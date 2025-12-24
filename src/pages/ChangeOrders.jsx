@@ -24,7 +24,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, DollarSign, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Search, DollarSign, Clock, TrendingUp, TrendingDown, FileSpreadsheet } from 'lucide-react';
+import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -50,6 +51,7 @@ export default function ChangeOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -221,16 +223,26 @@ export default function ChangeOrders() {
         title="Change Orders"
         subtitle="Track contract modifications"
         actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Change Order
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowCSVImport(true)}
+              variant="outline"
+              className="border-zinc-700"
+            >
+              <FileSpreadsheet size={18} className="mr-2" />
+              Import CSV
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              New Change Order
+            </Button>
+          </div>
         }
       />
 
@@ -354,6 +366,37 @@ export default function ChangeOrders() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* CSV Import */}
+      <CSVUpload
+        entityName="ChangeOrder"
+        templateFields={[
+          { label: 'Project Number', key: 'project_number', example: 'P-001' },
+          { label: 'Title', key: 'title', example: 'Add Level 2 Bracing' },
+          { label: 'Description', key: 'description', example: 'Additional bracing per engineer' },
+          { label: 'Cost Impact', key: 'cost_impact', example: '15000' },
+          { label: 'Schedule Impact Days', key: 'schedule_impact_days', example: '5' },
+        ]}
+        transformRow={(row) => {
+          const project = projects.find(p => p.project_number === row.project_number);
+          const projectCOs = changeOrders.filter(co => co.project_id === project?.id);
+          const maxNumber = projectCOs.reduce((max, co) => Math.max(max, co.co_number || 0), 0);
+          return {
+            project_id: project?.id || '',
+            co_number: maxNumber + 1,
+            title: row.title || '',
+            description: row.description || '',
+            cost_impact: parseFloat(row.cost_impact) || 0,
+            schedule_impact_days: parseInt(row.schedule_impact_days) || 0,
+            status: 'pending',
+          };
+        }}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+        }}
+        open={showCSVImport}
+        onOpenChange={setShowCSVImport}
+      />
     </div>
   );
 }

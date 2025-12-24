@@ -38,6 +38,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     notes: '',
   });
   const [uploading, setUploading] = useState(false);
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const queryClient = useQueryClient();
 

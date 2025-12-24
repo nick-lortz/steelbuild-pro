@@ -20,7 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Edit3, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
-export default function BulkEditDrawings({ drawings, open, onOpenChange }) {
+export default function BulkEditDrawings({ drawingSets, projects, open, onOpenChange }) {
+  const drawings = drawingSets; // Alias for compatibility
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkAction, setBulkAction] = useState('status');
   const [newValue, setNewValue] = useState('');

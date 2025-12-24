@@ -39,6 +39,11 @@ const statusStyles = {
   available: "bg-green-500/20 text-green-400 border-green-500/30",
   assigned: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   unavailable: "bg-red-500/20 text-red-400 border-red-500/30",
+  
+  // Task statuses
+  not_started: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
+  blocked: "bg-red-500/20 text-red-400 border-red-500/30",
+  cancelled: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
 };
 
 export default function StatusBadge({ status, className }) {

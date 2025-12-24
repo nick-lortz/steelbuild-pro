@@ -3,18 +3,38 @@ import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import { AlertTriangle, FileText } from 'lucide-react';
 
-export default function TaskList({ tasks, projects, resources, onTaskEdit, onTaskUpdate }) {
+export default function TaskList({ tasks, projects, resources, drawingSets, onTaskEdit, onTaskUpdate }) {
   const columns = [
     {
       header: 'Task',
       accessor: 'name',
-      render: (row) => (
-        <div>
-          <p className="font-medium">{row.is_milestone ? '◆ ' : ''}{row.name}</p>
-          <p className="text-xs text-zinc-500">{row.wbs_code || '-'}</p>
-        </div>
-      ),
+      render: (row) => {
+        // Check if task is blocked by drawings
+        const requiresFFFPhases = ['fabrication', 'delivery', 'erection'];
+        const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
+        const isBlocked = hasDrawingDeps && requiresFFFPhases.includes(row.phase) && 
+          row.linked_drawing_set_ids.some(id => {
+            const drawing = (drawingSets || []).find(d => d.id === id);
+            return drawing && drawing.status !== 'FFF';
+          });
+
+        return (
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{row.is_milestone ? '◆ ' : ''}{row.name}</p>
+              {isBlocked && (
+                <AlertTriangle size={14} className="text-red-400" title="Blocked by drawings" />
+              )}
+              {hasDrawingDeps && (
+                <FileText size={14} className="text-blue-400" title="Has drawing dependencies" />
+              )}
+            </div>
+            <p className="text-xs text-zinc-500">{row.wbs_code || '-'}</p>
+          </div>
+        );
+      },
     },
     {
       header: 'Project',
@@ -68,7 +88,17 @@ export default function TaskList({ tasks, projects, resources, onTaskEdit, onTas
     {
       header: 'Status',
       accessor: 'status',
-      render: (row) => <StatusBadge status={row.status} />,
+      render: (row) => {
+        const requiresFFFPhases = ['fabrication', 'delivery', 'erection'];
+        const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
+        const isBlocked = hasDrawingDeps && requiresFFFPhases.includes(row.phase) && 
+          row.linked_drawing_set_ids.some(id => {
+            const drawing = (drawingSets || []).find(d => d.id === id);
+            return drawing && drawing.status !== 'FFF';
+          });
+
+        return isBlocked ? <StatusBadge status="blocked" /> : <StatusBadge status={row.status} />;
+      },
     },
     {
       header: 'Float',

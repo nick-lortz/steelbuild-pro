@@ -248,6 +248,7 @@ export default function Schedule() {
             tasks={filteredTasks}
             projects={projects}
             resources={resources}
+            drawingSets={drawingSets}
             onTaskEdit={handleEditTask}
             onTaskUpdate={handleTaskUpdate}
           />

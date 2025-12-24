@@ -4,8 +4,10 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Calendar, Download, BarChart3, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+import { Plus, Calendar, Download, BarChart3, AlertTriangle, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
+import LookAheadSchedule from '@/components/schedule/LookAheadSchedule';
+import { getDrawingRisks } from '@/components/shared/drawingScheduleUtils';
 import PageHeader from '@/components/ui/PageHeader';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskList from '@/components/schedule/TaskList';
@@ -50,6 +52,11 @@ export default function Schedule() {
     queryFn: () => base44.entities.ChangeOrder.list(),
   });
 
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawings'],
+    queryFn: () => base44.entities.DrawingSet.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {
@@ -86,6 +93,11 @@ export default function Schedule() {
   const resourceConflicts = useMemo(() => {
     return detectResourceConflicts(filteredTasks, resources);
   }, [filteredTasks, resources]);
+
+  // Drawing risks
+  const drawingRisks = useMemo(() => {
+    return getDrawingRisks(filteredTasks, drawingSets);
+  }, [filteredTasks, drawingSets]);
 
   const handleTaskUpdate = (taskId, updates) => {
     updateMutation.mutate({ id: taskId, data: updates });
@@ -183,12 +195,25 @@ export default function Schedule() {
       </div>
 
       {/* Warning Indicators */}
-      {resourceConflicts.length > 0 && (
-        <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-amber-400">
-          <AlertTriangle size={18} />
-          <span>{resourceConflicts.length} resource conflict{resourceConflicts.length !== 1 ? 's' : ''} detected</span>
-        </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {resourceConflicts.length > 0 && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-amber-400">
+            <AlertTriangle size={18} />
+            <span>{resourceConflicts.length} resource conflict{resourceConflicts.length !== 1 ? 's' : ''} detected</span>
+          </div>
+        )}
+        {drawingRisks.length > 0 && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400">
+            <AlertTriangle size={18} />
+            <span>{drawingRisks.length} task{drawingRisks.length !== 1 ? 's' : ''} blocked or at risk due to drawings</span>
+          </div>
+        )}
+      </div>
+
+      {/* Look-Ahead Schedule */}
+      <div className="mb-6">
+        <LookAheadSchedule tasks={filteredTasks} drawingSets={drawingSets} weeks={2} />
+      </div>
 
       <Tabs defaultValue="gantt" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
@@ -199,6 +224,10 @@ export default function Schedule() {
           <TabsTrigger value="list">Task List</TabsTrigger>
           <TabsTrigger value="critical">Critical Path</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
+          <TabsTrigger value="lookahead">
+            <TrendingUp size={14} className="mr-2" />
+            Look-Ahead
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="gantt">
@@ -240,6 +269,10 @@ export default function Schedule() {
             projects={projects}
           />
         </TabsContent>
+
+        <TabsContent value="lookahead">
+          <LookAheadSchedule tasks={filteredTasks} drawingSets={drawingSets} weeks={4} />
+        </TabsContent>
       </Tabs>
 
       {/* Task Form Dialog */}
@@ -255,6 +288,7 @@ export default function Schedule() {
             resources={resources}
             rfis={rfis}
             changeOrders={changeOrders}
+            drawingSets={drawingSets}
             onSubmit={(data) => {
               if (editingTask) {
                 updateMutation.mutate({ id: editingTask.id, data });

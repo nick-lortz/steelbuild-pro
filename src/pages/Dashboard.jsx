@@ -35,6 +35,9 @@ import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import DashboardKPIs from '@/components/dashboard/DashboardKPIs';
+import ProjectOverview from '@/components/dashboard/ProjectOverview';
+import RecentActivity from '@/components/dashboard/RecentActivity';
 
 function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "default", onClick }) {
   const bgColors = {
@@ -111,6 +114,11 @@ export default function Dashboard() {
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
     queryFn: () => base44.entities.DailyLog.list('-log_date'),
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list('start_date'),
   });
 
   const activeProjects = projects.filter(p => p.status === 'in_progress');
@@ -210,35 +218,14 @@ export default function Dashboard() {
         }
       />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Active Projects"
-          value={activeProjects.length}
-          icon={Building2}
-          onClick={() => window.location.href = createPageUrl('Projects')}
-        />
-        <StatCard
-          title="Open RFIs"
-          value={pendingRFIs.length}
-          icon={MessageSquareWarning}
-          variant={pendingRFIs.length > 5 ? "amber" : "default"}
-        />
-        <StatCard
-          title="Pending COs"
-          value={pendingCOs.length}
-          icon={FileCheck}
-          variant={pendingCOs.length > 3 ? "amber" : "default"}
-        />
-        <StatCard
-          title="Budget Variance"
-          value={`${budgetVariancePercent}%`}
-          icon={DollarSign}
-          trend={budgetVariance >= 0 ? 'up' : 'down'}
-          trendValue={budgetVariance >= 0 ? 'Under budget' : 'Over budget'}
-          variant={budgetVariance >= 0 ? "green" : "red"}
-        />
-      </div>
+      {/* Enhanced KPI Cards */}
+      <DashboardKPIs 
+        projects={projects}
+        financials={financials}
+        drawings={drawings}
+        rfis={rfis}
+        tasks={tasks}
+      />
 
       {/* Progress Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
@@ -299,7 +286,27 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Project Overview */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-4">Active Projects</h2>
+        <ProjectOverview
+          projects={projects}
+          financials={financials}
+          tasks={tasks}
+          rfis={rfis}
+          changeOrders={changeOrders}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Recent Activity */}
+        <RecentActivity
+          drawings={drawings}
+          rfis={rfis}
+          changeOrders={changeOrders}
+          tasks={tasks}
+        />
+
         {/* At Risk List */}
         {widgetConfig.showAtRisk && (
           <Card className="bg-red-500/5 border-red-500/20">

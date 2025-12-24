@@ -52,7 +52,7 @@ export default function RFIAgingDashboard({ rfis = [], projects = [] }) {
           <p className="text-2xl font-bold text-amber-400">{agingStats.watch}</p>
         </div>
         <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg">
-          <p className="text-xs text-zinc-500">New (<7d)</p>
+          <p className="text-xs text-zinc-500">New (&lt;7d)</p>
           <p className="text-2xl font-bold text-white">{agingStats.new}</p>
         </div>
       </div>

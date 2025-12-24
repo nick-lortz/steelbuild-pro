@@ -278,8 +278,19 @@ export default function RFIs() {
 
         <TabsContent value="list" className="space-y-6">
 
+      <Tabs defaultValue="list" className="mb-6">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="list">RFI List</TabsTrigger>
+          <TabsTrigger value="dashboard">
+            <BarChart3 size={14} className="mr-2" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="aging">Aging Report</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <Input

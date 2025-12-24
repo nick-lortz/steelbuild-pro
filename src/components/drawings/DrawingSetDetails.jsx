@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DrawingSetForm from './DrawingSetForm';
-import { FileText, History, Brain, ExternalLink, Download } from 'lucide-react';
+import AIDrawingProcessor from './AIDrawingProcessor';
+import { FileText, History, Brain, ExternalLink, Download, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -69,6 +70,10 @@ export default function DrawingSetDetails({
               <TabsTrigger value="revisions" className="flex-1">
                 <History size={14} className="mr-2" />
                 History
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="flex-1">
+                <Sparkles size={14} className="mr-2" />
+                AI Analysis
               </TabsTrigger>
             </TabsList>
 
@@ -258,6 +263,14 @@ export default function DrawingSetDetails({
                   </Card>
                 ))
               )}
+            </TabsContent>
+
+            <TabsContent value="ai" className="mt-6">
+              <AIDrawingProcessor
+                drawingSet={drawingSet}
+                sheets={sheets}
+                onUpdate={onUpdate}
+              />
             </TabsContent>
           </Tabs>
         )}

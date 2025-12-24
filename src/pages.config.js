@@ -4,15 +4,15 @@ import DailyLogs from './pages/DailyLogs';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
+import Equipment from './pages/Equipment';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
+import Labor from './pages/Labor';
+import Meetings from './pages/Meetings';
+import Performance from './pages/Performance';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Resources from './pages/Resources';
-import Equipment from './pages/Equipment';
-import Meetings from './pages/Meetings';
-import Labor from './pages/Labor';
-import Performance from './pages/Performance';
 import Schedule from './pages/Schedule';
 import __Layout from './Layout.jsx';
 
@@ -24,15 +24,15 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "Documents": Documents,
     "Drawings": Drawings,
+    "Equipment": Equipment,
     "Financials": Financials,
     "Insights": Insights,
+    "Labor": Labor,
+    "Meetings": Meetings,
+    "Performance": Performance,
     "Projects": Projects,
     "RFIs": RFIs,
     "Resources": Resources,
-    "Equipment": Equipment,
-    "Meetings": Meetings,
-    "Labor": Labor,
-    "Performance": Performance,
     "Schedule": Schedule,
 }
 

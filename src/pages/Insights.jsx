@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ProjectAssistant from '@/components/ai/ProjectAssistant';
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -54,6 +56,21 @@ export default function Insights() {
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list(),
+  });
+
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials'],
+    queryFn: () => base44.entities.Financial.list(),
+  });
+
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawings'],
+    queryFn: () => base44.entities.DrawingSet.list(),
   });
 
   const { data: drawings = [] } = useQuery({

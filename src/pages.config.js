@@ -10,6 +10,9 @@ import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Resources from './pages/Resources';
 import Equipment from './pages/Equipment';
+import Meetings from './pages/Meetings';
+import Labor from './pages/Labor';
+import Performance from './pages/Performance';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +29,9 @@ export const PAGES = {
     "RFIs": RFIs,
     "Resources": Resources,
     "Equipment": Equipment,
+    "Meetings": Meetings,
+    "Labor": Labor,
+    "Performance": Performance,
 }
 
 export const pagesConfig = {

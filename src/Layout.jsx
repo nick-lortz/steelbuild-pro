@@ -29,8 +29,11 @@ const navItems = [
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
   { name: 'Resources', page: 'Resources', icon: Users },
   { name: 'Equipment', page: 'Equipment', icon: 'Truck' },
+  { name: 'Labor', page: 'Labor', icon: 'Clock' },
+  { name: 'Meetings', page: 'Meetings', icon: 'Users' },
   { name: 'Documents', page: 'Documents', icon: 'File' },
   { name: 'Daily Logs', page: 'DailyLogs', icon: 'Calendar' },
+  { name: 'Performance', page: 'Performance', icon: 'TrendingUp' },
   { name: 'AI Insights', page: 'Insights', icon: 'Sparkles' },
 ];
 

@@ -25,10 +25,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, MessageSquareWarning, AlertTriangle, DollarSign, Clock } from 'lucide-react';
+import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import BulkRFICreator from '@/components/rfis/BulkRFICreator';
+import RFIKPIDashboard from '@/components/rfis/RFIKPIDashboard';
+import RFIAgingDashboard from '@/components/rfis/RFIAgingDashboard';
 import { format } from 'date-fns';
 
 const initialFormState = {
@@ -238,18 +242,41 @@ export default function RFIs() {
         title="RFIs"
         subtitle="Requests for Information"
         actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New RFI
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowBulkCreator(true)}
+              variant="outline"
+              className="border-zinc-700"
+              disabled={projectFilter === 'all'}
+            >
+              <Copy size={18} className="mr-2" />
+              Bulk Create
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              New RFI
+            </Button>
+          </div>
         }
       />
+
+      <Tabs defaultValue="list" className="mb-6">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="list">RFI List</TabsTrigger>
+          <TabsTrigger value="dashboard">
+            <BarChart3 size={14} className="mr-2" />
+            Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="aging">Aging Report</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-6">
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

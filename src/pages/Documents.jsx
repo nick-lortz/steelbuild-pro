@@ -25,7 +25,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet } from 'lucide-react';
+import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -51,6 +52,7 @@ export default function Documents() {
   const [projectFilter, setProjectFilter] = useState('all');
   const [uploading, setUploading] = useState(false);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -262,16 +264,26 @@ export default function Documents() {
         title="Documents"
         subtitle="Manage project documentation"
         actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Document
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowCSVImport(true)}
+              variant="outline"
+              className="border-zinc-700"
+            >
+              <FileSpreadsheet size={18} className="mr-2" />
+              Import CSV
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              New Document
+            </Button>
+          </div>
         }
       />
 
@@ -508,6 +520,33 @@ export default function Documents() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* CSV Import */}
+      <CSVUpload
+        entityName="Document"
+        templateFields={[
+          { label: 'Project Number', key: 'project_number', example: 'P-001' },
+          { label: 'Title', key: 'title', example: 'Structural Specs' },
+          { label: 'Description', key: 'description', example: 'Main specifications' },
+          { label: 'Category', key: 'category', example: 'specification' },
+        ]}
+        transformRow={(row) => {
+          const project = projects.find(p => p.project_number === row.project_number);
+          return {
+            project_id: project?.id || '',
+            title: row.title || '',
+            description: row.description || '',
+            category: row.category || 'other',
+            status: 'draft',
+            workflow_stage: 'uploaded',
+          };
+        }}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['documents'] });
+        }}
+        open={showCSVImport}
+        onOpenChange={setShowCSVImport}
+      />
     </div>
   );
 }

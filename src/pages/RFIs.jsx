@@ -25,7 +25,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock } from 'lucide-react';
+import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet } from 'lucide-react';
+import CSVUpload from '@/components/shared/CSVUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
@@ -61,6 +62,7 @@ export default function RFIs() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
   const [showBulkCreator, setShowBulkCreator] = useState(false);
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -244,6 +246,14 @@ export default function RFIs() {
         actions={
           <div className="flex gap-2">
             <Button 
+              onClick={() => setShowCSVImport(true)}
+              variant="outline"
+              className="border-zinc-700"
+            >
+              <FileSpreadsheet size={18} className="mr-2" />
+              Import CSV
+            </Button>
+            <Button 
               onClick={() => setShowBulkCreator(true)}
               variant="outline"
               className="border-zinc-700"
@@ -380,6 +390,39 @@ export default function RFIs() {
         open={showBulkCreator}
         onOpenChange={setShowBulkCreator}
         projectId={projectFilter !== 'all' ? projectFilter : ''}
+      />
+
+      {/* CSV Import */}
+      <CSVUpload
+        entityName="RFI"
+        templateFields={[
+          { label: 'Project Number', key: 'project_number', example: 'P-001' },
+          { label: 'Subject', key: 'subject', example: 'Column connection detail' },
+          { label: 'Question', key: 'question', example: 'Please clarify base plate size' },
+          { label: 'Priority', key: 'priority', example: 'high' },
+          { label: 'Due Date', key: 'due_date', example: '2025-01-15' },
+        ]}
+        transformRow={(row) => {
+          const project = projects.find(p => p.project_number === row.project_number);
+          const projectRFIs = rfis.filter(r => r.project_id === project?.id);
+          const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
+          return {
+            project_id: project?.id || '',
+            rfi_number: maxNumber + 1,
+            subject: row.subject || '',
+            question: row.question || '',
+            priority: row.priority || 'medium',
+            status: 'draft',
+            due_date: row.due_date || '',
+            cost_impact: false,
+            schedule_impact: false,
+          };
+        }}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['rfis'] });
+        }}
+        open={showCSVImport}
+        onOpenChange={setShowCSVImport}
       />
     </div>
   );

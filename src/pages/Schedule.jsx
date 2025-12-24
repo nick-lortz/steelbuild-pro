@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Calendar, Download, BarChart3, AlertTriangle } from 'lucide-react';
+import { Plus, Calendar, Download, BarChart3, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskList from '@/components/schedule/TaskList';
@@ -20,6 +21,7 @@ export default function Schedule() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [selectedPhase, setSelectedPhase] = useState('all');
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -108,6 +110,14 @@ export default function Schedule() {
         subtitle="Gantt chart with dependencies and critical path"
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowCSVImport(true)}
+              className="border-zinc-700"
+            >
+              <FileSpreadsheet size={16} className="mr-2" />
+              Import CSV
+            </Button>
             <Button
               variant="outline"
               onClick={handleExportPDF}
@@ -260,6 +270,38 @@ export default function Schedule() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* CSV Import */}
+      <CSVUpload
+        entityName="Task"
+        templateFields={[
+          { label: 'Project Number', key: 'project_number', example: 'P-001' },
+          { label: 'Task Name', key: 'name', example: 'Fabricate Level 1 Columns' },
+          { label: 'Phase', key: 'phase', example: 'fabrication' },
+          { label: 'Start Date', key: 'start_date', example: '2025-01-10' },
+          { label: 'End Date', key: 'end_date', example: '2025-01-20' },
+          { label: 'Duration Days', key: 'duration_days', example: '10' },
+        ]}
+        transformRow={(row) => {
+          const project = projects.find(p => p.project_number === row.project_number);
+          return {
+            project_id: project?.id || '',
+            name: row.name || '',
+            phase: row.phase || 'fabrication',
+            start_date: row.start_date || '',
+            end_date: row.end_date || '',
+            duration_days: parseInt(row.duration_days) || 0,
+            status: 'not_started',
+            progress_percent: 0,
+            is_milestone: false,
+          };
+        }}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+        }}
+        open={showCSVImport}
+        onOpenChange={setShowCSVImport}
+      />
     </div>
   );
 }

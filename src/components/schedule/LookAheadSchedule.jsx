@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 import { getDrawingRisks } from '@/components/shared/drawingScheduleUtils';
 
-export default function LookAheadSchedule({ tasks, drawingSets, weeks = 2 }) {
+export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4 }) {
   const lookAheadData = useMemo(() => {
     const today = new Date();
     const endDate = new Date(today.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);

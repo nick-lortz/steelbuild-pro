@@ -34,6 +34,7 @@ const navItems = [
   { name: 'Equipment', page: 'Equipment', icon: 'Truck' },
   { name: 'Labor', page: 'Labor', icon: 'Clock' },
   { name: 'Meetings', page: 'Meetings', icon: 'Users' },
+  { name: 'Production Notes', page: 'ProductionMeetings', icon: 'Calendar' },
   { name: 'Documents', page: 'Documents', icon: 'File' },
   { name: 'Daily Logs', page: 'DailyLogs', icon: 'Calendar' },
   { name: 'Performance', page: 'Performance', icon: 'TrendingUp' },

@@ -56,6 +56,7 @@ export default function RFIs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [showBulkCreator, setShowBulkCreator] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -287,13 +288,23 @@ export default function RFIs() {
         </Select>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredRFIs}
-        onRowClick={handleEdit}
-        emptyMessage="No RFIs found. Create your first RFI to get started."
-      />
+          {/* Table */}
+          <DataTable
+            columns={columns}
+            data={filteredRFIs}
+            onRowClick={handleEdit}
+            emptyMessage="No RFIs found. Create your first RFI to get started."
+          />
+        </TabsContent>
+
+        <TabsContent value="dashboard" className="space-y-6">
+          <RFIKPIDashboard rfis={filteredRFIs} />
+        </TabsContent>
+
+        <TabsContent value="aging" className="space-y-6">
+          <RFIAgingDashboard rfis={filteredRFIs} projects={projects} />
+        </TabsContent>
+      </Tabs>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -337,6 +348,13 @@ export default function RFIs() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Bulk RFI Creator */}
+      <BulkRFICreator
+        open={showBulkCreator}
+        onOpenChange={setShowBulkCreator}
+        projectId={projectFilter !== 'all' ? projectFilter : ''}
+      />
     </div>
   );
 }

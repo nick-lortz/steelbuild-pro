@@ -25,11 +25,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Users, Truck, Hammer, Trash2 } from 'lucide-react';
+import { Plus, Search, Users, Truck, Hammer, Trash2, Calendar, BarChart3 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Badge } from "@/components/ui/badge";
+import ResourceAllocation from '@/components/resources/ResourceAllocation';
+import ResourceUtilization from '@/components/resources/ResourceUtilization';
+import ResourceForecast from '@/components/resources/ResourceForecast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -244,26 +247,41 @@ export default function Resources() {
         }
       />
 
-      {/* Type Tabs */}
-      <Tabs value={typeFilter} onValueChange={setTypeFilter} className="mb-6">
+      {/* Main Tabs */}
+      <Tabs defaultValue="directory" className="mb-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="all" className="data-[state=active]:bg-zinc-800">
-            All ({resources.length})
+          <TabsTrigger value="directory">Directory</TabsTrigger>
+          <TabsTrigger value="allocation">
+            <Calendar size={14} className="mr-2" />
+            Allocation
           </TabsTrigger>
-          <TabsTrigger value="labor" className="data-[state=active]:bg-zinc-800">
-            <Users size={14} className="mr-1" />
-            Labor ({laborCount})
-          </TabsTrigger>
-          <TabsTrigger value="equipment" className="data-[state=active]:bg-zinc-800">
-            <Truck size={14} className="mr-1" />
-            Equipment ({equipmentCount})
-          </TabsTrigger>
-          <TabsTrigger value="subcontractor" className="data-[state=active]:bg-zinc-800">
-            <Hammer size={14} className="mr-1" />
-            Subcontractors ({subCount})
+          <TabsTrigger value="analytics">
+            <BarChart3 size={14} className="mr-2" />
+            Analytics
           </TabsTrigger>
         </TabsList>
-      </Tabs>
+
+        <TabsContent value="directory" className="space-y-6">
+          {/* Type Tabs */}
+          <Tabs value={typeFilter} onValueChange={setTypeFilter}>
+            <TabsList className="bg-zinc-900 border border-zinc-800">
+              <TabsTrigger value="all" className="data-[state=active]:bg-zinc-800">
+                All ({resources.length})
+              </TabsTrigger>
+              <TabsTrigger value="labor" className="data-[state=active]:bg-zinc-800">
+                <Users size={14} className="mr-1" />
+                Labor ({laborCount})
+              </TabsTrigger>
+              <TabsTrigger value="equipment" className="data-[state=active]:bg-zinc-800">
+                <Truck size={14} className="mr-1" />
+                Equipment ({equipmentCount})
+              </TabsTrigger>
+              <TabsTrigger value="subcontractor" className="data-[state=active]:bg-zinc-800">
+                <Hammer size={14} className="mr-1" />
+                Subcontractors ({subCount})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
       {/* Search */}
       <div className="mb-6">
@@ -278,13 +296,24 @@ export default function Resources() {
         </div>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredResources}
-        onRowClick={handleEdit}
-        emptyMessage="No resources found. Add your first resource to get started."
-      />
+          {/* Table */}
+          <DataTable
+            columns={columns}
+            data={filteredResources}
+            onRowClick={handleEdit}
+            emptyMessage="No resources found. Add your first resource to get started."
+          />
+        </TabsContent>
+
+        <TabsContent value="allocation">
+          <ResourceAllocation />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <ResourceForecast />
+          <ResourceUtilization />
+        </TabsContent>
+      </Tabs>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

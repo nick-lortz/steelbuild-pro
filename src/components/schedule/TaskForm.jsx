@@ -16,6 +16,7 @@ export default function TaskForm({
   resources,
   rfis,
   changeOrders,
+  drawingSets,
   onSubmit, 
   onCancel,
   isLoading 
@@ -38,6 +39,7 @@ export default function TaskForm({
     assigned_equipment: [],
     linked_rfi_ids: [],
     linked_co_ids: [],
+    linked_drawing_set_ids: [],
     notes: '',
   });
 
@@ -61,6 +63,7 @@ export default function TaskForm({
         assigned_equipment: task.assigned_equipment || [],
         linked_rfi_ids: task.linked_rfi_ids || [],
         linked_co_ids: task.linked_co_ids || [],
+        linked_drawing_set_ids: task.linked_drawing_set_ids || [],
         notes: task.notes || '',
       });
     }
@@ -375,33 +378,64 @@ export default function TaskForm({
       {/* Links */}
       <div className="border-t border-zinc-800 pt-4">
         <h4 className="text-sm font-medium mb-3">Linked Items</h4>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>RFIs</Label>
-            <Select onValueChange={(v) => toggleArrayItem('linked_rfi_ids', v)}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Link RFI" />
-              </SelectTrigger>
-              <SelectContent>
-                {rfis.filter(r => r.project_id === formData.project_id).map(r => (
-                  <SelectItem key={r.id} value={r.id}>RFI-{r.rfi_number}: {r.subject}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>RFIs</Label>
+              <Select onValueChange={(v) => toggleArrayItem('linked_rfi_ids', v)}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Link RFI" />
+                </SelectTrigger>
+                <SelectContent>
+                  {rfis.filter(r => r.project_id === formData.project_id).map(r => (
+                    <SelectItem key={r.id} value={r.id}>RFI-{r.rfi_number}: {r.subject}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Change Orders</Label>
+              <Select onValueChange={(v) => toggleArrayItem('linked_co_ids', v)}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Link CO" />
+                </SelectTrigger>
+                <SelectContent>
+                  {changeOrders.filter(c => c.project_id === formData.project_id).map(c => (
+                    <SelectItem key={c.id} value={c.id}>CO-{c.co_number}: {c.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Change Orders</Label>
-            <Select onValueChange={(v) => toggleArrayItem('linked_co_ids', v)}>
+            <Label>Drawing Sets (Required for Fabrication/Erection)</Label>
+            <Select onValueChange={(v) => toggleArrayItem('linked_drawing_set_ids', v)}>
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Link CO" />
+                <SelectValue placeholder="Link drawing set" />
               </SelectTrigger>
               <SelectContent>
-                {changeOrders.filter(c => c.project_id === formData.project_id).map(c => (
-                  <SelectItem key={c.id} value={c.id}>CO-{c.co_number}: {c.title}</SelectItem>
+                {(drawingSets || []).filter(d => d.project_id === formData.project_id).map(d => (
+                  <SelectItem key={d.id} value={d.id}>{d.set_number} - {d.set_name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex flex-wrap gap-2">
+              {(formData.linked_drawing_set_ids || []).map(id => {
+                const d = (drawingSets || []).find(ds => ds.id === id);
+                return d ? (
+                  <Badge key={id} variant="outline" className="gap-1">
+                    {d.set_number}
+                    <X 
+                      size={12} 
+                      className="cursor-pointer" 
+                      onClick={() => toggleArrayItem('linked_drawing_set_ids', id)}
+                    />
+                  </Badge>
+                ) : null;
+              })}
+            </div>
           </div>
         </div>
       </div>

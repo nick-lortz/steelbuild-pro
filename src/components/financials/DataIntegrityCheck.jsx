@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Shield } from 'lucide-react';
-import { checkCostCodeIntegrity } from '@/utils/dataValidation';
+import { checkCostCodeIntegrity } from '@/components/shared/dataValidation';
 
 export default function DataIntegrityCheck() {
   const { data: costCodes = [] } = useQuery({

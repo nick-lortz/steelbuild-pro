@@ -30,7 +30,7 @@ import CommitmentsVsActuals from '@/components/financials/CommitmentsVsActuals';
 import ForecastAtCompletion from '@/components/financials/ForecastAtCompletion';
 import ExpensesManagement from '@/components/financials/ExpensesManagement';
 import DataIntegrityCheck from '@/components/financials/DataIntegrityCheck';
-import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@/utils/dataValidation';
+import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@/components/shared/dataValidation';
 
 export default function Financials() {
   const [showForm, setShowForm] = useState(false);

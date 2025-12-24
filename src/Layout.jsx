@@ -14,7 +14,8 @@ import {
   Hash,
   Sparkles,
   File,
-  Calendar
+  Calendar,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ const navItems = [
   { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning },
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
   { name: 'Resources', page: 'Resources', icon: Users },
+  { name: 'Equipment', page: 'Equipment', icon: 'Truck' },
   { name: 'Documents', page: 'Documents', icon: 'File' },
   { name: 'Daily Logs', page: 'DailyLogs', icon: 'Calendar' },
   { name: 'AI Insights', page: 'Insights', icon: 'Sparkles' },

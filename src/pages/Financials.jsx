@@ -19,9 +19,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
+import KPICard from '@/components/financials/KPICard';
+import BudgetByCategoryBreakdown from '@/components/financials/BudgetByCategoryBreakdown';
+import CashFlowSection from '@/components/financials/CashFlowSection';
+import CommitmentsVsActuals from '@/components/financials/CommitmentsVsActuals';
+import ForecastAtCompletion from '@/components/financials/ForecastAtCompletion';
+import ExpensesManagement from '@/components/financials/ExpensesManagement';
 
 export default function Financials() {
   const [showForm, setShowForm] = useState(false);
@@ -52,6 +59,16 @@ export default function Financials() {
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['changeOrders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
+  });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list(),
   });
 
   const createMutation = useMutation({
@@ -216,62 +233,95 @@ export default function Financials() {
         }
       />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Total Budget</p>
-                <p className="text-xl font-bold text-white">${totals.budget.toLocaleString()}</p>
-              </div>
-              <DollarSign className="text-amber-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Committed</p>
-                <p className="text-xl font-bold text-white">${totals.committed.toLocaleString()}</p>
-              </div>
-              <DollarSign className="text-blue-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Actual Costs</p>
-                <p className="text-xl font-bold text-white">${totals.actual.toLocaleString()}</p>
-              </div>
-              <DollarSign className="text-purple-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={`border ${variance >= 0 ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Variance</p>
-                <p className={`text-xl font-bold ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {variance >= 0 ? '+' : ''}${variance.toLocaleString()}
-                </p>
-                <p className={`text-xs ${variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {variancePercent.toFixed(1)}%
-                </p>
-              </div>
-              {variance >= 0 ? (
-                <TrendingUp className="text-green-500" size={24} />
-              ) : (
-                <TrendingDown className="text-red-500" size={24} />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="overview" className="mb-6">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800">
+            <BarChart3 size={14} className="mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="budget" className="data-[state=active]:bg-zinc-800">
+            Budget Lines
+          </TabsTrigger>
+          <TabsTrigger value="expenses" className="data-[state=active]:bg-zinc-800">
+            <Receipt size={14} className="mr-2" />
+            Expenses
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPICard
+              title="Total Budget"
+              value={`$${totals.budget.toLocaleString()}`}
+              icon={DollarSign}
+            />
+            <KPICard
+              title="Committed"
+              value={`$${totals.committed.toLocaleString()}`}
+              icon={DollarSign}
+              variant="blue"
+            />
+            <KPICard
+              title="Actual Costs"
+              value={`$${totals.actual.toLocaleString()}`}
+              icon={DollarSign}
+            />
+            <KPICard
+              title="Variance"
+              value={`${variance >= 0 ? '+' : ''}$${Math.abs(variance).toLocaleString()}`}
+              trend={variance >= 0 ? 'up' : 'down'}
+              trendValue={`${variancePercent.toFixed(1)}%`}
+              icon={variance >= 0 ? TrendingUp : TrendingDown}
+              variant={variance >= 0 ? 'green' : 'red'}
+            />
+          </div>
+
+          {/* Forecast & Analytics */}
+          <ForecastAtCompletion
+            financials={filteredFinancials}
+            projects={projects}
+            changeOrders={changeOrders}
+          />
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <BudgetByCategoryBreakdown financials={filteredFinancials} costCodes={costCodes} />
+            <CommitmentsVsActuals financials={filteredFinancials} projects={projects} />
+          </div>
+
+          {/* Cash Flow */}
+          <CashFlowSection expenses={expenses} changeOrders={changeOrders} />
+        </TabsContent>
+
+        <TabsContent value="budget" className="space-y-4">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPICard
+              title="Total Budget"
+              value={`$${totals.budget.toLocaleString()}`}
+              icon={DollarSign}
+            />
+            <KPICard
+              title="Committed"
+              value={`$${totals.committed.toLocaleString()}`}
+              icon={DollarSign}
+              variant="blue"
+            />
+            <KPICard
+              title="Actual Costs"
+              value={`$${totals.actual.toLocaleString()}`}
+              icon={DollarSign}
+            />
+            <KPICard
+              title="Variance"
+              value={`${variance >= 0 ? '+' : ''}$${Math.abs(variance).toLocaleString()}`}
+              trend={variance >= 0 ? 'up' : 'down'}
+              trendValue={`${variancePercent.toFixed(1)}%`}
+              icon={variance >= 0 ? TrendingUp : TrendingDown}
+              variant={variance >= 0 ? 'green' : 'red'}
+            />
+          </div>
 
       {/* Project Filter */}
       <div className="mb-6">
@@ -290,13 +340,19 @@ export default function Financials() {
         </Select>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredFinancials}
-        onRowClick={handleEdit}
-        emptyMessage="No financial records found. Add budget lines to start tracking costs."
-      />
+          {/* Table */}
+          <DataTable
+            columns={columns}
+            data={filteredFinancials}
+            onRowClick={handleEdit}
+            emptyMessage="No financial records found. Add budget lines to start tracking costs."
+          />
+        </TabsContent>
+
+        <TabsContent value="expenses">
+          <ExpensesManagement projectFilter={selectedProject} />
+        </TabsContent>
+      </Tabs>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

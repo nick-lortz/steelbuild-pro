@@ -13,6 +13,7 @@ import Equipment from './pages/Equipment';
 import Meetings from './pages/Meetings';
 import Labor from './pages/Labor';
 import Performance from './pages/Performance';
+import Schedule from './pages/Schedule';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "Meetings": Meetings,
     "Labor": Labor,
     "Performance": Performance,
+    "Schedule": Schedule,
 }
 
 export const pagesConfig = {

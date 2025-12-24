@@ -21,7 +21,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import BulkEditDrawings from '@/components/drawings/BulkEditDrawings';
-import DrawingSetDetails from '@/components/drawings/DrawingSetDetails';
+import DrawingSetDetails from '@/components/drawings/DrawingSetDetails.jsx';
 import { differenceInDays } from 'date-fns';
 
 export default function Drawings() {

@@ -18,7 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Receipt, Upload, Loader2 } from 'lucide-react';
+import { Plus, Receipt, Upload, Loader2, FileSpreadsheet } from 'lucide-react';
+import CSVUpload from '@/components/shared/CSVUpload';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
@@ -169,10 +170,16 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       </div>
 
       {/* Add Button */}
-      <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
-        <Plus size={16} className="mr-2" />
-        Add Expense
-      </Button>
+      <div className="flex gap-2">
+        <Button onClick={() => setShowCSVImport(true)} variant="outline" className="border-zinc-700">
+          <FileSpreadsheet size={16} className="mr-2" />
+          Import CSV
+        </Button>
+        <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+          <Plus size={16} className="mr-2" />
+          Add Expense
+        </Button>
+      </div>
 
       {/* Table */}
       <DataTable
@@ -330,6 +337,38 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* CSV Import */}
+      <CSVUpload
+        entityName="Expense"
+        templateFields={[
+          { label: 'Project Number', key: 'project_number', example: 'P-001' },
+          { label: 'Expense Date', key: 'expense_date', example: '2025-01-15' },
+          { label: 'Description', key: 'description', example: 'Steel delivery' },
+          { label: 'Category', key: 'category', example: 'material' },
+          { label: 'Vendor', key: 'vendor', example: 'ABC Steel Supply' },
+          { label: 'Amount', key: 'amount', example: '5000' },
+          { label: 'Invoice Number', key: 'invoice_number', example: 'INV-12345' },
+        ]}
+        transformRow={(row) => {
+          const project = projects.find(p => p.project_number === row.project_number);
+          return {
+            project_id: project?.id || '',
+            expense_date: row.expense_date || format(new Date(), 'yyyy-MM-dd'),
+            description: row.description || '',
+            category: row.category || 'other',
+            vendor: row.vendor || '',
+            amount: parseFloat(row.amount) || 0,
+            invoice_number: row.invoice_number || '',
+            payment_status: 'pending',
+          };
+        }}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['expenses'] });
+        }}
+        open={showCSVImport}
+        onOpenChange={setShowCSVImport}
+      />
     </div>
   );
 }

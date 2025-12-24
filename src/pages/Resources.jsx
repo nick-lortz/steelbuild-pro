@@ -25,7 +25,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Users, Truck, Hammer, Trash2, Calendar, BarChart3 } from 'lucide-react';
+import { Plus, Search, Users, Truck, Hammer, Trash2, Calendar, BarChart3, FileSpreadsheet } from 'lucide-react';
+import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -77,6 +78,7 @@ export default function Resources() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [deleteResource, setDeleteResource] = useState(null);
+  const [showCSVImport, setShowCSVImport] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -234,16 +236,26 @@ export default function Resources() {
         title="Resources"
         subtitle="Labor, equipment, and subcontractors"
         actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            Add Resource
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowCSVImport(true)}
+              variant="outline"
+              className="border-zinc-700"
+            >
+              <FileSpreadsheet size={18} className="mr-2" />
+              Import CSV
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              Add Resource
+            </Button>
+          </div>
         }
       />
 
@@ -372,10 +384,37 @@ export default function Resources() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
+        </AlertDialog>
+
+        {/* CSV Import */}
+        <CSVUpload
+        entityName="Resource"
+        templateFields={[
+          { label: 'Type', key: 'type', example: 'labor' },
+          { label: 'Name', key: 'name', example: 'John Smith' },
+          { label: 'Classification', key: 'classification', example: 'Ironworker' },
+          { label: 'Rate', key: 'rate', example: '45' },
+          { label: 'Rate Type', key: 'rate_type', example: 'hourly' },
+          { label: 'Contact Phone', key: 'contact_phone', example: '555-1234' },
+        ]}
+        transformRow={(row) => ({
+          type: row.type || 'labor',
+          name: row.name || '',
+          classification: row.classification || '',
+          rate: parseFloat(row.rate) || 0,
+          rate_type: row.rate_type || 'hourly',
+          contact_phone: row.contact_phone || '',
+          status: 'available',
+        })}
+        onImportComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['resources'] });
+        }}
+        open={showCSVImport}
+        onOpenChange={setShowCSVImport}
+        />
+        </div>
+        );
+        }
 
 function ResourceForm({ formData, setFormData, projects, onSubmit, isLoading, isEdit }) {
   const handleChange = (field, value) => {

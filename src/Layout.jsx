@@ -11,7 +11,8 @@ import {
   Menu, 
   X,
   ChevronRight,
-  Hash
+  Hash,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ const navItems = [
   { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning },
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
   { name: 'Resources', page: 'Resources', icon: Users },
+  { name: 'AI Insights', page: 'Insights', icon: 'Sparkles' },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -87,7 +89,7 @@ export default function Layout({ children, currentPageName }) {
         <nav className="p-3 space-y-1">
           {navItems.map((item) => {
             const isActive = currentPageName === item.page;
-            const Icon = item.icon;
+            const Icon = typeof item.icon === 'string' ? eval(item.icon) : item.icon;
             return (
               <Link
                 key={item.page}

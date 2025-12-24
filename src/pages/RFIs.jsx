@@ -277,18 +277,6 @@ export default function RFIs() {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-
-      <Tabs defaultValue="list" className="mb-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="list">RFI List</TabsTrigger>
-          <TabsTrigger value="dashboard">
-            <BarChart3 size={14} className="mr-2" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="aging">Aging Report</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="list" className="space-y-6">
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -326,13 +314,13 @@ export default function RFIs() {
         </Select>
       </div>
 
-          {/* Table */}
-          <DataTable
-            columns={columns}
-            data={filteredRFIs}
-            onRowClick={handleEdit}
-            emptyMessage="No RFIs found. Create your first RFI to get started."
-          />
+      {/* Table */}
+      <DataTable
+        columns={columns}
+        data={filteredRFIs}
+        onRowClick={handleEdit}
+        emptyMessage="No RFIs found. Create your first RFI to get started."
+      />
         </TabsContent>
 
         <TabsContent value="dashboard" className="space-y-6">

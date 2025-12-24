@@ -4,6 +4,8 @@ import CostCodes from './pages/CostCodes';
 import Financials from './pages/Financials';
 import Drawings from './pages/Drawings';
 import RFIs from './pages/RFIs';
+import ChangeOrders from './pages/ChangeOrders';
+import Resources from './pages/Resources';
 import __Layout from './Layout.jsx';
 
 
@@ -14,6 +16,8 @@ export const PAGES = {
     "Financials": Financials,
     "Drawings": Drawings,
     "RFIs": RFIs,
+    "ChangeOrders": ChangeOrders,
+    "Resources": Resources,
 }
 
 export const pagesConfig = {

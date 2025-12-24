@@ -269,6 +269,7 @@ export default function DrawingSetDetails({
               <AIDrawingProcessor
                 drawingSet={drawingSet}
                 sheets={sheets}
+                revisions={revisions}
                 onUpdate={onUpdate}
               />
             </TabsContent>

@@ -8,6 +8,7 @@ import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Resources from './pages/Resources';
 import DailyLogs from './pages/DailyLogs';
+import Documents from './pages/Documents';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "RFIs": RFIs,
     "Resources": Resources,
     "DailyLogs": DailyLogs,
+    "Documents": Documents,
 }
 
 export const pagesConfig = {

@@ -12,7 +12,9 @@ import {
   X,
   ChevronRight,
   Hash,
-  Sparkles
+  Sparkles,
+  File,
+  Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +27,7 @@ const navItems = [
   { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning },
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
   { name: 'Resources', page: 'Resources', icon: Users },
+  { name: 'Documents', page: 'Documents', icon: 'File' },
   { name: 'Daily Logs', page: 'DailyLogs', icon: 'Calendar' },
   { name: 'AI Insights', page: 'Insights', icon: 'Sparkles' },
 ];

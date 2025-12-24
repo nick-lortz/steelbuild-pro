@@ -24,10 +24,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, FileText, Clock, History } from 'lucide-react';
+import { Plus, Search, FileText, Clock, History, Brain, Edit3 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import AIDrawingAnalysis from '@/components/drawings/AIDrawingAnalysis';
+import BulkEditDrawings from '@/components/drawings/BulkEditDrawings';
 import { format } from 'date-fns';
 
 const initialFormState = {
@@ -50,6 +52,8 @@ export default function Drawings() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -189,16 +193,27 @@ export default function Drawings() {
         title="Drawing Sets"
         subtitle="Manage drawing submissions and revisions"
         actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Drawing Set
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowBulkEdit(true)}
+              variant="outline"
+              className="border-zinc-700"
+              disabled={filteredDrawings.length === 0}
+            >
+              <Edit3 size={18} className="mr-2" />
+              Bulk Edit
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              New Drawing Set
+            </Button>
+          </div>
         }
       />
 
@@ -279,6 +294,25 @@ export default function Drawings() {
               isEdit
             />
             
+            {/* AI Analysis */}
+            <div className="mt-6 pt-6 border-t border-zinc-800">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowAIAnalysis(!showAIAnalysis)}
+                className="mb-4 border-zinc-700"
+              >
+                <Brain size={16} className="mr-2" />
+                {showAIAnalysis ? 'Hide' : 'Show'} AI Analysis
+              </Button>
+              {showAIAnalysis && (
+                <AIDrawingAnalysis 
+                  drawing={selectedDrawing} 
+                  drawingUrl={selectedDrawing?.file_url} 
+                />
+              )}
+            </div>
+
             {/* Revision History */}
             {selectedDrawing?.revision_history?.length > 0 && (
               <div className="mt-6 pt-6 border-t border-zinc-800">
@@ -302,6 +336,13 @@ export default function Drawings() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Bulk Edit Dialog */}
+      <BulkEditDrawings
+        drawings={filteredDrawings}
+        open={showBulkEdit}
+        onOpenChange={setShowBulkEdit}
+      />
     </div>
   );
 }

@@ -29,6 +29,8 @@ import CashFlowSection from '@/components/financials/CashFlowSection';
 import CommitmentsVsActuals from '@/components/financials/CommitmentsVsActuals';
 import ForecastAtCompletion from '@/components/financials/ForecastAtCompletion';
 import ExpensesManagement from '@/components/financials/ExpensesManagement';
+import DataIntegrityCheck from '@/components/financials/DataIntegrityCheck';
+import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@/utils/dataValidation';
 
 export default function Financials() {
   const [showForm, setShowForm] = useState(false);
@@ -104,6 +106,14 @@ export default function Financials() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate required references
+    if (!formData.project_id || !formData.cost_code_id) {
+      alert('Project and Cost Code are required');
+      return;
+    }
+    
+    // Ensure all amounts are valid numbers
     const data = {
       ...formData,
       budget_amount: parseFloat(formData.budget_amount) || 0,
@@ -111,6 +121,12 @@ export default function Financials() {
       actual_amount: parseFloat(formData.actual_amount) || 0,
       forecast_amount: parseFloat(formData.forecast_amount) || 0,
     };
+
+    // Validate numeric values
+    if (data.budget_amount < 0 || data.committed_amount < 0 || data.actual_amount < 0 || data.forecast_amount < 0) {
+      alert('Amounts cannot be negative');
+      return;
+    }
 
     if (editingFinancial) {
       updateMutation.mutate({ id: editingFinancial.id, data });
@@ -137,18 +153,17 @@ export default function Financials() {
     ? financials 
     : financials.filter(f => f.project_id === selectedProject);
 
-  // Calculate totals
+  // Calculate totals using validated calculation
   const totals = useMemo(() => {
-    return filteredFinancials.reduce((acc, f) => ({
-      budget: acc.budget + (f.budget_amount || 0),
-      committed: acc.committed + (f.committed_amount || 0),
-      actual: acc.actual + (f.actual_amount || 0),
-      forecast: acc.forecast + (f.forecast_amount || 0),
-    }), { budget: 0, committed: 0, actual: 0, forecast: 0 });
+    return calculateFinancialTotals(filteredFinancials);
   }, [filteredFinancials]);
 
-  const variance = totals.budget - totals.actual;
-  const variancePercent = totals.budget > 0 ? (variance / totals.budget * 100) : 0;
+  const varianceMetrics = useMemo(() => {
+    return calculateVariance(totals.budget, totals.actual);
+  }, [totals.budget, totals.actual]);
+
+  const variance = varianceMetrics.variance;
+  const variancePercent = varianceMetrics.variancePercent;
 
   const columns = [
     {
@@ -292,6 +307,9 @@ export default function Financials() {
 
           {/* Cash Flow */}
           <CashFlowSection expenses={expenses} changeOrders={changeOrders} />
+
+          {/* Data Integrity Check */}
+          <DataIntegrityCheck />
         </TabsContent>
 
         <TabsContent value="budget" className="space-y-4">

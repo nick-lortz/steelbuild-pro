@@ -16,7 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet } from 'lucide-react';
+import { format } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
@@ -93,6 +94,55 @@ export default function Drawings() {
     return filteredSets.filter(d => d.status === 'BFS' && !d.released_for_fab_date);
   }, [filteredSets]);
 
+  // Export drawing registry
+  const exportDrawingRegistry = () => {
+    const headers = [
+      'Set Number',
+      'Set Name',
+      'Project',
+      'Discipline',
+      'Current Revision',
+      'Status',
+      'Sheet Count',
+      'IFA Date',
+      'BFA Date',
+      'Released Date',
+      'Due Date',
+      'Reviewer',
+      'AI Review Status'
+    ];
+
+    const rows = drawingSets.map(set => {
+      const project = projects.find(p => p.id === set.project_id);
+      return [
+        set.set_number || '',
+        set.set_name || '',
+        project?.project_number || '',
+        set.discipline || '',
+        set.current_revision || '',
+        set.status || '',
+        set.sheet_count || 0,
+        set.ifa_date || '',
+        set.bfa_date || '',
+        set.released_for_fab_date || '',
+        set.due_date || '',
+        set.reviewer || '',
+        set.ai_review_status || ''
+      ];
+    });
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `drawing_registry_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
       <PageHeader
@@ -100,6 +150,14 @@ export default function Drawings() {
         subtitle="Manage drawing submissions and revisions"
         actions={
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={exportDrawingRegistry}
+              className="border-zinc-700"
+            >
+              <FileSpreadsheet size={18} className="mr-2" />
+              Export Registry
+            </Button>
             <Button 
               onClick={() => setShowBulkEdit(true)}
               variant="outline"

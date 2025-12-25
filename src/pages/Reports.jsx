@@ -436,13 +436,55 @@ export default function Reports() {
         </Card>
       </div>
 
-      {/* Reports Table */}
-      <DataTable
-        columns={columns}
-        data={reports}
-        onRowClick={handleEdit}
-        emptyMessage="No reports configured. Create your first report to get started."
-      />
+      <Tabs defaultValue="financial" className="space-y-6">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="financial">Financial Reports</TabsTrigger>
+          <TabsTrigger value="progress">Progress Reports</TabsTrigger>
+          <TabsTrigger value="safety">Safety Reports</TabsTrigger>
+          <TabsTrigger value="quality">Quality Reports</TabsTrigger>
+          <TabsTrigger value="automated">Automated Reports</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="financial">
+          <DataTable
+            columns={columns}
+            data={reports.filter(r => r.report_type === 'financial')}
+            onRowClick={handleEdit}
+            emptyMessage="No financial reports. Create your first report to get started."
+          />
+        </TabsContent>
+
+        <TabsContent value="progress">
+          <DataTable
+            columns={columns}
+            data={reports.filter(r => r.report_type === 'progress')}
+            onRowClick={handleEdit}
+            emptyMessage="No progress reports. Create your first report to get started."
+          />
+        </TabsContent>
+
+        <TabsContent value="safety">
+          <DataTable
+            columns={columns}
+            data={reports.filter(r => r.report_type === 'safety')}
+            onRowClick={handleEdit}
+            emptyMessage="No safety reports. Create your first report to get started."
+          />
+        </TabsContent>
+
+        <TabsContent value="quality">
+          <DataTable
+            columns={columns}
+            data={reports.filter(r => r.report_type === 'quality')}
+            onRowClick={handleEdit}
+            emptyMessage="No quality reports. Create your first report to get started."
+          />
+        </TabsContent>
+
+        <TabsContent value="automated">
+          <AutomatedReportScheduler />
+        </TabsContent>
+      </Tabs>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

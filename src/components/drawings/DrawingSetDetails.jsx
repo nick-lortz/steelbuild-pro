@@ -124,7 +124,7 @@ export default function DrawingSetDetails({
                       )}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">BFS - Back from Shop</span>
+                      <span className="text-sm text-zinc-400">BFS - Back from Scrub</span>
                       {drawingSet.bfs_date ? (
                         <span className="text-sm">{format(new Date(drawingSet.bfs_date), 'MMM d, yyyy')}</span>
                       ) : (

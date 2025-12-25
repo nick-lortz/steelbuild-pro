@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from '@/components/ui/PageHeader';
+import AutomatedReportScheduler from '@/components/reports/AutomatedReportScheduler';
 import DataTable from '@/components/ui/DataTable';
 import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';

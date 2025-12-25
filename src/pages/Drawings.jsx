@@ -23,6 +23,7 @@ import DrawingSetTable from '@/components/drawings/DrawingSetTable';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import BulkEditDrawings from '@/components/drawings/BulkEditDrawings';
 import DrawingSetDetails from '@/components/drawings/DrawingSetDetails.jsx';
+import DrawingNotifications from '@/components/drawings/DrawingNotifications';
 import { differenceInDays } from 'date-fns';
 
 export default function Drawings() {
@@ -194,12 +195,17 @@ export default function Drawings() {
               <Clock size={18} className="text-amber-400 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-amber-400">{pendingRelease.length} Ready for Release</p>
-                <p className="text-xs text-zinc-400">Back from shop, pending fabrication release</p>
+                <p className="text-xs text-zinc-400">Back from scrub, pending fabrication release</p>
               </div>
             </div>
           )}
         </div>
       )}
+
+      {/* Drawing Notifications */}
+      <div className="mb-6">
+        <DrawingNotifications drawingSets={drawingSets} projects={projects} />
+      </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">

@@ -339,6 +339,7 @@ export default function Financials() {
             financials={filteredFinancials}
             projects={projects}
             changeOrders={changeOrders}
+            expenses={expenses}
           />
 
           {/* Charts Row */}

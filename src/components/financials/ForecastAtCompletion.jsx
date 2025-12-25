@@ -3,12 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Target, TrendingUp, AlertTriangle } from 'lucide-react';
 
-export default function ForecastAtCompletion({ financials, projects, changeOrders }) {
+export default function ForecastAtCompletion({ financials, projects, changeOrders, expenses = [] }) {
   const projectForecasts = projects.map(project => {
     const projectFinancials = financials.filter(f => f.project_id === project.id);
     const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    
+    // Calculate actual from financial records PLUS paid/approved expenses
+    let actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const actualFromExpenses = expenses
+      .filter(e => e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const actual = actualFromFinancials + actualFromExpenses;
+    
     const committed = projectFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+    const forecast = projectFinancials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0);
     
     // Add approved change orders
     const approvedCOs = changeOrders
@@ -16,7 +24,10 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
       .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
     
     const revisedBudget = budget + approvedCOs;
-    const forecastAtCompletion = actual + committed;
+    
+    // Forecast at completion = actual costs + remaining committed + forecast overruns
+    const forecastAtCompletion = actual + committed + (forecast - actual);
+    
     const variance = revisedBudget - forecastAtCompletion;
     const variancePercent = revisedBudget > 0 ? ((variance / revisedBudget) * 100) : 0;
     const costPerformanceIndex = actual > 0 ? (budget / forecastAtCompletion) : 1;

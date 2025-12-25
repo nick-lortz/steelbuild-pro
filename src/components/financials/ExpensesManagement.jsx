@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Receipt, Upload, Loader2, FileSpreadsheet } from 'lucide-react';
+import { Plus, Receipt, Upload, Loader2, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -26,6 +26,7 @@ import { format } from 'date-fns';
 
 export default function ExpensesManagement({ projectFilter = 'all' }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
     project_id: '',
     cost_code_id: '',
@@ -62,7 +63,9 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     mutationFn: (data) => base44.entities.Expense.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
       setShowForm(false);
+      setEditingExpense(null);
       setFormData({
         project_id: '',
         cost_code_id: '',
@@ -75,6 +78,36 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
         payment_status: 'pending',
         notes: '',
       });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Expense.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      setShowForm(false);
+      setEditingExpense(null);
+      setFormData({
+        project_id: '',
+        cost_code_id: '',
+        expense_date: format(new Date(), 'yyyy-MM-dd'),
+        description: '',
+        category: 'other',
+        vendor: '',
+        amount: '',
+        invoice_number: '',
+        payment_status: 'pending',
+        notes: '',
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Expense.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
     },
   });
 
@@ -99,7 +132,36 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       ...formData,
       amount: parseFloat(formData.amount) || 0,
     };
-    createMutation.mutate(data);
+    
+    if (editingExpense) {
+      updateMutation.mutate({ id: editingExpense.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (expense) => {
+    setEditingExpense(expense);
+    setFormData({
+      project_id: expense.project_id || '',
+      cost_code_id: expense.cost_code_id || '',
+      expense_date: expense.expense_date || format(new Date(), 'yyyy-MM-dd'),
+      description: expense.description || '',
+      category: expense.category || 'other',
+      vendor: expense.vendor || '',
+      amount: expense.amount?.toString() || '',
+      invoice_number: expense.invoice_number || '',
+      payment_status: expense.payment_status || 'pending',
+      notes: expense.notes || '',
+      receipt_url: expense.receipt_url || '',
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = (expense) => {
+    if (confirm(`Delete expense: ${expense.description}?`)) {
+      deleteMutation.mutate(expense.id);
+    }
   };
 
   const filteredExpenses = projectFilter === 'all' 
@@ -144,6 +206,36 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       header: 'Status',
       accessor: 'payment_status',
       render: (row) => <StatusBadge status={row.payment_status} />,
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (row) => (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(row);
+            }}
+            className="h-8 w-8 p-0"
+          >
+            <Pencil size={14} />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row);
+            }}
+            className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+          >
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      ),
     },
   ];
 
@@ -192,7 +284,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Expense</DialogTitle>
+            <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -330,8 +422,35 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-              <Button type="submit" disabled={createMutation.isPending} className="bg-amber-500 hover:bg-amber-600 text-black">
-                {createMutation.isPending ? 'Saving...' : 'Add Expense'}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingExpense(null);
+                  setFormData({
+                    project_id: '',
+                    cost_code_id: '',
+                    expense_date: format(new Date(), 'yyyy-MM-dd'),
+                    description: '',
+                    category: 'other',
+                    vendor: '',
+                    amount: '',
+                    invoice_number: '',
+                    payment_status: 'pending',
+                    notes: '',
+                  });
+                }}
+                className="border-zinc-700"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={createMutation.isPending || updateMutation.isPending} 
+                className="bg-amber-500 hover:bg-amber-600 text-black"
+              >
+                {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : editingExpense ? 'Update Expense' : 'Add Expense'}
               </Button>
             </div>
           </form>

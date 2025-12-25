@@ -10,11 +10,11 @@ import Insights from './pages/Insights';
 import Labor from './pages/Labor';
 import Meetings from './pages/Meetings';
 import Performance from './pages/Performance';
+import ProductionMeetings from './pages/ProductionMeetings';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
-import ProductionMeetings from './pages/ProductionMeetings';
 import __Layout from './Layout.jsx';
 
 
@@ -31,11 +31,11 @@ export const PAGES = {
     "Labor": Labor,
     "Meetings": Meetings,
     "Performance": Performance,
+    "ProductionMeetings": ProductionMeetings,
     "Projects": Projects,
     "RFIs": RFIs,
     "Resources": Resources,
     "Schedule": Schedule,
-    "ProductionMeetings": ProductionMeetings,
 }
 
 export const pagesConfig = {

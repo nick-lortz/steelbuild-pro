@@ -153,10 +153,33 @@ export default function Financials() {
     ? financials 
     : financials.filter(f => f.project_id === selectedProject);
 
-  // Calculate totals using validated calculation
+  // Calculate totals - roll up expenses into actual amounts by project and cost code
   const totals = useMemo(() => {
-    return calculateFinancialTotals(filteredFinancials);
-  }, [filteredFinancials]);
+    const baseTotals = calculateFinancialTotals(filteredFinancials);
+    
+    // Roll up expenses into actual costs
+    const expensesByProjectAndCostCode = {};
+    expenses.forEach(expense => {
+      if (expense.payment_status === 'paid' || expense.payment_status === 'approved') {
+        const key = `${expense.project_id}_${expense.cost_code_id}`;
+        if (!expensesByProjectAndCostCode[key]) {
+          expensesByProjectAndCostCode[key] = 0;
+        }
+        expensesByProjectAndCostCode[key] += expense.amount || 0;
+      }
+    });
+    
+    // Add expenses to actual totals
+    let totalExpensesActual = 0;
+    Object.values(expensesByProjectAndCostCode).forEach(amount => {
+      totalExpensesActual += amount;
+    });
+    
+    return {
+      ...baseTotals,
+      actual: baseTotals.actual + totalExpensesActual
+    };
+  }, [filteredFinancials, expenses]);
 
   const varianceMetrics = useMemo(() => {
     return calculateVariance(totals.budget, totals.actual);
@@ -164,6 +187,25 @@ export default function Financials() {
 
   const variance = varianceMetrics.variance;
   const variancePercent = varianceMetrics.variancePercent;
+
+  // Enhanced budget lines with expense rollup
+  const budgetLinesWithExpenses = useMemo(() => {
+    return filteredFinancials.map(financial => {
+      // Sum up expenses for this project + cost code combination
+      const relatedExpenses = expenses.filter(exp => 
+        exp.project_id === financial.project_id && 
+        exp.cost_code_id === financial.cost_code_id &&
+        (exp.payment_status === 'paid' || exp.payment_status === 'approved')
+      );
+      
+      const expenseTotal = relatedExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+      
+      return {
+        ...financial,
+        actual_amount: (financial.actual_amount || 0) + expenseTotal
+      };
+    });
+  }, [filteredFinancials, expenses]);
 
   const columns = [
     {
@@ -361,7 +403,7 @@ export default function Financials() {
           {/* Table */}
           <DataTable
             columns={columns}
-            data={filteredFinancials}
+            data={budgetLinesWithExpenses}
             onRowClick={handleEdit}
             emptyMessage="No financial records found. Add budget lines to start tracking costs."
           />

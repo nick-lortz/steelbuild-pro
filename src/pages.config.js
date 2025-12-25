@@ -13,9 +13,9 @@ import Performance from './pages/Performance';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
+import Reports from './pages/Reports';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
-import Reports from './pages/Reports';
 import __Layout from './Layout.jsx';
 
 
@@ -35,9 +35,9 @@ export const PAGES = {
     "ProductionMeetings": ProductionMeetings,
     "Projects": Projects,
     "RFIs": RFIs,
+    "Reports": Reports,
     "Resources": Resources,
     "Schedule": Schedule,
-    "Reports": Reports,
 }
 
 export const pagesConfig = {

@@ -25,8 +25,11 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
     
     const revisedBudget = budget + approvedCOs;
     
-    // Forecast at completion = actual costs + remaining committed + forecast overruns
-    const forecastAtCompletion = actual + committed + (forecast - actual);
+    // Forecast at completion = actual costs + remaining committed
+    // If forecast is manually set and greater than 0, use it; otherwise calculate it
+    const forecastAtCompletion = forecast > 0 
+      ? forecast 
+      : actual + committed;
     
     const variance = revisedBudget - forecastAtCompletion;
     const variancePercent = revisedBudget > 0 ? ((variance / revisedBudget) * 100) : 0;

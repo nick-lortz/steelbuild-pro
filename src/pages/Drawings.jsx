@@ -201,6 +201,32 @@ export default function Drawings() {
         </div>
       )}
 
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
+        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
+          <p className="text-xs text-zinc-500">Total Sets</p>
+          <p className="text-2xl font-bold text-white">{filteredSets.length}</p>
+        </div>
+        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <p className="text-xs text-zinc-500">In Review</p>
+          <p className="text-2xl font-bold text-blue-400">
+            {filteredSets.filter(d => d.status === 'IFA' || d.status === 'BFA').length}
+          </p>
+        </div>
+        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+          <p className="text-xs text-zinc-500">Released</p>
+          <p className="text-2xl font-bold text-green-400">
+            {filteredSets.filter(d => d.status === 'FFF' || d.status === 'As-Built').length}
+          </p>
+        </div>
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <p className="text-xs text-zinc-500">Pending Action</p>
+          <p className="text-2xl font-bold text-amber-400">
+            {overdueSets.length + pendingRelease.length}
+          </p>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">

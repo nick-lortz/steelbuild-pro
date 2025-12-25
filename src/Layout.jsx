@@ -37,6 +37,7 @@ const navItems = [
   { name: 'Production Notes', page: 'ProductionMeetings', icon: 'Calendar' },
   { name: 'Documents', page: 'Documents', icon: 'File' },
   { name: 'Daily Logs', page: 'DailyLogs', icon: 'Calendar' },
+  { name: 'Reports', page: 'Reports', icon: FileText },
   { name: 'Performance', page: 'Performance', icon: 'TrendingUp' },
   { name: 'AI Insights', page: 'Insights', icon: 'Sparkles' },
 ];

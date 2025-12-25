@@ -15,6 +15,7 @@ import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
+import Reports from './pages/Reports';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "RFIs": RFIs,
     "Resources": Resources,
     "Schedule": Schedule,
+    "Reports": Reports,
 }
 
 export const pagesConfig = {

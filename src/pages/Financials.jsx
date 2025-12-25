@@ -157,29 +157,24 @@ export default function Financials() {
   const totals = useMemo(() => {
     const baseTotals = calculateFinancialTotals(filteredFinancials);
     
-    // Roll up expenses into actual costs
-    const expensesByProjectAndCostCode = {};
-    expenses.forEach(expense => {
-      if (expense.payment_status === 'paid' || expense.payment_status === 'approved') {
-        const key = `${expense.project_id}_${expense.cost_code_id}`;
-        if (!expensesByProjectAndCostCode[key]) {
-          expensesByProjectAndCostCode[key] = 0;
-        }
-        expensesByProjectAndCostCode[key] += expense.amount || 0;
-      }
-    });
+    // Filter expenses by selected project
+    const filteredExpenses = selectedProject === 'all' 
+      ? expenses 
+      : expenses.filter(e => e.project_id === selectedProject);
     
-    // Add expenses to actual totals
+    // Roll up expenses into actual costs
     let totalExpensesActual = 0;
-    Object.values(expensesByProjectAndCostCode).forEach(amount => {
-      totalExpensesActual += amount;
+    filteredExpenses.forEach(expense => {
+      if (expense.payment_status === 'paid' || expense.payment_status === 'approved') {
+        totalExpensesActual += expense.amount || 0;
+      }
     });
     
     return {
       ...baseTotals,
       actual: baseTotals.actual + totalExpensesActual
     };
-  }, [filteredFinancials, expenses]);
+  }, [filteredFinancials, expenses, selectedProject]);
 
   const varianceMetrics = useMemo(() => {
     return calculateVariance(totals.budget, totals.actual);

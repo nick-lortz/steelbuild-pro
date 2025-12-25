@@ -86,40 +86,54 @@ export default function Dashboard() {
     showCharts: true
   });
 
-  const { data: projects = [] } = useQuery({
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
   });
 
-  const { data: rfis = [] } = useQuery({
+  const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list('-created_date'),
   });
 
-  const { data: changeOrders = [] } = useQuery({
+  const { data: changeOrders = [], isLoading: changeOrdersLoading } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list('-created_date'),
   });
 
-  const { data: financials = [] } = useQuery({
+  const { data: financials = [], isLoading: financialsLoading } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
   });
 
-  const { data: drawings = [] } = useQuery({
+  const { data: drawings = [], isLoading: drawingsLoading } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list('-created_date'),
   });
 
-  const { data: dailyLogs = [] } = useQuery({
+  const { data: dailyLogs = [], isLoading: dailyLogsLoading } = useQuery({
     queryKey: ['dailyLogs'],
     queryFn: () => base44.entities.DailyLog.list('-log_date'),
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
   });
+
+  const isLoading = projectsLoading || rfisLoading || changeOrdersLoading || 
+                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const activeProjects = projects.filter(p => p.status === 'in_progress');
   const pendingRFIs = rfis.filter(r => r.status === 'pending' || r.status === 'submitted');

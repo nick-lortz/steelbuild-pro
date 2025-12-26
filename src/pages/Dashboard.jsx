@@ -142,6 +142,10 @@ export default function Dashboard() {
   const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
   const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
   const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+  const totalForecast = financials.reduce((sum, f) => {
+    const forecast = f.forecast_amount || 0;
+    return sum + (forecast > 0 ? forecast : (f.actual_amount || 0) + (f.committed_amount || 0));
+  }, 0);
   const budgetVariance = totalBudget - totalActual;
   const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : 0;
 
@@ -291,7 +295,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-zinc-400 text-sm">Forecast</p>
                 <p className="text-xl font-bold text-amber-400">
-                  ${((totalActual + totalCommitted) / 1000).toFixed(0)}K
+                  ${totalForecast > 0 ? (totalForecast / 1000).toFixed(0) : (totalActual + totalCommitted) / 1000).toFixed(0)}K
                 </p>
               </div>
               <TrendingUp className="text-amber-500" size={20} />

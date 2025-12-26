@@ -30,6 +30,7 @@ import CommitmentsVsActuals from '@/components/financials/CommitmentsVsActuals';
 import ForecastAtCompletion from '@/components/financials/ForecastAtCompletion';
 import ExpensesManagement from '@/components/financials/ExpensesManagement';
 import DataIntegrityCheck from '@/components/financials/DataIntegrityCheck';
+import InvoiceTracking from '@/components/financials/InvoiceTracking';
 import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@/components/shared/dataValidation';
 
 export default function Financials() {
@@ -342,6 +343,14 @@ export default function Financials() {
             <BudgetByCategoryBreakdown financials={filteredFinancials} costCodes={costCodes} expenses={expenses} />
             <CommitmentsVsActuals financials={filteredFinancials} projects={projects} expenses={expenses} />
           </div>
+
+          {/* Invoice Tracking */}
+          <InvoiceTracking 
+            financials={filteredFinancials} 
+            projects={projects} 
+            costCodes={costCodes} 
+            expenses={expenses} 
+          />
 
           {/* Cash Flow */}
           <CashFlowSection expenses={expenses} changeOrders={changeOrders} />

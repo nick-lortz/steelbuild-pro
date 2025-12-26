@@ -85,10 +85,20 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
             <CollapsibleContent>
               <div className="border-t border-zinc-800">
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full table-fixed">
+                    <colgroup>
+                      <col style={{ width: '40px' }} />
+                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '100px' }} />
+                      <col style={{ width: '80px' }} />
+                      <col style={{ width: '180px' }} />
+                      <col style={{ width: '120px' }} />
+                      <col />
+                    </colgroup>
                     <thead className="bg-zinc-900 border-b border-zinc-800">
                       <tr>
-                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase w-10"></th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase"></th>
                         <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Set</th>
                         <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Revision</th>
                         <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Status</th>

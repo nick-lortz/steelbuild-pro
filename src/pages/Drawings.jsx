@@ -45,21 +45,25 @@ export default function Drawings() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawingSets'],
     queryFn: () => base44.entities.DrawingSet.list('-created_date'),
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: drawingSheets = [] } = useQuery({
     queryKey: ['drawingSheets'],
     queryFn: () => base44.entities.DrawingSheet.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawingRevisions'],
     queryFn: () => base44.entities.DrawingRevision.list('-revision_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleFormSubmit = () => {

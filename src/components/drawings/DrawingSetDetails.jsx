@@ -5,9 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DrawingSetForm from './DrawingSetForm';
 import AIDrawingProcessor from './AIDrawingProcessor';
-import { FileText, History, Brain, ExternalLink, Download, Sparkles } from 'lucide-react';
+import { FileText, History, Brain, ExternalLink, Download, Sparkles, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function DrawingSetDetails({ 
   drawingSet, 
@@ -16,9 +26,11 @@ export default function DrawingSetDetails({
   projects, 
   onClose, 
   onUpdate,
+  onDelete,
   isUpdating 
 }) {
   const [editMode, setEditMode] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const project = projects.find(p => p.id === drawingSet.project_id);
 
   const handleSubmit = (data) => {
@@ -38,13 +50,23 @@ export default function DrawingSetDetails({
               </p>
             </div>
             {!editMode && (
-              <Button
-                size="sm"
-                onClick={() => setEditMode(true)}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                Edit Set
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-zinc-400 hover:text-red-500"
+                >
+                  <Trash2 size={16} />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setEditMode(true)}
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                >
+                  Edit Set
+                </Button>
+              </div>
             )}
           </div>
         </SheetHeader>
@@ -276,6 +298,32 @@ export default function DrawingSetDetails({
           </Tabs>
         )}
       </SheetContent>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Drawing Set?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{drawingSet.set_name}"? This will also delete all associated sheets and revisions. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDelete?.();
+                setShowDeleteDialog(false);
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save } from 'lucide-react';
+import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { format } from 'date-fns';
@@ -50,18 +51,21 @@ export default function Settings() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    onSuccess: (data) => {
-      setProfileData({
-        full_name: data.full_name || '',
-        phone: data.phone || '',
-        title: data.title || '',
-        department: data.department || '',
-      });
-      if (data.preferences) {
-        setPreferences({ ...preferences, ...data.preferences });
-      }
-    },
   });
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfileData({
+        full_name: currentUser.full_name || '',
+        phone: currentUser.phone || '',
+        title: currentUser.title || '',
+        department: currentUser.department || '',
+      });
+      if (currentUser.preferences) {
+        setPreferences((prev) => ({ ...prev, ...currentUser.preferences }));
+      }
+    }
+  }, [currentUser]);
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
@@ -93,6 +97,42 @@ export default function Settings() {
   const savePreferences = () => {
     updateProfileMutation.mutate({ preferences });
   };
+
+  const [feedbackForm, setFeedbackForm] = useState({
+    type: 'feature_request',
+    title: '',
+    description: '',
+    priority: 'medium',
+  });
+
+  const submitFeedbackMutation = useMutation({
+    mutationFn: (data) => base44.entities.Feedback.create({
+      ...data,
+      user_email: currentUser?.email || '',
+      user_name: currentUser?.full_name || currentUser?.email || '',
+    }),
+    onSuccess: () => {
+      setFeedbackForm({
+        type: 'feature_request',
+        title: '',
+        description: '',
+        priority: 'medium',
+      });
+      queryClient.invalidateQueries({ queryKey: ['feedback'] });
+    },
+  });
+
+  const handleFeedbackSubmit = (e) => {
+    e.preventDefault();
+    if (!feedbackForm.title || !feedbackForm.description) return;
+    submitFeedbackMutation.mutate(feedbackForm);
+  };
+
+  const { data: myFeedback = [] } = useQuery({
+    queryKey: ['feedback'],
+    queryFn: () => base44.entities.Feedback.filter({ user_email: currentUser?.email }, '-created_date'),
+    enabled: !!currentUser?.email,
+  });
 
   const handleInviteUser = (e) => {
     e.preventDefault();
@@ -157,6 +197,10 @@ export default function Settings() {
           <TabsTrigger value="preferences">
             <Bell size={14} className="mr-2" />
             Preferences
+          </TabsTrigger>
+          <TabsTrigger value="feedback">
+            <MessageSquare size={14} className="mr-2" />
+            Feedback
           </TabsTrigger>
           <TabsTrigger value="app">
             <SettingsIcon size={14} className="mr-2" />
@@ -407,6 +451,155 @@ export default function Settings() {
                     {updateProfileMutation.isPending ? 'Saving...' : 'Save Preferences'}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Feedback Tab */}
+        <TabsContent value="feedback">
+          <div className="space-y-6">
+            {/* Submit Feedback */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare size={20} />
+                  Submit Feedback
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Feedback Type *</Label>
+                    <Select
+                      value={feedbackForm.type}
+                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}
+                    >
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="feature_request">Feature Request</SelectItem>
+                        <SelectItem value="bug_report">Bug Report</SelectItem>
+                        <SelectItem value="general_feedback">General Feedback</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Title *</Label>
+                    <Input
+                      value={feedbackForm.title}
+                      onChange={(e) => setFeedbackForm({ ...feedbackForm, title: e.target.value })}
+                      placeholder="Brief summary of your feedback"
+                      required
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description *</Label>
+                    <Textarea
+                      value={feedbackForm.description}
+                      onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })}
+                      placeholder="Provide detailed information about your feedback..."
+                      required
+                      rows={5}
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Priority</Label>
+                    <Select
+                      value={feedbackForm.priority}
+                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, priority: value })}
+                    >
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low - Nice to have</SelectItem>
+                        <SelectItem value="medium">Medium - Would be helpful</SelectItem>
+                        <SelectItem value="high">High - Important to me</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      type="submit"
+                      disabled={submitFeedbackMutation.isPending || !feedbackForm.title || !feedbackForm.description}
+                      className="bg-amber-500 hover:bg-amber-600 text-black"
+                    >
+                      <Send size={16} className="mr-2" />
+                      {submitFeedbackMutation.isPending ? 'Submitting...' : 'Submit Feedback'}
+                    </Button>
+                  </div>
+
+                  {submitFeedbackMutation.isSuccess && (
+                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+                      ✓ Thank you! Your feedback has been submitted successfully.
+                    </div>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* My Feedback History */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle>My Feedback History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {myFeedback.length === 0 ? (
+                  <p className="text-center text-zinc-500 py-6">No feedback submitted yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {myFeedback.map((item) => (
+                      <div key={item.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-800">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="capitalize">
+                                {item.type.replace('_', ' ')}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  item.status === 'completed'
+                                    ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                    : item.status === 'in_progress'
+                                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                    : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                                }
+                              >
+                                {item.status.replace('_', ' ')}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  item.priority === 'high'
+                                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                                    : item.priority === 'medium'
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                }
+                              >
+                                {item.priority}
+                              </Badge>
+                            </div>
+                            <h4 className="font-medium text-white">{item.title}</h4>
+                            <p className="text-sm text-zinc-400 mt-1">{item.description}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-2">
+                          Submitted {item.created_date ? format(new Date(item.created_date), 'MMM d, yyyy') : 'recently'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

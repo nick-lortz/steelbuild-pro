@@ -16,6 +16,7 @@ import ResourceConflicts from '@/components/schedule/ResourceConflicts';
 import CriticalPathAnalysis from '@/components/schedule/CriticalPathAnalysis';
 import BulkEditForm from '@/components/schedule/BulkEditForm';
 import BulkAddForm from '@/components/schedule/BulkAddForm';
+import WeatherWidget from '@/components/weather/WeatherWidget';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { calculateCriticalPath, detectResourceConflicts } from '@/components/shared/scheduleUtils';
 
@@ -249,13 +250,19 @@ export default function Schedule() {
         )}
       </div>
 
-      {/* Look-Ahead Schedule */}
-      <div className="mb-6">
-        <LookAheadSchedule 
-          tasks={filteredTasks} 
-          drawingSets={drawingSets} 
-          weeks={2} 
-          projects={projects}
+      {/* Look-Ahead Schedule and Weather */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          <LookAheadSchedule 
+            tasks={filteredTasks} 
+            drawingSets={drawingSets} 
+            weeks={2} 
+            projects={projects}
+          />
+        </div>
+        <WeatherWidget 
+          tasks={filteredTasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')} 
+          projectLocation={selectedProjectData?.location || 'Chicago,US'}
         />
       </div>
 

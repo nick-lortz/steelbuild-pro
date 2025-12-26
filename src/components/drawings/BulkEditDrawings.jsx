@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -129,6 +130,11 @@ export default function BulkEditDrawings({ drawingSets, projects, open, onOpenCh
                   <SelectContent>
                     <SelectItem value="status">Update Status</SelectItem>
                     <SelectItem value="discipline">Change Discipline</SelectItem>
+                    <SelectItem value="ifa_date">IFA Date</SelectItem>
+                    <SelectItem value="bfa_date">BFA Date</SelectItem>
+                    <SelectItem value="bfs_date">BFS Date</SelectItem>
+                    <SelectItem value="released_for_fab_date">Released Date</SelectItem>
+                    <SelectItem value="due_date">Due Date</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -148,7 +154,7 @@ export default function BulkEditDrawings({ drawingSets, projects, open, onOpenCh
                       <SelectItem value="As-Built">As-Built</SelectItem>
                     </SelectContent>
                   </Select>
-                ) : (
+                ) : bulkAction === 'discipline' ? (
                   <Select value={newValue} onValueChange={setNewValue}>
                     <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue placeholder="Select discipline" />
@@ -162,6 +168,13 @@ export default function BulkEditDrawings({ drawingSets, projects, open, onOpenCh
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                ) : (
+                  <Input
+                    type="date"
+                    value={newValue}
+                    onChange={(e) => setNewValue(e.target.value)}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
                 )}
               </div>
             </div>

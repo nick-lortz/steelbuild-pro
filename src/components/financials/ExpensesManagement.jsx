@@ -565,6 +565,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
         }}
         onImportComplete={() => {
           queryClient.invalidateQueries({ queryKey: ['expenses'] });
+          queryClient.invalidateQueries({ queryKey: ['financials'] });
         }}
         open={showCSVImport}
         onOpenChange={setShowCSVImport}

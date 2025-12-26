@@ -536,13 +536,12 @@ function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs,
       </div>
 
       <div className="space-y-2">
-        <Label>Question / Request *</Label>
+        <Label>Question / Request</Label>
         <Textarea
           value={formData.question}
           onChange={(e) => handleChange('question', e.target.value)}
           rows={4}
           placeholder="Detailed question or request for information"
-          required
           className="bg-zinc-800 border-zinc-700"
         />
       </div>

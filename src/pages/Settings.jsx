@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon } from 'lucide-react';
+import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { format } from 'date-fns';
@@ -29,11 +30,37 @@ export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
+  const [profileData, setProfileData] = useState({
+    full_name: '',
+    phone: '',
+    title: '',
+    department: '',
+  });
+  const [preferences, setPreferences] = useState({
+    email_notifications: true,
+    project_notifications: true,
+    rfi_notifications: true,
+    change_order_notifications: true,
+    theme: 'dark',
+    date_format: 'MM/dd/yyyy',
+    time_zone: 'America/New_York',
+  });
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    onSuccess: (data) => {
+      setProfileData({
+        full_name: data.full_name || '',
+        phone: data.phone || '',
+        title: data.title || '',
+        department: data.department || '',
+      });
+      if (data.preferences) {
+        setPreferences({ ...preferences, ...data.preferences });
+      }
+    },
   });
 
   const { data: allUsers = [] } = useQuery({
@@ -58,6 +85,14 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
+
+  const saveProfile = () => {
+    updateProfileMutation.mutate(profileData);
+  };
+
+  const savePreferences = () => {
+    updateProfileMutation.mutate({ preferences });
+  };
 
   const handleInviteUser = (e) => {
     e.preventDefault();
@@ -119,6 +154,10 @@ export default function Settings() {
               User Management
             </TabsTrigger>
           )}
+          <TabsTrigger value="preferences">
+            <Bell size={14} className="mr-2" />
+            Preferences
+          </TabsTrigger>
           <TabsTrigger value="app">
             <SettingsIcon size={14} className="mr-2" />
             App Settings
@@ -149,12 +188,8 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>Full Name</Label>
                   <Input
-                    defaultValue={currentUser?.full_name || ''}
-                    onBlur={(e) => {
-                      if (e.target.value !== currentUser?.full_name) {
-                        updateProfileMutation.mutate({ full_name: e.target.value });
-                      }
-                    }}
+                    value={profileData.full_name}
+                    onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                     className="bg-zinc-800 border-zinc-700"
                   />
                 </div>
@@ -170,6 +205,36 @@ export default function Settings() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Job Title</Label>
+                  <Input
+                    value={profileData.title}
+                    onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
+                    placeholder="Project Manager"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Department</Label>
+                  <Input
+                    value={profileData.department}
+                    onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
+                    placeholder="Engineering"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Phone Number</Label>
+                  <Input
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                    placeholder="+1 (555) 123-4567"
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label>Role</Label>
                   <Input
                     value={currentUser?.role || ''}
@@ -177,6 +242,17 @@ export default function Settings() {
                     className="bg-zinc-800 border-zinc-700 opacity-50 capitalize"
                   />
                   <p className="text-xs text-zinc-500">Contact an admin to change your role</p>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button
+                    onClick={saveProfile}
+                    disabled={updateProfileMutation.isPending}
+                    className="bg-amber-500 hover:bg-amber-600 text-black"
+                  >
+                    <Save size={16} className="mr-2" />
+                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -209,6 +285,132 @@ export default function Settings() {
             </Card>
           </TabsContent>
         )}
+
+        {/* Preferences Tab */}
+        <TabsContent value="preferences">
+          <div className="space-y-6">
+            {/* Notifications */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell size={20} />
+                  Notification Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Email Notifications</Label>
+                    <p className="text-sm text-zinc-400">Receive general email updates</p>
+                  </div>
+                  <Switch
+                    checked={preferences.email_notifications}
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, email_notifications: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Project Updates</Label>
+                    <p className="text-sm text-zinc-400">Get notified about project changes</p>
+                  </div>
+                  <Switch
+                    checked={preferences.project_notifications}
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, project_notifications: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>RFI Notifications</Label>
+                    <p className="text-sm text-zinc-400">Alerts for new and updated RFIs</p>
+                  </div>
+                  <Switch
+                    checked={preferences.rfi_notifications}
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, rfi_notifications: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Change Order Notifications</Label>
+                    <p className="text-sm text-zinc-400">Updates on change orders</p>
+                  </div>
+                  <Switch
+                    checked={preferences.change_order_notifications}
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, change_order_notifications: checked })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Display Preferences */}
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette size={20} />
+                  Display & Format
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Date Format</Label>
+                  <Select value={preferences.date_format} onValueChange={(value) => setPreferences({ ...preferences, date_format: value })}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MM/dd/yyyy">MM/DD/YYYY (12/31/2025)</SelectItem>
+                      <SelectItem value="dd/MM/yyyy">DD/MM/YYYY (31/12/2025)</SelectItem>
+                      <SelectItem value="yyyy-MM-dd">YYYY-MM-DD (2025-12-31)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Time Zone</Label>
+                  <Select value={preferences.time_zone} onValueChange={(value) => setPreferences({ ...preferences, time_zone: value })}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                      <SelectItem value="America/Anchorage">Alaska Time (AKT)</SelectItem>
+                      <SelectItem value="Pacific/Honolulu">Hawaii Time (HT)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Theme</Label>
+                  <Select value={preferences.theme} onValueChange={(value) => setPreferences({ ...preferences, theme: value })}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dark">Dark (Current)</SelectItem>
+                      <SelectItem value="light" disabled>Light (Coming Soon)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button
+                    onClick={savePreferences}
+                    disabled={updateProfileMutation.isPending}
+                    className="bg-amber-500 hover:bg-amber-600 text-black"
+                  >
+                    <Save size={16} className="mr-2" />
+                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Preferences'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* App Settings Tab */}
         <TabsContent value="app">

@@ -262,6 +262,34 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
         </div>
       )}
 
+      {/* Linked Schedule Tasks */}
+      {projectTasks.length > 0 && (
+        <div className="space-y-2">
+          <Label>Link to Schedule Tasks</Label>
+          <div className="border border-zinc-800 rounded-lg p-3 bg-zinc-800/50 max-h-48 overflow-y-auto">
+            {projectTasks.map(task => (
+              <div key={task.id} className="flex items-center gap-2 py-1">
+                <input
+                  type="checkbox"
+                  checked={formData.linked_task_ids.includes(task.id)}
+                  onChange={(e) => {
+                    const newLinked = e.target.checked
+                      ? [...formData.linked_task_ids, task.id]
+                      : formData.linked_task_ids.filter(id => id !== task.id);
+                    setFormData({ ...formData, linked_task_ids: newLinked });
+                  }}
+                  className="rounded"
+                />
+                <label className="text-sm text-white flex-1 cursor-pointer">
+                  {task.name}
+                  <span className="text-xs text-zinc-500 ml-2">({task.phase})</span>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label>Notes</Label>
         <Textarea

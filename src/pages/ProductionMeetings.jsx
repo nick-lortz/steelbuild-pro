@@ -208,8 +208,8 @@ export default function ProductionMeetings() {
                     value={statusSummary}
                     onChange={(e) => handleEdit(project.id, 'status_summary', e.target.value)}
                     placeholder="Overall project status this week..."
-                    rows={2}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    rows={3}
+                    className="bg-zinc-800 border-zinc-700 text-white resize-y min-h-[80px]"
                   />
                 </div>
 
@@ -220,8 +220,8 @@ export default function ProductionMeetings() {
                     value={notes}
                     onChange={(e) => handleEdit(project.id, 'notes', e.target.value)}
                     placeholder="Progress updates, milestones, discussions..."
-                    rows={4}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    rows={8}
+                    className="bg-zinc-800 border-zinc-700 text-white resize-y min-h-[150px]"
                   />
                 </div>
 
@@ -235,8 +235,8 @@ export default function ProductionMeetings() {
                     value={concerns}
                     onChange={(e) => handleEdit(project.id, 'concerns', e.target.value)}
                     placeholder="Any issues, blockers, or concerns..."
-                    rows={2}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    rows={3}
+                    className="bg-zinc-800 border-zinc-700 text-white resize-y min-h-[80px]"
                   />
                 </div>
 

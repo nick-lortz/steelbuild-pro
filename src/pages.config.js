@@ -8,6 +8,7 @@ import Equipment from './pages/Equipment';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Labor from './pages/Labor';
+import LandingPage from './pages/LandingPage';
 import Meetings from './pages/Meetings';
 import Performance from './pages/Performance';
 import ProductionMeetings from './pages/ProductionMeetings';
@@ -17,7 +18,6 @@ import Reports from './pages/Reports';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
-import LandingPage from './pages/LandingPage';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Deliveries from './pages/Deliveries';
 import __Layout from './Layout.jsx';
@@ -34,6 +34,7 @@ export const PAGES = {
     "Financials": Financials,
     "Insights": Insights,
     "Labor": Labor,
+    "LandingPage": LandingPage,
     "Meetings": Meetings,
     "Performance": Performance,
     "ProductionMeetings": ProductionMeetings,
@@ -43,7 +44,6 @@ export const PAGES = {
     "Resources": Resources,
     "Schedule": Schedule,
     "Settings": Settings,
-    "LandingPage": LandingPage,
     "WeeklySchedule": WeeklySchedule,
     "Deliveries": Deliveries,
 }

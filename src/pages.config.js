@@ -17,6 +17,7 @@ import Reports from './pages/Reports';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
+import LandingPage from './pages/LandingPage';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "Resources": Resources,
     "Schedule": Schedule,
     "Settings": Settings,
+    "LandingPage": LandingPage,
 }
 
 export const pagesConfig = {

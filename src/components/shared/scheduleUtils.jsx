@@ -10,9 +10,16 @@ export function calculateCriticalPath(tasks) {
     return { criticalTasks: [], longestPath: 0, paths: [], byProject: {} };
   }
 
+  // Clean up invalid task references
+  const validTaskIds = new Set(tasks.map(t => t.id));
+  const cleanTasks = tasks.map(task => ({
+    ...task,
+    predecessor_ids: (task.predecessor_ids || []).filter(id => validTaskIds.has(id))
+  }));
+
   // Group tasks by project_id
   const tasksByProject = {};
-  tasks.forEach(task => {
+  cleanTasks.forEach(task => {
     const projectId = task.project_id || 'unassigned';
     if (!tasksByProject[projectId]) {
       tasksByProject[projectId] = [];
@@ -48,11 +55,18 @@ function calculateProjectCriticalPath(tasks) {
     return { criticalTasks: [], longestPath: 0, taskData: {} };
   }
 
+  // Filter valid tasks and clean predecessor references
+  const validTaskIds = new Set(tasks.map(t => t.id));
+  const cleanTasks = tasks.map(t => ({
+    ...t,
+    predecessor_ids: (t.predecessor_ids || []).filter(id => validTaskIds.has(id))
+  }));
+
   // Create task map
-  const taskMap = new Map(tasks.map(t => [t.id, { ...t }]));
+  const taskMap = new Map(cleanTasks.map(t => [t.id, { ...t }]));
   
   // Forward pass - calculate Early Start (ES) and Early Finish (EF)
-  const roots = tasks.filter(t => !t.predecessor_ids || t.predecessor_ids.length === 0);
+  const roots = cleanTasks.filter(t => !t.predecessor_ids || t.predecessor_ids.length === 0);
   
   roots.forEach(task => {
     const t = taskMap.get(task.id);
@@ -67,9 +81,9 @@ function calculateProjectCriticalPath(tasks) {
     changed = false;
     iterations++;
     
-    tasks.forEach(task => {
+    cleanTasks.forEach(task => {
       const t = taskMap.get(task.id);
-      if (!t.predecessor_ids || t.predecessor_ids.length === 0) return;
+      if (!t || !t.predecessor_ids || t.predecessor_ids.length === 0) return;
       
       let maxEF = null;
       t.predecessor_ids.forEach(predId => {
@@ -114,11 +128,12 @@ function calculateProjectCriticalPath(tasks) {
     changed = false;
     iterations++;
     
-    tasks.forEach(task => {
+    cleanTasks.forEach(task => {
       const t = taskMap.get(task.id);
+      if (!t) return;
       
       // Find all successors (only within this project)
-      const successors = tasks.filter(succ => 
+      const successors = cleanTasks.filter(succ => 
         succ.predecessor_ids && succ.predecessor_ids.includes(task.id)
       );
       
@@ -224,13 +239,14 @@ export function detectResourceConflicts(tasks, resources) {
 export function adjustDependentTasks(changedTask, allTasks) {
   const updates = [];
   const visited = new Set();
+  const validTaskIds = new Set(allTasks.map(t => t.id));
   
   function processSuccessors(taskId) {
     if (visited.has(taskId)) return;
     visited.add(taskId);
     
     const successors = allTasks.filter(t => 
-      t.predecessor_ids && t.predecessor_ids.includes(taskId)
+      t.predecessor_ids && t.predecessor_ids.filter(id => validTaskIds.has(id)).includes(taskId)
     );
     
     successors.forEach(succ => {

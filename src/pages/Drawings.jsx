@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet, Upload, Zap } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet, Upload, Zap, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';
@@ -27,6 +27,7 @@ import DrawingNotifications from '@/components/drawings/DrawingNotifications';
 import CSVUpload from '@/components/shared/CSVUpload';
 import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
 import { differenceInDays } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function Drawings() {
   const [showForm, setShowForm] = useState(false);
@@ -37,6 +38,7 @@ export default function Drawings() {
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [expandedProjects, setExpandedProjects] = useState({});
 
   const queryClient = useQueryClient();
 
@@ -98,6 +100,25 @@ export default function Drawings() {
       return differenceInDays(new Date(), new Date(d.due_date)) > 0;
     });
   }, [filteredSets]);
+
+  // Group overdue sets by project
+  const overdueByProject = useMemo(() => {
+    const grouped = {};
+    overdueSets.forEach(set => {
+      const project = projects.find(p => p.id === set.project_id);
+      const projectKey = project?.id || 'unknown';
+      const projectName = project ? `${project.project_number} - ${project.name}` : 'Unknown Project';
+      
+      if (!grouped[projectKey]) {
+        grouped[projectKey] = {
+          projectName,
+          sets: []
+        };
+      }
+      grouped[projectKey].sets.push(set);
+    });
+    return grouped;
+  }, [overdueSets, projects]);
 
   // Calculate pending releases
   const pendingRelease = useMemo(() => {
@@ -205,16 +226,67 @@ export default function Drawings() {
 
       {/* Alert Summary */}
       {(overdueSets.length > 0 || pendingRelease.length > 0) && (
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="mb-6 space-y-3">
           {overdueSets.length > 0 && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
-              <AlertTriangle size={18} className="text-red-400 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-red-400">{overdueSets.length} Overdue Set{overdueSets.length !== 1 ? 's' : ''}</p>
-                <p className="text-xs text-zinc-400">Requires immediate attention</p>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg overflow-hidden">
+              <div className="p-3 flex items-center gap-3">
+                <AlertTriangle size={18} className="text-red-400 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-red-400">{overdueSets.length} Overdue Set{overdueSets.length !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-zinc-400">Requires immediate attention</p>
+                </div>
+              </div>
+              
+              {/* Overdue sets grouped by project */}
+              <div className="border-t border-red-500/20 bg-zinc-900/50">
+                {Object.entries(overdueByProject).map(([projectId, { projectName, sets }]) => (
+                  <Collapsible 
+                    key={projectId}
+                    open={expandedProjects[projectId]}
+                    onOpenChange={(open) => setExpandedProjects(prev => ({ ...prev, [projectId]: open }))}
+                  >
+                    <CollapsibleTrigger className="w-full p-3 hover:bg-zinc-800/50 transition-colors flex items-center justify-between text-left border-b border-zinc-800 last:border-b-0">
+                      <div className="flex items-center gap-2">
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-zinc-500 transition-transform ${expandedProjects[projectId] ? 'rotate-180' : ''}`} 
+                        />
+                        <span className="text-sm text-white font-medium">{projectName}</span>
+                        <span className="text-xs text-zinc-500">({sets.length} set{sets.length !== 1 ? 's' : ''})</span>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="p-3 space-y-2 bg-zinc-900/30">
+                        {sets.map(set => (
+                          <div 
+                            key={set.id}
+                            onClick={() => setSelectedSet(set)}
+                            className="p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-white">{set.set_name}</p>
+                                <p className="text-xs text-zinc-500">{set.set_number}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-red-400">
+                                  Due: {format(new Date(set.due_date), 'MMM d')}
+                                </p>
+                                <p className="text-xs text-zinc-500">
+                                  {Math.abs(differenceInDays(new Date(), new Date(set.due_date)))}d overdue
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
               </div>
             </div>
           )}
+          
           {pendingRelease.length > 0 && (
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-3">
               <Clock size={18} className="text-amber-400 flex-shrink-0" />

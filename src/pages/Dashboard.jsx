@@ -126,20 +126,7 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Expense.list(),
   });
 
-  const isLoading = projectsLoading || rfisLoading || changeOrdersLoading || 
-                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading || expensesLoading;
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Calculate all derived data with useMemo BEFORE any conditional returns
   const activeProjects = useMemo(() => 
     projects.filter(p => p.status === 'in_progress'), 
     [projects]
@@ -262,6 +249,21 @@ export default function Dashboard() {
       })), 
     [dailyLogs]
   );
+
+  // Loading check AFTER all hooks
+  const isLoading = projectsLoading || rfisLoading || changeOrdersLoading || 
+                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading || expensesLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

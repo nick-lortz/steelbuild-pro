@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send } from 'lucide-react';
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { format } from 'date-fns';
@@ -87,6 +88,10 @@ export default function Settings() {
     mutationFn: (data) => base44.auth.updateMe(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast.success('Profile updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update profile');
     },
   });
 

@@ -609,11 +609,12 @@ export default function Financials() {
             financials={filteredFinancials} 
             projects={projects} 
             costCodes={costCodes} 
-            expenses={expenses} 
+            expenses={expenses}
+            clientInvoices={clientInvoices}
           />
 
           {/* Cash Flow */}
-          <CashFlowSection expenses={expenses} changeOrders={changeOrders} />
+          <CashFlowSection expenses={expenses} changeOrders={changeOrders} clientInvoices={clientInvoices} />
 
           {/* Data Integrity Check */}
           <DataIntegrityCheck />

@@ -2,6 +2,7 @@ import ChangeOrders from './pages/ChangeOrders';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import Dashboard from './pages/Dashboard';
+import Deliveries from './pages/Deliveries';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
@@ -19,7 +20,6 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
-import Deliveries from './pages/Deliveries';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +28,7 @@ export const PAGES = {
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
     "Dashboard": Dashboard,
+    "Deliveries": Deliveries,
     "Documents": Documents,
     "Drawings": Drawings,
     "Equipment": Equipment,
@@ -45,7 +46,6 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
-    "Deliveries": Deliveries,
 }
 
 export const pagesConfig = {

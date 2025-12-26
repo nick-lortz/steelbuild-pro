@@ -513,13 +513,13 @@ function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs,
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>RFI Number</Label>
+          <Label>RFI Number *</Label>
           <Input
             type="number"
             value={formData.rfi_number}
             onChange={(e) => handleChange('rfi_number', e.target.value)}
             className="bg-zinc-800 border-zinc-700 font-mono"
-            disabled={isEdit}
+            required
           />
         </div>
       </div>

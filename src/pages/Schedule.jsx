@@ -96,6 +96,25 @@ export default function Schedule() {
     },
   });
 
+  // Clean up invalid task references
+  React.useEffect(() => {
+    const validTaskIds = new Set(tasks.map(t => t.id));
+    
+    // Clean up tasks with invalid predecessor references
+    tasks.forEach(task => {
+      if (task.predecessor_ids && task.predecessor_ids.length > 0) {
+        const validPredecessors = task.predecessor_ids.filter(id => validTaskIds.has(id));
+        if (validPredecessors.length !== task.predecessor_ids.length) {
+          // Update task to remove invalid predecessors
+          updateMutation.mutate({
+            id: task.id,
+            data: { predecessor_ids: validPredecessors }
+          });
+        }
+      }
+    });
+  }, [tasks]);
+
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter(t => {

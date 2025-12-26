@@ -62,6 +62,7 @@ export default function Financials() {
     paid_date: null,
     notes: '',
   });
+  const [quickFillPercent, setQuickFillPercent] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -163,6 +164,7 @@ export default function Financials() {
       paid_date: null,
       notes: '',
     });
+    setQuickFillPercent('');
   };
 
   const handleSubmit = (e) => {
@@ -319,6 +321,31 @@ export default function Financials() {
       project_id: projectId,
       line_items: lineItems,
     });
+  };
+
+  const applyQuickFillPercent = () => {
+    const percent = parseFloat(quickFillPercent);
+    if (isNaN(percent) || percent < 0 || percent > 100) {
+      alert('Please enter a valid percentage between 0 and 100');
+      return;
+    }
+
+    const updatedLineItems = invoiceFormData.line_items.map(item => {
+      const billedAmount = (item.scheduled_value * percent) / 100;
+      const billed = item.billed_this_month || 0;
+      const prevTotal = item.total_billed_to_date - billed;
+      const newTotal = prevTotal + billedAmount;
+      
+      return {
+        ...item,
+        billed_this_month: billedAmount,
+        total_billed_to_date: newTotal,
+        balance_to_finish: item.scheduled_value - newTotal,
+        percent_billed: item.scheduled_value > 0 ? (newTotal / item.scheduled_value) * 100 : 0,
+      };
+    });
+
+    setInvoiceFormData({ ...invoiceFormData, line_items: updatedLineItems });
   };
 
   const filteredFinancials = selectedProject === 'all' 
@@ -882,7 +909,30 @@ export default function Financials() {
             {/* Line Items Table */}
             {invoiceFormData.line_items && invoiceFormData.line_items.length > 0 && (
               <div className="space-y-2">
-                <Label>Billing Items</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Billing Items</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-zinc-400">Quick Fill %:</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={quickFillPercent}
+                      onChange={(e) => setQuickFillPercent(e.target.value)}
+                      placeholder="0"
+                      className="bg-zinc-800 border-zinc-700 w-20 h-8 text-sm"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={applyQuickFillPercent}
+                      className="bg-blue-500 hover:bg-blue-600 text-white h-8"
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
                 <div className="border border-zinc-800 rounded-lg overflow-hidden">
                   <div className="max-h-96 overflow-y-auto">
                     <table className="w-full text-sm">

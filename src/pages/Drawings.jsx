@@ -73,6 +73,14 @@ export default function Drawings() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
+      setSelectedSet(null);
+    },
+  });
+
   const filteredSets = useMemo(() => {
     return drawingSets.filter(d => {
       const matchesSearch = 
@@ -313,6 +321,7 @@ export default function Drawings() {
           projects={projects}
           onClose={() => setSelectedSet(null)}
           onUpdate={(data) => updateMutation.mutate({ id: selectedSet.id, data })}
+          onDelete={() => deleteMutation.mutate(selectedSet.id)}
           isUpdating={updateMutation.isPending}
         />
       )}

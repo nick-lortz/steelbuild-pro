@@ -54,6 +54,8 @@ const initialFormState = {
   gc_contact: '',
   gc_email: '',
   gc_phone: '',
+  scope_of_work: '',
+  exclusions: '',
   notes: '',
 };
 
@@ -444,8 +446,34 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit }) {
         </div>
       </div>
 
+      <div className="border-t border-zinc-800 pt-4">
+        <h4 className="text-sm font-medium text-zinc-400 mb-3">Scope of Work</h4>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Scope Description</Label>
+            <Textarea
+              value={formData.scope_of_work}
+              onChange={(e) => handleChange('scope_of_work', e.target.value)}
+              rows={4}
+              placeholder="Detailed description of work to be performed..."
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Exclusions</Label>
+            <Textarea
+              value={formData.exclusions}
+              onChange={(e) => handleChange('exclusions', e.target.value)}
+              rows={3}
+              placeholder="Work items excluded from this scope..."
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-2">
-        <Label>Notes</Label>
+        <Label>Additional Notes</Label>
         <Textarea
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}

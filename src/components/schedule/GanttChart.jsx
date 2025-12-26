@@ -248,9 +248,9 @@ export default function GanttChart({
                           </div>
 
                           {/* Dependencies */}
-                          {task.predecessor_ids?.map(predId => {
+                          {task.predecessor_ids?.filter(predId => tasks.some(t => t.id === predId)).map(predId => {
                             const pred = tasks.find(t => t.id === predId);
-                            if (!pred) return null;
+                            if (!pred || !pred.start_date || !pred.end_date) return null;
                             
                             // Simple dependency line (could be enhanced)
                             return (

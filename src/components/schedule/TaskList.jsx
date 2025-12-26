@@ -21,10 +21,11 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
   };
 
   const toggleAll = () => {
-    if (selectedTasks.size === tasks.length) {
+    const validTasks = tasks.filter(t => t && t.id);
+    if (selectedTasks.size === validTasks.length) {
       setSelectedTasks(new Set());
     } else {
-      setSelectedTasks(new Set(tasks.map(t => t.id)));
+      setSelectedTasks(new Set(validTasks.map(t => t.id)));
     }
   };
 

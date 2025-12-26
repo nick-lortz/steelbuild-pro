@@ -123,7 +123,8 @@ export default function DrawingSetForm({ projects, drawingSet, onSubmit, onCance
         });
 
         setUploading(false);
-        onSubmit(createdSet);
+        // Don't pass data, just signal completion - the set is already created
+        onSubmit();
       } catch (error) {
         console.error('Failed to create drawing set:', error);
         setUploading(false);

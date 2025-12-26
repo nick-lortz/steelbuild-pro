@@ -58,13 +58,10 @@ export default function Drawings() {
     queryFn: () => base44.entities.DrawingRevision.list('-revision_date'),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.DrawingSet.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-      setShowForm(false);
-    },
-  });
+  const handleFormSubmit = () => {
+    queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
+    setShowForm(false);
+  };
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.DrawingSet.update(id, data),
@@ -305,9 +302,8 @@ export default function Drawings() {
           </DialogHeader>
           <DrawingSetForm
             projects={projects}
-            onSubmit={(data) => createMutation.mutate(data)}
+            onSubmit={handleFormSubmit}
             onCancel={() => setShowForm(false)}
-            isLoading={createMutation.isPending}
           />
         </DialogContent>
       </Dialog>

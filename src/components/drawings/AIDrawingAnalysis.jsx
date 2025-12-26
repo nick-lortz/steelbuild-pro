@@ -12,14 +12,23 @@ export default function AIDrawingAnalysis({ drawing, drawingUrl }) {
   const analyzeDrawing = async () => {
     setAnalyzing(true);
     try {
+      const currentDate = new Date().toISOString().split('T')[0];
+      
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a structural steel engineering expert. Analyze this construction drawing and provide detailed insights.
+
+**IMPORTANT: Current date is ${currentDate}. Use this date to validate all date references in the drawing.**
 
 Drawing Information:
 - Set Name: ${drawing.set_name}
 - Revision: ${drawing.current_revision}
 - Status: ${drawing.status}
 - Discipline: ${drawing.discipline}
+
+When analyzing dates:
+- Compare drawing dates against the current date (${currentDate})
+- Only flag dates that are AFTER ${currentDate} as potential errors
+- Dates before ${currentDate} are valid
 
 Analyze the drawing file and provide:
 1. Quality check findings

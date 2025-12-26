@@ -24,12 +24,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, CheckCircle, Clock, Users } from 'lucide-react';
+import { Plus, Calendar, CheckCircle, Clock, Users, Bell, Repeat } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { format } from 'date-fns';
+import { format, isPast, differenceInMinutes } from 'date-fns';
+import { toast } from 'sonner';
 
 const initialFormState = {
   project_id: '',
@@ -40,6 +41,9 @@ const initialFormState = {
   attendees: [],
   notes: '',
   action_items: [],
+  is_recurring: false,
+  recurrence_pattern: '',
+  recurrence_end_date: '',
 };
 
 export default function Meetings() {
@@ -77,7 +81,7 @@ export default function Meetings() {
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const data = {
       ...formData,
@@ -87,7 +91,20 @@ export default function Meetings() {
     if (selectedMeeting) {
       updateMutation.mutate({ id: selectedMeeting.id, data });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data, {
+        onSuccess: async (newMeeting) => {
+          if (data.is_recurring && data.recurrence_pattern) {
+            try {
+              await base44.functions.invoke('generateRecurringMeetings', {
+                meetingId: newMeeting.id,
+              });
+              toast.success('Recurring meetings generated successfully');
+            } catch (error) {
+              toast.error('Failed to generate recurring meetings');
+            }
+          }
+        },
+      });
     }
   };
 
@@ -101,9 +118,33 @@ export default function Meetings() {
       attendees: meeting.attendees || [],
       notes: meeting.notes || '',
       action_items: meeting.action_items || [],
+      is_recurring: meeting.is_recurring || false,
+      recurrence_pattern: meeting.recurrence_pattern || '',
+      recurrence_end_date: meeting.recurrence_end_date || '',
     });
     setSelectedMeeting(meeting);
   };
+
+  // Check for upcoming meetings
+  React.useEffect(() => {
+    const checkUpcoming = () => {
+      const now = new Date();
+      meetings.forEach(meeting => {
+        const meetingDate = new Date(meeting.meeting_date);
+        const minutesUntil = differenceInMinutes(meetingDate, now);
+        
+        if (minutesUntil > 0 && minutesUntil <= 15 && !meeting.reminder_sent) {
+          toast.info(`Meeting starting in ${minutesUntil} minutes: ${meeting.title}`, {
+            duration: 10000,
+          });
+        }
+      });
+    };
+
+    checkUpcoming();
+    const interval = setInterval(checkUpcoming, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [meetings]);
 
   const addActionItem = () => {
     if (!newActionItem.item) return;
@@ -126,10 +167,20 @@ export default function Meetings() {
       accessor: 'title',
       render: (row) => {
         const project = projects.find(p => p.id === row.project_id);
+        const isUpcoming = !isPast(new Date(row.meeting_date));
+        const minutesUntil = differenceInMinutes(new Date(row.meeting_date), new Date());
         return (
-          <div>
-            <p className="font-medium">{row.title}</p>
-            <p className="text-xs text-zinc-500">{project?.name}</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{row.title}</p>
+                {row.is_recurring && <Repeat size={14} className="text-blue-400" title="Recurring" />}
+                {isUpcoming && minutesUntil <= 30 && minutesUntil > 0 && (
+                  <Bell size={14} className="text-amber-400 animate-pulse" title={`Starting in ${minutesUntil}m`} />
+                )}
+              </div>
+              <p className="text-xs text-zinc-500">{project?.name}</p>
+            </div>
           </div>
         );
       },
@@ -286,6 +337,11 @@ function MeetingForm({ formData, setFormData, projects, onSubmit, isLoading, isE
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleAttendeeChange = (value) => {
+    const emails = value.split(',').map(e => e.trim()).filter(Boolean);
+    handleChange('attendees', emails);
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -345,6 +401,59 @@ function MeetingForm({ formData, setFormData, projects, onSubmit, isLoading, isE
           className="bg-zinc-800 border-zinc-700"
         />
       </div>
+
+      <div className="space-y-2">
+        <Label>Attendee Emails (comma-separated)</Label>
+        <Input
+          value={formData.attendees.join(', ')}
+          onChange={(e) => handleAttendeeChange(e.target.value)}
+          placeholder="john@email.com, jane@email.com"
+          className="bg-zinc-800 border-zinc-700"
+        />
+        <p className="text-xs text-zinc-500">Attendees will receive reminder 15 minutes before meeting</p>
+      </div>
+
+      {/* Recurring Settings */}
+      {!isEdit && (
+        <div className="border border-zinc-800 rounded-lg p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={formData.is_recurring}
+              onCheckedChange={(checked) => handleChange('is_recurring', checked)}
+            />
+            <Label className="text-sm">Make this a recurring meeting</Label>
+          </div>
+          
+          {formData.is_recurring && (
+            <>
+              <div className="space-y-2">
+                <Label>Recurrence Pattern</Label>
+                <Select value={formData.recurrence_pattern} onValueChange={(v) => handleChange('recurrence_pattern', v)}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Recurrence End Date</Label>
+                <Input
+                  type="date"
+                  value={formData.recurrence_end_date}
+                  onChange={(e) => handleChange('recurrence_end_date', e.target.value)}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+                <p className="text-xs text-zinc-500">Leave blank to continue for 1 year</p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Notes</Label>

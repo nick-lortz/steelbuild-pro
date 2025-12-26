@@ -812,7 +812,7 @@ export default function Financials() {
 
       {/* Client Invoice Form Dialog */}
       <Dialog open={showInvoiceForm} onOpenChange={setShowInvoiceForm}>
-        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingInvoice ? 'Edit Client Invoice' : 'Add Client Invoice'}</DialogTitle>
           </DialogHeader>
@@ -906,7 +906,7 @@ export default function Financials() {
                                 <Input
                                   type="number"
                                   step="0.01"
-                                  value={item.billed_this_month}
+                                  value={item.billed_this_month || ''}
                                   onChange={(e) => {
                                     const newItems = [...invoiceFormData.line_items];
                                     const billedAmount = parseFloat(e.target.value) || 0;

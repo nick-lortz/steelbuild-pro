@@ -6,7 +6,7 @@ import { Building2, DollarSign, Calendar, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 
-export default function ProjectOverview({ projects, financials, tasks, rfis, changeOrders }) {
+export default function ProjectOverview({ projects, financials, tasks, rfis, changeOrders, expenses = [] }) {
   const activeProjects = projects.filter(p => 
     p.status === 'in_progress' || p.status === 'awarded'
   );
@@ -40,7 +40,11 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
   const getProjectFinancials = (project) => {
     const projectFinancials = financials.filter(f => f.project_id === project.id);
     const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const actualFromExpenses = expenses
+      .filter(e => e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const actual = actualFromFinancials + actualFromExpenses;
     const variance = budget - actual;
     const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
 

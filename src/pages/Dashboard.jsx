@@ -322,6 +322,7 @@ export default function Dashboard() {
           tasks={tasks}
           rfis={rfis}
           changeOrders={changeOrders}
+          expenses={expenses}
         />
       </div>
 

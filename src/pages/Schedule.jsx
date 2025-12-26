@@ -240,6 +240,7 @@ export default function Schedule() {
             resources={resources}
             rfis={rfis}
             changeOrders={changeOrders}
+            projects={projects}
           />
         </TabsContent>
 

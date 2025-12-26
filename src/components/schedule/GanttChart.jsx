@@ -12,7 +12,8 @@ export default function GanttChart({
   criticalPath = [],
   resources,
   rfis,
-  changeOrders
+  changeOrders,
+  projects = []
 }) {
   const [draggingTask, setDraggingTask] = useState(null);
   const chartRef = useRef(null);
@@ -149,23 +150,31 @@ export default function GanttChart({
                     const critical = isCritical(task.id);
                     const hasRFI = hasRFIImpact(task);
                     const hasCO = hasCOImpact(task);
+                    const project = projects.find(p => p.id === task.project_id);
                     
                     return (
                       <div key={task.id} className="flex border-b border-zinc-800 hover:bg-zinc-800/30 group">
                         {/* Task Name */}
-                        <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-2 flex items-center gap-2">
+                        <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-2 flex flex-col gap-1">
                           <button
                             onClick={() => handleTaskClick(task)}
-                            className="text-left text-sm hover:text-amber-500 flex-1 truncate"
+                            className="text-left text-sm hover:text-amber-500 truncate w-full"
                           >
                             {task.is_milestone ? '◆ ' : ''}{task.name}
                           </button>
-                          {(hasRFI || hasCO) && (
-                            <div className="flex gap-1">
-                              {hasRFI && <LinkIcon size={12} className="text-blue-400" />}
-                              {hasCO && <LinkIcon size={12} className="text-purple-400" />}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {project && (
+                              <span className="text-xs text-zinc-500 truncate">
+                                {project.project_number}
+                              </span>
+                            )}
+                            {(hasRFI || hasCO) && (
+                              <div className="flex gap-1">
+                                {hasRFI && <LinkIcon size={10} className="text-blue-400" />}
+                                {hasCO && <LinkIcon size={10} className="text-purple-400" />}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Gantt Bar */}

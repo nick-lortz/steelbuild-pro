@@ -339,8 +339,8 @@ export default function Financials() {
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BudgetByCategoryBreakdown financials={filteredFinancials} costCodes={costCodes} />
-            <CommitmentsVsActuals financials={filteredFinancials} projects={projects} />
+            <BudgetByCategoryBreakdown financials={filteredFinancials} costCodes={costCodes} expenses={expenses} />
+            <CommitmentsVsActuals financials={filteredFinancials} projects={projects} expenses={expenses} />
           </div>
 
           {/* Cash Flow */}

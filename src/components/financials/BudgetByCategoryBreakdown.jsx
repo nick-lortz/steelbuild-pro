@@ -4,13 +4,21 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 
 const COLORS = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444', '#6366f1'];
 
-export default function BudgetByCategoryBreakdown({ financials, costCodes }) {
+export default function BudgetByCategoryBreakdown({ financials, costCodes, expenses = [] }) {
   // Group by cost code category
   const categoryData = costCodes.reduce((acc, code) => {
     const category = code.category || 'other';
     const categoryFinancials = financials.filter(f => f.cost_code_id === code.id);
     const budget = categoryFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actual = categoryFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const actualFromFinancials = categoryFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    
+    // Add expenses for this cost code
+    const categoryExpenses = expenses.filter(e => 
+      e.cost_code_id === code.id && 
+      (e.payment_status === 'paid' || e.payment_status === 'approved')
+    );
+    const actualFromExpenses = categoryExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const actual = actualFromFinancials + actualFromExpenses;
     
     if (!acc[category]) {
       acc[category] = { budget: 0, actual: 0 };

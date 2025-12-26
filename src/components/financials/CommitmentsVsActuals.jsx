@@ -3,11 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { AlertTriangle } from 'lucide-react';
 
-export default function CommitmentsVsActuals({ financials, projects }) {
+export default function CommitmentsVsActuals({ financials, projects, expenses = [] }) {
   const projectData = projects.slice(0, 8).map(project => {
     const projectFinancials = financials.filter(f => f.project_id === project.id);
     const committed = projectFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
-    const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    
+    // Add expenses for this project
+    const projectExpenses = expenses.filter(e => 
+      e.project_id === project.id && 
+      (e.payment_status === 'paid' || e.payment_status === 'approved')
+    );
+    const actualFromExpenses = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const actual = actualFromFinancials + actualFromExpenses;
     
     return {
       name: project.project_number,

@@ -14,6 +14,7 @@ export default function ProjectAssistant({
   changeOrders, 
   tasks, 
   financials,
+  expenses = [],
   selectedProject 
 }) {
   const [question, setQuestion] = useState('');
@@ -40,6 +41,7 @@ export default function ProjectAssistant({
     const projectCOs = filterByProject(changeOrders);
     const projectTasks = filterByProject(tasks);
     const projectFinancials = filterByProject(financials);
+    const projectExpenses = filterByProject(expenses);
 
     // Calculate key metrics
     const overdueDrawings = projectDrawings.filter(d => 
@@ -56,8 +58,16 @@ export default function ProjectAssistant({
     const openRFIs = projectRFIs.filter(r => r.status !== 'closed' && r.status !== 'answered');
     const pendingCOs = projectCOs.filter(co => co.status === 'pending' || co.status === 'submitted');
     
-    const totalBudget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const totalActual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    // Calculate financial metrics including expenses
+    const totalBudget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+    const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+    
+    // Add paid/approved expenses to actual costs
+    const actualFromExpenses = projectExpenses
+      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    
+    const totalActual = actualFromFinancials + actualFromExpenses;
     const budgetVariance = totalBudget - totalActual;
 
     return {

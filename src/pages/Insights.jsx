@@ -27,6 +27,11 @@ export default function Insights() {
     queryFn: () => base44.entities.Financial.list(),
   });
 
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list(),
+  });
+
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list(),
@@ -77,6 +82,7 @@ export default function Insights() {
         changeOrders={changeOrders}
         tasks={tasks}
         financials={financials}
+        expenses={expenses}
         selectedProject={selectedProject === 'all' ? null : selectedProject}
       />
     </div>

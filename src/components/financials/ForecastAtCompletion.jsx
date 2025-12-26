@@ -5,35 +5,35 @@ import { Target, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export default function ForecastAtCompletion({ financials, projects, changeOrders, expenses = [] }) {
   const projectForecasts = projects.map(project => {
-    const projectFinancials = financials.filter(f => f.project_id === project.id);
-    const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+    const projectFinancials = financials.filter(f => f && f.project_id === project.id);
     
-    // Calculate actual from financial records PLUS paid/approved expenses
-    let actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    const actualFromExpenses = expenses
-      .filter(e => e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-    const actual = actualFromFinancials + actualFromExpenses;
+    // Convert all financial values to numbers
+    const budget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+    const committed = projectFinancials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
+    const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+    const forecast = projectFinancials.reduce((sum, f) => sum + (Number(f.forecast_amount) || 0), 0);
     
-    const committed = projectFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
-    const forecast = projectFinancials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0);
+    // Calculate actual from expenses (already included in actual_amount via budgetLinesWithExpenses)
+    // NOTE: actual_amount in financials already includes rolled-up expenses from Financials page
+    const actual = actualFromFinancials;
     
-    // Add approved change orders
+    // Add approved change orders to budget
     const approvedCOs = changeOrders
-      .filter(co => co.project_id === project.id && co.status === 'approved')
-      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+      .filter(co => co && co.project_id === project.id && co.status === 'approved')
+      .reduce((sum, co) => sum + (Number(co.cost_impact) || 0), 0);
     
     const revisedBudget = budget + approvedCOs;
     
-    // Forecast at completion = actual costs + remaining committed
-    // If forecast is manually set and greater than 0, use it; otherwise calculate it
+    // Forecast at completion logic:
+    // If forecast is manually set and greater than 0, use it
+    // Otherwise: actual costs + remaining committed
     const forecastAtCompletion = forecast > 0 
       ? forecast 
       : actual + committed;
     
     const variance = revisedBudget - forecastAtCompletion;
     const variancePercent = revisedBudget > 0 ? ((variance / revisedBudget) * 100) : 0;
-    const costPerformanceIndex = actual > 0 ? (budget / forecastAtCompletion) : 1;
+    const costPerformanceIndex = forecastAtCompletion > 0 ? (revisedBudget / forecastAtCompletion) : 1;
     
     return {
       project,
@@ -47,10 +47,10 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
       costPerformanceIndex,
       status: variance >= 0 ? 'on_track' : variancePercent > -10 ? 'at_risk' : 'over_budget'
     };
-  }).filter(f => f.budget > 0);
+  }).filter(f => f.budget > 0 || f.actual > 0);
 
-  const totalForecast = projectForecasts.reduce((sum, p) => sum + p.forecastAtCompletion, 0);
-  const totalBudget = projectForecasts.reduce((sum, p) => sum + p.revisedBudget, 0);
+  const totalForecast = projectForecasts.reduce((sum, p) => sum + (Number(p.forecastAtCompletion) || 0), 0);
+  const totalBudget = projectForecasts.reduce((sum, p) => sum + (Number(p.revisedBudget) || 0), 0);
   const overallVariance = totalBudget - totalForecast;
 
   return (

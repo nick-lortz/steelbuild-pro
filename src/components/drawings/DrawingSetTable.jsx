@@ -8,6 +8,31 @@ import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export default function DrawingSetTable({ sets, sheets, revisions, projects, onSelectSet }) {
+  const [expandedProjects, setExpandedProjects] = useState({});
+
+  // Group drawing sets by project
+  const setsByProject = useMemo(() => {
+    const grouped = {};
+    sets.forEach(set => {
+      const project = projects.find(p => p.id === set.project_id);
+      const projectKey = project?.id || 'unknown';
+      const projectName = project ? `${project.project_number} - ${project.name}` : 'Unknown Project';
+      
+      if (!grouped[projectKey]) {
+        grouped[projectKey] = {
+          projectName,
+          project,
+          sets: []
+        };
+      }
+      grouped[projectKey].sets.push(set);
+    });
+    
+    // Sort by project name
+    return Object.entries(grouped).sort(([, a], [, b]) => 
+      a.projectName.localeCompare(b.projectName)
+    );
+  }, [sets, projects]);
   const [expandedSets, setExpandedSets] = useState(new Set());
 
   const toggleExpand = (setId) => {

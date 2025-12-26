@@ -3,11 +3,49 @@
  */
 
 /**
- * Calculate critical path using forward and backward pass
+ * Calculate critical path using forward and backward pass - PROJECT SPECIFIC
  */
 export function calculateCriticalPath(tasks) {
   if (!tasks.length) {
-    return { criticalTasks: [], longestPath: 0, paths: [] };
+    return { criticalTasks: [], longestPath: 0, paths: [], byProject: {} };
+  }
+
+  // Group tasks by project_id
+  const tasksByProject = {};
+  tasks.forEach(task => {
+    const projectId = task.project_id || 'unassigned';
+    if (!tasksByProject[projectId]) {
+      tasksByProject[projectId] = [];
+    }
+    tasksByProject[projectId].push(task);
+  });
+
+  // Calculate critical path for each project separately
+  const projectResults = {};
+  const allCriticalTasks = [];
+  const allTaskData = {};
+
+  Object.entries(tasksByProject).forEach(([projectId, projectTasks]) => {
+    const result = calculateProjectCriticalPath(projectTasks);
+    projectResults[projectId] = result;
+    allCriticalTasks.push(...result.criticalTasks);
+    Object.assign(allTaskData, result.taskData);
+  });
+
+  return {
+    criticalTasks: allCriticalTasks,
+    longestPath: Math.max(...Object.values(projectResults).map(r => r.longestPath), 0),
+    taskData: allTaskData,
+    byProject: projectResults,
+  };
+}
+
+/**
+ * Calculate critical path for a single project's tasks
+ */
+function calculateProjectCriticalPath(tasks) {
+  if (!tasks.length) {
+    return { criticalTasks: [], longestPath: 0, taskData: {} };
   }
 
   // Create task map
@@ -79,7 +117,7 @@ export function calculateCriticalPath(tasks) {
     tasks.forEach(task => {
       const t = taskMap.get(task.id);
       
-      // Find all successors
+      // Find all successors (only within this project)
       const successors = tasks.filter(succ => 
         succ.predecessor_ids && succ.predecessor_ids.includes(task.id)
       );
@@ -125,7 +163,9 @@ export function calculateCriticalPath(tasks) {
 
   return {
     criticalTasks,
-    longestPath: projectEnd ? Math.round((projectEnd - roots[0]?.earlyStart) / (1000 * 60 * 60 * 24)) : 0,
+    longestPath: projectEnd && roots[0]?.earlyStart 
+      ? Math.round((projectEnd - new Date(roots[0].start_date)) / (1000 * 60 * 60 * 24)) 
+      : 0,
     taskData: Object.fromEntries(taskMap),
   };
 }

@@ -140,44 +140,73 @@ export default function Dashboard() {
     );
   }
 
-  const activeProjects = projects.filter(p => p.status === 'in_progress');
-  const pendingRFIs = rfis.filter(r => r.status === 'pending' || r.status === 'submitted');
-  const pendingCOs = changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted');
+  const activeProjects = React.useMemo(() => 
+    projects.filter(p => p.status === 'in_progress'), 
+    [projects]
+  );
   
-  const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-  const actualFromFinancials = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-  const actualFromExpenses = expenses
-    .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-    .reduce((sum, e) => sum + (e.amount || 0), 0);
-  const totalActual = actualFromFinancials + actualFromExpenses;
-  const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
-  const totalForecast = financials.reduce((sum, f) => {
-    const forecast = f.forecast_amount || 0;
-    return sum + (forecast > 0 ? forecast : (f.actual_amount || 0) + (f.committed_amount || 0));
-  }, 0);
-  const budgetVariance = totalBudget - totalActual;
-  const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : 0;
+  const pendingRFIs = React.useMemo(() => 
+    rfis.filter(r => r.status === 'pending' || r.status === 'submitted'), 
+    [rfis]
+  );
+  
+  const pendingCOs = React.useMemo(() => 
+    changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted'), 
+    [changeOrders]
+  );
+  
+  const financialTotals = React.useMemo(() => {
+    const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+    const actualFromFinancials = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const actualFromExpenses = expenses
+      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalActual = actualFromFinancials + actualFromExpenses;
+    const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+    const totalForecast = financials.reduce((sum, f) => {
+      const forecast = f.forecast_amount || 0;
+      return sum + (forecast > 0 ? forecast : (f.actual_amount || 0) + (f.committed_amount || 0));
+    }, 0);
+    const budgetVariance = totalBudget - totalActual;
+    const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : 0;
+    
+    return { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent };
+  }, [financials, expenses]);
+  
+  const { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent } = financialTotals;
 
-  const overdueDocs = drawings.filter(d => {
-    if (!d.due_date) return false;
-    return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
-  });
+  const overdueDocs = React.useMemo(() => 
+    drawings.filter(d => {
+      if (!d.due_date) return false;
+      return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
+    }), 
+    [drawings]
+  );
 
-  const safetyIncidents = dailyLogs.filter(log => log.safety_incidents).length;
-  const recentDelays = dailyLogs.filter(log => log.delays).slice(0, 30).length;
+  const safetyMetrics = React.useMemo(() => {
+    const incidents = dailyLogs.filter(log => log.safety_incidents).length;
+    const delays = dailyLogs.filter(log => log.delays).slice(0, 30).length;
+    return { incidents, delays };
+  }, [dailyLogs]);
+  
+  const safetyIncidents = safetyMetrics.incidents;
+  const recentDelays = safetyMetrics.delays;
 
   // At Risk Projects
-  const atRiskProjects = activeProjects.filter(project => {
-    const projectFinancials = financials.filter(f => f.project_id === project.id);
-    const projectBudget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const projectActual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    const variance = projectBudget > 0 ? ((projectActual / projectBudget) * 100) : 0;
-    
-    const projectRFIs = rfis.filter(r => r.project_id === project.id && (r.status === 'pending' || r.status === 'submitted'));
-    const overdueRFIs = projectRFIs.filter(r => r.due_date && new Date(r.due_date) < new Date()).length;
-    
-    return variance > 95 || overdueRFIs > 3 || overdueDocs.filter(d => d.project_id === project.id).length > 2;
-  });
+  const atRiskProjects = React.useMemo(() => 
+    activeProjects.filter(project => {
+      const projectFinancials = financials.filter(f => f.project_id === project.id);
+      const projectBudget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+      const projectActual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      const variance = projectBudget > 0 ? ((projectActual / projectBudget) * 100) : 0;
+      
+      const projectRFIs = rfis.filter(r => r.project_id === project.id && (r.status === 'pending' || r.status === 'submitted'));
+      const overdueRFIs = projectRFIs.filter(r => r.due_date && new Date(r.due_date) < new Date()).length;
+      
+      return variance > 95 || overdueRFIs > 3 || overdueDocs.filter(d => d.project_id === project.id).length > 2;
+    }), 
+    [activeProjects, financials, rfis, overdueDocs]
+  );
 
   // Change Order Chart Data
   const coChartData = [
@@ -509,7 +538,10 @@ export default function Dashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">Days Since Incident</span>
                   <span className="text-xl font-bold text-green-400">
-                    {dailyLogs.findIndex(log => log.safety_incidents) === -1 ? dailyLogs.length : dailyLogs.findIndex(log => log.safety_incidents)}
+                    {(() => {
+                      const incidentIndex = dailyLogs.findIndex(log => log.safety_incidents);
+                      return incidentIndex === -1 ? dailyLogs.length : incidentIndex;
+                    })()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

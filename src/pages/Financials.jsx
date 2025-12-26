@@ -209,23 +209,25 @@ export default function Financials() {
 
       // Create all budget lines
       try {
-        for (const item of linesToCreate) {
-          await base44.entities.Financial.create({
+        const createPromises = linesToCreate.map(item => 
+          base44.entities.Financial.create({
             project_id: formData.project_id,
             cost_code_id: item.cost_code_id,
-            budget_amount: item.budget_amount,
-            committed_amount: item.committed_amount,
-            actual_amount: item.actual_amount,
-            forecast_amount: item.forecast_amount,
+            budget_amount: item.budget_amount || 0,
+            committed_amount: item.committed_amount || 0,
+            actual_amount: item.actual_amount || 0,
+            forecast_amount: item.forecast_amount || 0,
             notes: item.notes || '',
-          });
-        }
+          })
+        );
+        
+        await Promise.all(createPromises);
         queryClient.invalidateQueries({ queryKey: ['financials'] });
         setShowForm(false);
         resetForm();
       } catch (error) {
         console.error('Failed to create budget lines:', error);
-        alert('Failed to create budget lines');
+        alert('Failed to create some budget lines. Please check and try again.');
       }
     }
   };

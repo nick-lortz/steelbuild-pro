@@ -25,10 +25,10 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
       // Calculate amount invoiced to client from line items
       let invoiced = 0;
       clientInvoices.forEach(inv => {
-        if (inv.project_id === financial.project_id && inv.line_items) {
-          const lineItem = inv.line_items.find(li => li.cost_code_id === financial.cost_code_id);
-          if (lineItem) {
-            invoiced += lineItem.billed_this_month || 0;
+        if (inv.project_id === financial.project_id && Array.isArray(inv.line_items)) {
+          const lineItem = inv.line_items.find(li => li && li.cost_code_id === financial.cost_code_id);
+          if (lineItem && typeof lineItem.billed_this_month === 'number') {
+            invoiced += lineItem.billed_this_month;
           }
         }
       });

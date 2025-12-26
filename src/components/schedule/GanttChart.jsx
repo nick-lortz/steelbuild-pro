@@ -28,8 +28,21 @@ export default function GanttChart({
     );
   }
 
-  // Calculate date range
-  const dates = tasks.flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
+  // Calculate date range with null checks
+  const dates = tasks
+    .filter(t => t.start_date && t.end_date)
+    .flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
+  
+  if (dates.length === 0) {
+    return (
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-8 text-center text-zinc-500">
+          No valid task dates found. Please ensure tasks have start and end dates.
+        </CardContent>
+      </Card>
+    );
+  }
+  
   const minDate = new Date(Math.min(...dates));
   const maxDate = new Date(Math.max(...dates));
   

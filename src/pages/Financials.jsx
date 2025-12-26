@@ -388,30 +388,35 @@ export default function Financials() {
 
 
 
-  const filteredFinancials = selectedProject === 'all' 
-    ? financials 
-    : financials.filter(f => f.project_id === selectedProject);
+  const filteredFinancials = useMemo(() => {
+    if (selectedProject === 'all') return financials;
+    return financials.filter(f => f && f.project_id === selectedProject);
+  }, [financials, selectedProject]);
 
   // Calculate totals - roll up expenses into actual amounts by project and cost code
   const totals = useMemo(() => {
+    if (!filteredFinancials || filteredFinancials.length === 0) {
+      return { budget: 0, committed: 0, actual: 0, forecast: 0, count: 0 };
+    }
+
     const baseTotals = calculateFinancialTotals(filteredFinancials);
     
     // Filter expenses by selected project
     const filteredExpenses = selectedProject === 'all' 
       ? expenses 
-      : expenses.filter(e => e.project_id === selectedProject);
+      : expenses.filter(e => e && e.project_id === selectedProject);
     
-    // Roll up expenses into actual costs
+    // Roll up expenses into actual costs - only paid or approved
     let totalExpensesActual = 0;
     filteredExpenses.forEach(expense => {
-      if (expense.payment_status === 'paid' || expense.payment_status === 'approved') {
-        totalExpensesActual += expense.amount || 0;
+      if (expense && (expense.payment_status === 'paid' || expense.payment_status === 'approved')) {
+        totalExpensesActual += Number(expense.amount) || 0;
       }
     });
     
     return {
       ...baseTotals,
-      actual: baseTotals.actual + totalExpensesActual
+      actual: Number(baseTotals.actual) + totalExpensesActual
     };
   }, [filteredFinancials, expenses, selectedProject]);
 
@@ -424,21 +429,31 @@ export default function Financials() {
 
   // Enhanced budget lines with expense rollup
   const budgetLinesWithExpenses = useMemo(() => {
+    if (!filteredFinancials || filteredFinancials.length === 0) {
+      return [];
+    }
+    
     return filteredFinancials.map(financial => {
+      if (!financial) return null;
+      
       // Sum up expenses for this project + cost code combination
       const relatedExpenses = expenses.filter(exp => 
+        exp &&
         exp.project_id === financial.project_id && 
         exp.cost_code_id === financial.cost_code_id &&
         (exp.payment_status === 'paid' || exp.payment_status === 'approved')
       );
       
-      const expenseTotal = relatedExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+      const expenseTotal = relatedExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
       
       return {
         ...financial,
-        actual_amount: (financial.actual_amount || 0) + expenseTotal
+        budget_amount: Number(financial.budget_amount) || 0,
+        committed_amount: Number(financial.committed_amount) || 0,
+        actual_amount: (Number(financial.actual_amount) || 0) + expenseTotal,
+        forecast_amount: Number(financial.forecast_amount) || 0,
       };
-    });
+    }).filter(Boolean);
   }, [filteredFinancials, expenses]);
 
   const columns = [
@@ -570,9 +585,10 @@ export default function Financials() {
     },
   ];
 
-  const filteredClientInvoices = selectedProject === 'all' 
-    ? clientInvoices 
-    : clientInvoices.filter(inv => inv.project_id === selectedProject);
+  const filteredClientInvoices = useMemo(() => {
+    if (selectedProject === 'all') return clientInvoices;
+    return clientInvoices.filter(inv => inv && inv.project_id === selectedProject);
+  }, [clientInvoices, selectedProject]);
 
   return (
     <div>
@@ -657,29 +673,41 @@ export default function Financials() {
 
           {/* Forecast & Analytics */}
           <ForecastAtCompletion
-            financials={filteredFinancials}
-            projects={projects}
-            changeOrders={changeOrders}
-            expenses={expenses}
+            financials={budgetLinesWithExpenses}
+            projects={projects.filter(p => selectedProject === 'all' || p.id === selectedProject)}
+            changeOrders={changeOrders.filter(co => selectedProject === 'all' || co.project_id === selectedProject)}
+            expenses={expenses.filter(e => selectedProject === 'all' || e.project_id === selectedProject)}
           />
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BudgetByCategoryBreakdown financials={filteredFinancials} costCodes={costCodes} expenses={expenses} />
-            <CommitmentsVsActuals financials={filteredFinancials} projects={projects} expenses={expenses} />
+            <BudgetByCategoryBreakdown 
+              financials={budgetLinesWithExpenses} 
+              costCodes={costCodes} 
+              expenses={expenses.filter(e => selectedProject === 'all' || e.project_id === selectedProject)} 
+            />
+            <CommitmentsVsActuals 
+              financials={budgetLinesWithExpenses} 
+              projects={projects.filter(p => selectedProject === 'all' || p.id === selectedProject)} 
+              expenses={expenses.filter(e => selectedProject === 'all' || e.project_id === selectedProject)} 
+            />
           </div>
 
           {/* Invoice Tracking */}
           <InvoiceTracking 
-            financials={filteredFinancials} 
-            projects={projects} 
+            financials={budgetLinesWithExpenses} 
+            projects={projects.filter(p => selectedProject === 'all' || p.id === selectedProject)} 
             costCodes={costCodes} 
-            expenses={expenses}
-            clientInvoices={clientInvoices}
+            expenses={expenses.filter(e => selectedProject === 'all' || e.project_id === selectedProject)}
+            clientInvoices={filteredClientInvoices}
           />
 
           {/* Cash Flow */}
-          <CashFlowSection expenses={expenses} changeOrders={changeOrders} clientInvoices={clientInvoices} />
+          <CashFlowSection 
+            expenses={expenses.filter(e => selectedProject === 'all' || e.project_id === selectedProject)} 
+            changeOrders={changeOrders.filter(co => selectedProject === 'all' || co.project_id === selectedProject)} 
+            clientInvoices={filteredClientInvoices} 
+          />
 
           {/* Data Integrity Check */}
           <DataIntegrityCheck />

@@ -54,11 +54,10 @@ export default function Financials() {
   });
   const [invoiceFormData, setInvoiceFormData] = useState({
     project_id: '',
-    cost_code_id: '',
     invoice_number: '',
     invoice_date: null,
-    amount: '',
     description: '',
+    line_items: [],
     payment_status: 'pending',
     paid_date: null,
     notes: '',
@@ -134,6 +133,13 @@ export default function Financials() {
     },
   });
 
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: (id) => base44.entities.ClientInvoice.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       project_id: '',
@@ -149,11 +155,10 @@ export default function Financials() {
   const resetInvoiceForm = () => {
     setInvoiceFormData({
       project_id: '',
-      cost_code_id: '',
       invoice_number: '',
       invoice_date: null,
-      amount: '',
       description: '',
+      line_items: [],
       payment_status: 'pending',
       paid_date: null,
       notes: '',
@@ -194,16 +199,23 @@ export default function Financials() {
   const handleInvoiceSubmit = (e) => {
     e.preventDefault();
 
-    if (!invoiceFormData.project_id || !invoiceFormData.invoice_number || !invoiceFormData.invoice_date || !invoiceFormData.amount) {
-      alert('Project, Invoice Number, Invoice Date, and Amount are required');
+    if (!invoiceFormData.project_id || !invoiceFormData.invoice_number || !invoiceFormData.invoice_date) {
+      alert('Project, Invoice Number, and Invoice Date are required');
       return;
     }
+
+    if (!invoiceFormData.line_items || invoiceFormData.line_items.length === 0) {
+      alert('At least one line item with billed amount is required');
+      return;
+    }
+
+    const total_amount = invoiceFormData.line_items.reduce((sum, item) => sum + (item.billed_this_month || 0), 0);
 
     const data = {
       ...invoiceFormData,
       invoice_date: invoiceFormData.invoice_date ? format(invoiceFormData.invoice_date, 'yyyy-MM-dd') : null,
       paid_date: invoiceFormData.paid_date ? format(invoiceFormData.paid_date, 'yyyy-MM-dd') : null,
-      amount: parseFloat(invoiceFormData.amount) || 0,
+      total_amount,
     };
 
     if (editingInvoice) {
@@ -230,17 +242,77 @@ export default function Financials() {
   const handleEditInvoice = (invoice) => {
     setInvoiceFormData({
       project_id: invoice.project_id || '',
-      cost_code_id: invoice.cost_code_id || '',
       invoice_number: invoice.invoice_number || '',
       invoice_date: invoice.invoice_date ? new Date(invoice.invoice_date) : null,
-      amount: invoice.amount?.toString() || '',
       description: invoice.description || '',
+      line_items: invoice.line_items || [],
       payment_status: invoice.payment_status || 'pending',
       paid_date: invoice.paid_date ? new Date(invoice.paid_date) : null,
       notes: invoice.notes || '',
     });
     setEditingInvoice(invoice);
     setShowInvoiceForm(true);
+  };
+
+  const handleDeleteInvoice = (invoice) => {
+    if (window.confirm(`Delete invoice ${invoice.invoice_number}? This cannot be undone.`)) {
+      deleteInvoiceMutation.mutate(invoice.id);
+    }
+  };
+
+  // When project is selected in invoice form, initialize line items
+  const handleProjectSelect = (projectId) => {
+    const projectFinancials = financials.filter(f => f.project_id === projectId);
+    
+    // Calculate previous invoices total for each cost code
+    const previousInvoices = clientInvoices.filter(inv => 
+      inv.project_id === projectId && (!editingInvoice || inv.id !== editingInvoice.id)
+    );
+    
+    const lineItems = projectFinancials.map(financial => {
+      const costCode = costCodes.find(c => c.id === financial.cost_code_id);
+      const scheduled_value = financial.budget_amount || 0;
+      
+      // Sum up previous invoices for this cost code
+      let previousTotal = 0;
+      previousInvoices.forEach(inv => {
+        if (inv.line_items) {
+          const lineItem = inv.line_items.find(li => li.cost_code_id === financial.cost_code_id);
+          if (lineItem) {
+            previousTotal += lineItem.billed_this_month || 0;
+          }
+        }
+      });
+
+      // Check if editing and restore previous value
+      let billed_this_month = 0;
+      if (editingInvoice && editingInvoice.line_items) {
+        const editingLineItem = editingInvoice.line_items.find(li => li.cost_code_id === financial.cost_code_id);
+        if (editingLineItem) {
+          billed_this_month = editingLineItem.billed_this_month || 0;
+        }
+      }
+
+      const total_billed_to_date = previousTotal + billed_this_month;
+      const balance_to_finish = scheduled_value - total_billed_to_date;
+      const percent_billed = scheduled_value > 0 ? (total_billed_to_date / scheduled_value) * 100 : 0;
+
+      return {
+        cost_code_id: financial.cost_code_id,
+        cost_code_display: costCode ? `${costCode.code} - ${costCode.name}` : financial.cost_code_id,
+        scheduled_value,
+        billed_this_month,
+        total_billed_to_date,
+        balance_to_finish,
+        percent_billed,
+      };
+    }).filter(item => item.scheduled_value > 0);
+
+    setInvoiceFormData({
+      ...invoiceFormData,
+      project_id: projectId,
+      line_items: lineItems,
+    });
   };
 
   const filteredFinancials = selectedProject === 'all' 
@@ -374,19 +446,6 @@ export default function Financials() {
       },
     },
     {
-      header: 'Cost Code',
-      accessor: 'cost_code_id',
-      render: (row) => {
-        const code = costCodes.find(c => c.id === row.cost_code_id);
-        return code ? (
-          <div>
-            <p className="font-mono text-amber-500">{code.code}</p>
-            <p className="text-xs text-zinc-500">{code.name}</p>
-          </div>
-        ) : '-';
-      },
-    },
-    {
       header: 'Invoice #',
       accessor: 'invoice_number',
     },
@@ -396,9 +455,14 @@ export default function Financials() {
       render: (row) => row.invoice_date ? format(new Date(row.invoice_date), 'PP') : '-',
     },
     {
-      header: 'Amount',
-      accessor: 'amount',
-      render: (row) => <span className="font-medium">${(row.amount || 0).toLocaleString()}</span>,
+      header: 'Line Items',
+      accessor: 'line_items',
+      render: (row) => (row.line_items || []).length,
+    },
+    {
+      header: 'Total Amount',
+      accessor: 'total_amount',
+      render: (row) => <span className="font-medium">${(row.total_amount || 0).toLocaleString()}</span>,
     },
     {
       header: 'Status',
@@ -413,6 +477,23 @@ export default function Financials() {
         const label = row.payment_status.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         return <span className={statusColors[row.payment_status]}>{label}</span>;
       },
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteInvoice(row);
+          }}
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          Delete
+        </Button>
+      ),
     },
   ];
 
@@ -811,35 +892,112 @@ export default function Financials() {
                 </Popover>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Line Items Table */}
+            {invoiceFormData.line_items && invoiceFormData.line_items.length > 0 && (
               <div className="space-y-2">
-                <Label>Amount *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={invoiceFormData.amount}
-                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, amount: e.target.value })}
-                  placeholder="0.00"
-                  className="bg-zinc-800 border-zinc-700"
-                />
+                <Label>Billing Items</Label>
+                <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-zinc-800 sticky top-0">
+                        <tr>
+                          <th className="text-left p-2 text-zinc-400 font-medium">Cost Code</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Scheduled Value</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Billed This Month</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Total to Date</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Balance</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">% Billed</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoiceFormData.line_items.map((item, idx) => {
+                          const billed = item.billed_this_month || 0;
+                          const prevTotal = item.total_billed_to_date - billed;
+                          const newTotal = prevTotal + billed;
+                          const balance = item.scheduled_value - newTotal;
+                          const percent = item.scheduled_value > 0 ? (newTotal / item.scheduled_value) * 100 : 0;
+
+                          return (
+                            <tr key={idx} className="border-t border-zinc-800">
+                              <td className="p-2 text-zinc-300 text-xs">{item.cost_code_display}</td>
+                              <td className="p-2 text-right text-zinc-400">${item.scheduled_value.toLocaleString()}</td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={item.billed_this_month}
+                                  onChange={(e) => {
+                                    const newItems = [...invoiceFormData.line_items];
+                                    const billedAmount = parseFloat(e.target.value) || 0;
+                                    newItems[idx] = {
+                                      ...item,
+                                      billed_this_month: billedAmount,
+                                      total_billed_to_date: prevTotal + billedAmount,
+                                      balance_to_finish: item.scheduled_value - (prevTotal + billedAmount),
+                                      percent_billed: item.scheduled_value > 0 ? ((prevTotal + billedAmount) / item.scheduled_value) * 100 : 0,
+                                    };
+                                    setInvoiceFormData({ ...invoiceFormData, line_items: newItems });
+                                  }}
+                                  className="bg-zinc-900 border-zinc-700 text-right h-8 text-sm"
+                                  placeholder="0.00"
+                                />
+                              </td>
+                              <td className="p-2 text-right text-zinc-300">${newTotal.toLocaleString()}</td>
+                              <td className={`p-2 text-right ${balance < 0 ? 'text-red-400' : 'text-zinc-400'}`}>
+                                ${balance.toLocaleString()}
+                              </td>
+                              <td className="p-2 text-right text-zinc-400">{percent.toFixed(1)}%</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot className="bg-zinc-800 border-t-2 border-zinc-700">
+                        <tr>
+                          <td className="p-2 font-medium text-white">TOTAL</td>
+                          <td className="p-2 text-right font-medium text-white">
+                            ${invoiceFormData.line_items.reduce((sum, item) => sum + item.scheduled_value, 0).toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right font-medium text-amber-500">
+                            ${invoiceFormData.line_items.reduce((sum, item) => sum + (item.billed_this_month || 0), 0).toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right font-medium text-white">
+                            ${invoiceFormData.line_items.reduce((sum, item) => {
+                              const billed = item.billed_this_month || 0;
+                              const prevTotal = item.total_billed_to_date - billed;
+                              return sum + prevTotal + billed;
+                            }, 0).toLocaleString()}
+                          </td>
+                          <td className="p-2 text-right font-medium text-white">
+                            ${invoiceFormData.line_items.reduce((sum, item) => {
+                              const billed = item.billed_this_month || 0;
+                              const prevTotal = item.total_billed_to_date - billed;
+                              return sum + (item.scheduled_value - (prevTotal + billed));
+                            }, 0).toLocaleString()}
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Payment Status</Label>
-                <Select 
-                  value={invoiceFormData.payment_status} 
-                  onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, payment_status: v })}
-                >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Payment Status</Label>
+              <Select 
+                value={invoiceFormData.payment_status} 
+                onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, payment_status: v })}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="partial">Partial</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {invoiceFormData.payment_status === 'paid' && (
               <div className="space-y-2">

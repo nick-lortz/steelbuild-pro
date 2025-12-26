@@ -62,7 +62,6 @@ export default function Financials() {
     paid_date: null,
     notes: '',
   });
-  const [quickFillPercent, setQuickFillPercent] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -164,7 +163,6 @@ export default function Financials() {
       paid_date: null,
       notes: '',
     });
-    setQuickFillPercent('');
   };
 
   const handleSubmit = (e) => {
@@ -323,30 +321,7 @@ export default function Financials() {
     });
   };
 
-  const applyQuickFillPercent = () => {
-    const percent = parseFloat(quickFillPercent);
-    if (isNaN(percent) || percent < 0 || percent > 100) {
-      alert('Please enter a valid percentage between 0 and 100');
-      return;
-    }
 
-    const updatedLineItems = invoiceFormData.line_items.map(item => {
-      const billedAmount = (item.scheduled_value * percent) / 100;
-      const billed = item.billed_this_month || 0;
-      const prevTotal = item.total_billed_to_date - billed;
-      const newTotal = prevTotal + billedAmount;
-      
-      return {
-        ...item,
-        billed_this_month: billedAmount,
-        total_billed_to_date: newTotal,
-        balance_to_finish: item.scheduled_value - newTotal,
-        percent_billed: item.scheduled_value > 0 ? (newTotal / item.scheduled_value) * 100 : 0,
-      };
-    });
-
-    setInvoiceFormData({ ...invoiceFormData, line_items: updatedLineItems });
-  };
 
   const filteredFinancials = selectedProject === 'all' 
     ? financials 
@@ -909,30 +884,7 @@ export default function Financials() {
             {/* Line Items Table */}
             {invoiceFormData.line_items && invoiceFormData.line_items.length > 0 && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Billing Items</Label>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs text-zinc-400">Quick Fill %:</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="100"
-                      value={quickFillPercent}
-                      onChange={(e) => setQuickFillPercent(e.target.value)}
-                      placeholder="0"
-                      className="bg-zinc-800 border-zinc-700 w-20 h-8 text-sm"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={applyQuickFillPercent}
-                      className="bg-blue-500 hover:bg-blue-600 text-white h-8"
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
+                <Label>Billing Items</Label>
                 <div className="border border-zinc-800 rounded-lg overflow-hidden">
                   <div className="max-h-96 overflow-y-auto">
                     <table className="w-full text-sm">
@@ -940,6 +892,7 @@ export default function Financials() {
                         <tr>
                           <th className="text-left p-2 text-zinc-400 font-medium">Cost Code</th>
                           <th className="text-right p-2 text-zinc-400 font-medium">Scheduled Value</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Quick Fill %</th>
                           <th className="text-right p-2 text-zinc-400 font-medium">Billed This Month</th>
                           <th className="text-right p-2 text-zinc-400 font-medium">Total to Date</th>
                           <th className="text-right p-2 text-zinc-400 font-medium">Balance</th>
@@ -958,6 +911,31 @@ export default function Financials() {
                             <tr key={idx} className="border-t border-zinc-800">
                               <td className="p-2 text-zinc-300 text-xs">{item.cost_code_display}</td>
                               <td className="p-2 text-right text-zinc-400">${item.scheduled_value.toLocaleString()}</td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  max="100"
+                                  placeholder="%"
+                                  onChange={(e) => {
+                                    const percent = parseFloat(e.target.value);
+                                    if (!isNaN(percent) && percent >= 0 && percent <= 100) {
+                                      const newItems = [...invoiceFormData.line_items];
+                                      const billedAmount = (item.scheduled_value * percent) / 100;
+                                      newItems[idx] = {
+                                        ...item,
+                                        billed_this_month: billedAmount,
+                                        total_billed_to_date: prevTotal + billedAmount,
+                                        balance_to_finish: item.scheduled_value - (prevTotal + billedAmount),
+                                        percent_billed: item.scheduled_value > 0 ? ((prevTotal + billedAmount) / item.scheduled_value) * 100 : 0,
+                                      };
+                                      setInvoiceFormData({ ...invoiceFormData, line_items: newItems });
+                                    }
+                                  }}
+                                  className="bg-zinc-900 border-zinc-700 text-right h-8 text-sm w-16"
+                                />
+                              </td>
                               <td className="p-2">
                                 <Input
                                   type="number"
@@ -994,6 +972,7 @@ export default function Financials() {
                           <td className="p-2 text-right font-medium text-white">
                             ${invoiceFormData.line_items.reduce((sum, item) => sum + item.scheduled_value, 0).toLocaleString()}
                           </td>
+                          <td></td>
                           <td className="p-2 text-right font-medium text-amber-500">
                             ${invoiceFormData.line_items.reduce((sum, item) => sum + (item.billed_this_month || 0), 0).toLocaleString()}
                           </td>

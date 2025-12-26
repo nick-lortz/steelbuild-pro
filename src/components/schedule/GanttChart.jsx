@@ -165,7 +165,7 @@ export default function GanttChart({
                           <div className="flex items-center gap-2">
                             {project && (
                               <span className="text-xs text-zinc-500 truncate">
-                                {project.project_number}
+                                {project.name}
                               </span>
                             )}
                             {(hasRFI || hasCO) && (

@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Calendar, Download, BarChart3, AlertTriangle, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import LookAheadSchedule from '@/components/schedule/LookAheadSchedule';
+import KanbanView from '@/components/schedule/KanbanView';
+import TaskFinancialImpact from '@/components/schedule/TaskFinancialImpact';
 import { getDrawingRisks } from '@/components/shared/drawingScheduleUtils';
 import PageHeader from '@/components/ui/PageHeader';
 import GanttChart from '@/components/schedule/GanttChart';
@@ -61,11 +63,6 @@ export default function Schedule() {
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list(),
-  });
-
-  const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
   });
 
   const createMutation = useMutation({
@@ -258,6 +255,11 @@ export default function Schedule() {
         </Select>
       </div>
 
+      {/* Financial Impact */}
+      <div className="mb-6">
+        <TaskFinancialImpact tasks={filteredTasks} changeOrders={changeOrders} />
+      </div>
+
       {/* Warning Indicators */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {resourceConflicts.length > 0 && (
@@ -296,6 +298,7 @@ export default function Schedule() {
             <BarChart3 size={14} className="mr-2" />
             Gantt Chart
           </TabsTrigger>
+          <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
           <TabsTrigger value="list">Task List</TabsTrigger>
           <TabsTrigger value="critical">Critical Path</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -316,6 +319,15 @@ export default function Schedule() {
             rfis={rfis}
             changeOrders={changeOrders}
             projects={projects}
+          />
+        </TabsContent>
+
+        <TabsContent value="kanban">
+          <KanbanView
+            tasks={filteredTasks}
+            projects={projects}
+            onTaskUpdate={handleTaskUpdate}
+            onTaskClick={handleEditTask}
           />
         </TabsContent>
 

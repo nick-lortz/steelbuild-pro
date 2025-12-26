@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
@@ -140,22 +140,22 @@ export default function Dashboard() {
     );
   }
 
-  const activeProjects = React.useMemo(() => 
+  const activeProjects = useMemo(() => 
     projects.filter(p => p.status === 'in_progress'), 
     [projects]
   );
   
-  const pendingRFIs = React.useMemo(() => 
+  const pendingRFIs = useMemo(() => 
     rfis.filter(r => r.status === 'pending' || r.status === 'submitted'), 
     [rfis]
   );
   
-  const pendingCOs = React.useMemo(() => 
+  const pendingCOs = useMemo(() => 
     changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted'), 
     [changeOrders]
   );
   
-  const financialTotals = React.useMemo(() => {
+  const financialTotals = useMemo(() => {
     const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
     const actualFromFinancials = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
     const actualFromExpenses = expenses
@@ -175,7 +175,7 @@ export default function Dashboard() {
   
   const { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent } = financialTotals;
 
-  const overdueDocs = React.useMemo(() => 
+  const overdueDocs = useMemo(() => 
     drawings.filter(d => {
       if (!d.due_date) return false;
       return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
@@ -183,7 +183,7 @@ export default function Dashboard() {
     [drawings]
   );
 
-  const safetyMetrics = React.useMemo(() => {
+  const safetyMetrics = useMemo(() => {
     const incidents = dailyLogs.filter(log => log.safety_incidents).length;
     const delays = dailyLogs.filter(log => log.delays).slice(0, 30).length;
     return { incidents, delays };
@@ -193,7 +193,7 @@ export default function Dashboard() {
   const recentDelays = safetyMetrics.delays;
 
   // At Risk Projects
-  const atRiskProjects = React.useMemo(() => 
+  const atRiskProjects = useMemo(() => 
     activeProjects.filter(project => {
       const projectFinancials = financials.filter(f => f.project_id === project.id);
       const projectBudget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
@@ -209,50 +209,59 @@ export default function Dashboard() {
   );
 
   // Change Order Chart Data
-  const coChartData = [
+  const coChartData = useMemo(() => [
     { name: 'Pending', value: changeOrders.filter(co => co.status === 'pending').length, color: '#f59e0b' },
     { name: 'Submitted', value: changeOrders.filter(co => co.status === 'submitted').length, color: '#3b82f6' },
     { name: 'Approved', value: changeOrders.filter(co => co.status === 'approved').length, color: '#10b981' },
     { name: 'Rejected', value: changeOrders.filter(co => co.status === 'rejected').length, color: '#ef4444' },
-  ];
+  ], [changeOrders]);
 
   // Project Status Chart
-  const statusChartData = [
+  const statusChartData = useMemo(() => [
     { name: 'Bidding', value: projects.filter(p => p.status === 'bidding').length },
     { name: 'Awarded', value: projects.filter(p => p.status === 'awarded').length },
     { name: 'In Progress', value: projects.filter(p => p.status === 'in_progress').length },
     { name: 'Completed', value: projects.filter(p => p.status === 'completed').length },
-  ];
+  ], [projects]);
 
   // Financial Progress by Project
-  const projectFinancialData = activeProjects.slice(0, 5).map(project => {
-    const projectFinancials = financials.filter(f => f.project_id === project.id);
-    const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    return {
-      name: project.project_number,
-      Budget: budget,
-      Actual: actual,
-    };
-  });
+  const projectFinancialData = useMemo(() => 
+    activeProjects.slice(0, 5).map(project => {
+      const projectFinancials = financials.filter(f => f.project_id === project.id);
+      const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      return {
+        name: project.project_number,
+        Budget: budget,
+        Actual: actual,
+      };
+    }), 
+    [activeProjects, financials]
+  );
 
   // Schedule Metrics
-  const upcomingMilestones = activeProjects.filter(p => {
-    if (!p.target_completion) return false;
-    const daysUntil = differenceInDays(new Date(p.target_completion), new Date());
-    return daysUntil >= 0 && daysUntil <= 30;
-  });
+  const upcomingMilestones = useMemo(() => 
+    activeProjects.filter(p => {
+      if (!p.target_completion) return false;
+      const daysUntil = differenceInDays(new Date(p.target_completion), new Date());
+      return daysUntil >= 0 && daysUntil <= 30;
+    }), 
+    [activeProjects]
+  );
 
   // Mock upcoming deliveries (you can replace with actual data from a deliveries entity)
-  const upcomingDeliveries = dailyLogs
-    .filter(log => log.materials_delivered && log.log_date)
-    .slice(0, 5)
-    .map(log => ({
-      id: log.id,
-      project_id: log.project_id,
-      date: log.log_date,
-      items: log.materials_delivered
-    }));
+  const upcomingDeliveries = useMemo(() => 
+    dailyLogs
+      .filter(log => log.materials_delivered && log.log_date)
+      .slice(0, 5)
+      .map(log => ({
+        id: log.id,
+        project_id: log.project_id,
+        date: log.log_date,
+        items: log.materials_delivered
+      })), 
+    [dailyLogs]
+  );
 
   return (
     <div>

@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
+import WeatherWidget from '@/components/weather/WeatherWidget';
 import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import DashboardKPIs from '@/components/dashboard/DashboardKPIs';
@@ -366,13 +367,19 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Recent Activity */}
         <RecentActivity
           drawings={drawings}
           rfis={rfis}
           changeOrders={changeOrders}
           tasks={tasks}
+        />
+
+        {/* Weather Widget */}
+        <WeatherWidget 
+          tasks={tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')} 
+          projectLocation="Chicago,US"
         />
 
         {/* At Risk List */}

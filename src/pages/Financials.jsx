@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -649,30 +649,128 @@ export default function Financials() {
             />
           </div>
 
-      {/* Project Filter */}
-      <div className="mb-6">
-        <Select value={selectedProject} onValueChange={setSelectedProject}>
-          <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.project_number} - {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          {/* Project Filter */}
+          <div className="mb-6">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Table */}
-          <DataTable
-            columns={columns}
-            data={budgetLinesWithExpenses}
-            onRowClick={handleEdit}
-            emptyMessage="No financial records found. Add budget lines to start tracking costs."
-          />
+          {/* Collapsible Budget Lines by Project */}
+          {(() => {
+            const budgetsByProject = {};
+            budgetLinesWithExpenses.forEach(financial => {
+              const projectId = financial.project_id || 'unassigned';
+              if (!budgetsByProject[projectId]) {
+                const project = projects.find(p => p.id === projectId);
+                budgetsByProject[projectId] = {
+                  projectId,
+                  projectName: project?.name || 'Unassigned',
+                  projectNumber: project?.project_number || '-',
+                  lines: [],
+                  budget: 0,
+                  committed: 0,
+                  actual: 0,
+                  forecast: 0,
+                };
+              }
+              budgetsByProject[projectId].lines.push(financial);
+              budgetsByProject[projectId].budget += financial.budget_amount || 0;
+              budgetsByProject[projectId].committed += financial.committed_amount || 0;
+              budgetsByProject[projectId].actual += financial.actual_amount || 0;
+              budgetsByProject[projectId].forecast += financial.forecast_amount || 0;
+            });
+
+            const projectGroups = Object.values(budgetsByProject);
+            const [expandedBudgetProjects, setExpandedBudgetProjects] = React.useState(new Set());
+
+            const toggleBudgetProject = (projectId) => {
+              const newExpanded = new Set(expandedBudgetProjects);
+              if (newExpanded.has(projectId)) {
+                newExpanded.delete(projectId);
+              } else {
+                newExpanded.add(projectId);
+              }
+              setExpandedBudgetProjects(newExpanded);
+            };
+
+            return projectGroups.length === 0 ? (
+              <div className="text-center py-8 text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-lg">
+                No financial records found. Add budget lines to start tracking costs.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {projectGroups.map(projectGroup => {
+                  const remaining = projectGroup.budget - projectGroup.actual;
+                  const variance = projectGroup.budget - projectGroup.actual;
+                  return (
+                    <div key={projectGroup.projectId} className="border border-zinc-800 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => toggleBudgetProject(projectGroup.projectId)}
+                        className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 transition-colors flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedBudgetProjects.has(projectGroup.projectId) ? (
+                            <ChevronDown size={16} className="text-zinc-400" />
+                          ) : (
+                            <ChevronRight size={16} className="text-zinc-400" />
+                          )}
+                          <div className="text-left">
+                            <p className="font-medium text-white">{projectGroup.projectNumber}</p>
+                            <p className="text-sm text-zinc-400">{projectGroup.projectName}</p>
+                          </div>
+                          <div className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">
+                            {projectGroup.lines.length} line{projectGroup.lines.length !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <p className="text-xs text-zinc-400">Budget</p>
+                            <p className="text-sm font-medium text-white">${projectGroup.budget.toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-zinc-400">Committed</p>
+                            <p className="text-sm font-medium text-blue-400">${projectGroup.committed.toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-zinc-400">Actual</p>
+                            <p className="text-sm font-medium text-purple-400">${projectGroup.actual.toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-zinc-400">Remaining</p>
+                            <p className={`text-sm font-medium ${remaining >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              ${Math.abs(remaining).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                      
+                      {expandedBudgetProjects.has(projectGroup.projectId) && (
+                        <div className="bg-zinc-950">
+                          <DataTable
+                            columns={columns}
+                            data={projectGroup.lines}
+                            onRowClick={handleEdit}
+                            emptyMessage="No budget lines for this project."
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="expenses">

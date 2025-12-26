@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Receipt, Upload, Loader2, FileSpreadsheet, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Receipt, Upload, Loader2, FileSpreadsheet, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -41,6 +41,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   });
   const [uploading, setUploading] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [expandedProjects, setExpandedProjects] = useState(new Set());
 
   const queryClient = useQueryClient();
 
@@ -168,19 +169,49 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     ? expenses 
     : expenses.filter(e => e.project_id === projectFilter);
 
-  const columns = [
+  // Group expenses by project
+  const expensesByProject = useMemo(() => {
+    const grouped = {};
+    filteredExpenses.forEach(expense => {
+      const projectId = expense.project_id || 'unassigned';
+      if (!grouped[projectId]) {
+        const project = projects.find(p => p.id === projectId);
+        grouped[projectId] = {
+          projectId,
+          projectName: project?.name || 'Unassigned',
+          projectNumber: project?.project_number || '-',
+          expenses: [],
+          total: 0,
+          paid: 0,
+          pending: 0,
+        };
+      }
+      grouped[projectId].expenses.push(expense);
+      grouped[projectId].total += expense.amount || 0;
+      if (expense.payment_status === 'paid') {
+        grouped[projectId].paid += expense.amount || 0;
+      } else if (expense.payment_status === 'pending') {
+        grouped[projectId].pending += expense.amount || 0;
+      }
+    });
+    return Object.values(grouped);
+  }, [filteredExpenses, projects]);
+
+  const toggleProject = (projectId) => {
+    const newExpanded = new Set(expandedProjects);
+    if (newExpanded.has(projectId)) {
+      newExpanded.delete(projectId);
+    } else {
+      newExpanded.add(projectId);
+    }
+    setExpandedProjects(newExpanded);
+  };
+
+  const expenseColumns = [
     {
       header: 'Date',
       accessor: 'expense_date',
       render: (row) => format(new Date(row.expense_date), 'MMM d, yyyy'),
-    },
-    {
-      header: 'Project',
-      accessor: 'project_id',
-      render: (row) => {
-        const project = projects.find(p => p.id === row.project_id);
-        return <span className="text-zinc-300">{project?.name || '-'}</span>;
-      },
     },
     {
       header: 'Description',
@@ -273,12 +304,62 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
         </Button>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredExpenses}
-        emptyMessage="No expenses recorded yet."
-      />
+      {/* Collapsible Project Groups */}
+      {expensesByProject.length === 0 ? (
+        <div className="text-center py-8 text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-lg">
+          No expenses recorded yet.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {expensesByProject.map(projectGroup => (
+            <div key={projectGroup.projectId} className="border border-zinc-800 rounded-lg overflow-hidden">
+              <button
+                onClick={() => toggleProject(projectGroup.projectId)}
+                className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  {expandedProjects.has(projectGroup.projectId) ? (
+                    <ChevronDown size={16} className="text-zinc-400" />
+                  ) : (
+                    <ChevronRight size={16} className="text-zinc-400" />
+                  )}
+                  <div className="text-left">
+                    <p className="font-medium text-white">{projectGroup.projectNumber}</p>
+                    <p className="text-sm text-zinc-400">{projectGroup.projectName}</p>
+                  </div>
+                  <div className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded">
+                    {projectGroup.expenses.length} expense{projectGroup.expenses.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-400">Total</p>
+                    <p className="text-sm font-medium text-white">${projectGroup.total.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-400">Paid</p>
+                    <p className="text-sm font-medium text-green-400">${projectGroup.paid.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-400">Pending</p>
+                    <p className="text-sm font-medium text-amber-400">${projectGroup.pending.toLocaleString()}</p>
+                  </div>
+                </div>
+              </button>
+              
+              {expandedProjects.has(projectGroup.projectId) && (
+                <div className="bg-zinc-950">
+                  <DataTable
+                    columns={expenseColumns}
+                    data={projectGroup.expenses}
+                    emptyMessage="No expenses for this project."
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

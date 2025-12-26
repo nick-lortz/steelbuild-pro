@@ -23,12 +23,17 @@ export default function TaskForm({
 }) {
   const [formData, setFormData] = useState({
     project_id: '',
+    parent_task_id: '',
     name: '',
     phase: 'fabrication',
     wbs_code: '',
     start_date: '',
     end_date: '',
     duration_days: 0,
+    estimated_hours: 0,
+    actual_hours: 0,
+    estimated_cost: 0,
+    actual_cost: 0,
     progress_percent: 0,
     status: 'not_started',
     is_milestone: false,
@@ -47,12 +52,17 @@ export default function TaskForm({
     if (task) {
       setFormData({
         project_id: task.project_id || '',
+        parent_task_id: task.parent_task_id || '',
         name: task.name || '',
         phase: task.phase || 'fabrication',
         wbs_code: task.wbs_code || '',
         start_date: task.start_date || '',
         end_date: task.end_date || '',
         duration_days: task.duration_days || 0,
+        estimated_hours: task.estimated_hours || 0,
+        actual_hours: task.actual_hours || 0,
+        estimated_cost: task.estimated_cost || 0,
+        actual_cost: task.actual_cost || 0,
         progress_percent: task.progress_percent || 0,
         status: task.status || 'not_started',
         is_milestone: task.is_milestone || false,
@@ -136,6 +146,23 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-2">
+          <Label>Parent Task (for sub-tasks)</Label>
+          <Select value={formData.parent_task_id} onValueChange={(v) => handleChange('parent_task_id', v)}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue placeholder="None (main task)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>None (main task)</SelectItem>
+              {availableTasks.filter(t => !t.parent_task_id && t.project_id === formData.project_id).map(t => (
+                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
           <Label>Phase *</Label>
           <Select value={formData.phase} onValueChange={(v) => handleChange('phase', v)}>
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
@@ -150,6 +177,16 @@ export default function TaskForm({
             </SelectContent>
           </Select>
         </div>
+
+        <div className="space-y-2">
+          <Label>WBS Code</Label>
+          <Input
+            value={formData.wbs_code}
+            onChange={(e) => handleChange('wbs_code', e.target.value)}
+            placeholder="e.g., 1.2.3"
+            className="bg-zinc-800 border-zinc-700"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -163,32 +200,20 @@ export default function TaskForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>WBS Code</Label>
-          <Input
-            value={formData.wbs_code}
-            onChange={(e) => handleChange('wbs_code', e.target.value)}
-            placeholder="e.g., 1.2.3"
-            className="bg-zinc-800 border-zinc-700"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="not_started">Not Started</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="on_hold">On Hold</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-2">
+        <Label>Status</Label>
+        <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
+          <SelectTrigger className="bg-zinc-800 border-zinc-700">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="not_started">Not Started</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Dates */}
@@ -224,6 +249,57 @@ export default function TaskForm({
             required
             className="bg-zinc-800 border-zinc-700"
           />
+        </div>
+      </div>
+
+      {/* Time & Cost Tracking */}
+      <div className="border-t border-zinc-800 pt-4">
+        <h4 className="text-sm font-medium mb-3">Time & Cost Tracking</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Estimated Hours</Label>
+            <Input
+              type="number"
+              value={formData.estimated_hours}
+              onChange={(e) => handleChange('estimated_hours', e.target.value)}
+              min="0"
+              step="0.5"
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Actual Hours</Label>
+            <Input
+              type="number"
+              value={formData.actual_hours}
+              onChange={(e) => handleChange('actual_hours', e.target.value)}
+              min="0"
+              step="0.5"
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Estimated Cost ($)</Label>
+            <Input
+              type="number"
+              value={formData.estimated_cost}
+              onChange={(e) => handleChange('estimated_cost', e.target.value)}
+              min="0"
+              step="0.01"
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Actual Cost ($)</Label>
+            <Input
+              type="number"
+              value={formData.actual_cost}
+              onChange={(e) => handleChange('actual_cost', e.target.value)}
+              min="0"
+              step="0.01"
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
         </div>
       </div>
 

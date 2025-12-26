@@ -63,6 +63,11 @@ export default function Schedule() {
     queryFn: () => base44.entities.DrawingSet.list(),
   });
 
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['changeOrders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {

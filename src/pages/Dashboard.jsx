@@ -295,7 +295,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-zinc-400 text-sm">Forecast</p>
                 <p className="text-xl font-bold text-amber-400">
-                  ${totalForecast > 0 ? (totalForecast / 1000).toFixed(0) : (totalActual + totalCommitted) / 1000).toFixed(0)}K
+                  ${totalForecast > 0 ? (totalForecast / 1000).toFixed(0) : ((totalActual + totalCommitted) / 1000).toFixed(0)}K
                 </p>
               </div>
               <TrendingUp className="text-amber-500" size={20} />

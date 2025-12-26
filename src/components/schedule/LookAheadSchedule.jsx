@@ -2,9 +2,10 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, TrendingUp } from 'lucide-react';
+import { format } from 'date-fns';
 import { getDrawingRisks } from '@/components/shared/drawingScheduleUtils';
 
-export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4 }) {
+export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4, projects = [] }) {
   const lookAheadData = useMemo(() => {
     const today = new Date();
     const endDate = new Date(today.getTime() + weeks * 7 * 24 * 60 * 60 * 1000);
@@ -85,6 +86,7 @@ export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4 }) {
           <div className="space-y-2">
             {lookAheadData.upcomingTasks.slice(0, 8).map(task => {
               const hasRisk = lookAheadData.risks.some(r => r.task.id === task.id);
+              const project = projects.find(p => p.id === task.project_id);
               return (
                 <div 
                   key={task.id} 
@@ -97,8 +99,11 @@ export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4 }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-white">{task.name}</p>
+                      {project && (
+                        <p className="text-xs text-zinc-400 mt-0.5">{project.name}</p>
+                      )}
                       <p className="text-xs text-zinc-500 mt-1">
-                        Starts: {new Date(task.start_date).toLocaleDateString()} • 
+                        Starts: {format(new Date(task.start_date), 'MMM d, yyyy')} • 
                         Phase: <span className="capitalize">{task.phase}</span>
                       </p>
                     </div>

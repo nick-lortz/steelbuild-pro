@@ -212,7 +212,12 @@ export default function Schedule() {
 
       {/* Look-Ahead Schedule */}
       <div className="mb-6">
-        <LookAheadSchedule tasks={filteredTasks} drawingSets={drawingSets} weeks={2} />
+        <LookAheadSchedule 
+          tasks={filteredTasks} 
+          drawingSets={drawingSets} 
+          weeks={2} 
+          projects={projects}
+        />
       </div>
 
       <Tabs defaultValue="gantt" className="space-y-6">
@@ -273,7 +278,12 @@ export default function Schedule() {
         </TabsContent>
 
         <TabsContent value="lookahead">
-          <LookAheadSchedule tasks={filteredTasks} drawingSets={drawingSets} weeks={4} />
+          <LookAheadSchedule 
+            tasks={filteredTasks} 
+            drawingSets={drawingSets} 
+            weeks={4} 
+            projects={projects}
+          />
         </TabsContent>
       </Tabs>
 

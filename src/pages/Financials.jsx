@@ -52,6 +52,7 @@ export default function Financials() {
     forecast_amount: '',
     notes: '',
   });
+  const [budgetLineItems, setBudgetLineItems] = useState([]);
   const [invoiceFormData, setInvoiceFormData] = useState({
     project_id: '',
     invoice_number: '',
@@ -150,6 +151,7 @@ export default function Financials() {
       forecast_amount: '',
       notes: '',
     });
+    setBudgetLineItems([]);
   };
 
   const resetInvoiceForm = () => {
@@ -165,34 +167,66 @@ export default function Financials() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate required references
-    if (!formData.project_id || !formData.cost_code_id) {
-      alert('Project and Cost Code are required');
-      return;
-    }
-    
-    // Ensure all amounts are valid numbers
-    const data = {
-      ...formData,
-      budget_amount: parseFloat(formData.budget_amount) || 0,
-      committed_amount: parseFloat(formData.committed_amount) || 0,
-      actual_amount: parseFloat(formData.actual_amount) || 0,
-      forecast_amount: parseFloat(formData.forecast_amount) || 0,
-    };
-
-    // Validate numeric values
-    if (data.budget_amount < 0 || data.committed_amount < 0 || data.actual_amount < 0 || data.forecast_amount < 0) {
-      alert('Amounts cannot be negative');
-      return;
-    }
-
     if (editingFinancial) {
+      // Single line edit mode
+      if (!formData.project_id || !formData.cost_code_id) {
+        alert('Project and Cost Code are required');
+        return;
+      }
+      
+      const data = {
+        ...formData,
+        budget_amount: parseFloat(formData.budget_amount) || 0,
+        committed_amount: parseFloat(formData.committed_amount) || 0,
+        actual_amount: parseFloat(formData.actual_amount) || 0,
+        forecast_amount: parseFloat(formData.forecast_amount) || 0,
+      };
+
+      if (data.budget_amount < 0 || data.committed_amount < 0 || data.actual_amount < 0 || data.forecast_amount < 0) {
+        alert('Amounts cannot be negative');
+        return;
+      }
+
       updateMutation.mutate({ id: editingFinancial.id, data });
     } else {
-      createMutation.mutate(data);
+      // Bulk create mode
+      if (!formData.project_id) {
+        alert('Project is required');
+        return;
+      }
+
+      const linesToCreate = budgetLineItems.filter(item => 
+        (item.budget_amount > 0) || (item.committed_amount > 0) || (item.actual_amount > 0) || (item.forecast_amount > 0)
+      );
+
+      if (linesToCreate.length === 0) {
+        alert('Please enter at least one budget line with amounts');
+        return;
+      }
+
+      // Create all budget lines
+      try {
+        for (const item of linesToCreate) {
+          await base44.entities.Financial.create({
+            project_id: formData.project_id,
+            cost_code_id: item.cost_code_id,
+            budget_amount: item.budget_amount,
+            committed_amount: item.committed_amount,
+            actual_amount: item.actual_amount,
+            forecast_amount: item.forecast_amount,
+            notes: item.notes || '',
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ['financials'] });
+        setShowForm(false);
+        resetForm();
+      } catch (error) {
+        console.error('Failed to create budget lines:', error);
+        alert('Failed to create budget lines');
+      }
     }
   };
 
@@ -236,7 +270,36 @@ export default function Financials() {
       notes: financial.notes || '',
     });
     setEditingFinancial(financial);
+    setBudgetLineItems([]);
     setShowForm(true);
+  };
+
+  const handleBudgetProjectSelect = (projectId) => {
+    setFormData({ ...formData, project_id: projectId });
+    
+    // Get existing financials for this project to pre-populate
+    const existingFinancials = financials.filter(f => f.project_id === projectId);
+    
+    // Create line items for all cost codes
+    const items = costCodes.filter(c => c.is_active).map(costCode => {
+      const existing = existingFinancials.find(f => f.cost_code_id === costCode.id);
+      return {
+        cost_code_id: costCode.id,
+        cost_code_display: `${costCode.code} - ${costCode.name}`,
+        cost_code_code: costCode.code,
+        budget_amount: existing?.budget_amount || 0,
+        committed_amount: existing?.committed_amount || 0,
+        actual_amount: existing?.actual_amount || 0,
+        forecast_amount: existing?.forecast_amount || 0,
+        notes: existing?.notes || '',
+      };
+    }).sort((a, b) => {
+      const codeA = a.cost_code_code.replace(/\D/g, '');
+      const codeB = b.cost_code_code.replace(/\D/g, '');
+      return parseInt(codeA || 0) - parseInt(codeB || 0);
+    });
+    
+    setBudgetLineItems(items);
   };
 
   const handleEditInvoice = (invoice) => {
@@ -804,16 +867,17 @@ export default function Financials() {
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className={`${editingFinancial ? 'max-w-lg' : 'max-w-5xl'} bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto`}>
           <DialogHeader>
-            <DialogTitle>{editingFinancial ? 'Edit Budget Line' : 'Add Budget Line'}</DialogTitle>
+            <DialogTitle>{editingFinancial ? 'Edit Budget Line' : 'Add Budget Lines'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Project *</Label>
               <Select 
                 value={formData.project_id} 
-                onValueChange={(v) => setFormData({ ...formData, project_id: v })}
+                onValueChange={editingFinancial ? (v) => setFormData({ ...formData, project_id: v }) : handleBudgetProjectSelect}
+                disabled={editingFinancial}
               >
                 <SelectTrigger className="bg-zinc-800 border-zinc-700">
                   <SelectValue placeholder="Select project" />
@@ -827,80 +891,172 @@ export default function Financials() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Cost Code *</Label>
-              <Select 
-                value={formData.cost_code_id} 
-                onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select cost code" />
-                </SelectTrigger>
-                <SelectContent>
-                  {costCodes.filter(c => c.is_active).map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.code} - {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            {editingFinancial ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Cost Code *</Label>
+                  <Select 
+                    value={formData.cost_code_id} 
+                    onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder="Select cost code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {costCodes.filter(c => c.is_active).map(c => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.code} - {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Budget Amount</Label>
+                    <Input
+                      type="number"
+                      value={formData.budget_amount}
+                      onChange={(e) => setFormData({ ...formData, budget_amount: e.target.value })}
+                      placeholder="0.00"
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Committed Amount</Label>
+                    <Input
+                      type="number"
+                      value={formData.committed_amount}
+                      onChange={(e) => setFormData({ ...formData, committed_amount: e.target.value })}
+                      placeholder="0.00"
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Actual Amount</Label>
+                    <Input
+                      type="number"
+                      value={formData.actual_amount}
+                      onChange={(e) => setFormData({ ...formData, actual_amount: e.target.value })}
+                      placeholder="0.00"
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Forecast Amount</Label>
+                    <Input
+                      type="number"
+                      value={formData.forecast_amount}
+                      onChange={(e) => setFormData({ ...formData, forecast_amount: e.target.value })}
+                      placeholder="0.00"
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={2}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </>
+            ) : budgetLineItems.length > 0 && (
               <div className="space-y-2">
-                <Label>Budget Amount</Label>
-                <Input
-                  type="number"
-                  value={formData.budget_amount}
-                  onChange={(e) => setFormData({ ...formData, budget_amount: e.target.value })}
-                  placeholder="0.00"
-                  className="bg-zinc-800 border-zinc-700"
-                />
+                <Label>Budget Lines</Label>
+                <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-zinc-800 sticky top-0">
+                        <tr>
+                          <th className="text-left p-2 text-zinc-400 font-medium">Cost Code</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Budget</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Committed</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Actual</th>
+                          <th className="text-right p-2 text-zinc-400 font-medium">Forecast</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {budgetLineItems.map((item, idx) => (
+                          <tr key={idx} className="border-t border-zinc-800">
+                            <td className="p-2 text-zinc-300 text-xs">{item.cost_code_display}</td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={item.budget_amount || ''}
+                                onChange={(e) => {
+                                  const newItems = [...budgetLineItems];
+                                  newItems[idx].budget_amount = parseFloat(e.target.value) || 0;
+                                  setBudgetLineItems(newItems);
+                                }}
+                                className="bg-zinc-900 border-zinc-700 text-right h-8 text-sm"
+                                placeholder="0.00"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={item.committed_amount || ''}
+                                onChange={(e) => {
+                                  const newItems = [...budgetLineItems];
+                                  newItems[idx].committed_amount = parseFloat(e.target.value) || 0;
+                                  setBudgetLineItems(newItems);
+                                }}
+                                className="bg-zinc-900 border-zinc-700 text-right h-8 text-sm"
+                                placeholder="0.00"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={item.actual_amount || ''}
+                                onChange={(e) => {
+                                  const newItems = [...budgetLineItems];
+                                  newItems[idx].actual_amount = parseFloat(e.target.value) || 0;
+                                  setBudgetLineItems(newItems);
+                                }}
+                                className="bg-zinc-900 border-zinc-700 text-right h-8 text-sm"
+                                placeholder="0.00"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={item.forecast_amount || ''}
+                                onChange={(e) => {
+                                  const newItems = [...budgetLineItems];
+                                  newItems[idx].forecast_amount = parseFloat(e.target.value) || 0;
+                                  setBudgetLineItems(newItems);
+                                }}
+                                className="bg-zinc-900 border-zinc-700 text-right h-8 text-sm"
+                                placeholder="0.00"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Committed Amount</Label>
-                <Input
-                  type="number"
-                  value={formData.committed_amount}
-                  onChange={(e) => setFormData({ ...formData, committed_amount: e.target.value })}
-                  placeholder="0.00"
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Actual Amount</Label>
-                <Input
-                  type="number"
-                  value={formData.actual_amount}
-                  onChange={(e) => setFormData({ ...formData, actual_amount: e.target.value })}
-                  placeholder="0.00"
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Forecast Amount</Label>
-                <Input
-                  type="number"
-                  value={formData.forecast_amount}
-                  onChange={(e) => setFormData({ ...formData, forecast_amount: e.target.value })}
-                  placeholder="0.00"
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={2}
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
+            )}
+
             <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingFinancial(null);
+                  resetForm();
+                }}
                 className="border-zinc-700"
               >
                 Cancel
@@ -910,7 +1066,7 @@ export default function Financials() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="bg-amber-500 hover:bg-amber-600 text-black"
               >
-                {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
+                {createMutation.isPending || updateMutation.isPending ? 'Saving...' : editingFinancial ? 'Save' : 'Save Budget Lines'}
               </Button>
             </div>
           </form>

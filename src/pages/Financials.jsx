@@ -299,6 +299,7 @@ export default function Financials() {
 
       return {
         cost_code_id: financial.cost_code_id,
+        cost_code_code: costCode?.code || '',
         cost_code_display: costCode ? `${costCode.code} - ${costCode.name}` : financial.cost_code_id,
         scheduled_value,
         billed_this_month,
@@ -306,7 +307,12 @@ export default function Financials() {
         balance_to_finish,
         percent_billed,
       };
-    }).filter(item => item.scheduled_value > 0);
+    }).filter(item => item.scheduled_value > 0).sort((a, b) => {
+      // Sort by cost code numerically
+      const codeA = a.cost_code_code.replace(/\D/g, '');
+      const codeB = b.cost_code_code.replace(/\D/g, '');
+      return parseInt(codeA || 0) - parseInt(codeB || 0);
+    });
 
     setInvoiceFormData({
       ...invoiceFormData,

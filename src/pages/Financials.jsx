@@ -821,7 +821,7 @@ export default function Financials() {
               <Label>Project *</Label>
               <Select 
                 value={invoiceFormData.project_id} 
-                onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, project_id: v })}
+                onValueChange={handleProjectSelect}
               >
                 <SelectTrigger className="bg-zinc-800 border-zinc-700">
                   <SelectValue placeholder="Select project" />
@@ -830,25 +830,6 @@ export default function Financials() {
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.project_number} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Cost Code</Label>
-              <Select 
-                value={invoiceFormData.cost_code_id} 
-                onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, cost_code_id: v })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select cost code (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {costCodes.filter(c => c.is_active).map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.code} - {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

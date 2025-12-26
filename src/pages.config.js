@@ -18,6 +18,7 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import LandingPage from './pages/LandingPage';
+import WeeklySchedule from './pages/WeeklySchedule';
 import __Layout from './Layout.jsx';
 
 
@@ -42,6 +43,7 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "LandingPage": LandingPage,
+    "WeeklySchedule": WeeklySchedule,
 }
 
 export const pagesConfig = {

@@ -121,8 +121,13 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Task.list('start_date'),
   });
 
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list(),
+  });
+
   const isLoading = projectsLoading || rfisLoading || changeOrdersLoading || 
-                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading;
+                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading || expensesLoading;
 
   if (isLoading) {
     return (
@@ -140,7 +145,11 @@ export default function Dashboard() {
   const pendingCOs = changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted');
   
   const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-  const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+  const actualFromFinancials = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+  const actualFromExpenses = expenses
+    .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+    .reduce((sum, e) => sum + (e.amount || 0), 0);
+  const totalActual = actualFromFinancials + actualFromExpenses;
   const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
   const totalForecast = financials.reduce((sum, f) => {
     const forecast = f.forecast_amount || 0;

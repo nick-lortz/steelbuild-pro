@@ -20,7 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import KPICard from '@/components/financials/KPICard';
@@ -36,6 +40,8 @@ import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@
 export default function Financials() {
   const [showForm, setShowForm] = useState(false);
   const [editingFinancial, setEditingFinancial] = useState(null);
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
   const [selectedProject, setSelectedProject] = useState('all');
   const [formData, setFormData] = useState({
     project_id: '',
@@ -44,6 +50,17 @@ export default function Financials() {
     committed_amount: '',
     actual_amount: '',
     forecast_amount: '',
+    notes: '',
+  });
+  const [invoiceFormData, setInvoiceFormData] = useState({
+    project_id: '',
+    cost_code_id: '',
+    invoice_number: '',
+    invoice_date: null,
+    amount: '',
+    description: '',
+    payment_status: 'pending',
+    paid_date: null,
     notes: '',
   });
 
@@ -74,6 +91,11 @@ export default function Financials() {
     queryFn: () => base44.entities.Expense.list(),
   });
 
+  const { data: clientInvoices = [] } = useQuery({
+    queryKey: ['clientInvoices'],
+    queryFn: () => base44.entities.ClientInvoice.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Financial.create(data),
     onSuccess: () => {
@@ -93,6 +115,25 @@ export default function Financials() {
     },
   });
 
+  const createInvoiceMutation = useMutation({
+    mutationFn: (data) => base44.entities.ClientInvoice.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
+      setShowInvoiceForm(false);
+      resetInvoiceForm();
+    },
+  });
+
+  const updateInvoiceMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ClientInvoice.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
+      setShowInvoiceForm(false);
+      setEditingInvoice(null);
+      resetInvoiceForm();
+    },
+  });
+
   const resetForm = () => {
     setFormData({
       project_id: '',
@@ -101,6 +142,20 @@ export default function Financials() {
       committed_amount: '',
       actual_amount: '',
       forecast_amount: '',
+      notes: '',
+    });
+  };
+
+  const resetInvoiceForm = () => {
+    setInvoiceFormData({
+      project_id: '',
+      cost_code_id: '',
+      invoice_number: '',
+      invoice_date: null,
+      amount: '',
+      description: '',
+      payment_status: 'pending',
+      paid_date: null,
       notes: '',
     });
   };
@@ -136,6 +191,28 @@ export default function Financials() {
     }
   };
 
+  const handleInvoiceSubmit = (e) => {
+    e.preventDefault();
+
+    if (!invoiceFormData.project_id || !invoiceFormData.invoice_number || !invoiceFormData.invoice_date || !invoiceFormData.amount) {
+      alert('Project, Invoice Number, Invoice Date, and Amount are required');
+      return;
+    }
+
+    const data = {
+      ...invoiceFormData,
+      invoice_date: invoiceFormData.invoice_date ? format(invoiceFormData.invoice_date, 'yyyy-MM-dd') : null,
+      paid_date: invoiceFormData.paid_date ? format(invoiceFormData.paid_date, 'yyyy-MM-dd') : null,
+      amount: parseFloat(invoiceFormData.amount) || 0,
+    };
+
+    if (editingInvoice) {
+      updateInvoiceMutation.mutate({ id: editingInvoice.id, data });
+    } else {
+      createInvoiceMutation.mutate(data);
+    }
+  };
+
   const handleEdit = (financial) => {
     setFormData({
       project_id: financial.project_id || '',
@@ -148,6 +225,22 @@ export default function Financials() {
     });
     setEditingFinancial(financial);
     setShowForm(true);
+  };
+
+  const handleEditInvoice = (invoice) => {
+    setInvoiceFormData({
+      project_id: invoice.project_id || '',
+      cost_code_id: invoice.cost_code_id || '',
+      invoice_number: invoice.invoice_number || '',
+      invoice_date: invoice.invoice_date ? new Date(invoice.invoice_date) : null,
+      amount: invoice.amount?.toString() || '',
+      description: invoice.description || '',
+      payment_status: invoice.payment_status || 'pending',
+      paid_date: invoice.paid_date ? new Date(invoice.paid_date) : null,
+      notes: invoice.notes || '',
+    });
+    setEditingInvoice(invoice);
+    setShowInvoiceForm(true);
   };
 
   const filteredFinancials = selectedProject === 'all' 
@@ -266,23 +359,97 @@ export default function Financials() {
     },
   ];
 
+  const clientInvoiceColumns = [
+    {
+      header: 'Project',
+      accessor: 'project_id',
+      render: (row) => {
+        const project = projects.find(p => p.id === row.project_id);
+        return (
+          <div>
+            <p className="font-medium">{project?.name || '-'}</p>
+            <p className="text-xs text-zinc-500">{project?.project_number}</p>
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Cost Code',
+      accessor: 'cost_code_id',
+      render: (row) => {
+        const code = costCodes.find(c => c.id === row.cost_code_id);
+        return code ? (
+          <div>
+            <p className="font-mono text-amber-500">{code.code}</p>
+            <p className="text-xs text-zinc-500">{code.name}</p>
+          </div>
+        ) : '-';
+      },
+    },
+    {
+      header: 'Invoice #',
+      accessor: 'invoice_number',
+    },
+    {
+      header: 'Invoice Date',
+      accessor: 'invoice_date',
+      render: (row) => row.invoice_date ? format(new Date(row.invoice_date), 'PP') : '-',
+    },
+    {
+      header: 'Amount',
+      accessor: 'amount',
+      render: (row) => <span className="font-medium">${(row.amount || 0).toLocaleString()}</span>,
+    },
+    {
+      header: 'Status',
+      accessor: 'payment_status',
+      render: (row) => {
+        const statusColors = {
+          pending: 'text-amber-400',
+          paid: 'text-green-400',
+          overdue: 'text-red-400',
+          partial: 'text-blue-400',
+        };
+        const label = row.payment_status.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        return <span className={statusColors[row.payment_status]}>{label}</span>;
+      },
+    },
+  ];
+
+  const filteredClientInvoices = selectedProject === 'all' 
+    ? clientInvoices 
+    : clientInvoices.filter(inv => inv.project_id === selectedProject);
+
   return (
     <div>
       <PageHeader
         title="Financials"
         subtitle="Budget tracking and cost control"
         actions={
-          <Button 
-            onClick={() => {
-              resetForm();
-              setEditingFinancial(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            Add Budget Line
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => {
+                resetInvoiceForm();
+                setEditingInvoice(null);
+                setShowInvoiceForm(true);
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Plus size={18} className="mr-2" />
+              Add Client Invoice
+            </Button>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setEditingFinancial(null);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              Add Budget Line
+            </Button>
+          </div>
         }
       />
 
@@ -298,6 +465,10 @@ export default function Financials() {
           <TabsTrigger value="expenses" className="data-[state=active]:bg-zinc-800">
             <Receipt size={14} className="mr-2" />
             Expenses
+          </TabsTrigger>
+          <TabsTrigger value="client-invoices" className="data-[state=active]:bg-zinc-800">
+            <FileText size={14} className="mr-2" />
+            Client Invoices
           </TabsTrigger>
         </TabsList>
 
@@ -417,6 +588,30 @@ export default function Financials() {
         <TabsContent value="expenses">
           <ExpensesManagement projectFilter={selectedProject} />
         </TabsContent>
+
+        <TabsContent value="client-invoices" className="space-y-4">
+          <div className="mb-6">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DataTable
+            columns={clientInvoiceColumns}
+            data={filteredClientInvoices}
+            onRowClick={handleEditInvoice}
+            emptyMessage="No client invoices found. Add client invoices to start tracking."
+          />
+        </TabsContent>
       </Tabs>
 
       {/* Form Dialog */}
@@ -528,6 +723,185 @@ export default function Financials() {
                 className="bg-amber-500 hover:bg-amber-600 text-black"
               >
                 {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Client Invoice Form Dialog */}
+      <Dialog open={showInvoiceForm} onOpenChange={setShowInvoiceForm}>
+        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingInvoice ? 'Edit Client Invoice' : 'Add Client Invoice'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleInvoiceSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Project *</Label>
+              <Select 
+                value={invoiceFormData.project_id} 
+                onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, project_id: v })}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Cost Code</Label>
+              <Select 
+                value={invoiceFormData.cost_code_id} 
+                onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, cost_code_id: v })}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select cost code (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {costCodes.filter(c => c.is_active).map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.code} - {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Invoice Number *</Label>
+                <Input
+                  type="text"
+                  value={invoiceFormData.invoice_number}
+                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, invoice_number: e.target.value })}
+                  placeholder="INV-001"
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Invoice Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
+                        !invoiceFormData.invoice_date && "text-zinc-400"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {invoiceFormData.invoice_date ? format(invoiceFormData.invoice_date, "PP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-zinc-900 border-zinc-700">
+                    <Calendar
+                      mode="single"
+                      selected={invoiceFormData.invoice_date}
+                      onSelect={(date) => setInvoiceFormData({ ...invoiceFormData, invoice_date: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Amount *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={invoiceFormData.amount}
+                  onChange={(e) => setInvoiceFormData({ ...invoiceFormData, amount: e.target.value })}
+                  placeholder="0.00"
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Payment Status</Label>
+                <Select 
+                  value={invoiceFormData.payment_status} 
+                  onValueChange={(v) => setInvoiceFormData({ ...invoiceFormData, payment_status: v })}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {invoiceFormData.payment_status === 'paid' && (
+              <div className="space-y-2">
+                <Label>Paid Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
+                        !invoiceFormData.paid_date && "text-zinc-400"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {invoiceFormData.paid_date ? format(invoiceFormData.paid_date, "PP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-zinc-900 border-zinc-700">
+                    <Calendar
+                      mode="single"
+                      selected={invoiceFormData.paid_date}
+                      onSelect={(date) => setInvoiceFormData({ ...invoiceFormData, paid_date: date })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={invoiceFormData.description}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, description: e.target.value })}
+                rows={2}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                value={invoiceFormData.notes}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, notes: e.target.value })}
+                rows={2}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowInvoiceForm(false)}
+                className="border-zinc-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createInvoiceMutation.isPending || updateInvoiceMutation.isPending}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {createInvoiceMutation.isPending || updateInvoiceMutation.isPending ? 'Saving...' : 'Save'}
               </Button>
             </div>
           </form>

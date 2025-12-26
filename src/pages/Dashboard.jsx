@@ -90,41 +90,49 @@ export default function Dashboard() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list('-created_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: changeOrders = [], isLoading: changeOrdersLoading } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list('-created_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: financials = [], isLoading: financialsLoading } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: drawings = [], isLoading: drawingsLoading } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list('-created_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: dailyLogs = [], isLoading: dailyLogsLoading } = useQuery({
     queryKey: ['dailyLogs'],
     queryFn: () => base44.entities.DailyLog.list('-log_date'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: expenses = [], isLoading: expensesLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   // Calculate all derived data with useMemo BEFORE any conditional returns

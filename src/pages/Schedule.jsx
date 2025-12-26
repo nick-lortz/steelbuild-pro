@@ -38,31 +38,37 @@ export default function Schedule() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const createMutation = useMutation({
@@ -98,24 +104,28 @@ export default function Schedule() {
     },
   });
 
-  // Clean up invalid task references
+  // Clean up invalid task references - optimized with debounce
   React.useEffect(() => {
-    const validTaskIds = new Set(tasks.map(t => t.id));
+    if (tasks.length === 0) return;
     
-    // Clean up tasks with invalid predecessor references
+    const validTaskIds = new Set(tasks.map(t => t.id));
+    const invalidTasks = [];
+    
+    // Collect all invalid tasks
     tasks.forEach(task => {
       if (task.predecessor_ids && task.predecessor_ids.length > 0) {
         const validPredecessors = task.predecessor_ids.filter(id => validTaskIds.has(id));
         if (validPredecessors.length !== task.predecessor_ids.length) {
-          // Update task to remove invalid predecessors
-          updateMutation.mutate({
-            id: task.id,
-            data: { predecessor_ids: validPredecessors }
-          });
+          invalidTasks.push({ id: task.id, data: { predecessor_ids: validPredecessors } });
         }
       }
     });
-  }, [tasks]);
+    
+    // Only update if there are invalid tasks (prevents infinite loops)
+    if (invalidTasks.length > 0 && invalidTasks.length < 5) {
+      invalidTasks.forEach(update => updateMutation.mutate(update));
+    }
+  }, [tasks.length]); // Only run when task count changes
 
   // Filter tasks
   const filteredTasks = useMemo(() => {

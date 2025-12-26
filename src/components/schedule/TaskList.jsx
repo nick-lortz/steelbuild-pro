@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,14 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
   const handleBulkEdit = () => {
     onBulkEdit(Array.from(selectedTasks));
   };
-  const columns = [
+  // Memoize drawing map for performance
+  const drawingMap = React.useMemo(() => {
+    const map = new Map();
+    (drawingSets || []).forEach(d => map.set(d.id, d));
+    return map;
+  }, [drawingSets]);
+
+  const columns = React.useMemo(() => [
     {
       header: (
         <Checkbox
@@ -60,12 +67,12 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       header: 'Task',
       accessor: 'name',
       render: (row) => {
-        // Check if task is blocked by drawings
+        // Check if task is blocked by drawings - optimized lookup
         const requiresFFFPhases = ['fabrication', 'delivery', 'erection'];
         const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
         const isBlocked = hasDrawingDeps && requiresFFFPhases.includes(row.phase) && 
           row.linked_drawing_set_ids.some(id => {
-            const drawing = (drawingSets || []).find(d => d.id === id);
+            const drawing = drawingMap.get(id);
             return drawing && drawing.status !== 'FFF';
           });
 
@@ -142,7 +149,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
         const isBlocked = hasDrawingDeps && requiresFFFPhases.includes(row.phase) && 
           row.linked_drawing_set_ids.some(id => {
-            const drawing = (drawingSets || []).find(d => d.id === id);
+            const drawing = drawingMap.get(id);
             return drawing && drawing.status !== 'FFF';
           });
 
@@ -161,7 +168,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         );
       },
     },
-  ];
+  ], [selectedTasks, tasks.length, toggleAll, drawingMap, projects, resources]);
 
   return (
     <div className="space-y-4">

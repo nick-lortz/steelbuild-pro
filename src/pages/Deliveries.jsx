@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package } from 'lucide-react';
+import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
@@ -14,11 +14,22 @@ import DeliveryForm from '@/components/deliveries/DeliveryForm';
 import DeliveryKPIs from '@/components/deliveries/DeliveryKPIs';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Deliveries() {
   const [selectedProject, setSelectedProject] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingDelivery, setEditingDelivery] = useState(null);
+  const [deleteDelivery, setDeleteDelivery] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -52,6 +63,14 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Delivery.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
+      setDeleteDelivery(null);
     },
   });
 
@@ -185,6 +204,23 @@ export default function Deliveries() {
     {
       header: 'Carrier',
       accessor: 'carrier',
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteDelivery(row);
+          }}
+          className="text-zinc-500 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
     },
   ];
 
@@ -334,6 +370,29 @@ export default function Deliveries() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteDelivery} onOpenChange={() => setDeleteDelivery(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Delivery?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete delivery "{deleteDelivery?.package_name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteDelivery.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -24,12 +24,22 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, DollarSign, Clock, TrendingUp, TrendingDown, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, DollarSign, Clock, TrendingUp, TrendingDown, FileSpreadsheet, Trash2 } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -52,6 +62,7 @@ export default function ChangeOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [deleteCO, setDeleteCO] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -80,6 +91,14 @@ export default function ChangeOrders() {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
       setSelectedCO(null);
       setFormData(initialFormState);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.ChangeOrder.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      setDeleteCO(null);
     },
   });
 
@@ -214,6 +233,23 @@ export default function ChangeOrders() {
       header: 'Submitted',
       accessor: 'submitted_date',
       render: (row) => row.submitted_date ? format(new Date(row.submitted_date), 'MMM d, yyyy') : '-',
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteCO(row);
+          }}
+          className="text-zinc-500 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
     },
   ];
 
@@ -397,6 +433,29 @@ export default function ChangeOrders() {
         open={showCSVImport}
         onOpenChange={setShowCSVImport}
       />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteCO} onOpenChange={() => setDeleteCO(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Change Order?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete CO-{String(deleteCO?.co_number).padStart(3, '0')} "{deleteCO?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteCO.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

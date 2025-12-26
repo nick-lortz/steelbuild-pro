@@ -25,11 +25,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, Users, AlertTriangle, CloudRain, Wrench } from 'lucide-react';
+import { Plus, Calendar, Users, AlertTriangle, CloudRain, Wrench, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -55,6 +65,7 @@ export default function DailyLogs() {
   const [selectedLog, setSelectedLog] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
   const [projectFilter, setProjectFilter] = useState('all');
+  const [deleteLog, setDeleteLog] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -83,6 +94,14 @@ export default function DailyLogs() {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setSelectedLog(null);
       setFormData(initialFormState);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.DailyLog.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
+      setDeleteLog(null);
     },
   });
 
@@ -196,6 +215,23 @@ export default function DailyLogs() {
             </Badge>
           )}
         </div>
+      ),
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteLog(row);
+          }}
+          className="text-zinc-500 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </Button>
       ),
     },
   ];
@@ -324,6 +360,29 @@ export default function DailyLogs() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Daily Log?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete the log from {deleteLog && format(new Date(deleteLog.log_date), 'MMM d, yyyy')}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteLog.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

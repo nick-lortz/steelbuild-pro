@@ -25,7 +25,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet, Trash2 } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from '@/components/ui/PageHeader';
@@ -35,6 +35,16 @@ import BulkRFICreator from '@/components/rfis/BulkRFICreator';
 import RFIKPIDashboard from '@/components/rfis/RFIKPIDashboard';
 import RFIAgingDashboard from '@/components/rfis/RFIAgingDashboard';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -63,6 +73,7 @@ export default function RFIs() {
   const [projectFilter, setProjectFilter] = useState('all');
   const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [deleteRFI, setDeleteRFI] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -101,6 +112,14 @@ export default function RFIs() {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setSelectedRFI(null);
       setFormData(initialFormState);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.RFI.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfis'] });
+      setDeleteRFI(null);
     },
   });
 
@@ -232,6 +251,23 @@ export default function RFIs() {
       header: 'Assigned To',
       accessor: 'assigned_to',
       render: (row) => row.assigned_to || '-',
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteRFI(row);
+          }}
+          className="text-zinc-500 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
     },
   ];
 
@@ -424,6 +460,29 @@ export default function RFIs() {
         open={showCSVImport}
         onOpenChange={setShowCSVImport}
       />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteRFI} onOpenChange={() => setDeleteRFI(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete RFI?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete RFI-{String(deleteRFI?.rfi_number).padStart(3, '0')} "{deleteRFI?.subject}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteRFI.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

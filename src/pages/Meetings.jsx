@@ -24,13 +24,23 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, CheckCircle, Clock, Users, Bell, Repeat } from 'lucide-react';
+import { Plus, Calendar, CheckCircle, Clock, Users, Bell, Repeat, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, isPast, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -51,6 +61,7 @@ export default function Meetings() {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
   const [newActionItem, setNewActionItem] = useState({ item: '', assignee: '', due_date: '', status: 'pending' });
+  const [deleteMeeting, setDeleteMeeting] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -78,6 +89,14 @@ export default function Meetings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setSelectedMeeting(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Meeting.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      setDeleteMeeting(null);
     },
   });
 
@@ -230,6 +249,23 @@ export default function Meetings() {
         );
       },
     },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteMeeting(row);
+          }}
+          className="text-zinc-500 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
+    },
   ];
 
   const allActionItems = meetings.flatMap(m => 
@@ -328,6 +364,29 @@ export default function Meetings() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteMeeting} onOpenChange={() => setDeleteMeeting(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Meeting?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{deleteMeeting?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteMeeting.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

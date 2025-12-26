@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet, Upload } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet, Upload, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';
@@ -25,6 +25,7 @@ import BulkEditDrawings from '@/components/drawings/BulkEditDrawings';
 import DrawingSetDetails from '@/components/drawings/DrawingSetDetails.jsx';
 import DrawingNotifications from '@/components/drawings/DrawingNotifications';
 import CSVUpload from '@/components/shared/CSVUpload';
+import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
 import { differenceInDays } from 'date-fns';
 
 export default function Drawings() {
@@ -35,6 +36,7 @@ export default function Drawings() {
   const [projectFilter, setProjectFilter] = useState('all');
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -172,7 +174,7 @@ export default function Drawings() {
               className="border-zinc-700"
             >
               <FileSpreadsheet size={18} className="mr-2" />
-              Export Registry
+              Export
             </Button>
             <Button 
               onClick={() => setShowBulkEdit(true)}
@@ -183,11 +185,19 @@ export default function Drawings() {
               Bulk Edit
             </Button>
             <Button 
+              onClick={() => setShowQuickAdd(true)}
+              variant="outline"
+              className="border-zinc-700"
+            >
+              <Zap size={18} className="mr-2" />
+              Quick Add
+            </Button>
+            <Button 
               onClick={() => setShowForm(true)}
               className="bg-amber-500 hover:bg-amber-600 text-black"
             >
               <Plus size={18} className="mr-2" />
-              New Drawing Set
+              Full Form
             </Button>
           </div>
         }
@@ -328,6 +338,17 @@ export default function Drawings() {
         projects={projects}
         open={showBulkEdit}
         onOpenChange={setShowBulkEdit}
+      />
+
+      {/* Quick Add Dialog */}
+      <QuickAddDrawingSet
+        projects={projects}
+        open={showQuickAdd}
+        onOpenChange={setShowQuickAdd}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
+          setShowQuickAdd(false);
+        }}
       />
 
       {/* CSV Import */}

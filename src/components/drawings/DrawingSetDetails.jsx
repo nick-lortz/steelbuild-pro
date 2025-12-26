@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DrawingSetForm from './DrawingSetForm';
 import AIDrawingProcessor from './AIDrawingProcessor';
-import { FileText, History, Brain, ExternalLink, Download, Sparkles, Trash2 } from 'lucide-react';
+import { FileText, History, Brain, ExternalLink, Download, Sparkles, Trash2, Upload, Loader2, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { base44 } from '@/api/base44Client';
 
 export default function DrawingSetDetails({ 
   drawingSet, 
@@ -31,11 +32,59 @@ export default function DrawingSetDetails({
 }) {
   const [editMode, setEditMode] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [uploadingSheets, setUploadingSheets] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState([]);
   const project = projects.find(p => p.id === drawingSet.project_id);
 
   const handleSubmit = (data) => {
     onUpdate(data);
     setEditMode(false);
+  };
+
+  const handleFilesDrop = (e) => {
+    e.preventDefault();
+    const droppedFiles = Array.from(e.dataTransfer?.files || e.target?.files || []);
+    const pdfFiles = droppedFiles.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+    
+    if (pdfFiles.length !== droppedFiles.length) {
+      alert('Only PDF files are allowed');
+    }
+    
+    setUploadFiles(prev => [...prev, ...pdfFiles]);
+  };
+
+  const handleUploadSheets = async () => {
+    if (uploadFiles.length === 0) return;
+    
+    setUploadingSheets(true);
+    try {
+      for (const file of uploadFiles) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const sheetNumber = file.name.replace('.pdf', '');
+        
+        await base44.entities.DrawingSheet.create({
+          drawing_set_id: drawingSet.id,
+          sheet_number: sheetNumber,
+          sheet_name: file.name,
+          file_url,
+          file_name: file.name,
+          file_size: file.size,
+          uploaded_date: new Date().toISOString(),
+          ai_reviewed: false,
+        });
+      }
+      
+      // Update sheet count
+      await onUpdate({ sheet_count: sheets.length + uploadFiles.length });
+      
+      setUploadFiles([]);
+      alert('Sheets uploaded successfully');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload sheets');
+    } finally {
+      setUploadingSheets(false);
+    }
   };
 
   return (
@@ -206,6 +255,65 @@ export default function DrawingSetDetails({
             </TabsContent>
 
             <TabsContent value="sheets" className="space-y-3 mt-6">
+              {/* Upload New Sheets */}
+              <Card className="bg-zinc-800/50 border-zinc-700">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div
+                      onDrop={handleFilesDrop}
+                      onDragOver={(e) => e.preventDefault()}
+                      className="border-2 border-dashed border-zinc-700 rounded-lg p-4 text-center hover:border-amber-500/50 transition-colors cursor-pointer"
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf"
+                        onChange={handleFilesDrop}
+                        className="hidden"
+                        id="sheet-upload"
+                      />
+                      <label htmlFor="sheet-upload" className="cursor-pointer">
+                        <Upload size={24} className="mx-auto text-zinc-500 mb-2" />
+                        <p className="text-xs text-zinc-400">Add more sheets (PDF)</p>
+                      </label>
+                    </div>
+                    
+                    {uploadFiles.length > 0 && (
+                      <div className="space-y-2">
+                        {uploadFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-zinc-900 rounded text-xs">
+                            <span>{file.name}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => setUploadFiles(prev => prev.filter((_, i) => i !== idx))}
+                            >
+                              <X size={12} />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          size="sm"
+                          onClick={handleUploadSheets}
+                          disabled={uploadingSheets}
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                        >
+                          {uploadingSheets ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin mr-2" />
+                              Uploading...
+                            </>
+                          ) : (
+                            `Upload ${uploadFiles.length} Sheet${uploadFiles.length !== 1 ? 's' : ''}`
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               {sheets.length === 0 ? (
                 <div className="p-8 text-center text-zinc-500">
                   <FileText size={32} className="mx-auto mb-2 opacity-50" />

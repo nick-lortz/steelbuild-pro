@@ -33,9 +33,9 @@ export default function GanttChart({
   const minDate = new Date(Math.min(...dates));
   const maxDate = new Date(Math.max(...dates));
   
-  // Extend range slightly
-  const startDate = addDays(minDate, -7);
-  const endDate = addDays(maxDate, 14);
+  // Extend range to at least 6 months
+  const startDate = addDays(minDate, -14);
+  const endDate = addDays(maxDate, 180);
   const totalDays = differenceInDays(endDate, startDate);
 
   // Generate time periods based on view mode

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
-export default function CashFlowSection({ expenses = [], changeOrders = [] }) {
+export default function CashFlowSection({ expenses = [], changeOrders = [], clientInvoices = [] }) {
   // Group expenses by month
   const monthlyData = expenses.reduce((acc, expense) => {
     if (!expense.expense_date) return acc;
@@ -16,6 +16,17 @@ export default function CashFlowSection({ expenses = [], changeOrders = [] }) {
     }
     return acc;
   }, {});
+
+  // Add paid client invoices as income
+  clientInvoices.forEach(inv => {
+    if (inv.payment_status === 'paid' && inv.paid_date) {
+      const month = new Date(inv.paid_date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      if (!monthlyData[month]) {
+        monthlyData[month] = { month, expenses: 0, income: 0 };
+      }
+      monthlyData[month].income += inv.total_amount || 0;
+    }
+  });
 
   // Add approved change orders as income
   changeOrders.forEach(co => {

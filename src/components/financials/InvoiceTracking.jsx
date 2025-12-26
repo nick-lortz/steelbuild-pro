@@ -13,11 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-export default function InvoiceTracking({ financials, projects, costCodes, expenses = [] }) {
-  const { data: clientInvoices = [] } = useQuery({
-    queryKey: ['clientInvoices'],
-    queryFn: () => base44.entities.ClientInvoice.list(),
-  });
+export default function InvoiceTracking({ financials, projects, costCodes, expenses = [], clientInvoices = [] }) {
   const [selectedProject, setSelectedProject] = useState('all');
   const [expandedProjects, setExpandedProjects] = useState(new Set());
 
@@ -26,13 +22,16 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
       const project = projects.find(p => p.id === financial.project_id);
       const costCode = costCodes.find(c => c.id === financial.cost_code_id);
       
-      // Calculate amount invoiced to client
-      const invoiced = clientInvoices
-        .filter(inv => 
-          inv.project_id === financial.project_id && 
-          inv.cost_code_id === financial.cost_code_id
-        )
-        .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+      // Calculate amount invoiced to client from line items
+      let invoiced = 0;
+      clientInvoices.forEach(inv => {
+        if (inv.project_id === financial.project_id && inv.line_items) {
+          const lineItem = inv.line_items.find(li => li.cost_code_id === financial.cost_code_id);
+          if (lineItem) {
+            invoiced += lineItem.billed_this_month || 0;
+          }
+        }
+      });
       
       // Calculate costs incurred (paid/approved expenses)
       const incurred = expenses

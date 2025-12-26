@@ -39,6 +39,8 @@ export default function Drawings() {
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [expandedProjects, setExpandedProjects] = useState({});
+  const [sortBy, setSortBy] = useState('created_date');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const queryClient = useQueryClient();
 
@@ -87,7 +89,7 @@ export default function Drawings() {
   });
 
   const filteredSets = useMemo(() => {
-    return drawingSets.filter(d => {
+    const filtered = drawingSets.filter(d => {
       const matchesSearch = 
         d.set_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.set_number?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -95,7 +97,47 @@ export default function Drawings() {
       const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
       return matchesSearch && matchesStatus && matchesProject;
     });
-  }, [drawingSets, searchTerm, statusFilter, projectFilter]);
+
+    // Sort the filtered sets
+    return filtered.sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortBy) {
+        case 'set_name':
+          aVal = a.set_name?.toLowerCase() || '';
+          bVal = b.set_name?.toLowerCase() || '';
+          break;
+        case 'set_number':
+          aVal = a.set_number?.toLowerCase() || '';
+          bVal = b.set_number?.toLowerCase() || '';
+          break;
+        case 'status':
+          const statusOrder = { 'IFA': 1, 'BFA': 2, 'BFS': 3, 'FFF': 4, 'As-Built': 5 };
+          aVal = statusOrder[a.status] || 0;
+          bVal = statusOrder[b.status] || 0;
+          break;
+        case 'due_date':
+          aVal = a.due_date ? new Date(a.due_date).getTime() : 0;
+          bVal = b.due_date ? new Date(b.due_date).getTime() : 0;
+          break;
+        case 'ifa_date':
+          aVal = a.ifa_date ? new Date(a.ifa_date).getTime() : 0;
+          bVal = b.ifa_date ? new Date(b.ifa_date).getTime() : 0;
+          break;
+        case 'created_date':
+        default:
+          aVal = a.created_date ? new Date(a.created_date).getTime() : 0;
+          bVal = b.created_date ? new Date(b.created_date).getTime() : 0;
+          break;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+  }, [drawingSets, searchTerm, statusFilter, projectFilter, sortBy, sortOrder]);
 
   // Calculate overdue sets
   const overdueSets = useMemo(() => {
@@ -367,6 +409,28 @@ export default function Drawings() {
             <SelectItem value="BFS">BFS</SelectItem>
             <SelectItem value="FFF">Released</SelectItem>
             <SelectItem value="As-Built">As-Built</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full sm:w-44 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_date">Created Date</SelectItem>
+            <SelectItem value="set_name">Set Name</SelectItem>
+            <SelectItem value="set_number">Set Number</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="due_date">Due Date</SelectItem>
+            <SelectItem value="ifa_date">IFA Date</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortOrder} onValueChange={setSortOrder}>
+          <SelectTrigger className="w-full sm:w-32 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="asc">Ascending</SelectItem>
+            <SelectItem value="desc">Descending</SelectItem>
           </SelectContent>
         </Select>
       </div>

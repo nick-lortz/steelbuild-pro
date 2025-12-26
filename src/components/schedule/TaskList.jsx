@@ -1,12 +1,60 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
-import { AlertTriangle, FileText } from 'lucide-react';
+import { AlertTriangle, FileText, Trash2, Edit } from 'lucide-react';
 
-export default function TaskList({ tasks, projects, resources, drawingSets, onTaskEdit, onTaskUpdate }) {
+export default function TaskList({ tasks, projects, resources, drawingSets, onTaskEdit, onTaskUpdate, onBulkDelete, onBulkEdit }) {
+  const [selectedTasks, setSelectedTasks] = useState(new Set());
+
+  const toggleTask = (taskId) => {
+    const newSelected = new Set(selectedTasks);
+    if (newSelected.has(taskId)) {
+      newSelected.delete(taskId);
+    } else {
+      newSelected.add(taskId);
+    }
+    setSelectedTasks(newSelected);
+  };
+
+  const toggleAll = () => {
+    if (selectedTasks.size === tasks.length) {
+      setSelectedTasks(new Set());
+    } else {
+      setSelectedTasks(new Set(tasks.map(t => t.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (window.confirm(`Delete ${selectedTasks.size} selected task(s)?`)) {
+      onBulkDelete(Array.from(selectedTasks));
+      setSelectedTasks(new Set());
+    }
+  };
+
+  const handleBulkEdit = () => {
+    onBulkEdit(Array.from(selectedTasks));
+  };
   const columns = [
+    {
+      header: (
+        <Checkbox
+          checked={selectedTasks.size === tasks.length && tasks.length > 0}
+          onCheckedChange={toggleAll}
+        />
+      ),
+      accessor: 'select',
+      render: (row) => (
+        <Checkbox
+          checked={selectedTasks.has(row.id)}
+          onCheckedChange={() => toggleTask(row.id)}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+    },
     {
       header: 'Task',
       accessor: 'name',
@@ -115,11 +163,38 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={tasks}
-      onRowClick={onTaskEdit}
-      emptyMessage="No tasks found. Add tasks to get started."
-    />
+    <div className="space-y-4">
+      {selectedTasks.size > 0 && (
+        <div className="flex items-center justify-between p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
+          <span className="text-white">{selectedTasks.size} task(s) selected</span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkEdit}
+              className="border-zinc-700"
+            >
+              <Edit size={16} className="mr-2" />
+              Bulk Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkDelete}
+              className="border-red-700 text-red-400 hover:bg-red-500/10"
+            >
+              <Trash2 size={16} className="mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+      <DataTable
+        columns={columns}
+        data={tasks}
+        onRowClick={onTaskEdit}
+        emptyMessage="No tasks found. Add tasks to get started."
+      />
+    </div>
   );
 }

@@ -14,6 +14,8 @@ import TaskList from '@/components/schedule/TaskList';
 import TaskForm from '@/components/schedule/TaskForm';
 import ResourceConflicts from '@/components/schedule/ResourceConflicts';
 import CriticalPathAnalysis from '@/components/schedule/CriticalPathAnalysis';
+import BulkEditForm from '@/components/schedule/BulkEditForm';
+import BulkAddForm from '@/components/schedule/BulkAddForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { calculateCriticalPath, detectResourceConflicts } from '@/components/shared/scheduleUtils';
 
@@ -24,6 +26,9 @@ export default function Schedule() {
   const [editingTask, setEditingTask] = useState(null);
   const [selectedPhase, setSelectedPhase] = useState('all');
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [bulkEditTasks, setBulkEditTasks] = useState([]);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -75,6 +80,21 @@ export default function Schedule() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+
+  const bulkCreateMutation = useMutation({
+    mutationFn: (tasksData) => base44.entities.Task.bulkCreate(tasksData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setShowBulkAdd(false);
+    },
+  });
+
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter(t => {
@@ -108,6 +128,17 @@ export default function Schedule() {
     setShowTaskForm(true);
   };
 
+  const handleBulkDelete = async (taskIds) => {
+    for (const id of taskIds) {
+      await deleteMutation.mutateAsync(id);
+    }
+  };
+
+  const handleBulkEdit = (taskIds) => {
+    setBulkEditTasks(taskIds);
+    setShowBulkEdit(true);
+  };
+
   const handleExportPDF = () => {
     // PDF export logic would go here
     alert('PDF export feature - integrate with jspdf library');
@@ -122,6 +153,14 @@ export default function Schedule() {
         subtitle="Gantt chart with dependencies and critical path"
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkAdd(true)}
+              className="border-zinc-700"
+            >
+              <Plus size={16} className="mr-2" />
+              Bulk Add
+            </Button>
             <Button
               variant="outline"
               onClick={() => setShowCSVImport(true)}
@@ -257,6 +296,8 @@ export default function Schedule() {
             drawingSets={drawingSets}
             onTaskEdit={handleEditTask}
             onTaskUpdate={handleTaskUpdate}
+            onBulkDelete={handleBulkDelete}
+            onBulkEdit={handleBulkEdit}
           />
         </TabsContent>
 
@@ -313,6 +354,45 @@ export default function Schedule() {
               setEditingTask(null);
             }}
             isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Edit Dialog */}
+      <Dialog open={showBulkEdit} onOpenChange={setShowBulkEdit}>
+        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Bulk Edit {bulkEditTasks.length} Task(s)</DialogTitle>
+          </DialogHeader>
+          <BulkEditForm
+            taskIds={bulkEditTasks}
+            tasks={tasks}
+            onSubmit={async (updates) => {
+              for (const id of bulkEditTasks) {
+                await updateMutation.mutateAsync({ id, data: updates });
+              }
+              setShowBulkEdit(false);
+              setBulkEditTasks([]);
+            }}
+            onCancel={() => {
+              setShowBulkEdit(false);
+              setBulkEditTasks([]);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Add Dialog */}
+      <Dialog open={showBulkAdd} onOpenChange={setShowBulkAdd}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Bulk Add Tasks</DialogTitle>
+          </DialogHeader>
+          <BulkAddForm
+            projects={projects}
+            onSubmit={(tasksData) => bulkCreateMutation.mutate(tasksData)}
+            onCancel={() => setShowBulkAdd(false)}
+            isLoading={bulkCreateMutation.isPending}
           />
         </DialogContent>
       </Dialog>

@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatusBadge from '@/components/ui/StatusBadge';
-import { ChevronDown, ChevronRight, FileText, AlertCircle, Clock } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, AlertCircle, Clock, FolderOpen } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function DrawingSetTable({ sets, sheets, revisions, projects, onSelectSet }) {
   const [expandedProjects, setExpandedProjects] = useState({});
+  const [expandedSets, setExpandedSets] = useState(new Set());
 
   // Group drawing sets by project
   const setsByProject = useMemo(() => {
@@ -33,7 +35,6 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
       a.projectName.localeCompare(b.projectName)
     );
   }, [sets, projects]);
-  const [expandedSets, setExpandedSets] = useState(new Set());
 
   const toggleExpand = (setId) => {
     const newExpanded = new Set(expandedSets);
@@ -56,25 +57,49 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
   }
 
   return (
-    <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-zinc-900 border-b border-zinc-800">
-            <tr>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase w-10"></th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Set</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Project</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Revision</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Status</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Sheets</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Milestones</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Due Date</th>
-              <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Alerts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sets.map((set) => {
-              const project = projects.find(p => p.id === set.project_id);
+    <div className="space-y-3">
+      {setsByProject.map(([projectId, { projectName, sets: projectSets }]) => (
+        <Collapsible
+          key={projectId}
+          open={expandedProjects[projectId] ?? true}
+          onOpenChange={(open) => setExpandedProjects(prev => ({ ...prev, [projectId]: open }))}
+        >
+          <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 hover:bg-zinc-800/50 transition-colors flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ChevronDown 
+                  size={20} 
+                  className={`text-amber-500 transition-transform ${expandedProjects[projectId] ?? true ? 'rotate-180' : ''}`} 
+                />
+                <FolderOpen size={20} className="text-amber-500" />
+                <div className="text-left">
+                  <h3 className="text-white font-semibold">{projectName}</h3>
+                  <p className="text-xs text-zinc-500">{projectSets.length} drawing set{projectSets.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                {projectSets.length}
+              </Badge>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <div className="border-t border-zinc-800">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-zinc-900 border-b border-zinc-800">
+                      <tr>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase w-10"></th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Set</th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Revision</th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Sheets</th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Milestones</th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Due Date</th>
+                        <th className="text-left p-3 text-xs font-medium text-zinc-400 uppercase">Alerts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {projectSets.map((set) => {
               const setSheets = sheets.filter(s => s.drawing_set_id === set.id);
               const setRevisions = revisions.filter(r => r.drawing_set_id === set.id);
               const isExpanded = expandedSets.has(set.id);
@@ -103,9 +128,6 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
                         <p className="font-medium text-white">{set.set_name}</p>
                         <p className="text-xs text-zinc-500 font-mono">{set.set_number || '-'}</p>
                       </div>
-                    </td>
-                    <td className="p-3 text-sm text-zinc-300" onClick={() => onSelectSet(set)}>
-                      {project?.project_number || '-'}
                     </td>
                     <td className="p-3" onClick={() => onSelectSet(set)}>
                       <span className="font-mono text-sm text-amber-500">{set.current_revision || '-'}</span>
@@ -247,6 +269,11 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
           </tbody>
         </table>
       </div>
-    </Card>
-  );
+    </div>
+  </CollapsibleContent>
+</Card>
+</Collapsible>
+))}
+</div>
+);
 }

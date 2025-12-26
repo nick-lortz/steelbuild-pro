@@ -16,6 +16,7 @@ import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "Reports": Reports,
     "Resources": Resources,
     "Schedule": Schedule,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {

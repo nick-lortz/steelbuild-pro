@@ -77,9 +77,7 @@ export default function DrawingSetForm({ projects, drawingSet, onSubmit, onCance
               return updated;
             });
 
-            const formData = new FormData();
-            formData.append('file', file);
-            const { file_url } = await base44.integrations.Core.UploadFile({ file: formData.get('file') });
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
             // Extract sheet number from filename (e.g., S-101.pdf -> S-101)
             const sheetNumber = file.name.replace('.pdf', '');

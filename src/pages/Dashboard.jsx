@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
+import EmptyState from '@/components/ui/EmptyState';
 import WeatherWidget from '@/components/weather/WeatherWidget';
 import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -417,7 +418,12 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-0">
               {atRiskProjects.length === 0 ? (
-                <div className="p-6 text-center text-zinc-500">No projects at risk</div>
+                <EmptyState
+                  icon={Target}
+                  title="All Projects On Track"
+                  description="Great news! No projects are currently at risk. Keep monitoring budgets, schedules, and RFIs to maintain healthy project status."
+                  variant="subtle"
+                />
               ) : (
                 <div className="divide-y divide-red-500/10">
                   {atRiskProjects.map((project) => {
@@ -640,7 +646,11 @@ export default function Dashboard() {
             <CardContent className="pt-4">
               <div className="space-y-3">
                 {upcomingDeliveries.length === 0 ? (
-                  <p className="text-zinc-500 text-sm">No recent deliveries</p>
+                  <div className="text-center py-4">
+                    <Truck className="text-zinc-600 mx-auto mb-2" size={24} />
+                    <p className="text-zinc-500 text-sm">No recent material deliveries logged.</p>
+                    <p className="text-zinc-600 text-xs mt-1">Track deliveries in Daily Logs</p>
+                  </div>
                 ) : (
                   upcomingDeliveries.map(delivery => {
                     const project = projects.find(p => p.id === delivery.project_id);
@@ -676,7 +686,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="p-0">
             {activeProjects.length === 0 ? (
-              <div className="p-6 text-center text-zinc-500">No active projects</div>
+              <EmptyState
+                icon={Building2}
+                title="No Active Projects"
+                description="Get started by creating your first project. Track progress, manage budgets, and coordinate with your team."
+                actionLabel="Create Project"
+                actionPage="Projects"
+                variant="subtle"
+              />
             ) : (
               <div className="divide-y divide-zinc-800">
                 {activeProjects.slice(0, 5).map((project) => (
@@ -712,7 +729,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="p-0">
             {pendingRFIs.length === 0 ? (
-              <div className="p-6 text-center text-zinc-500">No pending RFIs</div>
+              <EmptyState
+                icon={MessageSquareWarning}
+                title="No Pending RFIs"
+                description="Request for Information (RFI) helps clarify project details. Create an RFI when you need answers from the GC or architect."
+                actionLabel="Create RFI"
+                actionPage="RFIs"
+                variant="subtle"
+              />
             ) : (
               <div className="divide-y divide-zinc-800">
                 {pendingRFIs.slice(0, 5).map((rfi) => {
@@ -794,7 +818,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="p-0">
             {changeOrders.length === 0 ? (
-              <div className="p-6 text-center text-zinc-500">No change orders</div>
+              <EmptyState
+                icon={FileCheck}
+                title="No Change Orders"
+                description="Track scope changes and cost impacts. Change orders document modifications to the original project scope and budget."
+                actionLabel="Create Change Order"
+                actionPage="ChangeOrders"
+                variant="subtle"
+              />
             ) : (
               <div className="divide-y divide-zinc-800">
                 {changeOrders.slice(0, 5).map((co) => {

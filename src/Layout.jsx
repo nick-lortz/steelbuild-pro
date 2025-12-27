@@ -392,11 +392,11 @@ export default function Layout({ children, currentPageName }) {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="h-16 flex items-center px-4 border-b border-zinc-800">
-          <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-            <Building2 size={18} className="text-black" />
+        <div className="h-16 flex items-center px-4 border-b border-gray-600">
+          <div className="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+            <Building2 size={18} className="text-white" />
           </div>
-          <span className="font-bold text-lg tracking-tight ml-3">SteelBuild Pro</span>
+          <span className="font-bold text-lg tracking-tight ml-3 text-white">SteelBuild Pro</span>
         </div>
 
         <nav className="p-3 space-y-1 overflow-y-auto">

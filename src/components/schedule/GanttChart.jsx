@@ -118,7 +118,7 @@ export default function GanttChart({
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
       <CardHeader className="border-b border-zinc-800">
-        <CardTitle className="text-sm">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
+        <CardTitle className="text-sm text-white">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto" ref={chartRef}>
@@ -185,13 +185,13 @@ export default function GanttChart({
                         <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-2 flex flex-col gap-1">
                           <button
                             onClick={() => handleTaskClick(task)}
-                            className="text-left text-sm hover:text-amber-500 truncate w-full"
+                            className="text-left text-sm text-white hover:text-amber-500 truncate w-full"
                           >
                             {task.is_milestone ? '◆ ' : ''}{task.name}
                           </button>
                           <div className="flex items-center gap-2">
                             {project && (
-                              <span className="text-xs text-zinc-500 truncate">
+                              <span className="text-xs text-zinc-400 truncate">
                                 {project.name}
                               </span>
                             )}

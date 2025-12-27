@@ -85,11 +85,13 @@ export default function Resources() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list('name'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -149,17 +151,22 @@ export default function Resources() {
     setSelectedResource(resource);
   };
 
-  const filteredResources = resources.filter(r => {
-    const matchesSearch = 
-      r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.classification?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'all' || r.type === typeFilter;
-    return matchesSearch && matchesType;
-  });
+  const filteredResources = React.useMemo(() => 
+    resources.filter(r => {
+      const matchesSearch = 
+        r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.classification?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === 'all' || r.type === typeFilter;
+      return matchesSearch && matchesType;
+    }),
+    [resources, searchTerm, typeFilter]
+  );
 
-  const laborCount = resources.filter(r => r.type === 'labor').length;
-  const equipmentCount = resources.filter(r => r.type === 'equipment').length;
-  const subCount = resources.filter(r => r.type === 'subcontractor').length;
+  const { laborCount, equipmentCount, subCount } = React.useMemo(() => ({
+    laborCount: resources.filter(r => r.type === 'labor').length,
+    equipmentCount: resources.filter(r => r.type === 'equipment').length,
+    subCount: resources.filter(r => r.type === 'subcontractor').length,
+  }), [resources]);
 
   const columns = [
     {

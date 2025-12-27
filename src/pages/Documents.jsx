@@ -70,11 +70,13 @@ export default function Documents() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.list('-created_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -196,14 +198,17 @@ export default function Documents() {
       .sort((a, b) => (b.version || 1) - (a.version || 1));
   };
 
-  const filteredDocuments = documents.filter(d => {
-    const matchesSearch = 
-      d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.file_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
-    const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
-    return matchesSearch && matchesCategory && matchesProject;
-  }).filter(d => d.status !== 'superseded'); // Hide superseded versions from main list
+  const filteredDocuments = React.useMemo(() => 
+    documents.filter(d => {
+      const matchesSearch = 
+        d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.file_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
+      const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
+      return matchesSearch && matchesCategory && matchesProject;
+    }).filter(d => d.status !== 'superseded'),
+    [documents, searchTerm, categoryFilter, projectFilter]
+  );
 
   const columns = [
     {

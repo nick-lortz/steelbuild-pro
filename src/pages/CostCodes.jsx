@@ -62,6 +62,7 @@ export default function CostCodes() {
   const { data: costCodes = [], isLoading } = useQuery({
     queryKey: ['costCodes'],
     queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -106,13 +107,16 @@ export default function CostCodes() {
     setShowForm(true);
   };
 
-  const filteredCodes = costCodes.filter(c => {
-    const matchesSearch = 
-      c.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || c.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredCodes = React.useMemo(() => 
+    costCodes.filter(c => {
+      const matchesSearch = 
+        c.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || c.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    }),
+    [costCodes, searchTerm, categoryFilter]
+  );
 
   const columns = [
     {

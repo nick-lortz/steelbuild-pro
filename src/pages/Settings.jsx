@@ -52,6 +52,7 @@ export default function Settings() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    staleTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {

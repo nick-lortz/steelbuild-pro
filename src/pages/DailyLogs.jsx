@@ -72,11 +72,13 @@ export default function DailyLogs() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
     queryFn: () => base44.entities.DailyLog.list('-log_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -144,8 +146,11 @@ export default function DailyLogs() {
     setSelectedLog(log);
   };
 
-  const filteredLogs = dailyLogs.filter(log => 
-    projectFilter === 'all' || log.project_id === projectFilter
+  const filteredLogs = React.useMemo(() => 
+    dailyLogs.filter(log => 
+      projectFilter === 'all' || log.project_id === projectFilter
+    ),
+    [dailyLogs, projectFilter]
   );
 
   const weatherIcons = {

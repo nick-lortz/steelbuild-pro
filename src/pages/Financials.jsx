@@ -69,31 +69,37 @@ export default function Financials() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
     queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: clientInvoices = [] } = useQuery({
     queryKey: ['clientInvoices'],
     queryFn: () => base44.entities.ClientInvoice.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({

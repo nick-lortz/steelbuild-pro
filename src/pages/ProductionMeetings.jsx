@@ -21,6 +21,7 @@ export default function ProductionMeetings() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const activeProjects = useMemo(() => 
@@ -31,6 +32,7 @@ export default function ProductionMeetings() {
   const { data: productionNotes = [] } = useQuery({
     queryKey: ['productionNotes'],
     queryFn: () => base44.entities.ProductionNote.list('-week_starting'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createOrUpdateMutation = useMutation({

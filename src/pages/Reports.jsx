@@ -49,41 +49,49 @@ export default function Reports() {
   const { data: reports = [] } = useQuery({
     queryKey: ['reports'],
     queryFn: () => base44.entities.Report.list('-created_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawingSets'],
     queryFn: () => base44.entities.DrawingSet.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -375,9 +383,13 @@ export default function Reports() {
   ];
 
   // Quick Stats
-  const totalReports = reports.length;
-  const activeReports = reports.filter(r => r.active).length;
-  const scheduledReports = reports.filter(r => r.schedule !== 'on_demand').length;
+  const reportStats = React.useMemo(() => ({
+    totalReports: reports.length,
+    activeReports: reports.filter(r => r.active).length,
+    scheduledReports: reports.filter(r => r.schedule !== 'on_demand').length,
+  }), [reports]);
+  
+  const { totalReports, activeReports, scheduledReports } = reportStats;
 
   return (
     <div>

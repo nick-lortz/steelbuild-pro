@@ -68,11 +68,13 @@ export default function Meetings() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ['meetings'],
     queryFn: () => base44.entities.Meeting.list('-meeting_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -268,10 +270,13 @@ export default function Meetings() {
     },
   ];
 
-  const allActionItems = meetings.flatMap(m => 
-    (m.action_items || []).map(ai => ({ ...ai, meetingTitle: m.title, meetingId: m.id }))
-  );
-  const pendingActions = allActionItems.filter(a => a.status !== 'completed');
+  const { allActionItems, pendingActions } = React.useMemo(() => {
+    const all = meetings.flatMap(m => 
+      (m.action_items || []).map(ai => ({ ...ai, meetingTitle: m.title, meetingId: m.id }))
+    );
+    const pending = all.filter(a => a.status !== 'completed');
+    return { allActionItems: all, pendingActions: pending };
+  }, [meetings]);
 
   return (
     <div>

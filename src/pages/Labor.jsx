@@ -44,21 +44,25 @@ export default function Labor() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
     queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['laborHours'],
     queryFn: () => base44.entities.LaborHours.list('-work_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -89,7 +93,10 @@ export default function Labor() {
     createMutation.mutate(data);
   };
 
-  const laborResources = resources.filter(r => r.type === 'labor');
+  const laborResources = React.useMemo(() => 
+    resources.filter(r => r.type === 'labor' || r.type === 'subcontractor'),
+    [resources]
+  );
 
   const columns = [
     {
@@ -149,18 +156,23 @@ export default function Labor() {
     },
   ];
 
-  const totalHours = laborHours.reduce((sum, l) => sum + (l.hours || 0), 0);
-  const totalOT = laborHours.reduce((sum, l) => sum + (l.overtime_hours || 0), 0);
-  const pendingApproval = laborHours.filter(l => !l.approved).length;
+  const laborMetrics = React.useMemo(() => {
+    const totalHours = laborHours.reduce((sum, l) => sum + (l.hours || 0), 0);
+    const totalOT = laborHours.reduce((sum, l) => sum + (l.overtime_hours || 0), 0);
+    const pendingApproval = laborHours.filter(l => !l.approved).length;
 
-  // Forecast calculations
-  const last30Days = laborHours.filter(l => {
-    const daysAgo = (new Date() - new Date(l.work_date)) / (1000 * 60 * 60 * 24);
-    return daysAgo <= 30;
-  });
-  const avgDailyHours = last30Days.length > 0 
-    ? last30Days.reduce((sum, l) => sum + (l.hours || 0), 0) / 30 
-    : 0;
+    const last30Days = laborHours.filter(l => {
+      const daysAgo = (new Date() - new Date(l.work_date)) / (1000 * 60 * 60 * 24);
+      return daysAgo <= 30;
+    });
+    const avgDailyHours = last30Days.length > 0 
+      ? last30Days.reduce((sum, l) => sum + (l.hours || 0), 0) / 30 
+      : 0;
+    
+    return { totalHours, totalOT, pendingApproval, avgDailyHours };
+  }, [laborHours]);
+  
+  const { totalHours, totalOT, pendingApproval, avgDailyHours } = laborMetrics;
 
   return (
     <div>

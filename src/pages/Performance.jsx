@@ -10,56 +10,93 @@ export default function Performance() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
     queryFn: () => base44.entities.DailyLog.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
-  // Performance Metrics
-  const activeProjects = projects.filter(p => p.status === 'in_progress');
-  const onTimeProjects = activeProjects.filter(p => {
-    if (!p.target_completion) return true;
-    return new Date(p.target_completion) > new Date();
-  }).length;
-  const onTimeRate = activeProjects.length > 0 ? ((onTimeProjects / activeProjects.length) * 100) : 100;
+  // Performance Metrics with memoization
+  const performanceMetrics = React.useMemo(() => {
+    const activeProjects = projects.filter(p => p.status === 'in_progress');
+    const onTimeProjects = activeProjects.filter(p => {
+      if (!p.target_completion) return true;
+      return new Date(p.target_completion) > new Date();
+    }).length;
+    const onTimeRate = activeProjects.length > 0 ? ((onTimeProjects / activeProjects.length) * 100) : 100;
 
-  const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-  const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-  const budgetPerformance = totalBudget > 0 ? ((totalBudget - totalActual) / totalBudget * 100) : 0;
+    const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+    const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const budgetPerformance = totalBudget > 0 ? ((totalBudget - totalActual) / totalBudget * 100) : 0;
 
-  const safetyIncidents = dailyLogs.filter(log => log.safety_incidents).length;
-  const totalDays = dailyLogs.length;
-  const safetyRate = totalDays > 0 ? ((totalDays - safetyIncidents) / totalDays * 100) : 100;
+    const safetyIncidents = dailyLogs.filter(log => log.safety_incidents).length;
+    const totalDays = dailyLogs.length;
+    const safetyRate = totalDays > 0 ? ((totalDays - safetyIncidents) / totalDays * 100) : 100;
 
-  const approvedCOs = changeOrders.filter(co => co.status === 'approved').length;
-  const totalCOs = changeOrders.length;
-  const coApprovalRate = totalCOs > 0 ? ((approvedCOs / totalCOs) * 100) : 0;
+    const approvedCOs = changeOrders.filter(co => co.status === 'approved').length;
+    const totalCOs = changeOrders.length;
+    const coApprovalRate = totalCOs > 0 ? ((approvedCOs / totalCOs) * 100) : 0;
 
-  // Project Performance Data
-  const projectPerformance = activeProjects.slice(0, 6).map(project => {
-    const projectFinancials = financials.filter(f => f.project_id === project.id);
-    const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    const variance = budget > 0 ? ((budget - actual) / budget * 100) : 0;
-    
+    const projectPerformance = activeProjects.slice(0, 6).map(project => {
+      const projectFinancials = financials.filter(f => f.project_id === project.id);
+      const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      const variance = budget > 0 ? ((budget - actual) / budget * 100) : 0;
+      
+      return {
+        name: project.project_number,
+        variance: variance.toFixed(1),
+        status: variance >= 0 ? 'on_budget' : 'over_budget'
+      };
+    });
+
     return {
-      name: project.project_number,
-      variance: variance.toFixed(1),
-      status: variance >= 0 ? 'on_budget' : 'over_budget'
+      activeProjects,
+      onTimeProjects,
+      onTimeRate,
+      totalBudget,
+      totalActual,
+      budgetPerformance,
+      safetyIncidents,
+      totalDays,
+      safetyRate,
+      approvedCOs,
+      totalCOs,
+      coApprovalRate,
+      projectPerformance,
     };
-  });
+  }, [projects, financials, dailyLogs, changeOrders]);
+
+  const {
+    activeProjects,
+    onTimeProjects,
+    onTimeRate,
+    totalBudget,
+    totalActual,
+    budgetPerformance,
+    safetyIncidents,
+    totalDays,
+    safetyRate,
+    approvedCOs,
+    totalCOs,
+    coApprovalRate,
+    projectPerformance,
+  } = performanceMetrics;
 
   return (
     <div>

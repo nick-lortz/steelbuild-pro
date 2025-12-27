@@ -36,16 +36,19 @@ export default function Deliveries() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
     queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({

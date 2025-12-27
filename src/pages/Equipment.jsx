@@ -18,19 +18,25 @@ export default function Equipment() {
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['equipmentBookings'],
     queryFn: () => base44.entities.EquipmentBooking.list('-start_date'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000,
   });
 
-  const equipment = resources.filter(r => r.type === 'equipment');
+  const equipment = React.useMemo(() => 
+    resources.filter(r => r.type === 'equipment'),
+    [resources]
+  );
 
   const columns = [
     {

@@ -107,7 +107,14 @@ export default function GanttChart({
     onTaskEdit(task);
   };
 
-  const columnWidth = viewMode === 'day' ? 40 : viewMode === 'week' ? 80 : 100;
+  const columnWidth = viewMode === 'day' ? 60 : viewMode === 'week' ? 80 : 100;
+  
+  // Calculate today's position
+  const today = new Date();
+  const todayPosition = React.useMemo(() => {
+    const daysFromStart = differenceInDays(today, startDate);
+    return (daysFromStart / totalDays) * 100;
+  }, [today, startDate, totalDays]);
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
@@ -200,6 +207,18 @@ export default function GanttChart({
                               style={{ left: `${(idx / periods.length) * 100}%` }}
                             />
                           ))}
+
+                          {/* Today indicator line */}
+                          {todayPosition >= 0 && todayPosition <= 100 && (
+                            <div
+                              className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-20 pointer-events-none"
+                              style={{ left: `${todayPosition}%` }}
+                            >
+                              <div className="absolute -top-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-amber-500 text-black text-[10px] font-bold rounded whitespace-nowrap">
+                                TODAY
+                              </div>
+                            </div>
+                          )}
 
                           {/* Baseline (if exists) */}
                           {task.baseline_start && task.baseline_end && (

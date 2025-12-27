@@ -31,6 +31,7 @@ import { Plus, Search, Building2, MapPin, Calendar, User, Trash2 } from 'lucide-
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
 import { format } from 'date-fns';
 
 
@@ -282,6 +283,13 @@ export default function Projects() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Demo Seeder for new users */}
+      {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && (
+        <div className="mb-6">
+          <DemoProjectSeeder />
+        </div>
+      )}
 
       {/* Table */}
       <DataTable

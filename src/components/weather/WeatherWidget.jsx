@@ -7,7 +7,7 @@ import { AlertTriangle, Cloud, CloudRain, Wind, Snowflake, Sun, CloudDrizzle } f
 import { format, parseISO, addDays } from 'date-fns';
 
 export default function WeatherWidget({ tasks, projectLocation }) {
-  const { data: weatherData, isLoading } = useQuery({
+  const { data: weatherData, isLoading, error } = useQuery({
     queryKey: ['weather', projectLocation],
     queryFn: async () => {
       const response = await base44.functions.invoke('getWeatherForecast', { 
@@ -17,6 +17,7 @@ export default function WeatherWidget({ tasks, projectLocation }) {
     },
     staleTime: 1000 * 60 * 30, // 30 minutes
     enabled: !!projectLocation,
+    retry: 1,
   });
 
   // Detect weather conflicts with upcoming outdoor tasks
@@ -28,11 +29,12 @@ export default function WeatherWidget({ tasks, projectLocation }) {
     const outdoorKeywords = ['erect', 'steel', 'install', 'crane', 'lift', 'outdoor', 'exterior'];
 
     weatherData.forecasts.forEach(forecast => {
-      const forecastDate = parseISO(forecast.date);
+      const forecastDate = new Date(forecast.date + 'T00:00:00');
 
       tasks.forEach(task => {
-        const taskStart = parseISO(task.start_date);
-        const taskEnd = parseISO(task.end_date);
+        if (!task.start_date || !task.end_date) return;
+        const taskStart = new Date(task.start_date + 'T00:00:00');
+        const taskEnd = new Date(task.end_date + 'T00:00:00');
 
         // Check if forecast date is within task range
         if (forecastDate >= taskStart && forecastDate <= taskEnd) {
@@ -97,6 +99,23 @@ export default function WeatherWidget({ tasks, projectLocation }) {
     );
   }
 
+  if (error) {
+    return (
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Cloud size={18} />
+            Weather Forecast
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-400 text-sm">Failed to load weather data</p>
+          <p className="text-zinc-500 text-xs mt-1">{error.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!weatherData) {
     return null;
   }
@@ -129,7 +148,7 @@ export default function WeatherWidget({ tasks, projectLocation }) {
                 <div key={idx} className="p-2 bg-zinc-800 rounded text-sm">
                   <p className="text-white font-medium">{conflict.task.name}</p>
                   <p className="text-xs text-zinc-400 mt-1">
-                    {format(parseISO(conflict.forecast.date), 'MMM d')} - {conflict.risks.join(', ')}
+                    {format(new Date(conflict.forecast.date + 'T00:00:00'), 'MMM d')} - {conflict.risks.join(', ')}
                   </p>
                 </div>
               ))}
@@ -158,8 +177,8 @@ export default function WeatherWidget({ tasks, projectLocation }) {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-16 text-sm text-zinc-400">
-                      {format(parseISO(forecast.date), 'EEE, MMM d')}
+                    <div className="w-24 text-sm text-zinc-400">
+                      {format(new Date(forecast.date + 'T00:00:00'), 'EEE, MMM d')}
                     </div>
                     <WeatherIcon size={18} className="text-zinc-400" />
                     <div className="flex items-center gap-2">

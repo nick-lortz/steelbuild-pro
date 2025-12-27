@@ -9,8 +9,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const location = searchParams.get('location') || 'Chicago,US'; // Default location
+    const payload = await req.json();
+    const location = payload.location || 'Chicago,US'; // Default location
 
     const apiKey = Deno.env.get('OPENWEATHER_API_KEY');
     if (!apiKey) {

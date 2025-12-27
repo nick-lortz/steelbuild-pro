@@ -79,7 +79,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         return (
           <div>
             <div className="flex items-center gap-2">
-              <p className="font-medium">{row.is_milestone ? '◆ ' : ''}{row.name}</p>
+              <p className="font-medium text-white">{row.is_milestone ? '◆ ' : ''}{row.name}</p>
               {isBlocked && (
                 <AlertTriangle size={14} className="text-red-400" title="Blocked by drawings" />
               )}
@@ -87,7 +87,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
                 <FileText size={14} className="text-blue-400" title="Has drawing dependencies" />
               )}
             </div>
-            <p className="text-xs text-zinc-500">{row.wbs_code || '-'}</p>
+            <p className="text-xs text-zinc-400">{row.wbs_code || '-'}</p>
           </div>
         );
       },
@@ -98,15 +98,15 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       render: (row) => {
         const project = projects.find(p => p.id === row.project_id);
         return project ? (
-          <span className="text-sm">{project.project_number}</span>
-        ) : '-';
+          <span className="text-sm text-white">{project.project_number}</span>
+        ) : <span className="text-zinc-400">-</span>;
       },
     },
     {
       header: 'Phase',
       accessor: 'phase',
       render: (row) => (
-        <Badge variant="outline" className="capitalize">
+        <Badge variant="outline" className="capitalize text-white">
           {row.phase?.replace('_', ' ')}
         </Badge>
       ),
@@ -114,17 +114,17 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     {
       header: 'Start Date',
       accessor: 'start_date',
-      render: (row) => row.start_date ? format(new Date(row.start_date), 'MMM d, yyyy') : '-',
+      render: (row) => <span className="text-white">{row.start_date ? format(new Date(row.start_date), 'MMM d, yyyy') : '-'}</span>,
     },
     {
       header: 'End Date',
       accessor: 'end_date',
-      render: (row) => row.end_date ? format(new Date(row.end_date), 'MMM d, yyyy') : '-',
+      render: (row) => <span className="text-white">{row.end_date ? format(new Date(row.end_date), 'MMM d, yyyy') : '-'}</span>,
     },
     {
       header: 'Duration',
       accessor: 'duration_days',
-      render: (row) => row.duration_days ? `${row.duration_days}d` : '-',
+      render: (row) => <span className="text-white">{row.duration_days ? `${row.duration_days}d` : '-'}</span>,
     },
     {
       header: 'Progress',
@@ -132,12 +132,12 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       render: (row) => (
         <div className="flex items-center gap-2">
           <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-500 transition-all"
-              style={{ width: `${row.progress_percent || 0}%` }}
-            />
+          <div 
+            className="h-full bg-blue-500 transition-all"
+            style={{ width: `${row.progress_percent || 0}%` }}
+          />
           </div>
-          <span className="text-xs text-zinc-500">{row.progress_percent || 0}%</span>
+          <span className="text-xs text-zinc-300">{row.progress_percent || 0}%</span>
         </div>
       ),
     },
@@ -162,7 +162,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       render: (row) => {
         const float = row.float_days || 0;
         return (
-          <span className={float === 0 ? 'text-red-400 font-medium' : ''}>
+          <span className={float === 0 ? 'text-red-400 font-medium' : 'text-white'}>
             {float}d
           </span>
         );

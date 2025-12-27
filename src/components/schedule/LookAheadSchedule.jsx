@@ -52,7 +52,7 @@ export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4, proje
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <p className="text-sm text-red-400 font-medium">{risk.message}</p>
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         Drawing: {risk.drawing.set_number} - {risk.drawing.set_name}
                       </p>
                     </div>
@@ -65,7 +65,7 @@ export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4, proje
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <p className="text-sm text-amber-400 font-medium">{risk.message}</p>
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         Drawing: {risk.drawing.set_number} - {risk.drawing.set_name}
                       </p>
                     </div>
@@ -102,7 +102,7 @@ export default function LookAheadSchedule({ tasks, drawingSets, weeks = 4, proje
                       {project && (
                         <p className="text-xs text-zinc-400 mt-0.5">{project.name}</p>
                       )}
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-xs text-zinc-400 mt-1">
                         Starts: {format(new Date(task.start_date), 'MMM d, yyyy')} • 
                         Phase: <span className="capitalize">{task.phase}</span>
                       </p>

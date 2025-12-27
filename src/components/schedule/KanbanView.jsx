@@ -78,7 +78,7 @@ export default function KanbanView({ tasks, projects, onTaskUpdate, onTaskClick 
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-500">{project?.name}</p>
+                  <p className="text-xs text-zinc-400">{project?.name}</p>
                 </div>
 
                 {/* Progress */}
@@ -157,7 +157,7 @@ export default function KanbanView({ tasks, projects, onTaskUpdate, onTaskClick 
 
                 {/* Phase Badge */}
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs capitalize">
+                  <Badge variant="outline" className="text-xs capitalize text-white">
                     {task.phase}
                   </Badge>
                   {(task.linked_rfi_ids?.length > 0 || task.linked_co_ids?.length > 0) && (

@@ -298,38 +298,41 @@ export default function GanttChart({
         </div>
 
         {/* Legend */}
-        <div className="border-t border-zinc-800 p-4 flex flex-wrap gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-0.5 h-4 bg-amber-500" />
-            <span className="font-medium text-amber-400">Today</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-500 rounded" />
-            <span>Critical Path</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-500 rounded" />
-            <span>In Progress</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-500 rounded" />
-            <span>Completed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-zinc-600 rounded" />
-            <span>Not Started</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-amber-500 transform rotate-45" />
-            <span>Milestone</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <LinkIcon size={14} className="text-blue-400" />
-            <span>Linked RFI</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <LinkIcon size={14} className="text-purple-400" />
-            <span>Linked CO</span>
+        <div className="border-t border-zinc-800 bg-zinc-900/50 p-5">
+          <h4 className="text-sm font-semibold text-white mb-4">Legend</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-5 bg-amber-500" />
+              <span className="font-medium text-amber-400">Today</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-red-500 rounded border border-red-400" />
+              <span className="text-zinc-200">Critical Path</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-blue-500 rounded border border-blue-400" />
+              <span className="text-zinc-200">In Progress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-green-500 rounded border border-green-400" />
+              <span className="text-zinc-200">Completed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-zinc-600 rounded border border-zinc-500" />
+              <span className="text-zinc-200">Not Started</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-amber-500 transform rotate-45 border border-amber-400" />
+              <span className="text-zinc-200">Milestone</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <LinkIcon size={16} className="text-blue-400" />
+              <span className="text-zinc-200">Linked RFI</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <LinkIcon size={16} className="text-purple-400" />
+              <span className="text-zinc-200">Linked CO</span>
+            </div>
           </div>
         </div>
       </CardContent>

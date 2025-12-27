@@ -188,7 +188,7 @@ export default function Schedule() {
             <Button
               variant="outline"
               onClick={() => setShowBulkAdd(true)}
-              className="border-zinc-700"
+              className="border-zinc-700 text-white hover:bg-zinc-800"
             >
               <Plus size={16} className="mr-2" />
               Bulk Add
@@ -196,7 +196,7 @@ export default function Schedule() {
             <Button
               variant="outline"
               onClick={() => setShowCSVImport(true)}
-              className="border-zinc-700"
+              className="border-zinc-700 text-white hover:bg-zinc-800"
             >
               <FileSpreadsheet size={16} className="mr-2" />
               Import CSV
@@ -204,7 +204,7 @@ export default function Schedule() {
             <Button
               variant="outline"
               onClick={handleExportPDF}
-              className="border-zinc-700"
+              className="border-zinc-700 text-white hover:bg-zinc-800"
             >
               <Download size={16} className="mr-2" />
               Export

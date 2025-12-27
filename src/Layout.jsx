@@ -115,7 +115,7 @@
 //             <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
 //               <Building2 size={18} className="text-black" />
 //             </div>
-//             <span className="font-bold text-lg tracking-tight">SteelBuild Pro</span>
+//             <span className="font-bold text-lg tracking-tight text-white">SteelBuild Pro</span>
 //           </div>
 //         </div>
 //         {currentUser && (
@@ -331,7 +331,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
               <Building2 size={18} className="text-black" />
             </div>
-            <span className="font-bold text-lg tracking-tight">SteelBuild Pro</span>
+            <span className="font-bold text-lg tracking-tight text-white">SteelBuild Pro</span>
           </div>
         </div>
 
@@ -340,21 +340,21 @@ export default function Layout({ children, currentPageName }) {
             <DropdownMenuTrigger className="p-2">
               <UserCircle size={24} className="text-zinc-400" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800">
+            <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
               <div className="px-2 py-1.5">
                 <p className="text-sm font-medium text-white">
                   {currentUser.full_name || currentUser.email}
                 </p>
-                <p className="text-xs text-zinc-500 capitalize">{currentUser.role}</p>
+                <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
               </div>
               <DropdownMenuSeparator className="bg-zinc-800" />
-              <DropdownMenuItem asChild>
+              <DropdownMenuItem asChild className="text-white hover:text-white">
                 <Link to={createPageUrl('Settings')}>
                   <Settings size={16} className="mr-2" />
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="text-red-400">
+              <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
                 <LogOut size={16} className="mr-2" />
                 Logout
               </DropdownMenuItem>
@@ -409,21 +409,21 @@ export default function Layout({ children, currentPageName }) {
               <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800">
                 <UserCircle size={18} className="text-amber-500" />
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-sm font-medium truncate text-white">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-xs text-zinc-500 capitalize">{currentUser.role}</p>
+                  <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800">
-                <DropdownMenuItem asChild>
+              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
+                <DropdownMenuItem asChild className="text-white hover:text-white">
                   <Link to={createPageUrl('Settings')}>
                     <Settings size={16} className="mr-2" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-400">
+                <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
                   <LogOut size={16} className="mr-2" />
                   Logout
                 </DropdownMenuItem>

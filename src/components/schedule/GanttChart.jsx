@@ -110,12 +110,10 @@ export default function GanttChart({
   const columnWidth = viewMode === 'day' ? 60 : viewMode === 'week' ? 80 : 100;
   
   // Calculate today's position
-  const todayPosition = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const daysFromStart = differenceInDays(today, startDate);
-    return (daysFromStart / totalDays) * 100;
-  }, [startDate, totalDays]);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysFromStart = differenceInDays(today, startDate);
+  const todayPosition = (daysFromStart / totalDays) * 100;
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">

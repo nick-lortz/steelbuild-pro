@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { X } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
+import AITaskHelper from './AITaskHelper';
 
 export default function TaskForm({ 
   task, 
@@ -115,8 +116,9 @@ export default function TaskForm({
   };
 
   const availableTasks = tasks.filter(t => t.id !== task?.id);
-  const laborResources = resources.filter(r => r.type === 'labor');
+  const laborResources = resources.filter(r => r.type === 'labor' || r.type === 'subcontractor');
   const equipmentResources = resources.filter(r => r.type === 'equipment');
+  const selectedProject = projects.find(p => p.id === formData.project_id);
 
   const toggleArrayItem = (field, itemId) => {
     const current = formData[field] || [];
@@ -125,6 +127,10 @@ export default function TaskForm({
     } else {
       handleChange(field, [...current, itemId]);
     }
+  };
+
+  const handleApplyAISuggestions = (suggestions) => {
+    setFormData(prev => ({ ...prev, ...suggestions }));
   };
 
   return (
@@ -197,6 +203,27 @@ export default function TaskForm({
           placeholder="e.g., Fabricate Level 2 Columns"
           required
           className="bg-zinc-800 border-zinc-700"
+        />
+      </div>
+
+      {/* AI Assistant */}
+      {!task && formData.name && formData.project_id && (
+        <AITaskHelper
+          taskName={formData.name}
+          projectType={selectedProject?.scope_of_work || 'Steel fabrication'}
+          existingTasks={availableTasks.filter(t => t.project_id === formData.project_id)}
+          onApplySuggestions={handleApplyAISuggestions}
+        />
+      )}
+
+      <div className="space-y-2">
+        <Label>Description</Label>
+        <Textarea
+          value={formData.description || ''}
+          onChange={(e) => handleChange('description', e.target.value)}
+          rows={2}
+          className="bg-zinc-800 border-zinc-700"
+          placeholder="Task details..."
         />
       </div>
 
@@ -392,14 +419,16 @@ export default function TaskForm({
         <h4 className="text-sm font-medium mb-3">Resources</h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Labor</Label>
+            <Label>Labor / Subcontractors</Label>
             <Select onValueChange={(v) => toggleArrayItem('assigned_resources', v)}>
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Assign labor" />
+                <SelectValue placeholder="Assign labor/subs" />
               </SelectTrigger>
               <SelectContent>
                 {laborResources.map(r => (
-                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name} {r.type === 'subcontractor' ? '(Sub)' : ''}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -408,7 +437,7 @@ export default function TaskForm({
                 const r = resources.find(res => res.id === id);
                 return r ? (
                   <Badge key={id} variant="outline" className="gap-1">
-                    {r.name}
+                    {r.name} {r.type === 'subcontractor' && '(Sub)'}
                     <X 
                       size={12} 
                       className="cursor-pointer" 

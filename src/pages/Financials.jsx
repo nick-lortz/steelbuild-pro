@@ -399,6 +399,35 @@ export default function Financials() {
     return financials.filter(f => f && f.project_id === selectedProject);
   }, [financials, selectedProject]);
 
+  // Enhanced budget lines with expense rollup - MUST BE BEFORE totals
+  const budgetLinesWithExpenses = useMemo(() => {
+    if (!filteredFinancials || filteredFinancials.length === 0) {
+      return [];
+    }
+    
+    return filteredFinancials.map(financial => {
+      if (!financial) return null;
+      
+      // Sum up expenses for this project + cost code combination
+      const relatedExpenses = expenses.filter(exp => 
+        exp &&
+        exp.project_id === financial.project_id && 
+        exp.cost_code_id === financial.cost_code_id &&
+        (exp.payment_status === 'paid' || exp.payment_status === 'approved')
+      );
+      
+      const expenseTotal = relatedExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+      
+      return {
+        ...financial,
+        budget_amount: Number(financial.budget_amount) || 0,
+        committed_amount: Number(financial.committed_amount) || 0,
+        actual_amount: (Number(financial.actual_amount) || 0) + expenseTotal,
+        forecast_amount: Number(financial.forecast_amount) || 0,
+      };
+    }).filter(Boolean);
+  }, [filteredFinancials, expenses]);
+
   // Calculate totals from budget lines with expenses already rolled up
   const totals = useMemo(() => {
     if (!budgetLinesWithExpenses || budgetLinesWithExpenses.length === 0) {
@@ -432,35 +461,6 @@ export default function Financials() {
   // Calculate variance metrics
   const variance = totals.budget - totals.actual;
   const variancePercent = totals.budget > 0 ? ((variance / totals.budget) * 100) : 0;
-
-  // Enhanced budget lines with expense rollup
-  const budgetLinesWithExpenses = useMemo(() => {
-    if (!filteredFinancials || filteredFinancials.length === 0) {
-      return [];
-    }
-    
-    return filteredFinancials.map(financial => {
-      if (!financial) return null;
-      
-      // Sum up expenses for this project + cost code combination
-      const relatedExpenses = expenses.filter(exp => 
-        exp &&
-        exp.project_id === financial.project_id && 
-        exp.cost_code_id === financial.cost_code_id &&
-        (exp.payment_status === 'paid' || exp.payment_status === 'approved')
-      );
-      
-      const expenseTotal = relatedExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
-      
-      return {
-        ...financial,
-        budget_amount: Number(financial.budget_amount) || 0,
-        committed_amount: Number(financial.committed_amount) || 0,
-        actual_amount: (Number(financial.actual_amount) || 0) + expenseTotal,
-        forecast_amount: Number(financial.forecast_amount) || 0,
-      };
-    }).filter(Boolean);
-  }, [filteredFinancials, expenses]);
 
   const columns = [
     {

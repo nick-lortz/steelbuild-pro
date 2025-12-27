@@ -254,13 +254,13 @@ export default function Schedule() {
         </Select>
 
         <Select value={viewMode} onValueChange={setViewMode}>
-          <SelectTrigger className="w-32 bg-zinc-900 border-zinc-800">
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="day">Day</SelectItem>
-            <SelectItem value="week">Week</SelectItem>
-            <SelectItem value="month">Month</SelectItem>
+            <SelectItem value="day">Day View</SelectItem>
+            <SelectItem value="week">Week View</SelectItem>
+            <SelectItem value="month">Month View</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -23,7 +23,7 @@ export function usePermissions() {
     can: {
       // Project permissions
       createProject: true,
-      editProject: isAdmin,
+      editProject: true,
       deleteProject: true,
       viewProject: true,
 

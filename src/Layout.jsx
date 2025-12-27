@@ -316,45 +316,66 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <ConfirmProvider>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <div className="min-h-screen bg-gray-50 text-gray-900">
+        <style>{`
+          :root {
+            --background: 0 0% 98%;
+            --foreground: 0 0% 10%;
+            --card: 0 0% 100%;
+            --card-foreground: 0 0% 10%;
+            --primary: 199 89% 48%;
+            --primary-foreground: 0 0% 100%;
+            --secondary: 0 0% 96%;
+            --secondary-foreground: 0 0% 10%;
+            --muted: 0 0% 96%;
+            --muted-foreground: 0 0% 45%;
+            --accent: 199 89% 48%;
+            --accent-foreground: 0 0% 100%;
+            --destructive: 0 84% 60%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 0 0% 90%;
+            --input: 0 0% 90%;
+            --ring: 199 89% 48%;
+          }
+        `}</style>
         <Toaster />
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-zinc-400 hover:text-white"
+            className="p-2 text-gray-600 hover:text-gray-900"
           >
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-              <Building2 size={18} className="text-black" />
+            <div className="w-8 h-8 bg-cyan-500 rounded flex items-center justify-center">
+              <Building2 size={18} className="text-white" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-white">SteelBuild Pro</span>
+            <span className="font-bold text-lg tracking-tight text-gray-900">SteelBuild Pro</span>
           </div>
         </div>
 
         {currentUser && (
           <DropdownMenu>
             <DropdownMenuTrigger className="p-2">
-              <UserCircle size={24} className="text-zinc-400" />
+              <UserCircle size={24} className="text-gray-600" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
+            <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-gray-900">
                   {currentUser.full_name || currentUser.email}
                 </p>
-                <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
+                <p className="text-xs text-gray-500 capitalize">{currentUser.role}</p>
               </div>
-              <DropdownMenuSeparator className="bg-zinc-800" />
-              <DropdownMenuItem asChild className="text-white hover:text-white">
+              <DropdownMenuSeparator className="bg-gray-200" />
+              <DropdownMenuItem asChild className="text-gray-900">
                 <Link to={createPageUrl('Settings')}>
                   <Settings size={16} className="mr-2" />
                   Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
+              <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:text-red-700">
                 <LogOut size={16} className="mr-2" />
                 Logout
               </DropdownMenuItem>

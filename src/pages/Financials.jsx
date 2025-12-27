@@ -399,39 +399,39 @@ export default function Financials() {
     return financials.filter(f => f && f.project_id === selectedProject);
   }, [financials, selectedProject]);
 
-  // Calculate totals - roll up expenses into actual amounts by project and cost code
+  // Calculate totals from budget lines with expenses already rolled up
   const totals = useMemo(() => {
-    if (!filteredFinancials || filteredFinancials.length === 0) {
-      return { budget: 0, committed: 0, actual: 0, forecast: 0, count: 0 };
+    if (!budgetLinesWithExpenses || budgetLinesWithExpenses.length === 0) {
+      return { budget: 0, committed: 0, actual: 0, forecast: 0, remaining: 0 };
     }
 
-    const baseTotals = calculateFinancialTotals(filteredFinancials);
-    
-    // Filter expenses by selected project
-    const filteredExpenses = selectedProject === 'all' 
-      ? expenses 
-      : expenses.filter(e => e && e.project_id === selectedProject);
-    
-    // Roll up expenses into actual costs - only paid or approved
-    let totalExpensesActual = 0;
-    filteredExpenses.forEach(expense => {
-      if (expense && (expense.payment_status === 'paid' || expense.payment_status === 'approved')) {
-        totalExpensesActual += Number(expense.amount) || 0;
-      }
+    let budget = 0;
+    let committed = 0;
+    let actual = 0;
+    let forecast = 0;
+
+    budgetLinesWithExpenses.forEach(financial => {
+      budget += Number(financial.budget_amount) || 0;
+      committed += Number(financial.committed_amount) || 0;
+      actual += Number(financial.actual_amount) || 0;
+      forecast += Number(financial.forecast_amount) || 0;
     });
     
+    const remaining = budget - actual;
+    
     return {
-      ...baseTotals,
-      actual: Number(baseTotals.actual) + totalExpensesActual
+      budget,
+      committed,
+      actual,
+      forecast,
+      remaining,
+      count: budgetLinesWithExpenses.length
     };
-  }, [filteredFinancials, expenses, selectedProject]);
+  }, [budgetLinesWithExpenses]);
 
-  const varianceMetrics = useMemo(() => {
-    return calculateVariance(totals.budget, totals.actual);
-  }, [totals.budget, totals.actual]);
-
-  const variance = varianceMetrics.variance;
-  const variancePercent = varianceMetrics.variancePercent;
+  // Calculate variance metrics
+  const variance = totals.budget - totals.actual;
+  const variancePercent = totals.budget > 0 ? ((variance / totals.budget) * 100) : 0;
 
   // Enhanced budget lines with expense rollup
   const budgetLinesWithExpenses = useMemo(() => {
@@ -784,10 +784,10 @@ export default function Financials() {
                 };
               }
               budgetsByProject[projectId].lines.push(financial);
-              budgetsByProject[projectId].budget += financial.budget_amount || 0;
-              budgetsByProject[projectId].committed += financial.committed_amount || 0;
-              budgetsByProject[projectId].actual += financial.actual_amount || 0;
-              budgetsByProject[projectId].forecast += financial.forecast_amount || 0;
+              budgetsByProject[projectId].budget += Number(financial.budget_amount) || 0;
+              budgetsByProject[projectId].committed += Number(financial.committed_amount) || 0;
+              budgetsByProject[projectId].actual += Number(financial.actual_amount) || 0;
+              budgetsByProject[projectId].forecast += Number(financial.forecast_amount) || 0;
             });
 
             const projectGroups = Object.values(budgetsByProject);
@@ -811,7 +811,7 @@ export default function Financials() {
               <div className="space-y-2">
                 {projectGroups.map(projectGroup => {
                   const remaining = projectGroup.budget - projectGroup.actual;
-                  const variance = projectGroup.budget - projectGroup.actual;
+                  const percentSpent = projectGroup.budget > 0 ? ((projectGroup.actual / projectGroup.budget) * 100) : 0;
                   return (
                     <div key={projectGroup.projectId} className="border border-zinc-800 rounded-lg overflow-hidden">
                       <button

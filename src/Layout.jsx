@@ -387,7 +387,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-zinc-900 border-r border-zinc-800 transition-transform duration-200',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-gray-700 border-r border-gray-600 transition-transform duration-200 shadow-lg',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -412,8 +412,8 @@ export default function Layout({ children, currentPageName }) {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                    ? 'bg-gray-800 text-white'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-600'
                 )}
               >
                 <Icon size={18} />
@@ -425,26 +425,26 @@ export default function Layout({ children, currentPageName }) {
         </nav>
 
         {currentUser && (
-          <div className="border-t border-zinc-800 p-3">
+          <div className="border-t border-gray-600 p-3">
             <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800">
-                <UserCircle size={18} className="text-amber-500" />
+              <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-600">
+                <UserCircle size={18} className="text-gray-300" />
                 <div className="flex-1 text-left">
                   <p className="text-sm font-medium truncate text-white">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
+                  <p className="text-xs text-gray-400 capitalize">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
-                <DropdownMenuItem asChild className="text-white hover:text-white">
+              <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200">
+                <DropdownMenuItem asChild className="text-gray-900">
                   <Link to={createPageUrl('Settings')}>
                     <Settings size={16} className="mr-2" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
+                <DropdownMenuSeparator className="bg-gray-200" />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:text-red-700">
                   <LogOut size={16} className="mr-2" />
                   Logout
                 </DropdownMenuItem>

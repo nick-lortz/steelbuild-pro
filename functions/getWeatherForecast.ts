@@ -14,16 +14,25 @@ Deno.serve(async (req) => {
 
     const apiKey = Deno.env.get('OPENWEATHER_API_KEY');
     if (!apiKey) {
-      return Response.json({ error: 'Weather API key not configured' }, { status: 500 });
+      return Response.json({ 
+        error: 'Weather API key not configured. Please set OPENWEATHER_API_KEY in Settings > Environment Variables.' 
+      }, { status: 500 });
     }
 
     // Get coordinates from location
     const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${apiKey}`;
     const geoResponse = await fetch(geoUrl);
+    
+    if (!geoResponse.ok) {
+      return Response.json({ 
+        error: `OpenWeather API error: ${geoResponse.status} - ${geoResponse.statusText}. Check your API key.` 
+      }, { status: 500 });
+    }
+    
     const geoData = await geoResponse.json();
 
     if (!geoData || geoData.length === 0) {
-      return Response.json({ error: 'Location not found' }, { status: 404 });
+      return Response.json({ error: `Location not found: ${location}` }, { status: 404 });
     }
 
     const { lat, lon } = geoData[0];
@@ -31,7 +40,18 @@ Deno.serve(async (req) => {
     // Get 5-day forecast
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`;
     const forecastResponse = await fetch(forecastUrl);
+    
+    if (!forecastResponse.ok) {
+      return Response.json({ 
+        error: `Weather forecast API error: ${forecastResponse.status}` 
+      }, { status: 500 });
+    }
+    
     const forecastData = await forecastResponse.json();
+    
+    if (!forecastData.list || forecastData.list.length === 0) {
+      return Response.json({ error: 'No forecast data available' }, { status: 500 });
+    }
 
     // Process forecast data
     const dailyForecasts = [];

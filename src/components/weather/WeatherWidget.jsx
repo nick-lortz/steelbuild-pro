@@ -104,13 +104,18 @@ export default function WeatherWidget({ tasks, projectLocation }) {
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Cloud size={18} />
+            <AlertTriangle size={18} className="text-amber-500" />
             Weather Forecast
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-red-400 text-sm">Failed to load weather data</p>
-          <p className="text-zinc-500 text-xs mt-1">{error.message}</p>
+        <CardContent className="space-y-2">
+          <p className="text-red-400 text-sm font-medium">Failed to load weather data</p>
+          <p className="text-zinc-400 text-xs">{error.message}</p>
+          <p className="text-zinc-500 text-xs mt-2">
+            Set OPENWEATHER_API_KEY in Settings → Environment Variables.
+            <br />
+            Get a free key at: openweathermap.org/api
+          </p>
         </CardContent>
       </Card>
     );

@@ -130,7 +130,7 @@ export default function GanttChart({
               <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-3 font-medium text-xs text-zinc-400">
                 TASK NAME
               </div>
-              <div className="flex flex-1">
+              <div className="flex flex-1 relative">
                 {periods.map((date, idx) => (
                   <div 
                     key={idx} 
@@ -147,6 +147,14 @@ export default function GanttChart({
                     )}
                   </div>
                 ))}
+                
+                {/* Today indicator in header */}
+                {todayPosition >= 0 && todayPosition <= 100 && (
+                  <div
+                    className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-20"
+                    style={{ left: `${todayPosition}%` }}
+                  />
+                )}
               </div>
             </div>
 
@@ -209,7 +217,13 @@ export default function GanttChart({
                             />
                           ))}
 
-
+                          {/* Today indicator line */}
+                          {todayPosition >= 0 && todayPosition <= 100 && (
+                            <div
+                              className="absolute top-0 bottom-0 w-0.5 bg-amber-500/70 z-10"
+                              style={{ left: `${todayPosition}%` }}
+                            />
+                          )}
 
                           {/* Baseline (if exists) */}
                           {task.baseline_start && task.baseline_end && (
@@ -287,6 +301,10 @@ export default function GanttChart({
 
         {/* Legend */}
         <div className="border-t border-zinc-800 p-4 flex flex-wrap gap-4 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-0.5 h-4 bg-amber-500" />
+            <span className="font-medium text-amber-400">Today</span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-red-500 rounded" />
             <span>Critical Path</span>

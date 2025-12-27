@@ -316,6 +316,7 @@ export default function Dashboard() {
         drawings={drawings}
         rfis={rfis}
         tasks={tasks}
+        expenses={expenses}
       />
 
       {/* Progress Cards */}

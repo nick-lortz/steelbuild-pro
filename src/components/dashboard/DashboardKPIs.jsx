@@ -2,15 +2,23 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, DollarSign, FileText, MessageSquareWarning, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
-export default function DashboardKPIs({ projects, financials, drawings, rfis, tasks }) {
+export default function DashboardKPIs({ projects, financials, drawings, rfis, tasks, expenses = [] }) {
   const activeProjects = projects.filter(p => 
     p.status === 'in_progress' || p.status === 'awarded'
   ).length;
 
-  const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-  const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-  const variance = totalBudget - totalActual;
-  const variancePercent = totalBudget > 0 ? ((variance / totalBudget) * 100) : 0;
+  const totalBudget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+  const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
+  const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+  
+  // Add expenses to actual
+  const actualFromExpenses = expenses
+    .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  
+  const totalActual = actualFromFinancials + actualFromExpenses;
+  const remaining = totalBudget - totalActual;
+  const variancePercent = totalBudget > 0 ? ((remaining / totalBudget) * 100) : 0;
 
   const pendingDrawings = drawings.filter(d => d.status !== 'FFF' && d.status !== 'As-Built').length;
   
@@ -41,12 +49,12 @@ export default function DashboardKPIs({ projects, financials, drawings, rfis, ta
       bgColor: 'bg-amber-500/20',
     },
     {
-      title: 'Budget Variance',
-      value: `${variance >= 0 ? '+' : ''}$${Math.abs(variance).toLocaleString()}`,
-      subtitle: `${variancePercent.toFixed(1)}%`,
-      icon: variance >= 0 ? TrendingUp : TrendingDown,
-      color: variance >= 0 ? 'text-green-400' : 'text-red-400',
-      bgColor: variance >= 0 ? 'bg-green-500/20' : 'bg-red-500/20',
+      title: 'Remaining Budget',
+      value: `$${Math.abs(remaining).toLocaleString()}`,
+      subtitle: `${Math.abs(variancePercent).toFixed(1)}% ${remaining >= 0 ? 'remaining' : 'over'}`,
+      icon: remaining >= 0 ? TrendingUp : TrendingDown,
+      color: remaining >= 0 ? 'text-green-400' : 'text-red-400',
+      bgColor: remaining >= 0 ? 'bg-green-500/20' : 'bg-red-500/20',
     },
     {
       title: 'Pending Drawings',

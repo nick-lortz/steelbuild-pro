@@ -33,22 +33,38 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
     const projectTasks = tasks.filter(t => t.project_id === project.id);
     if (projectTasks.length === 0) return 0;
     
-    const totalProgress = projectTasks.reduce((sum, t) => sum + (t.progress_percent || 0), 0);
-    return Math.round(totalProgress / projectTasks.length);
+    // Calculate weighted average based on task hours
+    const totalHours = projectTasks.reduce((sum, t) => sum + (t.estimated_hours || 1), 0);
+    if (totalHours === 0) {
+      // Fall back to simple average if no hours defined
+      const totalProgress = projectTasks.reduce((sum, t) => sum + (t.progress_percent || 0), 0);
+      return Math.round(totalProgress / projectTasks.length);
+    }
+    
+    const weightedProgress = projectTasks.reduce((sum, t) => {
+      const weight = (t.estimated_hours || 1) / totalHours;
+      return sum + ((t.progress_percent || 0) * weight);
+    }, 0);
+    
+    return Math.round(weightedProgress);
   };
 
   const getProjectFinancials = (project) => {
     const projectFinancials = financials.filter(f => f.project_id === project.id);
-    const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const budget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+    const committed = projectFinancials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
+    const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+    
+    // Roll up expenses for this project
     const actualFromExpenses = expenses
       .filter(e => e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    
     const actual = actualFromFinancials + actualFromExpenses;
-    const variance = budget - actual;
-    const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
+    const remaining = budget - actual;
+    const variancePercent = budget > 0 ? ((remaining / budget) * 100) : 0;
 
-    return { budget, actual, variance, variancePercent };
+    return { budget, committed, actual, remaining, variancePercent };
   };
 
   const healthColors = {
@@ -103,15 +119,19 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
               </div>
 
               {/* Financial Summary */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="p-2 bg-zinc-800/50 rounded">
                   <p className="text-xs text-zinc-500">Budget</p>
                   <p className="text-sm font-medium text-white">${finances.budget.toLocaleString()}</p>
                 </div>
                 <div className="p-2 bg-zinc-800/50 rounded">
-                  <p className="text-xs text-zinc-500">Variance</p>
-                  <p className={`text-sm font-medium ${finances.variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {finances.variance >= 0 ? '+' : ''}${Math.abs(finances.variance).toLocaleString()}
+                  <p className="text-xs text-zinc-500">Actual</p>
+                  <p className="text-sm font-medium text-amber-400">${finances.actual.toLocaleString()}</p>
+                </div>
+                <div className="p-2 bg-zinc-800/50 rounded">
+                  <p className="text-xs text-zinc-500">Remaining</p>
+                  <p className={`text-sm font-medium ${finances.remaining >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    ${Math.abs(finances.remaining).toLocaleString()}
                   </p>
                 </div>
               </div>

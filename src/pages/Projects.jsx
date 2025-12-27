@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,16 +31,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 
 const initialFormState = {
   project_number: '',
@@ -66,9 +58,9 @@ export default function Projects() {
   const [formData, setFormData] = useState(initialFormState);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [deleteProject, setDeleteProject] = useState(null);
 
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
@@ -105,13 +97,25 @@ export default function Projects() {
     mutationFn: (id) => base44.entities.Project.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      setDeleteProject(null);
       toast.success('Project deleted successfully');
     },
     onError: (error) => {
       toast.error('Failed to delete project: ' + error.message);
     },
   });
+
+  const handleDelete = async (project) => {
+    const confirmed = await confirm({
+      title: 'Delete Project?',
+      description: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will affect all related data.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+
+    if (confirmed) {
+      deleteMutation.mutate(project.id);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -195,7 +199,7 @@ export default function Projects() {
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            setDeleteProject(row);
+            handleDelete(row);
           }}
           className="text-zinc-500 hover:text-red-500"
         >
@@ -292,28 +296,7 @@ export default function Projects() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteProject} onOpenChange={() => setDeleteProject(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Project?</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete "{deleteProject?.name}"? This action cannot be undone and will affect all related data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteMutation.mutate(deleteProject.id)}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
     </div>
   );
 }

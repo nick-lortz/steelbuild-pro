@@ -267,8 +267,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/Toaster';
+      import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 
-const navItems = [
+      const navItems = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
   { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
   { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
@@ -314,8 +315,9 @@ export default function Layout({ children, currentPageName }) {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <Toaster />
+    <ConfirmProvider>
+      <div className="min-h-screen bg-zinc-950 text-zinc-100">
+        <Toaster />
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
@@ -441,6 +443,7 @@ export default function Layout({ children, currentPageName }) {
       <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
         <div className="p-4 lg:p-6">{children}</div>
       </main>
-    </div>
-  );
+      </div>
+      </ConfirmProvider>
+      );
 }

@@ -668,12 +668,12 @@ export default function Financials() {
               icon={DollarSign}
             />
             <KPICard
-              title="Variance"
-              value={`${variance >= 0 ? '+' : ''}$${Math.abs(variance).toLocaleString()}`}
-              trend={variance >= 0 ? 'up' : 'down'}
-              trendValue={`${variancePercent.toFixed(1)}%`}
-              icon={variance >= 0 ? TrendingUp : TrendingDown}
-              variant={variance >= 0 ? 'green' : 'red'}
+              title="Remaining Budget"
+              value={`$${totals.remaining.toLocaleString()}`}
+              trend={totals.remaining >= 0 ? 'up' : 'down'}
+              trendValue={`${Math.abs(variancePercent).toFixed(1)}%`}
+              icon={totals.remaining >= 0 ? TrendingUp : TrendingDown}
+              variant={totals.remaining >= 0 ? 'green' : 'red'}
             />
           </div>
 
@@ -739,12 +739,12 @@ export default function Financials() {
               icon={DollarSign}
             />
             <KPICard
-              title="Variance"
-              value={`${variance >= 0 ? '+' : ''}$${Math.abs(variance).toLocaleString()}`}
-              trend={variance >= 0 ? 'up' : 'down'}
-              trendValue={`${variancePercent.toFixed(1)}%`}
-              icon={variance >= 0 ? TrendingUp : TrendingDown}
-              variant={variance >= 0 ? 'green' : 'red'}
+              title="Remaining Budget"
+              value={`$${totals.remaining.toLocaleString()}`}
+              trend={totals.remaining >= 0 ? 'up' : 'down'}
+              trendValue={`${Math.abs(variancePercent).toFixed(1)}%`}
+              icon={totals.remaining >= 0 ? TrendingUp : TrendingDown}
+              variant={totals.remaining >= 0 ? 'green' : 'red'}
             />
           </div>
 

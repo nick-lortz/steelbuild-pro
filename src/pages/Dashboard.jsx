@@ -40,6 +40,20 @@ import DashboardKPIs from '@/components/dashboard/DashboardKPIs';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 
+function formatFinancial(value) {
+  if (!value || value === 0) return '$0';
+  
+  const absValue = Math.abs(value);
+  
+  if (absValue >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (absValue >= 1000) {
+    return `$${(value / 1000).toFixed(2)}K`;
+  }
+  
+  return `$${value.toFixed(0)}`;
+}
+
 function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "default", onClick }) {
   const bgColors = {
     default: "bg-zinc-900 border-zinc-800",
@@ -340,7 +354,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-zinc-400 text-sm">Committed</p>
                 <p className="text-xl font-bold text-white">
-                  ${(totalCommitted / 1000).toFixed(0)}K
+                  {formatFinancial(totalCommitted)}
                 </p>
               </div>
               <Activity className="text-zinc-500" size={20} />
@@ -353,7 +367,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-zinc-400 text-sm">Forecast</p>
                 <p className="text-xl font-bold text-amber-400">
-                  ${totalForecast > 0 ? (totalForecast / 1000).toFixed(0) : ((totalActual + totalCommitted) / 1000).toFixed(0)}K
+                  {formatFinancial(totalForecast > 0 ? totalForecast : (totalActual + totalCommitted))}
                 </p>
               </div>
               <TrendingUp className="text-amber-500" size={20} />
@@ -459,21 +473,21 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">Total Budget</span>
-                  <span className="text-xl font-bold text-white">${(totalBudget / 1000).toFixed(0)}K</span>
+                  <span className="text-xl font-bold text-white">{formatFinancial(totalBudget)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">Actual Spent</span>
-                  <span className="text-xl font-bold text-amber-400">${(totalActual / 1000).toFixed(0)}K</span>
+                  <span className="text-xl font-bold text-amber-400">{formatFinancial(totalActual)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">Committed</span>
-                  <span className="text-xl font-bold text-blue-400">${(totalCommitted / 1000).toFixed(0)}K</span>
+                  <span className="text-xl font-bold text-blue-400">{formatFinancial(totalCommitted)}</span>
                 </div>
                 <div className="h-px bg-zinc-800" />
                 <div className="flex justify-between items-center">
                   <span className="text-zinc-400">Remaining</span>
                   <span className={`text-xl font-bold ${budgetVariance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    ${Math.abs(budgetVariance / 1000).toFixed(0)}K
+                    {formatFinancial(Math.abs(budgetVariance))}
                   </span>
                 </div>
                 <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">

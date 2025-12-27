@@ -22,9 +22,9 @@ export function usePermissions() {
     isUser,
     can: {
       // Project permissions
-      createProject: isAdmin,
+      createProject: true,
       editProject: isAdmin,
-      deleteProject: isAdmin,
+      deleteProject: true,
       viewProject: true,
 
       // Financial permissions

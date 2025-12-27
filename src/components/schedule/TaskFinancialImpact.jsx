@@ -1,60 +1,93 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, TrendingUp, TrendingDown, DollarSign, Clock } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 export default function TaskFinancialImpact({ tasks, changeOrders }) {
-  // Calculate financial impacts from tasks
-  const taskMetrics = tasks.reduce((acc, task) => {
-    const costVariance = (task.actual_cost || 0) - (task.estimated_cost || 0);
-    const hoursVariance = (task.actual_hours || 0) - (task.estimated_hours || 0);
-    
-    return {
-      totalEstimatedCost: acc.totalEstimatedCost + (task.estimated_cost || 0),
-      totalActualCost: acc.totalActualCost + (task.actual_cost || 0),
-      totalEstimatedHours: acc.totalEstimatedHours + (task.estimated_hours || 0),
-      totalActualHours: acc.totalActualHours + (task.actual_hours || 0),
-      overBudgetTasks: costVariance > 0 ? acc.overBudgetTasks + 1 : acc.overBudgetTasks,
-      underBudgetTasks: costVariance < 0 ? acc.underBudgetTasks + 1 : acc.underBudgetTasks,
-      tasksWithCO: task.linked_co_ids?.length > 0 ? acc.tasksWithCO + 1 : acc.tasksWithCO,
-    };
-  }, {
-    totalEstimatedCost: 0,
-    totalActualCost: 0,
-    totalEstimatedHours: 0,
-    totalActualHours: 0,
-    overBudgetTasks: 0,
-    underBudgetTasks: 0,
-    tasksWithCO: 0,
-  });
+  // Calculate financial impacts from tasks with memoization
+  const taskMetrics = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      const estimatedCost = task.estimated_cost || 0;
+      const actualCost = task.actual_cost || 0;
+      const progress = (task.progress_percent || 0) / 100;
+      
+      // Calculate Earned Value (EV) based on progress
+      const earnedValue = estimatedCost * progress;
+      
+      const costVariance = actualCost - estimatedCost;
+      const hoursVariance = (task.actual_hours || 0) - (task.estimated_hours || 0);
+      
+      return {
+        totalEstimatedCost: acc.totalEstimatedCost + estimatedCost,
+        totalActualCost: acc.totalActualCost + actualCost,
+        totalEarnedValue: acc.totalEarnedValue + earnedValue,
+        totalEstimatedHours: acc.totalEstimatedHours + (task.estimated_hours || 0),
+        totalActualHours: acc.totalActualHours + (task.actual_hours || 0),
+        overBudgetTasks: costVariance > 0 ? acc.overBudgetTasks + 1 : acc.overBudgetTasks,
+        underBudgetTasks: costVariance < 0 ? acc.underBudgetTasks + 1 : acc.underBudgetTasks,
+        tasksWithCO: task.linked_co_ids?.length > 0 ? acc.tasksWithCO + 1 : acc.tasksWithCO,
+      };
+    }, {
+      totalEstimatedCost: 0,
+      totalActualCost: 0,
+      totalEarnedValue: 0,
+      totalEstimatedHours: 0,
+      totalActualHours: 0,
+      overBudgetTasks: 0,
+      underBudgetTasks: 0,
+      tasksWithCO: 0,
+    });
+  }, [tasks]);
 
-  const costVariance = taskMetrics.totalActualCost - taskMetrics.totalEstimatedCost;
-  const costVariancePercent = taskMetrics.totalEstimatedCost > 0 
-    ? (costVariance / taskMetrics.totalEstimatedCost) * 100 
-    : 0;
+  // Cost Variance (CV) = Budgeted - Actual (negative = over budget, positive = under budget)
+  const costVariance = useMemo(() => 
+    taskMetrics.totalEstimatedCost - taskMetrics.totalActualCost,
+    [taskMetrics]
+  );
+  
+  const costVariancePercent = useMemo(() => 
+    taskMetrics.totalEstimatedCost > 0 
+      ? (costVariance / taskMetrics.totalEstimatedCost) * 100 
+      : 0,
+    [costVariance, taskMetrics.totalEstimatedCost]
+  );
 
-  const hoursVariance = taskMetrics.totalActualHours - taskMetrics.totalEstimatedHours;
-  const hoursVariancePercent = taskMetrics.totalEstimatedHours > 0 
-    ? (hoursVariance / taskMetrics.totalEstimatedHours) * 100 
-    : 0;
+  // Hours Variance = Estimated - Actual
+  const hoursVariance = useMemo(() =>
+    taskMetrics.totalEstimatedHours - taskMetrics.totalActualHours,
+    [taskMetrics]
+  );
+  
+  const hoursVariancePercent = useMemo(() =>
+    taskMetrics.totalEstimatedHours > 0 
+      ? (hoursVariance / taskMetrics.totalEstimatedHours) * 100 
+      : 0,
+    [hoursVariance, taskMetrics.totalEstimatedHours]
+  );
 
-  // Calculate CPI (Cost Performance Index)
-  const cpi = taskMetrics.totalActualCost > 0 
-    ? taskMetrics.totalEstimatedCost / taskMetrics.totalActualCost 
-    : 1;
+  // CPI (Cost Performance Index) = Earned Value / Actual Cost
+  // CPI > 1: Under budget, CPI < 1: Over budget
+  const cpi = useMemo(() => 
+    taskMetrics.totalActualCost > 0 
+      ? taskMetrics.totalEarnedValue / taskMetrics.totalActualCost 
+      : 1,
+    [taskMetrics]
+  );
 
   const cpiStatus = cpi >= 1 ? 'On Budget' : cpi >= 0.9 ? 'At Risk' : 'Over Budget';
   const cpiColor = cpi >= 1 ? 'text-green-400' : cpi >= 0.9 ? 'text-amber-400' : 'text-red-400';
 
   // Calculate change order impacts on tasks
-  const coImpacts = tasks.reduce((total, task) => {
-    if (task.linked_co_ids?.length > 0) {
-      const taskCOs = changeOrders.filter(co => task.linked_co_ids.includes(co.id));
-      return total + taskCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-    }
-    return total;
-  }, 0);
+  const coImpacts = useMemo(() => {
+    return tasks.reduce((total, task) => {
+      if (task.linked_co_ids?.length > 0) {
+        const taskCOs = changeOrders.filter(co => task.linked_co_ids.includes(co.id));
+        return total + taskCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+      }
+      return total;
+    }, 0);
+  }, [tasks, changeOrders]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -66,16 +99,19 @@ export default function TaskFinancialImpact({ tasks, changeOrders }) {
         <CardContent>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className={`text-2xl font-bold ${costVariance >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+              <span className={`text-2xl font-bold ${costVariance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {costVariance >= 0 ? '+' : ''}${Math.abs(costVariance).toLocaleString()}
               </span>
-              {costVariance >= 0 ? <TrendingUp className="text-red-400" /> : <TrendingDown className="text-green-400" />}
+              {costVariance >= 0 ? <TrendingDown className="text-green-400" /> : <TrendingUp className="text-red-400" />}
             </div>
             <p className="text-xs text-zinc-500">
-              {Math.abs(costVariancePercent).toFixed(1)}% {costVariance >= 0 ? 'over' : 'under'} estimate
+              {Math.abs(costVariancePercent).toFixed(1)}% {costVariance >= 0 ? 'under' : 'over'} budget
             </p>
             <div className="text-xs text-zinc-600">
-              Actual: ${taskMetrics.totalActualCost.toLocaleString()} / Est: ${taskMetrics.totalEstimatedCost.toLocaleString()}
+              Budget: ${taskMetrics.totalEstimatedCost.toLocaleString()} / Actual: ${taskMetrics.totalActualCost.toLocaleString()}
+            </div>
+            <div className="text-xs text-zinc-600">
+              Earned Value: ${taskMetrics.totalEarnedValue.toLocaleString()}
             </div>
           </div>
         </CardContent>
@@ -89,16 +125,16 @@ export default function TaskFinancialImpact({ tasks, changeOrders }) {
         <CardContent>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className={`text-2xl font-bold ${hoursVariance >= 0 ? 'text-red-400' : 'text-green-400'}`}>
+              <span className={`text-2xl font-bold ${hoursVariance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {hoursVariance >= 0 ? '+' : ''}{Math.abs(hoursVariance).toLocaleString()}h
               </span>
-              <Clock className={hoursVariance >= 0 ? 'text-red-400' : 'text-green-400'} />
+              <Clock className={hoursVariance >= 0 ? 'text-green-400' : 'text-red-400'} />
             </div>
             <p className="text-xs text-zinc-500">
-              {Math.abs(hoursVariancePercent).toFixed(1)}% {hoursVariance >= 0 ? 'over' : 'under'} estimate
+              {Math.abs(hoursVariancePercent).toFixed(1)}% {hoursVariance >= 0 ? 'under' : 'over'} estimate
             </p>
             <div className="text-xs text-zinc-600">
-              Actual: {taskMetrics.totalActualHours.toLocaleString()}h / Est: {taskMetrics.totalEstimatedHours.toLocaleString()}h
+              Est: {taskMetrics.totalEstimatedHours.toLocaleString()}h / Actual: {taskMetrics.totalActualHours.toLocaleString()}h
             </div>
           </div>
         </CardContent>

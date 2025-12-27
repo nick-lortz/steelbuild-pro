@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +62,7 @@ export default function Projects() {
 
   const queryClient = useQueryClient();
   const { confirm } = useConfirm();
+  const { can } = usePermissions();
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
@@ -105,6 +107,11 @@ export default function Projects() {
   });
 
   const handleDelete = async (project) => {
+    if (!can.deleteProject) {
+      toast.error('You do not have permission to delete projects');
+      return;
+    }
+
     const confirmed = await confirm({
       title: 'Delete Project?',
       description: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will affect all related data.`,
@@ -117,8 +124,31 @@ export default function Projects() {
     }
   };
 
+  const handleEdit = (project) => {
+    if (!can.editProject) {
+      toast.error('You do not have permission to edit projects');
+      return;
+    }
+    setFormData({
+      ...project,
+      contract_value: project.contract_value?.toString() || '',
+    });
+    setSelectedProject(project);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (selectedProject && !can.editProject) {
+      toast.error('You do not have permission to edit projects');
+      return;
+    }
+
+    if (!selectedProject && !can.createProject) {
+      toast.error('You do not have permission to create projects');
+      return;
+    }
+
     const data = {
       ...formData,
       contract_value: formData.contract_value ? parseFloat(formData.contract_value) : null,
@@ -131,13 +161,7 @@ export default function Projects() {
     }
   };
 
-  const handleEdit = (project) => {
-    setFormData({
-      ...project,
-      contract_value: project.contract_value?.toString() || '',
-    });
-    setSelectedProject(project);
-  };
+
 
   const filteredProjects = projects.filter(p => {
     const matchesSearch = 
@@ -194,17 +218,19 @@ export default function Projects() {
       header: '',
       accessor: 'actions',
       render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDelete(row);
-          }}
-          className="text-zinc-500 hover:text-red-500"
-        >
-          <Trash2 size={16} />
-        </Button>
+        can.deleteProject && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row);
+            }}
+            className="text-zinc-500 hover:text-red-500"
+          >
+            <Trash2 size={16} />
+          </Button>
+        )
       ),
     },
   ];
@@ -215,16 +241,18 @@ export default function Projects() {
         title="Projects"
         subtitle={`${projects.length} total projects`}
         actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Project
-          </Button>
+          can.createProject && (
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              New Project
+            </Button>
+          )
         }
       />
 
@@ -259,7 +287,7 @@ export default function Projects() {
       <DataTable
         columns={columns}
         data={filteredProjects}
-        onRowClick={handleEdit}
+        onRowClick={can.editProject ? handleEdit : undefined}
         emptyMessage="No projects found. Create your first project to get started."
       />
 

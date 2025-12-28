@@ -158,8 +158,8 @@ export default function ChangeOrders() {
     return matchesSearch && matchesStatus && matchesProject;
   }).sort((a, b) => (a.co_number || 0) - (b.co_number || 0));
 
-  // Calculate totals
-  const totals = filteredCOs.reduce((acc, co) => {
+  // Calculate totals - ensure we have an array before reducing
+  const totals = (filteredCOs || []).reduce((acc, co) => {
     if (co.status === 'approved') {
       return {
         approved: acc.approved + (co.cost_impact || 0),

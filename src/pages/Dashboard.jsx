@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -94,23 +94,7 @@ function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "defa
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [dateRange, setDateRange] = useState('all');
   
-  const getDateFilter = () => {
-    const now = new Date();
-    switch (dateRange) {
-      case 'week':
-        return { start: subDays(now, 7), end: now };
-      case 'month':
-        return { start: startOfMonth(now), end: endOfMonth(now) };
-      case '30days':
-        return { start: subDays(now, 30), end: now };
-      default:
-        return null;
-    }
-  };
-
-  const dateFilter = getDateFilter();
   const [widgetConfig, setWidgetConfig] = useState({
     showFinancial: true,
     showSafety: true,
@@ -452,7 +436,11 @@ export default function Dashboard() {
                     const spendPercent = projectBudget > 0 ? ((projectActual / projectBudget) * 100).toFixed(0) : 0;
                     
                     return (
-                      <div key={project.id} className="p-4">
+                      <div 
+                        key={project.id} 
+                        className="p-4 hover:bg-red-500/5 cursor-pointer transition-colors"
+                        onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <div>
                             <p className="font-medium text-white">{project.name}</p>
@@ -536,7 +524,17 @@ export default function Dashboard() {
           {/* Change Order Chart */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white">Change Orders by Status</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold text-white">Change Orders by Status</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(createPageUrl('ChangeOrders'))}
+                  className="text-amber-500 hover:text-amber-400 text-xs"
+                >
+                  View All →
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={250}>
@@ -550,6 +548,8 @@ export default function Dashboard() {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
+                    onClick={() => navigate(createPageUrl('ChangeOrders'))}
+                    style={{ cursor: 'pointer' }}
                   >
                     {coChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -564,7 +564,17 @@ export default function Dashboard() {
           {/* Project Status Chart */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white">Project Status Distribution</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold text-white">Project Status Distribution</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(createPageUrl('Projects'))}
+                  className="text-amber-500 hover:text-amber-400 text-xs"
+                >
+                  View All →
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={250}>
@@ -573,7 +583,12 @@ export default function Dashboard() {
                   <XAxis dataKey="name" stroke="#a1a1aa" />
                   <YAxis stroke="#a1a1aa" />
                   <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
-                  <Bar dataKey="value" fill="#f59e0b" />
+                  <Bar 
+                    dataKey="value" 
+                    fill="#f59e0b"
+                    onClick={() => navigate(createPageUrl('Projects'))}
+                    style={{ cursor: 'pointer' }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -716,17 +731,17 @@ export default function Dashboard() {
             ) : (
               <div className="divide-y divide-zinc-800">
                 {activeProjects.slice(0, 5).map((project) => (
-                  <Link 
+                  <div
                     key={project.id}
-                    to={createPageUrl(`Projects?id=${project.id}`)}
-                    className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors"
+                    onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
+                    className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer"
                   >
                     <div>
                       <p className="font-medium text-white">{project.name}</p>
                       <p className="text-sm text-zinc-400">{project.project_number} • {project.client}</p>
                     </div>
                     <StatusBadge status={project.status} />
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}

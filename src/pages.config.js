@@ -13,6 +13,7 @@ import LandingPage from './pages/LandingPage';
 import Meetings from './pages/Meetings';
 import Performance from './pages/Performance';
 import ProductionMeetings from './pages/ProductionMeetings';
+import ProjectDashboard from './pages/ProjectDashboard';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
@@ -20,7 +21,6 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
-import ProjectDashboard from './pages/ProjectDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +40,7 @@ export const PAGES = {
     "Meetings": Meetings,
     "Performance": Performance,
     "ProductionMeetings": ProductionMeetings,
+    "ProjectDashboard": ProjectDashboard,
     "Projects": Projects,
     "RFIs": RFIs,
     "Reports": Reports,
@@ -47,7 +48,6 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
-    "ProjectDashboard": ProjectDashboard,
 }
 
 export const pagesConfig = {

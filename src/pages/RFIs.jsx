@@ -238,13 +238,19 @@ export default function RFIs() {
       accessor: 'due_date',
       render: (row) => {
         if (!row.due_date) return '-';
-        const isOverdue = new Date(row.due_date) < new Date() && row.status !== 'answered' && row.status !== 'closed';
-        return (
-          <span className={isOverdue ? 'text-red-400 flex items-center gap-1' : ''}>
-            {isOverdue && <AlertTriangle size={14} />}
-            {format(new Date(row.due_date), 'MMM d, yyyy')}
-          </span>
-        );
+        try {
+          const dueDate = new Date(row.due_date);
+          if (isNaN(dueDate.getTime())) return '-';
+          const isOverdue = dueDate < new Date() && row.status !== 'answered' && row.status !== 'closed';
+          return (
+            <span className={isOverdue ? 'text-red-400 flex items-center gap-1' : ''}>
+              {isOverdue && <AlertTriangle size={14} />}
+              {format(dueDate, 'MMM d, yyyy')}
+            </span>
+          );
+        } catch {
+          return '-';
+        }
       },
     },
     {

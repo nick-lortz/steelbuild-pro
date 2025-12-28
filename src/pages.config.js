@@ -20,6 +20,7 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
+import ProjectDashboard from './pages/ProjectDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -46,6 +47,7 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
+    "ProjectDashboard": ProjectDashboard,
 }
 
 export const pagesConfig = {

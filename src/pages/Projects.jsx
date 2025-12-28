@@ -137,6 +137,11 @@ export default function Projects() {
     setSelectedProject(project);
   };
 
+  const handleViewDashboard = (project, e) => {
+    e.stopPropagation();
+    window.location.href = `/ProjectDashboard?id=${project.id}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -178,7 +183,17 @@ export default function Projects() {
       header: 'Project #',
       accessor: 'project_number',
       render: (row) => (
-        <span className="font-mono text-amber-500">{row.project_number}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-amber-500">{row.project_number}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => handleViewDashboard(row, e)}
+            className="text-blue-400 hover:text-blue-300 text-xs"
+          >
+            Dashboard →
+          </Button>
+        </div>
       ),
     },
     {

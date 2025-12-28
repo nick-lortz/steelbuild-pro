@@ -835,20 +835,20 @@ export default function Financials() {
                         <div className="flex items-center gap-6">
                           <div className="text-right">
                             <p className="text-xs text-zinc-400">Budget</p>
-                            <p className="text-sm font-medium text-white">${projectGroup.budget.toLocaleString()}</p>
+                            <p className="text-sm font-medium text-white">${(projectGroup.budget || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-zinc-400">Committed</p>
-                            <p className="text-sm font-medium text-blue-400">${projectGroup.committed.toLocaleString()}</p>
+                            <p className="text-sm font-medium text-blue-400">${(projectGroup.committed || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-zinc-400">Actual</p>
-                            <p className="text-sm font-medium text-purple-400">${projectGroup.actual.toLocaleString()}</p>
+                            <p className="text-sm font-medium text-purple-400">${(projectGroup.actual || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-zinc-400">Remaining</p>
                             <p className={`text-sm font-medium ${remaining >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                              ${Math.abs(remaining).toLocaleString()}
+                              ${Math.abs(remaining || 0).toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -1201,7 +1201,7 @@ export default function Financials() {
                           return (
                             <tr key={idx} className="border-t border-zinc-800">
                               <td className="p-2 text-zinc-300 text-xs">{item.cost_code_display}</td>
-                              <td className="p-2 text-right text-zinc-400">${item.scheduled_value.toLocaleString()}</td>
+                              <td className="p-2 text-right text-zinc-400">${(item.scheduled_value || 0).toLocaleString()}</td>
                               <td className="p-2">
                                 <Input
                                   type="number"
@@ -1248,9 +1248,9 @@ export default function Financials() {
                                   placeholder="0.00"
                                 />
                               </td>
-                              <td className="p-2 text-right text-zinc-300">${newTotal.toLocaleString()}</td>
+                              <td className="p-2 text-right text-zinc-300">${(newTotal || 0).toLocaleString()}</td>
                               <td className={`p-2 text-right ${balance < 0 ? 'text-red-400' : 'text-zinc-400'}`}>
-                                ${balance.toLocaleString()}
+                                ${(balance || 0).toLocaleString()}
                               </td>
                               <td className="p-2 text-right text-zinc-400">{percent.toFixed(1)}%</td>
                             </tr>
@@ -1261,24 +1261,24 @@ export default function Financials() {
                         <tr>
                           <td className="p-2 font-medium text-white">TOTAL</td>
                           <td className="p-2 text-right font-medium text-white">
-                            ${invoiceFormData.line_items.reduce((sum, item) => sum + item.scheduled_value, 0).toLocaleString()}
+                            ${(invoiceFormData.line_items || []).reduce((sum, item) => sum + (item.scheduled_value || 0), 0).toLocaleString()}
                           </td>
                           <td></td>
                           <td className="p-2 text-right font-medium text-amber-500">
-                            ${invoiceFormData.line_items.reduce((sum, item) => sum + (item.billed_this_month || 0), 0).toLocaleString()}
+                            ${(invoiceFormData.line_items || []).reduce((sum, item) => sum + (item.billed_this_month || 0), 0).toLocaleString()}
                           </td>
                           <td className="p-2 text-right font-medium text-white">
-                            ${invoiceFormData.line_items.reduce((sum, item) => {
+                            ${(invoiceFormData.line_items || []).reduce((sum, item) => {
                               const billed = item.billed_this_month || 0;
-                              const prevTotal = item.total_billed_to_date - billed;
+                              const prevTotal = (item.total_billed_to_date || 0) - billed;
                               return sum + prevTotal + billed;
                             }, 0).toLocaleString()}
                           </td>
                           <td className="p-2 text-right font-medium text-white">
-                            ${invoiceFormData.line_items.reduce((sum, item) => {
+                            ${(invoiceFormData.line_items || []).reduce((sum, item) => {
                               const billed = item.billed_this_month || 0;
-                              const prevTotal = item.total_billed_to_date - billed;
-                              return sum + (item.scheduled_value - (prevTotal + billed));
+                              const prevTotal = (item.total_billed_to_date || 0) - billed;
+                              return sum + ((item.scheduled_value || 0) - (prevTotal + billed));
                             }, 0).toLocaleString()}
                           </td>
                           <td></td>

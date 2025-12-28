@@ -843,8 +843,8 @@ export default function Dashboard() {
                       </div>
                       <div className="text-right">
                         <StatusBadge status={co.status} />
-                        <p className={`text-sm mt-1 ${co.cost_impact >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {co.cost_impact >= 0 ? '+' : ''}${co.cost_impact?.toLocaleString() || 0}
+                        <p className={`text-sm mt-1 ${(co.cost_impact || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {(co.cost_impact || 0) >= 0 ? '+' : ''}${(co.cost_impact || 0).toLocaleString()}
                         </p>
                       </div>
                     </Link>

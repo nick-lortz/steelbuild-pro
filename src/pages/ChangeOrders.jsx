@@ -162,6 +162,7 @@ export default function ChangeOrders() {
   const totals = (filteredCOs || []).reduce((acc, co) => {
     if (co.status === 'approved') {
       return {
+        ...acc,
         approved: acc.approved + (co.cost_impact || 0),
         days: acc.days + (co.schedule_impact_days || 0),
       };
@@ -289,7 +290,7 @@ export default function ChangeOrders() {
             <div>
               <p className="text-zinc-400 text-sm">Approved COs</p>
               <p className="text-xl font-bold text-green-400">
-                +${totals.approved.toLocaleString()}
+                +${(totals.approved || 0).toLocaleString()}
               </p>
             </div>
             <DollarSign className="text-green-500" size={24} />
@@ -300,7 +301,7 @@ export default function ChangeOrders() {
             <div>
               <p className="text-zinc-400 text-sm">Pending COs</p>
               <p className="text-xl font-bold text-amber-400">
-                ${totals.pending.toLocaleString()}
+                ${(totals.pending || 0).toLocaleString()}
               </p>
             </div>
             <DollarSign className="text-amber-500" size={24} />
@@ -311,7 +312,7 @@ export default function ChangeOrders() {
             <div>
               <p className="text-zinc-400 text-sm">Schedule Impact</p>
               <p className="text-xl font-bold text-white">
-                {totals.days > 0 ? '+' : ''}{totals.days} days
+                {(totals.days || 0) > 0 ? '+' : ''}{totals.days || 0} days
               </p>
             </div>
             <Clock className="text-zinc-500" size={24} />

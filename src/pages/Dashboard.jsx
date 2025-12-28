@@ -93,6 +93,24 @@ function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "defa
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const [dateRange, setDateRange] = useState('all');
+  
+  const getDateFilter = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case 'week':
+        return { start: subDays(now, 7), end: now };
+      case 'month':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case '30days':
+        return { start: subDays(now, 30), end: now };
+      default:
+        return null;
+    }
+  };
+
+  const dateFilter = getDateFilter();
   const [widgetConfig, setWidgetConfig] = useState({
     showFinancial: true,
     showSafety: true,

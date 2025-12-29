@@ -87,15 +87,19 @@ export default function Schedule() {
       await base44.entities.Task.update(id, data);
       
       // Check if dates changed and adjust dependent tasks
-      const updatedTask = tasks.find(t => t.id === id);
-      if (updatedTask && (data.start_date || data.end_date)) {
-        const taskWithUpdates = { ...updatedTask, ...data };
-        const dependentUpdates = adjustDependentTaskDates(taskWithUpdates, tasks);
-        
-        // Apply dependent updates
-        for (const update of dependentUpdates) {
-          await base44.entities.Task.update(update.id, update.data);
+      try {
+        const updatedTask = tasks.find(t => t.id === id);
+        if (updatedTask && (data.start_date || data.end_date)) {
+          const taskWithUpdates = { ...updatedTask, ...data };
+          const dependentUpdates = adjustDependentTaskDates(taskWithUpdates, tasks);
+          
+          // Apply dependent updates
+          for (const update of dependentUpdates) {
+            await base44.entities.Task.update(update.id, update.data);
+          }
         }
+      } catch (error) {
+        console.error('Error adjusting dependent tasks:', error);
       }
       
       return { id, data };
@@ -122,28 +126,7 @@ export default function Schedule() {
     },
   });
 
-  // Clean up invalid task references - optimized with debounce
-  React.useEffect(() => {
-    if (tasks.length === 0) return;
-    
-    const validTaskIds = new Set(tasks.map(t => t.id));
-    const invalidTasks = [];
-    
-    // Collect all invalid tasks
-    tasks.forEach(task => {
-      if (task.predecessor_ids && task.predecessor_ids.length > 0) {
-        const validPredecessors = task.predecessor_ids.filter(id => validTaskIds.has(id));
-        if (validPredecessors.length !== task.predecessor_ids.length) {
-          invalidTasks.push({ id: task.id, data: { predecessor_ids: validPredecessors } });
-        }
-      }
-    });
-    
-    // Only update if there are invalid tasks (prevents infinite loops)
-    if (invalidTasks.length > 0 && invalidTasks.length < 5) {
-      invalidTasks.forEach(update => updateMutation.mutate(update));
-    }
-  }, [tasks.length]); // Only run when task count changes
+
 
   // Filter tasks
   const filteredTasks = useMemo(() => {

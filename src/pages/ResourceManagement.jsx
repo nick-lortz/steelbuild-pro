@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, Zap, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, isAfter, isBefore, isWithinInterval, parseISO } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
+import ResourceLeveling from '@/components/resources/ResourceLeveling';
+import ResourceForecast from '@/components/resources/ResourceForecast';
 
 export default function ResourceManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -218,10 +221,27 @@ export default function ResourceManagement() {
     <div>
       <PageHeader 
         title="Resource Management" 
-        subtitle="Monitor resource allocation and utilization"
+        subtitle="Monitor allocation, leveling, and forecasting"
         showBackButton={false}
       />
 
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="overview">
+            <BarChart3 size={14} className="mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="leveling">
+            <Zap size={14} className="mr-2" />
+            Resource Leveling
+          </TabsTrigger>
+          <TabsTrigger value="forecast">
+            <TrendingUp size={14} className="mr-2" />
+            Forecast
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="bg-zinc-900 border-zinc-800">
@@ -535,6 +555,24 @@ export default function ResourceManagement() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="leveling">
+          <ResourceLeveling 
+            tasks={tasks}
+            resources={resources}
+            projects={projects}
+          />
+        </TabsContent>
+
+        <TabsContent value="forecast">
+          <ResourceForecast
+            tasks={tasks}
+            resources={resources}
+            projects={projects}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -188,7 +188,13 @@ export default function Schedule() {
             <Button
               variant="outline"
               onClick={() => {
-                setEditingTask({ parent_task_id: null, is_milestone: false });
+                setEditingTask({ 
+                  parent_task_id: null, 
+                  is_milestone: false,
+                  name: '',
+                  status: 'not_started',
+                  progress_percent: 0
+                });
                 setShowTaskForm(true);
               }}
               className="border-amber-700 text-amber-400 hover:bg-amber-500/10"

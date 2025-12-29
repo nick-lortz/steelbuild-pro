@@ -1,4 +1,4 @@
-import React from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -79,14 +79,20 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
     at_risk: 'At Risk',
   };
 
+  const projectData = useMemo(() => 
+    activeProjects.map(project => ({
+      project,
+      health: getProjectHealth(project),
+      progress: getProjectProgress(project),
+      finances: getProjectFinancials(project),
+      projectRFIs: rfis.filter(r => r.project_id === project.id && r.status !== 'closed'),
+      projectCOs: changeOrders.filter(co => co.project_id === project.id && co.status === 'pending'),
+    })), [activeProjects, tasks, financials, rfis, changeOrders, expenses]
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {activeProjects.map(project => {
-        const health = getProjectHealth(project);
-        const progress = getProjectProgress(project);
-        const finances = getProjectFinancials(project);
-        const projectRFIs = rfis.filter(r => r.project_id === project.id && r.status !== 'closed');
-        const projectCOs = changeOrders.filter(co => co.project_id === project.id && co.status === 'pending');
+      {projectData.map(({ project, health, progress, finances, projectRFIs, projectCOs }) => {
 
         return (
           <Card key={project.id} className="bg-zinc-900 border-zinc-800 hover:border-amber-500/50 transition-colors">

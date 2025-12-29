@@ -24,7 +24,7 @@ export default function PageHeader({ title, subtitle, actions, showBackButton = 
           {subtitle && <p className="text-zinc-400 mt-1">{subtitle}</p>}
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="text-slate-950 flex items-center gap-2">
         {onRefresh &&
         <Button
           variant="outline"

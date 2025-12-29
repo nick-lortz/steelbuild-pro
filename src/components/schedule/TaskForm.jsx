@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { X } from 'lucide-react';
+import { X, Settings } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
 import AITaskHelper from './AITaskHelper';
+import DependencyConfigurator from './DependencyConfigurator';
 
 export default function TaskForm({ 
   task, 
@@ -22,6 +23,7 @@ export default function TaskForm({
   onCancel,
   isLoading 
 }) {
+  const [showDependencyConfig, setShowDependencyConfig] = useState(false);
   const [formData, setFormData] = useState({
     project_id: '',
     parent_task_id: '',
@@ -39,8 +41,7 @@ export default function TaskForm({
     status: 'not_started',
     is_milestone: false,
     predecessor_ids: [],
-    dependency_type: 'FS',
-    lag_days: 0,
+    predecessor_configs: [],
     assigned_resources: [],
     assigned_equipment: [],
     linked_rfi_ids: [],
@@ -68,8 +69,7 @@ export default function TaskForm({
         status: task.status || 'not_started',
         is_milestone: task.is_milestone || false,
         predecessor_ids: task.predecessor_ids || [],
-        dependency_type: task.dependency_type || 'FS',
-        lag_days: task.lag_days || 0,
+        predecessor_configs: task.predecessor_configs || [],
         assigned_resources: task.assigned_resources || [],
         assigned_equipment: task.assigned_equipment || [],
         linked_rfi_ids: task.linked_rfi_ids || [],
@@ -380,64 +380,65 @@ export default function TaskForm({
 
       {/* Dependencies */}
       <div className="border-t border-zinc-800 pt-4">
-        <h4 className="text-sm font-medium mb-3">Dependencies</h4>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-2 space-y-2">
-            <Label>Predecessor Tasks</Label>
-            <Select onValueChange={(v) => toggleArrayItem('predecessor_ids', v)}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Add predecessor" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTasks.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {(formData.predecessor_ids || []).map(id => {
-                const t = tasks.find(task => task.id === id);
-                return t ? (
-                  <Badge key={id} variant="outline" className="gap-1">
-                    {t.name}
-                    <X 
-                      size={12} 
-                      className="cursor-pointer" 
-                      onClick={() => toggleArrayItem('predecessor_ids', id)}
-                    />
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium">Task Dependencies</h4>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setShowDependencyConfig(true)}
+            className="border-zinc-700 text-xs"
+          >
+            <Settings size={14} className="mr-1" />
+            Configure Dependencies
+          </Button>
+        </div>
+
+        {formData.predecessor_configs && formData.predecessor_configs.length > 0 ? (
+          <div className="space-y-2">
+            <Label className="text-xs text-zinc-400">
+              {formData.predecessor_configs.length} predecessor{formData.predecessor_configs.length !== 1 ? 's' : ''} configured
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {formData.predecessor_configs.map((config, idx) => {
+                const t = tasks.find(task => task.id === config.predecessor_id);
+                if (!t) return null;
+                
+                const typeLabels = {
+                  FS: 'Finish-Start',
+                  SS: 'Start-Start',
+                  FF: 'Finish-Finish',
+                  SF: 'Start-Finish'
+                };
+                
+                return (
+                  <Badge key={idx} variant="outline" className="gap-2 bg-blue-500/10 text-blue-400 border-blue-500/20">
+                    <span className="font-medium">{t.name}</span>
+                    <span className="text-[10px] text-blue-300">
+                      {typeLabels[config.type]}
+                      {config.lag_days !== 0 && ` ${config.lag_days > 0 ? '+' : ''}${config.lag_days}d`}
+                    </span>
                   </Badge>
-                ) : null;
+                );
               })}
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <Select value={formData.dependency_type} onValueChange={(v) => handleChange('dependency_type', v)}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FS">Finish-to-Start</SelectItem>
-                <SelectItem value="SS">Start-to-Start</SelectItem>
-                <SelectItem value="FF">Finish-to-Finish</SelectItem>
-                <SelectItem value="SF">Start-to-Finish</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="mt-4 space-y-2">
-          <Label>Lag (days)</Label>
-          <Input
-            type="number"
-            value={formData.lag_days}
-            onChange={(e) => handleChange('lag_days', e.target.value)}
-            placeholder="0"
-            className="bg-zinc-800 border-zinc-700 w-32"
-          />
-        </div>
+        ) : (
+          <p className="text-sm text-zinc-500">No dependencies configured. Click "Configure Dependencies" to add.</p>
+        )}
       </div>
+      
+      {showDependencyConfig && (
+        <DependencyConfigurator
+          predecessorConfigs={formData.predecessor_configs || []}
+          availableTasks={availableTasks.filter(t => t.project_id === formData.project_id)}
+          onChange={(configs) => {
+            handleChange('predecessor_configs', configs);
+            handleChange('predecessor_ids', configs.map(c => c.predecessor_id));
+          }}
+          onClose={() => setShowDependencyConfig(false)}
+        />
+      )}
 
       {/* Resources */}
       <div className="border-t border-zinc-800 pt-4">

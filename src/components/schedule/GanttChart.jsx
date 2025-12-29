@@ -478,22 +478,41 @@ export default function GanttChart({
                            )}
                           </div>
 
-                          {/* Dependencies */}
-                          {task.predecessor_ids?.filter(predId => tasks.some(t => t.id === predId)).map(predId => {
-                            const pred = tasks.find(t => t.id === predId);
+                          {/* Dependencies - Visual Lines */}
+                          {task.predecessor_ids?.filter(predId => filteredTasks.some(t => t.id === predId)).map(predId => {
+                            const pred = filteredTasks.find(t => t.id === predId);
                             if (!pred || !pred.start_date || !pred.end_date) return null;
-                            
-                            // Simple dependency line (could be enhanced)
+
+                            const predPos = getTaskPosition(pred);
+                            const taskPos = getTaskPosition(task);
+
+                            // Get dependency config
+                            const depConfig = (task.predecessor_configs || []).find(c => c.predecessor_id === predId) || 
+                              { type: 'FS', lag_days: 0 };
+
+                            // Determine line color based on type
+                            const typeColors = {
+                              FS: 'border-blue-400',
+                              SS: 'border-green-400',
+                              FF: 'border-purple-400',
+                              SF: 'border-amber-400'
+                            };
+
                             return (
                               <div
                                 key={predId}
-                                className="absolute h-px bg-zinc-600 z-0"
+                                className={`absolute border-t-2 ${typeColors[depConfig.type] || 'border-zinc-500'} z-5 pointer-events-none`}
                                 style={{
-                                  left: getTaskPosition(pred).left,
-                                  width: '20px',
+                                  left: depConfig.type === 'SS' ? predPos.left : 
+                                        `calc(${predPos.left} + ${predPos.width})`,
+                                  width: '40px',
                                   top: '50%',
+                                  transform: 'translateY(-50%)'
                                 }}
-                              />
+                                title={`${depConfig.type} ${depConfig.lag_days ? `(${depConfig.lag_days}d lag)` : ''}`}
+                              >
+                                <div className="absolute -right-1 -top-1 w-2 h-2 bg-blue-400 rounded-full" />
+                              </div>
                             );
                           })}
                           </div>
@@ -621,12 +640,20 @@ export default function GanttChart({
               <span className="text-zinc-200">Milestone</span>
             </div>
             <div className="flex items-center gap-2">
-              <LinkIcon size={16} className="text-blue-400" />
-              <span className="text-zinc-200">Linked RFI</span>
+              <div className="w-6 h-0.5 bg-blue-400" />
+              <span className="text-zinc-200">FS Dependency</span>
             </div>
             <div className="flex items-center gap-2">
-              <LinkIcon size={16} className="text-purple-400" />
-              <span className="text-zinc-200">Linked CO</span>
+              <div className="w-6 h-0.5 bg-green-400" />
+              <span className="text-zinc-200">SS Dependency</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-0.5 bg-purple-400" />
+              <span className="text-zinc-200">FF Dependency</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-0.5 bg-amber-400" />
+              <span className="text-zinc-200">SF Dependency</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-red-600 rounded border border-red-400 animate-pulse flex items-center justify-center">

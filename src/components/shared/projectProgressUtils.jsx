@@ -25,19 +25,44 @@ export function calculateProjectProgress(projectId, tasks) {
 }
 
 /**
+ * Get dependency configuration for a task
+ */
+export function getTaskDependencies(task) {
+  if (!task.predecessor_ids || task.predecessor_ids.length === 0) return [];
+  
+  // Handle both old format (global dependency_type/lag_days) and new format (per-predecessor config)
+  if (task.predecessor_configs && Array.isArray(task.predecessor_configs)) {
+    return task.predecessor_configs;
+  }
+  
+  // Legacy: use global dependency type and lag
+  return task.predecessor_ids.map(predId => ({
+    predecessor_id: predId,
+    type: task.dependency_type || 'FS',
+    lag_days: task.lag_days || 0
+  }));
+}
+
+/**
  * Adjust dependent task dates when predecessor changes
  */
-export function adjustDependentTaskDates(task, allTasks, dependencyType = 'FS', lagDays = 0) {
+export function adjustDependentTaskDates(task, allTasks) {
   const updates = [];
   
   // Find all tasks that depend on this task
-  const dependentTasks = allTasks.filter(t => 
-    t.predecessor_ids && t.predecessor_ids.includes(task.id)
-  );
+  const dependentTasks = allTasks.filter(t => {
+    if (!t.predecessor_ids) return false;
+    return t.predecessor_ids.includes(task.id);
+  });
   
   dependentTasks.forEach(depTask => {
-    const type = depTask.dependency_type || 'FS';
-    const lag = depTask.lag_days || 0;
+    const dependencies = getTaskDependencies(depTask);
+    const thisDepConfig = dependencies.find(d => d.predecessor_id === task.id);
+    
+    if (!thisDepConfig) return;
+    
+    const type = thisDepConfig.type || 'FS';
+    const lag = thisDepConfig.lag_days || 0;
     let newStartDate;
     
     switch(type) {

@@ -40,6 +40,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import DashboardKPIs from '@/components/dashboard/DashboardKPIs';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -878,19 +879,31 @@ export default function Dashboard() {
               />
             ) : (
               <div className="divide-y divide-zinc-800">
-                {activeProjects.slice(0, 5).map((project) => (
-                  <div
-                    key={project.id}
-                    onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
-                    className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                  >
-                    <div>
-                      <p className="font-medium text-white">{project.name}</p>
-                      <p className="text-sm text-zinc-400">{project.project_number} • {project.client}</p>
+                {activeProjects.slice(0, 5).map((project) => {
+                  const progress = calculateProjectProgress(project.id, tasks);
+                  return (
+                    <div
+                      key={project.id}
+                      onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
+                      className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-white">{project.name}</p>
+                        <p className="text-sm text-zinc-400 mb-2">{project.project_number} • {project.client}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="w-32 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 transition-all"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-zinc-400">{progress}%</span>
+                        </div>
+                      </div>
+                      <StatusBadge status={project.status} />
                     </div>
-                    <StatusBadge status={project.status} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

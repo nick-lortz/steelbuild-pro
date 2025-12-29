@@ -21,6 +21,7 @@ import BulkAddForm from '@/components/schedule/BulkAddForm';
 import WeatherWidget from '@/components/weather/WeatherWidget';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { calculateCriticalPath, detectResourceConflicts } from '@/components/shared/scheduleUtils';
+import { adjustDependentTaskDates } from '@/components/shared/projectProgressUtils';
 
 export default function Schedule() {
   const [selectedProject, setSelectedProject] = useState('all');
@@ -82,7 +83,19 @@ export default function Schedule() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: () => {
+    onSuccess: async (_, { id, data }) => {
+      // Check if dates changed and adjust dependent tasks
+      const updatedTask = tasks.find(t => t.id === id);
+      if (updatedTask && (data.start_date || data.end_date)) {
+        const taskWithUpdates = { ...updatedTask, ...data };
+        const dependentUpdates = adjustDependentTaskDates(taskWithUpdates, tasks);
+        
+        // Apply dependent updates
+        for (const update of dependentUpdates) {
+          await base44.entities.Task.update(update.id, update.data);
+        }
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);

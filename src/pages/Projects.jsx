@@ -27,7 +27,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, Building2, MapPin, Calendar, User, Trash2 } from 'lucide-react';
+import { Plus, Search, Building2, MapPin, Calendar, User, Trash2, TrendingUp } from 'lucide-react';
+import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -74,6 +75,11 @@ export default function Projects() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list('full_name'),
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list('start_date'),
   });
 
   const createMutation = useMutation({
@@ -212,6 +218,24 @@ export default function Projects() {
           <p className="text-sm text-zinc-500">{row.client}</p>
         </div>
       ),
+    },
+    {
+      header: 'Progress',
+      accessor: 'progress',
+      render: (row) => {
+        const progress = calculateProjectProgress(row.id, tasks);
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-20 h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-500 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-xs text-zinc-300 font-medium">{progress}%</span>
+          </div>
+        );
+      },
     },
     {
       header: 'Status',

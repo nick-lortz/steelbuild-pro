@@ -39,37 +39,37 @@ export default function Schedule() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   const { data: tasks = [], refetch: refetchTasks, isRefetching: isRefetchingTasks } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000 // 2 minutes
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000 // 10 minutes
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
   const createMutation = useMutation({
@@ -78,21 +78,21 @@ export default function Schedule() {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
-    },
+    }
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       // Update the main task
       await base44.entities.Task.update(id, data);
-      
+
       // Check if dates changed and adjust dependent tasks
       try {
-        const updatedTask = tasks.find(t => t.id === id);
+        const updatedTask = tasks.find((t) => t.id === id);
         if (updatedTask && (data.start_date || data.end_date)) {
           const taskWithUpdates = { ...updatedTask, ...data };
           const dependentUpdates = adjustDependentTaskDates(taskWithUpdates, tasks);
-          
+
           // Apply dependent updates
           for (const update of dependentUpdates) {
             await base44.entities.Task.update(update.id, update.data);
@@ -101,21 +101,21 @@ export default function Schedule() {
       } catch (error) {
         console.error('Error adjusting dependent tasks:', error);
       }
-      
+
       return { id, data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
-    },
+    }
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Task.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
+    }
   });
 
   const bulkCreateMutation = useMutation({
@@ -123,14 +123,14 @@ export default function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowBulkAdd(false);
-    },
+    }
   });
 
 
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    return tasks.filter(t => {
+    return tasks.filter((t) => {
       const matchesProject = selectedProject === 'all' || t.project_id === selectedProject;
       const matchesPhase = selectedPhase === 'all' || t.phase === selectedPhase;
       return matchesProject && matchesPhase;
@@ -177,7 +177,7 @@ export default function Schedule() {
     alert('PDF export feature - integrate with jspdf library');
   };
 
-  const selectedProjectData = projects.find(p => p.id === selectedProject);
+  const selectedProjectData = projects.find((p) => p.id === selectedProject);
 
   return (
     <div>
@@ -187,59 +187,59 @@ export default function Schedule() {
         onRefresh={refetchTasks}
         isRefreshing={isRefetchingTasks}
         actions={
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <Button
-              variant="outline"
-              onClick={() => {
-                setEditingTask({
-                  parent_task_id: null,
-                  name: '',
-                  is_milestone: false,
-                });
-                setShowTaskForm(true);
-              }}
-              className="border-amber-700 text-amber-400 hover:bg-amber-500/10"
-            >
+            variant="outline"
+            onClick={() => {
+              setEditingTask({
+                parent_task_id: null,
+                name: '',
+                is_milestone: false
+              });
+              setShowTaskForm(true);
+            }} className="bg-slate-50 text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-amber-700 hover:bg-amber-500/10">
+
+
               <Plus size={16} className="mr-2" />
               Summary Task
             </Button>
             <Button
-              variant="outline"
-              onClick={() => setShowBulkAdd(true)}
-              className="border-zinc-700 text-white hover:bg-zinc-800"
-            >
+            variant="outline"
+            onClick={() => setShowBulkAdd(true)} className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
+
+
               <Plus size={16} className="mr-2" />
               Bulk Add
             </Button>
             <Button
-              variant="outline"
-              onClick={() => setShowCSVImport(true)}
-              className="border-zinc-700 text-white hover:bg-zinc-800"
-            >
+            variant="outline"
+            onClick={() => setShowCSVImport(true)} className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
+
+
               <FileSpreadsheet size={16} className="mr-2" />
               Import CSV
             </Button>
             <Button
-              variant="outline"
-              onClick={handleExportPDF}
-              className="border-zinc-700 text-white hover:bg-zinc-800"
-            >
+            variant="outline"
+            onClick={handleExportPDF} className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
+
+
               <Download size={16} className="mr-2" />
               Export
             </Button>
-            <Button 
-              onClick={() => {
-                setEditingTask(null);
-                setShowTaskForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
+            <Button
+            onClick={() => {
+              setEditingTask(null);
+              setShowTaskForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black">
+
               <Plus size={18} className="mr-2" />
               Quick Add
             </Button>
           </div>
-        }
-      />
+        } />
+
 
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-4">
@@ -249,11 +249,11 @@ export default function Schedule() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>
+            {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id}>
                 {p.project_number} - {p.name}
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
 
@@ -290,34 +290,34 @@ export default function Schedule() {
 
       {/* Warning Indicators */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {resourceConflicts.length > 0 && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-amber-400">
+        {resourceConflicts.length > 0 &&
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-amber-400">
             <AlertTriangle size={18} />
             <span>{resourceConflicts.length} resource conflict{resourceConflicts.length !== 1 ? 's' : ''} detected</span>
           </div>
-        )}
-        {drawingRisks.length > 0 && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400">
+        }
+        {drawingRisks.length > 0 &&
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400">
             <AlertTriangle size={18} />
             <span>{drawingRisks.length} task{drawingRisks.length !== 1 ? 's' : ''} blocked or at risk due to drawings</span>
           </div>
-        )}
+        }
       </div>
 
       {/* Look-Ahead Schedule and Weather */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          <LookAheadSchedule 
-            tasks={filteredTasks} 
-            drawingSets={drawingSets} 
-            weeks={2} 
-            projects={projects}
-          />
+          <LookAheadSchedule
+            tasks={filteredTasks}
+            drawingSets={drawingSets}
+            weeks={2}
+            projects={projects} />
+
         </div>
-        <WeatherWidget 
-          tasks={filteredTasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')} 
-          projectLocation={selectedProjectData?.location || 'Chicago,US'}
-        />
+        <WeatherWidget
+          tasks={filteredTasks.filter((t) => t.status !== 'completed' && t.status !== 'cancelled')}
+          projectLocation={selectedProjectData?.location || 'Chicago,US'} />
+
       </div>
 
       <Tabs defaultValue="gantt" className="space-y-6">
@@ -346,8 +346,8 @@ export default function Schedule() {
             resources={resources}
             rfis={rfis}
             changeOrders={changeOrders}
-            projects={projects}
-          />
+            projects={projects} />
+
         </TabsContent>
 
         <TabsContent value="kanban">
@@ -355,8 +355,8 @@ export default function Schedule() {
             tasks={filteredTasks}
             projects={projects}
             onTaskUpdate={handleTaskUpdate}
-            onTaskClick={handleEditTask}
-          />
+            onTaskClick={handleEditTask} />
+
         </TabsContent>
 
         <TabsContent value="list">
@@ -368,16 +368,16 @@ export default function Schedule() {
             onTaskEdit={handleEditTask}
             onTaskUpdate={handleTaskUpdate}
             onBulkDelete={handleBulkDelete}
-            onBulkEdit={handleBulkEdit}
-          />
+            onBulkEdit={handleBulkEdit} />
+
         </TabsContent>
 
         <TabsContent value="critical">
           <CriticalPathAnalysis
             tasks={filteredTasks}
             criticalPathData={criticalPathData}
-            projects={projects}
-          />
+            projects={projects} />
+
         </TabsContent>
 
         <TabsContent value="resources">
@@ -385,17 +385,17 @@ export default function Schedule() {
             conflicts={resourceConflicts}
             tasks={filteredTasks}
             resources={resources}
-            projects={projects}
-          />
+            projects={projects} />
+
         </TabsContent>
 
         <TabsContent value="lookahead">
-          <LookAheadSchedule 
-            tasks={filteredTasks} 
-            drawingSets={drawingSets} 
-            weeks={4} 
-            projects={projects}
-          />
+          <LookAheadSchedule
+            tasks={filteredTasks}
+            drawingSets={drawingSets}
+            weeks={4}
+            projects={projects} />
+
         </TabsContent>
       </Tabs>
 
@@ -424,8 +424,8 @@ export default function Schedule() {
               setShowTaskForm(false);
               setEditingTask(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-          />
+            isLoading={createMutation.isPending || updateMutation.isPending} />
+
         </DialogContent>
       </Dialog>
 
@@ -448,8 +448,8 @@ export default function Schedule() {
             onCancel={() => {
               setShowBulkEdit(false);
               setBulkEditTasks([]);
-            }}
-          />
+            }} />
+
         </DialogContent>
       </Dialog>
 
@@ -463,8 +463,8 @@ export default function Schedule() {
             projects={projects}
             onSubmit={(tasksData) => bulkCreateMutation.mutate(tasksData)}
             onCancel={() => setShowBulkAdd(false)}
-            isLoading={bulkCreateMutation.isPending}
-          />
+            isLoading={bulkCreateMutation.isPending} />
+
         </DialogContent>
       </Dialog>
 
@@ -472,15 +472,15 @@ export default function Schedule() {
       <CSVUpload
         entityName="Task"
         templateFields={[
-          { label: 'Project Number', key: 'project_number', example: 'P-001' },
-          { label: 'Task Name', key: 'name', example: 'Fabricate Level 1 Columns' },
-          { label: 'Phase', key: 'phase', example: 'fabrication' },
-          { label: 'Start Date', key: 'start_date', example: '2025-01-10' },
-          { label: 'End Date', key: 'end_date', example: '2025-01-20' },
-          { label: 'Duration Days', key: 'duration_days', example: '10' },
-        ]}
+        { label: 'Project Number', key: 'project_number', example: 'P-001' },
+        { label: 'Task Name', key: 'name', example: 'Fabricate Level 1 Columns' },
+        { label: 'Phase', key: 'phase', example: 'fabrication' },
+        { label: 'Start Date', key: 'start_date', example: '2025-01-10' },
+        { label: 'End Date', key: 'end_date', example: '2025-01-20' },
+        { label: 'Duration Days', key: 'duration_days', example: '10' }]
+        }
         transformRow={(row) => {
-          const project = projects.find(p => p.project_number === row.project_number);
+          const project = projects.find((p) => p.project_number === row.project_number);
           return {
             project_id: project?.id || '',
             name: row.name || '',
@@ -490,15 +490,15 @@ export default function Schedule() {
             duration_days: parseInt(row.duration_days) || 0,
             status: 'not_started',
             progress_percent: 0,
-            is_milestone: false,
+            is_milestone: false
           };
         }}
         onImportComplete={() => {
           queryClient.invalidateQueries({ queryKey: ['tasks'] });
         }}
         open={showCSVImport}
-        onOpenChange={setShowCSVImport}
-      />
-    </div>
-  );
+        onOpenChange={setShowCSVImport} />
+
+    </div>);
+
 }

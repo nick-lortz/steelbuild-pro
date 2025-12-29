@@ -384,70 +384,71 @@ export default function GanttChart({
 
                           return (
                           <div key={childTask.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors">
-                            <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5">
-                              <button
-                                onClick={() => handleTaskClick(childTask)}
-                                className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate w-full transition-colors"
-                              >
-                                ↳ {childTask.name}
-                              </button>
-                              <div className="flex items-center gap-2">
-                                {(childHasRFI || childHasCO) && (
-                                  <div className="flex gap-1">
-                                    {childHasRFI && <LinkIcon size={10} className="text-blue-400" />}
-                                    {childHasCO && <LinkIcon size={10} className="text-purple-400" />}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                           <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5">
+                             <button
+                               onClick={() => handleTaskClick(childTask)}
+                               className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate w-full transition-colors"
+                             >
+                               ↳ {childTask.name}
+                             </button>
+                             <div className="flex items-center gap-2">
+                               {(childHasRFI || childHasCO) && (
+                                 <div className="flex gap-1">
+                                   {childHasRFI && <LinkIcon size={10} className="text-blue-400" />}
+                                   {childHasCO && <LinkIcon size={10} className="text-purple-400" />}
+                                 </div>
+                               )}
+                             </div>
+                           </div>
 
-                            <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px` }}>
-                              {periods.map((_, idx) => (
-                                <div
-                                  key={idx}
-                                  className="absolute top-0 bottom-0 border-r border-zinc-800/50"
-                                  style={{ left: `${(idx / periods.length) * 100}%` }}
-                                />
-                              ))}
+                           <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                             {periods.map((_, idx) => (
+                               <div
+                                 key={idx}
+                                 className="absolute top-0 bottom-0 border-r border-zinc-800/50"
+                                 style={{ left: `${(idx / periods.length) * 100}%` }}
+                               />
+                             ))}
 
-                              {todayPosition >= 0 && todayPosition <= 100 && (
-                                <div
-                                  className="absolute top-0 bottom-0 w-0.5 bg-amber-500/70 z-10"
-                                  style={{ left: `${todayPosition}%` }}
-                                />
-                              )}
+                             {todayPosition >= 0 && todayPosition <= 100 && (
+                               <div
+                                 className="absolute top-0 bottom-0 w-0.5 bg-amber-500/70 z-10"
+                                 style={{ left: `${todayPosition}%` }}
+                               />
+                             )}
 
-                              <div
-                                className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                                  childCritical 
-                                    ? 'bg-red-500/80 border border-red-300' 
-                                    : childTask.status === 'completed'
-                                      ? 'bg-green-500/80'
-                                      : childTask.status === 'in_progress'
-                                        ? 'bg-blue-500/80'
-                                        : 'bg-zinc-600/80'
-                                }`}
-                                style={{
-                                  ...childPos,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                }}
-                                onClick={() => handleTaskClick(childTask)}
-                              >
-                                {childTask.progress_percent > 0 && (
-                                  <div 
-                                    className="absolute inset-0 bg-white/20 rounded-l"
-                                    style={{ width: `${childTask.progress_percent}%` }}
-                                  />
-                                )}
-                                <div className="absolute inset-0 flex items-center px-2 text-xs font-medium text-white truncate">
-                                  {childTask.name}
-                                </div>
-                              </div>
-                            </div>
+                             <div
+                               className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                                 childCritical 
+                                   ? 'bg-red-500/80 border border-red-300' 
+                                   : childTask.status === 'completed'
+                                     ? 'bg-green-500/80'
+                                     : childTask.status === 'in_progress'
+                                       ? 'bg-blue-500/80'
+                                       : 'bg-zinc-600/80'
+                               }`}
+                               style={{
+                                 ...childPos,
+                                 top: '50%',
+                                 transform: 'translateY(-50%)',
+                               }}
+                               onClick={() => handleTaskClick(childTask)}
+                             >
+                               {childTask.progress_percent > 0 && (
+                                 <div 
+                                   className="absolute inset-0 bg-white/20 rounded-l"
+                                   style={{ width: `${childTask.progress_percent}%` }}
+                                 />
+                               )}
+                               <div className="absolute inset-0 flex items-center px-2 text-xs font-medium text-white truncate">
+                                 {childTask.name}
+                               </div>
+                             </div>
+                           </div>
                           </div>
                           );
                           })}
+                          </>
                           );
                           })}
                           </div>

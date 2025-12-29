@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function PageHeader({ title, subtitle, actions, showBackButton = true }) {
+export default function PageHeader({ title, subtitle, actions, showBackButton = true, onRefresh, isRefreshing = false }) {
   const navigate = useNavigate();
 
   return (
@@ -24,7 +24,20 @@ export default function PageHeader({ title, subtitle, actions, showBackButton = 
           {subtitle && <p className="text-zinc-400 mt-1">{subtitle}</p>}
         </div>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex items-center gap-2">
+        {onRefresh && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800"
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          </Button>
+        )}
+        {actions}
+      </div>
     </div>
   );
 }

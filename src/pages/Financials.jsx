@@ -88,7 +88,7 @@ export default function Financials() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: financials = [] } = useQuery({
+  const { data: financials = [], refetch: refetchFinancials, isRefetching: isRefetchingFinancials } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
     staleTime: 5 * 60 * 1000,
@@ -632,6 +632,8 @@ export default function Financials() {
       <PageHeader
         title="Financials"
         subtitle="Budget tracking and cost control"
+        onRefresh={refetchFinancials}
+        isRefreshing={isRefetchingFinancials}
         actions={
           <div className="flex gap-2">
             <Button 

@@ -66,7 +66,7 @@ export default function Projects() {
   const { confirm } = useConfirm();
   const { can } = usePermissions();
 
-  const { data: projects = [], isLoading } = useQuery({
+  const { data: projects = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
   });
@@ -263,6 +263,8 @@ export default function Projects() {
       <PageHeader
         title="Projects"
         subtitle={`${projects.length} total projects`}
+        onRefresh={refetch}
+        isRefreshing={isRefetching}
         actions={
           can.createProject && (
             <Button 

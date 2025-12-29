@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
-import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import QuickAddSubtask from './QuickAddSubtask';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
   const [selectedTasks, setSelectedTasks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [collapsedParents, setCollapsedParents] = useState(new Set());
+  const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
 
   const toggleParent = (taskId) => {
     const newCollapsed = new Set(collapsedParents);
@@ -231,20 +233,39 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     {
       header: 'Actions',
       accessor: 'actions',
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedTasks(new Set([row.id]));
-            setShowDeleteConfirm(true);
-          }}
-          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <Trash2 size={16} />
-        </Button>
-      ),
+      render: (row, meta) => {
+        const isParent = meta?.isParent;
+        return (
+          <div className="flex items-center gap-1">
+            {isParent && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAddingSubtaskTo(row);
+                }}
+                className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                title="Add subtasks"
+              >
+                <Plus size={16} />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedTasks(new Set([row.id]));
+                setShowDeleteConfirm(true);
+              }}
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            >
+              <Trash2 size={16} />
+            </Button>
+          </div>
+        );
+      },
     },
   ], [selectedTasks, tasks.length, toggleAll, drawingMap, projects, resources]);
 
@@ -277,7 +298,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       )}
       <DataTable
         columns={columns}
-        data={tasks}
+        data={organizedTasks.map(item => ({ ...item.task, ...item }))}
         onRowClick={onTaskEdit}
         emptyMessage="No tasks found. Add tasks to get started."
       />
@@ -304,6 +325,14 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {addingSubtaskTo && (
+        <QuickAddSubtask
+          parentTask={addingSubtaskTo}
+          open={!!addingSubtaskTo}
+          onOpenChange={(open) => !open && setAddingSubtaskTo(null)}
+        />
+      )}
     </div>
   );
 }

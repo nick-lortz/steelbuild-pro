@@ -95,14 +95,73 @@ function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "defa
 export default function Dashboard() {
   const navigate = useNavigate();
   
-  const [widgetConfig, setWidgetConfig] = useState({
-    showFinancial: true,
-    showSafety: true,
-    showSchedule: true,
-    showDeliveries: true,
-    showAtRisk: true,
-    showCharts: true
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    },
   });
+
+  // Role-based default views
+  const getDefaultView = () => {
+    if (!currentUser) return 'default';
+    return currentUser.role === 'admin' ? 'executive' : 'operations';
+  };
+
+  const [selectedView, setSelectedView] = useState('default');
+
+  // Update view when user loads
+  React.useEffect(() => {
+    if (currentUser && selectedView === 'default') {
+      setSelectedView(getDefaultView());
+    }
+  }, [currentUser]);
+
+  // View configurations
+  const viewConfigs = {
+    default: {
+      showFinancial: true,
+      showSafety: true,
+      showSchedule: true,
+      showDeliveries: true,
+      showAtRisk: true,
+      showCharts: true,
+      showKPIs: true,
+      showProgress: true,
+      showProjectOverview: true,
+      showActivity: true,
+    },
+    executive: {
+      showFinancial: true,
+      showSafety: false,
+      showSchedule: true,
+      showDeliveries: false,
+      showAtRisk: true,
+      showCharts: true,
+      showKPIs: true,
+      showProgress: true,
+      showProjectOverview: true,
+      showActivity: false,
+    },
+    operations: {
+      showFinancial: false,
+      showSafety: true,
+      showSchedule: true,
+      showDeliveries: true,
+      showAtRisk: true,
+      showCharts: false,
+      showKPIs: true,
+      showProgress: true,
+      showProjectOverview: true,
+      showActivity: true,
+    },
+  };
+
+  const widgetConfig = viewConfigs[selectedView] || viewConfigs.default;
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
@@ -293,36 +352,66 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader 
-        title="Dashboard" 
-        subtitle="Project command center"
-        actions={
-          <Select value="default" onValueChange={() => {}}>
-            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-              <Settings size={16} className="mr-2" />
-              <SelectValue placeholder="Customize" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Default View</SelectItem>
-              <SelectItem value="executive">Executive</SelectItem>
-              <SelectItem value="operations">Operations</SelectItem>
-            </SelectContent>
-          </Select>
-        }
-      />
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Dashboard</h1>
+            <p className="text-zinc-400">Project command center</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {currentUser && (
+              <div className="text-right mr-2">
+                <p className="text-xs text-zinc-500">Viewing as</p>
+                <p className="text-sm text-white font-medium capitalize">{currentUser.role}</p>
+              </div>
+            )}
+            <Select value={selectedView} onValueChange={setSelectedView}>
+              <SelectTrigger className="w-52 bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800 transition-colors">
+                <Settings size={16} className="mr-2 text-amber-500" />
+                <SelectValue placeholder="Select View" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="default" className="text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    Default View
+                  </div>
+                </SelectItem>
+                <SelectItem value="executive" className="text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                    Executive View
+                  </div>
+                </SelectItem>
+                <SelectItem value="operations" className="text-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    Operations View
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
 
       {/* Enhanced KPI Cards */}
-      <DashboardKPIs 
-        projects={projects}
-        financials={financials}
-        drawings={drawings}
-        rfis={rfis}
-        tasks={tasks}
-        expenses={expenses}
-      />
+      {widgetConfig.showKPIs && (
+        <div className="mb-8">
+          <DashboardKPIs 
+            projects={projects}
+            financials={financials}
+            drawings={drawings}
+            rfis={rfis}
+            tasks={tasks}
+            expenses={expenses}
+          />
+        </div>
+      )}
 
       {/* Progress Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+      {widgetConfig.showProgress && (
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -379,9 +468,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Project Overview */}
-      <div className="mb-6">
+      {widgetConfig.showProjectOverview && (
+        <div className="mb-8">
         <h2 className="text-xl font-bold text-white mb-4">Active Projects</h2>
         <ProjectOverview
           projects={projects}
@@ -392,21 +483,26 @@ export default function Dashboard() {
           expenses={expenses}
         />
       </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Recent Activity */}
-        <RecentActivity
-          drawings={drawings}
-          rfis={rfis}
-          changeOrders={changeOrders}
-          tasks={tasks}
-        />
+        {widgetConfig.showActivity && (
+          <RecentActivity
+            drawings={drawings}
+            rfis={rfis}
+            changeOrders={changeOrders}
+            tasks={tasks}
+          />
+        )}
 
         {/* Weather Widget */}
-        <WeatherWidget 
-          tasks={tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')} 
-          projectLocation="Chicago,US"
-        />
+        {widgetConfig.showSchedule && (
+          <WeatherWidget 
+            tasks={tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')} 
+            projectLocation="Chicago,US"
+          />
+        )}
 
         {/* At Risk List */}
         {widgetConfig.showAtRisk && (
@@ -597,7 +693,7 @@ export default function Dashboard() {
       )}
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Safety Section */}
         {widgetConfig.showSafety && (
           <Card className="bg-zinc-900 border-zinc-800">
@@ -716,9 +812,9 @@ export default function Dashboard() {
       </div>
 
       {/* Original Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Active Projects */}
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
           <CardHeader className="border-b border-zinc-800 pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-white">Active Projects</CardTitle>
@@ -761,7 +857,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Pending RFIs */}
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
           <CardHeader className="border-b border-zinc-800 pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-white">Pending RFIs</CardTitle>
@@ -858,7 +954,7 @@ export default function Dashboard() {
         )}
 
         {/* Recent Change Orders */}
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
           <CardHeader className="border-b border-zinc-800 pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold text-white">Recent Change Orders</CardTitle>

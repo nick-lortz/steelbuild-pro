@@ -41,7 +41,7 @@ export default function Schedule() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], refetch: refetchTasks, isRefetching: isRefetchingTasks } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -183,6 +183,8 @@ export default function Schedule() {
       <PageHeader
         title="Project Schedule"
         subtitle="Gantt chart with dependencies and critical path"
+        onRefresh={refetchTasks}
+        isRefreshing={isRefetchingTasks}
         actions={
           <div className="flex items-center gap-2">
             <Button

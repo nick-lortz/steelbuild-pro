@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -115,7 +115,7 @@ export default function Dashboard() {
   const [selectedView, setSelectedView] = useState('default');
 
   // Update view when user loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentUser && selectedView === 'default') {
       setSelectedView(getDefaultView());
     }

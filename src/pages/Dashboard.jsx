@@ -799,11 +799,14 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <StatusBadge status={rfi.priority} />
-                        {rfi.due_date && (
-                          <span className="text-xs text-zinc-500">
-                            {format(new Date(rfi.due_date), 'MMM d')}
-                          </span>
-                        )}
+                        {rfi.due_date && (() => {
+                          const dueDate = new Date(rfi.due_date);
+                          return !isNaN(dueDate.getTime()) && (
+                            <span className="text-xs text-zinc-500">
+                              {format(dueDate, 'MMM d')}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </Link>
                   );

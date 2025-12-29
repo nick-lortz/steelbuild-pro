@@ -125,23 +125,23 @@ export default function GanttChart({
           <div style={{ minWidth: `${periods.length * columnWidth}px` }}>
             {/* Timeline Header */}
             <div className="flex border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
-              <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-3 font-medium text-xs text-zinc-400">
+              <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-semibold text-sm text-white bg-zinc-900">
                 TASK NAME
               </div>
               <div className="flex flex-1 relative">
                 {periods.map((date, idx) => (
                   <div 
                     key={idx} 
-                    className="border-r border-zinc-800 p-2 text-center text-xs text-zinc-400"
+                    className="border-r border-zinc-800 p-2 text-center text-xs text-zinc-200"
                     style={{ minWidth: `${columnWidth}px` }}
                   >
-                    <div className="font-medium">
+                    <div className="font-semibold">
                       {viewMode === 'day' && format(date, 'MMM d')}
                       {viewMode === 'week' && format(date, 'MMM d')}
                       {viewMode === 'month' && format(date, 'MMM yyyy')}
                     </div>
                     {viewMode === 'day' && (
-                      <div className="text-[10px] text-zinc-600">{format(date, 'EEE')}</div>
+                      <div className="text-[10px] text-zinc-400">{format(date, 'EEE')}</div>
                     )}
                   </div>
                 ))}
@@ -164,8 +164,8 @@ export default function GanttChart({
               return (
                 <div key={phase} className="border-b border-zinc-800">
                   {/* Phase Header */}
-                  <div className="flex bg-zinc-800/50">
-                    <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-2 font-semibold text-sm text-amber-500">
+                  <div className="flex bg-zinc-800/70">
+                    <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-amber-400">
                       {phaseLabels[phase]}
                     </div>
                     <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
@@ -180,25 +180,25 @@ export default function GanttChart({
                     const project = projects.find(p => p.id === task.project_id);
                     
                     return (
-                      <div key={task.id} className="flex border-b border-zinc-800 hover:bg-zinc-800/30 group">
+                      <div key={task.id} className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
                         {/* Task Name */}
-                        <div className="w-64 flex-shrink-0 border-r border-zinc-800 p-2 flex flex-col gap-1">
+                        <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5">
                           <button
                             onClick={() => handleTaskClick(task)}
-                            className="text-left text-sm text-white hover:text-amber-500 truncate w-full"
+                            className="text-left text-sm font-medium text-white hover:text-amber-400 truncate w-full transition-colors"
                           >
                             {task.is_milestone ? '◆ ' : ''}{task.name}
                           </button>
                           <div className="flex items-center gap-2">
                             {project && (
-                              <span className="text-xs text-zinc-400 truncate">
+                              <span className="text-xs text-zinc-300 truncate">
                                 {project.name}
                               </span>
                             )}
                             {(hasRFI || hasCO) && (
                               <div className="flex gap-1">
-                                {hasRFI && <LinkIcon size={10} className="text-blue-400" />}
-                                {hasCO && <LinkIcon size={10} className="text-purple-400" />}
+                                {hasRFI && <LinkIcon size={12} className="text-blue-400" />}
+                                {hasCO && <LinkIcon size={12} className="text-purple-400" />}
                               </div>
                             )}
                           </div>
@@ -238,35 +238,35 @@ export default function GanttChart({
 
                           {/* Task Bar */}
                           <div
-                            className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg ${
-                              task.is_milestone 
-                                ? 'bg-amber-500 w-3 h-3 transform rotate-45' 
-                                : critical 
-                                  ? 'bg-red-500 border-2 border-red-400' 
-                                  : task.status === 'completed'
-                                    ? 'bg-green-500'
-                                    : task.status === 'in_progress'
-                                      ? 'bg-blue-500'
-                                      : 'bg-zinc-600'
-                            }`}
-                            style={{
-                              ...pos,
-                              top: '50%',
-                              transform: task.is_milestone ? 'translateY(-50%) rotate(45deg)' : 'translateY(-50%)',
-                            }}
-                            onClick={() => handleTaskClick(task)}
+                           className={`absolute h-7 rounded cursor-pointer transition-all hover:shadow-xl hover:scale-105 ${
+                             task.is_milestone 
+                               ? 'bg-amber-500 w-3.5 h-3.5 transform rotate-45 shadow-lg' 
+                               : critical 
+                                 ? 'bg-red-500 border-2 border-red-300 shadow-lg' 
+                                 : task.status === 'completed'
+                                   ? 'bg-green-500 shadow-md'
+                                   : task.status === 'in_progress'
+                                     ? 'bg-blue-500 shadow-md'
+                                     : 'bg-zinc-600 shadow-md'
+                           }`}
+                           style={{
+                             ...pos,
+                             top: '50%',
+                             transform: task.is_milestone ? 'translateY(-50%) rotate(45deg)' : 'translateY(-50%)',
+                           }}
+                           onClick={() => handleTaskClick(task)}
                           >
-                            {!task.is_milestone && task.progress_percent > 0 && (
-                              <div 
-                                className="absolute inset-0 bg-white/20 rounded-l"
-                                style={{ width: `${task.progress_percent}%` }}
-                              />
-                            )}
-                            {!task.is_milestone && (
-                              <div className="absolute inset-0 flex items-center px-2 text-xs font-medium text-white truncate">
-                                {task.name}
-                              </div>
-                            )}
+                           {!task.is_milestone && task.progress_percent > 0 && (
+                             <div 
+                               className="absolute inset-0 bg-white/25 rounded-l"
+                               style={{ width: `${task.progress_percent}%` }}
+                             />
+                           )}
+                           {!task.is_milestone && (
+                             <div className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-white truncate drop-shadow-md">
+                               {task.name}
+                             </div>
+                           )}
                           </div>
 
                           {/* Dependencies */}

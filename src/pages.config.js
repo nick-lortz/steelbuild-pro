@@ -17,11 +17,11 @@ import ProjectDashboard from './pages/ProjectDashboard';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
-import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
+import ResourceManagement from './pages/ResourceManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -45,11 +45,11 @@ export const PAGES = {
     "Projects": Projects,
     "RFIs": RFIs,
     "Reports": Reports,
-    "ResourceManagement": ResourceManagement,
     "Resources": Resources,
     "Schedule": Schedule,
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
+    "ResourceManagement": ResourceManagement,
 }
 
 export const pagesConfig = {

@@ -82,8 +82,10 @@ export default function Schedule() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: async (_, { id, data }) => {
+    mutationFn: async ({ id, data }) => {
+      // Update the main task
+      await base44.entities.Task.update(id, data);
+      
       // Check if dates changed and adjust dependent tasks
       const updatedTask = tasks.find(t => t.id === id);
       if (updatedTask && (data.start_date || data.end_date)) {
@@ -96,6 +98,9 @@ export default function Schedule() {
         }
       }
       
+      return { id, data };
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);

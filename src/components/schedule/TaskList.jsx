@@ -178,6 +178,24 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         );
       },
     },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedTasks(new Set([row.id]));
+            setShowDeleteConfirm(true);
+          }}
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
+    },
   ], [selectedTasks, tasks.length, toggleAll, drawingMap, projects, resources]);
 
   return (

@@ -424,9 +424,9 @@ export default function TaskForm({
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Assign labor/subs" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
                 {laborResources.map(r => (
-                  <SelectItem key={r.id} value={r.id}>
+                  <SelectItem key={r.id} value={r.id} className="text-white">
                     {r.name} {r.type === 'subcontractor' ? '(Sub)' : ''}
                   </SelectItem>
                 ))}
@@ -436,7 +436,7 @@ export default function TaskForm({
               {(formData.assigned_resources || []).map(id => {
                 const r = resources.find(res => res.id === id);
                 return r ? (
-                  <Badge key={id} variant="outline" className="gap-1">
+                  <Badge key={id} variant="outline" className="gap-1 bg-blue-500/20 text-blue-400 border-blue-500/30">
                     {r.name} {r.type === 'subcontractor' && '(Sub)'}
                     <X 
                       size={12} 
@@ -455,9 +455,9 @@ export default function TaskForm({
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Assign equipment" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
                 {equipmentResources.map(r => (
-                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  <SelectItem key={r.id} value={r.id} className="text-white">{r.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -465,7 +465,7 @@ export default function TaskForm({
               {(formData.assigned_equipment || []).map(id => {
                 const r = resources.find(res => res.id === id);
                 return r ? (
-                  <Badge key={id} variant="outline" className="gap-1">
+                  <Badge key={id} variant="outline" className="gap-1 bg-purple-500/20 text-purple-400 border-purple-500/30">
                     {r.name}
                     <X 
                       size={12} 

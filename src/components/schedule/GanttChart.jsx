@@ -64,7 +64,21 @@ export default function GanttChart({
     setCollapsedParents(new Set());
   };
 
-  if (!tasks.length) {
+  // Filter tasks first
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesSearch = !searchTerm || 
+        task.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.wbs_code?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+      const matchesProject = projectFilter === 'all' || task.project_id === projectFilter;
+      
+      return matchesSearch && matchesStatus && matchesProject;
+    });
+  }, [tasks, searchTerm, statusFilter, projectFilter]);
+
+  if (!filteredTasks.length) {
     return (
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardContent className="p-8 text-center text-zinc-500">
@@ -74,7 +88,7 @@ export default function GanttChart({
     );
   }
 
-  // Calculate date range with null checks - use filteredTasks
+  // Calculate date range with null checks
   const dates = filteredTasks
     .filter(t => t.start_date && t.end_date)
     .flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
@@ -154,20 +168,6 @@ export default function GanttChart({
     const endDate = new Date(task.end_date);
     return isPast(endDate) && isBefore(endDate, new Date());
   };
-
-  // Filter tasks
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const matchesSearch = !searchTerm || 
-        task.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.wbs_code?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-      const matchesProject = projectFilter === 'all' || task.project_id === projectFilter;
-      
-      return matchesSearch && matchesStatus && matchesProject;
-    });
-  }, [tasks, searchTerm, statusFilter, projectFilter]);
 
   const handleTaskClick = (task, e) => {
     // Right-click or Ctrl+click opens dependency editor

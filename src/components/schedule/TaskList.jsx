@@ -6,9 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
 import { AlertTriangle, FileText, Trash2, Edit } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TaskList({ tasks, projects, resources, drawingSets, onTaskEdit, onTaskUpdate, onBulkDelete, onBulkEdit }) {
   const [selectedTasks, setSelectedTasks] = useState(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const toggleTask = (taskId) => {
     const newSelected = new Set(selectedTasks);
@@ -29,11 +40,10 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     }
   };
 
-  const handleBulkDelete = () => {
-    if (window.confirm(`Delete ${selectedTasks.size} selected task(s)?`)) {
-      onBulkDelete(Array.from(selectedTasks));
-      setSelectedTasks(new Set());
-    }
+  const confirmBulkDelete = () => {
+    onBulkDelete(Array.from(selectedTasks));
+    setSelectedTasks(new Set());
+    setShowDeleteConfirm(false);
   };
 
   const handleBulkEdit = () => {
@@ -188,7 +198,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
             <Button
               variant="outline"
               size="sm"
-              onClick={handleBulkDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               className="border-red-700 text-red-400 hover:bg-red-500/10"
             >
               <Trash2 size={16} className="mr-2" />
@@ -203,6 +213,29 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         onRowClick={onTaskEdit}
         emptyMessage="No tasks found. Add tasks to get started."
       />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Tasks?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete {selectedTasks.size} selected task(s)? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

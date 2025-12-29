@@ -23,6 +23,16 @@ import CSVUpload from '@/components/shared/CSVUpload';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ExpensesManagement({ projectFilter = 'all' }) {
   const [showForm, setShowForm] = useState(false);
@@ -159,11 +169,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     setShowForm(true);
   };
 
-  const handleDelete = (expense) => {
-    if (confirm(`Delete expense: ${expense.description}?`)) {
-      deleteMutation.mutate(expense.id);
-    }
-  };
+  const [deleteExpense, setDeleteExpense] = useState(null);
 
   const filteredExpenses = projectFilter === 'all' 
     ? expenses 
@@ -259,7 +265,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
             variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(row);
+              setDeleteExpense(row);
             }}
             className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
           >
@@ -570,6 +576,32 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
         open={showCSVImport}
         onOpenChange={setShowCSVImport}
       />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteExpense} onOpenChange={() => setDeleteExpense(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Expense?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete expense "{deleteExpense?.description}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteMutation.mutate(deleteExpense.id);
+                setDeleteExpense(null);
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

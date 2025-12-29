@@ -18,6 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
@@ -325,11 +335,7 @@ export default function Financials() {
     setShowInvoiceForm(true);
   };
 
-  const handleDeleteInvoice = (invoice) => {
-    if (window.confirm(`Delete invoice ${invoice.invoice_number}? This cannot be undone.`)) {
-      deleteInvoiceMutation.mutate(invoice.id);
-    }
-  };
+  const [deleteInvoice, setDeleteInvoice] = useState(null);
 
   // When project is selected in invoice form, initialize line items
   const handleProjectSelect = (projectId) => {
@@ -581,7 +587,7 @@ export default function Financials() {
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
-            handleDeleteInvoice(row);
+            setDeleteInvoice(row);
           }}
           className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
         >
@@ -1372,6 +1378,32 @@ export default function Financials() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Invoice Confirmation */}
+      <AlertDialog open={!!deleteInvoice} onOpenChange={() => setDeleteInvoice(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Invoice?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete invoice "{deleteInvoice?.invoice_number}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteInvoiceMutation.mutate(deleteInvoice.id);
+                setDeleteInvoice(null);
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

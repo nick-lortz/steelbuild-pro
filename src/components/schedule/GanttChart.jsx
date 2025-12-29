@@ -250,7 +250,8 @@ export default function GanttChart({
                     const project = projects.find(p => p.id === task.project_id);
                     
                     return (
-                      <div key={task.id} className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
+                      <React.Fragment key={task.id}>
+                      <div className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
                         {/* Task Name */}
                         <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5">
                           <div className="flex items-center gap-1">
@@ -375,7 +376,6 @@ export default function GanttChart({
                           </div>
                           </div>
 
-                          {/* Child Tasks */}
                           {!isParentCollapsed && childTasks.map((childTask) => {
                           const childPos = getTaskPosition(childTask);
                           const childCritical = isCritical(childTask.id);
@@ -448,7 +448,7 @@ export default function GanttChart({
                           </div>
                           );
                           })}
-                          </>
+                          </React.Fragment>
                           );
                           })}
                           </div>

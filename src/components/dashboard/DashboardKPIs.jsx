@@ -1,4 +1,4 @@
-import React from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, DollarSign, FileText, MessageSquareWarning, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 

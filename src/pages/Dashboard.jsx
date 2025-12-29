@@ -228,19 +228,23 @@ export default function Dashboard() {
   );
   
   const financialTotals = useMemo(() => {
-    const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actualFromFinancials = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    if (!financials || !expenses) {
+      return { totalBudget: 0, totalActual: 0, totalCommitted: 0, totalForecast: 0, budgetVariance: 0, budgetVariancePercent: 0 };
+    }
+    
+    const totalBudget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+    const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
     const actualFromExpenses = expenses
       .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const totalActual = actualFromFinancials + actualFromExpenses;
-    const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+    const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
     const totalForecast = financials.reduce((sum, f) => {
-      const forecast = f.forecast_amount || 0;
-      return sum + (forecast > 0 ? forecast : (f.actual_amount || 0) + (f.committed_amount || 0));
+      const forecast = Number(f.forecast_amount) || 0;
+      return sum + (forecast > 0 ? forecast : (Number(f.actual_amount) || 0) + (Number(f.committed_amount) || 0));
     }, 0);
     const budgetVariance = totalBudget - totalActual;
-    const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : 0;
+    const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : '0';
     
     return { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent };
   }, [financials, expenses]);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Badge } from "@/components/ui/badge";
@@ -50,13 +50,13 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     onBulkEdit(Array.from(selectedTasks));
   };
   // Memoize drawing map for performance
-  const drawingMap = React.useMemo(() => {
+  const drawingMap = useMemo(() => {
     const map = new Map();
     (drawingSets || []).forEach(d => map.set(d.id, d));
     return map;
   }, [drawingSets]);
 
-  const columns = React.useMemo(() => [
+  const columns = useMemo(() => [
     {
       header: (
         <Checkbox

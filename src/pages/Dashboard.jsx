@@ -163,11 +163,30 @@ export default function Dashboard() {
 
   const widgetConfig = viewConfigs[selectedView] || viewConfigs.default;
 
-  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+  const [showAllProjects, setShowAllProjects] = useState(false);
+
+  const { data: allProjects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Filter projects based on user role and toggle
+  const projects = useMemo(() => {
+    if (!currentUser) return allProjects;
+    
+    // Admins always see all projects
+    if (currentUser.role === 'admin' || showAllProjects) {
+      return allProjects;
+    }
+    
+    // Regular users see only their projects (where they are PM or superintendent)
+    return allProjects.filter(p => 
+      p.project_manager === currentUser.email || 
+      p.superintendent === currentUser.email ||
+      p.created_by === currentUser.email
+    );
+  }, [allProjects, currentUser, showAllProjects]);
 
   const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
@@ -359,10 +378,26 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Dashboard</h1>
-            <p className="text-zinc-400">Project command center</p>
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-1">
+              {currentUser?.role !== 'admin' && !showAllProjects ? 'My Dashboard' : 'Dashboard'}
+            </h1>
+            <p className="text-zinc-400">
+              {currentUser?.role !== 'admin' && !showAllProjects 
+                ? `Showing ${projects.length} of ${allProjects.length} projects` 
+                : 'Project command center'}
+            </p>
           </div>
           <div className="flex items-center gap-3">
+            {currentUser && currentUser.role !== 'admin' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAllProjects(!showAllProjects)}
+                className="border-zinc-700 text-white hover:bg-zinc-800"
+              >
+                {showAllProjects ? 'Show My Projects' : 'Show All Projects'}
+              </Button>
+            )}
             {currentUser && (
               <div className="text-right mr-2">
                 <p className="text-xs text-zinc-500">Viewing as</p>

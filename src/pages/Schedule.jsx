@@ -188,19 +188,13 @@ export default function Schedule() {
             <Button
               variant="outline"
               onClick={() => {
-                setEditingTask({ 
-                  parent_task_id: null, 
-                  is_milestone: false,
-                  name: '',
-                  status: 'not_started',
-                  progress_percent: 0
-                });
+                setEditingTask(null);
                 setShowTaskForm(true);
               }}
               className="border-amber-700 text-amber-400 hover:bg-amber-500/10"
             >
               <Plus size={16} className="mr-2" />
-              Summary Task
+              Add Task
             </Button>
             <Button
               variant="outline"
@@ -234,7 +228,7 @@ export default function Schedule() {
               className="bg-amber-500 hover:bg-amber-600 text-black"
             >
               <Plus size={18} className="mr-2" />
-              Add Task
+              Quick Add
             </Button>
           </div>
         }

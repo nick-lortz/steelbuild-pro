@@ -133,8 +133,21 @@ export default function TaskForm({
     setFormData(prev => ({ ...prev, ...suggestions }));
   };
 
+  const isSummaryTask = formData.parent_task_id === null || formData.parent_task_id === '';
+  const childTasks = tasks.filter(t => t.parent_task_id === task?.id);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Summary Task Info Banner */}
+      {task && isSummaryTask && childTasks.length > 0 && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <p className="text-sm text-amber-400">
+            📁 This is a summary task with {childTasks.length} subtask{childTasks.length !== 1 ? 's' : ''}. 
+            Its dates are determined by its subtasks.
+          </p>
+        </div>
+      )}
+
       {/* Basic Info */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -152,18 +165,30 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-2">
-          <Label>Parent Task (for sub-tasks)</Label>
-          <Select value={formData.parent_task_id} onValueChange={(v) => handleChange('parent_task_id', v)}>
+          <Label>Task Type</Label>
+          <Select 
+            value={formData.parent_task_id || 'none'} 
+            onValueChange={(v) => handleChange('parent_task_id', v === 'none' ? null : v)}
+          >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="None (main task)" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None (main task)</SelectItem>
-              {availableTasks.filter(t => !t.parent_task_id && t.project_id === formData.project_id).map(t => (
-                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-              ))}
+              <SelectItem value="none">📁 Summary Task (Parent)</SelectItem>
+              {availableTasks
+                .filter(t => !t.parent_task_id && t.project_id === formData.project_id)
+                .map(t => (
+                  <SelectItem key={t.id} value={t.id}>
+                    ↳ Subtask of: {t.name}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
+          {isSummaryTask && !task && (
+            <p className="text-xs text-zinc-500">
+              💡 Create this as a parent task, then add subtasks to it later
+            </p>
+          )}
         </div>
       </div>
 

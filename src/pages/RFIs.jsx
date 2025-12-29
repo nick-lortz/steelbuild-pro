@@ -443,23 +443,43 @@ export default function RFIs() {
           { label: 'Question', key: 'question', example: 'Please clarify base plate size' },
           { label: 'Priority', key: 'priority', example: 'high' },
           { label: 'Due Date', key: 'due_date', example: '2025-01-15' },
+          { label: 'Assigned To', key: 'assigned_to', example: 'John Smith' },
+          { label: 'Status', key: 'status', example: 'draft' },
         ]}
-        transformRow={(row) => {
-          const project = projects.find(p => p.project_number === row.project_number);
-          const projectRFIs = rfis.filter(r => r.project_id === project?.id);
-          const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
-          return {
-            project_id: project?.id || '',
-            rfi_number: maxNumber + 1,
-            subject: row.subject || '',
-            question: row.question || '',
-            priority: row.priority || 'medium',
-            status: 'draft',
-            due_date: row.due_date || '',
-            cost_impact: false,
-            schedule_impact: false,
+        transformRow={(() => {
+          const projectCounters = {};
+          
+          return (row) => {
+            const project = projects.find(p => p.project_number === row.project_number);
+            
+            if (!project?.id) {
+              throw new Error(`Project not found: ${row.project_number}`);
+            }
+            
+            // Initialize counter for this project if not exists
+            if (!projectCounters[project.id]) {
+              const projectRFIs = rfis.filter(r => r.project_id === project.id);
+              const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
+              projectCounters[project.id] = maxNumber;
+            }
+            
+            // Increment counter for this project
+            projectCounters[project.id]++;
+            
+            return {
+              project_id: project.id,
+              rfi_number: projectCounters[project.id],
+              subject: row.subject || '',
+              question: row.question || '',
+              priority: row.priority || 'medium',
+              status: row.status || 'draft',
+              assigned_to: row.assigned_to || '',
+              due_date: row.due_date || '',
+              cost_impact: false,
+              schedule_impact: false,
+            };
           };
-        }}
+        })()}
         onImportComplete={() => {
           queryClient.invalidateQueries({ queryKey: ['rfis'] });
         }}

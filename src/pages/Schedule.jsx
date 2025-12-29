@@ -187,6 +187,17 @@ export default function Schedule() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              onClick={() => {
+                setEditingTask({ parent_task_id: null, is_milestone: false });
+                setShowTaskForm(true);
+              }}
+              className="border-amber-700 text-amber-400 hover:bg-amber-500/10"
+            >
+              <Plus size={16} className="mr-2" />
+              Summary Task
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setShowBulkAdd(true)}
               className="border-zinc-700 text-white hover:bg-zinc-800"
             >

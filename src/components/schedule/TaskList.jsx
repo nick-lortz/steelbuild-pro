@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
-import { AlertTriangle, FileText, Trash2, Edit } from 'lucide-react';
+import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,17 @@ import {
 export default function TaskList({ tasks, projects, resources, drawingSets, onTaskEdit, onTaskUpdate, onBulkDelete, onBulkEdit }) {
   const [selectedTasks, setSelectedTasks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [collapsedParents, setCollapsedParents] = useState(new Set());
+
+  const toggleParent = (taskId) => {
+    const newCollapsed = new Set(collapsedParents);
+    if (newCollapsed.has(taskId)) {
+      newCollapsed.delete(taskId);
+    } else {
+      newCollapsed.add(taskId);
+    }
+    setCollapsedParents(newCollapsed);
+  };
 
   const toggleTask = (taskId) => {
     const newSelected = new Set(selectedTasks);
@@ -56,6 +67,25 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     return map;
   }, [drawingSets]);
 
+  // Organize tasks by parent-child relationships
+  const organizedTasks = useMemo(() => {
+    const parentTasks = tasks.filter(t => !t.parent_task_id);
+    const result = [];
+    
+    parentTasks.forEach(parent => {
+      const children = tasks.filter(t => t.parent_task_id === parent.id);
+      result.push({ task: parent, children, isParent: children.length > 0 });
+      
+      if (!collapsedParents.has(parent.id)) {
+        children.forEach(child => {
+          result.push({ task: child, children: [], isParent: false, isChild: true });
+        });
+      }
+    });
+    
+    return result;
+  }, [tasks, collapsedParents]);
+
   const columns = useMemo(() => [
     {
       header: (
@@ -76,7 +106,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     {
       header: 'Task',
       accessor: 'name',
-      render: (row) => {
+      render: (row, meta) => {
         // Check if task is blocked by drawings - optimized lookup
         const requiresFFFPhases = ['fabrication', 'delivery', 'erection'];
         const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
@@ -86,10 +116,30 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
             return drawing && drawing.status !== 'FFF';
           });
 
+        const isParent = meta?.isParent;
+        const isChild = meta?.isChild;
+        const isCollapsed = collapsedParents.has(row.id);
+
         return (
-          <div>
+          <div className={isChild ? 'pl-6' : ''}>
             <div className="flex items-center gap-2">
-              <p className="font-medium text-white">{row.is_milestone ? '◆ ' : ''}{row.name}</p>
+              {isParent && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleParent(row.id);
+                  }}
+                  className="text-zinc-400 hover:text-white transition-colors"
+                >
+                  {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                </button>
+              )}
+              <p className={`font-medium ${isChild ? 'text-zinc-300' : 'text-white'}`}>
+                {isParent && '📁 '}
+                {isChild && '↳ '}
+                {row.is_milestone ? '◆ ' : ''}
+                {row.name}
+              </p>
               {isBlocked && (
                 <AlertTriangle size={14} className="text-red-400" title="Blocked by drawings" />
               )}

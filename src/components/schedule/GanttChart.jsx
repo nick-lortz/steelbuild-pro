@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format, addDays, differenceInDays, startOfWeek, startOfMonth } from 'date-fns';
-import { AlertTriangle, Link as LinkIcon } from 'lucide-react';
+import { AlertTriangle, Link as LinkIcon, ZoomIn, ZoomOut, Home, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function GanttChart({ 
   tasks, 
@@ -16,7 +17,45 @@ export default function GanttChart({
   projects = []
 }) {
   const [draggingTask, setDraggingTask] = useState(null);
+  const [collapsedPhases, setCollapsedPhases] = useState(new Set());
+  const [collapsedParents, setCollapsedParents] = useState(new Set());
   const chartRef = useRef(null);
+
+  const togglePhase = (phase) => {
+    const newCollapsed = new Set(collapsedPhases);
+    if (newCollapsed.has(phase)) {
+      newCollapsed.delete(phase);
+    } else {
+      newCollapsed.add(phase);
+    }
+    setCollapsedPhases(newCollapsed);
+  };
+
+  const toggleParent = (taskId) => {
+    const newCollapsed = new Set(collapsedParents);
+    if (newCollapsed.has(taskId)) {
+      newCollapsed.delete(taskId);
+    } else {
+      newCollapsed.add(taskId);
+    }
+    setCollapsedParents(newCollapsed);
+  };
+
+  const scrollToToday = () => {
+    if (chartRef.current) {
+      const scrollPosition = (todayPosition / 100) * chartRef.current.scrollWidth - (chartRef.current.clientWidth / 2);
+      chartRef.current.scrollTo({ left: Math.max(0, scrollPosition), behavior: 'smooth' });
+    }
+  };
+
+  const collapseAll = () => {
+    setCollapsedPhases(new Set(phases));
+  };
+
+  const expandAll = () => {
+    setCollapsedPhases(new Set());
+    setCollapsedParents(new Set());
+  };
 
   if (!tasks.length) {
     return (
@@ -118,7 +157,21 @@ export default function GanttChart({
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
       <CardHeader className="border-b border-zinc-800">
-        <CardTitle className="text-sm text-white">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm text-white">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={scrollToToday} className="border-zinc-700 text-xs">
+              <Home size={14} className="mr-1" />
+              Today
+            </Button>
+            <Button size="sm" variant="outline" onClick={expandAll} className="border-zinc-700 text-xs">
+              Expand All
+            </Button>
+            <Button size="sm" variant="outline" onClick={collapseAll} className="border-zinc-700 text-xs">
+              Collapse All
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto" ref={chartRef}>
@@ -160,19 +213,36 @@ export default function GanttChart({
             {phases.map(phase => {
               const phaseTasks = tasksByPhase[phase];
               if (phaseTasks.length === 0) return null;
+              
+              const isPhaseCollapsed = collapsedPhases.has(phase);
+              
+              // Separate parent and child tasks
+              const parentTasks = phaseTasks.filter(t => !t.parent_task_id);
+              const childTasksMap = {};
+              phaseTasks.filter(t => t.parent_task_id).forEach(t => {
+                if (!childTasksMap[t.parent_task_id]) childTasksMap[t.parent_task_id] = [];
+                childTasksMap[t.parent_task_id].push(t);
+              });
 
               return (
                 <div key={phase} className="border-b border-zinc-800">
                   {/* Phase Header */}
-                  <div className="flex bg-zinc-800/70">
-                    <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-amber-400">
-                      {phaseLabels[phase]}
-                    </div>
+                  <div className="flex bg-zinc-800/70 hover:bg-zinc-800">
+                    <button
+                      onClick={() => togglePhase(phase)}
+                      className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-amber-400 flex items-center gap-2 text-left hover:text-amber-300 transition-colors"
+                    >
+                      {isPhaseCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                      {phaseLabels[phase]} ({phaseTasks.length})
+                    </button>
                     <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                   </div>
 
                   {/* Phase Tasks */}
-                  {phaseTasks.map((task) => {
+                  {!isPhaseCollapsed && parentTasks.map((task) => {
+                    const childTasks = childTasksMap[task.id] || [];
+                    const hasChildren = childTasks.length > 0;
+                    const isParentCollapsed = collapsedParents.has(task.id);
                     const pos = getTaskPosition(task);
                     const critical = isCritical(task.id);
                     const hasRFI = hasRFIImpact(task);
@@ -183,12 +253,27 @@ export default function GanttChart({
                       <div key={task.id} className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
                         {/* Task Name */}
                         <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5">
-                          <button
-                            onClick={() => handleTaskClick(task)}
-                            className="text-left text-sm font-medium text-white hover:text-amber-400 truncate w-full transition-colors"
-                          >
-                            {task.is_milestone ? '◆ ' : ''}{task.name}
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {hasChildren && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleParent(task.id);
+                                }}
+                                className="text-zinc-400 hover:text-white transition-colors"
+                              >
+                                {isParentCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleTaskClick(task)}
+                              className="text-left text-sm font-medium text-white hover:text-amber-400 truncate flex-1 transition-colors"
+                            >
+                              {hasChildren && '📁 '}
+                              {task.is_milestone ? '◆ ' : ''}
+                              {task.name}
+                            </button>
+                          </div>
                           <div className="flex items-center gap-2">
                             {project && (
                               <span className="text-xs text-zinc-300 truncate">
@@ -287,13 +372,87 @@ export default function GanttChart({
                               />
                             );
                           })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+                          </div>
+                          </div>
+
+                          {/* Child Tasks */}
+                          {!isParentCollapsed && childTasks.map((childTask) => {
+                          const childPos = getTaskPosition(childTask);
+                          const childCritical = isCritical(childTask.id);
+                          const childHasRFI = hasRFIImpact(childTask);
+                          const childHasCO = hasCOImpact(childTask);
+
+                          return (
+                          <div key={childTask.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors">
+                            <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5">
+                              <button
+                                onClick={() => handleTaskClick(childTask)}
+                                className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate w-full transition-colors"
+                              >
+                                ↳ {childTask.name}
+                              </button>
+                              <div className="flex items-center gap-2">
+                                {(childHasRFI || childHasCO) && (
+                                  <div className="flex gap-1">
+                                    {childHasRFI && <LinkIcon size={10} className="text-blue-400" />}
+                                    {childHasCO && <LinkIcon size={10} className="text-purple-400" />}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                              {periods.map((_, idx) => (
+                                <div
+                                  key={idx}
+                                  className="absolute top-0 bottom-0 border-r border-zinc-800/50"
+                                  style={{ left: `${(idx / periods.length) * 100}%` }}
+                                />
+                              ))}
+
+                              {todayPosition >= 0 && todayPosition <= 100 && (
+                                <div
+                                  className="absolute top-0 bottom-0 w-0.5 bg-amber-500/70 z-10"
+                                  style={{ left: `${todayPosition}%` }}
+                                />
+                              )}
+
+                              <div
+                                className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+                                  childCritical 
+                                    ? 'bg-red-500/80 border border-red-300' 
+                                    : childTask.status === 'completed'
+                                      ? 'bg-green-500/80'
+                                      : childTask.status === 'in_progress'
+                                        ? 'bg-blue-500/80'
+                                        : 'bg-zinc-600/80'
+                                }`}
+                                style={{
+                                  ...childPos,
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                }}
+                                onClick={() => handleTaskClick(childTask)}
+                              >
+                                {childTask.progress_percent > 0 && (
+                                  <div 
+                                    className="absolute inset-0 bg-white/20 rounded-l"
+                                    style={{ width: `${childTask.progress_percent}%` }}
+                                  />
+                                )}
+                                <div className="absolute inset-0 flex items-center px-2 text-xs font-medium text-white truncate">
+                                  {childTask.name}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          );
+                          })}
+                          );
+                          })}
+                          </div>
+                          );
+                          })}
           </div>
         </div>
 

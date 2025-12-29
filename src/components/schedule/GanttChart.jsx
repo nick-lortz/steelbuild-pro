@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format, addDays, differenceInDays, startOfWeek, startOfMonth } from 'date-fns';
-import { AlertTriangle, Link as LinkIcon, ZoomIn, ZoomOut, Home, ChevronDown, ChevronRight, GitBranch } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, addDays, differenceInDays, isPast, isBefore } from 'date-fns';
+import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X } from 'lucide-react';
 import DependencyEditor from './DependencyEditor';
 
 export default function GanttChart({ 
@@ -21,6 +23,9 @@ export default function GanttChart({
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
   const [editingDependencies, setEditingDependencies] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState('all');
   const chartRef = useRef(null);
 
   const togglePhase = (phase) => {
@@ -69,8 +74,8 @@ export default function GanttChart({
     );
   }
 
-  // Calculate date range with null checks
-  const dates = tasks
+  // Calculate date range with null checks - use filteredTasks
+  const dates = filteredTasks
     .filter(t => t.start_date && t.end_date)
     .flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
   
@@ -107,11 +112,11 @@ export default function GanttChart({
     }
   }
 
-  // Group tasks by phase
+  // Group filteredTasks by phase
   const phases = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
   const tasksByPhase = {};
   phases.forEach(phase => {
-    tasksByPhase[phase] = tasks.filter(t => t.phase === phase);
+    tasksByPhase[phase] = filteredTasks.filter(t => t.phase === phase);
   });
 
   const phaseLabels = {
@@ -144,6 +149,26 @@ export default function GanttChart({
     return task.linked_co_ids && task.linked_co_ids.length > 0;
   };
 
+  const isOverdue = (task) => {
+    if (!task.end_date || task.status === 'completed') return false;
+    const endDate = new Date(task.end_date);
+    return isPast(endDate) && isBefore(endDate, new Date());
+  };
+
+  // Filter tasks
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesSearch = !searchTerm || 
+        task.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.wbs_code?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+      const matchesProject = projectFilter === 'all' || task.project_id === projectFilter;
+      
+      return matchesSearch && matchesStatus && matchesProject;
+    });
+  }, [tasks, searchTerm, statusFilter, projectFilter]);
+
   const handleTaskClick = (task, e) => {
     // Right-click or Ctrl+click opens dependency editor
     if (e?.button === 2 || e?.ctrlKey) {
@@ -164,7 +189,7 @@ export default function GanttChart({
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
-      <CardHeader className="border-b border-zinc-800">
+      <CardHeader className="border-b border-zinc-800 space-y-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-white">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
           <div className="flex items-center gap-2">
@@ -184,6 +209,76 @@ export default function GanttChart({
             </div>
           </div>
         </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Input
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-zinc-800 border-zinc-700 text-white h-8 text-sm"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700 h-8 text-sm">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value="all" className="text-white">All Status</SelectItem>
+              <SelectItem value="not_started" className="text-white">Not Started</SelectItem>
+              <SelectItem value="in_progress" className="text-white">In Progress</SelectItem>
+              <SelectItem value="completed" className="text-white">Completed</SelectItem>
+              <SelectItem value="on_hold" className="text-white">On Hold</SelectItem>
+              <SelectItem value="blocked" className="text-white">Blocked</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700 h-8 text-sm">
+              <SelectValue placeholder="Project" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value="all" className="text-white">All Projects</SelectItem>
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id} className="text-white">
+                  {p.project_number}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {(searchTerm || statusFilter !== 'all' || projectFilter !== 'all') && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setProjectFilter('all');
+              }}
+              className="text-xs text-zinc-400 hover:text-white"
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+
+        {filteredTasks.length < tasks.length && (
+          <div className="text-xs text-zinc-400">
+            Showing {filteredTasks.length} of {tasks.length} tasks
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto" ref={chartRef}>
@@ -259,6 +354,7 @@ export default function GanttChart({
                     const critical = isCritical(task.id);
                     const hasRFI = hasRFIImpact(task);
                     const hasCO = hasCOImpact(task);
+                    const overdue = isOverdue(task);
                     const project = projects.find(p => p.id === task.project_id);
                     
                     return (
@@ -336,16 +432,18 @@ export default function GanttChart({
 
                           {/* Task Bar */}
                           <div
-                           className={`absolute h-7 rounded cursor-pointer transition-all hover:shadow-xl hover:scale-105 ${
+                           className={`absolute h-7 rounded cursor-pointer transition-all hover:shadow-xl hover:scale-105 overflow-hidden ${
                              task.is_milestone 
                                ? 'bg-amber-500 w-3.5 h-3.5 transform rotate-45 shadow-lg' 
-                               : critical 
-                                 ? 'bg-red-500 border-2 border-red-300 shadow-lg' 
-                                 : task.status === 'completed'
-                                   ? 'bg-green-500 shadow-md'
-                                   : task.status === 'in_progress'
-                                     ? 'bg-blue-500 shadow-md'
-                                     : 'bg-zinc-600 shadow-md'
+                               : overdue
+                                 ? 'bg-red-600 border-2 border-red-400 shadow-lg animate-pulse'
+                                 : critical 
+                                   ? 'bg-red-500 border-2 border-red-300 shadow-lg' 
+                                   : task.status === 'completed'
+                                     ? 'bg-green-500 shadow-md'
+                                     : task.status === 'in_progress'
+                                       ? 'bg-blue-500 shadow-md'
+                                       : 'bg-zinc-600 shadow-md'
                            }`}
                            style={{
                              ...pos,
@@ -357,17 +455,25 @@ export default function GanttChart({
                              e.preventDefault();
                              setEditingDependencies(task);
                            }}
-                           title="Click to edit | Right-click or Ctrl+Click for dependencies"
+                           title={`${task.name} - ${task.progress_percent || 0}% complete${overdue ? ' (OVERDUE)' : ''}`}
                           >
                            {!task.is_milestone && task.progress_percent > 0 && (
                              <div 
-                               className="absolute inset-0 bg-white/25 rounded-l"
+                               className="absolute inset-0 bg-white/30 rounded-l transition-all"
                                style={{ width: `${task.progress_percent}%` }}
                              />
                            )}
                            {!task.is_milestone && (
-                             <div className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-white truncate drop-shadow-md">
-                               {task.name}
+                             <div className="absolute inset-0 flex items-center justify-between px-2">
+                               <span className="text-xs font-semibold text-white truncate drop-shadow-md">
+                                 {task.name}
+                               </span>
+                               <div className="flex items-center gap-1 ml-2">
+                                 {overdue && <AlertTriangle size={12} className="text-white drop-shadow" />}
+                                 <span className="text-[10px] font-bold text-white/90 drop-shadow">
+                                   {task.progress_percent || 0}%
+                                 </span>
+                               </div>
                              </div>
                            )}
                           </div>
@@ -398,6 +504,7 @@ export default function GanttChart({
                           const childCritical = isCritical(childTask.id);
                           const childHasRFI = hasRFIImpact(childTask);
                           const childHasCO = hasCOImpact(childTask);
+                          const childOverdue = isOverdue(childTask);
 
                           return (
                           <div key={childTask.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors">
@@ -435,14 +542,16 @@ export default function GanttChart({
                              )}
 
                              <div
-                               className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
-                                 childCritical 
-                                   ? 'bg-red-500/80 border border-red-300' 
-                                   : childTask.status === 'completed'
-                                     ? 'bg-green-500/80'
-                                     : childTask.status === 'in_progress'
-                                       ? 'bg-blue-500/80'
-                                       : 'bg-zinc-600/80'
+                               className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg hover:scale-105 overflow-hidden ${
+                                 childOverdue
+                                   ? 'bg-red-600/80 border border-red-400 animate-pulse'
+                                   : childCritical 
+                                     ? 'bg-red-500/80 border border-red-300' 
+                                     : childTask.status === 'completed'
+                                       ? 'bg-green-500/80'
+                                       : childTask.status === 'in_progress'
+                                         ? 'bg-blue-500/80'
+                                         : 'bg-zinc-600/80'
                                }`}
                                style={{
                                  ...childPos,
@@ -450,15 +559,24 @@ export default function GanttChart({
                                  transform: 'translateY(-50%)',
                                }}
                                onClick={() => handleTaskClick(childTask)}
+                               title={`${childTask.name} - ${childTask.progress_percent || 0}% complete${childOverdue ? ' (OVERDUE)' : ''}`}
                              >
                                {childTask.progress_percent > 0 && (
                                  <div 
-                                   className="absolute inset-0 bg-white/20 rounded-l"
+                                   className="absolute inset-0 bg-white/25 rounded-l transition-all"
                                    style={{ width: `${childTask.progress_percent}%` }}
                                  />
                                )}
-                               <div className="absolute inset-0 flex items-center px-2 text-xs font-medium text-white truncate">
-                                 {childTask.name}
+                               <div className="absolute inset-0 flex items-center justify-between px-2">
+                                 <span className="text-xs font-medium text-white truncate">
+                                   {childTask.name}
+                                 </span>
+                                 <div className="flex items-center gap-1 ml-1">
+                                   {childOverdue && <AlertTriangle size={10} className="text-white" />}
+                                   <span className="text-[9px] font-bold text-white/90">
+                                     {childTask.progress_percent || 0}%
+                                   </span>
+                                 </div>
                                </div>
                              </div>
                            </div>
@@ -509,6 +627,18 @@ export default function GanttChart({
             <div className="flex items-center gap-2">
               <LinkIcon size={16} className="text-purple-400" />
               <span className="text-zinc-200">Linked CO</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-red-600 rounded border border-red-400 animate-pulse flex items-center justify-center">
+                <AlertTriangle size={12} className="text-white" />
+              </div>
+              <span className="text-zinc-200">Overdue</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-blue-500 rounded relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/30 w-3/5" />
+              </div>
+              <span className="text-zinc-200">Progress Bar</span>
             </div>
           </div>
         </div>

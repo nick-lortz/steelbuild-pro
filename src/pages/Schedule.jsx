@@ -188,13 +188,17 @@ export default function Schedule() {
             <Button
               variant="outline"
               onClick={() => {
-                setEditingTask(null);
+                setEditingTask({
+                  parent_task_id: null,
+                  name: '',
+                  is_milestone: false,
+                });
                 setShowTaskForm(true);
               }}
               className="border-amber-700 text-amber-400 hover:bg-amber-500/10"
             >
               <Plus size={16} className="mr-2" />
-              Add Task
+              Summary Task
             </Button>
             <Button
               variant="outline"

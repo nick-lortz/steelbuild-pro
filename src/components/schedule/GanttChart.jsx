@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, addDays, differenceInDays, startOfWeek, startOfMonth } from 'date-fns';
-import { AlertTriangle, Link as LinkIcon, ZoomIn, ZoomOut, Home, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Link as LinkIcon, ZoomIn, ZoomOut, Home, ChevronDown, ChevronRight, GitBranch } from 'lucide-react';
+import DependencyEditor from './DependencyEditor';
 
 export default function GanttChart({ 
   tasks, 
@@ -19,6 +20,7 @@ export default function GanttChart({
   const [draggingTask, setDraggingTask] = useState(null);
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
+  const [editingDependencies, setEditingDependencies] = useState(null);
   const chartRef = useRef(null);
 
   const togglePhase = (phase) => {
@@ -142,8 +144,14 @@ export default function GanttChart({
     return task.linked_co_ids && task.linked_co_ids.length > 0;
   };
 
-  const handleTaskClick = (task) => {
-    onTaskEdit(task);
+  const handleTaskClick = (task, e) => {
+    // Right-click or Ctrl+click opens dependency editor
+    if (e?.button === 2 || e?.ctrlKey) {
+      e.preventDefault();
+      setEditingDependencies(task);
+    } else {
+      onTaskEdit(task);
+    }
   };
 
   const columnWidth = viewMode === 'day' ? 60 : viewMode === 'week' ? 80 : 100;
@@ -170,6 +178,10 @@ export default function GanttChart({
             <Button size="sm" variant="outline" onClick={collapseAll} className="border-zinc-700 text-xs">
               Collapse All
             </Button>
+            <div className="text-xs text-zinc-400 flex items-center gap-1">
+              <GitBranch size={12} />
+              Ctrl+Click to edit dependencies
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -340,7 +352,12 @@ export default function GanttChart({
                              top: '50%',
                              transform: task.is_milestone ? 'translateY(-50%) rotate(45deg)' : 'translateY(-50%)',
                            }}
-                           onClick={() => handleTaskClick(task)}
+                           onClick={(e) => handleTaskClick(task, e)}
+                           onContextMenu={(e) => {
+                             e.preventDefault();
+                             setEditingDependencies(task);
+                           }}
+                           title="Click to edit | Right-click or Ctrl+Click for dependencies"
                           >
                            {!task.is_milestone && task.progress_percent > 0 && (
                              <div 
@@ -496,6 +513,15 @@ export default function GanttChart({
           </div>
         </div>
       </CardContent>
+
+      {editingDependencies && (
+        <DependencyEditor
+          task={editingDependencies}
+          tasks={tasks}
+          open={!!editingDependencies}
+          onOpenChange={(open) => !open && setEditingDependencies(null)}
+        />
+      )}
     </Card>
   );
 }

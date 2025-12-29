@@ -167,26 +167,26 @@ export default function TaskForm({
         <div className="space-y-2">
           <Label>Task Type</Label>
           <Select 
-            value={formData.parent_task_id || 'none'} 
+            value={formData.parent_task_id === null ? 'none' : (formData.parent_task_id || 'none')} 
             onValueChange={(v) => handleChange('parent_task_id', v === 'none' ? null : v)}
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
+              <SelectValue placeholder="Select task type" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">📁 Summary Task (Parent)</SelectItem>
-              {availableTasks
-                .filter(t => !t.parent_task_id && t.project_id === formData.project_id)
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value="none" className="text-white">📁 Summary Task (can have subtasks)</SelectItem>
+              {formData.project_id && availableTasks
+                .filter(t => !t.parent_task_id && t.project_id === formData.project_id && t.id !== task?.id)
                 .map(t => (
-                  <SelectItem key={t.id} value={t.id}>
-                    ↳ Subtask of: {t.name}
+                  <SelectItem key={t.id} value={t.id} className="text-white">
+                    ↳ Subtask under: {t.name}
                   </SelectItem>
                 ))}
             </SelectContent>
           </Select>
           {isSummaryTask && !task && (
-            <p className="text-xs text-zinc-500">
-              💡 Create this as a parent task, then add subtasks to it later
+            <p className="text-xs text-zinc-500 mt-1">
+              💡 Summary tasks are parent tasks that can contain subtasks
             </p>
           )}
         </div>

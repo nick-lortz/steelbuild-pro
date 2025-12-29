@@ -25,25 +25,25 @@ export default function ResourceManagement() {
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: allocations = [] } = useQuery({
     queryKey: ['resourceAllocations'],
     queryFn: () => base44.entities.ResourceAllocation.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   // Calculate resource utilization and allocation
@@ -63,42 +63,42 @@ export default function ResourceManagement() {
       underutilized: [],
       utilizationByResource: [],
       allocationByProject: {},
-      typeDistribution: [],
+      typeDistribution: []
     };
 
     // Count by type and status
-    resources.forEach(resource => {
+    resources.forEach((resource) => {
       if (resource.status === 'available') metrics.available++;
       if (resource.status === 'assigned') metrics.assigned++;
       if (resource.status === 'unavailable') metrics.unavailable++;
-      
+
       if (resource.type === 'labor') metrics.labor++;
       if (resource.type === 'equipment') metrics.equipment++;
       if (resource.type === 'subcontractor') metrics.subcontractor++;
     });
 
     // Calculate allocation per resource
-    resources.forEach(resource => {
-      const resourceTasks = tasks.filter(task => {
-        const isAssigned = 
-          (task.assigned_resources || []).includes(resource.id) ||
-          (task.assigned_equipment || []).includes(resource.id);
-        
+    resources.forEach((resource) => {
+      const resourceTasks = tasks.filter((task) => {
+        const isAssigned =
+        (task.assigned_resources || []).includes(resource.id) ||
+        (task.assigned_equipment || []).includes(resource.id);
+
         if (!isAssigned || !task.start_date || !task.end_date) return false;
-        
+
         const taskStart = new Date(task.start_date);
         const taskEnd = new Date(task.end_date);
-        
+
         // Check if task is active or upcoming
         return task.status !== 'completed' && task.status !== 'cancelled' &&
-               !isAfter(taskStart, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // Within 30 days
+        !isAfter(taskStart, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // Within 30 days
       });
 
-      const activeTaskCount = resourceTasks.filter(t => t.status === 'in_progress').length;
-      
+      const activeTaskCount = resourceTasks.filter((t) => t.status === 'in_progress').length;
+
       // Calculate utilization score (active tasks / reasonable capacity)
-      const utilizationScore = Math.min((activeTaskCount / 3) * 100, 100); // Assume 3 concurrent tasks is 100%
-      
+      const utilizationScore = Math.min(activeTaskCount / 3 * 100, 100); // Assume 3 concurrent tasks is 100%
+
       metrics.utilizationByResource.push({
         id: resource.id,
         name: resource.name,
@@ -106,14 +106,14 @@ export default function ResourceManagement() {
         status: resource.status,
         activeTasks: activeTaskCount,
         totalTasks: resourceTasks.length,
-        utilization: utilizationScore,
+        utilization: utilizationScore
       });
 
       // Flag overallocated (>3 active tasks)
       if (activeTaskCount > 3) {
         metrics.overallocated.push({
           ...resource,
-          taskCount: activeTaskCount,
+          taskCount: activeTaskCount
         });
       }
 
@@ -123,27 +123,27 @@ export default function ResourceManagement() {
       }
 
       // Track allocation by project
-      resourceTasks.forEach(task => {
+      resourceTasks.forEach((task) => {
         const projectId = task.project_id;
         if (!metrics.allocationByProject[projectId]) {
           metrics.allocationByProject[projectId] = {
             projectId,
             resourceCount: 0,
-            resources: new Set(),
+            resources: new Set()
           };
         }
         metrics.allocationByProject[projectId].resources.add(resource.id);
-        metrics.allocationByProject[projectId].resourceCount = 
-          metrics.allocationByProject[projectId].resources.size;
+        metrics.allocationByProject[projectId].resourceCount =
+        metrics.allocationByProject[projectId].resources.size;
       });
     });
 
     // Type distribution for pie chart
     metrics.typeDistribution = [
-      { name: 'Labor', value: metrics.labor, color: '#3b82f6' },
-      { name: 'Equipment', value: metrics.equipment, color: '#8b5cf6' },
-      { name: 'Subcontractor', value: metrics.subcontractor, color: '#10b981' },
-    ].filter(item => item.value > 0);
+    { name: 'Labor', value: metrics.labor, color: '#3b82f6' },
+    { name: 'Equipment', value: metrics.equipment, color: '#8b5cf6' },
+    { name: 'Subcontractor', value: metrics.subcontractor, color: '#10b981' }].
+    filter((item) => item.value > 0);
 
     return metrics;
   }, [resources, tasks]);
@@ -151,42 +151,42 @@ export default function ResourceManagement() {
   // Allocation chart data
   const allocationChartData = useMemo(() => {
     if (!resourceMetrics || !projects.length) return [];
-    
-    return Object.values(resourceMetrics.allocationByProject)
-      .map(allocation => {
-        const project = projects.find(p => p.id === allocation.projectId);
-        return {
-          name: project?.project_number || 'Unknown',
-          resources: allocation.resourceCount,
-        };
-      })
-      .sort((a, b) => b.resources - a.resources)
-      .slice(0, 10);
+
+    return Object.values(resourceMetrics.allocationByProject).
+    map((allocation) => {
+      const project = projects.find((p) => p.id === allocation.projectId);
+      return {
+        name: project?.project_number || 'Unknown',
+        resources: allocation.resourceCount
+      };
+    }).
+    sort((a, b) => b.resources - a.resources).
+    slice(0, 10);
   }, [resourceMetrics, projects]);
 
   // Utilization chart data
   const utilizationChartData = useMemo(() => {
     if (!resourceMetrics) return [];
-    
-    return resourceMetrics.utilizationByResource
-      .sort((a, b) => b.utilization - a.utilization)
-      .slice(0, 15)
-      .map(r => ({
-        name: r.name.length > 20 ? r.name.substring(0, 20) + '...' : r.name,
-        utilization: Math.round(r.utilization),
-        activeTasks: r.activeTasks,
-      }));
+
+    return resourceMetrics.utilizationByResource.
+    sort((a, b) => b.utilization - a.utilization).
+    slice(0, 15).
+    map((r) => ({
+      name: r.name.length > 20 ? r.name.substring(0, 20) + '...' : r.name,
+      utilization: Math.round(r.utilization),
+      activeTasks: r.activeTasks
+    }));
   }, [resourceMetrics]);
 
   // Filter resources
   const filteredResources = useMemo(() => {
     if (!resourceMetrics) return [];
 
-    return resourceMetrics.utilizationByResource.filter(resource => {
+    return resourceMetrics.utilizationByResource.filter((resource) => {
       const matchesSearch = resource.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === 'all' || resource.type === typeFilter;
       const matchesStatus = statusFilter === 'all' || resource.status === statusFilter;
-      
+
       return matchesSearch && matchesType && matchesStatus;
     });
   }, [resourceMetrics, searchTerm, typeFilter, statusFilter]);
@@ -198,8 +198,8 @@ export default function ResourceManagement() {
           <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-zinc-400">Loading resources...</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (!resourceMetrics) {
@@ -211,19 +211,19 @@ export default function ResourceManagement() {
           title="No Resources Available"
           description="Add resources to track utilization and allocation across projects."
           actionLabel="Manage Resources"
-          actionPage="Resources"
-        />
-      </div>
-    );
+          actionPage="Resources" />
+
+      </div>);
+
   }
 
   return (
     <div>
-      <PageHeader 
-        title="Resource Management" 
+      <PageHeader
+        title="Resource Management"
         subtitle="Monitor allocation, leveling, and forecasting"
-        showBackButton={false}
-      />
+        showBackButton={false} />
+
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
@@ -265,9 +265,9 @@ export default function ResourceManagement() {
                 <p className="text-zinc-400 text-sm font-medium">Assigned</p>
                 <p className="text-2xl font-bold text-green-400 mt-1">{resourceMetrics.assigned}</p>
                 <p className="text-xs text-zinc-500 mt-1">
-                  {resourceMetrics.total > 0 
-                    ? `${Math.round((resourceMetrics.assigned / resourceMetrics.total) * 100)}% utilized`
-                    : '0% utilized'}
+                  {resourceMetrics.total > 0 ?
+                      `${Math.round(resourceMetrics.assigned / resourceMetrics.total * 100)}% utilized` :
+                      '0% utilized'}
                 </p>
               </div>
               <div className="p-2.5 bg-green-500/10 rounded-lg">
@@ -309,10 +309,10 @@ export default function ResourceManagement() {
       </div>
 
       {/* Alerts Section */}
-      {(resourceMetrics.overallocated.length > 0 || resourceMetrics.underutilized.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      {(resourceMetrics.overallocated.length > 0 || resourceMetrics.underutilized.length > 0) &&
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Overallocated Resources */}
-          {resourceMetrics.overallocated.length > 0 && (
+          {resourceMetrics.overallocated.length > 0 &&
             <Card className="bg-red-500/5 border-red-500/20">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -322,8 +322,8 @@ export default function ResourceManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {resourceMetrics.overallocated.slice(0, 5).map(resource => (
-                    <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
+                  {resourceMetrics.overallocated.slice(0, 5).map((resource) =>
+                  <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-white">{resource.name}</p>
@@ -334,14 +334,14 @@ export default function ResourceManagement() {
                         </Badge>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
-          )}
+            }
 
           {/* Underutilized Resources */}
-          {resourceMetrics.underutilized.length > 0 && (
+          {resourceMetrics.underutilized.length > 0 &&
             <Card className="bg-amber-500/5 border-amber-500/20">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -351,8 +351,8 @@ export default function ResourceManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {resourceMetrics.underutilized.slice(0, 5).map(resource => (
-                    <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
+                  {resourceMetrics.underutilized.slice(0, 5).map((resource) =>
+                  <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-white">{resource.name}</p>
@@ -363,13 +363,13 @@ export default function ResourceManagement() {
                         </Badge>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
-          )}
+            }
         </div>
-      )}
+          }
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -382,18 +382,18 @@ export default function ResourceManagement() {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={resourceMetrics.typeDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {resourceMetrics.typeDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                      data={resourceMetrics.typeDistribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value">
+
+                  {resourceMetrics.typeDistribution.map((entry, index) =>
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      )}
                 </Pie>
                 <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
               </PieChart>
@@ -404,7 +404,7 @@ export default function ResourceManagement() {
         {/* Resource Allocation by Project */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-lg">Top 10 Projects by Resource Count</CardTitle>
+            <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Top 10 Projects by Resource Count</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -431,13 +431,13 @@ export default function ResourceManagement() {
               <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
               <XAxis type="number" stroke="#a1a1aa" domain={[0, 100]} />
               <YAxis type="category" dataKey="name" stroke="#a1a1aa" width={150} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
-                formatter={(value, name) => {
-                  if (name === 'utilization') return [`${value}%`, 'Utilization'];
-                  return [value, name];
-                }}
-              />
+              <Tooltip
+                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
+                    formatter={(value, name) => {
+                      if (name === 'utilization') return [`${value}%`, 'Utilization'];
+                      return [value, name];
+                    }} />
+
               <Legend />
               <Bar dataKey="utilization" fill="#3b82f6" name="Utilization %" />
               <Bar dataKey="activeTasks" fill="#10b981" name="Active Tasks" />
@@ -452,11 +452,11 @@ export default function ResourceManagement() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" size={18} />
             <Input
-              placeholder="Search resources..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-zinc-900 border-zinc-800"
-            />
+                  placeholder="Search resources..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-zinc-900 border-zinc-800" />
+
           </div>
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -490,15 +490,15 @@ export default function ResourceManagement() {
           <CardTitle className="text-lg">Resource Details ({filteredResources.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredResources.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="No Resources Found"
-              description="Try adjusting your filters."
-              variant="subtle"
-            />
-          ) : (
-            <div className="overflow-x-auto">
+          {filteredResources.length === 0 ?
+              <EmptyState
+                icon={Users}
+                title="No Resources Found"
+                description="Try adjusting your filters."
+                variant="subtle" /> :
+
+
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-zinc-800">
@@ -510,7 +510,7 @@ export default function ResourceManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredResources.map(resource => (
+                  {filteredResources.map((resource) =>
                     <tr key={resource.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                       <td className="py-3 px-4">
                         <p className="font-medium text-white">{resource.name}</p>
@@ -532,14 +532,14 @@ export default function ResourceManagement() {
                         <div className="flex items-center gap-3">
                           <div className="flex-1 max-w-[120px]">
                             <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className={`h-full transition-all ${
-                                  resource.utilization > 80 ? 'bg-red-500' :
-                                  resource.utilization > 50 ? 'bg-amber-500' :
-                                  'bg-green-500'
-                                }`}
-                                style={{ width: `${Math.min(resource.utilization, 100)}%` }}
-                              />
+                                resource.utilization > 80 ? 'bg-red-500' :
+                                resource.utilization > 50 ? 'bg-amber-500' :
+                                'bg-green-500'}`
+                                }
+                                style={{ width: `${Math.min(resource.utilization, 100)}%` }} />
+
                             </div>
                           </div>
                           <span className="text-sm text-zinc-300 min-w-[45px]">
@@ -548,31 +548,31 @@ export default function ResourceManagement() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )}
                 </tbody>
               </table>
             </div>
-          )}
+              }
         </CardContent>
       </Card>
         </TabsContent>
 
         <TabsContent value="leveling">
-          <ResourceLeveling 
+          <ResourceLeveling
             tasks={tasks}
             resources={resources}
-            projects={projects}
-          />
+            projects={projects} />
+
         </TabsContent>
 
         <TabsContent value="forecast">
           <ResourceForecast
             tasks={tasks}
             resources={resources}
-            projects={projects}
-          />
+            projects={projects} />
+
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>);
+
 }

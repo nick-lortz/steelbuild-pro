@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -128,6 +128,13 @@ export default function Financials() {
       setShowForm(false);
       setEditingFinancial(null);
       resetForm();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Financial.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
     },
   });
 
@@ -336,6 +343,7 @@ export default function Financials() {
   };
 
   const [deleteInvoice, setDeleteInvoice] = useState(null);
+  const [deleteFinancial, setDeleteFinancial] = useState(null);
 
   // When project is selected in invoice form, initialize line items
   const handleProjectSelect = (projectId) => {
@@ -528,6 +536,23 @@ export default function Financials() {
       header: 'Forecast',
       accessor: 'forecast_amount',
       render: (row) => `$${(row.forecast_amount || 0).toLocaleString()}`,
+    },
+    {
+      header: 'Actions',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteFinancial(row);
+          }}
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
     },
   ];
 
@@ -1396,6 +1421,32 @@ export default function Financials() {
               onClick={() => {
                 deleteInvoiceMutation.mutate(deleteInvoice.id);
                 setDeleteInvoice(null);
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Financial/SOV Line Confirmation */}
+      <AlertDialog open={!!deleteFinancial} onOpenChange={() => setDeleteFinancial(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Budget Line?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete this budget line? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteMutation.mutate(deleteFinancial.id);
+                setDeleteFinancial(null);
               }}
               className="bg-red-500 hover:bg-red-600"
             >

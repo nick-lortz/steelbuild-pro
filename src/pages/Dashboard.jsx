@@ -180,11 +180,12 @@ export default function Dashboard() {
       return allProjects;
     }
     
-    // Regular users see only their projects (where they are PM or superintendent)
+    // Regular users see only their projects (where they are PM, superintendent, assigned, or creator)
     return allProjects.filter(p => 
       p.project_manager === currentUser.email || 
       p.superintendent === currentUser.email ||
-      p.created_by === currentUser.email
+      p.created_by === currentUser.email ||
+      (p.assigned_users && p.assigned_users.includes(currentUser.email))
     );
   }, [allProjects, currentUser, showAllProjects]);
 

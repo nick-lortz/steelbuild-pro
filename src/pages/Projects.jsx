@@ -46,6 +46,7 @@ const initialFormState = {
   target_completion: '',
   project_manager: '',
   superintendent: '',
+  assigned_users: [],
   gc_contact: '',
   gc_email: '',
   gc_phone: '',
@@ -68,6 +69,11 @@ export default function Projects() {
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list('full_name'),
   });
 
   const createMutation = useMutation({
@@ -133,6 +139,7 @@ export default function Projects() {
     setFormData({
       ...project,
       contract_value: project.contract_value?.toString() || '',
+      assigned_users: project.assigned_users || [],
     });
     setSelectedProject(project);
   };
@@ -353,8 +360,22 @@ export default function Projects() {
 }
 
 function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit }) {
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list('full_name'),
+  });
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleUser = (userEmail) => {
+    const current = formData.assigned_users || [];
+    if (current.includes(userEmail)) {
+      handleChange('assigned_users', current.filter(e => e !== userEmail));
+    } else {
+      handleChange('assigned_users', [...current, userEmail]);
+    }
   };
 
   return (
@@ -459,6 +480,37 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit }) {
             placeholder="Superintendent name"
             className="bg-zinc-800 border-zinc-700"
           />
+        </div>
+      </div>
+
+      <div className="border-t border-zinc-800 pt-4">
+        <h4 className="text-sm font-medium text-zinc-400 mb-3">Assigned Users</h4>
+        <div className="space-y-2">
+          <Label className="text-xs text-zinc-500">Select users who can access this project</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-zinc-950 border border-zinc-800 rounded-lg">
+            {users.map(user => (
+              <label
+                key={user.id}
+                className="flex items-center gap-2 p-2 rounded hover:bg-zinc-800 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={(formData.assigned_users || []).includes(user.email)}
+                  onChange={() => toggleUser(user.email)}
+                  className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white truncate">{user.full_name || user.email}</p>
+                  <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+          {(formData.assigned_users || []).length > 0 && (
+            <p className="text-xs text-zinc-500 mt-2">
+              {(formData.assigned_users || []).length} user(s) assigned
+            </p>
+          )}
         </div>
       </div>
 

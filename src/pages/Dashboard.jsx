@@ -651,17 +651,24 @@ export default function Dashboard() {
                   </Badge>
                 </div>
                 <div className="space-y-2">
-                  {upcomingMilestones.slice(0, 3).map(project => (
-                    <div key={project.id} className="text-sm">
-                      <p className="text-white font-medium">{project.name}</p>
-                      <p className="text-zinc-500">
-                        {format(new Date(project.target_completion), 'MMM d, yyyy')} 
-                        <span className="text-amber-400 ml-2">
-                          ({differenceInDays(new Date(project.target_completion), new Date())}d)
-                        </span>
-                      </p>
-                    </div>
-                  ))}
+                  {upcomingMilestones.slice(0, 3).map(project => {
+                    const targetDate = project.target_completion ? new Date(project.target_completion) : null;
+                    const isValidDate = targetDate && !isNaN(targetDate.getTime());
+
+                    return (
+                      <div key={project.id} className="text-sm">
+                        <p className="text-white font-medium">{project.name}</p>
+                        <p className="text-zinc-500">
+                          {isValidDate ? format(targetDate, 'MMM d, yyyy') : 'No date'} 
+                          {isValidDate && (
+                            <span className="text-amber-400 ml-2">
+                              ({differenceInDays(targetDate, new Date())}d)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
@@ -688,9 +695,14 @@ export default function Dashboard() {
                 ) : (
                   upcomingDeliveries.map(delivery => {
                     const project = projects.find(p => p.id === delivery.project_id);
+                    const deliveryDate = delivery.date ? new Date(delivery.date) : null;
+                    const isValidDate = deliveryDate && !isNaN(deliveryDate.getTime());
+
                     return (
                       <div key={delivery.id} className="text-sm">
-                        <p className="text-zinc-400 text-xs">{format(new Date(delivery.date), 'MMM d')}</p>
+                        <p className="text-zinc-400 text-xs">
+                          {isValidDate ? format(deliveryDate, 'MMM d') : 'No date'}
+                        </p>
                         <p className="text-white font-medium">{project?.name}</p>
                         <p className="text-zinc-500 line-clamp-1">{delivery.items}</p>
                       </div>
@@ -823,10 +835,15 @@ export default function Dashboard() {
                         </div>
                         <div className="text-right">
                           <StatusBadge status={drawing.status} />
-                          <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                            <Clock size={12} />
-                            Due: {format(new Date(drawing.due_date), 'MMM d')}
-                          </p>
+                          {drawing.due_date && (() => {
+                            const dueDate = new Date(drawing.due_date);
+                            return !isNaN(dueDate.getTime()) && (
+                              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                                <Clock size={12} />
+                                Due: {format(dueDate, 'MMM d')}
+                              </p>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>

@@ -180,51 +180,70 @@ export default function DrawingSetDetails({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-400">IFA - Issued for Approval</span>
-                      {drawingSet.ifa_date ? (
-                        <span className="text-sm">{format(new Date(drawingSet.ifa_date), 'MMM d, yyyy')}</span>
-                      ) : (
-                        <span className="text-xs text-zinc-600">Not set</span>
-                      )}
+                      {drawingSet.ifa_date && (() => {
+                        const date = new Date(drawingSet.ifa_date);
+                        return !isNaN(date.getTime()) ? (
+                          <span className="text-sm">{format(date, 'MMM d, yyyy')}</span>
+                        ) : (
+                          <span className="text-xs text-zinc-600">Not set</span>
+                        );
+                      })()}
+                      {!drawingSet.ifa_date && <span className="text-xs text-zinc-600">Not set</span>}
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-400">BFA - Back from Approval</span>
-                      {drawingSet.bfa_date ? (
-                        <span className="text-sm">{format(new Date(drawingSet.bfa_date), 'MMM d, yyyy')}</span>
-                      ) : (
-                        <span className="text-xs text-zinc-600">Not set</span>
-                      )}
+                      {drawingSet.bfa_date && (() => {
+                        const date = new Date(drawingSet.bfa_date);
+                        return !isNaN(date.getTime()) ? (
+                          <span className="text-sm">{format(date, 'MMM d, yyyy')}</span>
+                        ) : (
+                          <span className="text-xs text-zinc-600">Not set</span>
+                        );
+                      })()}
+                      {!drawingSet.bfa_date && <span className="text-xs text-zinc-600">Not set</span>}
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-400">BFS - Back from Scrub</span>
-                      {drawingSet.bfs_date ? (
-                        <span className="text-sm">{format(new Date(drawingSet.bfs_date), 'MMM d, yyyy')}</span>
-                      ) : (
-                        <span className="text-xs text-zinc-600">Not set</span>
-                      )}
+                      {drawingSet.bfs_date && (() => {
+                        const date = new Date(drawingSet.bfs_date);
+                        return !isNaN(date.getTime()) ? (
+                          <span className="text-sm">{format(date, 'MMM d, yyyy')}</span>
+                        ) : (
+                          <span className="text-xs text-zinc-600">Not set</span>
+                        );
+                      })()}
+                      {!drawingSet.bfs_date && <span className="text-xs text-zinc-600">Not set</span>}
                     </div>
                     <div className="flex items-center justify-between border-t border-zinc-700 pt-3">
                       <span className="text-sm font-medium text-green-400">Released for Fabrication</span>
-                      {drawingSet.released_for_fab_date ? (
-                        <span className="text-sm font-medium">{format(new Date(drawingSet.released_for_fab_date), 'MMM d, yyyy')}</span>
-                      ) : (
-                        <span className="text-xs text-zinc-600">Not released</span>
-                      )}
+                      {drawingSet.released_for_fab_date && (() => {
+                        const date = new Date(drawingSet.released_for_fab_date);
+                        return !isNaN(date.getTime()) ? (
+                          <span className="text-sm font-medium">{format(date, 'MMM d, yyyy')}</span>
+                        ) : (
+                          <span className="text-xs text-zinc-600">Not released</span>
+                        );
+                      })()}
+                      {!drawingSet.released_for_fab_date && <span className="text-xs text-zinc-600">Not released</span>}
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Due Date */}
-              {drawingSet.due_date && (
-                <Card className="bg-zinc-800/50 border-zinc-700">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">Due Date</span>
-                      <span className="text-sm font-medium">{format(new Date(drawingSet.due_date), 'MMM d, yyyy')}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {drawingSet.due_date && (() => {
+                const dueDate = new Date(drawingSet.due_date);
+                return !isNaN(dueDate.getTime()) && (
+                  <Card className="bg-zinc-800/50 border-zinc-700">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Due Date</span>
+                        <span className="text-sm font-medium">{format(dueDate, 'MMM d, yyyy')}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* AI Summary */}
               {drawingSet.ai_summary && (
@@ -338,11 +357,14 @@ export default function DrawingSetDetails({
                           {sheet.ai_findings && (
                             <p className="text-xs text-zinc-500 mt-2">{sheet.ai_findings}</p>
                           )}
-                          {sheet.uploaded_date && (
-                            <p className="text-xs text-zinc-600 mt-1">
-                              Uploaded {format(new Date(sheet.uploaded_date), 'MMM d, yyyy h:mm a')}
-                            </p>
-                          )}
+                          {sheet.uploaded_date && (() => {
+                            const uploadDate = new Date(sheet.uploaded_date);
+                            return !isNaN(uploadDate.getTime()) && (
+                              <p className="text-xs text-zinc-600 mt-1">
+                                Uploaded {format(uploadDate, 'MMM d, yyyy h:mm a')}
+                              </p>
+                            );
+                          })()}
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -384,9 +406,14 @@ export default function DrawingSetDetails({
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-zinc-500">
-                            {format(new Date(rev.revision_date), 'MMM d, yyyy')}
-                          </p>
+                          {(() => {
+                            const revDate = new Date(rev.revision_date);
+                            return !isNaN(revDate.getTime()) && (
+                              <p className="text-xs text-zinc-500">
+                                {format(revDate, 'MMM d, yyyy')}
+                              </p>
+                            );
+                          })()}
                         </div>
                       </div>
                     </CardContent>

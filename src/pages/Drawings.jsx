@@ -315,12 +315,19 @@ export default function Drawings() {
                                 <p className="text-xs text-zinc-500">{set.set_number}</p>
                               </div>
                               <div className="text-right">
-                                <p className="text-xs text-red-400">
-                                  Due: {format(new Date(set.due_date), 'MMM d')}
-                                </p>
-                                <p className="text-xs text-zinc-500">
-                                  {Math.abs(differenceInDays(new Date(), new Date(set.due_date)))}d overdue
-                                </p>
+                                {(() => {
+                                  const dueDate = new Date(set.due_date);
+                                  return !isNaN(dueDate.getTime()) && (
+                                    <>
+                                      <p className="text-xs text-red-400">
+                                        Due: {format(dueDate, 'MMM d')}
+                                      </p>
+                                      <p className="text-xs text-zinc-500">
+                                        {Math.abs(differenceInDays(new Date(), dueDate))}d overdue
+                                      </p>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </div>

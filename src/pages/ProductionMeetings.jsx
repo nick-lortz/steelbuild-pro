@@ -7,13 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
+import ProjectAssistant from '@/components/ai/ProjectAssistant';
 import { format, startOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 
 export default function ProductionMeetings() {
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [editingNotes, setEditingNotes] = useState({});
+  const [showAI, setShowAI] = useState(false);
   
   const queryClient = useQueryClient();
   const weekKey = format(currentWeek, 'yyyy-MM-dd');
@@ -33,6 +35,41 @@ export default function ProductionMeetings() {
     queryKey: ['productionNotes'],
     queryFn: () => base44.entities.ProductionNote.list('-week_starting'),
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list('start_date'),
+  });
+
+  const { data: fabrications = [] } = useQuery({
+    queryKey: ['fabrications'],
+    queryFn: () => base44.entities.Fabrication.list('-created_date'),
+  });
+
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries'],
+    queryFn: () => base44.entities.Delivery.list('scheduled_date'),
+  });
+
+  const { data: drawings = [] } = useQuery({
+    queryKey: ['drawings'],
+    queryFn: () => base44.entities.DrawingSet.list('set_name'),
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis'],
+    queryFn: () => base44.entities.RFI.list('-submitted_date'),
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['changeOrders'],
+    queryFn: () => base44.entities.ChangeOrder.list('-submitted_date'),
+  });
+
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials'],
+    queryFn: () => base44.entities.Financial.list(),
   });
 
   const createOrUpdateMutation = useMutation({
@@ -118,7 +155,43 @@ export default function ProductionMeetings() {
       <PageHeader
         title="Production Meeting Notes"
         subtitle="Weekly project notes that carry forward"
+        actions={
+          <Button
+            onClick={() => setShowAI(!showAI)}
+            variant={showAI ? "default" : "outline"}
+            className={showAI ? "bg-amber-500 hover:bg-amber-600 text-black" : "border-zinc-700"}
+          >
+            <Sparkles size={18} className="mr-2" />
+            {showAI ? 'Hide' : 'Show'} AI Assistant
+          </Button>
+        }
       />
+
+      {/* AI Assistant */}
+      {showAI && (
+        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Sparkles size={18} className="text-amber-500" />
+              Production AI Assistant
+            </CardTitle>
+            <p className="text-sm text-zinc-400">
+              Get insights on fabrication status, delivery schedules, task progress, and production metrics
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ProjectAssistant
+              projects={projects}
+              drawings={drawings}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              tasks={tasks}
+              financials={financials}
+              selectedProject={null}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Week Navigation */}
       <div className="mb-6 flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-lg p-4">

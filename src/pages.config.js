@@ -6,6 +6,7 @@ import Deliveries from './pages/Deliveries';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
+import Fabrication from './pages/Fabrication';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Labor from './pages/Labor';
@@ -22,7 +23,6 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
-import Fabrication from './pages/Fabrication';
 import __Layout from './Layout.jsx';
 
 
@@ -35,6 +35,7 @@ export const PAGES = {
     "Documents": Documents,
     "Drawings": Drawings,
     "Equipment": Equipment,
+    "Fabrication": Fabrication,
     "Financials": Financials,
     "Insights": Insights,
     "Labor": Labor,
@@ -51,7 +52,6 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
-    "Fabrication": Fabrication,
 }
 
 export const pagesConfig = {

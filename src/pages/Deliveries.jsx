@@ -27,6 +27,7 @@ import {
 
 export default function Deliveries() {
   const [selectedProject, setSelectedProject] = useState('all');
+  const [sortBy, setSortBy] = useState('scheduled_date');
   const [showForm, setShowForm] = useState(false);
   const [editingDelivery, setEditingDelivery] = useState(null);
   const [deleteDelivery, setDeleteDelivery] = useState(null);
@@ -78,10 +79,29 @@ export default function Deliveries() {
   });
 
   const filteredDeliveries = useMemo(() => {
-    return deliveries.filter((d) =>
-    selectedProject === 'all' || d.project_id === selectedProject
+    let filtered = deliveries.filter((d) =>
+      selectedProject === 'all' || d.project_id === selectedProject
     );
-  }, [deliveries, selectedProject]);
+
+    // Sort deliveries
+    if (sortBy === 'project') {
+      filtered = [...filtered].sort((a, b) => {
+        const projA = projects.find(p => p.id === a.project_id);
+        const projB = projects.find(p => p.id === b.project_id);
+        return (projA?.name || '').localeCompare(projB?.name || '');
+      });
+    } else if (sortBy === 'scheduled_date') {
+      filtered = [...filtered].sort((a, b) => 
+        new Date(b.scheduled_date) - new Date(a.scheduled_date)
+      );
+    } else if (sortBy === 'status') {
+      filtered = [...filtered].sort((a, b) => 
+        (a.delivery_status || '').localeCompare(b.delivery_status || '')
+      );
+    }
+
+    return filtered;
+  }, [deliveries, selectedProject, sortBy, projects]);
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -246,11 +266,11 @@ export default function Deliveries() {
         } />
 
 
-      {/* Project Filter */}
-      <div className="mb-6">
+      {/* Filters */}
+      <div className="flex gap-4 mb-6">
         <Select value={selectedProject} onValueChange={setSelectedProject}>
           <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="Select project" />
+            <SelectValue placeholder="Filter by project" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
@@ -259,6 +279,17 @@ export default function Deliveries() {
                 {p.project_number} - {p.name}
               </SelectItem>
             )}
+          </SelectContent>
+        </Select>
+
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="scheduled_date">Scheduled Date</SelectItem>
+            <SelectItem value="project">Project</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
           </SelectContent>
         </Select>
       </div>

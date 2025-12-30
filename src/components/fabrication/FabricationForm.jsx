@@ -30,7 +30,7 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
     linked_delivery_id: fabrication?.linked_delivery_id || '',
     linked_erection_task_id: fabrication?.linked_erection_task_id || '',
     priority: fabrication?.priority || 'medium',
-    notes: fabrication?.notes || '',
+    notes: fabrication?.notes || ''
   });
 
   const handleSubmit = (e) => {
@@ -56,7 +56,7 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
       actual_completion: formatLocalDate(formData.actual_completion),
       qc_date: formatLocalDate(formData.qc_date),
       weight_tons: formData.weight_tons ? parseFloat(formData.weight_tons) : null,
-      piece_count: formData.piece_count ? parseInt(formData.piece_count) : null,
+      piece_count: formData.piece_count ? parseInt(formData.piece_count) : null
     };
 
     onSubmit(data);
@@ -76,11 +76,11 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
             <SelectContent>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
+              {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>
                   {p.project_number} - {p.name}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -91,8 +91,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             value={formData.package_name}
             onChange={(e) => setFormData({ ...formData, package_name: e.target.value })}
             placeholder="Level 1 Columns"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -103,8 +103,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             placeholder="Package details"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -113,8 +113,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             value={formData.shop_location}
             onChange={(e) => setFormData({ ...formData, shop_location: e.target.value })}
             placeholder="Bay 3"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -126,8 +126,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             step="0.1"
             value={formData.weight_tons}
             onChange={(e) => setFormData({ ...formData, weight_tons: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -136,8 +136,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             type="number"
             value={formData.piece_count}
             onChange={(e) => setFormData({ ...formData, piece_count: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -186,8 +186,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   className={cn(
                     "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
                     !formData.start_date && "text-zinc-400"
-                  )}
-                >
+                  )}>
+
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.start_date ? format(formData.start_date, "PP") : "Pick date"}
                 </Button>
@@ -197,8 +197,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.start_date}
                   onSelect={(date) => setFormData({ ...formData, start_date: date })}
-                  initialFocus
-                />
+                  initialFocus className="text-slate-50 p-3 rdp" />
+
               </PopoverContent>
             </Popover>
           </div>
@@ -213,8 +213,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   className={cn(
                     "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
                     !formData.target_completion && "text-zinc-400"
-                  )}
-                >
+                  )}>
+
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.target_completion ? format(formData.target_completion, "PP") : "Pick date"}
                 </Button>
@@ -224,8 +224,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.target_completion}
                   onSelect={(date) => setFormData({ ...formData, target_completion: date })}
-                  initialFocus
-                />
+                  initialFocus />
+
               </PopoverContent>
             </Popover>
           </div>
@@ -240,8 +240,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   className={cn(
                     "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
                     !formData.actual_completion && "text-zinc-400"
-                  )}
-                >
+                  )}>
+
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.actual_completion ? format(formData.actual_completion, "PP") : "Pick date"}
                 </Button>
@@ -251,8 +251,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.actual_completion}
                   onSelect={(date) => setFormData({ ...formData, actual_completion: date })}
-                  initialFocus
-                />
+                  initialFocus />
+
               </PopoverContent>
             </Popover>
           </div>
@@ -282,8 +282,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             <Input
               value={formData.qc_inspector}
               onChange={(e) => setFormData({ ...formData, qc_inspector: e.target.value })}
-              className="bg-zinc-800 border-zinc-700"
-            />
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
 
           <div className="space-y-2">
@@ -296,8 +296,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   className={cn(
                     "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
                     !formData.qc_date && "text-zinc-400"
-                  )}
-                >
+                  )}>
+
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.qc_date ? format(formData.qc_date, "PP") : "Pick date"}
                 </Button>
@@ -307,8 +307,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.qc_date}
                   onSelect={(date) => setFormData({ ...formData, qc_date: date })}
-                  initialFocus
-                />
+                  initialFocus />
+
               </PopoverContent>
             </Popover>
           </div>
@@ -321,11 +321,11 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None</SelectItem>
-                {projectDrawings.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
+                {projectDrawings.map((d) =>
+                <SelectItem key={d.id} value={d.id}>
                     {d.set_name} ({d.current_revision || 'No Rev'})
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -337,8 +337,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             value={formData.qc_notes}
             onChange={(e) => setFormData({ ...formData, qc_notes: e.target.value })}
             rows={2}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -353,11 +353,11 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None</SelectItem>
-                {projectDeliveries.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
+                {projectDeliveries.map((d) =>
+                <SelectItem key={d.id} value={d.id}>
                     {d.package_name} - {format(new Date(d.scheduled_date), 'MMM d')}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -370,28 +370,28 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None</SelectItem>
-                {projectTasks.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
+                {projectTasks.map((t) =>
+                <SelectItem key={t.id} value={t.id}>
                     {t.name}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      {formData.fabrication_status === 'delayed' && (
-        <div className="space-y-2">
+      {formData.fabrication_status === 'delayed' &&
+      <div className="space-y-2">
           <Label>Delay Reason</Label>
           <Textarea
-            value={formData.delay_reason}
-            onChange={(e) => setFormData({ ...formData, delay_reason: e.target.value })}
-            rows={2}
-            className="bg-zinc-800 border-zinc-700"
-          />
+          value={formData.delay_reason}
+          onChange={(e) => setFormData({ ...formData, delay_reason: e.target.value })}
+          rows={2}
+          className="bg-zinc-800 border-zinc-700" />
+
         </div>
-      )}
+      }
 
       <div className="space-y-2">
         <Label>Notes</Label>
@@ -399,8 +399,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={3}
-          className="bg-zinc-800 border-zinc-700"
-        />
+          className="bg-zinc-800 border-zinc-700" />
+
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
@@ -411,6 +411,6 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
           {isLoading ? 'Saving...' : fabrication ? 'Update' : 'Create'}
         </Button>
       </div>
-    </form>
-  );
+    </form>);
+
 }

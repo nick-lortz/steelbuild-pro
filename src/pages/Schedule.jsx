@@ -439,7 +439,7 @@ export default function Schedule() {
             changeOrders={changeOrders}
             drawingSets={drawingSets}
             onSubmit={(data) => {
-              if (editingTask) {
+              if (editingTask?.id) {
                 updateMutation.mutate({ id: editingTask.id, data });
               } else {
                 createMutation.mutate(data);

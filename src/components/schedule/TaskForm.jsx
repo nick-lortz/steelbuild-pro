@@ -6,10 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { X, Settings } from 'lucide-react';
+import { X, Settings, Save, User } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
 import AITaskHelper from './AITaskHelper';
 import DependencyConfigurator from './DependencyConfigurator';
+import TaskTemplateManager from './TaskTemplateManager';
+import { toast } from '@/components/ui/notifications';
 
 export default function TaskForm({ 
   task, 
@@ -24,6 +26,7 @@ export default function TaskForm({
   isLoading 
 }) {
   const [showDependencyConfig, setShowDependencyConfig] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [formData, setFormData] = useState({
     project_id: '',
     parent_task_id: '',
@@ -42,6 +45,10 @@ export default function TaskForm({
     is_milestone: false,
     predecessor_ids: [],
     predecessor_configs: [],
+    is_recurring: false,
+    recurrence_pattern: 'weekly',
+    recurrence_interval: 1,
+    recurrence_end_date: '',
     assigned_resources: [],
     assigned_equipment: [],
     linked_rfi_ids: [],
@@ -70,6 +77,10 @@ export default function TaskForm({
         is_milestone: task.is_milestone || false,
         predecessor_ids: task.predecessor_ids || [],
         predecessor_configs: task.predecessor_configs || [],
+        is_recurring: task.is_recurring || false,
+        recurrence_pattern: task.recurrence_pattern || 'weekly',
+        recurrence_interval: task.recurrence_interval || 1,
+        recurrence_end_date: task.recurrence_end_date || '',
         assigned_resources: task.assigned_resources || [],
         assigned_equipment: task.assigned_equipment || [],
         linked_rfi_ids: task.linked_rfi_ids || [],
@@ -133,11 +144,91 @@ export default function TaskForm({
     setFormData(prev => ({ ...prev, ...suggestions }));
   };
 
+  const handleTemplateSelect = async (template) => {
+    setFormData(prev => ({
+      ...prev,
+      name: prev.name || template.name,
+      phase: template.phase,
+      duration_days: template.duration_days,
+      estimated_hours: template.estimated_hours,
+      estimated_cost: template.estimated_cost,
+      is_milestone: template.is_milestone,
+      notes: template.notes || prev.notes
+    }));
+    toast.success('Template applied');
+  };
+
+  const handleSaveAsTemplate = async () => {
+    try {
+      await base44.entities.TaskTemplate.create({
+        name: formData.name,
+        category: 'custom',
+        phase: formData.phase,
+        duration_days: formData.duration_days,
+        estimated_hours: formData.estimated_hours,
+        estimated_cost: formData.estimated_cost,
+        is_milestone: formData.is_milestone,
+        notes: formData.notes
+      });
+      toast.success('Template saved');
+    } catch (error) {
+      toast.error('Failed to save template');
+    }
+  };
+
+  const handleAssignToMe = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      // Assuming we need to find or create a resource for this user
+      const userResources = resources.filter(r => 
+        r.contact_email === currentUser.email || r.name === currentUser.full_name
+      );
+      
+      if (userResources.length > 0) {
+        const current = formData.assigned_resources || [];
+        if (!current.includes(userResources[0].id)) {
+          handleChange('assigned_resources', [...current, userResources[0].id]);
+          toast.success('Assigned to you');
+        }
+      } else {
+        toast.info('No resource profile found. Assign manually.');
+      }
+    } catch (error) {
+      toast.error('Could not assign task');
+    }
+  };
+
   const isSummaryTask = formData.parent_task_id === null || formData.parent_task_id === '';
   const childTasks = tasks.filter(t => t.parent_task_id === task?.id);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Action Buttons */}
+      {!task && (
+        <div className="flex gap-2 pb-4 border-b border-zinc-800">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowTemplates(true)}
+            className="border-zinc-700"
+          >
+            <Copy size={16} className="mr-2" />
+            Use Template
+          </Button>
+          {formData.name && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveAsTemplate}
+              className="border-zinc-700"
+            >
+              <Save size={16} className="mr-2" />
+              Save as Template
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Summary Task Info Banner */}
       {task && isSummaryTask && childTasks.length > 0 && (
         <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
@@ -440,9 +531,81 @@ export default function TaskForm({
         />
       )}
 
+      {showTemplates && (
+        <TaskTemplateManager
+          open={showTemplates}
+          onOpenChange={setShowTemplates}
+          onSelectTemplate={handleTemplateSelect}
+        />
+      )}
+
+      {/* Recurring Task Options */}
+      {!task && (
+        <div className="border-t border-zinc-800 pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Checkbox
+              checked={formData.is_recurring}
+              onCheckedChange={(checked) => handleChange('is_recurring', checked)}
+              id="recurring"
+            />
+            <Label htmlFor="recurring" className="cursor-pointer">Recurring Task</Label>
+          </div>
+
+          {formData.is_recurring && (
+            <div className="grid grid-cols-3 gap-4 ml-6">
+              <div className="space-y-2">
+                <Label>Pattern</Label>
+                <Select value={formData.recurrence_pattern} onValueChange={(v) => handleChange('recurrence_pattern', v)}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Every</Label>
+                <Input
+                  type="number"
+                  value={formData.recurrence_interval}
+                  onChange={(e) => handleChange('recurrence_interval', parseInt(e.target.value) || 1)}
+                  min="1"
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Until Date</Label>
+                <Input
+                  type="date"
+                  value={formData.recurrence_end_date}
+                  onChange={(e) => handleChange('recurrence_end_date', e.target.value)}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Resources */}
       <div className="border-t border-zinc-800 pt-4">
-        <h4 className="text-sm font-medium mb-3">Resources</h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium">Resources</h4>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleAssignToMe}
+            className="border-zinc-700 text-xs"
+          >
+            <User size={14} className="mr-1" />
+            Assign to Me
+          </Button>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Labor / Subcontractors</Label>

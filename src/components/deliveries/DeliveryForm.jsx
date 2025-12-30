@@ -28,7 +28,7 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
     contact_phone: delivery?.contact_phone || '',
     linked_task_ids: delivery?.linked_task_ids || [],
     notes: delivery?.notes || '',
-    delay_reason: delivery?.delay_reason || '',
+    delay_reason: delivery?.delay_reason || ''
   });
 
   const handleSubmit = (e) => {
@@ -44,13 +44,13 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
       scheduled_date: formData.scheduled_date ? format(formData.scheduled_date, 'yyyy-MM-dd') : null,
       actual_date: formData.actual_date ? format(formData.actual_date, 'yyyy-MM-dd') : null,
       weight_tons: formData.weight_tons ? parseFloat(formData.weight_tons) : null,
-      piece_count: formData.piece_count ? parseInt(formData.piece_count) : null,
+      piece_count: formData.piece_count ? parseInt(formData.piece_count) : null
     };
 
     onSubmit(data);
   };
 
-  const projectTasks = tasks.filter(t => t.project_id === formData.project_id);
+  const projectTasks = tasks.filter((t) => t.project_id === formData.project_id);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -62,11 +62,11 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
             <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
+              {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>
                   {p.project_number} - {p.name}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -95,8 +95,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
             value={formData.package_name}
             onChange={(e) => setFormData({ ...formData, package_name: e.target.value })}
             placeholder="Level 1 Columns"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -105,8 +105,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
             value={formData.package_number}
             onChange={(e) => setFormData({ ...formData, package_number: e.target.value })}
             placeholder="PKG-001"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -116,8 +116,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           rows={2}
-          className="bg-zinc-800 border-zinc-700"
-        />
+          className="bg-zinc-800 border-zinc-700" />
+
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -131,8 +131,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
                 className={cn(
                   "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
                   !formData.scheduled_date && "text-zinc-400"
-                )}
-              >
+                )}>
+
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {formData.scheduled_date ? format(formData.scheduled_date, "PP") : <span>Pick a date</span>}
               </Button>
@@ -142,8 +142,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
                 mode="single"
                 selected={formData.scheduled_date}
                 onSelect={(date) => setFormData({ ...formData, scheduled_date: date })}
-                initialFocus
-              />
+                initialFocus className="text-slate-50 p-3 rdp" />
+
             </PopoverContent>
           </Popover>
         </div>
@@ -158,8 +158,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
                 className={cn(
                   "w-full justify-start text-left font-normal bg-zinc-800 border-zinc-700",
                   !formData.actual_date && "text-zinc-400"
-                )}
-              >
+                )}>
+
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {formData.actual_date ? format(formData.actual_date, "PP") : <span>Pick a date</span>}
               </Button>
@@ -169,8 +169,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
                 mode="single"
                 selected={formData.actual_date}
                 onSelect={(date) => setFormData({ ...formData, actual_date: date })}
-                initialFocus
-              />
+                initialFocus />
+
             </PopoverContent>
           </Popover>
         </div>
@@ -184,8 +184,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
             step="0.1"
             value={formData.weight_tons}
             onChange={(e) => setFormData({ ...formData, weight_tons: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -194,8 +194,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
             type="number"
             value={formData.piece_count}
             onChange={(e) => setFormData({ ...formData, piece_count: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -204,8 +204,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
             value={formData.carrier}
             onChange={(e) => setFormData({ ...formData, carrier: e.target.value })}
             placeholder="ABC Trucking"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -215,8 +215,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
           <Input
             value={formData.tracking_number}
             onChange={(e) => setFormData({ ...formData, tracking_number: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -225,8 +225,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
             value={formData.delivery_location}
             onChange={(e) => setFormData({ ...formData, delivery_location: e.target.value })}
             placeholder="Site address"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -236,8 +236,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
           <Input
             value={formData.contact_name}
             onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
 
         <div className="space-y-2">
@@ -245,50 +245,50 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
           <Input
             value={formData.contact_phone}
             onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
-      {formData.delivery_status === 'delayed' && (
-        <div className="space-y-2">
+      {formData.delivery_status === 'delayed' &&
+      <div className="space-y-2">
           <Label>Delay Reason</Label>
           <Textarea
-            value={formData.delay_reason}
-            onChange={(e) => setFormData({ ...formData, delay_reason: e.target.value })}
-            rows={2}
-            className="bg-zinc-800 border-zinc-700"
-          />
+          value={formData.delay_reason}
+          onChange={(e) => setFormData({ ...formData, delay_reason: e.target.value })}
+          rows={2}
+          className="bg-zinc-800 border-zinc-700" />
+
         </div>
-      )}
+      }
 
       {/* Linked Schedule Tasks */}
-      {projectTasks.length > 0 && (
-        <div className="space-y-2">
+      {projectTasks.length > 0 &&
+      <div className="space-y-2">
           <Label>Link to Schedule Tasks</Label>
           <div className="border border-zinc-800 rounded-lg p-3 bg-zinc-800/50 max-h-48 overflow-y-auto">
-            {projectTasks.map(task => (
-              <div key={task.id} className="flex items-center gap-2 py-1">
+            {projectTasks.map((task) =>
+          <div key={task.id} className="flex items-center gap-2 py-1">
                 <input
-                  type="checkbox"
-                  checked={formData.linked_task_ids.includes(task.id)}
-                  onChange={(e) => {
-                    const newLinked = e.target.checked
-                      ? [...formData.linked_task_ids, task.id]
-                      : formData.linked_task_ids.filter(id => id !== task.id);
-                    setFormData({ ...formData, linked_task_ids: newLinked });
-                  }}
-                  className="rounded"
-                />
+              type="checkbox"
+              checked={formData.linked_task_ids.includes(task.id)}
+              onChange={(e) => {
+                const newLinked = e.target.checked ?
+                [...formData.linked_task_ids, task.id] :
+                formData.linked_task_ids.filter((id) => id !== task.id);
+                setFormData({ ...formData, linked_task_ids: newLinked });
+              }}
+              className="rounded" />
+
                 <label className="text-sm text-white flex-1 cursor-pointer">
                   {task.name}
                   <span className="text-xs text-zinc-500 ml-2">({task.phase})</span>
                 </label>
               </div>
-            ))}
+          )}
           </div>
         </div>
-      )}
+      }
 
       <div className="space-y-2">
         <Label>Notes</Label>
@@ -296,8 +296,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
           value={formData.notes}
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           rows={2}
-          className="bg-zinc-800 border-zinc-700"
-        />
+          className="bg-zinc-800 border-zinc-700" />
+
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
@@ -305,18 +305,18 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="border-zinc-700"
-        >
+          className="border-zinc-700">
+
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-amber-500 hover:bg-amber-600 text-black"
-        >
+          className="bg-amber-500 hover:bg-amber-600 text-black">
+
           {isLoading ? 'Saving...' : delivery ? 'Update' : 'Create'}
         </Button>
       </div>
-    </form>
-  );
+    </form>);
+
 }

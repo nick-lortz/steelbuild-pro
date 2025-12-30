@@ -267,7 +267,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/Toaster';
-      import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
+import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
+import NotificationPanel from '@/components/notifications/NotificationPanel';
 
       const navItems = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
@@ -338,10 +339,12 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {currentUser && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="p-2">
-              <UserCircle size={24} className="text-zinc-400" />
-            </DropdownMenuTrigger>
+          <>
+            <NotificationPanel />
+            <DropdownMenu>
+              <DropdownMenuTrigger className="p-2">
+                <UserCircle size={24} className="text-zinc-400" />
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
               <div className="px-2 py-1.5">
                 <p className="text-sm font-medium text-white">
@@ -361,8 +364,9 @@ export default function Layout({ children, currentPageName }) {
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+            </DropdownMenu>
+            </>
+            )}
       </header>
 
       {/* Sidebar */}
@@ -407,6 +411,9 @@ export default function Layout({ children, currentPageName }) {
 
         {currentUser && (
           <div className="border-t border-zinc-800 p-3 flex-shrink-0">
+            <div className="flex items-center justify-between mb-3 px-3">
+              <NotificationPanel />
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800">
                 <UserCircle size={18} className="text-amber-500" />

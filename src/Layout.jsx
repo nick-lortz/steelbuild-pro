@@ -278,6 +278,7 @@ import { Toaster } from '@/components/ui/Toaster';
   { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
   { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
+  { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
   { name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
   { name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
   { name: 'Resource Management', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },

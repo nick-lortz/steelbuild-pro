@@ -11,6 +11,12 @@ import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 
 export default function FabricationForm({ fabrication, projects, drawings, deliveries, tasks, onSubmit, onCancel, isLoading }) {
+  const parseLocalDate = (dateString) => {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   const [formData, setFormData] = useState({
     project_id: fabrication?.project_id || '',
     package_name: fabrication?.package_name || '',
@@ -20,12 +26,12 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
     piece_count: fabrication?.piece_count?.toString() || '',
     fabrication_status: fabrication?.fabrication_status || 'not_started',
     shop_location: fabrication?.shop_location || '',
-    start_date: fabrication?.start_date ? new Date(fabrication.start_date) : null,
-    target_completion: fabrication?.target_completion ? new Date(fabrication.target_completion) : null,
-    actual_completion: fabrication?.actual_completion ? new Date(fabrication.actual_completion) : null,
+    start_date: fabrication?.start_date ? parseLocalDate(fabrication.start_date) : null,
+    target_completion: fabrication?.target_completion ? parseLocalDate(fabrication.target_completion) : null,
+    actual_completion: fabrication?.actual_completion ? parseLocalDate(fabrication.actual_completion) : null,
     qc_status: fabrication?.qc_status || 'pending',
     qc_inspector: fabrication?.qc_inspector || '',
-    qc_date: fabrication?.qc_date ? new Date(fabrication.qc_date) : null,
+    qc_date: fabrication?.qc_date ? parseLocalDate(fabrication.qc_date) : null,
     qc_notes: fabrication?.qc_notes || '',
     linked_delivery_id: fabrication?.linked_delivery_id || '',
     linked_erection_task_id: fabrication?.linked_erection_task_id || '',

@@ -55,7 +55,7 @@ export default function Fabrication() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrications'] });
       setShowForm(false);
-      toast.success('Fabrication item created');
+      toast.success('Fabrication package created');
     },
     onError: (error) => {
       toast.error('Failed to create: ' + error.message);
@@ -67,7 +67,7 @@ export default function Fabrication() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrications'] });
       setEditingItem(null);
-      toast.success('Fabrication item updated');
+      toast.success('Fabrication package updated');
     },
     onError: (error) => {
       toast.error('Failed to update: ' + error.message);
@@ -78,7 +78,7 @@ export default function Fabrication() {
     mutationFn: (id) => base44.entities.Fabrication.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrications'] });
-      toast.success('Fabrication item deleted');
+      toast.success('Fabrication package deleted');
     },
     onError: (error) => {
       toast.error('Failed to delete: ' + error.message);
@@ -87,8 +87,8 @@ export default function Fabrication() {
 
   const handleDelete = async (item) => {
     const confirmed = await confirm({
-      title: 'Delete Fabrication Item?',
-      description: `Delete ${item.piece_mark}? This cannot be undone.`,
+      title: 'Delete Fabrication Package?',
+      description: `Delete ${item.package_name}? This cannot be undone.`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
     });
@@ -110,7 +110,6 @@ export default function Fabrication() {
     const matchesProject = selectedProject === 'all' || f.project_id === selectedProject;
     const matchesStatus = statusFilter === 'all' || f.fabrication_status === statusFilter;
     const matchesSearch = 
-      f.piece_mark?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.description?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesProject && matchesStatus && matchesSearch;
@@ -124,12 +123,12 @@ export default function Fabrication() {
 
   const columns = [
     {
-      header: 'Piece Mark',
-      accessor: 'piece_mark',
+      header: 'Package',
+      accessor: 'package_name',
       render: (row) => (
         <div>
-          <p className="font-medium text-white">{row.piece_mark}</p>
-          {row.package_name && <p className="text-xs text-zinc-500">{row.package_name}</p>}
+          <p className="font-medium text-white">{row.package_name}</p>
+          {row.description && <p className="text-xs text-zinc-500">{row.description}</p>}
         </div>
       ),
     },
@@ -202,11 +201,9 @@ export default function Fabrication() {
 
   const statusCounts = {
     total: fabrications.length,
-    in_progress: fabrications.filter(f => 
-      ['cutting', 'fitting', 'welding', 'painting'].includes(f.fabrication_status)
-    ).length,
-    qc: fabrications.filter(f => f.fabrication_status === 'qc_inspection').length,
-    complete: fabrications.filter(f => f.fabrication_status === 'complete').length,
+    in_progress: fabrications.filter(f => f.fabrication_status === 'in_progress').length,
+    ready: fabrications.filter(f => f.fabrication_status === 'ready_to_ship').length,
+    complete: fabrications.filter(f => f.fabrication_status === 'completed').length,
   };
 
   return (
@@ -237,15 +234,15 @@ export default function Fabrication() {
           <p className="text-2xl font-bold text-white">{statusCounts.in_progress}</p>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-sm text-zinc-400">QC Inspection</p>
-          <p className="text-2xl font-bold text-amber-500">{statusCounts.qc}</p>
+          <p className="text-sm text-zinc-400">Ready to Ship</p>
+          <p className="text-2xl font-bold text-amber-500">{statusCounts.ready}</p>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-sm text-zinc-400">Complete</p>
+          <p className="text-sm text-zinc-400">Completed</p>
           <p className="text-2xl font-bold text-green-500">{statusCounts.complete}</p>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-sm text-zinc-400">Total Items</p>
+          <p className="text-sm text-zinc-400">Total Packages</p>
           <p className="text-2xl font-bold text-white">{statusCounts.total}</p>
         </div>
       </div>
@@ -255,7 +252,7 @@ export default function Fabrication() {
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <Input
-            placeholder="Search piece marks, packages..."
+            placeholder="Search packages..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-zinc-900 border-zinc-800 text-white"
@@ -281,15 +278,11 @@ export default function Fabrication() {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="not_started">Not Started</SelectItem>
-            <SelectItem value="material_ordered">Material Ordered</SelectItem>
-            <SelectItem value="material_received">Material Received</SelectItem>
-            <SelectItem value="cutting">Cutting</SelectItem>
-            <SelectItem value="fitting">Fitting</SelectItem>
-            <SelectItem value="welding">Welding</SelectItem>
-            <SelectItem value="qc_inspection">QC Inspection</SelectItem>
-            <SelectItem value="painting">Painting</SelectItem>
-            <SelectItem value="complete">Complete</SelectItem>
-            <SelectItem value="on_hold">On Hold</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="delayed">Delayed</SelectItem>
+            <SelectItem value="ready_to_ship">Ready to Ship</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -299,14 +292,14 @@ export default function Fabrication() {
         columns={columns}
         data={filteredFabrications}
         onRowClick={(row) => setEditingItem(row)}
-        emptyMessage="No fabrication items found. Create your first item to start tracking."
+        emptyMessage="No fabrication packages found. Create your first package to start tracking."
       />
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Fabrication Item</DialogTitle>
+            <DialogTitle>New Fabrication Package</DialogTitle>
           </DialogHeader>
           <FabricationForm
             fabrication={null}
@@ -325,7 +318,7 @@ export default function Fabrication() {
       <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
         <SheetContent className="w-full sm:max-w-3xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-white">Edit Fabrication Item</SheetTitle>
+            <SheetTitle className="text-white">Edit Fabrication Package</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <FabricationForm

@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 export default function FabricationForm({ fabrication, projects, drawings, deliveries, tasks, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
     project_id: fabrication?.project_id || '',
-    piece_mark: fabrication?.piece_mark || '',
     package_name: fabrication?.package_name || '',
     description: fabrication?.description || '',
     drawing_set_id: fabrication?.drawing_set_id || '',
@@ -37,8 +36,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.project_id || !formData.piece_mark) {
-      alert('Project and Piece Mark are required');
+    if (!formData.project_id || !formData.package_name) {
+      alert('Project and Package Name are required');
       return;
     }
 
@@ -87,11 +86,11 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
         </div>
 
         <div className="space-y-2">
-          <Label>Piece Mark *</Label>
+          <Label>Package Name *</Label>
           <Input
-            value={formData.piece_mark}
-            onChange={(e) => setFormData({ ...formData, piece_mark: e.target.value })}
-            placeholder="B1-Col-A1"
+            value={formData.package_name}
+            onChange={(e) => setFormData({ ...formData, package_name: e.target.value })}
+            placeholder="Level 1 Columns"
             className="bg-zinc-800 border-zinc-700"
           />
         </div>
@@ -99,11 +98,11 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Package Name</Label>
+          <Label>Description</Label>
           <Input
-            value={formData.package_name}
-            onChange={(e) => setFormData({ ...formData, package_name: e.target.value })}
-            placeholder="Level 1 Columns"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Package details"
             className="bg-zinc-800 border-zinc-700"
           />
         </div>
@@ -117,16 +116,6 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
             className="bg-zinc-800 border-zinc-700"
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={2}
-          className="bg-zinc-800 border-zinc-700"
-        />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -178,15 +167,11 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="material_ordered">Material Ordered</SelectItem>
-                <SelectItem value="material_received">Material Received</SelectItem>
-                <SelectItem value="cutting">Cutting</SelectItem>
-                <SelectItem value="fitting">Fitting</SelectItem>
-                <SelectItem value="welding">Welding</SelectItem>
-                <SelectItem value="qc_inspection">QC Inspection</SelectItem>
-                <SelectItem value="painting">Painting</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="delayed">Delayed</SelectItem>
+                <SelectItem value="ready_to_ship">Ready to Ship</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -395,6 +380,18 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
           </div>
         </div>
       </div>
+
+      {formData.fabrication_status === 'delayed' && (
+        <div className="space-y-2">
+          <Label>Delay Reason</Label>
+          <Textarea
+            value={formData.delay_reason}
+            onChange={(e) => setFormData({ ...formData, delay_reason: e.target.value })}
+            rows={2}
+            className="bg-zinc-800 border-zinc-700"
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Notes</Label>

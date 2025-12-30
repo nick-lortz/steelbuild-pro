@@ -62,6 +62,7 @@ export default function Projects() {
   const [formData, setFormData] = useState(initialFormState);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
 
   const queryClient = useQueryClient();
   const { confirm } = useConfirm();
@@ -188,8 +189,11 @@ export default function Projects() {
       p.project_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.client?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesPm = pmFilter === 'all' || p.project_manager === pmFilter;
+    return matchesSearch && matchesStatus && matchesPm;
   });
+
+  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
 
   const columns = [
     {
@@ -330,10 +334,21 @@ export default function Projects() {
             <SelectItem value="closed">Closed</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Demo Seeder for new users */}
-      {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && (
+      {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && pmFilter === 'all' && (
         <div className="mb-6">
           <DemoProjectSeeder />
         </div>

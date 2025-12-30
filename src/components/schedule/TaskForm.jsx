@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { X, Settings, Save, User, Copy } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
+import { base44 } from '@/api/base44Client';
 import AITaskHelper from './AITaskHelper';
 import DependencyConfigurator from './DependencyConfigurator';
 import TaskTemplateManager from './TaskTemplateManager';

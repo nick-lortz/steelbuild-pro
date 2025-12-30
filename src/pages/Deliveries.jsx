@@ -22,8 +22,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from
+"@/components/ui/alert-dialog";
 
 export default function Deliveries() {
   const [selectedProject, setSelectedProject] = useState('all');
@@ -36,19 +36,19 @@ export default function Deliveries() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
     queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
@@ -57,7 +57,7 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
-    },
+    }
   });
 
   const updateMutation = useMutation({
@@ -66,7 +66,7 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -74,19 +74,19 @@ export default function Deliveries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setDeleteDelivery(null);
-    },
+    }
   });
 
   const filteredDeliveries = useMemo(() => {
-    return deliveries.filter(d => 
-      selectedProject === 'all' || d.project_id === selectedProject
+    return deliveries.filter((d) =>
+    selectedProject === 'all' || d.project_id === selectedProject
     );
   }, [deliveries, selectedProject]);
 
   // Calculate KPIs
   const kpis = useMemo(() => {
-    const completed = filteredDeliveries.filter(d => d.delivery_status === 'delivered');
-    const onTime = completed.filter(d => {
+    const completed = filteredDeliveries.filter((d) => d.delivery_status === 'delivered');
+    const onTime = completed.filter((d) => {
       if (!d.actual_date) return false;
       const variance = differenceInDays(
         parseISO(d.actual_date),
@@ -95,13 +95,13 @@ export default function Deliveries() {
       return variance <= 0; // On time or early
     });
 
-    const delayed = filteredDeliveries.filter(d => 
-      d.delivery_status === 'delayed' ||
-      (d.delivery_status === 'delivered' && d.actual_date && 
-        differenceInDays(parseISO(d.actual_date), parseISO(d.scheduled_date)) > 0)
+    const delayed = filteredDeliveries.filter((d) =>
+    d.delivery_status === 'delayed' ||
+    d.delivery_status === 'delivered' && d.actual_date &&
+    differenceInDays(parseISO(d.actual_date), parseISO(d.scheduled_date)) > 0
     );
 
-    const upcoming = filteredDeliveries.filter(d => {
+    const upcoming = filteredDeliveries.filter((d) => {
       if (d.delivery_status !== 'scheduled') return false;
       const daysUntil = differenceInDays(
         parseISO(d.scheduled_date),
@@ -113,26 +113,26 @@ export default function Deliveries() {
     const totalWeight = filteredDeliveries.reduce((sum, d) => sum + (d.weight_tons || 0), 0);
     const totalPieces = filteredDeliveries.reduce((sum, d) => sum + (d.piece_count || 0), 0);
 
-    const avgVariance = completed.length > 0
-      ? completed.reduce((sum, d) => {
-          if (!d.actual_date) return sum;
-          return sum + differenceInDays(
-            parseISO(d.actual_date),
-            parseISO(d.scheduled_date)
-          );
-        }, 0) / completed.length
-      : 0;
+    const avgVariance = completed.length > 0 ?
+    completed.reduce((sum, d) => {
+      if (!d.actual_date) return sum;
+      return sum + differenceInDays(
+        parseISO(d.actual_date),
+        parseISO(d.scheduled_date)
+      );
+    }, 0) / completed.length :
+    0;
 
     return {
       total: filteredDeliveries.length,
       completed: completed.length,
       onTime: onTime.length,
-      onTimePercent: completed.length > 0 ? (onTime.length / completed.length) * 100 : 0,
+      onTimePercent: completed.length > 0 ? onTime.length / completed.length * 100 : 0,
       delayed: delayed.length,
       upcoming: upcoming.length,
       totalWeight,
       totalPieces,
-      avgVariance: Math.round(avgVariance * 10) / 10,
+      avgVariance: Math.round(avgVariance * 10) / 10
     };
   }, [filteredDeliveries]);
 
@@ -142,90 +142,90 @@ export default function Deliveries() {
   };
 
   const columns = [
-    {
-      header: 'Package',
-      accessor: 'package_name',
-      render: (row) => (
-        <div>
+  {
+    header: 'Package',
+    accessor: 'package_name',
+    render: (row) =>
+    <div>
           <p className="font-medium">{row.package_name}</p>
           <p className="text-xs text-zinc-500">{row.package_number}</p>
         </div>
-      ),
-    },
-    {
-      header: 'Project',
-      accessor: 'project_id',
-      render: (row) => {
-        const project = projects.find(p => p.id === row.project_id);
-        return project ? (
-          <div>
+
+  },
+  {
+    header: 'Project',
+    accessor: 'project_id',
+    render: (row) => {
+      const project = projects.find((p) => p.id === row.project_id);
+      return project ?
+      <div>
             <p className="text-sm">{project.name}</p>
             <p className="text-xs text-zinc-500">{project.project_number}</p>
-          </div>
-        ) : '-';
-      },
-    },
-    {
-      header: 'Scheduled Date',
-      accessor: 'scheduled_date',
-      render: (row) => row.scheduled_date ? format(parseISO(row.scheduled_date), 'MMM d, yyyy') : '-',
-    },
-    {
-      header: 'Actual Date',
-      accessor: 'actual_date',
-      render: (row) => {
-        if (!row.actual_date) return '-';
-        const variance = differenceInDays(
-          parseISO(row.actual_date),
-          parseISO(row.scheduled_date)
-        );
-        return (
-          <div>
+          </div> :
+      '-';
+    }
+  },
+  {
+    header: 'Scheduled Date',
+    accessor: 'scheduled_date',
+    render: (row) => row.scheduled_date ? format(parseISO(row.scheduled_date), 'MMM d, yyyy') : '-'
+  },
+  {
+    header: 'Actual Date',
+    accessor: 'actual_date',
+    render: (row) => {
+      if (!row.actual_date) return '-';
+      const variance = differenceInDays(
+        parseISO(row.actual_date),
+        parseISO(row.scheduled_date)
+      );
+      return (
+        <div>
             <p>{format(parseISO(row.actual_date), 'MMM d, yyyy')}</p>
             <p className={`text-xs ${variance > 0 ? 'text-red-400' : 'text-green-400'}`}>
               {variance > 0 ? `+${variance}` : variance} days
             </p>
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Status',
-      accessor: 'delivery_status',
-      render: (row) => <StatusBadge status={row.delivery_status} />,
-    },
-    {
-      header: 'Weight',
-      accessor: 'weight_tons',
-      render: (row) => row.weight_tons ? `${row.weight_tons} tons` : '-',
-    },
-    {
-      header: 'Pieces',
-      accessor: 'piece_count',
-      render: (row) => row.piece_count || '-',
-    },
-    {
-      header: 'Carrier',
-      accessor: 'carrier',
-    },
-    {
-      header: '',
-      accessor: 'actions',
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteDelivery(row);
-          }}
-          className="text-zinc-500 hover:text-red-500"
-        >
+          </div>);
+
+    }
+  },
+  {
+    header: 'Status',
+    accessor: 'delivery_status',
+    render: (row) => <StatusBadge status={row.delivery_status} />
+  },
+  {
+    header: 'Weight',
+    accessor: 'weight_tons',
+    render: (row) => row.weight_tons ? `${row.weight_tons} tons` : '-'
+  },
+  {
+    header: 'Pieces',
+    accessor: 'piece_count',
+    render: (row) => row.piece_count || '-'
+  },
+  {
+    header: 'Carrier',
+    accessor: 'carrier'
+  },
+  {
+    header: '',
+    accessor: 'actions',
+    render: (row) =>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={(e) => {
+        e.stopPropagation();
+        setDeleteDelivery(row);
+      }}
+      className="text-zinc-500 hover:text-red-500">
+
           <Trash2 size={16} />
         </Button>
-      ),
-    },
-  ];
+
+  }];
+
 
   return (
     <div>
@@ -233,18 +233,18 @@ export default function Deliveries() {
         title="Delivery Tracking"
         subtitle="Steel package deliveries and KPIs"
         actions={
-          <Button 
-            onClick={() => {
-              setEditingDelivery(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
+        <Button
+          onClick={() => {
+            setEditingDelivery(null);
+            setShowForm(true);
+          }}
+          className="bg-amber-500 hover:bg-amber-600 text-black">
+
             <Plus size={18} className="mr-2" />
             Add Delivery
           </Button>
-        }
-      />
+        } />
+
 
       {/* Project Filter */}
       <div className="mb-6">
@@ -254,11 +254,11 @@ export default function Deliveries() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>
+            {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id}>
                 {p.project_number} - {p.name}
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -276,28 +276,28 @@ export default function Deliveries() {
             <KPICard
               title="Total Deliveries"
               value={kpis.total}
-              icon={Package}
-            />
+              icon={Package} />
+
             <KPICard
               title="On-Time Rate"
               value={`${kpis.onTimePercent.toFixed(1)}%`}
               trend={kpis.onTimePercent >= 90 ? 'up' : 'down'}
               trendValue={`${kpis.onTime}/${kpis.completed}`}
               icon={kpis.onTimePercent >= 90 ? TrendingUp : TrendingDown}
-              variant={kpis.onTimePercent >= 90 ? 'green' : 'red'}
-            />
+              variant={kpis.onTimePercent >= 90 ? 'green' : 'red'} />
+
             <KPICard
               title="Delayed"
               value={kpis.delayed}
               icon={Clock}
-              variant={kpis.delayed > 0 ? 'red' : 'green'}
-            />
+              variant={kpis.delayed > 0 ? 'red' : 'green'} />
+
             <KPICard
               title="Upcoming (14 days)"
               value={kpis.upcoming}
               icon={Truck}
-              variant="blue"
-            />
+              variant="blue" />
+
           </div>
 
           {/* Detailed KPIs */}
@@ -306,15 +306,15 @@ export default function Deliveries() {
           {/* Recent Deliveries */}
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle className="text-lg">Recent & Upcoming Deliveries</CardTitle>
+              <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Recent & Upcoming Deliveries</CardTitle>
             </CardHeader>
             <CardContent>
               <DataTable
                 columns={columns}
                 data={filteredDeliveries.slice(0, 10)}
                 onRowClick={handleEdit}
-                emptyMessage="No deliveries found."
-              />
+                emptyMessage="No deliveries found." />
+
             </CardContent>
           </Card>
         </TabsContent>
@@ -324,17 +324,17 @@ export default function Deliveries() {
             columns={columns}
             data={filteredDeliveries}
             onRowClick={handleEdit}
-            emptyMessage="No deliveries found."
-          />
+            emptyMessage="No deliveries found." />
+
         </TabsContent>
 
         <TabsContent value="upcoming">
           <DataTable
             columns={columns}
-            data={filteredDeliveries.filter(d => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
+            data={filteredDeliveries.filter((d) => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
             onRowClick={handleEdit}
-            emptyMessage="No upcoming deliveries."
-          />
+            emptyMessage="No upcoming deliveries." />
+
         </TabsContent>
       </Tabs>
 
@@ -369,8 +369,8 @@ export default function Deliveries() {
               setShowForm(false);
               setEditingDelivery(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-          />
+            isLoading={createMutation.isPending || updateMutation.isPending} />
+
         </DialogContent>
       </Dialog>
 
@@ -389,13 +389,13 @@ export default function Deliveries() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteDelivery.id)}
-              className="bg-red-500 hover:bg-red-600"
-            >
+              className="bg-red-500 hover:bg-red-600">
+
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>);
+
 }

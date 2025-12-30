@@ -15,6 +15,8 @@ export default function ProjectAssistant({
   tasks,
   financials,
   expenses = [],
+  fabrications = [],
+  deliveries = [],
   selectedProject
 }) {
   const [question, setQuestion] = useState('');
@@ -42,6 +44,8 @@ export default function ProjectAssistant({
     const projectTasks = filterByProject(tasks);
     const projectFinancials = filterByProject(financials);
     const projectExpenses = filterByProject(expenses);
+    const projectFabrications = filterByProject(fabrications);
+    const projectDeliveries = filterByProject(deliveries);
 
     // Calculate key metrics
     const overdueDrawings = projectDrawings.filter((d) =>
@@ -70,6 +74,34 @@ export default function ProjectAssistant({
     const totalActual = actualFromFinancials + actualFromExpenses;
     const budgetVariance = totalBudget - totalActual;
 
+    // Fabrication metrics
+    const delayedFabs = projectFabrications.filter((f) => f.fabrication_status === 'delayed');
+    const inProgressFabs = projectFabrications.filter((f) => f.fabrication_status === 'in_progress');
+    const readyToShipFabs = projectFabrications.filter((f) => f.fabrication_status === 'ready_to_ship');
+    const overdueDeliveries = projectDeliveries.filter((d) => 
+      d.scheduled_date && new Date(d.scheduled_date) < new Date() && 
+      d.status !== 'delivered' && d.status !== 'completed'
+    );
+
+    // Identify bottlenecks
+    const fabBottlenecks = delayedFabs.map((f) => ({
+      package: f.package_name,
+      reason: f.delay_reason,
+      target_date: f.target_completion,
+      weight: f.weight_tons
+    }));
+
+    const deliveryBottlenecks = overdueDeliveries.map((d) => ({
+      package: d.package_name,
+      scheduled: d.scheduled_date,
+      status: d.status,
+      reason: d.delay_reason
+    }));
+
+    // Resource allocation suggestions
+    const criticalPathTasks = projectTasks.filter((t) => t.is_critical && t.status !== 'completed');
+    const unassignedCritical = criticalPathTasks.filter((t) => !t.assigned_resources || t.assigned_resources.length === 0);
+
     return {
       ...projectData,
       metrics: {
@@ -86,7 +118,15 @@ export default function ProjectAssistant({
         budget: totalBudget,
         actual_cost: totalActual,
         budget_variance: budgetVariance,
-        budget_utilization: totalBudget > 0 ? (totalActual / totalBudget * 100).toFixed(1) : 0
+        budget_utilization: totalBudget > 0 ? (totalActual / totalBudget * 100).toFixed(1) : 0,
+        total_fabrications: projectFabrications.length,
+        delayed_fabrications: delayedFabs.length,
+        in_progress_fabrications: inProgressFabs.length,
+        ready_to_ship: readyToShipFabs.length,
+        total_deliveries: projectDeliveries.length,
+        overdue_deliveries: overdueDeliveries.length,
+        fabrication_tonnage: projectFabrications.reduce((sum, f) => sum + (f.weight_tons || 0), 0),
+        unassigned_critical_tasks: unassignedCritical.length
       },
       critical_issues: {
         overdue_drawings: overdueDrawings.map((d) => ({
@@ -105,34 +145,70 @@ export default function ProjectAssistant({
           priority: r.priority,
           due_date: r.due_date
         }))
+      },
+      production_bottlenecks: {
+        fabrication: fabBottlenecks,
+        delivery: deliveryBottlenecks,
+        unassigned_critical: unassignedCritical.map((t) => ({
+          name: t.name,
+          phase: t.phase,
+          start_date: t.start_date,
+          is_critical: true
+        }))
+      },
+      fabrication_pipeline: {
+        not_started: projectFabrications.filter((f) => f.fabrication_status === 'not_started').length,
+        in_progress: inProgressFabs.length,
+        delayed: delayedFabs.length,
+        ready_to_ship: readyToShipFabs.length,
+        completed: projectFabrications.filter((f) => f.fabrication_status === 'completed').length
+      },
+      delivery_schedule: {
+        upcoming_7_days: projectDeliveries.filter((d) => {
+          const scheduled = new Date(d.scheduled_date);
+          const today = new Date();
+          const sevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+          return scheduled >= today && scheduled <= sevenDays;
+        }).map((d) => ({
+          package: d.package_name,
+          date: d.scheduled_date,
+          weight: d.weight_tons
+        })),
+        overdue: deliveryBottlenecks
       }
     };
   };
 
   const quickAnalyses = [
   {
-    id: 'drawing_status',
-    label: 'Drawing Status Report',
+    id: 'fabrication_bottlenecks',
+    label: 'Fabrication Bottlenecks',
     icon: FileText,
-    prompt: 'Analyze the current drawing status. Identify any overdue drawings, tasks blocked by drawings, and provide recommendations for accelerating approvals.'
+    prompt: 'Identify all fabrication bottlenecks, delayed packages, and their root causes. Analyze the impact on downstream deliveries and erection. Recommend specific actions to clear bottlenecks and accelerate production.'
   },
   {
-    id: 'rfi_analysis',
-    label: 'RFI Analysis',
-    icon: MessageSquareWarning,
-    prompt: 'Analyze open RFIs. Identify any overdue items, high priority issues, and patterns in RFI submissions. Recommend actions to expedite closures.'
-  },
-  {
-    id: 'schedule_risks',
-    label: 'Schedule Risk Assessment',
+    id: 'delivery_analysis',
+    label: 'Delivery Schedule Analysis',
     icon: Calendar,
-    prompt: 'Assess schedule risks based on blocked tasks, drawing delays, and change order impacts. Provide data-driven recommendations to mitigate delays.'
+    prompt: 'Analyze the delivery schedule for the next 7-14 days. Identify overdue deliveries, potential conflicts, and sequencing issues. Recommend adjustments to optimize logistics and site readiness.'
   },
   {
-    id: 'change_orders',
-    label: 'Change Order Impact',
+    id: 'resource_allocation',
+    label: 'Resource Reallocation',
+    icon: MessageSquareWarning,
+    prompt: 'Analyze resource assignments across all active tasks. Identify unassigned critical path tasks, over/under-allocated resources, and recommend specific reallocations to optimize production flow and prevent delays.'
+  },
+  {
+    id: 'production_gantt',
+    label: 'Production Timeline Visual',
     icon: FileCheck,
-    prompt: 'Analyze pending change orders, their cost and schedule impacts. Provide insights on budget exposure and schedule implications.'
+    prompt: 'Generate a textual Gantt chart representation showing fabrication and delivery timelines. Include start/end dates, durations, status, and critical path items. Format as a clear schedule table showing: Package | Phase | Start | End | Duration | Status | Notes.'
+  },
+  {
+    id: 'weekly_summary',
+    label: 'Weekly Production Summary',
+    icon: FileCheck,
+    prompt: 'Provide a comprehensive weekly production summary including: completed fabrications, active packages, upcoming deliveries, bottlenecks, resource utilization, and top 3 action items for the coming week.'
   }];
 
 

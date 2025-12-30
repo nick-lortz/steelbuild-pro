@@ -187,6 +187,8 @@ export default function ProductionMeetings() {
               changeOrders={changeOrders}
               tasks={tasks}
               financials={financials}
+              fabrications={fabrications}
+              deliveries={deliveries}
               selectedProject={null}
             />
           </CardContent>

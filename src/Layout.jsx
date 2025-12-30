@@ -368,19 +368,19 @@ export default function Layout({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-zinc-900 border-r border-zinc-800 transition-transform duration-200',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-zinc-900 border-r border-zinc-800 transition-transform duration-200 flex flex-col',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="h-16 flex items-center px-4 border-b border-zinc-800">
+        <div className="h-16 flex items-center px-4 border-b border-zinc-800 flex-shrink-0">
           <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
             <Building2 size={18} className="text-black" />
           </div>
           <span className="font-bold text-lg tracking-tight ml-3">SteelBuild Pro</span>
         </div>
 
-        <nav className="p-3 space-y-1 overflow-y-auto">
+        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {visibleNavItems.map((item) => {
             const isActive = currentPageName === item.page;
             const Icon = item.icon;
@@ -406,7 +406,7 @@ export default function Layout({ children, currentPageName }) {
         </nav>
 
         {currentUser && (
-          <div className="border-t border-zinc-800 p-3">
+          <div className="border-t border-zinc-800 p-3 flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800">
                 <UserCircle size={18} className="text-amber-500" />

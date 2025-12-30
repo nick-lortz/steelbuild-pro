@@ -881,7 +881,9 @@ export default function Dashboard() {
         <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
           <CardHeader className="border-b border-zinc-800 pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white">Active Projects</CardTitle>
+              <CardTitle className="text-lg font-semibold text-white">
+                Active Projects ({activeProjects.length})
+              </CardTitle>
               <Link 
                 to={createPageUrl('Projects')} 
                 className="text-sm text-amber-500 hover:text-amber-400"

@@ -237,7 +237,12 @@ export default function Schedule() {
             </Button>
             <Button
             onClick={() => {
-              setEditingTask(null);
+              setEditingTask({
+                name: '',
+                project_id: selectedProject !== 'all' ? selectedProject : '',
+                phase: selectedPhase !== 'all' ? selectedPhase : 'fabrication',
+                is_milestone: false
+              });
               setShowTaskForm(true);
             }}
             className="bg-amber-500 hover:bg-amber-600 text-black">

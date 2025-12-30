@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { parseLocalDate, formatLocalDate } from '@/components/shared/dateUtils';
 
 export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
@@ -16,8 +17,8 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
     package_name: delivery?.package_name || '',
     package_number: delivery?.package_number || '',
     description: delivery?.description || '',
-    scheduled_date: delivery?.scheduled_date ? new Date(delivery.scheduled_date) : null,
-    actual_date: delivery?.actual_date ? new Date(delivery.actual_date) : null,
+    scheduled_date: delivery?.scheduled_date ? parseLocalDate(delivery.scheduled_date) : null,
+    actual_date: delivery?.actual_date ? parseLocalDate(delivery.actual_date) : null,
     delivery_status: delivery?.delivery_status || 'scheduled',
     weight_tons: delivery?.weight_tons?.toString() || '',
     piece_count: delivery?.piece_count?.toString() || '',
@@ -38,14 +39,6 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
       alert('Project, Package Name, and Scheduled Date are required');
       return;
     }
-
-    const formatLocalDate = (date) => {
-      if (!date) return null;
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
 
     const data = {
       ...formData,

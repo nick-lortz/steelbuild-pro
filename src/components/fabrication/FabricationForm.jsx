@@ -9,13 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
+import { parseLocalDate, formatLocalDate } from '@/components/shared/dateUtils';
 
 export default function FabricationForm({ fabrication, projects, drawings, deliveries, tasks, onSubmit, onCancel, isLoading }) {
-  const parseLocalDate = (dateString) => {
-    if (!dateString) return null;
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  };
 
   const [formData, setFormData] = useState({
     project_id: fabrication?.project_id || '',
@@ -46,14 +42,6 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
       alert('Project and Package Name are required');
       return;
     }
-
-    const formatLocalDate = (date) => {
-      if (!date) return null;
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
 
     const data = {
       ...formData,

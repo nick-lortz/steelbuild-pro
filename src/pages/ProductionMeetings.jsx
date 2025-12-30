@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import ProjectAssistant from '@/components/ai/ProjectAssistant';

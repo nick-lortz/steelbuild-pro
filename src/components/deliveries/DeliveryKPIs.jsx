@@ -7,10 +7,10 @@ export default function DeliveryKPIs({ deliveries, projects }) {
   const chartData = useMemo(() => {
     const projectStats = {};
 
-    projects.forEach(project => {
-      const projectDeliveries = deliveries.filter(d => d.project_id === project.id);
-      const completed = projectDeliveries.filter(d => d.delivery_status === 'delivered');
-      const onTime = completed.filter(d => {
+    projects.forEach((project) => {
+      const projectDeliveries = deliveries.filter((d) => d.project_id === project.id);
+      const completed = projectDeliveries.filter((d) => d.delivery_status === 'delivered');
+      const onTime = completed.filter((d) => {
         if (!d.actual_date) return false;
         const variance = differenceInDays(
           parseISO(d.actual_date),
@@ -25,7 +25,7 @@ export default function DeliveryKPIs({ deliveries, projects }) {
           total: projectDeliveries.length,
           completed: completed.length,
           onTime: onTime.length,
-          delayed: completed.length - onTime.length,
+          delayed: completed.length - onTime.length
         };
       }
     });
@@ -39,44 +39,44 @@ export default function DeliveryKPIs({ deliveries, projects }) {
       in_transit: 0,
       delivered: 0,
       delayed: 0,
-      cancelled: 0,
+      cancelled: 0
     };
 
-    deliveries.forEach(d => {
+    deliveries.forEach((d) => {
       if (counts.hasOwnProperty(d.delivery_status)) {
         counts[d.delivery_status]++;
       }
     });
 
     return [
-      { name: 'Scheduled', value: counts.scheduled, color: '#3b82f6' },
-      { name: 'In Transit', value: counts.in_transit, color: '#f59e0b' },
-      { name: 'Delivered', value: counts.delivered, color: '#10b981' },
-      { name: 'Delayed', value: counts.delayed, color: '#ef4444' },
-      { name: 'Cancelled', value: counts.cancelled, color: '#6b7280' },
-    ].filter(item => item.value > 0);
+    { name: 'Scheduled', value: counts.scheduled, color: '#3b82f6' },
+    { name: 'In Transit', value: counts.in_transit, color: '#f59e0b' },
+    { name: 'Delivered', value: counts.delivered, color: '#10b981' },
+    { name: 'Delayed', value: counts.delayed, color: '#ef4444' },
+    { name: 'Cancelled', value: counts.cancelled, color: '#6b7280' }].
+    filter((item) => item.value > 0);
   }, [deliveries]);
 
   const varianceData = useMemo(() => {
-    const completed = deliveries.filter(d => d.delivery_status === 'delivered' && d.actual_date);
-    
+    const completed = deliveries.filter((d) => d.delivery_status === 'delivered' && d.actual_date);
+
     const buckets = {
       'Early (>2d)': 0,
       'On Time (±2d)': 0,
       'Late (2-7d)': 0,
-      'Very Late (>7d)': 0,
+      'Very Late (>7d)': 0
     };
 
-    completed.forEach(d => {
+    completed.forEach((d) => {
       const variance = differenceInDays(
         parseISO(d.actual_date),
         parseISO(d.scheduled_date)
       );
 
-      if (variance < -2) buckets['Early (>2d)']++;
-      else if (variance <= 2) buckets['On Time (±2d)']++;
-      else if (variance <= 7) buckets['Late (2-7d)']++;
-      else buckets['Very Late (>7d)']++;
+      if (variance < -2) buckets['Early (>2d)']++;else
+      if (variance <= 2) buckets['On Time (±2d)']++;else
+      if (variance <= 7) buckets['Late (2-7d)']++;else
+      buckets['Very Late (>7d)']++;
     });
 
     return Object.entries(buckets).map(([name, value]) => ({ name, value }));
@@ -86,7 +86,7 @@ export default function DeliveryKPIs({ deliveries, projects }) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Deliveries by Project */}
       <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader>
+        <CardHeader className="text-slate-50 p-6 flex flex-col space-y-1.5">
           <CardTitle className="text-lg">Deliveries by Project</CardTitle>
         </CardHeader>
         <CardContent>
@@ -97,8 +97,8 @@ export default function DeliveryKPIs({ deliveries, projects }) {
               <YAxis stroke="#a1a1aa" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a' }}
-                labelStyle={{ color: '#fff' }}
-              />
+                labelStyle={{ color: '#fff' }} />
+
               <Legend />
               <Bar dataKey="onTime" fill="#10b981" name="On Time" />
               <Bar dataKey="delayed" fill="#ef4444" name="Delayed" />
@@ -110,7 +110,7 @@ export default function DeliveryKPIs({ deliveries, projects }) {
       {/* Status Distribution */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-lg">Delivery Status Distribution</CardTitle>
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Delivery Status Distribution</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
@@ -123,15 +123,15 @@ export default function DeliveryKPIs({ deliveries, projects }) {
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
-                dataKey="value"
-              >
-                {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
+                dataKey="value">
+
+                {statusData.map((entry, index) =>
+                <Cell key={`cell-${index}`} fill={entry.color} />
+                )}
               </Pie>
               <Tooltip
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a' }}
-              />
+                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a' }} />
+
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
@@ -140,7 +140,7 @@ export default function DeliveryKPIs({ deliveries, projects }) {
       {/* Variance Analysis */}
       <Card className="bg-zinc-900 border-zinc-800 lg:col-span-2">
         <CardHeader>
-          <CardTitle className="text-lg">Delivery Variance Analysis</CardTitle>
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Delivery Variance Analysis</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
@@ -150,13 +150,13 @@ export default function DeliveryKPIs({ deliveries, projects }) {
               <YAxis type="category" dataKey="name" stroke="#a1a1aa" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a' }}
-                labelStyle={{ color: '#fff' }}
-              />
+                labelStyle={{ color: '#fff' }} />
+
               <Bar dataKey="value" fill="#f59e0b" name="Deliveries" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }

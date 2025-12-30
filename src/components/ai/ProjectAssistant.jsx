@@ -7,15 +7,15 @@ import { base44 } from '@/api/base44Client';
 import { Sparkles, Send, Loader2, AlertTriangle, FileText, MessageSquareWarning, FileCheck, Calendar } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-export default function ProjectAssistant({ 
-  projects, 
-  drawings, 
-  rfis, 
-  changeOrders, 
-  tasks, 
+export default function ProjectAssistant({
+  projects,
+  drawings,
+  rfis,
+  changeOrders,
+  tasks,
   financials,
   expenses = [],
-  selectedProject 
+  selectedProject
 }) {
   const [question, setQuestion] = useState('');
   const [conversation, setConversation] = useState([]);
@@ -23,18 +23,18 @@ export default function ProjectAssistant({
   const [analysisType, setAnalysisType] = useState(null);
 
   const getProjectContext = () => {
-    const project = selectedProject ? projects.find(p => p.id === selectedProject) : null;
+    const project = selectedProject ? projects.find((p) => p.id === selectedProject) : null;
     const projectData = project ? {
       project: {
         name: project.name,
         number: project.project_number,
         status: project.status,
         start_date: project.start_date,
-        target_completion: project.target_completion,
+        target_completion: project.target_completion
       }
-    } : { projects: projects.map(p => ({ name: p.name, number: p.project_number, status: p.status })) };
+    } : { projects: projects.map((p) => ({ name: p.name, number: p.project_number, status: p.status })) };
 
-    const filterByProject = (items) => selectedProject ? items.filter(i => i.project_id === selectedProject) : items;
+    const filterByProject = (items) => selectedProject ? items.filter((i) => i.project_id === selectedProject) : items;
 
     const projectDrawings = filterByProject(drawings);
     const projectRFIs = filterByProject(rfis);
@@ -44,29 +44,29 @@ export default function ProjectAssistant({
     const projectExpenses = filterByProject(expenses);
 
     // Calculate key metrics
-    const overdueDrawings = projectDrawings.filter(d => 
-      d.due_date && new Date(d.due_date) < new Date() && d.status !== 'FFF'
+    const overdueDrawings = projectDrawings.filter((d) =>
+    d.due_date && new Date(d.due_date) < new Date() && d.status !== 'FFF'
     );
-    const blockedTasks = projectTasks.filter(t => 
-      t.linked_drawing_set_ids && t.linked_drawing_set_ids.length > 0 &&
-      ['fabrication', 'delivery', 'erection'].includes(t.phase) &&
-      t.linked_drawing_set_ids.some(id => {
-        const drawing = projectDrawings.find(d => d.id === id);
-        return drawing && drawing.status !== 'FFF';
-      })
+    const blockedTasks = projectTasks.filter((t) =>
+    t.linked_drawing_set_ids && t.linked_drawing_set_ids.length > 0 &&
+    ['fabrication', 'delivery', 'erection'].includes(t.phase) &&
+    t.linked_drawing_set_ids.some((id) => {
+      const drawing = projectDrawings.find((d) => d.id === id);
+      return drawing && drawing.status !== 'FFF';
+    })
     );
-    const openRFIs = projectRFIs.filter(r => r.status !== 'closed' && r.status !== 'answered');
-    const pendingCOs = projectCOs.filter(co => co.status === 'pending' || co.status === 'submitted');
-    
+    const openRFIs = projectRFIs.filter((r) => r.status !== 'closed' && r.status !== 'answered');
+    const pendingCOs = projectCOs.filter((co) => co.status === 'pending' || co.status === 'submitted');
+
     // Calculate financial metrics including expenses
     const totalBudget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
     const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
-    
+
     // Add paid/approved expenses to actual costs
-    const actualFromExpenses = projectExpenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    
+    const actualFromExpenses = projectExpenses.
+    filter((e) => e.payment_status === 'paid' || e.payment_status === 'approved').
+    reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
     const totalActual = actualFromFinancials + actualFromExpenses;
     const budgetVariance = totalBudget - totalActual;
 
@@ -75,66 +75,66 @@ export default function ProjectAssistant({
       metrics: {
         total_drawings: projectDrawings.length,
         overdue_drawings: overdueDrawings.length,
-        drawings_pending_release: projectDrawings.filter(d => d.status !== 'FFF' && d.status !== 'As-Built').length,
+        drawings_pending_release: projectDrawings.filter((d) => d.status !== 'FFF' && d.status !== 'As-Built').length,
         open_rfis: openRFIs.length,
-        overdue_rfis: openRFIs.filter(r => r.due_date && new Date(r.due_date) < new Date()).length,
+        overdue_rfis: openRFIs.filter((r) => r.due_date && new Date(r.due_date) < new Date()).length,
         pending_change_orders: pendingCOs.length,
         co_cost_impact: pendingCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0),
         total_tasks: projectTasks.length,
         blocked_tasks: blockedTasks.length,
-        completed_tasks: projectTasks.filter(t => t.status === 'completed').length,
+        completed_tasks: projectTasks.filter((t) => t.status === 'completed').length,
         budget: totalBudget,
         actual_cost: totalActual,
         budget_variance: budgetVariance,
-        budget_utilization: totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : 0,
+        budget_utilization: totalBudget > 0 ? (totalActual / totalBudget * 100).toFixed(1) : 0
       },
       critical_issues: {
-        overdue_drawings: overdueDrawings.map(d => ({
+        overdue_drawings: overdueDrawings.map((d) => ({
           set_name: d.set_name,
           due_date: d.due_date,
-          status: d.status,
+          status: d.status
         })),
-        blocked_tasks: blockedTasks.map(t => ({
+        blocked_tasks: blockedTasks.map((t) => ({
           name: t.name,
           phase: t.phase,
-          start_date: t.start_date,
+          start_date: t.start_date
         })),
-        high_priority_rfis: openRFIs.filter(r => r.priority === 'high' || r.priority === 'critical').map(r => ({
+        high_priority_rfis: openRFIs.filter((r) => r.priority === 'high' || r.priority === 'critical').map((r) => ({
           number: r.rfi_number,
           subject: r.subject,
           priority: r.priority,
-          due_date: r.due_date,
-        })),
-      },
+          due_date: r.due_date
+        }))
+      }
     };
   };
 
   const quickAnalyses = [
-    {
-      id: 'drawing_status',
-      label: 'Drawing Status Report',
-      icon: FileText,
-      prompt: 'Analyze the current drawing status. Identify any overdue drawings, tasks blocked by drawings, and provide recommendations for accelerating approvals.',
-    },
-    {
-      id: 'rfi_analysis',
-      label: 'RFI Analysis',
-      icon: MessageSquareWarning,
-      prompt: 'Analyze open RFIs. Identify any overdue items, high priority issues, and patterns in RFI submissions. Recommend actions to expedite closures.',
-    },
-    {
-      id: 'schedule_risks',
-      label: 'Schedule Risk Assessment',
-      icon: Calendar,
-      prompt: 'Assess schedule risks based on blocked tasks, drawing delays, and change order impacts. Provide data-driven recommendations to mitigate delays.',
-    },
-    {
-      id: 'change_orders',
-      label: 'Change Order Impact',
-      icon: FileCheck,
-      prompt: 'Analyze pending change orders, their cost and schedule impacts. Provide insights on budget exposure and schedule implications.',
-    },
-  ];
+  {
+    id: 'drawing_status',
+    label: 'Drawing Status Report',
+    icon: FileText,
+    prompt: 'Analyze the current drawing status. Identify any overdue drawings, tasks blocked by drawings, and provide recommendations for accelerating approvals.'
+  },
+  {
+    id: 'rfi_analysis',
+    label: 'RFI Analysis',
+    icon: MessageSquareWarning,
+    prompt: 'Analyze open RFIs. Identify any overdue items, high priority issues, and patterns in RFI submissions. Recommend actions to expedite closures.'
+  },
+  {
+    id: 'schedule_risks',
+    label: 'Schedule Risk Assessment',
+    icon: Calendar,
+    prompt: 'Assess schedule risks based on blocked tasks, drawing delays, and change order impacts. Provide data-driven recommendations to mitigate delays.'
+  },
+  {
+    id: 'change_orders',
+    label: 'Change Order Impact',
+    icon: FileCheck,
+    prompt: 'Analyze pending change orders, their cost and schedule impacts. Provide insights on budget exposure and schedule implications.'
+  }];
+
 
   const handleQuickAnalysis = async (analysis) => {
     setAnalysisType(analysis.id);
@@ -146,12 +146,12 @@ export default function ProjectAssistant({
     if (!userQuestion.trim()) return;
 
     setLoading(true);
-    setConversation(prev => [...prev, { role: 'user', content: userQuestion }]);
+    setConversation((prev) => [...prev, { role: 'user', content: userQuestion }]);
     if (!customQuestion) setQuestion('');
 
     try {
       const context = getProjectContext();
-      
+
       const systemPrompt = `You are an AI Project Manager Assistant for a structural steel fabrication company. You provide data-driven insights based on ACTUAL project data.
 
 CRITICAL RULES:
@@ -169,14 +169,14 @@ ${JSON.stringify(context, null, 2)}
 The user's question is about the ${selectedProject ? 'selected project' : 'all projects in the portfolio'}.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `${systemPrompt}\n\nUser Question: ${userQuestion}`,
+        prompt: `${systemPrompt}\n\nUser Question: ${userQuestion}`
       });
 
-      setConversation(prev => [...prev, { role: 'assistant', content: response }]);
+      setConversation((prev) => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
-      setConversation(prev => [...prev, { 
-        role: 'assistant', 
-        content: `Error: ${error.message || 'Failed to get AI response'}` 
+      setConversation((prev) => [...prev, {
+        role: 'assistant',
+        content: `Error: ${error.message || 'Failed to get AI response'}`
       }]);
     } finally {
       setLoading(false);
@@ -193,26 +193,26 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
     <div className="space-y-4">
       {/* Quick Analysis Buttons */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {quickAnalyses.map(analysis => {
+        {quickAnalyses.map((analysis) => {
           const Icon = analysis.icon;
           return (
             <Button
               key={analysis.id}
               variant="outline"
               onClick={() => handleQuickAnalysis(analysis)}
-              disabled={loading}
-              className="h-auto py-3 px-4 flex flex-col items-start gap-2 border-zinc-700 hover:border-amber-500"
-            >
+              disabled={loading} className="bg-background text-slate-950 px-4 py-3 text-sm font-medium rounded-md justify-center whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-auto flex flex-col items-start gap-2 border-zinc-700 hover:border-amber-500">
+
+
               <Icon size={18} className="text-amber-500" />
               <span className="text-xs text-left">{analysis.label}</span>
-            </Button>
-          );
+            </Button>);
+
         })}
       </div>
 
       {/* Conversation */}
-      {conversation.length > 0 && (
-        <Card className="bg-zinc-900 border-zinc-800">
+      {conversation.length > 0 &&
+      <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Sparkles size={18} className="text-amber-500" />
@@ -220,19 +220,19 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 max-h-[600px] overflow-y-auto">
-            {conversation.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-lg ${
-                  msg.role === 'user'
-                    ? 'bg-amber-500/10 border border-amber-500/20 ml-8'
-                    : 'bg-zinc-800 mr-8'
-                }`}
-              >
+            {conversation.map((msg, idx) =>
+          <div
+            key={idx}
+            className={`p-4 rounded-lg ${
+            msg.role === 'user' ?
+            'bg-amber-500/10 border border-amber-500/20 ml-8' :
+            'bg-zinc-800 mr-8'}`
+            }>
+
                 <div className="flex items-start gap-2 mb-2">
-                  {msg.role === 'assistant' && (
-                    <Sparkles size={14} className="text-amber-500 mt-1" />
-                  )}
+                  {msg.role === 'assistant' &&
+              <Sparkles size={14} className="text-amber-500 mt-1" />
+              }
                   <p className="text-xs text-zinc-500 font-medium uppercase">
                     {msg.role === 'user' ? 'You' : 'AI Assistant'}
                   </p>
@@ -241,16 +241,16 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
                   {msg.content}
                 </ReactMarkdown>
               </div>
-            ))}
-            {loading && (
-              <div className="flex items-center gap-2 text-zinc-400">
+          )}
+            {loading &&
+          <div className="flex items-center gap-2 text-zinc-400">
                 <Loader2 size={16} className="animate-spin" />
                 <span className="text-sm">Analyzing data...</span>
               </div>
-            )}
+          }
           </CardContent>
         </Card>
-      )}
+      }
 
       {/* Input */}
       <Card className="bg-zinc-900 border-zinc-800">
@@ -260,10 +260,10 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask about drawings, RFIs, schedule risks, budget variance, or any project metrics..."
-              rows={3}
-              className="bg-zinc-800 border-zinc-700 text-white resize-none"
-              disabled={loading}
-            />
+              rows={3} className="bg-zinc-800 text-slate-50 px-3 py-2 text-base rounded-md flex min-h-[60px] w-full border shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm border-zinc-700 resize-none"
+
+              disabled={loading} />
+
             <div className="flex items-center justify-between">
               <p className="text-xs text-zinc-500">
                 AI provides data-driven insights from actual project data
@@ -271,19 +271,19 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
               <Button
                 type="submit"
                 disabled={loading || !question.trim()}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {loading ? (
-                  <>
+                className="bg-amber-500 hover:bg-amber-600 text-black">
+
+                {loading ?
+                <>
                     <Loader2 size={16} className="mr-2 animate-spin" />
                     Analyzing...
-                  </>
-                ) : (
-                  <>
+                  </> :
+
+                <>
                     <Send size={16} className="mr-2" />
                     Ask AI
                   </>
-                )}
+                }
               </Button>
             </div>
           </form>
@@ -304,6 +304,6 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

@@ -39,10 +39,18 @@ export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCa
       return;
     }
 
+    const formatLocalDate = (date) => {
+      if (!date) return null;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     const data = {
       ...formData,
-      scheduled_date: formData.scheduled_date ? format(formData.scheduled_date, 'yyyy-MM-dd') : null,
-      actual_date: formData.actual_date ? format(formData.actual_date, 'yyyy-MM-dd') : null,
+      scheduled_date: formatLocalDate(formData.scheduled_date),
+      actual_date: formatLocalDate(formData.actual_date),
       weight_tons: formData.weight_tons ? parseFloat(formData.weight_tons) : null,
       piece_count: formData.piece_count ? parseInt(formData.piece_count) : null
     };

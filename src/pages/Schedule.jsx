@@ -29,6 +29,7 @@ export default function Schedule() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [selectedPhase, setSelectedPhase] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [bulkEditTasks, setBulkEditTasks] = useState([]);
@@ -131,11 +132,18 @@ export default function Schedule() {
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
+      const project = projects.find(p => p.id === t.project_id);
       const matchesProject = selectedProject === 'all' || t.project_id === selectedProject;
       const matchesPhase = selectedPhase === 'all' || t.phase === selectedPhase;
-      return matchesProject && matchesPhase;
+      const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
+      return matchesProject && matchesPhase && matchesPm;
     });
-  }, [tasks, selectedProject, selectedPhase]);
+  }, [tasks, selectedProject, selectedPhase, pmFilter, projects]);
+
+  const uniquePMs = useMemo(() => 
+    [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort(),
+    [projects]
+  );
 
   // Calculate critical path
   const criticalPathData = useMemo(() => {
@@ -268,6 +276,18 @@ export default function Schedule() {
             <SelectItem value="delivery">Delivery</SelectItem>
             <SelectItem value="erection">Erection</SelectItem>
             <SelectItem value="closeout">Closeout</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

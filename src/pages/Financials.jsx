@@ -53,6 +53,7 @@ export default function Financials() {
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [selectedProject, setSelectedProject] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
   const [formData, setFormData] = useState({
     project_id: '',
     cost_code_id: '',
@@ -409,9 +410,26 @@ export default function Financials() {
 
 
   const filteredFinancials = useMemo(() => {
-    if (selectedProject === 'all') return financials;
-    return financials.filter(f => f && f.project_id === selectedProject);
-  }, [financials, selectedProject]);
+    let filtered = financials;
+    
+    if (selectedProject !== 'all') {
+      filtered = filtered.filter(f => f && f.project_id === selectedProject);
+    }
+    
+    if (pmFilter !== 'all') {
+      filtered = filtered.filter(f => {
+        const project = projects.find(p => p.id === f.project_id);
+        return project?.project_manager === pmFilter;
+      });
+    }
+    
+    return filtered;
+  }, [financials, selectedProject, pmFilter, projects]);
+
+  const uniquePMs = useMemo(() => 
+    [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort(),
+    [projects]
+  );
 
   // Enhanced budget lines with expense rollup - MUST BE BEFORE totals
   const budgetLinesWithExpenses = useMemo(() => {
@@ -782,7 +800,7 @@ export default function Financials() {
           </div>
 
           {/* Project Filter */}
-          <div className="mb-6">
+          <div className="mb-6 flex gap-3">
             <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
                 <SelectValue placeholder="Filter by project" />
@@ -793,6 +811,17 @@ export default function Financials() {
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={pmFilter} onValueChange={setPmFilter}>
+              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by PM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All PMs</SelectItem>
+                {uniquePMs.map(pm => (
+                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -910,7 +939,7 @@ export default function Financials() {
         </TabsContent>
 
         <TabsContent value="client-invoices" className="space-y-4">
-          <div className="mb-6">
+          <div className="mb-6 flex gap-3">
             <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
                 <SelectValue placeholder="Filter by project" />
@@ -921,6 +950,17 @@ export default function Financials() {
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={pmFilter} onValueChange={setPmFilter}>
+              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by PM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All PMs</SelectItem>
+                {uniquePMs.map(pm => (
+                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

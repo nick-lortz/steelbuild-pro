@@ -16,6 +16,7 @@ export default function ProductionMeetings() {
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [editingNotes, setEditingNotes] = useState({});
   const [showAI, setShowAI] = useState(false);
+  const [pmFilter, setPmFilter] = useState('all');
   
   const queryClient = useQueryClient();
   const weekKey = format(currentWeek, 'yyyy-MM-dd');
@@ -26,8 +27,16 @@ export default function ProductionMeetings() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const activeProjects = useMemo(() => 
-    projects.filter(p => p.status === 'in_progress' || p.status === 'awarded'),
+  const activeProjects = useMemo(() => {
+    let filtered = projects.filter(p => p.status === 'in_progress' || p.status === 'awarded');
+    if (pmFilter !== 'all') {
+      filtered = filtered.filter(p => p.project_manager === pmFilter);
+    }
+    return filtered;
+  }, [projects, pmFilter]);
+
+  const uniquePMs = useMemo(() => 
+    [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort(),
     [projects]
   );
 
@@ -194,6 +203,21 @@ export default function ProductionMeetings() {
           </CardContent>
         </Card>
       )}
+
+      {/* PM Filter */}
+      <div className="mb-6">
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Week Navigation */}
       <div className="mb-6 flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-lg p-4">

@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 export default function Fabrication() {
   const [selectedProject, setSelectedProject] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -107,13 +108,17 @@ export default function Fabrication() {
   };
 
   const filteredFabrications = fabrications.filter((f) => {
+    const project = projects.find(p => p.id === f.project_id);
     const matchesProject = selectedProject === 'all' || f.project_id === selectedProject;
     const matchesStatus = statusFilter === 'all' || f.fabrication_status === statusFilter;
+    const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
     const matchesSearch = 
       f.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesProject && matchesStatus && matchesSearch;
+    return matchesProject && matchesStatus && matchesPm && matchesSearch;
   });
+
+  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
 
   const getStatusIcon = (status) => {
     if (status === 'complete') return <CheckCircle size={16} className="text-green-500" />;
@@ -283,6 +288,17 @@ export default function Fabrication() {
             <SelectItem value="ready_to_ship">Ready to Ship</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

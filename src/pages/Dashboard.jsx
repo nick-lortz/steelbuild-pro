@@ -165,6 +165,7 @@ export default function Dashboard() {
   const widgetConfig = viewConfigs[selectedView] || viewConfigs.default;
 
   const [showAllProjects, setShowAllProjects] = useState(false);
+  const [pmFilter, setPmFilter] = useState('all');
 
   const { data: allProjects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
@@ -176,19 +177,30 @@ export default function Dashboard() {
   const projects = useMemo(() => {
     if (!currentUser) return allProjects;
     
-    // Admins always see all projects
-    if (currentUser.role === 'admin' || showAllProjects) {
-      return allProjects;
+    let filtered = allProjects;
+    
+    // Admins always see all projects, regular users see only their projects
+    if (currentUser.role !== 'admin' && !showAllProjects) {
+      filtered = allProjects.filter(p => 
+        p.project_manager === currentUser.email || 
+        p.superintendent === currentUser.email ||
+        p.created_by === currentUser.email ||
+        (p.assigned_users && p.assigned_users.includes(currentUser.email))
+      );
     }
     
-    // Regular users see only their projects (where they are PM, superintendent, assigned, or creator)
-    return allProjects.filter(p => 
-      p.project_manager === currentUser.email || 
-      p.superintendent === currentUser.email ||
-      p.created_by === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
-    );
-  }, [allProjects, currentUser, showAllProjects]);
+    // Apply PM filter
+    if (pmFilter !== 'all') {
+      filtered = filtered.filter(p => p.project_manager === pmFilter);
+    }
+    
+    return filtered;
+  }, [allProjects, currentUser, showAllProjects, pmFilter]);
+
+  const uniquePMs = useMemo(() => 
+    [...new Set(allProjects.map(p => p.project_manager).filter(Boolean))].sort(),
+    [allProjects]
+  );
 
   const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
@@ -400,6 +412,17 @@ export default function Dashboard() {
                 {showAllProjects ? 'Show My Projects' : 'Show All Projects'}
               </Button>
             )}
+            <Select value={pmFilter} onValueChange={setPmFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by PM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All PMs</SelectItem>
+                {uniquePMs.map(pm => (
+                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {currentUser && (
               <div className="text-right mr-2">
                 <p className="text-xs text-zinc-500">Viewing as</p>

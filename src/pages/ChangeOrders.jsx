@@ -61,6 +61,7 @@ export default function ChangeOrders() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [deleteCO, setDeleteCO] = useState(null);
 
@@ -150,13 +151,17 @@ export default function ChangeOrders() {
   };
 
   const filteredCOs = changeOrders.filter(co => {
+    const project = projects.find(p => p.id === co.project_id);
     const matchesSearch = 
       co.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(co.co_number).includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || co.status === statusFilter;
     const matchesProject = projectFilter === 'all' || co.project_id === projectFilter;
-    return matchesSearch && matchesStatus && matchesProject;
+    const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
+    return matchesSearch && matchesStatus && matchesProject && matchesPm;
   }).sort((a, b) => (a.co_number || 0) - (b.co_number || 0));
+
+  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
 
   // Calculate totals - ensure we have an array before reducing
   const totals = (filteredCOs || []).reduce((acc, co) => {
@@ -353,6 +358,17 @@ export default function ChangeOrders() {
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="void">Void</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

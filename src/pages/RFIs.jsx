@@ -71,6 +71,7 @@ export default function RFIs() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
   const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [deleteRFI, setDeleteRFI] = useState(null);
@@ -174,13 +175,17 @@ export default function RFIs() {
   };
 
   const filteredRFIs = rfis.filter((r) => {
+    const project = projects.find(p => p.id === r.project_id);
     const matchesSearch =
     r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     String(r.rfi_number).includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
     const matchesProject = projectFilter === 'all' || r.project_id === projectFilter;
-    return matchesSearch && matchesStatus && matchesProject;
+    const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
+    return matchesSearch && matchesStatus && matchesProject && matchesPm;
   }).sort((a, b) => (a.rfi_number || 0) - (b.rfi_number || 0));
+
+  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
 
   const columns = [
   {
@@ -362,6 +367,17 @@ export default function RFIs() {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="answered">Answered</SelectItem>
             <SelectItem value="closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

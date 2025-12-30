@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Copy } from 'lucide-react';
+import { Plus, Trash2, Files } from 'lucide-react';
 
 export default function BulkRFICreator({ open, onOpenChange, projectId }) {
   const [rfis, setRfis] = useState([{
@@ -109,7 +109,7 @@ export default function BulkRFICreator({ open, onOpenChange, projectId }) {
                       onClick={() => duplicateRFI(index)}
                       className="h-8 w-8 p-0"
                     >
-                      <Copy size={14} />
+                      <Files size={14} />
                     </Button>
                     {rfis.length > 1 && (
                       <Button

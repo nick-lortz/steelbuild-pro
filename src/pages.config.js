@@ -6,7 +6,6 @@ import Deliveries from './pages/Deliveries';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
-import Fabrication from './pages/Fabrication';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Labor from './pages/Labor';
@@ -15,7 +14,6 @@ import Meetings from './pages/Meetings';
 import Performance from './pages/Performance';
 import ProductionMeetings from './pages/ProductionMeetings';
 import ProjectDashboard from './pages/ProjectDashboard';
-import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
@@ -23,6 +21,8 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
+import Projects from './pages/Projects';
+import Fabrication from './pages/Fabrication';
 import __Layout from './Layout.jsx';
 
 
@@ -35,7 +35,6 @@ export const PAGES = {
     "Documents": Documents,
     "Drawings": Drawings,
     "Equipment": Equipment,
-    "Fabrication": Fabrication,
     "Financials": Financials,
     "Insights": Insights,
     "Labor": Labor,
@@ -44,7 +43,6 @@ export const PAGES = {
     "Performance": Performance,
     "ProductionMeetings": ProductionMeetings,
     "ProjectDashboard": ProjectDashboard,
-    "Projects": Projects,
     "RFIs": RFIs,
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
@@ -52,6 +50,8 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
+    "Projects": Projects,
+    "Fabrication": Fabrication,
 }
 
 export const pagesConfig = {

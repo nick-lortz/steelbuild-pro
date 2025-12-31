@@ -18,9 +18,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Clock, CheckCircle, Users, TrendingUp } from 'lucide-react';
+import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -28,6 +44,7 @@ import { format } from 'date-fns';
 
 export default function Labor() {
   const [showForm, setShowForm] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
   const [formData, setFormData] = useState({
     project_id: '',
     resource_id: '',
@@ -80,6 +97,14 @@ export default function Labor() {
         description: '',
         approved: false,
       });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.LaborHours.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['laborHours'] });
+      setDeleteId(null);
     },
   });
 
@@ -152,6 +177,29 @@ export default function Labor() {
         row.approved 
           ? <StatusBadge status="approved" />
           : <StatusBadge status="pending" />
+      ),
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      cellClassName: 'w-12',
+      render: (row) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
+            <DropdownMenuItem 
+              onClick={() => setDeleteId(row.id)}
+              className="text-red-400 hover:text-red-300 cursor-pointer"
+            >
+              <Trash2 size={14} className="mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
@@ -408,6 +456,29 @@ export default function Labor() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Labor Entry</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              This will permanently delete this labor entry. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteId)}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -77,7 +77,7 @@ export default function GanttChart({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const startDate = addDays(today, -7);
-  const endDate = addDays(today, 180);
+  const endDate = addDays(today, 180); // 6 months = ~180 days
   const totalDays = differenceInDays(endDate, startDate);
 
   // Generate time periods based on view mode
@@ -485,7 +485,7 @@ export default function GanttChart({
                         </div>
 
                         {/* Gantt Bar */}
-                        <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                        <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px`, overflow: 'visible' }}>
                           {/* Grid lines */}
                           {periods.map((_, idx) => (
                             <div
@@ -545,7 +545,7 @@ export default function GanttChart({
 
                           {/* Task Bar */}
                           <div
-                           className={`absolute h-7 rounded transition-all hover:shadow-xl overflow-hidden ${
+                           className={`absolute h-7 rounded transition-all hover:shadow-xl ${
                              task.is_milestone 
                                ? 'bg-amber-500 w-3.5 h-3.5 transform rotate-45 shadow-lg cursor-pointer' 
                                : overdue
@@ -580,8 +580,8 @@ export default function GanttChart({
                              />
                            )}
                            {!task.is_milestone && (
-                             <div className="absolute inset-0 flex items-center justify-between px-2">
-                               <span className="text-xs font-semibold text-white truncate drop-shadow-md">
+                             <div className="absolute inset-0 flex items-center justify-between px-2 overflow-hidden">
+                               <span className="text-xs font-semibold text-white truncate drop-shadow-md whitespace-nowrap">
                                  {task.name}
                                </span>
                                <div className="flex items-center gap-1 ml-2">
@@ -698,7 +698,7 @@ export default function GanttChart({
                              </div>
                            </div>
 
-                           <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                           <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px`, overflow: 'visible' }}>
                              {periods.map((_, idx) => (
                                <div
                                  key={idx}
@@ -715,7 +715,7 @@ export default function GanttChart({
                              )}
 
                              <div
-                               className={`absolute h-6 rounded transition-all hover:shadow-lg overflow-hidden cursor-grab active:cursor-grabbing ${
+                               className={`absolute h-6 rounded transition-all hover:shadow-lg cursor-grab active:cursor-grabbing ${
                                  childOverdue
                                    ? 'bg-red-600/80 border border-red-400 animate-pulse'
                                    : childCritical 
@@ -743,8 +743,8 @@ export default function GanttChart({
                                    style={{ width: `${childTask.progress_percent}%` }}
                                  />
                                )}
-                               <div className="absolute inset-0 flex items-center justify-between px-2">
-                                 <span className="text-xs font-medium text-white truncate">
+                               <div className="absolute inset-0 flex items-center justify-between px-2 overflow-hidden">
+                                 <span className="text-xs font-medium text-white truncate whitespace-nowrap">
                                    {childTask.name}
                                  </span>
                                  <div className="flex items-center gap-1 ml-1">

@@ -177,8 +177,13 @@ export default function Labor() {
       accessor: 'work_date',
       render: (row) => {
         if (!row.work_date) return '-';
-        const date = new Date(row.work_date + 'T00:00:00');
-        return format(date, 'MMM d, yyyy');
+        try {
+          const date = new Date(row.work_date + 'T00:00:00');
+          if (isNaN(date.getTime())) return '-';
+          return format(date, 'MMM d, yyyy');
+        } catch {
+          return '-';
+        }
       },
     },
     {
@@ -286,9 +291,14 @@ export default function Labor() {
 
     const last30Days = laborHours.filter(l => {
       if (!l.work_date) return false;
-      const workDate = new Date(l.work_date + 'T00:00:00');
-      const daysAgo = (new Date() - workDate) / (1000 * 60 * 60 * 24);
-      return daysAgo <= 30;
+      try {
+        const workDate = new Date(l.work_date + 'T00:00:00');
+        if (isNaN(workDate.getTime())) return false;
+        const daysAgo = (new Date() - workDate) / (1000 * 60 * 60 * 24);
+        return daysAgo <= 30;
+      } catch {
+        return false;
+      }
     });
     const avgDailyHours = last30Days.length > 0 
       ? last30Days.reduce((sum, l) => sum + (l.hours || 0), 0) / 30 

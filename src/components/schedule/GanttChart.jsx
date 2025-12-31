@@ -216,8 +216,6 @@ export default function GanttChart({
   const columnWidth = viewMode === 'day' ? 60 : viewMode === 'week' ? 80 : 100;
   
   // Calculate today's position
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
   const daysFromStart = differenceInDays(today, startDate);
   const todayPosition = (daysFromStart / totalDays) * 100;
 

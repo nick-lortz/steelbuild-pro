@@ -49,32 +49,6 @@ export default function GanttChart({
     setCollapsedParents(newCollapsed);
   };
 
-  const scrollToToday = () => {
-    if (chartRef.current) {
-      const scrollPosition = (todayPosition / 100) * chartRef.current.scrollWidth - (chartRef.current.clientWidth / 2);
-      chartRef.current.scrollTo({ left: Math.max(0, scrollPosition), behavior: 'smooth' });
-    }
-  };
-
-  // Auto-scroll to today on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (todayPosition >= 0 && todayPosition <= 100) {
-        scrollToToday();
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const collapseAll = () => {
-    setCollapsedPhases(new Set(phases));
-  };
-
-  const expandAll = () => {
-    setCollapsedPhases(new Set());
-    setCollapsedParents(new Set());
-  };
-
   // Filter tasks first
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -262,6 +236,32 @@ export default function GanttChart({
   today.setHours(0, 0, 0, 0);
   const daysFromStart = differenceInDays(today, startDate);
   const todayPosition = (daysFromStart / totalDays) * 100;
+
+  const scrollToToday = () => {
+    if (chartRef.current) {
+      const scrollPosition = (todayPosition / 100) * chartRef.current.scrollWidth - (chartRef.current.clientWidth / 2);
+      chartRef.current.scrollTo({ left: Math.max(0, scrollPosition), behavior: 'smooth' });
+    }
+  };
+
+  // Auto-scroll to today on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (todayPosition >= 0 && todayPosition <= 100) {
+        scrollToToday();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [todayPosition]);
+
+  const collapseAll = () => {
+    setCollapsedPhases(new Set(phases));
+  };
+
+  const expandAll = () => {
+    setCollapsedPhases(new Set());
+    setCollapsedParents(new Set());
+  };
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">

@@ -205,8 +205,8 @@ export default function TaskForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Action Buttons */}
-      {!task &&
-      <div className="flex gap-2 pb-4 border-b border-zinc-800">
+      {!task && (
+        <div className="flex gap-2 pb-4 border-b border-zinc-800">
           <Button
           type="button"
           variant="outline"
@@ -216,8 +216,8 @@ export default function TaskForm({
             <Copy size={16} className="mr-2" />
             Use Template
           </Button>
-          {formData.name &&
-        <Button
+          {formData.name && (
+            <Button
           type="button"
           variant="outline"
           onClick={handleSaveAsTemplate}
@@ -226,19 +226,19 @@ export default function TaskForm({
               <Save size={16} className="mr-2" />
               Save as Template
             </Button>
-        }
+          )}
         </div>
-      }
+      )}
 
       {/* Summary Task Info Banner */}
-      {task && isSummaryTask && childTasks.length > 0 &&
-      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+      {task && isSummaryTask && childTasks.length > 0 && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
           <p className="text-sm text-amber-400">
             📁 This is a summary task with {childTasks.length} subtask{childTasks.length !== 1 ? 's' : ''}. 
             Its dates are determined by its subtasks.
           </p>
         </div>
-      }
+      )}
 
       {/* Basic Info */}
       <div className="grid grid-cols-2 gap-4">
@@ -276,11 +276,11 @@ export default function TaskForm({
               )}
             </SelectContent>
           </Select>
-          {isSummaryTask && !task &&
-          <p className="text-xs text-zinc-500 mt-1">
+          {isSummaryTask && !task && (
+            <p className="text-xs text-zinc-500 mt-1">
               💡 Summary tasks are parent tasks that can contain subtasks
             </p>
-          }
+          )}
         </div>
       </div>
 
@@ -324,14 +324,14 @@ export default function TaskForm({
       </div>
 
       {/* AI Assistant */}
-      {!task && formData.name && formData.project_id &&
-      <AITaskHelper
-        taskName={formData.name}
-        projectType={selectedProject?.scope_of_work || 'Steel fabrication'}
-        existingTasks={availableTasks.filter((t) => t.project_id === formData.project_id)}
-        onApplySuggestions={handleApplyAISuggestions} />
-
-      }
+      {!task && formData.name && formData.project_id && (
+        <AITaskHelper
+          taskName={formData.name}
+          projectType={selectedProject?.scope_of_work || 'Steel fabrication'}
+          existingTasks={availableTasks.filter((t) => t.project_id === formData.project_id)}
+          onApplySuggestions={handleApplyAISuggestions}
+        />
+      )}
 
       <div className="space-y-2">
         <Label>Description</Label>
@@ -478,7 +478,8 @@ export default function TaskForm({
             type="button"
             size="sm"
             variant="outline"
-            onClick={() => setShowDependencyConfig(true)} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+            onClick={() => setShowDependencyConfig(true)}
+            className="border-zinc-700">
 
 
             <Settings size={14} className="mr-1" />
@@ -486,8 +487,8 @@ export default function TaskForm({
           </Button>
         </div>
 
-        {formData.predecessor_configs && formData.predecessor_configs.length > 0 ?
-        <div className="space-y-2">
+        {formData.predecessor_configs && formData.predecessor_configs.length > 0 ? (
+          <div className="space-y-2">
             <Label className="text-xs text-zinc-400">
               {formData.predecessor_configs.length} predecessor{formData.predecessor_configs.length !== 1 ? 's' : ''} configured
             </Label>
@@ -514,35 +515,35 @@ export default function TaskForm({
 
             })}
             </div>
-          </div> :
-
-        <p className="text-sm text-zinc-500">No dependencies configured. Click "Configure Dependencies" to add.</p>
-        }
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-500">No dependencies configured. Click "Configure Dependencies" to add.</p>
+        )}
       </div>
       
-      {showDependencyConfig &&
-      <DependencyConfigurator
-        predecessorConfigs={formData.predecessor_configs || []}
-        availableTasks={availableTasks.filter((t) => t.project_id === formData.project_id)}
-        onChange={(configs) => {
-          handleChange('predecessor_configs', configs);
-          handleChange('predecessor_ids', configs.map((c) => c.predecessor_id));
-        }}
-        onClose={() => setShowDependencyConfig(false)} />
+      {showDependencyConfig && (
+        <DependencyConfigurator
+          predecessorConfigs={formData.predecessor_configs || []}
+          availableTasks={availableTasks.filter((t) => t.project_id === formData.project_id)}
+          onChange={(configs) => {
+            handleChange('predecessor_configs', configs);
+            handleChange('predecessor_ids', configs.map((c) => c.predecessor_id));
+          }}
+          onClose={() => setShowDependencyConfig(false)}
+        />
+      )}
 
-      }
-
-      {showTemplates &&
-      <TaskTemplateManager
-        open={showTemplates}
-        onOpenChange={setShowTemplates}
-        onSelectTemplate={handleTemplateSelect} />
-
-      }
+      {showTemplates && (
+        <TaskTemplateManager
+          open={showTemplates}
+          onOpenChange={setShowTemplates}
+          onSelectTemplate={handleTemplateSelect}
+        />
+      )}
 
       {/* Recurring Task Options */}
-      {!task &&
-      <div className="border-t border-zinc-800 pt-4">
+      {!task && (
+        <div className="border-t border-zinc-800 pt-4">
           <div className="flex items-center gap-2 mb-3">
             <Checkbox
             checked={formData.is_recurring}
@@ -552,8 +553,8 @@ export default function TaskForm({
             <Label htmlFor="recurring" className="cursor-pointer">Recurring Task</Label>
           </div>
 
-          {formData.is_recurring &&
-        <div className="grid grid-cols-3 gap-4 ml-6">
+          {formData.is_recurring && (
+            <div className="grid grid-cols-3 gap-4 ml-6">
               <div className="space-y-2">
                 <Label>Pattern</Label>
                 <Select value={formData.recurrence_pattern} onValueChange={(v) => handleChange('recurrence_pattern', v)}>
@@ -588,9 +589,9 @@ export default function TaskForm({
 
               </div>
             </div>
-        }
+          )}
         </div>
-      }
+      )}
 
       {/* Resources */}
       <div className="border-t border-zinc-800 pt-4">
@@ -600,7 +601,8 @@ export default function TaskForm({
             type="button"
             size="sm"
             variant="outline"
-            onClick={handleAssignToMe} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+            onClick={handleAssignToMe}
+            className="border-zinc-700">
 
 
             <User size={14} className="mr-1" />

@@ -262,19 +262,20 @@ export default function Dashboard() {
   
   const financialTotals = useMemo(() => {
     if (!financials || !expenses) {
-      return { totalBudget: 0, totalActual: 0, totalCommitted: 0, totalForecast: 0, budgetVariance: 0, budgetVariancePercent: 0 };
+      return { totalBudget: 0, totalActual: 0, totalCommitted: 0, totalForecast: 0, budgetVariance: 0, budgetVariancePercent: '0' };
     }
     
     const totalBudget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
     const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
-    const actualFromExpenses = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+    const actualFromExpenses = (expenses || [])
+      .filter(e => e && (e.payment_status === 'paid' || e.payment_status === 'approved'))
       .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const totalActual = actualFromFinancials + actualFromExpenses;
     const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
     const totalForecast = financials.reduce((sum, f) => {
       const forecast = Number(f.forecast_amount) || 0;
-      return sum + (forecast > 0 ? forecast : (Number(f.actual_amount) || 0) + (Number(f.committed_amount) || 0));
+      const fallback = (Number(f.actual_amount) || 0) + (Number(f.committed_amount) || 0);
+      return sum + (forecast > 0 ? forecast : fallback);
     }, 0);
     const budgetVariance = totalBudget - totalActual;
     const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : '0';
@@ -285,9 +286,13 @@ export default function Dashboard() {
   const { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent } = financialTotals;
 
   const overdueDocs = useMemo(() => 
-    drawings.filter(d => {
-      if (!d.due_date) return false;
-      return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
+    (drawings || []).filter(d => {
+      if (!d || !d.due_date) return false;
+      try {
+        return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
+      } catch {
+        return false;
+      }
     }), 
     [drawings]
   );
@@ -304,15 +309,22 @@ export default function Dashboard() {
   // At Risk Projects
   const atRiskProjects = useMemo(() => 
     activeProjects.filter(project => {
-      const projectFinancials = financials.filter(f => f.project_id === project.id);
-      const projectBudget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-      const projectActual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      const projectFinancials = (financials || []).filter(f => f && f.project_id === project.id);
+      const projectBudget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+      const projectActual = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
       const variance = projectBudget > 0 ? ((projectActual / projectBudget) * 100) : 0;
       
-      const projectRFIs = rfis.filter(r => r.project_id === project.id && (r.status === 'pending' || r.status === 'submitted'));
-      const overdueRFIs = projectRFIs.filter(r => r.due_date && new Date(r.due_date) < new Date()).length;
+      const projectRFIs = (rfis || []).filter(r => r && r.project_id === project.id && (r.status === 'pending' || r.status === 'submitted'));
+      const overdueRFIs = projectRFIs.filter(r => {
+        if (!r.due_date) return false;
+        try {
+          return new Date(r.due_date) < new Date();
+        } catch {
+          return false;
+        }
+      }).length;
       
-      return variance > 95 || overdueRFIs > 3 || overdueDocs.filter(d => d.project_id === project.id).length > 2;
+      return variance > 95 || overdueRFIs > 3 || overdueDocs.filter(d => d && d.project_id === project.id).length > 2;
     }), 
     [activeProjects, financials, rfis, overdueDocs]
   );
@@ -360,8 +372,8 @@ export default function Dashboard() {
 
   // Mock upcoming deliveries (you can replace with actual data from a deliveries entity)
   const upcomingDeliveries = useMemo(() => 
-    dailyLogs
-      .filter(log => log.materials_delivered && log.log_date)
+    (dailyLogs || [])
+      .filter(log => log && log.materials_delivered && log.log_date)
       .slice(0, 5)
       .map(log => ({
         id: log.id,
@@ -666,11 +678,11 @@ export default function Dashboard() {
                 <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
                   <div 
                     className="bg-amber-500 h-full transition-all"
-                    style={{ width: `${Math.min((totalActual / totalBudget) * 100, 100)}%` }}
+                    style={{ width: `${totalBudget > 0 ? Math.min((totalActual / totalBudget) * 100, 100) : 0}%` }}
                   />
                 </div>
                 <p className="text-sm text-zinc-500 text-center">
-                  {((totalActual / totalBudget) * 100).toFixed(1)}% of budget utilized
+                  {totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : '0'}% of budget utilized
                 </p>
               </div>
             </CardContent>

@@ -348,34 +348,34 @@ export default function Financials() {
 
   // When project is selected in invoice form, initialize line items
   const handleProjectSelect = (projectId) => {
-    const projectFinancials = financials.filter(f => f.project_id === projectId);
-    
+    const projectFinancials = (financials || []).filter(f => f && f.project_id === projectId);
+
     // Calculate previous invoices total for each cost code
-    const previousInvoices = clientInvoices.filter(inv => 
-      inv.project_id === projectId && (!editingInvoice || inv.id !== editingInvoice.id)
+    const previousInvoices = (clientInvoices || []).filter(inv => 
+      inv && inv.project_id === projectId && (!editingInvoice || inv.id !== editingInvoice.id)
     );
-    
+
     const lineItems = projectFinancials.map(financial => {
       const costCode = costCodes.find(c => c.id === financial.cost_code_id);
-      const scheduled_value = financial.budget_amount || 0;
-      
+      const scheduled_value = Number(financial.budget_amount) || 0;
+
       // Sum up previous invoices for this cost code
       let previousTotal = 0;
       previousInvoices.forEach(inv => {
-        if (inv.line_items) {
+        if (inv.line_items && Array.isArray(inv.line_items)) {
           const lineItem = inv.line_items.find(li => li.cost_code_id === financial.cost_code_id);
           if (lineItem) {
-            previousTotal += lineItem.billed_this_month || 0;
+            previousTotal += Number(lineItem.billed_this_month) || 0;
           }
         }
       });
 
       // Check if editing and restore previous value
       let billed_this_month = 0;
-      if (editingInvoice && editingInvoice.line_items) {
+      if (editingInvoice && editingInvoice.line_items && Array.isArray(editingInvoice.line_items)) {
         const editingLineItem = editingInvoice.line_items.find(li => li.cost_code_id === financial.cost_code_id);
         if (editingLineItem) {
-          billed_this_month = editingLineItem.billed_this_month || 0;
+          billed_this_month = Number(editingLineItem.billed_this_month) || 0;
         }
       }
 
@@ -395,9 +395,9 @@ export default function Financials() {
       };
     }).filter(item => item.scheduled_value > 0).sort((a, b) => {
       // Sort by cost code numerically
-      const codeA = a.cost_code_code.replace(/\D/g, '');
-      const codeB = b.cost_code_code.replace(/\D/g, '');
-      return parseInt(codeA || 0) - parseInt(codeB || 0);
+      const codeA = String(a.cost_code_code).replace(/\D/g, '');
+      const codeB = String(b.cost_code_code).replace(/\D/g, '');
+      return parseInt(codeA || '0') - parseInt(codeB || '0');
     });
 
     setInvoiceFormData({
@@ -441,7 +441,7 @@ export default function Financials() {
       if (!financial) return null;
       
       // Sum up expenses for this project + cost code combination
-      const relatedExpenses = expenses.filter(exp => 
+      const relatedExpenses = (expenses || []).filter(exp => 
         exp &&
         exp.project_id === financial.project_id && 
         exp.cost_code_id === financial.cost_code_id &&

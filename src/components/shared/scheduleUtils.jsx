@@ -70,8 +70,14 @@ function calculateProjectCriticalPath(tasks) {
   
   roots.forEach(task => {
     const t = taskMap.get(task.id);
-    t.earlyStart = new Date(t.start_date);
-    t.earlyFinish = addDays(t.earlyStart, t.duration_days || 0);
+    if (!t.start_date) return;
+    try {
+      t.earlyStart = new Date(t.start_date);
+      if (isNaN(t.earlyStart.getTime())) return;
+      t.earlyFinish = addDays(t.earlyStart, Number(t.duration_days) || 0);
+    } catch {
+      return;
+    }
   });
 
   // Process tasks in topological order
@@ -97,12 +103,16 @@ function calculateProjectCriticalPath(tasks) {
       });
       
       if (maxEF) {
-        const lagDays = t.lag_days || 0;
-        const newES = addDays(maxEF, lagDays);
-        if (!t.earlyStart || newES > t.earlyStart) {
-          t.earlyStart = newES;
-          t.earlyFinish = addDays(newES, t.duration_days || 0);
-          changed = true;
+        try {
+          const lagDays = Number(t.lag_days) || 0;
+          const newES = addDays(maxEF, lagDays);
+          if (!t.earlyStart || newES > t.earlyStart) {
+            t.earlyStart = newES;
+            t.earlyFinish = addDays(newES, Number(t.duration_days) || 0);
+            changed = true;
+          }
+        } catch {
+          // Skip invalid dates
         }
       }
     });
@@ -117,10 +127,16 @@ function calculateProjectCriticalPath(tasks) {
   });
 
   // Backward pass - calculate Late Start (LS) and Late Finish (LF)
-  taskMap.forEach(t => {
-    t.lateFinish = projectEnd;
-    t.lateStart = addDays(t.lateFinish, -(t.duration_days || 0));
-  });
+  if (projectEnd) {
+    taskMap.forEach(t => {
+      try {
+        t.lateFinish = projectEnd;
+        t.lateStart = addDays(t.lateFinish, -(Number(t.duration_days) || 0));
+      } catch {
+        // Skip invalid dates
+      }
+    });
+  }
 
   changed = true;
   iterations = 0;
@@ -151,11 +167,15 @@ function calculateProjectCriticalPath(tasks) {
         });
         
         if (minLS) {
-          const newLF = minLS;
-          if (!t.lateFinish || newLF < t.lateFinish) {
-            t.lateFinish = newLF;
-            t.lateStart = addDays(newLF, -(t.duration_days || 0));
-            changed = true;
+          try {
+            const newLF = minLS;
+            if (!t.lateFinish || newLF < t.lateFinish) {
+              t.lateFinish = newLF;
+              t.lateStart = addDays(newLF, -(Number(t.duration_days) || 0));
+              changed = true;
+            }
+          } catch {
+            // Skip invalid dates
           }
         }
       }
@@ -166,12 +186,16 @@ function calculateProjectCriticalPath(tasks) {
   const criticalTasks = [];
   taskMap.forEach((t, id) => {
     if (t.earlyStart && t.lateStart) {
-      const floatMs = t.lateStart - t.earlyStart;
-      t.totalFloat = Math.max(0, Math.round(floatMs / (1000 * 60 * 60 * 24)));
-      t.isCritical = t.totalFloat === 0;
-      
-      if (t.isCritical) {
-        criticalTasks.push(id);
+      try {
+        const floatMs = t.lateStart - t.earlyStart;
+        t.totalFloat = Math.max(0, Math.round(floatMs / (1000 * 60 * 60 * 24)));
+        t.isCritical = t.totalFloat === 0;
+        
+        if (t.isCritical) {
+          criticalTasks.push(id);
+        }
+      } catch {
+        // Skip invalid calculations
       }
     }
   });
@@ -193,8 +217,8 @@ export function detectResourceConflicts(tasks, resources) {
   const resourceMap = new Map();
 
   // Group tasks by resource
-  tasks.forEach(task => {
-    if (task.status === 'cancelled') return;
+  (tasks || []).forEach(task => {
+    if (!task || task.status === 'cancelled' || !task.start_date || !task.end_date) return;
     
     (task.assigned_resources || []).forEach(resourceId => {
       if (!resourceMap.has(resourceId)) {
@@ -211,20 +235,28 @@ export function detectResourceConflicts(tasks, resources) {
         const t1 = resourceTasks[i];
         const t2 = resourceTasks[j];
         
-        const t1Start = new Date(t1.start_date);
-        const t1End = new Date(t1.end_date);
-        const t2Start = new Date(t2.start_date);
-        const t2End = new Date(t2.end_date);
-        
-        // Check for overlap
-        if (t1Start <= t2End && t2Start <= t1End) {
-          conflicts.push({
-            resourceId,
-            task1: t1,
-            task2: t2,
-            overlapStart: t1Start > t2Start ? t1Start : t2Start,
-            overlapEnd: t1End < t2End ? t1End : t2End,
-          });
+        try {
+          const t1Start = new Date(t1.start_date);
+          const t1End = new Date(t1.end_date);
+          const t2Start = new Date(t2.start_date);
+          const t2End = new Date(t2.end_date);
+          
+          // Validate dates
+          if (isNaN(t1Start.getTime()) || isNaN(t1End.getTime()) || 
+              isNaN(t2Start.getTime()) || isNaN(t2End.getTime())) continue;
+          
+          // Check for overlap
+          if (t1Start <= t2End && t2Start <= t1End) {
+            conflicts.push({
+              resourceId,
+              task1: t1,
+              task2: t2,
+              overlapStart: t1Start > t2Start ? t1Start : t2Start,
+              overlapEnd: t1End < t2End ? t1End : t2End,
+            });
+          }
+        } catch {
+          continue;
         }
       }
     }

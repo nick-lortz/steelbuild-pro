@@ -12,16 +12,24 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
   );
 
   const getProjectHealth = (project) => {
-    const projectTasks = tasks.filter(t => t.project_id === project.id);
+    const projectTasks = (tasks || []).filter(t => t && t.project_id === project.id);
     const overdueTasks = projectTasks.filter(t => {
-      if (t.status === 'completed') return false;
-      return new Date(t.end_date) < new Date();
+      if (t.status === 'completed' || !t.end_date) return false;
+      try {
+        return new Date(t.end_date) < new Date();
+      } catch {
+        return false;
+      }
     });
 
-    const projectRFIs = rfis.filter(r => r.project_id === project.id && r.status !== 'closed');
+    const projectRFIs = (rfis || []).filter(r => r && r.project_id === project.id && r.status !== 'closed');
     const overdueRFIs = projectRFIs.filter(r => {
       if (!r.due_date) return false;
-      return new Date(r.due_date) < new Date();
+      try {
+        return new Date(r.due_date) < new Date();
+      } catch {
+        return false;
+      }
     });
 
     if (overdueTasks.length > 0 || overdueRFIs.length > 0) return 'at_risk';
@@ -30,20 +38,20 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
   };
 
   const getProjectProgress = (project) => {
-    const projectTasks = tasks.filter(t => t.project_id === project.id);
+    const projectTasks = (tasks || []).filter(t => t && t.project_id === project.id);
     if (projectTasks.length === 0) return 0;
     
     // Calculate weighted average based on task hours
-    const totalHours = projectTasks.reduce((sum, t) => sum + (t.estimated_hours || 1), 0);
+    const totalHours = projectTasks.reduce((sum, t) => sum + (Number(t.estimated_hours) || 1), 0);
     if (totalHours === 0) {
       // Fall back to simple average if no hours defined
-      const totalProgress = projectTasks.reduce((sum, t) => sum + (t.progress_percent || 0), 0);
+      const totalProgress = projectTasks.reduce((sum, t) => sum + (Number(t.progress_percent) || 0), 0);
       return Math.round(totalProgress / projectTasks.length);
     }
     
     const weightedProgress = projectTasks.reduce((sum, t) => {
-      const weight = (t.estimated_hours || 1) / totalHours;
-      return sum + ((t.progress_percent || 0) * weight);
+      const weight = (Number(t.estimated_hours) || 1) / totalHours;
+      return sum + ((Number(t.progress_percent) || 0) * weight);
     }, 0);
     
     return Math.round(weightedProgress);
@@ -56,8 +64,8 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
     const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
     
     // Roll up expenses for this project
-    const actualFromExpenses = expenses
-      .filter(e => e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
+    const actualFromExpenses = (expenses || [])
+      .filter(e => e && e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
       .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     
     const actual = actualFromFinancials + actualFromExpenses;

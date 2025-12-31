@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, DollarSign, FileText, MessageSquareWarning, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
-export default function DashboardKPIs({ projects, financials, drawings, rfis, tasks, expenses = [] }) {
+export default function DashboardKPIs({ projects, financials, drawings, rfis, tasks, expenses = [], laborHours = [], resources = [] }) {
   const activeProjects = projects.filter(p => 
     p.status === 'in_progress' || p.status === 'awarded'
   ).length;
@@ -12,11 +12,23 @@ export default function DashboardKPIs({ projects, financials, drawings, rfis, ta
   const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
   
   // Add expenses to actual
-  const actualFromExpenses = expenses
-    .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+  const actualFromExpenses = (expenses || [])
+    .filter(e => e && (e.payment_status === 'paid' || e.payment_status === 'approved'))
     .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   
-  const totalActual = actualFromFinancials + actualFromExpenses;
+  // Add approved labor costs to actual
+  const actualFromLabor = (laborHours || [])
+    .filter(lh => lh && lh.approved)
+    .reduce((sum, lh) => {
+      const resource = resources.find(r => r.id === lh.resource_id);
+      const regularRate = Number(resource?.rate) || 0;
+      const overtimeRate = regularRate * 1.5;
+      const regularHours = Number(lh.hours) || 0;
+      const otHours = Number(lh.overtime_hours) || 0;
+      return sum + (regularHours * regularRate) + (otHours * overtimeRate);
+    }, 0);
+  
+  const totalActual = actualFromFinancials + actualFromExpenses + actualFromLabor;
   const remaining = totalBudget - totalActual;
   const variancePercent = totalBudget > 0 ? ((remaining / totalBudget) * 100) : 0;
 

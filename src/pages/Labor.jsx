@@ -46,6 +46,7 @@ export default function Labor() {
   const [showForm, setShowForm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [bulkMode, setBulkMode] = useState(false);
   const [formData, setFormData] = useState({
     project_id: '',
     resource_id: '',
@@ -56,6 +57,9 @@ export default function Labor() {
     description: '',
     approved: false,
   });
+  const [bulkEntries, setBulkEntries] = useState([
+    { resource_id: '', hours: '', overtime_hours: '', description: '' }
+  ]);
 
   const queryClient = useQueryClient();
 
@@ -89,6 +93,7 @@ export default function Labor() {
       queryClient.invalidateQueries({ queryKey: ['laborHours'] });
       setShowForm(false);
       setEditingEntry(null);
+      setBulkMode(false);
       setFormData({
         project_id: '',
         resource_id: '',
@@ -99,6 +104,27 @@ export default function Labor() {
         description: '',
         approved: false,
       });
+      setBulkEntries([{ resource_id: '', hours: '', overtime_hours: '', description: '' }]);
+    },
+  });
+
+  const bulkCreateMutation = useMutation({
+    mutationFn: (entries) => base44.entities.LaborHours.bulkCreate(entries),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['laborHours'] });
+      setShowForm(false);
+      setBulkMode(false);
+      setFormData({
+        project_id: '',
+        resource_id: '',
+        work_date: format(new Date(), 'yyyy-MM-dd'),
+        hours: '',
+        overtime_hours: '',
+        cost_code_id: '',
+        description: '',
+        approved: false,
+      });
+      setBulkEntries([{ resource_id: '', hours: '', overtime_hours: '', description: '' }]);
     },
   });
 
@@ -138,17 +164,51 @@ export default function Labor() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const data = {
-      ...formData,
-      hours: parseFloat(formData.hours) || 0,
-      overtime_hours: parseFloat(formData.overtime_hours) || 0,
-    };
     
-    if (editingEntry) {
-      updateMutation.mutate({ id: editingEntry.id, data });
+    if (bulkMode) {
+      const validEntries = bulkEntries
+        .filter(entry => entry.resource_id && entry.hours)
+        .map(entry => ({
+          project_id: formData.project_id,
+          work_date: formData.work_date,
+          cost_code_id: formData.cost_code_id,
+          resource_id: entry.resource_id,
+          hours: parseFloat(entry.hours) || 0,
+          overtime_hours: parseFloat(entry.overtime_hours) || 0,
+          description: entry.description || '',
+          approved: false,
+        }));
+      
+      if (validEntries.length > 0) {
+        bulkCreateMutation.mutate(validEntries);
+      }
     } else {
-      createMutation.mutate(data);
+      const data = {
+        ...formData,
+        hours: parseFloat(formData.hours) || 0,
+        overtime_hours: parseFloat(formData.overtime_hours) || 0,
+      };
+      
+      if (editingEntry) {
+        updateMutation.mutate({ id: editingEntry.id, data });
+      } else {
+        createMutation.mutate(data);
+      }
     }
+  };
+
+  const addBulkEntry = () => {
+    setBulkEntries([...bulkEntries, { resource_id: '', hours: '', overtime_hours: '', description: '' }]);
+  };
+
+  const removeBulkEntry = (index) => {
+    setBulkEntries(bulkEntries.filter((_, i) => i !== index));
+  };
+
+  const updateBulkEntry = (index, field, value) => {
+    const updated = [...bulkEntries];
+    updated[index][field] = value;
+    setBulkEntries(updated);
   };
 
   const handleEdit = (entry) => {
@@ -441,6 +501,7 @@ export default function Labor() {
         setShowForm(open);
         if (!open) {
           setEditingEntry(null);
+          setBulkMode(false);
           setFormData({
             project_id: '',
             resource_id: '',
@@ -451,108 +512,254 @@ export default function Labor() {
             description: '',
             approved: false,
           });
+          setBulkEntries([{ resource_id: '', hours: '', overtime_hours: '', description: '' }]);
         }
       }}>
-        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingEntry ? 'Edit Hours' : 'Log Hours'}</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              {editingEntry ? 'Edit Hours' : 'Log Hours'}
+              {!editingEntry && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBulkMode(!bulkMode)}
+                  className="border-zinc-700"
+                >
+                  {bulkMode ? 'Single Entry' : 'Bulk Entry'}
+                </Button>
+              )}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Worker *</Label>
-                <Select value={formData.resource_id} onValueChange={(v) => setFormData({ ...formData, resource_id: v })}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                    <SelectValue placeholder="Select worker" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {laborResources.map(r => (
-                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Date *</Label>
-                <Input
-                  type="date"
-                  value={formData.work_date}
-                  onChange={(e) => setFormData({ ...formData, work_date: e.target.value })}
-                  required
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-            </div>
+            {bulkMode ? (
+              <>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input
+                      type="date"
+                      value={formData.work_date}
+                      onChange={(e) => setFormData({ ...formData, work_date: e.target.value })}
+                      required
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Project *</Label>
+                    <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue placeholder="Select project" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cost Code</Label>
+                    <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue placeholder="Select cost code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {costCodes.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Project *</Label>
-              <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Workers</Label>
+                    <Button type="button" size="sm" onClick={addBulkEntry} className="bg-amber-500 hover:bg-amber-600 text-black">
+                      <Plus size={14} className="mr-1" />
+                      Add Worker
+                    </Button>
+                  </div>
+                  <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                    <div className="bg-zinc-800/50 grid grid-cols-12 gap-2 p-2 text-xs font-medium text-zinc-400">
+                      <div className="col-span-4">Worker</div>
+                      <div className="col-span-2">Hours</div>
+                      <div className="col-span-2">OT</div>
+                      <div className="col-span-3">Notes</div>
+                      <div className="col-span-1"></div>
+                    </div>
+                    <div className="divide-y divide-zinc-800">
+                      {bulkEntries.map((entry, idx) => (
+                        <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center">
+                          <div className="col-span-4">
+                            <Select 
+                              value={entry.resource_id} 
+                              onValueChange={(v) => updateBulkEntry(idx, 'resource_id', v)}
+                            >
+                              <SelectTrigger className="bg-zinc-800 border-zinc-700 h-8">
+                                <SelectValue placeholder="Select" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {laborResources.map(r => (
+                                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="col-span-2">
+                            <Input
+                              type="number"
+                              step="0.5"
+                              value={entry.hours}
+                              onChange={(e) => updateBulkEntry(idx, 'hours', e.target.value)}
+                              className="bg-zinc-800 border-zinc-700 h-8"
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Input
+                              type="number"
+                              step="0.5"
+                              value={entry.overtime_hours}
+                              onChange={(e) => updateBulkEntry(idx, 'overtime_hours', e.target.value)}
+                              className="bg-zinc-800 border-zinc-700 h-8"
+                              placeholder="0"
+                            />
+                          </div>
+                          <div className="col-span-3">
+                            <Input
+                              value={entry.description}
+                              onChange={(e) => updateBulkEntry(idx, 'description', e.target.value)}
+                              className="bg-zinc-800 border-zinc-700 h-8"
+                              placeholder="Notes"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            {bulkEntries.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeBulkEntry(idx)}
+                                className="h-8 w-8 text-red-400 hover:text-red-300"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Worker *</Label>
+                    <Select value={formData.resource_id} onValueChange={(v) => setFormData({ ...formData, resource_id: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue placeholder="Select worker" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {laborResources.map(r => (
+                          <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input
+                      type="date"
+                      value={formData.work_date}
+                      onChange={(e) => setFormData({ ...formData, work_date: e.target.value })}
+                      required
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Hours *</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={formData.hours}
-                  onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
-                  required
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Overtime Hours</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={formData.overtime_hours}
-                  onChange={(e) => setFormData({ ...formData, overtime_hours: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label>Project *</Label>
+                  <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Cost Code</Label>
-              <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select cost code" />
-                </SelectTrigger>
-                <SelectContent>
-                  {costCodes.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Hours *</Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={formData.hours}
+                      onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                      required
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Overtime Hours</Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={formData.overtime_hours}
+                      onChange={(e) => setFormData({ ...formData, overtime_hours: e.target.value })}
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={2}
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>Cost Code</Label>
+                  <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue placeholder="Select cost code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {costCodes.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={2}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
               <Button
                 type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending || bulkCreateMutation.isPending}
                 className="bg-amber-500 hover:bg-amber-600 text-black"
               >
-                {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : editingEntry ? 'Update Hours' : 'Log Hours'}
+                {(createMutation.isPending || updateMutation.isPending || bulkCreateMutation.isPending) 
+                  ? 'Saving...' 
+                  : editingEntry 
+                    ? 'Update Hours' 
+                    : bulkMode 
+                      ? `Log ${bulkEntries.filter(e => e.resource_id && e.hours).length} Entries`
+                      : 'Log Hours'}
               </Button>
             </div>
           </form>

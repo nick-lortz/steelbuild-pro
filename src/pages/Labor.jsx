@@ -175,7 +175,11 @@ export default function Labor() {
     {
       header: 'Date',
       accessor: 'work_date',
-      render: (row) => format(new Date(row.work_date), 'MMM d, yyyy'),
+      render: (row) => {
+        if (!row.work_date) return '-';
+        const date = new Date(row.work_date + 'T00:00:00');
+        return format(date, 'MMM d, yyyy');
+      },
     },
     {
       header: 'Worker',
@@ -281,7 +285,9 @@ export default function Labor() {
     const pendingApproval = laborHours.filter(l => !l.approved).length;
 
     const last30Days = laborHours.filter(l => {
-      const daysAgo = (new Date() - new Date(l.work_date)) / (1000 * 60 * 60 * 24);
+      if (!l.work_date) return false;
+      const workDate = new Date(l.work_date + 'T00:00:00');
+      const daysAgo = (new Date() - workDate) / (1000 * 60 * 60 * 24);
       return daysAgo <= 30;
     });
     const avgDailyHours = last30Days.length > 0 

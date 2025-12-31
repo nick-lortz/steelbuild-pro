@@ -315,18 +315,18 @@ export default function Schedule() {
 
       {/* Warning Indicators */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {resourceConflicts.length > 0 &&
-        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-amber-400">
+        {resourceConflicts.length > 0 && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2 text-amber-400">
             <AlertTriangle size={18} />
             <span>{resourceConflicts.length} resource conflict{resourceConflicts.length !== 1 ? 's' : ''} detected</span>
           </div>
-        }
-        {drawingRisks.length > 0 &&
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400">
+        )}
+        {drawingRisks.length > 0 && (
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400">
             <AlertTriangle size={18} />
             <span>{drawingRisks.length} task{drawingRisks.length !== 1 ? 's' : ''} blocked or at risk due to drawings</span>
           </div>
-        }
+        )}
       </div>
 
       {/* Look-Ahead Schedule and Weather */}

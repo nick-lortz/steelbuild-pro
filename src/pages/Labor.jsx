@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2 } from 'lucide-react';
+import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2, Pencil } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -45,6 +45,7 @@ import { format } from 'date-fns';
 export default function Labor() {
   const [showForm, setShowForm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
   const [formData, setFormData] = useState({
     project_id: '',
     resource_id: '',
@@ -87,6 +88,26 @@ export default function Labor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['laborHours'] });
       setShowForm(false);
+      setEditingEntry(null);
+      setFormData({
+        project_id: '',
+        resource_id: '',
+        work_date: format(new Date(), 'yyyy-MM-dd'),
+        hours: '',
+        overtime_hours: '',
+        cost_code_id: '',
+        description: '',
+        approved: false,
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.LaborHours.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['laborHours'] });
+      setShowForm(false);
+      setEditingEntry(null);
       setFormData({
         project_id: '',
         resource_id: '',
@@ -115,7 +136,27 @@ export default function Labor() {
       hours: parseFloat(formData.hours) || 0,
       overtime_hours: parseFloat(formData.overtime_hours) || 0,
     };
-    createMutation.mutate(data);
+    
+    if (editingEntry) {
+      updateMutation.mutate({ id: editingEntry.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (entry) => {
+    setEditingEntry(entry);
+    setFormData({
+      project_id: entry.project_id || '',
+      resource_id: entry.resource_id || '',
+      work_date: entry.work_date || format(new Date(), 'yyyy-MM-dd'),
+      hours: entry.hours?.toString() || '',
+      overtime_hours: entry.overtime_hours?.toString() || '',
+      cost_code_id: entry.cost_code_id || '',
+      description: entry.description || '',
+      approved: entry.approved || false,
+    });
+    setShowForm(true);
   };
 
   const laborResources = React.useMemo(() => 
@@ -191,6 +232,13 @@ export default function Labor() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
+            <DropdownMenuItem 
+              onClick={() => handleEdit(row)}
+              className="cursor-pointer text-white hover:text-white"
+            >
+              <Pencil size={14} className="mr-2" />
+              Edit
+            </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setDeleteId(row.id)}
               className="text-red-400 hover:text-red-300 cursor-pointer"
@@ -350,10 +398,25 @@ export default function Labor() {
       </Tabs>
 
       {/* Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={(open) => {
+        setShowForm(open);
+        if (!open) {
+          setEditingEntry(null);
+          setFormData({
+            project_id: '',
+            resource_id: '',
+            work_date: format(new Date(), 'yyyy-MM-dd'),
+            hours: '',
+            overtime_hours: '',
+            cost_code_id: '',
+            description: '',
+            approved: false,
+          });
+        }
+      }}>
         <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
-            <DialogTitle>Log Hours</DialogTitle>
+            <DialogTitle>{editingEntry ? 'Edit Hours' : 'Log Hours'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -447,10 +510,10 @@ export default function Labor() {
             <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
               <Button
                 type="submit"
-                disabled={createMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending}
                 className="bg-amber-500 hover:bg-amber-600 text-black"
               >
-                {createMutation.isPending ? 'Saving...' : 'Log Hours'}
+                {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : editingEntry ? 'Update Hours' : 'Log Hours'}
               </Button>
             </div>
           </form>

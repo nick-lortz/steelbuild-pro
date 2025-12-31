@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2, Pencil } from 'lucide-react';
+import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2, Pencil, Check, X } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -126,6 +126,13 @@ export default function Labor() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['laborHours'] });
       setDeleteId(null);
+    },
+  });
+
+  const toggleApprovalMutation = useMutation({
+    mutationFn: ({ id, approved }) => base44.entities.LaborHours.update(id, { approved }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['laborHours'] });
     },
   });
 
@@ -238,6 +245,22 @@ export default function Labor() {
             >
               <Pencil size={14} className="mr-2" />
               Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => toggleApprovalMutation.mutate({ id: row.id, approved: !row.approved })}
+              className="cursor-pointer text-white hover:text-white"
+            >
+              {row.approved ? (
+                <>
+                  <X size={14} className="mr-2" />
+                  Mark as Pending
+                </>
+              ) : (
+                <>
+                  <Check size={14} className="mr-2" />
+                  Approve
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => setDeleteId(row.id)}

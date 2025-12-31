@@ -73,27 +73,11 @@ export default function GanttChart({
     );
   }
 
-  // Calculate date range with null checks
-  const dates = filteredTasks
-    .filter(t => t.start_date && t.end_date)
-    .flatMap(t => [new Date(t.start_date), new Date(t.end_date)]);
-  
-  if (dates.length === 0) {
-    return (
-      <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardContent className="p-8 text-center text-zinc-500">
-          No valid task dates found. Please ensure tasks have start and end dates.
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  const minDate = new Date(Math.min(...dates));
-  const maxDate = new Date(Math.max(...dates));
-  
-  // Extend range to at least 6 months
-  const startDate = addDays(minDate, -14);
-  const endDate = addDays(maxDate, 180);
+  // Set date range: 1 week before today and 6 months into the future
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = addDays(today, -7);
+  const endDate = addDays(today, 180);
   const totalDays = differenceInDays(endDate, startDate);
 
   // Generate time periods based on view mode

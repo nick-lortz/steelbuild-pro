@@ -545,7 +545,7 @@ export default function GanttChart({
 
                           {/* Task Bar */}
                           <div
-                           className={`absolute h-7 rounded transition-all hover:shadow-xl ${
+                           className={`absolute h-7 rounded transition-all hover:shadow-xl overflow-hidden ${
                              task.is_milestone 
                                ? 'bg-amber-500 w-3.5 h-3.5 transform rotate-45 shadow-lg cursor-pointer' 
                                : overdue
@@ -715,7 +715,7 @@ export default function GanttChart({
                              )}
 
                              <div
-                               className={`absolute h-6 rounded transition-all hover:shadow-lg cursor-grab active:cursor-grabbing ${
+                               className={`absolute h-6 rounded transition-all hover:shadow-lg overflow-hidden cursor-grab active:cursor-grabbing ${
                                  childOverdue
                                    ? 'bg-red-600/80 border border-red-400 animate-pulse'
                                    : childCritical 

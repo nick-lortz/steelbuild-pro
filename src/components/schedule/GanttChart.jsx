@@ -111,15 +111,26 @@ export default function GanttChart({
   };
 
   const getTaskPosition = (task) => {
-    const taskStart = new Date(task.start_date);
-    const taskEnd = new Date(task.end_date);
-    const daysFromStart = differenceInDays(taskStart, startDate);
-    const duration = differenceInDays(taskEnd, taskStart);
+    if (!task.start_date || !task.end_date) return { left: '0%', width: '0%' };
     
-    return {
-      left: `${(daysFromStart / totalDays) * 100}%`,
-      width: `${(duration / totalDays) * 100}%`,
-    };
+    try {
+      const taskStart = new Date(task.start_date);
+      const taskEnd = new Date(task.end_date);
+      
+      if (isNaN(taskStart.getTime()) || isNaN(taskEnd.getTime())) {
+        return { left: '0%', width: '0%' };
+      }
+      
+      const daysFromStart = differenceInDays(taskStart, startDate);
+      const duration = differenceInDays(taskEnd, taskStart);
+      
+      return {
+        left: `${(daysFromStart / totalDays) * 100}%`,
+        width: `${Math.max(duration, 0) / totalDays * 100}%`,
+      };
+    } catch {
+      return { left: '0%', width: '0%' };
+    }
   };
 
   const isCritical = (taskId) => criticalPath.includes(taskId);
@@ -134,8 +145,13 @@ export default function GanttChart({
 
   const isOverdue = (task) => {
     if (!task.end_date || task.status === 'completed') return false;
-    const endDate = new Date(task.end_date);
-    return isPast(endDate) && isBefore(endDate, new Date());
+    try {
+      const endDate = new Date(task.end_date);
+      if (isNaN(endDate.getTime())) return false;
+      return isPast(endDate) && isBefore(endDate, new Date());
+    } catch {
+      return false;
+    }
   };
 
   const handleTaskClick = (task, e) => {
@@ -150,51 +166,59 @@ export default function GanttChart({
 
   const handleDragStart = (task, e) => {
     e.stopPropagation();
-    if (task.is_milestone) return; // Don't drag milestones
+    if (task.is_milestone || !task.start_date || !task.end_date) return;
     
-    const taskStart = new Date(task.start_date);
-    const daysFromStart = differenceInDays(taskStart, startDate);
-    const clickPosition = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
-    
-    setDraggingTask(task);
-    setDragOffset(clickPosition);
+    try {
+      const taskStart = new Date(task.start_date);
+      if (isNaN(taskStart.getTime())) return;
+      
+      const daysFromStart = differenceInDays(taskStart, startDate);
+      const clickPosition = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
+      
+      setDraggingTask(task);
+      setDragOffset(clickPosition);
+    } catch {
+      return;
+    }
   };
 
   const handleDragMove = (e) => {
     if (!draggingTask || !chartRef.current) return;
-    
-    const chartRect = chartRef.current.getBoundingClientRect();
-    const relativeX = e.clientX - chartRect.left;
-    const percentage = relativeX / chartRect.scrollWidth;
-    const newDaysFromStart = Math.round(percentage * totalDays);
-    const taskDuration = differenceInDays(new Date(draggingTask.end_date), new Date(draggingTask.start_date));
-    
-    // Calculate new dates
-    const newStartDate = addDays(startDate, newDaysFromStart);
-    const newEndDate = addDays(newStartDate, taskDuration);
-    
-    // Update visual position temporarily
     document.body.style.cursor = 'grabbing';
   };
 
   const handleDragEnd = (e) => {
     if (!draggingTask || !chartRef.current) return;
     
-    const chartRect = chartRef.current.getBoundingClientRect();
-    const relativeX = e.clientX - chartRect.left;
-    const percentage = relativeX / chartRect.scrollWidth;
-    const newDaysFromStart = Math.round(percentage * totalDays);
-    const taskDuration = differenceInDays(new Date(draggingTask.end_date), new Date(draggingTask.start_date));
-    
-    // Calculate new dates
-    const newStartDate = addDays(startDate, newDaysFromStart);
-    const newEndDate = addDays(newStartDate, taskDuration);
-    
-    // Update task
-    onTaskUpdate(draggingTask.id, {
-      start_date: format(newStartDate, 'yyyy-MM-dd'),
-      end_date: format(newEndDate, 'yyyy-MM-dd')
-    });
+    try {
+      const chartRect = chartRef.current.getBoundingClientRect();
+      const relativeX = e.clientX - chartRect.left;
+      const percentage = relativeX / chartRect.scrollWidth;
+      const newDaysFromStart = Math.round(percentage * totalDays);
+      
+      const taskStart = new Date(draggingTask.start_date);
+      const taskEnd = new Date(draggingTask.end_date);
+      
+      if (isNaN(taskStart.getTime()) || isNaN(taskEnd.getTime())) {
+        setDraggingTask(null);
+        document.body.style.cursor = 'default';
+        return;
+      }
+      
+      const taskDuration = differenceInDays(taskEnd, taskStart);
+      
+      // Calculate new dates
+      const newStartDate = addDays(startDate, newDaysFromStart);
+      const newEndDate = addDays(newStartDate, taskDuration);
+      
+      // Update task
+      onTaskUpdate(draggingTask.id, {
+        start_date: format(newStartDate, 'yyyy-MM-dd'),
+        end_date: format(newEndDate, 'yyyy-MM-dd')
+      });
+    } catch (error) {
+      console.error('Error during drag end:', error);
+    }
     
     setDraggingTask(null);
     setDragOffset(0);
@@ -484,18 +508,28 @@ export default function GanttChart({
                           )}
 
                           {/* Baseline (if exists) - thin bar below actual */}
-                          {task.baseline_start && task.baseline_end && (
-                            <div
-                              className="absolute h-2 bg-zinc-500/50 border border-zinc-400/50 rounded"
-                              style={{
-                                left: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).left,
-                                width: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).width,
-                                top: '50%',
-                                transform: 'translateY(14px)',
-                              }}
-                              title={`Baseline: ${format(new Date(task.baseline_start), 'MMM d')} - ${format(new Date(task.baseline_end), 'MMM d')}`}
-                            />
-                          )}
+                          {task.baseline_start && task.baseline_end && (() => {
+                            try {
+                              const baselineStart = new Date(task.baseline_start);
+                              const baselineEnd = new Date(task.baseline_end);
+                              if (isNaN(baselineStart.getTime()) || isNaN(baselineEnd.getTime())) return null;
+                              
+                              return (
+                                <div
+                                  className="absolute h-2 bg-zinc-500/50 border border-zinc-400/50 rounded"
+                                  style={{
+                                    left: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).left,
+                                    width: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).width,
+                                    top: '50%',
+                                    transform: 'translateY(14px)',
+                                  }}
+                                  title={`Baseline: ${format(baselineStart, 'MMM d')} - ${format(baselineEnd, 'MMM d')}`}
+                                />
+                              );
+                            } catch {
+                              return null;
+                            }
+                          })()}
 
                           {/* Critical path indicator - thick border */}
                           {critical && !task.is_milestone && (

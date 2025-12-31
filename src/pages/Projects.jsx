@@ -373,6 +373,7 @@ export default function Projects() {
             setFormData={setFormData}
             onSubmit={handleSubmit}
             isLoading={createMutation.isPending}
+            users={users}
           />
         </DialogContent>
       </Dialog>
@@ -389,6 +390,7 @@ export default function Projects() {
               setFormData={setFormData}
               onSubmit={handleSubmit}
               isLoading={updateMutation.isPending}
+              users={users}
               isEdit
             />
           </div>
@@ -400,12 +402,7 @@ export default function Projects() {
   );
 }
 
-function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit }) {
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('full_name'),
-  });
-
+function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users = [] }) {
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };

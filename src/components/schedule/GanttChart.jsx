@@ -580,13 +580,13 @@ export default function GanttChart({
                              />
                            )}
                            {!task.is_milestone && (
-                             <div className="absolute inset-0 flex items-center justify-between px-2 overflow-hidden">
-                               <span className="text-xs font-semibold text-white truncate drop-shadow-md whitespace-nowrap">
+                             <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
+                               <span className="text-xs font-semibold text-white truncate drop-shadow-md mr-auto min-w-0">
                                  {task.name}
                                </span>
-                               <div className="flex items-center gap-1 ml-2">
+                               <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                  {overdue && <AlertTriangle size={12} className="text-white drop-shadow" />}
-                                 <span className="text-[10px] font-bold text-white/90 drop-shadow">
+                                 <span className="text-[10px] font-bold text-white/90 drop-shadow whitespace-nowrap">
                                    {task.progress_percent || 0}%
                                  </span>
                                </div>
@@ -743,13 +743,13 @@ export default function GanttChart({
                                    style={{ width: `${childTask.progress_percent}%` }}
                                  />
                                )}
-                               <div className="absolute inset-0 flex items-center justify-between px-2 overflow-hidden">
-                                 <span className="text-xs font-medium text-white truncate whitespace-nowrap">
+                               <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
+                                 <span className="text-xs font-medium text-white truncate mr-auto min-w-0">
                                    {childTask.name}
                                  </span>
-                                 <div className="flex items-center gap-1 ml-1">
+                                 <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                    {childOverdue && <AlertTriangle size={10} className="text-white" />}
-                                   <span className="text-[9px] font-bold text-white/90">
+                                   <span className="text-[9px] font-bold text-white/90 whitespace-nowrap">
                                      {childTask.progress_percent || 0}%
                                    </span>
                                  </div>

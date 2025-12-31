@@ -218,8 +218,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.target_completion}
                   onSelect={(date) => setFormData({ ...formData, target_completion: date })}
-                  initialFocus />
-
+                  initialFocus
+                  className="text-slate-50 p-3 rdp" />
               </PopoverContent>
             </Popover>
           </div>
@@ -245,8 +245,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.actual_completion}
                   onSelect={(date) => setFormData({ ...formData, actual_completion: date })}
-                  initialFocus />
-
+                  initialFocus
+                  className="text-slate-50 p-3 rdp" />
               </PopoverContent>
             </Popover>
           </div>
@@ -301,8 +301,8 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                   mode="single"
                   selected={formData.qc_date}
                   onSelect={(date) => setFormData({ ...formData, qc_date: date })}
-                  initialFocus />
-
+                  initialFocus
+                  className="text-slate-50 p-3 rdp" />
               </PopoverContent>
             </Popover>
           </div>

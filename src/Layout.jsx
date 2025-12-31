@@ -280,6 +280,8 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
   { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
   { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
+  { name: 'Delivery', page: 'Delivery', icon: Truck, roles: ['admin', 'user'] },
+  { name: 'Installation', page: 'Installation', icon: TrendingUp, roles: ['admin', 'user'] },
   { name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
   { name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
   { name: 'Resource Management', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },

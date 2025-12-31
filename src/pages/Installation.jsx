@@ -5,16 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Search, CheckCircle } from 'lucide-react';
+import { Search, CheckCircle } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import WorkPackageForm from '@/components/workpackage/WorkPackageForm';
-import PhaseCompleteDialog from '@/components/workpackage/PhaseCompleteDialog';
 import { toast } from '@/components/ui/notifications';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export default function FabricationPage() {
-  const [showForm, setShowForm] = useState(false);
+export default function InstallationPage() {
   const [editingPackage, setEditingPackage] = useState(null);
   const [completingPackage, setCompletingPackage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,29 +30,14 @@ export default function FabricationPage() {
 
   const queryClient = useQueryClient();
 
-  const { data: packages = [], isLoading } = useQuery({
-    queryKey: ['workPackages', 'fabrication'],
-    queryFn: () => base44.entities.WorkPackage.filter({ current_phase: 'fabrication' })
+  const { data: packages = [] } = useQuery({
+    queryKey: ['workPackages', 'installation'],
+    queryFn: () => base44.entities.WorkPackage.filter({ current_phase: 'installation' })
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list()
-  });
-
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackages'] });
-      setShowForm(false);
-      toast.success('Work package created');
-    },
-    onError: () => toast.error('Failed to create package')
   });
 
   const updateMutation = useMutation({
@@ -57,39 +50,17 @@ export default function FabricationPage() {
     onError: () => toast.error('Failed to update package')
   });
 
-  const completePhase = async (pkg) => {
+  const completePhase = async () => {
     try {
-      // Mark fabrication complete
-      await base44.entities.WorkPackage.update(pkg.id, {
-        fabrication_complete: true,
-        current_phase: 'delivery',
-        phase_status: 'not_started'
+      await base44.entities.WorkPackage.update(completingPackage.id, {
+        installation_complete: true,
+        phase_status: 'complete',
+        actual_finish: new Date().toISOString().split('T')[0]
       });
 
-      // Create delivery task if doesn't exist
-      const existingDeliveryTask = tasks.find(t => t.work_package_id === pkg.id && t.phase === 'delivery');
-      
-      if (!existingDeliveryTask) {
-        const fabTask = tasks.find(t => t.work_package_id === pkg.id && t.phase === 'fabrication');
-        const startDate = fabTask?.end_date || pkg.baseline_start;
-        
-        await base44.entities.Task.create({
-          project_id: pkg.project_id,
-          work_package_id: pkg.id,
-          name: `${pkg.package_id} - Delivery`,
-          phase: 'delivery',
-          start_date: startDate,
-          end_date: startDate,
-          duration_days: 1,
-          predecessor_ids: fabTask ? [fabTask.id] : [],
-          status: 'not_started'
-        });
-      }
-
       queryClient.invalidateQueries({ queryKey: ['workPackages'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setCompletingPackage(null);
-      toast.success('Fabrication complete - moved to Delivery');
+      toast.success('Installation complete - package closed');
     } catch (error) {
       toast.error('Failed to complete phase');
     }
@@ -162,14 +133,8 @@ export default function FabricationPage() {
   return (
     <div>
       <PageHeader
-        title="Fabrication"
-        subtitle="Work packages in fabrication phase"
-        actions={
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
-            <Plus size={18} className="mr-2" />
-            New Package
-          </Button>
-        }
+        title="Installation"
+        subtitle="Work packages in installation phase"
       />
 
       <div className="flex items-center gap-3 mb-6">
@@ -199,22 +164,8 @@ export default function FabricationPage() {
       <DataTable 
         columns={columns} 
         data={filteredPackages}
-        emptyMessage="No packages in fabrication"
+        emptyMessage="No packages in installation"
       />
-
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>New Work Package</DialogTitle>
-          </DialogHeader>
-          <WorkPackageForm
-            projects={projects}
-            onSubmit={(data) => createMutation.mutate({ ...data, current_phase: 'fabrication' })}
-            onCancel={() => setShowForm(false)}
-            isLoading={createMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!editingPackage} onOpenChange={() => setEditingPackage(null)}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
@@ -231,15 +182,23 @@ export default function FabricationPage() {
         </DialogContent>
       </Dialog>
 
-      {completingPackage && (
-        <PhaseCompleteDialog
-          workPackage={completingPackage}
-          phase="fabrication"
-          nextPhase="delivery"
-          onConfirm={() => completePhase(completingPackage)}
-          onCancel={() => setCompletingPackage(null)}
-        />
-      )}
+      <AlertDialog open={!!completingPackage} onOpenChange={() => setCompletingPackage(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Complete Installation?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              This will mark <strong className="text-white">{completingPackage?.package_id}</strong> as fully complete. 
+              This is the final phase and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={completePhase} className="bg-green-600 hover:bg-green-700">
+              Complete Installation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

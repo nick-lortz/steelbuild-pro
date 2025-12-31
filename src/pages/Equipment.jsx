@@ -18,32 +18,32 @@ export default function Equipment() {
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list('name'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['equipmentBookings'],
     queryFn: () => base44.entities.EquipmentBooking.list('-start_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
-  const equipment = React.useMemo(() => 
-    resources.filter(r => r.type === 'equipment'),
-    [resources]
+  const equipment = React.useMemo(() =>
+  resources.filter((r) => r.type === 'equipment'),
+  [resources]
   );
 
   const columns = [
-    {
-      header: 'Equipment',
-      accessor: 'name',
-      render: (row) => (
-        <div className="flex items-center gap-3">
+  {
+    header: 'Equipment',
+    accessor: 'name',
+    render: (row) =>
+    <div className="flex items-center gap-3">
           <div className="p-2 bg-purple-500/20 rounded">
             <Truck size={18} className="text-purple-400" />
           </div>
@@ -52,61 +52,61 @@ export default function Equipment() {
             <p className="text-xs text-zinc-500">{row.classification}</p>
           </div>
         </div>
-      ),
-    },
-    {
-      header: 'Status',
-      accessor: 'status',
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      header: 'Rate',
-      accessor: 'rate',
-      render: (row) => row.rate 
-        ? <span className="font-mono">${row.rate.toLocaleString()}/{row.rate_type}</span>
-        : '-',
-    },
-    {
-      header: 'Current Project',
-      accessor: 'current_project_id',
-      render: (row) => {
-        if (!row.current_project_id) return <span className="text-zinc-500">Available</span>;
-        const project = projects.find(p => p.id === row.current_project_id);
-        return <span className="text-zinc-300">{project?.name || '-'}</span>;
-      },
-    },
-    {
-      header: 'Bookings',
-      render: (row) => {
-        const equipmentBookings = bookings.filter(b => b.resource_id === row.id);
-        const activeBookings = equipmentBookings.filter(b => 
-          b.status === 'confirmed' || b.status === 'in_use'
-        ).length;
-        return (
-          <span className="text-sm text-zinc-400">
+
+  },
+  {
+    header: 'Status',
+    accessor: 'status',
+    render: (row) => <StatusBadge status={row.status} />
+  },
+  {
+    header: 'Rate',
+    accessor: 'rate',
+    render: (row) => row.rate ?
+    <span className="font-mono">${row.rate.toLocaleString()}/{row.rate_type}</span> :
+    '-'
+  },
+  {
+    header: 'Current Project',
+    accessor: 'current_project_id',
+    render: (row) => {
+      if (!row.current_project_id) return <span className="text-zinc-500">Available</span>;
+      const project = projects.find((p) => p.id === row.current_project_id);
+      return <span className="text-zinc-300">{project?.name || '-'}</span>;
+    }
+  },
+  {
+    header: 'Bookings',
+    render: (row) => {
+      const equipmentBookings = bookings.filter((b) => b.resource_id === row.id);
+      const activeBookings = equipmentBookings.filter((b) =>
+      b.status === 'confirmed' || b.status === 'in_use'
+      ).length;
+      return (
+        <span className="text-sm text-zinc-400">
             {activeBookings} active
-          </span>
-        );
-      },
-    },
-    {
-      header: '',
-      render: (row) => (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedEquipment(row);
-          }}
-          className="border-zinc-700"
-        >
+          </span>);
+
+    }
+  },
+  {
+    header: '',
+    render: (row) =>
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={(e) => {
+        e.stopPropagation();
+        setSelectedEquipment(row);
+      }} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+
+
           <Calendar size={14} className="mr-2" />
           Schedule
         </Button>
-      ),
-    },
-  ];
+
+  }];
+
 
   return (
     <div>
@@ -114,24 +114,24 @@ export default function Equipment() {
         title="Equipment Manager"
         subtitle="Track equipment availability and utilization"
         actions={
-          <Link to={createPageUrl('Resources')}>
+        <Link to={createPageUrl('Resources')}>
             <Button className="bg-amber-500 hover:bg-amber-600 text-black">
               Manage Resources
             </Button>
           </Link>
-        }
-      />
+        } />
+
 
       {/* Overall KPIs */}
-      {equipment.length > 0 && (
-        <div className="mb-6">
+      {equipment.length > 0 &&
+      <div className="mb-6">
           <h3 className="text-sm font-medium text-zinc-400 mb-3">Fleet Overview</h3>
-          <EquipmentKPIs 
-            bookings={bookings} 
-            equipment={equipment}
-          />
+          <EquipmentKPIs
+          bookings={bookings}
+          equipment={equipment} />
+
         </div>
-      )}
+      }
 
       {/* Equipment List */}
       <div className="mb-6">
@@ -139,21 +139,21 @@ export default function Equipment() {
         <DataTable
           columns={columns}
           data={equipment}
-          emptyMessage="No equipment found. Add equipment resources to get started."
-        />
+          emptyMessage="No equipment found. Add equipment resources to get started." />
+
       </div>
 
       {/* Selected Equipment Details */}
-      {selectedEquipment && (
-        <div className="space-y-6">
+      {selectedEquipment &&
+      <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium text-white">Equipment Details</h3>
             <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSelectedEquipment(null)}
-              className="border-zinc-700"
-            >
+            size="sm"
+            variant="outline"
+            onClick={() => setSelectedEquipment(null)}
+            className="border-zinc-700">
+
               Close
             </Button>
           </div>
@@ -161,9 +161,9 @@ export default function Equipment() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Calendar */}
             <EquipmentCalendar
-              equipmentId={selectedEquipment.id}
-              equipmentName={selectedEquipment.name}
-            />
+            equipmentId={selectedEquipment.id}
+            equipmentName={selectedEquipment.name} />
+
 
             {/* Equipment-specific KPIs */}
             <Card className="bg-zinc-900 border-zinc-800">
@@ -174,10 +174,10 @@ export default function Equipment() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <EquipmentKPIs 
-                  bookings={bookings.filter(b => b.resource_id === selectedEquipment.id)} 
-                  equipment={[selectedEquipment]}
-                />
+                <EquipmentKPIs
+                bookings={bookings.filter((b) => b.resource_id === selectedEquipment.id)}
+                equipment={[selectedEquipment]} />
+
                 
                 {/* Additional Details */}
                 <div className="mt-6 space-y-3">
@@ -202,7 +202,7 @@ export default function Equipment() {
             </Card>
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }

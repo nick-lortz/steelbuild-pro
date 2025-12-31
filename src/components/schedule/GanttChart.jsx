@@ -447,7 +447,7 @@ export default function GanttChart({
                       <React.Fragment key={task.id}>
                       <div className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
                         {/* Task Name */}
-                        <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5">
+                        <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5 bg-zinc-900 z-10">
                           <div className="flex items-center gap-1">
                             {hasChildren && (
                               <button
@@ -485,7 +485,7 @@ export default function GanttChart({
                         </div>
 
                         {/* Gantt Bar */}
-                        <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px`, overflow: 'visible' }}>
+                        <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
                           {/* Grid lines */}
                           {periods.map((_, idx) => (
                             <div
@@ -681,7 +681,7 @@ export default function GanttChart({
 
                           return (
                           <div key={childTask.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors">
-                           <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5">
+                           <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5 bg-zinc-900 z-10">
                              <button
                                onClick={() => handleTaskClick(childTask)}
                                className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate w-full transition-colors"
@@ -698,7 +698,7 @@ export default function GanttChart({
                              </div>
                            </div>
 
-                           <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px`, overflow: 'visible' }}>
+                           <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
                              {periods.map((_, idx) => (
                                <div
                                  key={idx}

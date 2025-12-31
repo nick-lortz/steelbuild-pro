@@ -461,7 +461,7 @@ export default function GanttChart({
                         </div>
 
                         {/* Gantt Bar */}
-                        <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                        <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
                           {/* Grid lines */}
                           {periods.map((_, idx) => (
                             <div
@@ -664,7 +664,7 @@ export default function GanttChart({
                              </div>
                            </div>
 
-                           <div className="flex-1 relative py-2" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                           <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
                              {periods.map((_, idx) => (
                                <div
                                  key={idx}

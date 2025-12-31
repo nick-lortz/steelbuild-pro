@@ -10,14 +10,14 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import { Plus, Receipt, Upload, Loader2, FileSpreadsheet, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import DataTable from '@/components/ui/DataTable';
@@ -31,8 +31,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from
+"@/components/ui/alert-dialog";
 
 export default function ExpensesManagement({ projectFilter = 'all' }) {
   const [showForm, setShowForm] = useState(false);
@@ -47,7 +47,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     amount: '',
     invoice_number: '',
     payment_status: 'pending',
-    notes: '',
+    notes: ''
   });
   const [uploading, setUploading] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
@@ -57,17 +57,17 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => base44.entities.Project.list('name')
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+    queryFn: () => base44.entities.CostCode.list('code')
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list('-expense_date'),
+    queryFn: () => base44.entities.Expense.list('-expense_date')
   });
 
   const createMutation = useMutation({
@@ -87,9 +87,9 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
         amount: '',
         invoice_number: '',
         payment_status: 'pending',
-        notes: '',
+        notes: ''
       });
-    },
+    }
   });
 
   const updateMutation = useMutation({
@@ -109,9 +109,9 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
         amount: '',
         invoice_number: '',
         payment_status: 'pending',
-        notes: '',
+        notes: ''
       });
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -119,17 +119,17 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
-    },
+    }
   });
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData(prev => ({ ...prev, receipt_url: file_url }));
+      setFormData((prev) => ({ ...prev, receipt_url: file_url }));
     } catch (error) {
       console.error('Upload failed:', error);
     } finally {
@@ -141,9 +141,9 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
     e.preventDefault();
     const data = {
       ...formData,
-      amount: parseFloat(formData.amount) || 0,
+      amount: parseFloat(formData.amount) || 0
     };
-    
+
     if (editingExpense) {
       updateMutation.mutate({ id: editingExpense.id, data });
     } else {
@@ -164,24 +164,24 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       invoice_number: expense.invoice_number || '',
       payment_status: expense.payment_status || 'pending',
       notes: expense.notes || '',
-      receipt_url: expense.receipt_url || '',
+      receipt_url: expense.receipt_url || ''
     });
     setShowForm(true);
   };
 
   const [deleteExpense, setDeleteExpense] = useState(null);
 
-  const filteredExpenses = projectFilter === 'all' 
-    ? expenses 
-    : expenses.filter(e => e.project_id === projectFilter);
+  const filteredExpenses = projectFilter === 'all' ?
+  expenses :
+  expenses.filter((e) => e.project_id === projectFilter);
 
   // Group expenses by project
   const expensesByProject = useMemo(() => {
     const grouped = {};
-    filteredExpenses.forEach(expense => {
+    filteredExpenses.forEach((expense) => {
       const projectId = expense.project_id || 'unassigned';
       if (!grouped[projectId]) {
-        const project = projects.find(p => p.id === projectId);
+        const project = projects.find((p) => p.id === projectId);
         grouped[projectId] = {
           projectId,
           projectName: project?.name || 'Unassigned',
@@ -189,7 +189,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
           expenses: [],
           total: 0,
           paid: 0,
-          pending: 0,
+          pending: 0
         };
       }
       grouped[projectId].expenses.push(expense);
@@ -214,71 +214,71 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   };
 
   const expenseColumns = [
-    {
-      header: 'Date',
-      accessor: 'expense_date',
-      render: (row) => format(new Date(row.expense_date), 'MMM d, yyyy'),
-    },
-    {
-      header: 'Description',
-      accessor: 'description',
-      render: (row) => (
-        <div>
+  {
+    header: 'Date',
+    accessor: 'expense_date',
+    render: (row) => format(new Date(row.expense_date), 'MMM d, yyyy')
+  },
+  {
+    header: 'Description',
+    accessor: 'description',
+    render: (row) =>
+    <div>
           <p className="font-medium">{row.description}</p>
           <p className="text-xs text-zinc-500">{row.vendor}</p>
         </div>
-      ),
-    },
-    {
-      header: 'Category',
-      accessor: 'category',
-      render: (row) => <span className="capitalize text-zinc-400">{row.category}</span>,
-    },
-    {
-      header: 'Amount',
-      accessor: 'amount',
-      render: (row) => <span className="font-mono text-white">${row.amount?.toLocaleString()}</span>,
-    },
-    {
-      header: 'Status',
-      accessor: 'payment_status',
-      render: (row) => <StatusBadge status={row.payment_status} />,
-    },
-    {
-      header: 'Actions',
-      accessor: 'actions',
-      render: (row) => (
-        <div className="flex gap-2">
+
+  },
+  {
+    header: 'Category',
+    accessor: 'category',
+    render: (row) => <span className="capitalize text-zinc-400">{row.category}</span>
+  },
+  {
+    header: 'Amount',
+    accessor: 'amount',
+    render: (row) => <span className="font-mono text-white">${row.amount?.toLocaleString()}</span>
+  },
+  {
+    header: 'Status',
+    accessor: 'payment_status',
+    render: (row) => <StatusBadge status={row.payment_status} />
+  },
+  {
+    header: 'Actions',
+    accessor: 'actions',
+    render: (row) =>
+    <div className="flex gap-2">
           <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(row);
-            }}
-            className="h-8 w-8 p-0"
-          >
+        size="sm"
+        variant="ghost"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEdit(row);
+        }}
+        className="h-8 w-8 p-0">
+
             <Pencil size={14} />
           </Button>
           <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteExpense(row);
-            }}
-            className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
-          >
+        size="sm"
+        variant="ghost"
+        onClick={(e) => {
+          e.stopPropagation();
+          setDeleteExpense(row);
+        }}
+        className="h-8 w-8 p-0 text-red-400 hover:text-red-300">
+
             <Trash2 size={14} />
           </Button>
         </div>
-      ),
-    },
-  ];
+
+  }];
+
 
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const paidExpenses = filteredExpenses.filter(e => e.payment_status === 'paid').reduce((sum, e) => sum + (e.amount || 0), 0);
-  const pendingExpenses = filteredExpenses.filter(e => e.payment_status === 'pending').reduce((sum, e) => sum + (e.amount || 0), 0);
+  const paidExpenses = filteredExpenses.filter((e) => e.payment_status === 'paid').reduce((sum, e) => sum + (e.amount || 0), 0);
+  const pendingExpenses = filteredExpenses.filter((e) => e.payment_status === 'pending').reduce((sum, e) => sum + (e.amount || 0), 0);
 
   return (
     <div className="space-y-4">
@@ -300,7 +300,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
 
       {/* Add Button */}
       <div className="flex gap-2">
-        <Button onClick={() => setShowCSVImport(true)} variant="outline" className="border-zinc-700">
+        <Button onClick={() => setShowCSVImport(true)} variant="outline" className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
           <FileSpreadsheet size={16} className="mr-2" />
           Import CSV
         </Button>
@@ -311,24 +311,24 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       </div>
 
       {/* Collapsible Project Groups */}
-      {expensesByProject.length === 0 ? (
-        <div className="text-center py-8 text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-lg">
+      {expensesByProject.length === 0 ?
+      <div className="text-center py-8 text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-lg">
           No expenses recorded yet.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {expensesByProject.map(projectGroup => (
-            <div key={projectGroup.projectId} className="border border-zinc-800 rounded-lg overflow-hidden">
+        </div> :
+
+      <div className="space-y-2">
+          {expensesByProject.map((projectGroup) =>
+        <div key={projectGroup.projectId} className="border border-zinc-800 rounded-lg overflow-hidden">
               <button
-                onClick={() => toggleProject(projectGroup.projectId)}
-                className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 transition-colors flex items-center justify-between"
-              >
+            onClick={() => toggleProject(projectGroup.projectId)}
+            className="w-full p-4 bg-zinc-900 hover:bg-zinc-800 transition-colors flex items-center justify-between">
+
                 <div className="flex items-center gap-3">
-                  {expandedProjects.has(projectGroup.projectId) ? (
-                    <ChevronDown size={16} className="text-zinc-400" />
-                  ) : (
-                    <ChevronRight size={16} className="text-zinc-400" />
-                  )}
+                  {expandedProjects.has(projectGroup.projectId) ?
+              <ChevronDown size={16} className="text-zinc-400" /> :
+
+              <ChevronRight size={16} className="text-zinc-400" />
+              }
                   <div className="text-left">
                     <p className="font-medium text-white">{projectGroup.projectNumber}</p>
                     <p className="text-sm text-zinc-400">{projectGroup.projectName}</p>
@@ -353,19 +353,19 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                 </div>
               </button>
               
-              {expandedProjects.has(projectGroup.projectId) && (
-                <div className="bg-zinc-950">
+              {expandedProjects.has(projectGroup.projectId) &&
+          <div className="bg-zinc-950">
                   <DataTable
-                    columns={expenseColumns}
-                    data={projectGroup.expenses}
-                    emptyMessage="No expenses for this project."
-                  />
+              columns={expenseColumns}
+              data={projectGroup.expenses}
+              emptyMessage="No expenses for this project." />
+
                 </div>
-              )}
+          }
             </div>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -382,9 +382,9 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
                   <SelectContent>
-                    {projects.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
+                    {projects.map((p) =>
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -395,9 +395,9 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                     <SelectValue placeholder="Select cost code" />
                   </SelectTrigger>
                   <SelectContent>
-                    {costCodes.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
-                    ))}
+                    {costCodes.map((c) =>
+                    <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -411,8 +411,8 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                   value={formData.expense_date}
                   onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
                   required
-                  className="bg-zinc-800 border-zinc-700"
-                />
+                  className="bg-zinc-800 border-zinc-700" />
+
               </div>
               <div className="space-y-2">
                 <Label>Amount *</Label>
@@ -422,8 +422,8 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   placeholder="0.00"
                   required
-                  className="bg-zinc-800 border-zinc-700"
-                />
+                  className="bg-zinc-800 border-zinc-700" />
+
               </div>
             </div>
 
@@ -433,8 +433,8 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Expense description"
-                className="bg-zinc-800 border-zinc-700"
-              />
+                className="bg-zinc-800 border-zinc-700" />
+
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -476,16 +476,16 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                 <Input
                   value={formData.vendor}
                   onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700"
-                />
+                  className="bg-zinc-800 border-zinc-700" />
+
               </div>
               <div className="space-y-2">
                 <Label>Invoice #</Label>
                 <Input
                   value={formData.invoice_number}
                   onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700"
-                />
+                  className="bg-zinc-800 border-zinc-700" />
+
               </div>
             </div>
 
@@ -494,13 +494,13 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
               <div className="border-2 border-dashed border-zinc-700 rounded-lg p-4 text-center">
                 <input type="file" id="receipt-upload" onChange={handleFileUpload} className="hidden" accept="image/*,application/pdf" />
                 <label htmlFor="receipt-upload" className="cursor-pointer">
-                  {uploading ? (
-                    <Loader2 className="mx-auto mb-2 animate-spin text-amber-500" size={24} />
-                  ) : formData.receipt_url ? (
-                    <Receipt className="mx-auto mb-2 text-green-500" size={24} />
-                  ) : (
-                    <Upload className="mx-auto mb-2 text-zinc-500" size={24} />
-                  )}
+                  {uploading ?
+                  <Loader2 className="mx-auto mb-2 animate-spin text-amber-500" size={24} /> :
+                  formData.receipt_url ?
+                  <Receipt className="mx-auto mb-2 text-green-500" size={24} /> :
+
+                  <Upload className="mx-auto mb-2 text-zinc-500" size={24} />
+                  }
                   <p className="text-sm text-zinc-400">
                     {uploading ? 'Uploading...' : formData.receipt_url ? 'Receipt uploaded' : 'Click to upload receipt'}
                   </p>
@@ -525,19 +525,19 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                     amount: '',
                     invoice_number: '',
                     payment_status: 'pending',
-                    notes: '',
+                    notes: ''
                   });
                 }}
-                className="border-zinc-700"
-              >
+                className="border-zinc-700">
+
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={createMutation.isPending || updateMutation.isPending} 
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : editingExpense ? 'Update Expense' : 'Add Expense'}
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="bg-amber-500 hover:bg-amber-600 text-black">
+
+                {createMutation.isPending || updateMutation.isPending ? 'Saving...' : editingExpense ? 'Update Expense' : 'Add Expense'}
               </Button>
             </div>
           </form>
@@ -548,16 +548,16 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
       <CSVUpload
         entityName="Expense"
         templateFields={[
-          { label: 'Project Number', key: 'project_number', example: 'P-001' },
-          { label: 'Expense Date', key: 'expense_date', example: '2025-01-15' },
-          { label: 'Description', key: 'description', example: 'Steel delivery' },
-          { label: 'Category', key: 'category', example: 'material' },
-          { label: 'Vendor', key: 'vendor', example: 'ABC Steel Supply' },
-          { label: 'Amount', key: 'amount', example: '5000' },
-          { label: 'Invoice Number', key: 'invoice_number', example: 'INV-12345' },
-        ]}
+        { label: 'Project Number', key: 'project_number', example: 'P-001' },
+        { label: 'Expense Date', key: 'expense_date', example: '2025-01-15' },
+        { label: 'Description', key: 'description', example: 'Steel delivery' },
+        { label: 'Category', key: 'category', example: 'material' },
+        { label: 'Vendor', key: 'vendor', example: 'ABC Steel Supply' },
+        { label: 'Amount', key: 'amount', example: '5000' },
+        { label: 'Invoice Number', key: 'invoice_number', example: 'INV-12345' }]
+        }
         transformRow={(row) => {
-          const project = projects.find(p => p.project_number === row.project_number);
+          const project = projects.find((p) => p.project_number === row.project_number);
           return {
             project_id: project?.id || '',
             expense_date: row.expense_date || format(new Date(), 'yyyy-MM-dd'),
@@ -566,7 +566,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
             vendor: row.vendor || '',
             amount: parseFloat(row.amount) || 0,
             invoice_number: row.invoice_number || '',
-            payment_status: 'pending',
+            payment_status: 'pending'
           };
         }}
         onImportComplete={() => {
@@ -574,8 +574,8 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
           queryClient.invalidateQueries({ queryKey: ['financials'] });
         }}
         open={showCSVImport}
-        onOpenChange={setShowCSVImport}
-      />
+        onOpenChange={setShowCSVImport} />
+
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteExpense} onOpenChange={() => setDeleteExpense(null)}>
@@ -595,13 +595,13 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
                 deleteMutation.mutate(deleteExpense.id);
                 setDeleteExpense(null);
               }}
-              className="bg-red-500 hover:bg-red-600"
-            >
+              className="bg-red-500 hover:bg-red-600">
+
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>);
+
 }

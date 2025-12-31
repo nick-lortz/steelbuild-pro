@@ -20,6 +20,7 @@ export default function GanttChart({
   projects = []
 }) {
   const [draggingTask, setDraggingTask] = useState(null);
+  const [dragOffset, setDragOffset] = useState(0);
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
   const [editingDependencies, setEditingDependencies] = useState(null);
@@ -178,6 +179,71 @@ export default function GanttChart({
       onTaskEdit(task);
     }
   };
+
+  const handleDragStart = (task, e) => {
+    e.stopPropagation();
+    if (task.is_milestone) return; // Don't drag milestones
+    
+    const taskStart = new Date(task.start_date);
+    const daysFromStart = differenceInDays(taskStart, startDate);
+    const clickPosition = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.offsetWidth;
+    
+    setDraggingTask(task);
+    setDragOffset(clickPosition);
+  };
+
+  const handleDragMove = (e) => {
+    if (!draggingTask || !chartRef.current) return;
+    
+    const chartRect = chartRef.current.getBoundingClientRect();
+    const relativeX = e.clientX - chartRect.left;
+    const percentage = relativeX / chartRect.scrollWidth;
+    const newDaysFromStart = Math.round(percentage * totalDays);
+    const taskDuration = differenceInDays(new Date(draggingTask.end_date), new Date(draggingTask.start_date));
+    
+    // Calculate new dates
+    const newStartDate = addDays(startDate, newDaysFromStart);
+    const newEndDate = addDays(newStartDate, taskDuration);
+    
+    // Update visual position temporarily
+    document.body.style.cursor = 'grabbing';
+  };
+
+  const handleDragEnd = (e) => {
+    if (!draggingTask || !chartRef.current) return;
+    
+    const chartRect = chartRef.current.getBoundingClientRect();
+    const relativeX = e.clientX - chartRect.left;
+    const percentage = relativeX / chartRect.scrollWidth;
+    const newDaysFromStart = Math.round(percentage * totalDays);
+    const taskDuration = differenceInDays(new Date(draggingTask.end_date), new Date(draggingTask.start_date));
+    
+    // Calculate new dates
+    const newStartDate = addDays(startDate, newDaysFromStart);
+    const newEndDate = addDays(newStartDate, taskDuration);
+    
+    // Update task
+    onTaskUpdate(draggingTask.id, {
+      start_date: format(newStartDate, 'yyyy-MM-dd'),
+      end_date: format(newEndDate, 'yyyy-MM-dd')
+    });
+    
+    setDraggingTask(null);
+    setDragOffset(0);
+    document.body.style.cursor = 'default';
+  };
+
+  useEffect(() => {
+    if (draggingTask) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+      };
+    }
+  }, [draggingTask, totalDays, startDate]);
 
   const columnWidth = viewMode === 'day' ? 60 : viewMode === 'week' ? 80 : 100;
   
@@ -432,30 +498,33 @@ export default function GanttChart({
 
                           {/* Task Bar */}
                           <div
-                           className={`absolute h-7 rounded cursor-pointer transition-all hover:shadow-xl hover:scale-105 overflow-hidden ${
+                           className={`absolute h-7 rounded transition-all hover:shadow-xl overflow-hidden ${
                              task.is_milestone 
-                               ? 'bg-amber-500 w-3.5 h-3.5 transform rotate-45 shadow-lg' 
+                               ? 'bg-amber-500 w-3.5 h-3.5 transform rotate-45 shadow-lg cursor-pointer' 
                                : overdue
-                                 ? 'bg-red-600 border-2 border-red-400 shadow-lg animate-pulse'
+                                 ? 'bg-red-600 border-2 border-red-400 shadow-lg animate-pulse cursor-grab active:cursor-grabbing'
                                  : critical 
-                                   ? 'bg-red-500 border-2 border-red-300 shadow-lg' 
+                                   ? 'bg-red-500 border-2 border-red-300 shadow-lg cursor-grab active:cursor-grabbing' 
                                    : task.status === 'completed'
-                                     ? 'bg-green-500 shadow-md'
+                                     ? 'bg-green-500 shadow-md cursor-grab active:cursor-grabbing'
                                      : task.status === 'in_progress'
-                                       ? 'bg-blue-500 shadow-md'
-                                       : 'bg-zinc-600 shadow-md'
-                           }`}
+                                       ? 'bg-blue-500 shadow-md cursor-grab active:cursor-grabbing'
+                                       : 'bg-zinc-600 shadow-md cursor-grab active:cursor-grabbing'
+                           } ${draggingTask?.id === task.id ? 'opacity-70 scale-105' : 'hover:scale-105'}`}
                            style={{
                              ...pos,
                              top: '50%',
                              transform: task.is_milestone ? 'translateY(-50%) rotate(45deg)' : 'translateY(-50%)',
                            }}
-                           onClick={(e) => handleTaskClick(task, e)}
+                           onMouseDown={(e) => handleDragStart(task, e)}
+                           onClick={(e) => {
+                             if (!draggingTask) handleTaskClick(task, e);
+                           }}
                            onContextMenu={(e) => {
                              e.preventDefault();
                              setEditingDependencies(task);
                            }}
-                           title={`${task.name} - ${task.progress_percent || 0}% complete${overdue ? ' (OVERDUE)' : ''}`}
+                           title={`${task.name} - ${task.progress_percent || 0}% complete${overdue ? ' (OVERDUE)' : ''}${task.is_milestone ? '' : ' (drag to reschedule)'}`}
                           >
                            {!task.is_milestone && task.progress_percent > 0 && (
                              <div 
@@ -561,7 +630,7 @@ export default function GanttChart({
                              )}
 
                              <div
-                               className={`absolute h-6 rounded cursor-pointer transition-all hover:shadow-lg hover:scale-105 overflow-hidden ${
+                               className={`absolute h-6 rounded transition-all hover:shadow-lg overflow-hidden cursor-grab active:cursor-grabbing ${
                                  childOverdue
                                    ? 'bg-red-600/80 border border-red-400 animate-pulse'
                                    : childCritical 
@@ -571,14 +640,17 @@ export default function GanttChart({
                                        : childTask.status === 'in_progress'
                                          ? 'bg-blue-500/80'
                                          : 'bg-zinc-600/80'
-                               }`}
+                               } ${draggingTask?.id === childTask.id ? 'opacity-70 scale-105' : 'hover:scale-105'}`}
                                style={{
                                  ...childPos,
                                  top: '50%',
                                  transform: 'translateY(-50%)',
                                }}
-                               onClick={() => handleTaskClick(childTask)}
-                               title={`${childTask.name} - ${childTask.progress_percent || 0}% complete${childOverdue ? ' (OVERDUE)' : ''}`}
+                               onMouseDown={(e) => handleDragStart(childTask, e)}
+                               onClick={(e) => {
+                                 if (!draggingTask) handleTaskClick(childTask, e);
+                               }}
+                               title={`${childTask.name} - ${childTask.progress_percent || 0}% complete${childOverdue ? ' (OVERDUE)' : ''} (drag to reschedule)`}
                              >
                                {childTask.progress_percent > 0 && (
                                  <div 

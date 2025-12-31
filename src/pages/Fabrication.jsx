@@ -1,245 +1,355 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Search, CheckCircle } from 'lucide-react';
+import { Plus, Search, Trash2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { toast } from '@/components/ui/notifications';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import WorkPackageForm from '@/components/workpackage/WorkPackageForm';
-import PhaseCompleteDialog from '@/components/workpackage/PhaseCompleteDialog';
-import { toast } from '@/components/ui/notifications';
+import FabricationForm from '@/components/fabrication/FabricationForm';
+import { format } from 'date-fns';
 
-export default function FabricationPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [editingPackage, setEditingPackage] = useState(null);
-  const [completingPackage, setCompletingPackage] = useState(null);
+export default function Fabrication() {
+  const [selectedProject, setSelectedProject] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [pmFilter, setPmFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [projectFilter, setProjectFilter] = useState('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
 
-  const { data: packages = [], isLoading } = useQuery({
-    queryKey: ['workPackages', 'fabrication'],
-    queryFn: () => base44.entities.WorkPackage.filter({ current_phase: 'fabrication' })
+  const { data: fabrications = [], isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['fabrications'],
+    queryFn: () => base44.entities.Fabrication.list('-created_date'),
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list('name'),
+  });
+
+  const { data: drawings = [] } = useQuery({
+    queryKey: ['drawings'],
+    queryFn: () => base44.entities.DrawingSet.list('set_name'),
+  });
+
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries'],
+    queryFn: () => base44.entities.Delivery.list('scheduled_date'),
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryFn: () => base44.entities.Task.list('name'),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+    mutationFn: (data) => base44.entities.Fabrication.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackages'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrications'] });
       setShowForm(false);
-      toast.success('Work package created');
+      toast.success('Fabrication package created');
     },
-    onError: () => toast.error('Failed to create package')
+    onError: (error) => {
+      toast.error('Failed to create: ' + error.message);
+    },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.Fabrication.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackages'] });
-      setEditingPackage(null);
-      toast.success('Package updated');
+      queryClient.invalidateQueries({ queryKey: ['fabrications'] });
+      setEditingItem(null);
+      toast.success('Fabrication package updated');
     },
-    onError: () => toast.error('Failed to update package')
+    onError: (error) => {
+      toast.error('Failed to update: ' + error.message);
+    },
   });
 
-  const completePhase = async (pkg) => {
-    try {
-      // Mark fabrication complete
-      await base44.entities.WorkPackage.update(pkg.id, {
-        fabrication_complete: true,
-        current_phase: 'delivery',
-        phase_status: 'not_started'
-      });
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Fabrication.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fabrications'] });
+      toast.success('Fabrication package deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete: ' + error.message);
+    },
+  });
 
-      // Create delivery task if doesn't exist
-      const existingDeliveryTask = tasks.find(t => t.work_package_id === pkg.id && t.phase === 'delivery');
-      
-      if (!existingDeliveryTask) {
-        const fabTask = tasks.find(t => t.work_package_id === pkg.id && t.phase === 'fabrication');
-        const startDate = fabTask?.end_date || pkg.baseline_start;
-        
-        await base44.entities.Task.create({
-          project_id: pkg.project_id,
-          work_package_id: pkg.id,
-          name: `${pkg.package_id} - Delivery`,
-          phase: 'delivery',
-          start_date: startDate,
-          end_date: startDate,
-          duration_days: 1,
-          predecessor_ids: fabTask ? [fabTask.id] : [],
-          status: 'not_started'
-        });
-      }
+  const handleDelete = async (item) => {
+    const confirmed = await confirm({
+      title: 'Delete Fabrication Package?',
+      description: `Delete ${item.package_name}? This cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
 
-      queryClient.invalidateQueries({ queryKey: ['workPackages'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      setCompletingPackage(null);
-      toast.success('Fabrication complete - moved to Delivery');
-    } catch (error) {
-      toast.error('Failed to complete phase');
+    if (confirmed) {
+      deleteMutation.mutate(item.id);
     }
   };
 
-  const filteredPackages = packages.filter(pkg => {
-    const matchesSearch = !searchTerm || 
-      pkg.package_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pkg.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesProject = projectFilter === 'all' || pkg.project_id === projectFilter;
-    return matchesSearch && matchesProject;
+  const handleSubmit = (data) => {
+    if (editingItem) {
+      updateMutation.mutate({ id: editingItem.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const filteredFabrications = fabrications.filter((f) => {
+    const project = projects.find(p => p.id === f.project_id);
+    const matchesProject = selectedProject === 'all' || f.project_id === selectedProject;
+    const matchesStatus = statusFilter === 'all' || f.fabrication_status === statusFilter;
+    const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
+    const matchesSearch = 
+      f.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesProject && matchesStatus && matchesPm && matchesSearch;
   });
+
+  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
+
+  const getStatusIcon = (status) => {
+    if (status === 'complete') return <CheckCircle size={16} className="text-green-500" />;
+    if (status === 'on_hold') return <AlertCircle size={16} className="text-red-500" />;
+    return <Clock size={16} className="text-amber-500" />;
+  };
 
   const columns = [
     {
-      header: 'Package ID',
-      accessor: 'package_id',
-      cell: (pkg) => <span className="font-medium text-white">{pkg.package_id}</span>
+      header: 'Package',
+      accessor: 'package_name',
+      render: (row) => (
+        <div>
+          <p className="font-medium text-white">{row.package_name}</p>
+          {row.description && <p className="text-xs text-zinc-500">{row.description}</p>}
+        </div>
+      ),
     },
     {
       header: 'Project',
       accessor: 'project_id',
-      cell: (pkg) => {
-        const project = projects.find(p => p.id === pkg.project_id);
-        return <span className="text-zinc-300">{project?.name || '-'}</span>;
-      }
-    },
-    {
-      header: 'Scope',
-      accessor: 'scope_type',
-      cell: (pkg) => <span className="text-zinc-300 capitalize">{pkg.scope_type?.replace(/_/g, ' ')}</span>
+      render: (row) => {
+        const project = projects.find((p) => p.id === row.project_id);
+        return project ? (
+          <div>
+            <p className="text-sm">{project.project_number}</p>
+            <p className="text-xs text-zinc-500">{project.name}</p>
+          </div>
+        ) : '-';
+      },
     },
     {
       header: 'Status',
-      accessor: 'phase_status',
-      cell: (pkg) => <StatusBadge status={pkg.phase_status} />
+      accessor: 'fabrication_status',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          {getStatusIcon(row.fabrication_status)}
+          <StatusBadge status={row.fabrication_status} />
+        </div>
+      ),
     },
     {
-      header: 'Tonnage',
-      accessor: 'tonnage',
-      cell: (pkg) => <span className="text-zinc-300">{pkg.tonnage || '-'}</span>
+      header: 'Weight',
+      accessor: 'weight_tons',
+      render: (row) => row.weight_tons ? `${row.weight_tons} tons` : '-',
     },
     {
       header: 'Pieces',
       accessor: 'piece_count',
-      cell: (pkg) => <span className="text-zinc-300">{pkg.piece_count || '-'}</span>
+      render: (row) => row.piece_count || '-',
     },
     {
-      header: 'Actions',
+      header: 'Target',
+      accessor: 'target_completion',
+      render: (row) => row.target_completion ? format(new Date(row.target_completion), 'MMM d') : '-',
+    },
+    {
+      header: 'QC',
+      accessor: 'qc_status',
+      render: (row) => row.qc_status ? <StatusBadge status={row.qc_status} /> : '-',
+    },
+    {
+      header: 'Priority',
+      accessor: 'priority',
+      render: (row) => <StatusBadge status={row.priority} />,
+    },
+    {
+      header: '',
       accessor: 'actions',
-      cell: (pkg) => (
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => setEditingPackage(pkg)} className="border-zinc-700">
-            Edit
-          </Button>
-          <Button 
-            size="sm" 
-            onClick={() => setCompletingPackage(pkg)}
-            className="bg-green-600 hover:bg-green-700"
-            disabled={pkg.phase_status === 'complete'}
-          >
-            <CheckCircle size={16} className="mr-1" />
-            Complete
-          </Button>
-        </div>
-      )
-    }
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(row);
+          }}
+          className="text-zinc-500 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </Button>
+      ),
+    },
   ];
+
+  const statusCounts = {
+    total: fabrications.length,
+    in_progress: fabrications.filter(f => f.fabrication_status === 'in_progress').length,
+    ready: fabrications.filter(f => f.fabrication_status === 'ready_to_ship').length,
+    complete: fabrications.filter(f => f.fabrication_status === 'completed').length,
+  };
 
   return (
     <div>
       <PageHeader
-        title="Fabrication"
-        subtitle="Work packages in fabrication phase"
+        title="Fabrication Tracking"
+        subtitle={`${statusCounts.total} items tracked`}
+        onRefresh={refetch}
+        isRefreshing={isRefetching}
         actions={
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+          <Button
+            onClick={() => {
+              setEditingItem(null);
+              setShowForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
+          >
             <Plus size={18} className="mr-2" />
-            New Package
+            New Item
           </Button>
         }
       />
 
-      <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+          <p className="text-sm text-zinc-400">In Progress</p>
+          <p className="text-2xl font-bold text-white">{statusCounts.in_progress}</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+          <p className="text-sm text-zinc-400">Ready to Ship</p>
+          <p className="text-2xl font-bold text-amber-500">{statusCounts.ready}</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+          <p className="text-sm text-zinc-400">Completed</p>
+          <p className="text-2xl font-bold text-green-500">{statusCounts.complete}</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+          <p className="text-sm text-zinc-400">Total Packages</p>
+          <p className="text-2xl font-bold text-white">{statusCounts.total}</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <Input
             placeholder="Search packages..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 bg-zinc-800 border-zinc-700 text-white"
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
           />
         </div>
-
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-48 bg-zinc-800 border-zinc-700">
+        <Select value={selectedProject} onValueChange={setSelectedProject}>
+          <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
             <SelectValue placeholder="All Projects" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700">
-            <SelectItem value="all" className="text-white">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id} className="text-white">{p.name}</SelectItem>
+          <SelectContent>
+            <SelectItem value="all">All Projects</SelectItem>
+            {projects.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.project_number} - {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="not_started">Not Started</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="delayed">Delayed</SelectItem>
+            <SelectItem value="ready_to_ship">Ready to Ship</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      <DataTable 
-        columns={columns} 
-        data={filteredPackages}
-        emptyMessage="No packages in fabrication"
+      {/* Table */}
+      <DataTable
+        columns={columns}
+        data={filteredFabrications}
+        onRowClick={(row) => setEditingItem(row)}
+        emptyMessage="No fabrication packages found. Create your first package to start tracking."
       />
 
+      {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>New Work Package</DialogTitle>
+            <DialogTitle>New Fabrication Package</DialogTitle>
           </DialogHeader>
-          <WorkPackageForm
+          <FabricationForm
+            fabrication={null}
             projects={projects}
-            onSubmit={(data) => createMutation.mutate({ ...data, current_phase: 'fabrication' })}
+            drawings={drawings}
+            deliveries={deliveries}
+            tasks={tasks}
+            onSubmit={handleSubmit}
             onCancel={() => setShowForm(false)}
             isLoading={createMutation.isPending}
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editingPackage} onOpenChange={() => setEditingPackage(null)}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Work Package</DialogTitle>
-          </DialogHeader>
-          <WorkPackageForm
-            workPackage={editingPackage}
-            projects={projects}
-            onSubmit={(data) => updateMutation.mutate({ id: editingPackage.id, data })}
-            onCancel={() => setEditingPackage(null)}
-            isLoading={updateMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {completingPackage && (
-        <PhaseCompleteDialog
-          workPackage={completingPackage}
-          phase="fabrication"
-          nextPhase="delivery"
-          onConfirm={() => completePhase(completingPackage)}
-          onCancel={() => setCompletingPackage(null)}
-        />
-      )}
+      {/* Edit Sheet */}
+      <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+        <SheetContent className="w-full sm:max-w-3xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-white">Edit Fabrication Package</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <FabricationForm
+              fabrication={editingItem}
+              projects={projects}
+              drawings={drawings}
+              deliveries={deliveries}
+              tasks={tasks}
+              onSubmit={handleSubmit}
+              onCancel={() => setEditingItem(null)}
+              isLoading={updateMutation.isPending}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

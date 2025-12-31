@@ -555,56 +555,32 @@ export default function GanttChart({
                             const predPos = getTaskPosition(pred);
                             const taskPos = getTaskPosition(task);
 
+                            // Get dependency config
                             const depConfig = (task.predecessor_configs || []).find(c => c.predecessor_id === predId) || 
                               { type: 'FS', lag_days: 0 };
 
+                            // Determine line color based on type
                             const typeColors = {
-                              FS: 'border-blue-400 bg-blue-400',
-                              SS: 'border-green-400 bg-green-400',
-                              FF: 'border-purple-400 bg-purple-400',
-                              SF: 'border-amber-400 bg-amber-400'
+                              FS: 'border-blue-400',
+                              SS: 'border-green-400',
+                              FF: 'border-purple-400',
+                              SF: 'border-amber-400'
                             };
-
-                            const typeLabels = {
-                              FS: 'Finish-Start',
-                              SS: 'Start-Start',
-                              FF: 'Finish-Finish',
-                              SF: 'Start-Finish'
-                            };
-
-                            const startX = depConfig.type === 'SS' ? predPos.left : `calc(${predPos.left} + ${predPos.width})`;
-                            const endX = depConfig.type === 'FF' ? `calc(${taskPos.left} + ${taskPos.width})` : taskPos.left;
 
                             return (
-                              <div key={predId} className="absolute z-5 group/dep">
-                                <div
-                                  className={`absolute border-t-2 ${typeColors[depConfig.type]?.split(' ')[0] || 'border-zinc-500'} transition-all`}
-                                  style={{
-                                    left: startX,
-                                    width: '60px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)'
-                                  }}
-                                >
-                                  <div className={`absolute -right-1.5 -top-1.5 w-3 h-3 ${typeColors[depConfig.type]?.split(' ')[1] || 'bg-zinc-500'} rounded-full border-2 border-white`} />
-
-                                  {/* Dependency Label - Shows on Hover */}
-                                  <div className="absolute left-1/2 -top-8 -translate-x-1/2 opacity-0 group-hover/dep:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                                    <div className="bg-zinc-800 border border-zinc-600 px-2 py-1 rounded shadow-lg">
-                                      <div className="text-[10px] font-semibold text-white">
-                                        {typeLabels[depConfig.type]}
-                                        {depConfig.lag_days !== 0 && (
-                                          <span className="ml-1 text-amber-400">
-                                            {depConfig.lag_days > 0 ? '+' : ''}{depConfig.lag_days}d
-                                          </span>
-                                        )}
-                                      </div>
-                                      <div className="text-[9px] text-zinc-400 truncate max-w-[120px]">
-                                        {pred.name}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                              <div
+                                key={predId}
+                                className={`absolute border-t-2 ${typeColors[depConfig.type] || 'border-zinc-500'} z-5 pointer-events-none`}
+                                style={{
+                                  left: depConfig.type === 'SS' ? predPos.left : 
+                                        `calc(${predPos.left} + ${predPos.width})`,
+                                  width: '40px',
+                                  top: '50%',
+                                  transform: 'translateY(-50%)'
+                                }}
+                                title={`${depConfig.type} ${depConfig.lag_days ? `(${depConfig.lag_days}d lag)` : ''}`}
+                              >
+                                <div className="absolute -right-1 -top-1 w-2 h-2 bg-blue-400 rounded-full" />
                               </div>
                             );
                           })}

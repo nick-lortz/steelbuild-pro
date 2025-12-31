@@ -6,7 +6,7 @@ import { Building2, DollarSign, Calendar, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 
-export default function ProjectOverview({ projects, financials, tasks, rfis, changeOrders, expenses = [] }) {
+export default function ProjectOverview({ projects, financials, tasks, rfis, changeOrders, expenses = [], laborHours = [], resources = [] }) {
   const activeProjects = projects.filter(p => 
     p.status === 'in_progress' || p.status === 'awarded'
   );
@@ -68,7 +68,19 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
       .filter(e => e && e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'))
       .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     
-    const actual = actualFromFinancials + actualFromExpenses;
+    // Roll up approved labor costs for this project
+    const actualFromLabor = (laborHours || [])
+      .filter(lh => lh && lh.project_id === project.id && lh.approved)
+      .reduce((sum, lh) => {
+        const resource = resources.find(r => r.id === lh.resource_id);
+        const regularRate = Number(resource?.rate) || 0;
+        const overtimeRate = regularRate * 1.5;
+        const regularHours = Number(lh.hours) || 0;
+        const otHours = Number(lh.overtime_hours) || 0;
+        return sum + (regularHours * regularRate) + (otHours * overtimeRate);
+      }, 0);
+    
+    const actual = actualFromFinancials + actualFromExpenses + actualFromLabor;
     const remaining = budget - actual;
     const variancePercent = budget > 0 ? ((remaining / budget) * 100) : 0;
 
@@ -95,7 +107,7 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
       finances: getProjectFinancials(project),
       projectRFIs: rfis.filter(r => r.project_id === project.id && r.status !== 'closed'),
       projectCOs: changeOrders.filter(co => co.project_id === project.id && co.status === 'pending'),
-    })), [activeProjects, tasks, financials, rfis, changeOrders, expenses]
+    })), [activeProjects, tasks, financials, rfis, changeOrders, expenses, laborHours, resources]
   );
 
   return (

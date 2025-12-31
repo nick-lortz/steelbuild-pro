@@ -107,6 +107,18 @@ export default function Financials() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: laborHours = [] } = useQuery({
+    queryKey: ['laborHours'],
+    queryFn: () => base44.entities.LaborHours.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: resources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: () => base44.entities.Resource.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const { data: clientInvoices = [] } = useQuery({
     queryKey: ['clientInvoices'],
     queryFn: () => base44.entities.ClientInvoice.list(),
@@ -450,15 +462,34 @@ export default function Financials() {
       
       const expenseTotal = relatedExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
       
+      // Sum up labor costs for this project + cost code combination
+      const relatedLaborHours = (laborHours || []).filter(lh => 
+        lh &&
+        lh.project_id === financial.project_id && 
+        lh.cost_code_id === financial.cost_code_id &&
+        lh.approved
+      );
+      
+      const laborCostTotal = relatedLaborHours.reduce((sum, lh) => {
+        const resource = resources.find(r => r.id === lh.resource_id);
+        const regularRate = Number(resource?.rate) || 0;
+        const overtimeRate = regularRate * 1.5; // OT is typically 1.5x
+        
+        const regularHours = Number(lh.hours) || 0;
+        const otHours = Number(lh.overtime_hours) || 0;
+        
+        return sum + (regularHours * regularRate) + (otHours * overtimeRate);
+      }, 0);
+      
       return {
         ...financial,
         budget_amount: Number(financial.budget_amount) || 0,
         committed_amount: Number(financial.committed_amount) || 0,
-        actual_amount: (Number(financial.actual_amount) || 0) + expenseTotal,
+        actual_amount: (Number(financial.actual_amount) || 0) + expenseTotal + laborCostTotal,
         forecast_amount: Number(financial.forecast_amount) || 0,
       };
     }).filter(Boolean);
-  }, [filteredFinancials, expenses]);
+  }, [filteredFinancials, expenses, laborHours, resources]);
 
   // Calculate totals from budget lines with expenses already rolled up
   const totals = useMemo(() => {

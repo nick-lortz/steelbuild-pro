@@ -244,6 +244,18 @@ export default function Dashboard() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: laborHours = [], isLoading: laborHoursLoading } = useQuery({
+    queryKey: ['laborHours'],
+    queryFn: () => base44.entities.LaborHours.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: resources = [], isLoading: resourcesLoading } = useQuery({
+    queryKey: ['resources'],
+    queryFn: () => base44.entities.Resource.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
   // Calculate all derived data with useMemo BEFORE any conditional returns
   const activeProjects = useMemo(() => 
     projects.filter(p => p.status === 'in_progress'), 
@@ -270,7 +282,20 @@ export default function Dashboard() {
     const actualFromExpenses = (expenses || [])
       .filter(e => e && (e.payment_status === 'paid' || e.payment_status === 'approved'))
       .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const totalActual = actualFromFinancials + actualFromExpenses;
+    
+    // Calculate labor costs from approved hours
+    const actualFromLabor = (laborHours || [])
+      .filter(lh => lh && lh.approved)
+      .reduce((sum, lh) => {
+        const resource = resources.find(r => r.id === lh.resource_id);
+        const regularRate = Number(resource?.rate) || 0;
+        const overtimeRate = regularRate * 1.5;
+        const regularHours = Number(lh.hours) || 0;
+        const otHours = Number(lh.overtime_hours) || 0;
+        return sum + (regularHours * regularRate) + (otHours * overtimeRate);
+      }, 0);
+    
+    const totalActual = actualFromFinancials + actualFromExpenses + actualFromLabor;
     const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
     const totalForecast = financials.reduce((sum, f) => {
       const forecast = Number(f.forecast_amount) || 0;
@@ -281,7 +306,7 @@ export default function Dashboard() {
     const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : '0';
     
     return { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent };
-  }, [financials, expenses]);
+  }, [financials, expenses, laborHours, resources]);
   
   const { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent } = financialTotals;
 
@@ -386,7 +411,8 @@ export default function Dashboard() {
 
   // Loading check AFTER all hooks
   const isLoading = projectsLoading || rfisLoading || changeOrdersLoading || 
-                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading || expensesLoading;
+                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading || expensesLoading ||
+                     laborHoursLoading || resourcesLoading;
 
   if (isLoading) {
     return (
@@ -481,6 +507,8 @@ export default function Dashboard() {
             rfis={rfis}
             tasks={tasks}
             expenses={expenses}
+            laborHours={laborHours}
+            resources={resources}
           />
         </div>
       )}
@@ -557,6 +585,8 @@ export default function Dashboard() {
           rfis={rfis}
           changeOrders={changeOrders}
           expenses={expenses}
+          laborHours={laborHours}
+          resources={resources}
         />
       </div>
       )}

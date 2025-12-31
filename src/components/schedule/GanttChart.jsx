@@ -56,6 +56,16 @@ export default function GanttChart({
     }
   };
 
+  // Auto-scroll to today on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (todayPosition >= 0 && todayPosition <= 100) {
+        scrollToToday();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const collapseAll = () => {
     setCollapsedPhases(new Set(phases));
   };
@@ -372,12 +382,16 @@ export default function GanttChart({
                   </div>
                 ))}
                 
-                {/* Today indicator in header */}
+                {/* Today indicator in header - enhanced */}
                 {todayPosition >= 0 && todayPosition <= 100 && (
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-20"
+                    className="absolute top-0 bottom-0 w-1 bg-amber-500 z-20 shadow-lg"
                     style={{ left: `${todayPosition}%` }}
-                  />
+                  >
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[9px] font-bold px-2 py-1 rounded-b shadow">
+                      TODAY
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -475,23 +489,40 @@ export default function GanttChart({
                             />
                           ))}
 
-                          {/* Today indicator line */}
+                          {/* Today indicator line - enhanced */}
                           {todayPosition >= 0 && todayPosition <= 100 && (
                             <div
-                              className="absolute top-0 bottom-0 w-0.5 bg-amber-500/70 z-10"
+                              className="absolute top-0 bottom-0 w-1 bg-amber-500 z-10 shadow-lg"
                               style={{ left: `${todayPosition}%` }}
-                            />
+                            >
+                              <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-[9px] font-bold px-2 py-0.5 rounded whitespace-nowrap shadow">
+                                TODAY
+                              </div>
+                            </div>
                           )}
 
-                          {/* Baseline (if exists) */}
+                          {/* Baseline (if exists) - thin bar below actual */}
                           {task.baseline_start && task.baseline_end && (
                             <div
-                              className="absolute h-2 bg-zinc-700/30 rounded"
+                              className="absolute h-2 bg-zinc-500/50 border border-zinc-400/50 rounded"
                               style={{
                                 left: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).left,
                                 width: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).width,
                                 top: '50%',
-                                transform: 'translateY(-8px)',
+                                transform: 'translateY(14px)',
+                              }}
+                              title={`Baseline: ${format(new Date(task.baseline_start), 'MMM d')} - ${format(new Date(task.baseline_end), 'MMM d')}`}
+                            />
+                          )}
+
+                          {/* Critical path indicator - thick border */}
+                          {critical && !task.is_milestone && (
+                            <div
+                              className="absolute h-9 border-2 border-red-400 rounded pointer-events-none"
+                              style={{
+                                ...pos,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
                               }}
                             />
                           )}
@@ -547,7 +578,7 @@ export default function GanttChart({
                            )}
                           </div>
 
-                          {/* Dependencies - Visual Lines */}
+                          {/* Dependencies - Enhanced Visual Lines with Labels */}
                           {task.predecessor_ids?.filter(predId => filteredTasks.some(t => t.id === predId)).map(predId => {
                             const pred = filteredTasks.find(t => t.id === predId);
                             if (!pred || !pred.start_date || !pred.end_date) return null;
@@ -559,29 +590,67 @@ export default function GanttChart({
                             const depConfig = (task.predecessor_configs || []).find(c => c.predecessor_id === predId) || 
                               { type: 'FS', lag_days: 0 };
 
-                            // Determine line color based on type
-                            const typeColors = {
-                              FS: 'border-blue-400',
-                              SS: 'border-green-400',
-                              FF: 'border-purple-400',
-                              SF: 'border-amber-400'
+                            // Determine line color and style based on type
+                            const typeStyles = {
+                              FS: { color: 'border-blue-400 bg-blue-400', label: 'FS' },
+                              SS: { color: 'border-green-400 bg-green-400', label: 'SS' },
+                              FF: { color: 'border-purple-400 bg-purple-400', label: 'FF' },
+                              SF: { color: 'border-amber-400 bg-amber-400', label: 'SF' }
                             };
+                            const style = typeStyles[depConfig.type] || { color: 'border-zinc-500 bg-zinc-500', label: 'FS' };
+
+                            // Calculate connection points
+                            const predEndX = depConfig.type === 'SS' || depConfig.type === 'SF' 
+                              ? parseFloat(predPos.left) 
+                              : parseFloat(predPos.left) + parseFloat(predPos.width);
+                            
+                            const taskStartX = depConfig.type === 'FF' || depConfig.type === 'SF'
+                              ? parseFloat(taskPos.left) + parseFloat(taskPos.width)
+                              : parseFloat(taskPos.left);
 
                             return (
-                              <div
-                                key={predId}
-                                className={`absolute border-t-2 ${typeColors[depConfig.type] || 'border-zinc-500'} z-5 pointer-events-none`}
-                                style={{
-                                  left: depConfig.type === 'SS' ? predPos.left : 
-                                        `calc(${predPos.left} + ${predPos.width})`,
-                                  width: '40px',
-                                  top: '50%',
-                                  transform: 'translateY(-50%)'
-                                }}
-                                title={`${depConfig.type} ${depConfig.lag_days ? `(${depConfig.lag_days}d lag)` : ''}`}
-                              >
-                                <div className="absolute -right-1 -top-1 w-2 h-2 bg-blue-400 rounded-full" />
-                              </div>
+                              <React.Fragment key={predId}>
+                                {/* Horizontal line */}
+                                <div
+                                  className={`absolute border-t-2 ${style.color} z-5`}
+                                  style={{
+                                    left: `${predEndX}%`,
+                                    width: `${Math.abs(taskStartX - predEndX)}%`,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)'
+                                  }}
+                                />
+                                
+                                {/* Arrow head */}
+                                <div
+                                  className={`absolute w-0 h-0 border-4 z-5`}
+                                  style={{
+                                    left: `${taskStartX}%`,
+                                    top: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    borderLeft: `6px solid transparent`,
+                                    borderRight: `6px solid transparent`,
+                                    borderTop: depConfig.type === 'SS' || depConfig.type === 'FS' 
+                                      ? `6px solid ${style.color.split(' ')[1].replace('bg-', '')}` 
+                                      : 'none',
+                                    borderBottom: depConfig.type === 'FF' || depConfig.type === 'SF' 
+                                      ? `6px solid ${style.color.split(' ')[1].replace('bg-', '')}` 
+                                      : 'none',
+                                  }}
+                                />
+
+                                {/* Dependency label */}
+                                <div
+                                  className={`absolute z-10 px-1.5 py-0.5 rounded text-[9px] font-bold text-white ${style.color.split(' ')[1]} border ${style.color.split(' ')[0]} shadow-lg`}
+                                  style={{
+                                    left: `${(predEndX + taskStartX) / 2}%`,
+                                    top: '50%',
+                                    transform: 'translate(-50%, -150%)',
+                                  }}
+                                >
+                                  {style.label}{depConfig.lag_days ? ` +${depConfig.lag_days}d` : ''}
+                                </div>
+                              </React.Fragment>
                             );
                           })}
                           </div>
@@ -624,7 +693,7 @@ export default function GanttChart({
 
                              {todayPosition >= 0 && todayPosition <= 100 && (
                                <div
-                                 className="absolute top-0 bottom-0 w-0.5 bg-amber-500/70 z-10"
+                                 className="absolute top-0 bottom-0 w-1 bg-amber-500 z-10"
                                  style={{ left: `${todayPosition}%` }}
                                />
                              )}
@@ -738,6 +807,10 @@ export default function GanttChart({
                 <div className="absolute inset-0 bg-white/30 w-3/5" />
               </div>
               <span className="text-zinc-200">Progress Bar</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-2 bg-zinc-500/50 border border-zinc-400/50 rounded" />
+              <span className="text-zinc-200">Baseline</span>
             </div>
           </div>
         </div>

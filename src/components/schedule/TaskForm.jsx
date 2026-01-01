@@ -752,8 +752,18 @@ export default function TaskForm({
         <Button type="button" variant="outline" onClick={onCancel} className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading} className="bg-amber-500 hover:bg-amber-600 text-black">
-          {isLoading ? 'Saving...' : task ? 'Update Task' : 'Create Task'}
+        <Button 
+          type="submit" 
+          disabled={isLoading || task?.is_phase_locked} 
+          className="bg-amber-500 hover:bg-amber-600 text-black"
+        >
+          {task?.is_phase_locked 
+            ? 'Task Locked' 
+            : isLoading 
+              ? 'Saving...' 
+              : task 
+                ? 'Update Task' 
+                : 'Create Task'}
         </Button>
       </div>
     </form>);

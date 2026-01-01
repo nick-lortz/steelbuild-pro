@@ -9,8 +9,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
 export default function InvoiceTracking({ financials, projects, costCodes, expenses = [], clientInvoices = [] }) {
@@ -18,35 +18,35 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
   const [expandedProjects, setExpandedProjects] = useState(new Set());
 
   const invoiceData = useMemo(() => {
-    return financials.map(financial => {
-      const project = projects.find(p => p.id === financial.project_id);
-      const costCode = costCodes.find(c => c.id === financial.cost_code_id);
-      
+    return financials.map((financial) => {
+      const project = projects.find((p) => p.id === financial.project_id);
+      const costCode = costCodes.find((c) => c.id === financial.cost_code_id);
+
       // Calculate amount invoiced to client from line items
       let invoiced = 0;
-      clientInvoices.forEach(inv => {
+      clientInvoices.forEach((inv) => {
         if (inv.project_id === financial.project_id && Array.isArray(inv.line_items)) {
-          const lineItem = inv.line_items.find(li => li && li.cost_code_id === financial.cost_code_id);
+          const lineItem = inv.line_items.find((li) => li && li.cost_code_id === financial.cost_code_id);
           if (lineItem && typeof lineItem.billed_this_month === 'number') {
             invoiced += lineItem.billed_this_month;
           }
         }
       });
-      
+
       // Calculate costs incurred (paid/approved expenses)
-      const incurred = expenses
-        .filter(e => 
-          e.project_id === financial.project_id && 
-          e.cost_code_id === financial.cost_code_id &&
-          (e.payment_status === 'paid' || e.payment_status === 'approved')
-        )
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
-      
+      const incurred = expenses.
+      filter((e) =>
+      e.project_id === financial.project_id &&
+      e.cost_code_id === financial.cost_code_id && (
+      e.payment_status === 'paid' || e.payment_status === 'approved')
+      ).
+      reduce((sum, e) => sum + (e.amount || 0), 0);
+
       const budget = financial.budget_amount || 0;
       const remainingToBill = budget - invoiced;
-      const percentInvoiced = budget > 0 ? (invoiced / budget) * 100 : 0;
+      const percentInvoiced = budget > 0 ? invoiced / budget * 100 : 0;
       const margin = invoiced - incurred;
-      
+
       return {
         id: financial.id,
         projectId: financial.project_id,
@@ -63,16 +63,16 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
         overInvoiced: invoiced > budget,
         negativeMargin: margin < 0
       };
-    }).filter(d => d.budget > 0);
+    }).filter((d) => d.budget > 0);
   }, [financials, projects, costCodes, expenses, clientInvoices]);
 
-  const filteredData = selectedProject === 'all' 
-    ? invoiceData 
-    : invoiceData.filter(d => d.projectId === selectedProject);
+  const filteredData = selectedProject === 'all' ?
+  invoiceData :
+  invoiceData.filter((d) => d.projectId === selectedProject);
 
   const projectSummaries = useMemo(() => {
     const summaries = {};
-    filteredData.forEach(item => {
+    filteredData.forEach((item) => {
       if (!summaries[item.projectId]) {
         summaries[item.projectId] = {
           projectNumber: item.projectNumber,
@@ -93,7 +93,7 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
       ...data,
       remainingToBill: data.budget - data.invoiced,
       margin: data.invoiced - data.incurred,
-      percentInvoiced: data.budget > 0 ? (data.invoiced / data.budget) * 100 : 0
+      percentInvoiced: data.budget > 0 ? data.invoiced / data.budget * 100 : 0
     }));
   }, [filteredData]);
 
@@ -103,8 +103,8 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
     const totalIncurred = filteredData.reduce((sum, d) => sum + d.incurred, 0);
     const totalRemainingToBill = totalBudget - totalInvoiced;
     const totalMargin = totalInvoiced - totalIncurred;
-    const percentInvoiced = totalBudget > 0 ? (totalInvoiced / totalBudget) * 100 : 0;
-    
+    const percentInvoiced = totalBudget > 0 ? totalInvoiced / totalBudget * 100 : 0;
+
     return { totalBudget, totalInvoiced, totalIncurred, totalRemainingToBill, totalMargin, percentInvoiced };
   }, [filteredData]);
 
@@ -133,11 +133,11 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Projects</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
+                {projects.map((p) =>
+                <SelectItem key={p.id} value={p.id}>
                     {p.project_number}
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
             <div className="grid grid-cols-3 gap-4 text-right">
@@ -167,30 +167,30 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
         </div>
       </CardHeader>
       <CardContent>
-        {projectSummaries.length === 0 ? (
-          <div className="text-center py-8 text-zinc-500">
+        {projectSummaries.length === 0 ?
+        <div className="text-center py-8 text-zinc-500">
             <Receipt size={32} className="mx-auto mb-2 opacity-50" />
             <p>No invoice data available</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {projectSummaries.map(project => (
-              <div key={project.id} className="border border-zinc-800 rounded-lg overflow-hidden">
+          </div> :
+
+        <div className="space-y-2">
+            {projectSummaries.map((project) =>
+          <div key={project.id} className="border border-zinc-800 rounded-lg overflow-hidden">
                 <button
-                  onClick={() => toggleProject(project.id)}
-                  className="w-full p-3 bg-zinc-800/50 hover:bg-zinc-800 transition-colors flex items-center justify-between"
-                >
+              onClick={() => toggleProject(project.id)}
+              className="w-full p-3 bg-zinc-800/50 hover:bg-zinc-800 transition-colors flex items-center justify-between">
+
                   <div className="flex items-center gap-3">
-                    {expandedProjects.has(project.id) ? (
-                      <ChevronDown size={16} className="text-zinc-400" />
-                    ) : (
-                      <ChevronRight size={16} className="text-zinc-400" />
-                    )}
+                    {expandedProjects.has(project.id) ?
+                <ChevronDown size={16} className="text-zinc-400" /> :
+
+                <ChevronRight size={16} className="text-zinc-400" />
+                }
                     <div className="text-left">
                       <p className="font-medium text-white">{project.projectNumber}</p>
                       <p className="text-xs text-zinc-500">{project.projectName}</p>
                     </div>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-slate-50 px-2.5 py-0.5 text-xs font-semibold rounded-md inline-flex items-center border transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                       {project.items.length} items
                     </Badge>
                   </div>
@@ -210,8 +210,8 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
                     <div className="text-right">
                       <p className="text-xs text-zinc-400">Margin</p>
                       <p className={`text-sm font-medium ${
-                        project.margin >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
+                  project.margin >= 0 ? 'text-green-400' : 'text-red-400'}`
+                  }>
                         ${Math.abs(project.margin).toLocaleString()}
                       </p>
                     </div>
@@ -224,8 +224,8 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
                   </div>
                 </button>
                 
-                {expandedProjects.has(project.id) && (
-                  <div className="bg-zinc-900/50">
+                {expandedProjects.has(project.id) &&
+            <div className="bg-zinc-900/50">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-zinc-800">
@@ -239,20 +239,20 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
                         </tr>
                       </thead>
                       <tbody>
-                        {project.items.map(item => (
-                          <tr 
-                            key={item.id} 
-                            className={`border-b border-zinc-800/50 ${
-                              item.negativeMargin ? 'bg-red-500/5' : ''
-                            }`}
-                          >
+                        {project.items.map((item) =>
+                  <tr
+                    key={item.id}
+                    className={`border-b border-zinc-800/50 ${
+                    item.negativeMargin ? 'bg-red-500/5' : ''}`
+                    }>
+
                             <td className="p-2">
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-amber-500">{item.costCode}</span>
                                 <span className="text-zinc-400">{item.costCodeName}</span>
-                                {item.negativeMargin && (
-                                  <AlertCircle size={14} className="text-red-400" />
-                                )}
+                                {item.negativeMargin &&
+                        <AlertCircle size={14} className="text-red-400" />
+                        }
                               </div>
                             </td>
                             <td className="text-right p-2 text-zinc-300">
@@ -265,8 +265,8 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
                               ${item.incurred.toLocaleString()}
                             </td>
                             <td className={`text-right p-2 font-medium ${
-                              item.margin >= 0 ? 'text-green-400' : 'text-red-400'
-                            }`}>
+                    item.margin >= 0 ? 'text-green-400' : 'text-red-400'}`
+                    }>
                               ${Math.abs(item.margin).toLocaleString()}
                             </td>
                             <td className="text-right p-2 text-zinc-300">
@@ -276,16 +276,16 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
                               {item.percentInvoiced.toFixed(0)}%
                             </td>
                           </tr>
-                        ))}
+                  )}
                       </tbody>
                     </table>
                   </div>
-                )}
+            }
               </div>
-            ))}
+          )}
           </div>
-        )}
+        }
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 }

@@ -30,6 +30,7 @@ export default function TaskForm({
   const [showTemplates, setShowTemplates] = useState(false);
   const [formData, setFormData] = useState({
     project_id: '',
+    work_package_id: '',
     parent_task_id: '',
     name: '',
     phase: 'fabrication',
@@ -62,6 +63,7 @@ export default function TaskForm({
     if (task) {
       setFormData({
         project_id: task.project_id || '',
+        work_package_id: task.work_package_id || '',
         parent_task_id: task.parent_task_id || '',
         name: task.name || '',
         phase: task.phase || 'fabrication',
@@ -244,7 +246,7 @@ export default function TaskForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Project *</Label>
-          <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
+          <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} disabled={!!task}>
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
@@ -256,6 +258,31 @@ export default function TaskForm({
           </Select>
         </div>
 
+        <div className="space-y-2">
+          <Label>Work Package (Optional)</Label>
+          <Select 
+            value={formData.work_package_id || ''} 
+            onValueChange={(v) => handleChange('work_package_id', v)}
+            disabled={!formData.project_id || (task?.is_phase_locked)}
+          >
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue placeholder="None" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value={null} className="text-white">None</SelectItem>
+              {workPackages
+                .filter(wp => wp.project_id === formData.project_id)
+                .map((wp) => (
+                  <SelectItem key={wp.id} value={wp.id} className="text-white">
+                    {wp.package_number} - {wp.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Task Type</Label>
           <Select
@@ -284,10 +311,13 @@ export default function TaskForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Phase *</Label>
-          <Select value={formData.phase} onValueChange={(v) => handleChange('phase', v)}>
+          <Select 
+            value={formData.phase} 
+            onValueChange={(v) => handleChange('phase', v)}
+            disabled={task?.is_phase_locked}
+          >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
               <SelectValue />
             </SelectTrigger>
@@ -299,6 +329,11 @@ export default function TaskForm({
               <SelectItem value="closeout">Closeout</SelectItem>
             </SelectContent>
           </Select>
+          {task?.is_phase_locked && (
+            <p className="text-xs text-amber-400 mt-1">
+              🔒 This task is locked - phase completed
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

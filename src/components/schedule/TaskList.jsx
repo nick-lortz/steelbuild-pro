@@ -294,46 +294,62 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     {
       header: 'Phase',
       accessor: 'phase',
-      render: (row) => (
-        <Badge variant="outline" className="capitalize text-white">
-          {row.phase?.replace('_', ' ')}
-        </Badge>
-      ),
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return (
+          <Badge variant="outline" className="capitalize text-white">
+            {row.phase?.replace('_', ' ')}
+          </Badge>
+        );
+      },
     },
     {
       header: 'Start Date',
       accessor: 'start_date',
-      render: (row) => <span className="text-white">{row.start_date ? format(new Date(row.start_date), 'MMM d, yyyy') : '-'}</span>,
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return <span className="text-white">{row.start_date ? format(new Date(row.start_date), 'MMM d, yyyy') : '-'}</span>;
+      },
     },
     {
       header: 'End Date',
       accessor: 'end_date',
-      render: (row) => <span className="text-white">{row.end_date ? format(new Date(row.end_date), 'MMM d, yyyy') : '-'}</span>,
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return <span className="text-white">{row.end_date ? format(new Date(row.end_date), 'MMM d, yyyy') : '-'}</span>;
+      },
     },
     {
       header: 'Duration',
       accessor: 'duration_days',
-      render: (row) => <span className="text-white">{row.duration_days ? `${row.duration_days}d` : '-'}</span>,
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return <span className="text-white">{row.duration_days ? `${row.duration_days}d` : '-'}</span>;
+      },
     },
     {
       header: 'Progress',
       accessor: 'progress_percent',
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
-          <div 
-            className={`h-full transition-all ${row.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
-            style={{ width: `${row.status === 'completed' ? 100 : row.progress_percent || 0}%` }}
-          />
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+              className={`h-full transition-all ${row.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
+              style={{ width: `${row.status === 'completed' ? 100 : row.progress_percent || 0}%` }}
+            />
+            </div>
+            <span className="text-xs text-zinc-300 font-medium">{row.status === 'completed' ? '✓' : `${row.progress_percent || 0}%`}</span>
           </div>
-          <span className="text-xs text-zinc-300 font-medium">{row.status === 'completed' ? '✓' : `${row.progress_percent || 0}%`}</span>
-        </div>
-      ),
+        );
+      },
     },
     {
       header: 'Status',
       accessor: 'status',
-      render: (row) => {
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
         const requiresFFFPhases = ['fabrication', 'delivery', 'erection'];
         const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
         const isBlocked = hasDrawingDeps && requiresFFFPhases.includes(row.phase) && 
@@ -348,7 +364,8 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     {
       header: 'Float',
       accessor: 'float_days',
-      render: (row) => {
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
         const float = row.float_days || 0;
         return (
           <span className={float === 0 ? 'text-red-400 font-medium' : 'text-white'}>
@@ -361,6 +378,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       header: 'Actions',
       accessor: 'actions',
       render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
         const isParent = meta?.isParent;
         return (
           <div className="flex items-center gap-1">

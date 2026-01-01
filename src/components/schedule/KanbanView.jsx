@@ -65,15 +65,26 @@ export default function KanbanView({ tasks, projects, onTaskUpdate, onTaskClick 
             <Card 
               className={`mb-3 cursor-pointer transition-all hover:shadow-lg ${
                 snapshot.isDragging ? 'shadow-xl ring-2 ring-amber-500' : ''
-              } ${isOverdue ? 'border-red-500/30' : 'border-zinc-800'} bg-zinc-900`}
+              } ${
+                task.status === 'completed' ? 'border-green-500/30 bg-zinc-900/50 opacity-75' : 
+                isOverdue ? 'border-red-500/30 bg-zinc-900' : 
+                'border-zinc-800 bg-zinc-900'
+              }`}
             >
               <CardContent className="p-4 space-y-3">
                 {/* Header */}
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-medium text-sm line-clamp-2 text-white">{task.name}</h4>
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      {task.status === 'completed' && (
+                        <CheckCircle2 size={16} className="text-green-400 flex-shrink-0 mt-0.5" />
+                      )}
+                      <h4 className={`font-medium text-sm line-clamp-2 ${task.status === 'completed' ? 'line-through text-zinc-500' : 'text-white'}`}>
+                        {task.name}
+                      </h4>
+                    </div>
                     {task.is_milestone && (
-                      <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30">
+                      <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400 border-purple-500/30 flex-shrink-0">
                         Milestone
                       </Badge>
                     )}
@@ -82,13 +93,18 @@ export default function KanbanView({ tasks, projects, onTaskUpdate, onTaskClick 
                 </div>
 
                 {/* Progress */}
-                {task.progress_percent > 0 && (
+                {(task.progress_percent > 0 || task.status === 'completed') && (
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-zinc-400">Progress</span>
-                      <span className="text-amber-500 font-medium">{task.progress_percent}%</span>
+                      <span className={`font-medium ${task.status === 'completed' ? 'text-green-500' : 'text-amber-500'}`}>
+                        {task.status === 'completed' ? '✓ Complete' : `${task.progress_percent}%`}
+                      </span>
                     </div>
-                    <Progress value={task.progress_percent} className="h-1.5" />
+                    <Progress 
+                      value={task.status === 'completed' ? 100 : task.progress_percent} 
+                      className={`h-1.5 ${task.status === 'completed' ? '[&>div]:bg-green-500' : ''}`}
+                    />
                   </div>
                 )}
 

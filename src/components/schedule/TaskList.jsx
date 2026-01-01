@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
-import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import QuickAddSubtask from './QuickAddSubtask';
 import {
   AlertDialog,
@@ -136,7 +136,10 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
                   {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                 </button>
               )}
-              <p className={`font-medium ${isChild ? 'text-zinc-300' : 'text-white'}`}>
+              {row.status === 'completed' && (
+                <CheckCircle2 size={16} className="text-green-400 flex-shrink-0" />
+              )}
+              <p className={`font-medium ${row.status === 'completed' ? 'line-through text-zinc-500' : isChild ? 'text-zinc-300' : 'text-white'}`}>
                 {isParent && '📁 '}
                 {isChild && '↳ '}
                 {row.is_milestone ? '◆ ' : ''}
@@ -195,11 +198,11 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         <div className="flex items-center gap-2">
           <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-blue-500 transition-all"
-            style={{ width: `${row.progress_percent || 0}%` }}
+            className={`h-full transition-all ${row.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`}
+            style={{ width: `${row.status === 'completed' ? 100 : row.progress_percent || 0}%` }}
           />
           </div>
-          <span className="text-xs text-zinc-300">{row.progress_percent || 0}%</span>
+          <span className="text-xs text-zinc-300 font-medium">{row.status === 'completed' ? '✓' : `${row.progress_percent || 0}%`}</span>
         </div>
       ),
     },

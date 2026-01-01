@@ -8,14 +8,14 @@ import { Plus, Trash2 } from 'lucide-react';
 export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading }) {
   const [selectedProject, setSelectedProject] = useState('');
   const [tasks, setTasks] = useState([
-    { name: '', phase: 'fabrication', start_date: '', end_date: '', duration_days: 1 },
-  ]);
+  { name: '', phase: 'fabrication', start_date: '', end_date: '', duration_days: 1 }]
+  );
 
   const addTask = () => {
     setTasks([
-      ...tasks,
-      { name: '', phase: 'fabrication', start_date: '', end_date: '', duration_days: 1 },
-    ]);
+    ...tasks,
+    { name: '', phase: 'fabrication', start_date: '', end_date: '', duration_days: 1 }]
+    );
   };
 
   const removeTask = (index) => {
@@ -25,7 +25,7 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
   const updateTask = (index, field, value) => {
     const updated = [...tasks];
     updated[index][field] = value;
-    
+
     // Auto-calculate end_date if start_date and duration_days are set
     if ((field === 'start_date' || field === 'duration_days') && updated[index].start_date && updated[index].duration_days) {
       const startDate = new Date(updated[index].start_date);
@@ -33,7 +33,7 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
       endDate.setDate(endDate.getDate() + parseInt(updated[index].duration_days || 0));
       updated[index].end_date = endDate.toISOString().split('T')[0];
     }
-    
+
     setTasks(updated);
   };
 
@@ -45,14 +45,14 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
       return;
     }
 
-    const validTasks = tasks.filter(t => t.name && t.start_date && t.end_date);
-    
+    const validTasks = tasks.filter((t) => t.name && t.start_date && t.end_date);
+
     if (validTasks.length === 0) {
       alert('Please add at least one valid task (name, start date, end date required)');
       return;
     }
 
-    const tasksData = validTasks.map(t => ({
+    const tasksData = validTasks.map((t) => ({
       project_id: selectedProject,
       name: t.name,
       phase: t.phase,
@@ -61,7 +61,7 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
       duration_days: parseInt(t.duration_days) || 1,
       status: 'not_started',
       progress_percent: 0,
-      is_milestone: false,
+      is_milestone: false
     }));
 
     onSubmit(tasksData);
@@ -76,11 +76,11 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
             <SelectValue placeholder="Select project" />
           </SelectTrigger>
           <SelectContent>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>
+            {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id}>
                 {p.project_number} - {p.name}
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -92,9 +92,9 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
             type="button"
             variant="outline"
             size="sm"
-            onClick={addTask}
-            className="border-zinc-700"
-          >
+            onClick={addTask} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+
+
             <Plus size={14} className="mr-1" />
             Add Row
           </Button>
@@ -114,21 +114,21 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task, idx) => (
-                  <tr key={idx} className="border-t border-zinc-800">
+                {tasks.map((task, idx) =>
+                <tr key={idx} className="border-t border-zinc-800">
                     <td className="p-2">
                       <Input
-                        value={task.name}
-                        onChange={(e) => updateTask(idx, 'name', e.target.value)}
-                        placeholder="Task name"
-                        className="bg-zinc-900 border-zinc-700 h-8 text-sm"
-                      />
+                      value={task.name}
+                      onChange={(e) => updateTask(idx, 'name', e.target.value)}
+                      placeholder="Task name"
+                      className="bg-zinc-900 border-zinc-700 h-8 text-sm" />
+
                     </td>
                     <td className="p-2">
                       <Select
-                        value={task.phase}
-                        onValueChange={(v) => updateTask(idx, 'phase', v)}
-                      >
+                      value={task.phase}
+                      onValueChange={(v) => updateTask(idx, 'phase', v)}>
+
                         <SelectTrigger className="bg-zinc-900 border-zinc-700 h-8 text-sm">
                           <SelectValue />
                         </SelectTrigger>
@@ -143,43 +143,43 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
                     </td>
                     <td className="p-2">
                       <Input
-                        type="date"
-                        value={task.start_date}
-                        onChange={(e) => updateTask(idx, 'start_date', e.target.value)}
-                        className="bg-zinc-900 border-zinc-700 h-8 text-sm"
-                      />
+                      type="date"
+                      value={task.start_date}
+                      onChange={(e) => updateTask(idx, 'start_date', e.target.value)}
+                      className="bg-zinc-900 border-zinc-700 h-8 text-sm" />
+
                     </td>
                     <td className="p-2">
                       <Input
-                        type="number"
-                        min="1"
-                        value={task.duration_days}
-                        onChange={(e) => updateTask(idx, 'duration_days', e.target.value)}
-                        className="bg-zinc-900 border-zinc-700 h-8 text-sm w-20"
-                      />
+                      type="number"
+                      min="1"
+                      value={task.duration_days}
+                      onChange={(e) => updateTask(idx, 'duration_days', e.target.value)}
+                      className="bg-zinc-900 border-zinc-700 h-8 text-sm w-20" />
+
                     </td>
                     <td className="p-2">
                       <Input
-                        type="date"
-                        value={task.end_date}
-                        onChange={(e) => updateTask(idx, 'end_date', e.target.value)}
-                        className="bg-zinc-900 border-zinc-700 h-8 text-sm"
-                      />
+                      type="date"
+                      value={task.end_date}
+                      onChange={(e) => updateTask(idx, 'end_date', e.target.value)}
+                      className="bg-zinc-900 border-zinc-700 h-8 text-sm" />
+
                     </td>
                     <td className="p-2">
                       <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeTask(idx)}
-                        className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        disabled={tasks.length === 1}
-                      >
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeTask(idx)}
+                      className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      disabled={tasks.length === 1}>
+
                         <Trash2 size={14} />
                       </Button>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -190,19 +190,19 @@ export default function BulkAddForm({ projects, onSubmit, onCancel, isLoading })
         <Button
           type="button"
           variant="outline"
-          onClick={onCancel}
-          className="border-zinc-700"
-        >
+          onClick={onCancel} className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
+
+
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-amber-500 hover:bg-amber-600 text-black"
-        >
-          {isLoading ? 'Creating...' : `Create ${tasks.filter(t => t.name).length} Task(s)`}
+          className="bg-amber-500 hover:bg-amber-600 text-black">
+
+          {isLoading ? 'Creating...' : `Create ${tasks.filter((t) => t.name).length} Task(s)`}
         </Button>
       </div>
-    </form>
-  );
+    </form>);
+
 }

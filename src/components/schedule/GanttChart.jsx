@@ -249,7 +249,7 @@ export default function GanttChart({
         window.removeEventListener('mouseup', handleDragEnd);
       };
     }
-  }, [draggingTask, totalDays, startDate]);
+  }, [draggingTask]);
 
   const columnWidth = viewMode === 'day' ? 60 : viewMode === 'week' ? 80 : 100;
   

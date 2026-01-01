@@ -323,8 +323,9 @@ export default function Dashboard() {
   );
 
   const safetyMetrics = useMemo(() => {
-    const incidents = dailyLogs.filter(log => log.safety_incidents).length;
-    const delays = dailyLogs.filter(log => log.delays).slice(0, 30).length;
+    if (!dailyLogs || !Array.isArray(dailyLogs)) return { incidents: 0, delays: 0 };
+    const incidents = dailyLogs.filter(log => log && log.safety_incidents).length;
+    const delays = dailyLogs.filter(log => log && log.delays).slice(0, 30).length;
     return { incidents, delays };
   }, [dailyLogs]);
   

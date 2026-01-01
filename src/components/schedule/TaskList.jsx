@@ -412,7 +412,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         );
       },
     },
-  ], [selectedTasks, tasks.length, toggleAll, drawingMap, projects, resources, collapsedParents]);
+  ], [selectedTasks, tasks.length, toggleAll, drawingMap, projects, collapsedProjects, collapsedPhases, collapsedParents]);
 
   return (
     <div className="space-y-4">

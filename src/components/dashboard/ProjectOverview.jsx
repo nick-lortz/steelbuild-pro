@@ -99,16 +99,18 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
     at_risk: 'At Risk',
   };
 
-  const projectData = useMemo(() => 
-    activeProjects.map(project => ({
+  const projectData = useMemo(() => {
+    if (!activeProjects || !tasks || !financials || !rfis || !changeOrders) return [];
+    
+    return activeProjects.map(project => ({
       project,
       health: getProjectHealth(project),
       progress: getProjectProgress(project),
       finances: getProjectFinancials(project),
-      projectRFIs: rfis.filter(r => r.project_id === project.id && r.status !== 'closed'),
-      projectCOs: changeOrders.filter(co => co.project_id === project.id && co.status === 'pending'),
-    })), [activeProjects, tasks, financials, rfis, changeOrders, expenses, laborHours, resources]
-  );
+      projectRFIs: (rfis || []).filter(r => r && r.project_id === project.id && r.status !== 'closed'),
+      projectCOs: (changeOrders || []).filter(co => co && co.project_id === project.id && co.status === 'pending'),
+    }));
+  }, [activeProjects, tasks, financials, rfis, changeOrders, expenses, laborHours, resources]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -168,7 +168,9 @@ export default function Drawings() {
       }
       grouped[projectKey].sets.push(set);
     });
-    return grouped;
+    return Object.fromEntries(
+      Object.entries(grouped).sort(([, a], [, b]) => a.projectName.localeCompare(b.projectName))
+    );
   }, [overdueSets, projects]);
 
   // Calculate pending releases

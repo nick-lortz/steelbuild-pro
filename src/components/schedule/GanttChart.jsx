@@ -35,6 +35,7 @@ export default function GanttChart({
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
+  const [collapsedCompleted, setCollapsedCompleted] = useState(true);
   const [editingDependencies, setEditingDependencies] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -108,10 +109,17 @@ export default function GanttChart({
     }
   }
 
-  // Group filteredTasks by project and phase
+  // Separate completed and active tasks
+  const { activeTasks, completedTasks } = useMemo(() => {
+    const active = filteredTasks.filter(t => t.status !== 'completed');
+    const completed = filteredTasks.filter(t => t.status === 'completed');
+    return { activeTasks: active, completedTasks: completed };
+  }, [filteredTasks]);
+
+  // Group active tasks by project and phase
   const tasksByProjectAndPhase = useMemo(() => {
     const grouped = {};
-    filteredTasks.forEach(task => {
+    activeTasks.forEach(task => {
       const projectId = task.project_id || 'unassigned';
       const phase = task.phase || 'unassigned';
       
@@ -124,7 +132,20 @@ export default function GanttChart({
       grouped[projectId][phase].push(task);
     });
     return grouped;
-  }, [filteredTasks]);
+  }, [activeTasks]);
+
+  // Group completed tasks by project
+  const completedTasksByProject = useMemo(() => {
+    const grouped = {};
+    completedTasks.forEach(task => {
+      const projectId = task.project_id || 'unassigned';
+      if (!grouped[projectId]) {
+        grouped[projectId] = [];
+      }
+      grouped[projectId].push(task);
+    });
+    return grouped;
+  }, [completedTasks]);
 
   const phases = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
   const phaseLabels = {
@@ -861,10 +882,105 @@ export default function GanttChart({
                           </div>
                           );
                           })}
+
+                          {/* Completed Tasks Section */}
+                          {completedTasks.length > 0 && (
+                          <>
+                          <div className="border-b-2 border-zinc-700 my-4" />
+                          <div className="flex bg-zinc-800/70 hover:bg-zinc-800 border-b border-zinc-800">
+                          <button
+                          onClick={() => setCollapsedCompleted(!collapsedCompleted)}
+                          className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-green-400 flex items-center gap-2 text-left hover:text-green-300 transition-colors"
+                          >
+                          {collapsedCompleted ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                          ✓ Completed Tasks ({completedTasks.length})
+                          </button>
+                          <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
+                          </div>
+
+                          {!collapsedCompleted && Object.entries(completedTasksByProject).map(([projectId, projectCompletedTasks]) => {
+                          const project = projects.find(p => p.id === projectId) || { name: 'Unassigned', project_number: 'N/A' };
+
+                          return (
+                          <React.Fragment key={`completed-${projectId}`}>
+                          {projectCompletedTasks.map((task) => {
+                          const pos = getTaskPosition(task);
+
+                          return (
+                          <div key={task.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors opacity-60">
+                           <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-8 flex flex-col gap-1.5 bg-zinc-900 z-10">
+                             <div className="flex items-center gap-1">
+                               <CheckCircle size={14} className="text-green-400 flex-shrink-0" />
+                               <button
+                                 onClick={() => handleTaskClick(task)}
+                                 className="text-left text-sm text-zinc-400 hover:text-green-400 truncate flex-1 transition-colors line-through"
+                               >
+                                 {task.name}
+                               </button>
+                               <button
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setDeleteTask(task);
+                                 }}
+                                 className="text-zinc-500 hover:text-red-400 transition-colors p-1"
+                                 title="Delete task"
+                               >
+                                 <Trash2 size={14} />
+                               </button>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <span className="text-xs text-zinc-500 truncate">
+                                 {project.name}
+                               </span>
+                             </div>
+                           </div>
+
+                           <div className="flex-1 relative py-2 overflow-hidden" style={{ minWidth: `${periods.length * columnWidth}px` }}>
+                             {periods.map((_, idx) => (
+                               <div
+                                 key={idx}
+                                 className="absolute top-0 bottom-0 border-r border-zinc-800/50"
+                                 style={{ left: `${(idx / periods.length) * 100}%` }}
+                               />
+                             ))}
+
+                             {todayPosition >= 0 && todayPosition <= 100 && (
+                               <div
+                                 className="absolute top-0 bottom-0 w-1 bg-amber-500 z-10"
+                                 style={{ left: `${todayPosition}%` }}
+                               />
+                             )}
+
+                             <div
+                               className="absolute h-6 rounded bg-green-600/30 border border-green-400/50 cursor-pointer"
+                               style={{
+                                 ...pos,
+                                 top: '50%',
+                                 transform: 'translateY(-50%)',
+                               }}
+                               onClick={() => handleTaskClick(task)}
+                               title={`${task.name} - Completed`}
+                             >
+                               <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
+                                 <CheckCircle size={12} className="text-green-400 mr-1 flex-shrink-0" />
+                                 <span className="text-xs font-medium text-green-400 truncate line-through">
+                                   {task.name}
+                                 </span>
+                               </div>
+                             </div>
+                           </div>
+                          </div>
+                          );
+                          })}
+                          </React.Fragment>
+                          );
+                          })}
+                          </>
+                          )}
                           </div>
                           </div>
 
-        {/* Legend */}
+                          {/* Legend */}
         <div className="border-t border-zinc-800 bg-zinc-900/50 p-5">
           <h4 className="text-sm font-semibold text-white mb-4">Legend</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, differenceInDays, isPast, isBefore } from 'date-fns';
-import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X, CheckCircle, Trash2 } from 'lucide-react';
 import DependencyEditor from './DependencyEditor';
 
 export default function GanttChart({ 
@@ -13,6 +13,7 @@ export default function GanttChart({
   viewMode, 
   onTaskUpdate, 
   onTaskEdit,
+  onTaskDelete,
   criticalPath = [],
   resources,
   rfis,
@@ -28,6 +29,7 @@ export default function GanttChart({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
+  const [deleteTask, setDeleteTask] = useState(null);
   const chartRef = useRef(null);
 
   const toggleProject = (projectId) => {
@@ -515,6 +517,16 @@ export default function GanttChart({
                               {task.is_milestone ? '◆ ' : ''}
                               {task.name}
                             </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteTask(task);
+                              }}
+                              className="text-zinc-500 hover:text-red-400 transition-colors p-1"
+                              title="Delete task"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                           <div className="flex items-center gap-2">
                             {project && (
@@ -735,12 +747,24 @@ export default function GanttChart({
                           return (
                           <div key={childTask.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors">
                            <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5 bg-zinc-900 z-10">
-                             <button
-                               onClick={() => handleTaskClick(childTask)}
-                               className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate w-full transition-colors"
-                             >
-                               ↳ {childTask.name}
-                             </button>
+                             <div className="flex items-center gap-1">
+                               <button
+                                 onClick={() => handleTaskClick(childTask)}
+                                 className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate flex-1 transition-colors"
+                               >
+                                 ↳ {childTask.name}
+                               </button>
+                               <button
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   setDeleteTask(childTask);
+                                 }}
+                                 className="text-zinc-500 hover:text-red-400 transition-colors p-1"
+                                 title="Delete task"
+                               >
+                                 <Trash2 size={14} />
+                               </button>
+                             </div>
                              <div className="flex items-center gap-2">
                                {(childHasRFI || childHasCO) && (
                                  <div className="flex gap-1">
@@ -904,6 +928,33 @@ export default function GanttChart({
           onOpenChange={(open) => !open && setEditingDependencies(null)}
         />
       )}
+
+      <AlertDialog open={!!deleteTask} onOpenChange={() => setDeleteTask(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Task?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{deleteTask?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteTask && onTaskDelete) {
+                  onTaskDelete(deleteTask.id);
+                }
+                setDeleteTask(null);
+              }}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

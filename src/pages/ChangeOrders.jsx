@@ -67,10 +67,15 @@ export default function ChangeOrders() {
 
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
+  const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
   });
+
+  const projects = React.useMemo(() => 
+    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    [rawProjects]
+  );
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
@@ -150,16 +155,24 @@ export default function ChangeOrders() {
     setSelectedCO(co);
   };
 
-  const filteredCOs = changeOrders.filter(co => {
-    const project = projects.find(p => p.id === co.project_id);
-    const matchesSearch = 
-      co.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(co.co_number).includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || co.status === statusFilter;
-    const matchesProject = projectFilter === 'all' || co.project_id === projectFilter;
-    const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
-    return matchesSearch && matchesStatus && matchesProject && matchesPm;
-  }).sort((a, b) => (a.co_number || 0) - (b.co_number || 0));
+  const filteredCOs = React.useMemo(() => {
+    return changeOrders.filter(co => {
+      const project = projects.find(p => p.id === co.project_id);
+      const matchesSearch = 
+        co.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(co.co_number).includes(searchTerm);
+      const matchesStatus = statusFilter === 'all' || co.status === statusFilter;
+      const matchesProject = projectFilter === 'all' || co.project_id === projectFilter;
+      const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
+      return matchesSearch && matchesStatus && matchesProject && matchesPm;
+    }).sort((a, b) => {
+      const projectA = projects.find(p => p.id === a.project_id);
+      const projectB = projects.find(p => p.id === b.project_id);
+      const nameComparison = (projectA?.name || '').localeCompare(projectB?.name || '');
+      if (nameComparison !== 0) return nameComparison;
+      return (a.co_number || 0) - (b.co_number || 0);
+    });
+  }, [changeOrders, projects, searchTerm, statusFilter, projectFilter, pmFilter]);
 
   const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
 

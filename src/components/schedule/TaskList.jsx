@@ -22,6 +22,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
   const [selectedTasks, setSelectedTasks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
+  const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
   const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
 
@@ -33,6 +34,16 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       newCollapsed.add(projectId);
     }
     setCollapsedProjects(newCollapsed);
+  };
+
+  const togglePhase = (phaseKey) => {
+    const newCollapsed = new Set(collapsedPhases);
+    if (newCollapsed.has(phaseKey)) {
+      newCollapsed.delete(phaseKey);
+    } else {
+      newCollapsed.add(phaseKey);
+    }
+    setCollapsedPhases(newCollapsed);
   };
 
   const toggleParent = (taskId) => {
@@ -80,23 +91,37 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     return map;
   }, [drawingSets]);
 
-  // Organize tasks by project, then parent-child relationships
+  // Organize tasks by project, then phase, then parent-child relationships
   const organizedTasks = useMemo(() => {
     const result = [];
+    const phases = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
+    const phaseLabels = {
+      detailing: 'Detailing',
+      fabrication: 'Fabrication',
+      delivery: 'Delivery',
+      erection: 'Erection',
+      closeout: 'Closeout',
+      unassigned: 'Unassigned'
+    };
     
     // Group by project
     const projectGroups = {};
     tasks.forEach(task => {
       const projectId = task.project_id || 'unassigned';
       if (!projectGroups[projectId]) {
-        projectGroups[projectId] = [];
+        projectGroups[projectId] = {};
       }
-      projectGroups[projectId].push(task);
+      const phase = task.phase || 'unassigned';
+      if (!projectGroups[projectId][phase]) {
+        projectGroups[projectId][phase] = [];
+      }
+      projectGroups[projectId][phase].push(task);
     });
     
     // Process each project
-    Object.entries(projectGroups).forEach(([projectId, projectTasks]) => {
+    Object.entries(projectGroups).forEach(([projectId, phaseGroups]) => {
       const project = projects.find(p => p.id === projectId) || { name: 'Unassigned', project_number: 'N/A' };
+      const totalTasks = Object.values(phaseGroups).flat().length;
       
       // Add project header row
       result.push({
@@ -106,19 +131,42 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
           project_id: projectId 
         },
         isProjectHeader: true,
-        taskCount: projectTasks.length
+        taskCount: totalTasks
       });
       
       if (!collapsedProjects.has(projectId)) {
-        // Add parent and child tasks
-        const parentTasks = projectTasks.filter(t => !t.parent_task_id);
-        parentTasks.forEach(parent => {
-          const children = projectTasks.filter(t => t.parent_task_id === parent.id);
-          result.push({ task: parent, children, isParent: children.length > 0, isProjectTask: true });
+        // Process each phase
+        phases.forEach(phase => {
+          const phaseTasks = phaseGroups[phase] || [];
+          if (phaseTasks.length === 0) return;
           
-          if (!collapsedParents.has(parent.id)) {
-            children.forEach(child => {
-              result.push({ task: child, children: [], isParent: false, isChild: true, isProjectTask: true });
+          const phaseKey = `${projectId}-${phase}`;
+          
+          // Add phase header row
+          result.push({
+            task: {
+              id: `phase-${phaseKey}`,
+              name: phaseLabels[phase],
+              project_id: projectId,
+              phase: phase
+            },
+            isPhaseHeader: true,
+            phaseKey: phaseKey,
+            taskCount: phaseTasks.length
+          });
+          
+          if (!collapsedPhases.has(phaseKey)) {
+            // Add parent and child tasks
+            const parentTasks = phaseTasks.filter(t => !t.parent_task_id);
+            parentTasks.forEach(parent => {
+              const children = phaseTasks.filter(t => t.parent_task_id === parent.id);
+              result.push({ task: parent, children, isParent: children.length > 0, isPhaseTask: true });
+              
+              if (!collapsedParents.has(parent.id)) {
+                children.forEach(child => {
+                  result.push({ task: child, children: [], isParent: false, isChild: true, isPhaseTask: true });
+                });
+              }
             });
           }
         });
@@ -126,7 +174,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     });
     
     return result;
-  }, [tasks, projects, collapsedProjects, collapsedParents]);
+  }, [tasks, projects, collapsedProjects, collapsedPhases, collapsedParents]);
 
   const columns = useMemo(() => [
     {
@@ -138,7 +186,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       ),
       accessor: 'select',
       render: (row, meta) => {
-        if (meta?.isProjectHeader) return null;
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
         return (
           <Checkbox
             checked={selectedTasks.has(row.id)}
@@ -163,6 +211,22 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
               className="w-full text-left flex items-center gap-2 font-bold text-amber-400 hover:text-amber-300 transition-colors py-1"
             >
               {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+              {row.name} ({meta.taskCount})
+            </button>
+          );
+        }
+
+        if (meta?.isPhaseHeader) {
+          const isCollapsed = collapsedPhases.has(meta.phaseKey);
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePhase(meta.phaseKey);
+              }}
+              className="w-full text-left flex items-center gap-2 pl-6 font-semibold text-sm text-zinc-300 hover:text-white transition-colors py-1"
+            >
+              {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
               {row.name} ({meta.taskCount})
             </button>
           );
@@ -220,7 +284,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       header: 'Project',
       accessor: 'project_id',
       render: (row, meta) => {
-        if (meta?.isProjectHeader) return null;
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
         const project = projects.find(p => p.id === row.project_id);
         return project ? (
           <span className="text-sm text-white">{project.project_number}</span>
@@ -363,7 +427,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         columns={columns}
         data={organizedTasks.map(item => ({ ...item.task, ...item }))}
         onRowClick={(row) => {
-          if (!row.isProjectHeader) {
+          if (!row.isProjectHeader && !row.isPhaseHeader) {
             onTaskEdit(row);
           }
         }}

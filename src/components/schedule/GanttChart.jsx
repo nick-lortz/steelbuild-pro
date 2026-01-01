@@ -22,6 +22,7 @@ export default function GanttChart({
   const [draggingTask, setDraggingTask] = useState(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
+  const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
   const [editingDependencies, setEditingDependencies] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,6 +38,16 @@ export default function GanttChart({
       newCollapsed.add(projectId);
     }
     setCollapsedProjects(newCollapsed);
+  };
+
+  const togglePhase = (phaseKey) => {
+    const newCollapsed = new Set(collapsedPhases);
+    if (newCollapsed.has(phaseKey)) {
+      newCollapsed.delete(phaseKey);
+    } else {
+      newCollapsed.add(phaseKey);
+    }
+    setCollapsedPhases(newCollapsed);
   };
 
   const toggleParent = (taskId) => {
@@ -85,18 +96,33 @@ export default function GanttChart({
     }
   }
 
-  // Group filteredTasks by project
-  const tasksByProject = useMemo(() => {
+  // Group filteredTasks by project and phase
+  const tasksByProjectAndPhase = useMemo(() => {
     const grouped = {};
     filteredTasks.forEach(task => {
       const projectId = task.project_id || 'unassigned';
+      const phase = task.phase || 'unassigned';
+      
       if (!grouped[projectId]) {
-        grouped[projectId] = [];
+        grouped[projectId] = {};
       }
-      grouped[projectId].push(task);
+      if (!grouped[projectId][phase]) {
+        grouped[projectId][phase] = [];
+      }
+      grouped[projectId][phase].push(task);
     });
     return grouped;
   }, [filteredTasks]);
+
+  const phases = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
+  const phaseLabels = {
+    detailing: 'Detailing',
+    fabrication: 'Fabrication',
+    delivery: 'Delivery',
+    erection: 'Erection',
+    closeout: 'Closeout',
+    unassigned: 'Unassigned'
+  };
 
   const getTaskPosition = (task) => {
     if (!task.start_date || !task.end_date) return { left: '0%', width: '0%' };
@@ -255,6 +281,7 @@ export default function GanttChart({
 
   const expandAll = () => {
     setCollapsedProjects(new Set());
+    setCollapsedPhases(new Set());
     setCollapsedParents(new Set());
   };
 
@@ -401,18 +428,11 @@ export default function GanttChart({
               </div>
             </div>
 
-            {/* Task Rows by Project */}
-            {Object.entries(tasksByProject).map(([projectId, projectTasks]) => {
+            {/* Task Rows by Project and Phase */}
+            {Object.entries(tasksByProjectAndPhase).map(([projectId, phaseGroups]) => {
               const project = projects.find(p => p.id === projectId) || { name: 'Unassigned', project_number: 'N/A' };
               const isProjectCollapsed = collapsedProjects.has(projectId);
-
-              // Separate parent and child tasks
-              const parentTasks = projectTasks.filter(t => !t.parent_task_id);
-              const childTasksMap = {};
-              projectTasks.filter(t => t.parent_task_id).forEach(t => {
-                if (!childTasksMap[t.parent_task_id]) childTasksMap[t.parent_task_id] = [];
-                childTasksMap[t.parent_task_id].push(t);
-              });
+              const totalTasks = Object.values(phaseGroups).flat().length;
 
               return (
                 <div key={projectId} className="border-b border-zinc-800">
@@ -423,13 +443,43 @@ export default function GanttChart({
                       className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-amber-400 flex items-center gap-2 text-left hover:text-amber-300 transition-colors"
                     >
                       {isProjectCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
-                      {project.project_number} - {project.name} ({projectTasks.length})
+                      {project.project_number} - {project.name} ({totalTasks})
                     </button>
                     <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                   </div>
 
-                  {/* Project Tasks */}
-                  {!isProjectCollapsed && parentTasks.map((task) => {
+                  {/* Phase Groups */}
+                  {!isProjectCollapsed && phases.map(phase => {
+                    const phaseTasks = phaseGroups[phase] || [];
+                    if (phaseTasks.length === 0) return null;
+
+                    const phaseKey = `${projectId}-${phase}`;
+                    const isPhaseCollapsed = collapsedPhases.has(phaseKey);
+
+                    // Separate parent and child tasks
+                    const parentTasks = phaseTasks.filter(t => !t.parent_task_id);
+                    const childTasksMap = {};
+                    phaseTasks.filter(t => t.parent_task_id).forEach(t => {
+                      if (!childTasksMap[t.parent_task_id]) childTasksMap[t.parent_task_id] = [];
+                      childTasksMap[t.parent_task_id].push(t);
+                    });
+
+                    return (
+                      <React.Fragment key={phaseKey}>
+                        {/* Phase Header */}
+                        <div className="flex bg-zinc-800/50 hover:bg-zinc-800/70">
+                          <button
+                            onClick={() => togglePhase(phaseKey)}
+                            className="w-80 flex-shrink-0 border-r border-zinc-800 p-2.5 pl-8 font-semibold text-sm text-zinc-300 flex items-center gap-2 text-left hover:text-white transition-colors"
+                          >
+                            {isPhaseCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                            {phaseLabels[phase]} ({phaseTasks.length})
+                          </button>
+                          <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
+                        </div>
+
+                        {/* Phase Tasks */}
+                        {!isPhaseCollapsed && parentTasks.map((task) => {
                     const childTasks = childTasksMap[task.id] || [];
                     const hasChildren = childTasks.length > 0;
                     const isParentCollapsed = collapsedParents.has(task.id);

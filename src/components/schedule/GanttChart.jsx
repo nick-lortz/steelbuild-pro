@@ -63,16 +63,6 @@ export default function GanttChart({
     });
   }, [tasks, searchTerm, statusFilter, projectFilter]);
 
-  if (!filteredTasks.length) {
-    return (
-      <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardContent className="p-8 text-center text-zinc-500">
-          No tasks found. Add tasks to see the Gantt chart.
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Set date range: 1 week before today and 6 months into the future
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -268,6 +258,16 @@ export default function GanttChart({
     setCollapsedPhases(new Set());
     setCollapsedParents(new Set());
   };
+
+  if (!filteredTasks.length) {
+    return (
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-8 text-center text-zinc-500">
+          No tasks found. Add tasks to see the Gantt chart.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">

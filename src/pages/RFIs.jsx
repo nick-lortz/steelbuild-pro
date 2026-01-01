@@ -78,10 +78,15 @@ export default function RFIs() {
 
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
+  const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name')
   });
+
+  const projects = React.useMemo(() => 
+    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    [rawProjects]
+  );
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
@@ -174,16 +179,24 @@ export default function RFIs() {
     setSelectedRFI(rfi);
   };
 
-  const filteredRFIs = rfis.filter((r) => {
-    const project = projects.find(p => p.id === r.project_id);
-    const matchesSearch =
-    r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(r.rfi_number).includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    const matchesProject = projectFilter === 'all' || r.project_id === projectFilter;
-    const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
-    return matchesSearch && matchesStatus && matchesProject && matchesPm;
-  }).sort((a, b) => (a.rfi_number || 0) - (b.rfi_number || 0));
+  const filteredRFIs = React.useMemo(() => {
+    return rfis.filter((r) => {
+      const project = projects.find(p => p.id === r.project_id);
+      const matchesSearch =
+        r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(r.rfi_number).includes(searchTerm);
+      const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+      const matchesProject = projectFilter === 'all' || r.project_id === projectFilter;
+      const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
+      return matchesSearch && matchesStatus && matchesProject && matchesPm;
+    }).sort((a, b) => {
+      const projectA = projects.find(p => p.id === a.project_id);
+      const projectB = projects.find(p => p.id === b.project_id);
+      const nameComparison = (projectA?.name || '').localeCompare(projectB?.name || '');
+      if (nameComparison !== 0) return nameComparison;
+      return (a.rfi_number || 0) - (b.rfi_number || 0);
+    });
+  }, [rfis, projects, searchTerm, statusFilter, projectFilter, pmFilter]);
 
   const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
 

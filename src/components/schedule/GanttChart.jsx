@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, differenceInDays, isPast, isBefore } from 'date-fns';
-import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X } from 'lucide-react';
+import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X, CheckCircle } from 'lucide-react';
 import DependencyEditor from './DependencyEditor';
 
 export default function GanttChart({ 
@@ -553,10 +553,10 @@ export default function GanttChart({
                                  : critical 
                                    ? 'bg-red-500 border-2 border-red-300 shadow-lg cursor-grab active:cursor-grabbing' 
                                    : task.status === 'completed'
-                                     ? 'bg-green-500 shadow-md cursor-grab active:cursor-grabbing'
+                                     ? 'bg-green-600 border-2 border-green-400 shadow-lg cursor-grab active:cursor-grabbing opacity-75'
                                      : task.status === 'in_progress'
-                                       ? 'bg-blue-500 shadow-md cursor-grab active:cursor-grabbing'
-                                       : 'bg-zinc-600 shadow-md cursor-grab active:cursor-grabbing'
+                                       ? 'bg-blue-500 border border-blue-400 shadow-md cursor-grab active:cursor-grabbing'
+                                       : 'bg-zinc-600 border border-zinc-500 shadow-md cursor-grab active:cursor-grabbing'
                            } ${draggingTask?.id === task.id ? 'opacity-70 scale-105' : 'hover:scale-105'}`}
                            style={{
                              ...pos,
@@ -573,7 +573,10 @@ export default function GanttChart({
                            }}
                            title={`${task.name} - ${task.progress_percent || 0}% complete${overdue ? ' (OVERDUE)' : ''}${task.is_milestone ? '' : ' (drag to reschedule)'}`}
                           >
-                           {!task.is_milestone && task.progress_percent > 0 && (
+                           {!task.is_milestone && task.status === 'completed' && (
+                             <div className="absolute inset-0 bg-white/20 rounded" />
+                           )}
+                           {!task.is_milestone && task.status !== 'completed' && task.progress_percent > 0 && (
                              <div 
                                className="absolute inset-0 bg-white/30 rounded-l transition-all"
                                style={{ width: `${task.progress_percent}%` }}
@@ -581,13 +584,16 @@ export default function GanttChart({
                            )}
                            {!task.is_milestone && (
                              <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
-                               <span className="text-xs font-semibold text-white truncate drop-shadow-md mr-auto min-w-0">
+                               {task.status === 'completed' && (
+                                 <CheckCircle size={14} className="text-white drop-shadow-md mr-1.5 flex-shrink-0" />
+                               )}
+                               <span className={`text-xs font-semibold text-white truncate drop-shadow-md mr-auto min-w-0 ${task.status === 'completed' ? 'line-through' : ''}`}>
                                  {task.name}
                                </span>
                                <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                  {overdue && <AlertTriangle size={12} className="text-white drop-shadow" />}
                                  <span className="text-[10px] font-bold text-white/90 drop-shadow whitespace-nowrap">
-                                   {task.progress_percent || 0}%
+                                   {task.status === 'completed' ? '✓' : `${task.progress_percent || 0}%`}
                                  </span>
                                </div>
                              </div>
@@ -721,10 +727,10 @@ export default function GanttChart({
                                    : childCritical 
                                      ? 'bg-red-500/80 border border-red-300' 
                                      : childTask.status === 'completed'
-                                       ? 'bg-green-500/80'
+                                       ? 'bg-green-600/80 border border-green-400 opacity-75'
                                        : childTask.status === 'in_progress'
-                                         ? 'bg-blue-500/80'
-                                         : 'bg-zinc-600/80'
+                                         ? 'bg-blue-500/80 border border-blue-400'
+                                         : 'bg-zinc-600/80 border border-zinc-500'
                                } ${draggingTask?.id === childTask.id ? 'opacity-70 scale-105' : 'hover:scale-105'}`}
                                style={{
                                  ...childPos,
@@ -737,20 +743,26 @@ export default function GanttChart({
                                }}
                                title={`${childTask.name} - ${childTask.progress_percent || 0}% complete${childOverdue ? ' (OVERDUE)' : ''} (drag to reschedule)`}
                              >
-                               {childTask.progress_percent > 0 && (
+                               {childTask.status === 'completed' && (
+                                 <div className="absolute inset-0 bg-white/20 rounded" />
+                               )}
+                               {childTask.status !== 'completed' && childTask.progress_percent > 0 && (
                                  <div 
                                    className="absolute inset-0 bg-white/25 rounded-l transition-all"
                                    style={{ width: `${childTask.progress_percent}%` }}
                                  />
                                )}
                                <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
-                                 <span className="text-xs font-medium text-white truncate mr-auto min-w-0">
+                                 {childTask.status === 'completed' && (
+                                   <CheckCircle size={12} className="text-white drop-shadow-md mr-1 flex-shrink-0" />
+                                 )}
+                                 <span className={`text-xs font-medium text-white truncate mr-auto min-w-0 ${childTask.status === 'completed' ? 'line-through' : ''}`}>
                                    {childTask.name}
                                  </span>
                                  <div className="flex items-center gap-1 ml-1 flex-shrink-0">
                                    {childOverdue && <AlertTriangle size={10} className="text-white" />}
                                    <span className="text-[9px] font-bold text-white/90 whitespace-nowrap">
-                                     {childTask.progress_percent || 0}%
+                                     {childTask.status === 'completed' ? '✓' : `${childTask.progress_percent || 0}%`}
                                    </span>
                                  </div>
                                </div>
@@ -785,8 +797,10 @@ export default function GanttChart({
               <span className="text-zinc-200">In Progress</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 bg-green-500 rounded border border-green-400" />
-              <span className="text-zinc-200">Completed</span>
+              <div className="w-5 h-5 bg-green-600 rounded border-2 border-green-400 opacity-75 flex items-center justify-center">
+                <CheckCircle size={12} className="text-white" />
+              </div>
+              <span className="text-zinc-200">Completed (with ✓)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 bg-zinc-600 rounded border border-zinc-500" />

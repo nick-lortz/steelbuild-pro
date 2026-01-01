@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Settings, Save, User, Copy } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import AITaskHelper from './AITaskHelper';
 import DependencyConfigurator from './DependencyConfigurator';
 import TaskTemplateManager from './TaskTemplateManager';
@@ -93,6 +94,11 @@ export default function TaskForm({
       });
     }
   }, [task]);
+
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+  });
 
   const handleChange = (field, value) => {
     setFormData((prev) => {

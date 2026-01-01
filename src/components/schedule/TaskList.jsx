@@ -21,8 +21,19 @@ import {
 export default function TaskList({ tasks, projects, resources, drawingSets, onTaskEdit, onTaskUpdate, onBulkDelete, onBulkEdit }) {
   const [selectedTasks, setSelectedTasks] = useState(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [collapsedProjects, setCollapsedProjects] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
   const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
+
+  const toggleProject = (projectId) => {
+    const newCollapsed = new Set(collapsedProjects);
+    if (newCollapsed.has(projectId)) {
+      newCollapsed.delete(projectId);
+    } else {
+      newCollapsed.add(projectId);
+    }
+    setCollapsedProjects(newCollapsed);
+  };
 
   const toggleParent = (taskId) => {
     const newCollapsed = new Set(collapsedParents);
@@ -69,24 +80,53 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     return map;
   }, [drawingSets]);
 
-  // Organize tasks by parent-child relationships
+  // Organize tasks by project, then parent-child relationships
   const organizedTasks = useMemo(() => {
-    const parentTasks = tasks.filter(t => !t.parent_task_id);
     const result = [];
     
-    parentTasks.forEach(parent => {
-      const children = tasks.filter(t => t.parent_task_id === parent.id);
-      result.push({ task: parent, children, isParent: children.length > 0 });
+    // Group by project
+    const projectGroups = {};
+    tasks.forEach(task => {
+      const projectId = task.project_id || 'unassigned';
+      if (!projectGroups[projectId]) {
+        projectGroups[projectId] = [];
+      }
+      projectGroups[projectId].push(task);
+    });
+    
+    // Process each project
+    Object.entries(projectGroups).forEach(([projectId, projectTasks]) => {
+      const project = projects.find(p => p.id === projectId) || { name: 'Unassigned', project_number: 'N/A' };
       
-      if (!collapsedParents.has(parent.id)) {
-        children.forEach(child => {
-          result.push({ task: child, children: [], isParent: false, isChild: true });
+      // Add project header row
+      result.push({
+        task: { 
+          id: `project-${projectId}`, 
+          name: `${project.project_number} - ${project.name}`,
+          project_id: projectId 
+        },
+        isProjectHeader: true,
+        taskCount: projectTasks.length
+      });
+      
+      if (!collapsedProjects.has(projectId)) {
+        // Add parent and child tasks
+        const parentTasks = projectTasks.filter(t => !t.parent_task_id);
+        parentTasks.forEach(parent => {
+          const children = projectTasks.filter(t => t.parent_task_id === parent.id);
+          result.push({ task: parent, children, isParent: children.length > 0, isProjectTask: true });
+          
+          if (!collapsedParents.has(parent.id)) {
+            children.forEach(child => {
+              result.push({ task: child, children: [], isParent: false, isChild: true, isProjectTask: true });
+            });
+          }
         });
       }
     });
     
     return result;
-  }, [tasks, collapsedParents]);
+  }, [tasks, projects, collapsedProjects, collapsedParents]);
 
   const columns = useMemo(() => [
     {
@@ -97,18 +137,37 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         />
       ),
       accessor: 'select',
-      render: (row) => (
-        <Checkbox
-          checked={selectedTasks.has(row.id)}
-          onCheckedChange={() => toggleTask(row.id)}
-          onClick={(e) => e.stopPropagation()}
-        />
-      ),
+      render: (row, meta) => {
+        if (meta?.isProjectHeader) return null;
+        return (
+          <Checkbox
+            checked={selectedTasks.has(row.id)}
+            onCheckedChange={() => toggleTask(row.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        );
+      },
     },
     {
       header: 'Task',
       accessor: 'name',
       render: (row, meta) => {
+        if (meta?.isProjectHeader) {
+          const isCollapsed = collapsedProjects.has(row.project_id);
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleProject(row.project_id);
+              }}
+              className="w-full text-left flex items-center gap-2 font-bold text-amber-400 hover:text-amber-300 transition-colors py-1"
+            >
+              {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+              {row.name} ({meta.taskCount})
+            </button>
+          );
+        }
+
         // Check if task is blocked by drawings - optimized lookup
         const requiresFFFPhases = ['fabrication', 'delivery', 'erection'];
         const hasDrawingDeps = row.linked_drawing_set_ids && row.linked_drawing_set_ids.length > 0;
@@ -160,7 +219,8 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
     {
       header: 'Project',
       accessor: 'project_id',
-      render: (row) => {
+      render: (row, meta) => {
+        if (meta?.isProjectHeader) return null;
         const project = projects.find(p => p.id === row.project_id);
         return project ? (
           <span className="text-sm text-white">{project.project_number}</span>
@@ -302,7 +362,11 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
       <DataTable
         columns={columns}
         data={organizedTasks.map(item => ({ ...item.task, ...item }))}
-        onRowClick={onTaskEdit}
+        onRowClick={(row) => {
+          if (!row.isProjectHeader) {
+            onTaskEdit(row);
+          }
+        }}
         emptyMessage="No tasks found. Add tasks to get started."
       />
 

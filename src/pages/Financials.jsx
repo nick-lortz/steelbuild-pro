@@ -77,11 +77,16 @@ export default function Financials() {
 
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
+  const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000,
   });
+
+  const projects = useMemo(() => 
+    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    [rawProjects]
+  );
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
@@ -883,7 +888,9 @@ export default function Financials() {
               budgetsByProject[projectId].forecast += Number(financial.forecast_amount) || 0;
             });
 
-            const projectGroups = Object.values(budgetsByProject);
+            const projectGroups = Object.values(budgetsByProject).sort((a, b) => 
+              a.projectName.localeCompare(b.projectName)
+            );
             const [expandedBudgetProjects, setExpandedBudgetProjects] = React.useState(new Set());
 
             const toggleBudgetProject = (projectId) => {

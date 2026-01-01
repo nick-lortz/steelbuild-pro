@@ -167,11 +167,16 @@ export default function Dashboard() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [pmFilter, setPmFilter] = useState('all');
 
-  const { data: allProjects = [], isLoading: projectsLoading } = useQuery({
+  const { data: rawProjects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
     staleTime: 5 * 60 * 1000,
   });
+
+  const allProjects = useMemo(() => 
+    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    [rawProjects]
+  );
 
   // Filter projects based on user role and toggle
   const projects = useMemo(() => {

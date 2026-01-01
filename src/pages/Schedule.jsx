@@ -37,11 +37,16 @@ export default function Schedule() {
 
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
+  const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
+
+  const projects = useMemo(() => 
+    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    [rawProjects]
+  );
 
   const { data: tasks = [], refetch: refetchTasks, isRefetching: isRefetchingTasks } = useQuery({
     queryKey: ['tasks'],

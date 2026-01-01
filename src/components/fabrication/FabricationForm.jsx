@@ -190,7 +190,14 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                 <Calendar
                   mode="single"
                   selected={formData.start_date}
-                  onSelect={(date) => setFormData({ ...formData, start_date: date })}
+                  onSelect={(date) => {
+                    if (date) {
+                      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+                      setFormData({ ...formData, start_date: localDate });
+                    } else {
+                      setFormData({ ...formData, start_date: null });
+                    }
+                  }}
                   initialFocus className="text-slate-50 p-3 rdp" />
 
               </PopoverContent>
@@ -217,7 +224,14 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                 <Calendar
                   mode="single"
                   selected={formData.target_completion}
-                  onSelect={(date) => setFormData({ ...formData, target_completion: date })}
+                  onSelect={(date) => {
+                    if (date) {
+                      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+                      setFormData({ ...formData, target_completion: localDate });
+                    } else {
+                      setFormData({ ...formData, target_completion: null });
+                    }
+                  }}
                   initialFocus
                   className="text-slate-50 p-3 rdp" />
               </PopoverContent>
@@ -244,7 +258,14 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                 <Calendar
                   mode="single"
                   selected={formData.actual_completion}
-                  onSelect={(date) => setFormData({ ...formData, actual_completion: date })}
+                  onSelect={(date) => {
+                    if (date) {
+                      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+                      setFormData({ ...formData, actual_completion: localDate });
+                    } else {
+                      setFormData({ ...formData, actual_completion: null });
+                    }
+                  }}
                   initialFocus
                   className="text-slate-50 p-3 rdp" />
               </PopoverContent>
@@ -300,7 +321,14 @@ export default function FabricationForm({ fabrication, projects, drawings, deliv
                 <Calendar
                   mode="single"
                   selected={formData.qc_date}
-                  onSelect={(date) => setFormData({ ...formData, qc_date: date })}
+                  onSelect={(date) => {
+                    if (date) {
+                      const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+                      setFormData({ ...formData, qc_date: localDate });
+                    } else {
+                      setFormData({ ...formData, qc_date: null });
+                    }
+                  }}
                   initialFocus
                   className="text-slate-50 p-3 rdp" />
               </PopoverContent>

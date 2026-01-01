@@ -333,8 +333,12 @@ export default function Dashboard() {
   const recentDelays = safetyMetrics.delays;
 
   // At Risk Projects
-  const atRiskProjects = useMemo(() => 
-    activeProjects.filter(project => {
+  const atRiskProjects = useMemo(() => {
+    if (!activeProjects || !financials) return [];
+    
+    return activeProjects.filter(project => {
+      if (!project || !project.id) return false;
+      
       const projectFinancials = (financials || []).filter(f => f && f.project_id === project.id);
       const projectBudget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
       const projectActual = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
@@ -342,7 +346,7 @@ export default function Dashboard() {
       
       const projectRFIs = (rfis || []).filter(r => r && r.project_id === project.id && (r.status === 'pending' || r.status === 'submitted'));
       const overdueRFIs = projectRFIs.filter(r => {
-        if (!r.due_date) return false;
+        if (!r || !r.due_date) return false;
         try {
           return new Date(r.due_date) < new Date();
         } catch {
@@ -350,10 +354,9 @@ export default function Dashboard() {
         }
       }).length;
       
-      return variance > 95 || overdueRFIs > 3 || overdueDocs.filter(d => d && d.project_id === project.id).length > 2;
-    }), 
-    [activeProjects, financials, rfis, overdueDocs]
-  );
+      return variance > 95 || overdueRFIs > 3 || (overdueDocs || []).filter(d => d && d.project_id === project.id).length > 2;
+    });
+  }, [activeProjects, financials, rfis, overdueDocs]);
 
   // Change Order Chart Data
   const coChartData = useMemo(() => [
@@ -713,7 +716,7 @@ export default function Dashboard() {
                   />
                 </div>
                 <p className="text-sm text-zinc-500 text-center">
-                  {totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : '0'}% of budget utilized
+                  {totalBudget > 0 ? Math.min(((totalActual / totalBudget) * 100), 100).toFixed(1) : '0'}% of budget utilized
                 </p>
               </div>
             </CardContent>

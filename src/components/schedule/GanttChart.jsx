@@ -272,7 +272,7 @@ export default function GanttChart({
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [todayPosition]);
+  }, []);
 
   const collapseAll = () => {
     const allProjectIds = [...new Set(filteredTasks.map(t => t.project_id).filter(Boolean))];

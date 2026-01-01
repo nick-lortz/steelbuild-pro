@@ -821,11 +821,14 @@ export default function GanttChart({
                           </React.Fragment>
                           );
                           })}
+                          </React.Fragment>
+                          );
+                          })}
                           </div>
                           );
                           })}
-          </div>
-        </div>
+                          </div>
+                          </div>
 
         {/* Legend */}
         <div className="border-t border-zinc-800 bg-zinc-900/50 p-5">

@@ -309,7 +309,6 @@ export default function TaskForm({
             </p>
           }
         </div>
-      </div>
 
         <div className="space-y-2">
           <Label>Phase *</Label>
@@ -335,7 +334,9 @@ export default function TaskForm({
             </p>
           )}
         </div>
+      </div>
 
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>WBS Code</Label>
           <Input
@@ -343,7 +344,6 @@ export default function TaskForm({
             onChange={(e) => handleChange('wbs_code', e.target.value)}
             placeholder="e.g., 1.2.3"
             className="bg-zinc-800 border-zinc-700" />
-
         </div>
       </div>
 

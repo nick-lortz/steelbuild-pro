@@ -174,6 +174,10 @@ export default function Schedule() {
     setShowTaskForm(true);
   };
 
+  const handleDelete = (taskId) => {
+    deleteMutation.mutate(taskId);
+  };
+
   const handleBulkDelete = async (taskIds) => {
     for (const id of taskIds) {
       await deleteMutation.mutateAsync(id);
@@ -372,6 +376,7 @@ export default function Schedule() {
             viewMode={viewMode}
             onTaskUpdate={handleTaskUpdate}
             onTaskEdit={handleEditTask}
+            onTaskDelete={handleDelete}
             criticalPath={criticalPathData.criticalTasks}
             resources={resources}
             rfis={rfis}

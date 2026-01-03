@@ -184,8 +184,13 @@ export default function LaborScope() {
 
   const resetLaborMutation = useMutation({
     mutationFn: async () => {
+      // Fetch fresh data
+      const currentBreakdowns = await base44.entities.LaborBreakdown.filter({ project_id: projectId });
+      const currentSpecialty = await base44.entities.SpecialtyDiscussionItem.filter({ project_id: projectId });
+      const currentGaps = await base44.entities.ScopeGap.filter({ project_id: projectId });
+      
       // Reset all breakdowns to 0
-      const resetPromises = breakdowns.map(b => 
+      const resetPromises = currentBreakdowns.map(b => 
         base44.entities.LaborBreakdown.update(b.id, { 
           shop_hours: 0, 
           field_hours: 0, 
@@ -194,12 +199,12 @@ export default function LaborScope() {
       );
       
       // Delete all specialty items
-      const deleteSpecialtyPromises = specialtyItems.map(s => 
+      const deleteSpecialtyPromises = currentSpecialty.map(s => 
         base44.entities.SpecialtyDiscussionItem.delete(s.id)
       );
       
       // Delete all scope gaps
-      const deleteGapPromises = scopeGaps.map(g => 
+      const deleteGapPromises = currentGaps.map(g => 
         base44.entities.ScopeGap.delete(g.id)
       );
 

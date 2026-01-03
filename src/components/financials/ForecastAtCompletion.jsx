@@ -4,37 +4,37 @@ import { Badge } from "@/components/ui/badge";
 import { Target, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export default function ForecastAtCompletion({ financials, projects, changeOrders, expenses = [] }) {
-  const projectForecasts = projects.map(project => {
-    const projectFinancials = financials.filter(f => f && f.project_id === project.id);
-    
+  const projectForecasts = projects.map((project) => {
+    const projectFinancials = financials.filter((f) => f && f.project_id === project.id);
+
     // Convert all financial values to numbers
     const budget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
     const committed = projectFinancials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
     const actualFromFinancials = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
     const forecast = projectFinancials.reduce((sum, f) => sum + (Number(f.forecast_amount) || 0), 0);
-    
+
     // Calculate actual from expenses (already included in actual_amount via budgetLinesWithExpenses)
     // NOTE: actual_amount in financials already includes rolled-up expenses from Financials page
     const actual = actualFromFinancials;
-    
+
     // Add approved change orders to budget
-    const approvedCOs = changeOrders
-      .filter(co => co && co.project_id === project.id && co.status === 'approved')
-      .reduce((sum, co) => sum + (Number(co.cost_impact) || 0), 0);
-    
+    const approvedCOs = changeOrders.
+    filter((co) => co && co.project_id === project.id && co.status === 'approved').
+    reduce((sum, co) => sum + (Number(co.cost_impact) || 0), 0);
+
     const revisedBudget = budget + approvedCOs;
-    
+
     // Forecast at completion logic:
     // If forecast is manually set and greater than 0, use it
     // Otherwise: actual costs + remaining committed
-    const forecastAtCompletion = forecast > 0 
-      ? forecast 
-      : actual + committed;
-    
+    const forecastAtCompletion = forecast > 0 ?
+    forecast :
+    actual + committed;
+
     const variance = revisedBudget - forecastAtCompletion;
-    const variancePercent = revisedBudget > 0 ? ((variance / revisedBudget) * 100) : 0;
-    const costPerformanceIndex = forecastAtCompletion > 0 ? (revisedBudget / forecastAtCompletion) : 1;
-    
+    const variancePercent = revisedBudget > 0 ? variance / revisedBudget * 100 : 0;
+    const costPerformanceIndex = forecastAtCompletion > 0 ? revisedBudget / forecastAtCompletion : 1;
+
     return {
       project,
       budget,
@@ -47,7 +47,7 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
       costPerformanceIndex,
       status: variance >= 0 ? 'on_track' : variancePercent > -10 ? 'at_risk' : 'over_budget'
     };
-  }).filter(f => f.budget > 0 || f.actual > 0);
+  }).filter((f) => f.budget > 0 || f.actual > 0);
 
   const totalForecast = projectForecasts.reduce((sum, p) => sum + (Number(p.forecastAtCompletion) || 0), 0);
   const totalBudget = projectForecasts.reduce((sum, p) => sum + (Number(p.revisedBudget) || 0), 0);
@@ -74,27 +74,27 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
       {/* Project Breakdown */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-lg">Project Forecasts</CardTitle>
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Project Forecasts</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {projectForecasts.map(forecast => (
-              <div key={forecast.project.id} className="p-3 bg-zinc-800/50 rounded-lg">
+            {projectForecasts.map((forecast) =>
+            <div key={forecast.project.id} className="p-3 bg-zinc-800/50 rounded-lg">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <p className="font-medium text-white">{forecast.project.name}</p>
                     <p className="text-xs text-zinc-500">{forecast.project.project_number}</p>
                   </div>
-                  <Badge 
-                    variant="outline" 
-                    className={
-                      forecast.status === 'on_track' 
-                        ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                        : forecast.status === 'at_risk'
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                        : 'bg-red-500/20 text-red-400 border-red-500/30'
-                    }
-                  >
+                  <Badge
+                  variant="outline"
+                  className={
+                  forecast.status === 'on_track' ?
+                  'bg-green-500/20 text-green-400 border-green-500/30' :
+                  forecast.status === 'at_risk' ?
+                  'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                  'bg-red-500/20 text-red-400 border-red-500/30'
+                  }>
+
                     {forecast.status === 'on_track' ? 'On Track' : forecast.status === 'at_risk' ? 'At Risk' : 'Over Budget'}
                   </Badge>
                 </div>
@@ -123,23 +123,23 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
                 {/* Progress Bar */}
                 <div className="mt-3">
                   <div className="w-full bg-zinc-700 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className={`h-full transition-all ${
-                        forecast.status === 'on_track' ? 'bg-green-500' :
-                        forecast.status === 'at_risk' ? 'bg-amber-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${Math.min((forecast.actual / forecast.revisedBudget) * 100, 100)}%` }}
-                    />
+                    <div
+                    className={`h-full transition-all ${
+                    forecast.status === 'on_track' ? 'bg-green-500' :
+                    forecast.status === 'at_risk' ? 'bg-amber-500' : 'bg-red-500'}`
+                    }
+                    style={{ width: `${Math.min(forecast.actual / forecast.revisedBudget * 100, 100)}%` }} />
+
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {((forecast.actual / forecast.revisedBudget) * 100).toFixed(1)}% spent • CPI: {forecast.costPerformanceIndex.toFixed(2)}
+                    {(forecast.actual / forecast.revisedBudget * 100).toFixed(1)}% spent • CPI: {forecast.costPerformanceIndex.toFixed(2)}
                   </p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }

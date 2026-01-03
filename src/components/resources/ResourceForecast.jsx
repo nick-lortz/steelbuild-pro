@@ -18,7 +18,7 @@ export default function ResourceForecast({ tasks, resources, projects }) {
       const monthEnd = endOfMonth(monthDate);
 
       // Count resources needed in this month
-      const activeTasks = tasks.filter(task => {
+      const activeTasks = tasks.filter((task) => {
         if (!task.start_date || !task.end_date) return false;
         if (task.status === 'completed' || task.status === 'cancelled') return false;
 
@@ -28,8 +28,8 @@ export default function ResourceForecast({ tasks, resources, projects }) {
         return (
           isWithinInterval(taskStart, { start: monthStart, end: monthEnd }) ||
           isWithinInterval(taskEnd, { start: monthStart, end: monthEnd }) ||
-          (taskStart <= monthStart && taskEnd >= monthEnd)
-        );
+          taskStart <= monthStart && taskEnd >= monthEnd);
+
       });
 
       // Calculate resource demand by type
@@ -37,9 +37,9 @@ export default function ResourceForecast({ tasks, resources, projects }) {
       const equipmentNeeded = new Set();
       const subcontractorNeeded = new Set();
 
-      activeTasks.forEach(task => {
-        (task.assigned_resources || []).forEach(resId => {
-          const resource = resources.find(r => r.id === resId);
+      activeTasks.forEach((task) => {
+        (task.assigned_resources || []).forEach((resId) => {
+          const resource = resources.find((r) => r.id === resId);
           if (resource) {
             if (resource.type === 'labor') laborNeeded.add(resId);
             if (resource.type === 'equipment') equipmentNeeded.add(resId);
@@ -47,7 +47,7 @@ export default function ResourceForecast({ tasks, resources, projects }) {
           }
         });
 
-        (task.assigned_equipment || []).forEach(resId => {
+        (task.assigned_equipment || []).forEach((resId) => {
           equipmentNeeded.add(resId);
         });
       });
@@ -58,7 +58,7 @@ export default function ResourceForecast({ tasks, resources, projects }) {
         equipment: equipmentNeeded.size,
         subcontractor: subcontractorNeeded.size,
         total: laborNeeded.size + equipmentNeeded.size + subcontractorNeeded.size,
-        tasks: activeTasks.length,
+        tasks: activeTasks.length
       });
     }
 
@@ -68,51 +68,51 @@ export default function ResourceForecast({ tasks, resources, projects }) {
   // Calculate resource gaps
   const resourceGaps = useMemo(() => {
     const currentResources = {
-      labor: resources.filter(r => r.type === 'labor' && r.status !== 'unavailable').length,
-      equipment: resources.filter(r => r.type === 'equipment' && r.status !== 'unavailable').length,
-      subcontractor: resources.filter(r => r.type === 'subcontractor' && r.status !== 'unavailable').length,
+      labor: resources.filter((r) => r.type === 'labor' && r.status !== 'unavailable').length,
+      equipment: resources.filter((r) => r.type === 'equipment' && r.status !== 'unavailable').length,
+      subcontractor: resources.filter((r) => r.type === 'subcontractor' && r.status !== 'unavailable').length
     };
 
     const peakDemand = {
-      labor: Math.max(...forecastData.map(m => m.labor)),
-      equipment: Math.max(...forecastData.map(m => m.equipment)),
-      subcontractor: Math.max(...forecastData.map(m => m.subcontractor)),
+      labor: Math.max(...forecastData.map((m) => m.labor)),
+      equipment: Math.max(...forecastData.map((m) => m.equipment)),
+      subcontractor: Math.max(...forecastData.map((m) => m.subcontractor))
     };
 
     return [
-      {
-        type: 'Labor',
-        current: currentResources.labor,
-        peak: peakDemand.labor,
-        gap: Math.max(0, peakDemand.labor - currentResources.labor),
-        status: peakDemand.labor > currentResources.labor ? 'shortage' : 'adequate',
-      },
-      {
-        type: 'Equipment',
-        current: currentResources.equipment,
-        peak: peakDemand.equipment,
-        gap: Math.max(0, peakDemand.equipment - currentResources.equipment),
-        status: peakDemand.equipment > currentResources.equipment ? 'shortage' : 'adequate',
-      },
-      {
-        type: 'Subcontractor',
-        current: currentResources.subcontractor,
-        peak: peakDemand.subcontractor,
-        gap: Math.max(0, peakDemand.subcontractor - currentResources.subcontractor),
-        status: peakDemand.subcontractor > currentResources.subcontractor ? 'shortage' : 'adequate',
-      },
-    ];
+    {
+      type: 'Labor',
+      current: currentResources.labor,
+      peak: peakDemand.labor,
+      gap: Math.max(0, peakDemand.labor - currentResources.labor),
+      status: peakDemand.labor > currentResources.labor ? 'shortage' : 'adequate'
+    },
+    {
+      type: 'Equipment',
+      current: currentResources.equipment,
+      peak: peakDemand.equipment,
+      gap: Math.max(0, peakDemand.equipment - currentResources.equipment),
+      status: peakDemand.equipment > currentResources.equipment ? 'shortage' : 'adequate'
+    },
+    {
+      type: 'Subcontractor',
+      current: currentResources.subcontractor,
+      peak: peakDemand.subcontractor,
+      gap: Math.max(0, peakDemand.subcontractor - currentResources.subcontractor),
+      status: peakDemand.subcontractor > currentResources.subcontractor ? 'shortage' : 'adequate'
+    }];
+
   }, [forecastData, resources]);
 
   // Project pipeline analysis
   const pipelineAnalysis = useMemo(() => {
-    const activeProjects = projects.filter(p => 
-      p.status === 'in_progress' || p.status === 'awarded'
+    const activeProjects = projects.filter((p) =>
+    p.status === 'in_progress' || p.status === 'awarded'
     ).length;
 
-    const biddingProjects = projects.filter(p => p.status === 'bidding').length;
+    const biddingProjects = projects.filter((p) => p.status === 'bidding').length;
 
-    const upcomingProjects = projects.filter(p => {
+    const upcomingProjects = projects.filter((p) => {
       if (p.status !== 'awarded' || !p.start_date) return false;
       const startDate = parseISO(p.start_date);
       return startDate > new Date() && startDate <= addMonths(new Date(), 3);
@@ -121,7 +121,7 @@ export default function ResourceForecast({ tasks, resources, projects }) {
     return {
       active: activeProjects,
       bidding: biddingProjects,
-      upcoming: upcomingProjects,
+      upcoming: upcomingProjects
     };
   }, [projects]);
 
@@ -130,7 +130,7 @@ export default function ResourceForecast({ tasks, resources, projects }) {
       {/* Forecast Chart */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight flex items-center gap-2">
             <TrendingUp size={18} className="text-amber-500" />
             6-Month Resource Demand Forecast
           </CardTitle>
@@ -141,10 +141,10 @@ export default function ResourceForecast({ tasks, resources, projects }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
               <XAxis dataKey="month" stroke="#a1a1aa" />
               <YAxis stroke="#a1a1aa" />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
-                labelStyle={{ color: '#fff' }}
-              />
+                labelStyle={{ color: '#fff' }} />
+
               <Legend />
               <Line type="monotone" dataKey="labor" stroke="#3b82f6" strokeWidth={2} name="Labor" />
               <Line type="monotone" dataKey="equipment" stroke="#8b5cf6" strokeWidth={2} name="Equipment" />
@@ -158,28 +158,28 @@ export default function ResourceForecast({ tasks, resources, projects }) {
       {/* Resource Gap Analysis */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight flex items-center gap-2">
             <AlertCircle size={18} className="text-amber-500" />
             Resource Gap Analysis
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {resourceGaps.map(gap => (
-              <div key={gap.type} className="p-4 bg-zinc-800/50 rounded-lg">
+            {resourceGaps.map((gap) =>
+            <div key={gap.type} className="p-4 bg-zinc-800/50 rounded-lg">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <Users size={18} className="text-zinc-400" />
                     <span className="font-medium text-white">{gap.type}</span>
                   </div>
                   <Badge
-                    variant="outline"
-                    className={
-                      gap.status === 'shortage'
-                        ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                        : 'bg-green-500/20 text-green-400 border-green-500/30'
-                    }
-                  >
+                  variant="outline"
+                  className={
+                  gap.status === 'shortage' ?
+                  'bg-red-500/20 text-red-400 border-red-500/30' :
+                  'bg-green-500/20 text-green-400 border-green-500/30'
+                  }>
+
                     {gap.status === 'shortage' ? 'Shortage Expected' : 'Adequate'}
                   </Badge>
                 </div>
@@ -201,13 +201,13 @@ export default function ResourceForecast({ tasks, resources, projects }) {
                   </div>
                 </div>
 
-                {gap.gap > 0 && (
-                  <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-400">
+                {gap.gap > 0 &&
+              <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-400">
                     Recommend hiring or contracting {gap.gap} additional {gap.type.toLowerCase()} resource{gap.gap !== 1 ? 's' : ''}
                   </div>
-                )}
+              }
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -215,7 +215,7 @@ export default function ResourceForecast({ tasks, resources, projects }) {
       {/* Pipeline Analysis */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight flex items-center gap-2">
             <Clock size={18} className="text-amber-500" />
             Project Pipeline Impact
           </CardTitle>
@@ -236,19 +236,19 @@ export default function ResourceForecast({ tasks, resources, projects }) {
             </div>
           </div>
           
-          {pipelineAnalysis.upcoming > 0 && (
-            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-400">
+          {pipelineAnalysis.upcoming > 0 &&
+          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-400">
               <AlertCircle size={14} className="inline mr-2" />
               {pipelineAnalysis.upcoming} project{pipelineAnalysis.upcoming !== 1 ? 's' : ''} starting in next 3 months - ensure adequate resource planning
             </div>
-          )}
+          }
         </CardContent>
       </Card>
 
       {/* Task Distribution Forecast */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-lg">Task Volume Forecast</CardTitle>
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Task Volume Forecast</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
@@ -256,15 +256,15 @@ export default function ResourceForecast({ tasks, resources, projects }) {
               <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
               <XAxis dataKey="month" stroke="#a1a1aa" />
               <YAxis stroke="#a1a1aa" />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
-                labelStyle={{ color: '#fff' }}
-              />
+                labelStyle={{ color: '#fff' }} />
+
               <Bar dataKey="tasks" fill="#f59e0b" name="Active Tasks" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }

@@ -124,8 +124,27 @@ export default function TaskForm({
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate dependencies for circular references
+    if (formData.predecessor_ids && formData.predecessor_ids.length > 0) {
+      try {
+        const validation = await base44.functions.invoke('validateTaskDependencies', {
+          task_id: task?.id || 'new',
+          predecessor_ids: formData.predecessor_ids,
+          project_id: formData.project_id
+        });
+
+        if (!validation.data.valid) {
+          toast.error(`Circular dependency detected: ${validation.data.circularPath.join(' → ')}`);
+          return;
+        }
+      } catch (error) {
+        toast.error('Failed to validate dependencies');
+        return;
+      }
+    }
 
     if (!formData.baseline_start && formData.start_date) {
       formData.baseline_start = formData.start_date;

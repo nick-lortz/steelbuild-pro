@@ -406,14 +406,31 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    if (!formData.project_id) {
+      toast.error('Please select a project');
+      return;
+    }
+    
+    if (!formData.package_number || !formData.name) {
+      toast.error('Package number and name are required');
+      return;
+    }
+    
+    const submitData = {
+      ...formData,
+      tonnage: formData.tonnage ? parseFloat(formData.tonnage) : null,
+      piece_count: formData.piece_count ? parseInt(formData.piece_count) : null
+    };
+    
+    onSubmit(submitData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
       <div className="text-slate-50 space-y-2">
-        <Label>Project</Label>
-        <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
+        <Label>Project *</Label>
+        <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} required>
           <SelectTrigger className="bg-zinc-800 border-zinc-700">
             <SelectValue placeholder="Select project" />
           </SelectTrigger>
@@ -428,7 +445,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Number</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Number *</Label>
         <Input
           value={formData.package_number}
           onChange={(e) => handleChange('package_number', e.target.value)}
@@ -439,7 +456,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Name</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Name *</Label>
         <Input
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}

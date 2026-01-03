@@ -274,6 +274,7 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
   { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
   { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
+  { name: 'Labor & Scope', page: 'LaborScope', icon: Clock, roles: ['admin', 'user'] },
   { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
   { name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
   { name: 'Drawings', page: 'Drawings', icon: FileText, roles: ['admin', 'user'] },

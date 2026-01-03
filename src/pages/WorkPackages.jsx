@@ -353,7 +353,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label>Package Number</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Number</Label>
         <Input
           value={formData.package_number}
           onChange={(e) => handleChange('package_number', e.target.value)}
@@ -364,7 +364,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label>Package Name</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Name</Label>
         <Input
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}
@@ -375,7 +375,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label>Description</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</Label>
         <Textarea
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
@@ -387,7 +387,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Tonnage</Label>
+          <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tonnage</Label>
           <Input
             type="number"
             step="0.01"
@@ -399,7 +399,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
         </div>
 
         <div className="space-y-2">
-          <Label>Piece Count</Label>
+          <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Piece Count</Label>
           <Input
             type="number"
             value={formData.piece_count}
@@ -411,7 +411,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label>Priority</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Priority</Label>
         <Select value={formData.priority} onValueChange={(v) => handleChange('priority', v)}>
           <SelectTrigger className="bg-zinc-800 border-zinc-700">
             <SelectValue />
@@ -426,7 +426,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
       </div>
 
       <div className="space-y-2">
-        <Label>Notes</Label>
+        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Notes</Label>
         <Textarea
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}

@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Package, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Package, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import DataTable from '../components/ui/DataTable';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -19,6 +20,7 @@ export default function WorkPackages() {
   const [showForm, setShowForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [completingPhase, setCompletingPhase] = useState(null);
+  const [deletePackage, setDeletePackage] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
@@ -52,6 +54,18 @@ export default function WorkPackages() {
       setShowForm(false);
       setEditingPackage(null);
       toast.success('Work package updated');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.WorkPackage.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['work-packages']);
+      setDeletePackage(null);
+      toast.success('Work package deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete work package');
     }
   });
 
@@ -213,6 +227,17 @@ export default function WorkPackages() {
                 Complete Erection
               </Button>
           }
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeletePackage(pkg);
+              }}
+              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10">
+
+              <Trash2 size={16} />
+            </Button>
           </div>);
 
     }
@@ -309,6 +334,30 @@ export default function WorkPackages() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Work Package?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{deletePackage?.package_number} - {deletePackage?.name}"? 
+              This will also delete all associated tasks ({getPackageTaskCount(deletePackage?.id || '')} tasks). 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deletePackage.id)}
+              className="bg-red-500 hover:bg-red-600">
+
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>);
 
 }

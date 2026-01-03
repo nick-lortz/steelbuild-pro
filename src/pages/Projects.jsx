@@ -13,20 +13,20 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  SheetTitle } from
+"@/components/ui/sheet";
 import { Plus, Search, Building2, MapPin, Calendar, User, Trash2, TrendingUp, Eye } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectHealthWidget from '@/components/projects/ProjectHealthWidget';
@@ -55,7 +55,7 @@ const initialFormState = {
   gc_phone: '',
   scope_of_work: '',
   exclusions: '',
-  notes: '',
+  notes: ''
 };
 
 export default function Projects() {
@@ -74,42 +74,42 @@ export default function Projects() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list('full_name'),
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list(),
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const createMutation = useMutation({
@@ -122,7 +122,7 @@ export default function Projects() {
     },
     onError: (error) => {
       toast.error('Failed to create project: ' + error.message);
-    },
+    }
   });
 
   const updateMutation = useMutation({
@@ -135,7 +135,7 @@ export default function Projects() {
     },
     onError: (error) => {
       toast.error('Failed to update project: ' + error.message);
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -146,7 +146,7 @@ export default function Projects() {
     },
     onError: (error) => {
       toast.error('Failed to delete project: ' + error.message);
-    },
+    }
   });
 
   const handleDelete = useCallback(async (project) => {
@@ -159,7 +159,7 @@ export default function Projects() {
       title: 'Delete Project?',
       description: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will affect all related data.`,
       confirmText: 'Delete',
-      cancelText: 'Cancel',
+      cancelText: 'Cancel'
     });
 
     if (confirmed) {
@@ -175,7 +175,7 @@ export default function Projects() {
     setFormData({
       ...project,
       contract_value: project.contract_value?.toString() || '',
-      assigned_users: project.assigned_users || [],
+      assigned_users: project.assigned_users || []
     });
     setSelectedProject(project);
   };
@@ -200,9 +200,9 @@ export default function Projects() {
 
     const data = {
       ...formData,
-      contract_value: formData.contract_value ? parseFloat(formData.contract_value) : null,
+      contract_value: formData.contract_value ? parseFloat(formData.contract_value) : null
     };
-    
+
     if (selectedProject) {
       updateMutation.mutate({ id: selectedProject.id, data });
     } else {
@@ -212,143 +212,143 @@ export default function Projects() {
 
 
 
-  const filteredProjects = projects.filter(p => {
-    const matchesSearch = 
-      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.project_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.client?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredProjects = projects.filter((p) => {
+    const matchesSearch =
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.project_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.client?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     const matchesPm = pmFilter === 'all' || p.project_manager === pmFilter;
     return matchesSearch && matchesStatus && matchesPm;
   });
 
-  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
+  const uniquePMs = [...new Set(projects.map((p) => p.project_manager).filter(Boolean))].sort();
 
   const columns = [
-    {
-      header: 'Project #',
-      accessor: 'project_number',
-      render: (row) => (
-        <div className="flex items-center gap-2">
+  {
+    header: 'Project #',
+    accessor: 'project_number',
+    render: (row) =>
+    <div className="flex items-center gap-2">
           <span className="font-mono text-amber-500">{row.project_number}</span>
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => handleViewDashboard(row, e)}
-            className="text-blue-400 hover:text-blue-300 text-xs"
-          >
+        variant="ghost"
+        size="sm"
+        onClick={(e) => handleViewDashboard(row, e)}
+        className="text-blue-400 hover:text-blue-300 text-xs">
+
             Dashboard →
           </Button>
         </div>
-      ),
-    },
-    {
-      header: 'Name',
-      accessor: 'name',
-      render: (row) => (
-        <div>
+
+  },
+  {
+    header: 'Name',
+    accessor: 'name',
+    render: (row) =>
+    <div>
           <p className="font-medium">{row.name}</p>
           <p className="text-sm text-zinc-500">{row.client}</p>
         </div>
-      ),
-    },
-    {
-      header: 'Progress',
-      accessor: 'progress',
-      render: (row) => {
-        const progress = calculateProjectProgress(row.id, tasks);
-        return (
-          <div className="flex items-center gap-2">
+
+  },
+  {
+    header: 'Progress',
+    accessor: 'progress',
+    render: (row) => {
+      const progress = calculateProjectProgress(row.id, tasks);
+      return (
+        <div className="flex items-center gap-2">
             <div className="w-20 h-2 bg-zinc-800 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-blue-500 transition-all"
-                style={{ width: `${progress}%` }}
-              />
+              <div
+              className="h-full bg-blue-500 transition-all"
+              style={{ width: `${progress}%` }} />
+
             </div>
             <span className="text-xs text-zinc-300 font-medium">{progress}%</span>
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Status',
-      accessor: 'status',
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-    {
-      header: 'Contract Value',
-      accessor: 'contract_value',
-      render: (row) => row.contract_value 
-        ? `$${row.contract_value.toLocaleString()}` 
-        : '-',
-    },
-    {
-      header: 'Target Completion',
-      accessor: 'target_completion',
-      render: (row) => row.target_completion 
-        ? format(new Date(row.target_completion), 'MMM d, yyyy')
-        : '-',
-    },
-    {
-      header: 'PM',
-      accessor: 'project_manager',
-      render: (row) => row.project_manager || '-',
-    },
-    {
-      header: 'Actions',
-      accessor: 'actions',
-      render: (row) => (
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          </div>);
+
+    }
+  },
+  {
+    header: 'Status',
+    accessor: 'status',
+    render: (row) => <StatusBadge status={row.status} />
+  },
+  {
+    header: 'Contract Value',
+    accessor: 'contract_value',
+    render: (row) => row.contract_value ?
+    `$${row.contract_value.toLocaleString()}` :
+    '-'
+  },
+  {
+    header: 'Target Completion',
+    accessor: 'target_completion',
+    render: (row) => row.target_completion ?
+    format(new Date(row.target_completion), 'MMM d, yyyy') :
+    '-'
+  },
+  {
+    header: 'PM',
+    accessor: 'project_manager',
+    render: (row) => row.project_manager || '-'
+  },
+  {
+    header: 'Actions',
+    accessor: 'actions',
+    render: (row) =>
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                size="sm"
-                variant="outline"
-                className="border-zinc-700 text-zinc-400 hover:text-white"
-              >
+            size="sm"
+            variant="outline" className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent h-8 border-zinc-700 hover:text-white">
+
+
                 <TrendingUp size={14} className="mr-1" />
                 Health
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-96 bg-zinc-900 border-zinc-800 p-0" align="end">
               <ProjectHealthWidget
-                project={row}
-                tasks={tasks}
-                financials={financials}
-                changeOrders={changeOrders}
-                rfis={rfis}
-              />
+            project={row}
+            tasks={tasks}
+            financials={financials}
+            changeOrders={changeOrders}
+            rfis={rfis} />
+
             </PopoverContent>
           </Popover>
           <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewDashboard(row);
-            }}
-            className="border-zinc-700 text-zinc-400 hover:text-white"
-          >
+        size="sm"
+        variant="outline"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleViewDashboard(row);
+        }} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent h-8 border-zinc-700 hover:text-white">
+
+
             <Eye size={14} className="mr-1" />
             Dashboard
           </Button>
-          {can.deleteProject && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(row);
-              }}
-              className="text-zinc-500 hover:text-red-500"
-            >
+          {can.deleteProject &&
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDelete(row);
+        }}
+        className="text-zinc-500 hover:text-red-500">
+
               <Trash2 size={16} />
             </Button>
-          )}
+      }
         </div>
-      ),
-    },
-  ];
+
+  }];
+
 
   return (
     <div>
@@ -358,20 +358,20 @@ export default function Projects() {
         onRefresh={refetch}
         isRefreshing={isRefetching}
         actions={
-          can.createProject && (
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
+        can.createProject &&
+        <Button
+          onClick={() => {
+            setFormData(initialFormState);
+            setShowForm(true);
+          }}
+          className="bg-amber-500 hover:bg-amber-600 text-black">
+
               <Plus size={18} className="mr-2" />
               New Project
             </Button>
-          )
-        }
-      />
+
+        } />
+
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -381,8 +381,8 @@ export default function Projects() {
             placeholder="Search projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-          />
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white" />
+
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
@@ -404,27 +404,27 @@ export default function Projects() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All PMs</SelectItem>
-            {uniquePMs.map(pm => (
-              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-            ))}
+            {uniquePMs.map((pm) =>
+            <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
 
       {/* Demo Seeder for new users */}
-      {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && pmFilter === 'all' && (
-        <div className="mb-6">
+      {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && pmFilter === 'all' &&
+      <div className="mb-6">
           <DemoProjectSeeder />
         </div>
-      )}
+      }
 
       {/* Table */}
       <DataTable
         columns={columns}
         data={filteredProjects}
         onRowClick={can.editProject ? handleEdit : undefined}
-        emptyMessage="No projects found. Create your first project to get started."
-      />
+        emptyMessage="No projects found. Create your first project to get started." />
+
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -437,8 +437,8 @@ export default function Projects() {
             setFormData={setFormData}
             onSubmit={handleSubmit}
             isLoading={createMutation.isPending}
-            users={users}
-          />
+            users={users} />
+
         </DialogContent>
       </Dialog>
 
@@ -455,26 +455,26 @@ export default function Projects() {
               onSubmit={handleSubmit}
               isLoading={updateMutation.isPending}
               users={users}
-              isEdit
-            />
+              isEdit />
+
           </div>
         </SheetContent>
       </Sheet>
 
 
-    </div>
-  );
+    </div>);
+
 }
 
 function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users = [] }) {
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const toggleUser = (userEmail) => {
     const current = formData.assigned_users || [];
     if (current.includes(userEmail)) {
-      handleChange('assigned_users', current.filter(e => e !== userEmail));
+      handleChange('assigned_users', current.filter((e) => e !== userEmail));
     } else {
       handleChange('assigned_users', [...current, userEmail]);
     }
@@ -490,8 +490,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('project_number', e.target.value)}
             placeholder="e.g., 2024-001"
             required
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Project Name *</Label>
@@ -500,8 +500,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Project name"
             required
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Client / GC</Label>
@@ -509,8 +509,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.client}
             onChange={(e) => handleChange('client', e.target.value)}
             placeholder="General contractor or owner"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Status</Label>
@@ -534,8 +534,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
             placeholder="Project address"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Contract Value</Label>
@@ -544,8 +544,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.contract_value}
             onChange={(e) => handleChange('contract_value', e.target.value)}
             placeholder="0.00"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Start Date</Label>
@@ -553,8 +553,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             type="date"
             value={formData.start_date}
             onChange={(e) => handleChange('start_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Target Completion</Label>
@@ -562,8 +562,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             type="date"
             value={formData.target_completion}
             onChange={(e) => handleChange('target_completion', e.target.value)}
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Project Manager</Label>
@@ -571,8 +571,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.project_manager}
             onChange={(e) => handleChange('project_manager', e.target.value)}
             placeholder="PM name"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Superintendent</Label>
@@ -580,8 +580,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.superintendent}
             onChange={(e) => handleChange('superintendent', e.target.value)}
             placeholder="Superintendent name"
-            className="bg-zinc-800 border-zinc-700"
-          />
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
       </div>
 
@@ -590,29 +590,29 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         <div className="space-y-2">
           <Label className="text-xs text-zinc-500">Select users who can access this project</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-zinc-950 border border-zinc-800 rounded-lg">
-            {users.map(user => (
-              <label
-                key={user.id}
-                className="flex items-center gap-2 p-2 rounded hover:bg-zinc-800 cursor-pointer transition-colors"
-              >
+            {users.map((user) =>
+            <label
+              key={user.id}
+              className="flex items-center gap-2 p-2 rounded hover:bg-zinc-800 cursor-pointer transition-colors">
+
                 <input
-                  type="checkbox"
-                  checked={(formData.assigned_users || []).includes(user.email)}
-                  onChange={() => toggleUser(user.email)}
-                  className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500"
-                />
+                type="checkbox"
+                checked={(formData.assigned_users || []).includes(user.email)}
+                onChange={() => toggleUser(user.email)}
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500" />
+
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white truncate">{user.full_name || user.email}</p>
                   <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                 </div>
               </label>
-            ))}
+            )}
           </div>
-          {(formData.assigned_users || []).length > 0 && (
-            <p className="text-xs text-zinc-500 mt-2">
+          {(formData.assigned_users || []).length > 0 &&
+          <p className="text-xs text-zinc-500 mt-2">
               {(formData.assigned_users || []).length} user(s) assigned
             </p>
-          )}
+          }
         </div>
       </div>
 
@@ -624,8 +624,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             <Input
               value={formData.gc_contact}
               onChange={(e) => handleChange('gc_contact', e.target.value)}
-              className="bg-zinc-800 border-zinc-700"
-            />
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
@@ -633,16 +633,16 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="email"
               value={formData.gc_email}
               onChange={(e) => handleChange('gc_email', e.target.value)}
-              className="bg-zinc-800 border-zinc-700"
-            />
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
           <div className="space-y-2">
             <Label>Phone</Label>
             <Input
               value={formData.gc_phone}
               onChange={(e) => handleChange('gc_phone', e.target.value)}
-              className="bg-zinc-800 border-zinc-700"
-            />
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
         </div>
       </div>
@@ -657,8 +657,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               onChange={(e) => handleChange('scope_of_work', e.target.value)}
               rows={4}
               placeholder="Detailed description of work to be performed..."
-              className="bg-zinc-800 border-zinc-700"
-            />
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
           <div className="space-y-2">
             <Label>Exclusions</Label>
@@ -667,8 +667,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               onChange={(e) => handleChange('exclusions', e.target.value)}
               rows={3}
               placeholder="Work items excluded from this scope..."
-              className="bg-zinc-800 border-zinc-700"
-            />
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
         </div>
       </div>
@@ -679,19 +679,19 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
           rows={3}
-          className="bg-zinc-800 border-zinc-700"
-        />
+          className="bg-zinc-800 border-zinc-700" />
+
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-amber-500 hover:bg-amber-600 text-black"
-        >
+          className="bg-amber-500 hover:bg-amber-600 text-black">
+
           {isLoading ? 'Saving...' : isEdit ? 'Update Project' : 'Create Project'}
         </Button>
       </div>
-    </form>
-  );
+    </form>);
+
 }

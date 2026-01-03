@@ -7,7 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, AlertTriangle, Trash2, Save, Zap, RefreshCw } from 'lucide-react';
+import { Plus, AlertTriangle, Trash2, Save, Zap, RefreshCw, RotateCcw } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -17,6 +27,7 @@ export default function LaborScope() {
   const urlParams = new URLSearchParams(window.location.search);
   const initialProjectId = urlParams.get('project_id');
   const [projectId, setProjectId] = useState(initialProjectId);
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -171,6 +182,41 @@ export default function LaborScope() {
     }
   });
 
+  const resetLaborMutation = useMutation({
+    mutationFn: async () => {
+      // Reset all breakdowns to 0
+      const resetPromises = breakdowns.map(b => 
+        base44.entities.LaborBreakdown.update(b.id, { 
+          shop_hours: 0, 
+          field_hours: 0, 
+          notes: '' 
+        })
+      );
+      
+      // Delete all specialty items
+      const deleteSpecialtyPromises = specialtyItems.map(s => 
+        base44.entities.SpecialtyDiscussionItem.delete(s.id)
+      );
+      
+      // Delete all scope gaps
+      const deleteGapPromises = scopeGaps.map(g => 
+        base44.entities.ScopeGap.delete(g.id)
+      );
+
+      await Promise.all([...resetPromises, ...deleteSpecialtyPromises, ...deleteGapPromises]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['labor-breakdowns', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['specialty-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['scope-gaps', projectId] });
+      toast.success('Labor & scope data reset');
+      setShowResetDialog(false);
+    },
+    onError: (error) => {
+      toast.error('Failed to reset data');
+    }
+  });
+
   // Calculate totals
   const totals = useMemo(() => {
     const categoryShop = breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0), 0);
@@ -250,23 +296,33 @@ export default function LaborScope() {
         title="Labor & Scope Breakdown"
         subtitle={`${project.project_number} - ${project.name}`}
         actions={
-          <Button
-            onClick={() => allocateLaborMutation.mutate()}
-            disabled={allocateLaborMutation.isPending}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            {allocateLaborMutation.isPending ? (
-              <>
-                <RefreshCw size={16} className="mr-2 animate-spin" />
-                Allocating...
-              </>
-            ) : (
-              <>
-                <Zap size={16} className="mr-2" />
-                Allocate Labor to Schedule
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowResetDialog(true)}
+              className="border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800"
+            >
+              <RotateCcw size={16} className="mr-2" />
+              Reset
+            </Button>
+            <Button
+              onClick={() => allocateLaborMutation.mutate()}
+              disabled={allocateLaborMutation.isPending}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              {allocateLaborMutation.isPending ? (
+                <>
+                  <RefreshCw size={16} className="mr-2 animate-spin" />
+                  Allocating...
+                </>
+              ) : (
+                <>
+                  <Zap size={16} className="mr-2" />
+                  Allocate Labor to Schedule
+                </>
+              )}
+            </Button>
+          </div>
         }
       />
 
@@ -715,6 +771,30 @@ export default function LaborScope() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Reset Labor & Scope Data?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              This will zero out all category hours, delete all specialty items, and delete all scope gaps for this project. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resetLaborMutation.mutate()}
+              disabled={resetLaborMutation.isPending}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {resetLaborMutation.isPending ? 'Resetting...' : 'Reset All Data'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

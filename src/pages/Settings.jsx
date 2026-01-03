@@ -182,13 +182,13 @@ export default function Settings() {
 
 
   return (
-    <div>
+    <div className="text-slate-50">
       <PageHeader
         title="Settings"
         subtitle="Manage your profile and application settings" />
 
 
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs defaultValue="profile" className="text-slate-50 space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="profile">
             <UserCircle size={14} className="mr-2" />
@@ -340,8 +340,8 @@ export default function Settings() {
         <TabsContent value="preferences">
           <div className="space-y-6">
             {/* Notifications */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
+            <Card className="bg-zinc-900 text-slate-50 rounded-xl border shadow border-zinc-800">
+              <CardHeader className="text-slate-50 p-6 flex flex-col space-y-1.5">
                 <CardTitle className="flex items-center gap-2">
                   <Bell size={20} />
                   Notification Preferences
@@ -395,7 +395,7 @@ export default function Settings() {
             </Card>
 
             {/* Display Preferences */}
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-zinc-900 text-slate-50 rounded-xl border shadow border-zinc-800">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Palette size={20} />

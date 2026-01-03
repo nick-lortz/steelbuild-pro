@@ -270,6 +270,7 @@ import {
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
+import MobileNav from '@/components/layout/MobileNav';
 
       const navItems = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
@@ -453,9 +454,11 @@ export default function Layout({ children, currentPageName }) {
         />
       )}
 
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen">
+      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0">
         <div className="p-4 lg:p-6">{children}</div>
       </main>
+
+      <MobileNav currentPageName={currentPageName} />
       </div>
       </ConfirmProvider>
       );

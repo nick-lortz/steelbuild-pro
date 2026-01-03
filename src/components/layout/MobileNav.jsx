@@ -52,10 +52,10 @@ export default function MobileNav({ currentPageName }) {
         })}
         
         <Link
-          to={createPageUrl('Settings')}
+          to={createPageUrl('Profile')}
           className={cn(
             "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px]",
-            currentPageName === 'Settings' 
+            currentPageName === 'Profile' 
               ? "text-amber-500" 
               : "text-zinc-400 active:bg-zinc-800"
           )}

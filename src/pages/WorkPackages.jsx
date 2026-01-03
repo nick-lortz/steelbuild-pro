@@ -363,15 +363,15 @@ export default function WorkPackages() {
 }
 
 function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading }) {
-  const [formData, setFormData] = useState(pkg || {
-    project_id: '',
-    package_number: '',
-    name: '',
-    description: '',
-    tonnage: '',
-    piece_count: '',
-    priority: 'medium',
-    notes: ''
+  const [formData, setFormData] = useState({
+    project_id: pkg?.project_id || '',
+    package_number: pkg?.package_number || '',
+    name: pkg?.name || '',
+    description: pkg?.description || '',
+    tonnage: pkg?.tonnage || '',
+    piece_count: pkg?.piece_count || '',
+    priority: pkg?.priority || 'medium',
+    notes: pkg?.notes || ''
   });
 
   const handleChange = (field, value) => {

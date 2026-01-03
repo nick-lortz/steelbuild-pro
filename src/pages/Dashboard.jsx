@@ -34,7 +34,7 @@ import {
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
-import WeatherWidget from '@/components/weather/WeatherWidget';
+
 import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import DashboardKPIs from '@/components/dashboard/DashboardKPIs';

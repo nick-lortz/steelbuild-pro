@@ -387,7 +387,6 @@ export default function Projects() {
         </>
       )}
 
-
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
@@ -422,10 +421,8 @@ export default function Projects() {
           </div>
         </SheetContent>
       </Sheet>
-
-
-    </div>);
-
+    </ScreenContainer>
+  );
 }
 
 function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users = [] }) {

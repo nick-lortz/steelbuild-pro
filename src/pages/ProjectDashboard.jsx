@@ -27,6 +27,7 @@ import RFIResponseTimeWidget from '@/components/project-dashboard/RFIResponseTim
 import RiskRegister from '@/components/project-dashboard/RiskRegister';
 import ProjectAlerts from '@/components/project-dashboard/ProjectAlerts';
 import { format, differenceInDays } from 'date-fns';
+import { calculateProjectLaborTotals, identifyScopeRiskTasks } from '@/components/shared/laborScheduleUtils';
 
 export default function ProjectDashboard() {
   const navigate = useNavigate();
@@ -105,6 +106,29 @@ export default function ProjectDashboard() {
     enabled: !!projectId,
   });
 
+  const { data: breakdowns = [] } = useQuery({
+    queryKey: ['labor-breakdowns', projectId],
+    queryFn: async () => {
+      const all = await base44.entities.LaborBreakdown.list();
+      return all.filter(b => b.project_id === projectId);
+    },
+    enabled: !!projectId,
+  });
+
+  const { data: scopeGaps = [] } = useQuery({
+    queryKey: ['scope-gaps', projectId],
+    queryFn: async () => {
+      const all = await base44.entities.ScopeGap.list();
+      return all.filter(g => g.project_id === projectId);
+    },
+    enabled: !!projectId,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['labor-categories'],
+    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+  });
+
   // Calculate project totals
   const projectTotals = useMemo(() => {
     const budget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
@@ -138,6 +162,26 @@ export default function ProjectDashboard() {
 
     return { total, completed, onTrack, overdue, adherence };
   }, [tasks]);
+
+  // Labor metrics
+  const laborMetrics = useMemo(() => {
+    const totals = calculateProjectLaborTotals(breakdowns, tasks);
+    const openGaps = scopeGaps.filter(g => g.status === 'open');
+    const totalGapCost = openGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
+    const scopeRisks = identifyScopeRiskTasks(tasks, breakdowns, scopeGaps, categories);
+    const categoriesAtRisk = scopeRisks.length;
+
+    return {
+      plannedShop: totals.scheduled_shop,
+      plannedField: totals.scheduled_field,
+      laborVariance: totals.shop_variance + totals.field_variance,
+      hasVariance: totals.has_mismatch,
+      openGapsCount: openGaps.length,
+      totalGapCost,
+      categoriesAtRisk,
+      scopeRisks
+    };
+  }, [breakdowns, tasks, scopeGaps, categories]);
 
   if (!project) {
     return (
@@ -243,6 +287,67 @@ export default function ProjectDashboard() {
                 </p>
               </div>
               <FileText className="text-green-500" size={24} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Labor KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-zinc-400 text-sm">Planned Shop Hrs</p>
+                <p className="text-2xl font-bold text-blue-400">{laborMetrics.plannedShop}</p>
+                <p className="text-xs text-zinc-500 mt-1">Allocated to tasks</p>
+              </div>
+              <TrendingUp className="text-blue-400" size={24} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-zinc-400 text-sm">Planned Field Hrs</p>
+                <p className="text-2xl font-bold text-green-400">{laborMetrics.plannedField}</p>
+                <p className="text-xs text-zinc-500 mt-1">Allocated to tasks</p>
+              </div>
+              <TrendingUp className="text-green-400" size={24} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-zinc-400 text-sm">Labor Variance</p>
+                <p className={`text-2xl font-bold ${laborMetrics.hasVariance ? 'text-amber-400' : 'text-green-400'}`}>
+                  {laborMetrics.laborVariance > 0 ? '+' : ''}{laborMetrics.laborVariance} hrs
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {laborMetrics.categoriesAtRisk} categories at risk
+                </p>
+              </div>
+              {laborMetrics.hasVariance ? <AlertTriangle className="text-amber-400" size={24} /> : <Target className="text-green-400" size={24} />}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-zinc-400 text-sm">Scope Gaps</p>
+                <p className="text-2xl font-bold text-red-400">${(laborMetrics.totalGapCost / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {laborMetrics.openGapsCount} open items
+                </p>
+              </div>
+              <AlertTriangle className="text-red-400" size={24} />
             </div>
           </CardContent>
         </Card>

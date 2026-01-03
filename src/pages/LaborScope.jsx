@@ -345,6 +345,51 @@ export default function LaborScope() {
         }
       />
 
+      {/* Overall Project Info */}
+      <Card className="bg-zinc-900 border-zinc-800 mb-6">
+        <CardHeader>
+          <CardTitle>Overall Project Info</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-zinc-400 text-xs">Structure Anatomy/Job Type</Label>
+              <p className="text-white font-medium">{selectedProjectData?.structure_anatomy_job_type || '-'}</p>
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-xs">Rough Square Footage</Label>
+              <p className="text-white font-medium">
+                {selectedProjectData?.rough_square_footage ? selectedProjectData.rough_square_footage.toLocaleString() : '-'}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-xs">Rough Price/SqFt</Label>
+              <p className="text-white font-medium">
+                {selectedProjectData?.rough_price_per_sqft ? `$${selectedProjectData.rough_price_per_sqft.toFixed(2)}` : '-'}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-xs">Crane Budget</Label>
+              <p className="text-white font-medium">
+                ${(selectedProjectData?.crane_budget || 0).toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-xs">Sub Budget</Label>
+              <p className="text-white font-medium">
+                ${(selectedProjectData?.sub_budget || 0).toLocaleString()}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400 text-xs">Rough Lift/Hr Rate</Label>
+              <p className="text-white font-medium">
+                {selectedProjectData?.rough_lift_hr_rate || '-'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="bg-zinc-900 border-zinc-800">

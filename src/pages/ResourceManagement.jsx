@@ -344,7 +344,7 @@ export default function ResourceManagement() {
           {resourceMetrics.underutilized.length > 0 &&
             <Card className="bg-amber-500/5 border-amber-500/20">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight flex items-center gap-2">
                   <Clock className="text-amber-500" size={18} />
                   Underutilized Resources ({resourceMetrics.underutilized.length})
                 </CardTitle>
@@ -376,7 +376,7 @@ export default function ResourceManagement() {
         {/* Resource Type Distribution */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-lg">Resource Type Distribution</CardTitle>
+            <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Resource Type Distribution</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -404,7 +404,7 @@ export default function ResourceManagement() {
         {/* Resource Allocation by Project */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-lg">Top 10 Projects by Resource Count</CardTitle>
+            <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Top 10 Projects by Resource Count</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -423,7 +423,7 @@ export default function ResourceManagement() {
       {/* Utilization Chart */}
       <Card className="bg-zinc-900 border-zinc-800 mb-8">
         <CardHeader>
-          <CardTitle className="text-lg">Resource Utilization (Top 15)</CardTitle>
+          <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Resource Utilization (Top 15)</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>

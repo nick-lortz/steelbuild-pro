@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, AlertTriangle, Trash2, Save, Zap, RefreshCw, RotateCcw } from 'lucide-react';
+import { Plus, AlertTriangle, Trash2, Zap, RefreshCw, RotateCcw } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
-import StatusBadge from '@/components/ui/StatusBadge';
 import LaborScheduleValidator from '@/components/labor/LaborScheduleValidator';
 
 export default function LaborScope() {
@@ -28,13 +27,14 @@ export default function LaborScope() {
   const initialProjectId = urlParams.get('project_id');
   const [projectId, setProjectId] = useState(initialProjectId);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [localBreakdowns, setLocalBreakdowns] = useState({});
+  const [localSpecialty, setLocalSpecialty] = useState({});
 
   const queryClient = useQueryClient();
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    staleTime: 5 * 60 * 1000
   });
 
   const { data: project } = useQuery({
@@ -44,44 +44,38 @@ export default function LaborScope() {
       return projects.find(p => p.id === projectId);
     },
     enabled: !!projectId,
-    staleTime: 5 * 60 * 1000
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['labor-categories'],
     queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
-    staleTime: 30 * 60 * 1000
   });
 
   const { data: breakdowns = [] } = useQuery({
     queryKey: ['labor-breakdowns', projectId],
     queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: projectId }),
     enabled: !!projectId,
-    staleTime: 2 * 60 * 1000
   });
 
   const { data: specialtyItems = [] } = useQuery({
     queryKey: ['specialty-items', projectId],
     queryFn: () => base44.entities.SpecialtyDiscussionItem.filter({ project_id: projectId }),
     enabled: !!projectId,
-    staleTime: 2 * 60 * 1000
   });
 
   const { data: scopeGaps = [] } = useQuery({
     queryKey: ['scope-gaps', projectId],
     queryFn: () => base44.entities.ScopeGap.filter({ project_id: projectId }),
     enabled: !!projectId,
-    staleTime: 2 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
     queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
     enabled: !!projectId,
-    staleTime: 2 * 60 * 1000
   });
 
-  // Auto-create missing breakdowns for categories
+  // Auto-create missing breakdowns
   useEffect(() => {
     if (projectId && categories.length > 0 && breakdowns.length < categories.length) {
       const existingCategoryIds = new Set(breakdowns.map(b => b.labor_category_id));
@@ -99,13 +93,12 @@ export default function LaborScope() {
         queryClient.invalidateQueries({ queryKey: ['labor-breakdowns', projectId] });
       }
     }
-  }, [projectId, categories, breakdowns]);
+  }, [projectId, categories, breakdowns, queryClient]);
 
   const updateBreakdownMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.LaborBreakdown.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns', projectId] });
-      toast.success('Updated');
     }
   });
 
@@ -121,7 +114,6 @@ export default function LaborScope() {
     mutationFn: ({ id, data }) => base44.entities.SpecialtyDiscussionItem.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specialty-items', projectId] });
-      toast.success('Updated');
     }
   });
 
@@ -145,7 +137,6 @@ export default function LaborScope() {
     mutationFn: ({ id, data }) => base44.entities.ScopeGap.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scope-gaps', projectId] });
-      toast.success('Updated');
     }
   });
 
@@ -184,12 +175,10 @@ export default function LaborScope() {
 
   const resetLaborMutation = useMutation({
     mutationFn: async () => {
-      // Fetch fresh data
       const currentBreakdowns = await base44.entities.LaborBreakdown.filter({ project_id: projectId });
       const currentSpecialty = await base44.entities.SpecialtyDiscussionItem.filter({ project_id: projectId });
       const currentGaps = await base44.entities.ScopeGap.filter({ project_id: projectId });
       
-      // Reset all breakdowns to 0
       for (const b of currentBreakdowns) {
         await base44.entities.LaborBreakdown.update(b.id, { 
           shop_hours: 0, 
@@ -198,23 +187,17 @@ export default function LaborScope() {
         });
       }
       
-      // Delete all specialty items
       for (const s of currentSpecialty) {
         await base44.entities.SpecialtyDiscussionItem.delete(s.id);
       }
       
-      // Delete all scope gaps
       for (const g of currentGaps) {
         await base44.entities.ScopeGap.delete(g.id);
       }
-
-      return { 
-        resetCount: currentBreakdowns.length, 
-        deletedSpecialty: currentSpecialty.length, 
-        deletedGaps: currentGaps.length 
-      };
     },
     onSuccess: () => {
+      setLocalBreakdowns({});
+      setLocalSpecialty({});
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns', projectId] });
       queryClient.invalidateQueries({ queryKey: ['specialty-items', projectId] });
       queryClient.invalidateQueries({ queryKey: ['scope-gaps', projectId] });
@@ -226,6 +209,38 @@ export default function LaborScope() {
       toast.error(error?.message || 'Failed to reset data');
     }
   });
+
+  const handleBreakdownChange = (breakdown, field, value) => {
+    const numValue = parseFloat(value) || 0;
+    setLocalBreakdowns(prev => ({
+      ...prev,
+      [breakdown.id]: { ...breakdown, [field]: numValue }
+    }));
+    updateBreakdownMutation.mutate({
+      id: breakdown.id,
+      data: { [field]: numValue }
+    });
+  };
+
+  const handleSpecialtyChange = (item, field, value) => {
+    const numValue = field.includes('hours') ? (parseFloat(value) || 0) : value;
+    setLocalSpecialty(prev => ({
+      ...prev,
+      [item.id]: { ...item, [field]: numValue }
+    }));
+    updateSpecialtyMutation.mutate({
+      id: item.id,
+      data: { [field]: numValue }
+    });
+  };
+
+  const getBreakdownValue = (breakdown, field) => {
+    return localBreakdowns[breakdown.id]?.[field] ?? breakdown[field];
+  };
+
+  const getSpecialtyValue = (item, field) => {
+    return localSpecialty[item.id]?.[field] ?? item[field];
+  };
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -336,7 +351,6 @@ export default function LaborScope() {
         }
       />
 
-      {/* Discrepancy Alert */}
       {totals.hasDiscrepancy && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-3">
           <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={20} />
@@ -350,7 +364,6 @@ export default function LaborScope() {
         </div>
       )}
 
-      {/* Labor vs Schedule Validation */}
       <div className="mb-6">
         <LaborScheduleValidator
           projectId={projectId}
@@ -362,7 +375,7 @@ export default function LaborScope() {
         />
       </div>
 
-      {/* Section A: Specific Field Hours Breakout */}
+      {/* Labor Categories */}
       <Card className="bg-zinc-900/50 border-zinc-800 mb-6">
         <CardHeader>
           <CardTitle className="text-white">Specific Field Hours Breakout</CardTitle>
@@ -384,7 +397,9 @@ export default function LaborScope() {
                   const breakdown = breakdowns.find(b => b.labor_category_id === category.id);
                   if (!breakdown) return null;
                   
-                  const total = (breakdown.shop_hours || 0) + (breakdown.field_hours || 0);
+                  const shopHours = getBreakdownValue(breakdown, 'shop_hours') || 0;
+                  const fieldHours = getBreakdownValue(breakdown, 'field_hours') || 0;
+                  const total = shopHours + fieldHours;
                   
                   return (
                     <tr key={category.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
@@ -392,17 +407,8 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          defaultValue={breakdown.shop_hours || ''}
-                          key={`shop-${breakdown.id}-${breakdown.shop_hours}`}
-                          onBlur={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            if (val !== breakdown.shop_hours) {
-                              updateBreakdownMutation.mutate({
-                                id: breakdown.id,
-                                data: { shop_hours: val }
-                              });
-                            }
-                          }}
+                          value={shopHours || ''}
+                          onChange={(e) => handleBreakdownChange(breakdown, 'shop_hours', e.target.value)}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
                           placeholder="0"
                         />
@@ -410,11 +416,8 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={breakdown.field_hours || ''}
-                          onChange={(e) => updateBreakdownMutation.mutate({
-                            id: breakdown.id,
-                            data: { field_hours: parseFloat(e.target.value) || 0 }
-                          })}
+                          value={fieldHours || ''}
+                          onChange={(e) => handleBreakdownChange(breakdown, 'field_hours', e.target.value)}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
                           placeholder="0"
                         />
@@ -424,11 +427,8 @@ export default function LaborScope() {
                       </td>
                       <td className="py-3 px-4">
                         <Input
-                          value={breakdown.notes || ''}
-                          onChange={(e) => updateBreakdownMutation.mutate({
-                            id: breakdown.id,
-                            data: { notes: e.target.value }
-                          })}
+                          value={getBreakdownValue(breakdown, 'notes') || ''}
+                          onChange={(e) => handleBreakdownChange(breakdown, 'notes', e.target.value)}
                           placeholder="Optional notes..."
                           className="bg-zinc-800 border-zinc-700"
                         />
@@ -455,7 +455,7 @@ export default function LaborScope() {
         </CardContent>
       </Card>
 
-      {/* Section B: Specialty Items for Discussion */}
+      {/* Specialty Items */}
       <Card className="bg-zinc-900/50 border-zinc-800 mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -501,11 +501,8 @@ export default function LaborScope() {
                     <tr key={item.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
                       <td className="py-3 px-4">
                         <Textarea
-                          value={item.location_detail || ''}
-                          onChange={(e) => updateSpecialtyMutation.mutate({
-                            id: item.id,
-                            data: { location_detail: e.target.value }
-                          })}
+                          value={getSpecialtyValue(item, 'location_detail') || ''}
+                          onChange={(e) => handleSpecialtyChange(item, 'location_detail', e.target.value)}
                           rows={2}
                           className="bg-zinc-800 border-zinc-700 text-white"
                         />
@@ -513,11 +510,8 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={item.shop_hours || ''}
-                          onChange={(e) => updateSpecialtyMutation.mutate({
-                            id: item.id,
-                            data: { shop_hours: parseFloat(e.target.value) || 0 }
-                          })}
+                          value={getSpecialtyValue(item, 'shop_hours') || ''}
+                          onChange={(e) => handleSpecialtyChange(item, 'shop_hours', e.target.value)}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
                           placeholder="0"
                         />
@@ -525,22 +519,16 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={item.field_hours || ''}
-                          onChange={(e) => updateSpecialtyMutation.mutate({
-                            id: item.id,
-                            data: { field_hours: parseFloat(e.target.value) || 0 }
-                          })}
+                          value={getSpecialtyValue(item, 'field_hours') || ''}
+                          onChange={(e) => handleSpecialtyChange(item, 'field_hours', e.target.value)}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
                           placeholder="0"
                         />
                       </td>
                       <td className="py-3 px-4">
                         <Select
-                          value={item.status}
-                          onValueChange={(v) => updateSpecialtyMutation.mutate({
-                            id: item.id,
-                            data: { status: v }
-                          })}
+                          value={getSpecialtyValue(item, 'status')}
+                          onValueChange={(v) => handleSpecialtyChange(item, 'status', v)}
                         >
                           <SelectTrigger className="bg-zinc-800 border-zinc-700 w-32">
                             <SelectValue />
@@ -554,11 +542,8 @@ export default function LaborScope() {
                       </td>
                       <td className="py-3 px-4">
                         <Input
-                          value={item.notes || ''}
-                          onChange={(e) => updateSpecialtyMutation.mutate({
-                            id: item.id,
-                            data: { notes: e.target.value }
-                          })}
+                          value={getSpecialtyValue(item, 'notes') || ''}
+                          onChange={(e) => handleSpecialtyChange(item, 'notes', e.target.value)}
                           className="bg-zinc-800 border-zinc-700"
                         />
                       </td>
@@ -581,14 +566,13 @@ export default function LaborScope() {
         </CardContent>
       </Card>
 
-      {/* Section C: Total Hours & Baseline Comparison */}
+      {/* Totals & Baseline */}
       <Card className={`border mb-6 ${totals.hasDiscrepancy ? 'bg-red-500/5 border-red-500/30' : 'bg-zinc-900/50 border-zinc-800'}`}>
         <CardHeader>
           <CardTitle className="text-white">Total Hours Per Above Breakouts</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Totals */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-zinc-400">Current Totals</h4>
               <div className="space-y-3">
@@ -607,7 +591,6 @@ export default function LaborScope() {
               </div>
             </div>
 
-            {/* Baseline */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-zinc-400">Baseline (Estimate)</h4>
               <div className="space-y-3">
@@ -640,35 +623,34 @@ export default function LaborScope() {
               </div>
             </div>
 
-            {/* Discrepancy */}
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-zinc-400">Discrepancy</h4>
               <div className="space-y-3">
-              <div className={`flex justify-between items-center p-3 rounded ${
-                totals.shopDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
-                'bg-red-500/10 border border-red-500/30'
-              }`}>
-                <span className="text-zinc-300">Shop Hours</span>
-                <span className={`text-xl font-bold ${totals.shopDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {totals.shopDiscrepancy === 0 ? '--' : (totals.shopDiscrepancy > 0 ? '+' : '') + totals.shopDiscrepancy}
-                </span>
-              </div>
-              <div className={`flex justify-between items-center p-3 rounded ${
-                totals.fieldDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
-                'bg-red-500/10 border border-red-500/30'
-              }`}>
-                <span className="text-zinc-300">Field Hours</span>
-                <span className={`text-xl font-bold ${totals.fieldDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {totals.fieldDiscrepancy === 0 ? '--' : (totals.fieldDiscrepancy > 0 ? '+' : '') + totals.fieldDiscrepancy}
-                </span>
-              </div>
+                <div className={`flex justify-between items-center p-3 rounded ${
+                  totals.shopDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
+                  'bg-red-500/10 border border-red-500/30'
+                }`}>
+                  <span className="text-zinc-300">Shop Hours</span>
+                  <span className={`text-xl font-bold ${totals.shopDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {totals.shopDiscrepancy === 0 ? '--' : (totals.shopDiscrepancy > 0 ? '+' : '') + totals.shopDiscrepancy}
+                  </span>
+                </div>
+                <div className={`flex justify-between items-center p-3 rounded ${
+                  totals.fieldDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
+                  'bg-red-500/10 border border-red-500/30'
+                }`}>
+                  <span className="text-zinc-300">Field Hours</span>
+                  <span className={`text-xl font-bold ${totals.fieldDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {totals.fieldDiscrepancy === 0 ? '--' : (totals.fieldDiscrepancy > 0 ? '+' : '') + totals.fieldDiscrepancy}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Section D: Misses/Gap in Scope */}
+      {/* Scope Gaps */}
       <Card className="bg-zinc-900/50 border-zinc-800">
         <CardHeader>
           <div className="flex items-center justify-between">

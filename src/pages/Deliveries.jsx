@@ -4,15 +4,16 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2 } from 'lucide-react';
+import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2, Calendar, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import KPICard from '@/components/financials/KPICard';
 import DeliveryForm from '@/components/deliveries/DeliveryForm';
 import DeliveryKPIs from '@/components/deliveries/DeliveryKPIs';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import FilterBar from '@/components/shared/FilterBar';
+import SortControl from '@/components/shared/SortControl';
+import { format, parseISO, differenceInDays, isWithinInterval, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
   AlertDialog,
@@ -26,30 +27,48 @@ import {
 "@/components/ui/alert-dialog";
 
 export default function Deliveries() {
-  const [selectedProject, setSelectedProject] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilters, setActiveFilters] = useState({
+    projects: [],
+    statuses: [],
+    carriers: [],
+    dateRange: 'all'
+  });
   const [sortBy, setSortBy] = useState('scheduled_date');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [showForm, setShowForm] = useState(false);
   const [editingDelivery, setEditingDelivery] = useState(null);
   const [deleteDelivery, setDeleteDelivery] = useState(null);
+  const [savedFilters, setSavedFilters] = useState([]);
 
   const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
     queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
-    staleTime: 5 * 60 * 1000
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
+  });
+
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const createMutation = useMutation({
@@ -58,6 +77,9 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
+    },
+    onError: (error) => {
+      console.error('Failed to create delivery:', error);
     }
   });
 
@@ -67,6 +89,9 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
+    },
+    onError: (error) => {
+      console.error('Failed to update delivery:', error);
     }
   });
 
@@ -75,33 +100,118 @@ export default function Deliveries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setDeleteDelivery(null);
+    },
+    onError: (error) => {
+      console.error('Failed to delete delivery:', error);
     }
   });
 
-  const filteredDeliveries = useMemo(() => {
-    let filtered = deliveries.filter((d) =>
-      selectedProject === 'all' || d.project_id === selectedProject
-    );
+  // Get unique carriers for filter
+  const uniqueCarriers = useMemo(() => 
+    [...new Set(deliveries.map(d => d.carrier).filter(Boolean))].sort(),
+    [deliveries]
+  );
 
-    // Sort deliveries
-    if (sortBy === 'project') {
-      filtered = [...filtered].sort((a, b) => {
-        const projA = projects.find(p => p.id === a.project_id);
-        const projB = projects.find(p => p.id === b.project_id);
-        return (projA?.name || '').localeCompare(projB?.name || '');
-      });
-    } else if (sortBy === 'scheduled_date') {
-      filtered = [...filtered].sort((a, b) => 
-        new Date(b.scheduled_date) - new Date(a.scheduled_date)
-      );
-    } else if (sortBy === 'status') {
-      filtered = [...filtered].sort((a, b) => 
-        (a.delivery_status || '').localeCompare(b.delivery_status || '')
+  const filteredDeliveries = useMemo(() => {
+    let filtered = deliveries;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(d =>
+        d.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.package_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.carrier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.load_number?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    return filtered;
-  }, [deliveries, selectedProject, sortBy, projects]);
+    // Multi-select project filter
+    if (activeFilters.projects?.length > 0) {
+      filtered = filtered.filter(d => activeFilters.projects.includes(d.project_id));
+    }
+
+    // Multi-select status filter
+    if (activeFilters.statuses?.length > 0) {
+      filtered = filtered.filter(d => activeFilters.statuses.includes(d.delivery_status));
+    }
+
+    // Multi-select carrier filter
+    if (activeFilters.carriers?.length > 0) {
+      filtered = filtered.filter(d => activeFilters.carriers.includes(d.carrier));
+    }
+
+    // Date range filter
+    const today = new Date();
+    if (activeFilters.dateRange === 'this_week') {
+      filtered = filtered.filter(d => {
+        if (!d.scheduled_date) return false;
+        return isWithinInterval(parseISO(d.scheduled_date), {
+          start: startOfWeek(today),
+          end: endOfWeek(today)
+        });
+      });
+    } else if (activeFilters.dateRange === 'next_7_days') {
+      filtered = filtered.filter(d => {
+        if (!d.scheduled_date) return false;
+        const daysUntil = differenceInDays(parseISO(d.scheduled_date), today);
+        return daysUntil >= 0 && daysUntil <= 7;
+      });
+    } else if (activeFilters.dateRange === 'next_14_days') {
+      filtered = filtered.filter(d => {
+        if (!d.scheduled_date) return false;
+        const daysUntil = differenceInDays(parseISO(d.scheduled_date), today);
+        return daysUntil >= 0 && daysUntil <= 14;
+      });
+    } else if (activeFilters.dateRange === 'past_30_days') {
+      filtered = filtered.filter(d => {
+        if (!d.scheduled_date) return false;
+        const daysAgo = differenceInDays(today, parseISO(d.scheduled_date));
+        return daysAgo >= 0 && daysAgo <= 30;
+      });
+    }
+
+    // Apply sorting
+    const sortFunctions = {
+      scheduled_date: (a, b) => {
+        const dateA = a.scheduled_date ? new Date(a.scheduled_date) : new Date(0);
+        const dateB = b.scheduled_date ? new Date(b.scheduled_date) : new Date(0);
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      },
+      actual_date: (a, b) => {
+        const dateA = a.actual_date ? new Date(a.actual_date) : new Date(0);
+        const dateB = b.actual_date ? new Date(b.actual_date) : new Date(0);
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      },
+      project: (a, b) => {
+        const projA = projects.find(p => p.id === a.project_id)?.name || '';
+        const projB = projects.find(p => p.id === b.project_id)?.name || '';
+        return sortOrder === 'asc' ? projA.localeCompare(projB) : projB.localeCompare(projA);
+      },
+      status: (a, b) => {
+        const statusA = a.delivery_status || '';
+        const statusB = b.delivery_status || '';
+        return sortOrder === 'asc' ? statusA.localeCompare(statusB) : statusB.localeCompare(statusA);
+      },
+      weight: (a, b) => {
+        const weightA = Number(a.weight_tons) || 0;
+        const weightB = Number(b.weight_tons) || 0;
+        return sortOrder === 'asc' ? weightA - weightB : weightB - weightA;
+      },
+      carrier: (a, b) => {
+        const carrierA = a.carrier || '';
+        const carrierB = b.carrier || '';
+        return sortOrder === 'asc' ? carrierA.localeCompare(carrierB) : carrierB.localeCompare(carrierA);
+      },
+      variance: (a, b) => {
+        const varianceA = a.days_variance || 0;
+        const varianceB = b.days_variance || 0;
+        return sortOrder === 'asc' ? varianceA - varianceB : varianceB - varianceA;
+      }
+    };
+
+    const sortFn = sortFunctions[sortBy] || sortFunctions.scheduled_date;
+    return [...filtered].sort(sortFn);
+  }, [deliveries, searchTerm, activeFilters, sortBy, sortOrder, projects]);
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -188,7 +298,23 @@ export default function Deliveries() {
   {
     header: 'Scheduled Date',
     accessor: 'scheduled_date',
-    render: (row) => row.scheduled_date ? format(parseISO(row.scheduled_date), 'MMM d, yyyy') : '-'
+    render: (row) => {
+      if (!row.scheduled_date) return '-';
+      const date = parseISO(row.scheduled_date);
+      const daysUntil = differenceInDays(date, new Date());
+      const isUpcoming = daysUntil >= 0 && daysUntil <= 7;
+      return (
+        <div>
+          <p>{format(date, 'MMM d, yyyy')}</p>
+          {isUpcoming && (
+            <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5">
+              <Calendar size={10} />
+              in {daysUntil} days
+            </p>
+          )}
+        </div>
+      );
+    }
   },
   {
     header: 'Actual Date',
@@ -212,7 +338,19 @@ export default function Deliveries() {
   {
     header: 'Status',
     accessor: 'delivery_status',
-    render: (row) => <StatusBadge status={row.delivery_status} />
+    render: (row) => {
+      const isDelayed = row.delivery_status === 'delayed' || (
+        row.delivery_status === 'scheduled' && 
+        row.scheduled_date && 
+        differenceInDays(new Date(), parseISO(row.scheduled_date)) > 0
+      );
+      return (
+        <div className="flex items-center gap-1">
+          <StatusBadge status={row.delivery_status} />
+          {isDelayed && <AlertTriangle size={14} className="text-red-400" />}
+        </div>
+      );
+    }
   },
   {
     header: 'Weight',
@@ -266,32 +404,81 @@ export default function Deliveries() {
         } />
 
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <Select value={selectedProject} onValueChange={setSelectedProject}>
-          <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="Filter by project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map((p) =>
-            <SelectItem key={p.id} value={p.id}>
-                {p.project_number} - {p.name}
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+      {/* Advanced Filters and Search */}
+      <div className="mb-6 space-y-4">
+        <FilterBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          placeholder="Search packages, carriers, load numbers..."
+          filterGroups={[
+            {
+              key: 'projects',
+              label: 'Projects',
+              multiSelect: true,
+              options: projects.map(p => ({
+                value: p.id,
+                label: `${p.project_number} - ${p.name}`
+              }))
+            },
+            {
+              key: 'statuses',
+              label: 'Status',
+              multiSelect: true,
+              options: [
+                { value: 'scheduled', label: 'Scheduled' },
+                { value: 'in_transit', label: 'In Transit' },
+                { value: 'delivered', label: 'Delivered' },
+                { value: 'delayed', label: 'Delayed' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]
+            },
+            {
+              key: 'carriers',
+              label: 'Carriers',
+              multiSelect: true,
+              options: uniqueCarriers.map(c => ({ value: c, label: c }))
+            },
+            {
+              key: 'dateRange',
+              label: 'Date Range',
+              multiSelect: false,
+              options: [
+                { value: 'this_week', label: 'This Week' },
+                { value: 'next_7_days', label: 'Next 7 Days' },
+                { value: 'next_14_days', label: 'Next 14 Days' },
+                { value: 'past_30_days', label: 'Past 30 Days' }
+              ]
+            }
+          ]}
+          activeFilters={activeFilters}
+          onFilterChange={setActiveFilters}
+          savedConfigs={savedFilters}
+          onSaveConfig={(config) => setSavedFilters([...savedFilters, config])}
+          onLoadConfig={(config) => setActiveFilters(config.filters)}
+        />
 
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="scheduled_date">Scheduled Date</SelectItem>
-            <SelectItem value="project">Project</SelectItem>
-            <SelectItem value="status">Status</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-zinc-400">
+            Showing {filteredDeliveries.length} of {deliveries.length} deliveries
+          </p>
+          <SortControl
+            sortOptions={[
+              { value: 'scheduled_date', label: 'Scheduled Date' },
+              { value: 'actual_date', label: 'Actual Date' },
+              { value: 'project', label: 'Project' },
+              { value: 'status', label: 'Status' },
+              { value: 'weight', label: 'Weight' },
+              { value: 'carrier', label: 'Carrier' },
+              { value: 'variance', label: 'Variance' }
+            ]}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSortChange={(field, order) => {
+              setSortBy(field);
+              setSortOrder(order);
+            }}
+          />
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
@@ -334,38 +521,72 @@ export default function Deliveries() {
           {/* Detailed KPIs */}
           <DeliveryKPIs deliveries={filteredDeliveries} projects={projects} />
 
-          {/* Recent Deliveries */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Recent & Upcoming Deliveries</CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Grouped by Project */}
+          {(() => {
+            const groupedByProject = {};
+            filteredDeliveries.forEach(d => {
+              const projectId = d.project_id || 'unassigned';
+              if (!groupedByProject[projectId]) {
+                const project = projects.find(p => p.id === projectId);
+                groupedByProject[projectId] = {
+                  project,
+                  deliveries: []
+                };
+              }
+              groupedByProject[projectId].deliveries.push(d);
+            });
+
+            return Object.values(groupedByProject).map(group => (
+              <Card key={group.project?.id || 'unassigned'} className="bg-zinc-900/50 border-zinc-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white">
+                        {group.project?.project_number || 'Unassigned'}
+                      </CardTitle>
+                      <p className="text-sm text-zinc-400 mt-1">{group.project?.name || 'No project'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-amber-500">{group.deliveries.length}</p>
+                      <p className="text-xs text-zinc-500">deliveries</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <DataTable
+                    columns={columns}
+                    data={group.deliveries}
+                    onRowClick={handleEdit}
+                    emptyMessage="No deliveries for this project"
+                  />
+                </CardContent>
+              </Card>
+            ));
+          })()}
+        </TabsContent>
+
+        <TabsContent value="deliveries">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardContent className="p-6">
               <DataTable
                 columns={columns}
-                data={filteredDeliveries.slice(0, 10)}
+                data={filteredDeliveries}
                 onRowClick={handleEdit}
                 emptyMessage="No deliveries found." />
-
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="deliveries">
-          <DataTable
-            columns={columns}
-            data={filteredDeliveries}
-            onRowClick={handleEdit}
-            emptyMessage="No deliveries found." />
-
-        </TabsContent>
-
         <TabsContent value="upcoming">
-          <DataTable
-            columns={columns}
-            data={filteredDeliveries.filter((d) => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
-            onRowClick={handleEdit}
-            emptyMessage="No upcoming deliveries." />
-
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardContent className="p-6">
+              <DataTable
+                columns={columns}
+                data={filteredDeliveries.filter((d) => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
+                onRowClick={handleEdit}
+                emptyMessage="No upcoming deliveries." />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

@@ -1,46 +1,29 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Building2, 
   DollarSign, 
-  FileText, 
-  MessageSquareWarning, 
-  FileCheck,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Clock,
-  Target,
   Calendar,
-  Shield,
-  Truck,
-  Activity,
-  BarChart3,
-  Settings
+  TrendingUp,
+  AlertTriangle,
+  ArrowRight,
+  Plus,
+  FileText,
+  MessageSquareWarning,
+  FileCheck,
+  Target,
+  RefreshCw
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import PageHeader from '@/components/ui/PageHeader';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import ScreenContainer from '@/components/layout/ScreenContainer';
 import StatusBadge from '@/components/ui/StatusBadge';
-import EmptyState from '@/components/ui/EmptyState';
-
-import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import DashboardKPIs from '@/components/dashboard/DashboardKPIs';
-import ProjectOverview from '@/components/dashboard/ProjectOverview';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
+import { format, differenceInDays } from 'date-fns';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -48,1031 +31,394 @@ function formatFinancial(value) {
   const absValue = Math.abs(value);
   
   if (absValue >= 1000000) {
-    return `$${(value / 1000000).toFixed(2)}M`;
+    return `$${(value / 1000000).toFixed(1)}M`;
   } else if (absValue >= 1000) {
-    return `$${(value / 1000).toFixed(2)}K`;
+    return `$${(value / 1000).toFixed(0)}K`;
   }
   
   return `$${value.toFixed(0)}`;
 }
 
-const StatCard = React.memo(function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "default", onClick }) {
-  const bgColors = {
-    default: "bg-zinc-900 border-zinc-800",
-    amber: "bg-amber-500/5 border-amber-500/20",
-    green: "bg-green-500/5 border-green-500/20",
-    red: "bg-red-500/5 border-red-500/20",
-    blue: "bg-blue-500/5 border-blue-500/20",
+const KPICard = ({ title, value, icon: Icon, variant = "default", onClick, loading = false }) => {
+  const variants = {
+    default: "bg-card border-border",
+    amber: "bg-amber-500/10 border-amber-500/20",
+    green: "bg-green-500/10 border-green-500/20",
+    blue: "bg-blue-500/10 border-blue-500/20",
   };
   
   return (
     <Card 
-      className={`${bgColors[variant]} border ${onClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+      className={`${variants[variant]} border ${onClick ? 'cursor-pointer active:scale-95' : ''} transition-transform`}
       onClick={onClick}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-zinc-400 text-sm font-medium">{title}</p>
-            <p className="text-2xl font-bold text-white mt-1">{value}</p>
-            {trend && (
-              <div className={`flex items-center gap-1 mt-2 text-sm ${
-                trend === 'up' ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {trend === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {trendValue}
-              </div>
-            )}
-          </div>
-          <div className="p-2.5 bg-zinc-800 rounded-lg">
-            <Icon size={20} className="text-amber-500" />
-          </div>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <Icon size={20} className="text-amber-500" />
         </div>
+        <p className="text-sm text-muted-foreground mb-1">{title}</p>
+        {loading ? (
+          <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+        ) : (
+          <p className="text-2xl font-bold">{value}</p>
+        )}
       </CardContent>
     </Card>
   );
-});
+};
+
+const ActivityItem = ({ type, title, subtitle, badge, onClick }) => (
+  <div 
+    className="flex items-center justify-between py-3 border-b border-border last:border-0 active:bg-secondary transition-colors cursor-pointer"
+    onClick={onClick}
+  >
+    <div className="flex-1 min-w-0 mr-3">
+      <p className="text-sm font-medium truncate">{title}</p>
+      <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+    </div>
+    <div className="flex items-center gap-2 flex-shrink-0">
+      {badge}
+      <ArrowRight size={16} className="text-muted-foreground" />
+    </div>
+  </div>
+);
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activityPage, setActivityPage] = useState(1);
+  const ACTIVITY_PER_PAGE = 10;
+
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: 15 * 60 * 1000,
+  });
+
+  // Fetch portfolio metrics
+  const { data: metricsData, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery({
+    queryKey: ['portfolioMetrics'],
     queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch {
-        return null;
-      }
+      const response = await base44.functions.invoke('getPortfolioMetrics', {
+        timeframe: '12_months'
+      });
+      return response.data;
     },
-    staleTime: 15 * 60 * 1000, // 15 minutes - user rarely changes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Role-based default views
-  const getDefaultView = () => {
-    if (!currentUser) return 'default';
-    return currentUser.role === 'admin' ? 'executive' : 'operations';
-  };
-
-  const [selectedView, setSelectedView] = useState('default');
-
-  // Update view when user loads
-  React.useEffect(() => {
-    if (currentUser && selectedView === 'default') {
-      setSelectedView(getDefaultView());
-    }
-  }, [currentUser]);
-
-  // View configurations
-  const viewConfigs = {
-    default: {
-      showFinancial: true,
-      showSafety: true,
-      showSchedule: true,
-      showDeliveries: true,
-      showAtRisk: true,
-      showCharts: true,
-      showKPIs: true,
-      showProgress: true,
-      showProjectOverview: true,
-      showActivity: true,
-    },
-    executive: {
-      showFinancial: true,
-      showSafety: false,
-      showSchedule: true,
-      showDeliveries: false,
-      showAtRisk: true,
-      showCharts: true,
-      showKPIs: true,
-      showProgress: true,
-      showProjectOverview: true,
-      showActivity: false,
-    },
-    operations: {
-      showFinancial: false,
-      showSafety: true,
-      showSchedule: true,
-      showDeliveries: true,
-      showAtRisk: true,
-      showCharts: false,
-      showKPIs: true,
-      showProgress: true,
-      showProjectOverview: true,
-      showActivity: true,
-    },
-  };
-
-  const widgetConfig = viewConfigs[selectedView] || viewConfigs.default;
-
-  const [showAllProjects, setShowAllProjects] = useState(false);
-  const [pmFilter, setPmFilter] = useState('all');
-
-  const { data: rawProjects = [], isLoading: projectsLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-created_date'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  const allProjects = useMemo(() => 
-    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
-    [rawProjects]
-  );
-
-  // Filter projects based on user role and toggle
-  const projects = useMemo(() => {
-    if (!currentUser) return allProjects;
-    
-    let filtered = allProjects;
-    
-    // Admins always see all projects, regular users see only their projects
-    if (currentUser.role !== 'admin' && !showAllProjects) {
-      filtered = allProjects.filter(p => 
+  // Fetch projects
+  const { data: projects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
+    queryKey: ['dashboardProjects'],
+    queryFn: () => base44.entities.Project.list('-updated_date'),
+    select: (data) => {
+      if (!currentUser) return data;
+      if (currentUser.role === 'admin') return data;
+      return data.filter(p => 
         p.project_manager === currentUser.email || 
         p.superintendent === currentUser.email ||
-        p.created_by === currentUser.email ||
         (p.assigned_users && p.assigned_users.includes(currentUser.email))
       );
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch recent activity data
+  const { data: rfis = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
+    queryKey: ['dashboardRFIs'],
+    queryFn: () => base44.entities.RFI.list('-created_date', 20),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: changeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
+    queryKey: ['dashboardCOs'],
+    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 20),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
+    queryKey: ['dashboardTasks'],
+    queryFn: () => base44.entities.Task.list('-updated_date', 20),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: drawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
+    queryKey: ['dashboardDrawings'],
+    queryFn: () => base44.entities.DrawingSet.list('-created_date', 20),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      refetchMetrics(),
+      refetchProjects(),
+      refetchRFIs(),
+      refetchCOs(),
+      refetchTasks(),
+      refetchDrawings()
+    ]);
+    setIsRefreshing(false);
+  }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings]);
+
+  // Calculate critical issues
+  const criticalIssues = React.useMemo(() => {
+    const issues = [];
+    
+    // Check overdue RFIs
+    const overdueRFIs = rfis.filter(r => 
+      r.due_date && new Date(r.due_date) < new Date() && 
+      (r.status === 'pending' || r.status === 'submitted')
+    );
+    if (overdueRFIs.length > 0) {
+      issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
     }
-    
-    // Apply PM filter
-    if (pmFilter !== 'all') {
-      filtered = filtered.filter(p => p.project_manager === pmFilter);
+
+    // Check overdue drawings
+    const overdueDrawings = drawings.filter(d => 
+      d.due_date && new Date(d.due_date) < new Date() && 
+      !['FFF', 'As-Built'].includes(d.status)
+    );
+    if (overdueDrawings.length > 0) {
+      issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
     }
-    
-    return filtered;
-  }, [allProjects, currentUser, showAllProjects, pmFilter]);
 
-  const uniquePMs = useMemo(() => 
-    [...new Set(allProjects.map(p => p.project_manager).filter(Boolean))].sort(),
-    [allProjects]
-  );
-
-  const { data: rfis = [], isLoading: rfisLoading } = useQuery({
-    queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  const { data: changeOrders = [], isLoading: changeOrdersLoading } = useQuery({
-    queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  const { data: financials = [], isLoading: financialsLoading } = useQuery({
-    queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  const { data: drawings = [], isLoading: drawingsLoading } = useQuery({
-    queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  const { data: dailyLogs = [], isLoading: dailyLogsLoading } = useQuery({
-    queryKey: ['dailyLogs'],
-    queryFn: () => base44.entities.DailyLog.list('-log_date'),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 20 * 60 * 1000, // 20 minutes
-  });
-
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('start_date'),
-    staleTime: 2 * 60 * 1000, // 2 minutes - tasks change frequently
-    gcTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-    queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
-  });
-
-  const { data: laborHours = [], isLoading: laborHoursLoading } = useQuery({
-    queryKey: ['laborHours'],
-    queryFn: () => base44.entities.LaborHours.list(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
-  });
-
-  const { data: resources = [], isLoading: resourcesLoading } = useQuery({
-    queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
-  });
-
-  // Calculate all derived data with useMemo BEFORE any conditional returns
-  const activeProjects = useMemo(() => 
-    projects.filter(p => p.status === 'in_progress'), 
-    [projects]
-  );
-  
-  const pendingRFIs = useMemo(() => 
-    rfis.filter(r => r.status === 'pending' || r.status === 'submitted'), 
-    [rfis]
-  );
-  
-  const pendingCOs = useMemo(() => 
-    changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted'), 
-    [changeOrders]
-  );
-  
-  const financialTotals = useMemo(() => {
-    if (!financials || !expenses) {
-      return { totalBudget: 0, totalActual: 0, totalCommitted: 0, totalForecast: 0, budgetVariance: 0, budgetVariancePercent: '0' };
+    // Check pending COs
+    const pendingCOs = changeOrders.filter(co => co.status === 'pending');
+    if (pendingCOs.length > 3) {
+      issues.push(`${pendingCOs.length} pending change orders`);
     }
-    
-    const totalBudget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
-    const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
-    const actualFromExpenses = (expenses || [])
-      .filter(e => e && (e.payment_status === 'paid' || e.payment_status === 'approved'))
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    
-    // Calculate labor costs from approved hours
-    const actualFromLabor = (laborHours || [])
-      .filter(lh => lh && lh.approved)
-      .reduce((sum, lh) => {
-        const resource = resources.find(r => r.id === lh.resource_id);
-        const regularRate = Number(resource?.rate) || 0;
-        const overtimeRate = regularRate * 1.5;
-        const regularHours = Number(lh.hours) || 0;
-        const otHours = Number(lh.overtime_hours) || 0;
-        return sum + (regularHours * regularRate) + (otHours * overtimeRate);
-      }, 0);
-    
-    const totalActual = actualFromFinancials + actualFromExpenses + actualFromLabor;
-    const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
-    const totalForecast = financials.reduce((sum, f) => {
-      const forecast = Number(f.forecast_amount) || 0;
-      const fallback = (Number(f.actual_amount) || 0) + (Number(f.committed_amount) || 0);
-      return sum + (forecast > 0 ? forecast : fallback);
-    }, 0);
-    const budgetVariance = totalBudget - totalActual;
-    const budgetVariancePercent = totalBudget > 0 ? ((budgetVariance / totalBudget) * 100).toFixed(1) : '0';
-    
-    return { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent };
-  }, [financials, expenses, laborHours, resources]);
-  
-  const { totalBudget, totalActual, totalCommitted, totalForecast, budgetVariance, budgetVariancePercent } = financialTotals;
 
-  const overdueDocs = useMemo(() => 
-    (drawings || []).filter(d => {
-      if (!d || !d.due_date) return false;
-      try {
-        return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
-      } catch {
-        return false;
-      }
-    }), 
-    [drawings]
-  );
+    return issues;
+  }, [rfis, drawings, changeOrders]);
 
-  const safetyMetrics = useMemo(() => {
-    if (!dailyLogs || !Array.isArray(dailyLogs)) return { incidents: 0, delays: 0 };
-    const incidents = dailyLogs.filter(log => log && log.safety_incidents).length;
-    const delays = dailyLogs.filter(log => log && log.delays).slice(0, 30).length;
-    return { incidents, delays };
-  }, [dailyLogs]);
-  
-  const safetyIncidents = safetyMetrics.incidents;
-  const recentDelays = safetyMetrics.delays;
+  // Combine activity feed
+  const activityFeed = React.useMemo(() => {
+    const items = [];
 
-  // At Risk Projects
-  const atRiskProjects = useMemo(() => {
-    if (!activeProjects || !financials) return [];
-    
-    return activeProjects.filter(project => {
-      if (!project || !project.id) return false;
-      
-      const projectFinancials = (financials || []).filter(f => f && f.project_id === project.id);
-      const projectBudget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
-      const projectActual = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
-      const variance = projectBudget > 0 ? ((projectActual / projectBudget) * 100) : 0;
-      
-      const projectRFIs = (rfis || []).filter(r => r && r.project_id === project.id && (r.status === 'pending' || r.status === 'submitted'));
-      const overdueRFIs = projectRFIs.filter(r => {
-        if (!r || !r.due_date) return false;
-        try {
-          return new Date(r.due_date) < new Date();
-        } catch {
-          return false;
-        }
-      }).length;
-      
-      return variance > 95 || overdueRFIs > 3 || (overdueDocs || []).filter(d => d && d.project_id === project.id).length > 2;
+    rfis.forEach(r => {
+      const project = projects.find(p => p.id === r.project_id);
+      items.push({
+        id: `rfi-${r.id}`,
+        type: 'rfi',
+        title: `RFI-${String(r.rfi_number).padStart(3, '0')}`,
+        subtitle: project?.name || r.subject,
+        badge: <StatusBadge status={r.status} className="text-xs" />,
+        date: new Date(r.created_date),
+        onClick: () => navigate(createPageUrl('RFIs'))
+      });
     });
-  }, [activeProjects, financials, rfis, overdueDocs]);
 
-  // Change Order Chart Data
-  const coChartData = useMemo(() => [
-    { name: 'Pending', value: changeOrders.filter(co => co.status === 'pending').length, color: '#f59e0b' },
-    { name: 'Submitted', value: changeOrders.filter(co => co.status === 'submitted').length, color: '#3b82f6' },
-    { name: 'Approved', value: changeOrders.filter(co => co.status === 'approved').length, color: '#10b981' },
-    { name: 'Rejected', value: changeOrders.filter(co => co.status === 'rejected').length, color: '#ef4444' },
-  ], [changeOrders]);
+    changeOrders.forEach(co => {
+      const project = projects.find(p => p.id === co.project_id);
+      items.push({
+        id: `co-${co.id}`,
+        type: 'co',
+        title: `CO-${String(co.co_number).padStart(3, '0')}`,
+        subtitle: project?.name || co.title,
+        badge: <StatusBadge status={co.status} className="text-xs" />,
+        date: new Date(co.created_date),
+        onClick: () => navigate(createPageUrl('ChangeOrders'))
+      });
+    });
 
-  // Project Status Chart
-  const statusChartData = useMemo(() => [
-    { name: 'Bidding', value: projects.filter(p => p.status === 'bidding').length },
-    { name: 'Awarded', value: projects.filter(p => p.status === 'awarded').length },
-    { name: 'In Progress', value: projects.filter(p => p.status === 'in_progress').length },
-    { name: 'Completed', value: projects.filter(p => p.status === 'completed').length },
-  ], [projects]);
+    tasks.filter(t => t.status !== 'completed').forEach(t => {
+      const project = projects.find(p => p.id === t.project_id);
+      items.push({
+        id: `task-${t.id}`,
+        type: 'task',
+        title: t.name,
+        subtitle: project?.name || 'Task',
+        badge: <StatusBadge status={t.status} className="text-xs" />,
+        date: new Date(t.updated_date || t.created_date),
+        onClick: () => navigate(createPageUrl('Schedule'))
+      });
+    });
 
-  // Financial Progress by Project
-  const projectFinancialData = useMemo(() => 
-    activeProjects.slice(0, 5).map(project => {
-      const projectFinancials = financials.filter(f => f.project_id === project.id);
-      const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      return {
-        name: project.project_number,
-        Budget: budget,
-        Actual: actual,
-      };
-    }), 
-    [activeProjects, financials]
-  );
+    return items.sort((a, b) => b.date - a.date);
+  }, [rfis, changeOrders, tasks, projects, navigate]);
 
-  // Schedule Metrics
-  const upcomingMilestones = useMemo(() => 
-    activeProjects.filter(p => {
-      if (!p.target_completion) return false;
-      const daysUntil = differenceInDays(new Date(p.target_completion), new Date());
-      return daysUntil >= 0 && daysUntil <= 30;
-    }), 
-    [activeProjects]
-  );
+  const paginatedActivity = activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE);
+  const hasMoreActivity = activityFeed.length > paginatedActivity.length;
 
-  // Mock upcoming deliveries (you can replace with actual data from a deliveries entity)
-  const upcomingDeliveries = useMemo(() => 
-    (dailyLogs || [])
-      .filter(log => log && log.materials_delivered && log.log_date)
-      .slice(0, 5)
-      .map(log => ({
-        id: log.id,
-        project_id: log.project_id,
-        date: log.log_date,
-        items: log.materials_delivered
-      })), 
-    [dailyLogs]
-  );
-
-  // Loading check AFTER all hooks
-  const isLoading = projectsLoading || rfisLoading || changeOrdersLoading || 
-                     financialsLoading || drawingsLoading || dailyLogsLoading || tasksLoading || expensesLoading ||
-                     laborHoursLoading || resourcesLoading;
+  const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading dashboard...</p>
+      <ScreenContainer>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
         </div>
-      </div>
+      </ScreenContainer>
     );
   }
 
+  const portfolioHealth = metricsData?.portfolioHealth || {};
+  const activeProjects = projects.filter(p => p.status === 'in_progress');
+  const upcomingMilestones = activeProjects.filter(p => {
+    if (!p.target_completion) return false;
+    const days = differenceInDays(new Date(p.target_completion), new Date());
+    return days >= 0 && days <= 30;
+  });
+
   return (
-    <div>
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+    <ScreenContainer>
+      {/* Hero Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-1">
-              {currentUser?.role !== 'admin' && !showAllProjects ? 'My Dashboard' : 'Dashboard'}
-            </h1>
-            <p className="text-zinc-400">
-              {currentUser?.role !== 'admin' && !showAllProjects 
-                ? `Showing ${projects.length} of ${allProjects.length} projects` 
-                : 'Project command center'}
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {currentUser?.full_name || 'Welcome'} • {format(new Date(), 'MMM d, yyyy')}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {currentUser && currentUser.role !== 'admin' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAllProjects(!showAllProjects)}
-                className="border-zinc-700 text-white hover:bg-zinc-800"
-              >
-                {showAllProjects ? 'Show My Projects' : 'Show All Projects'}
-              </Button>
-            )}
-            <Select value={pmFilter} onValueChange={setPmFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by PM" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All PMs</SelectItem>
-                {uniquePMs.map(pm => (
-                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {currentUser && (
-              <div className="text-right mr-2">
-                <p className="text-xs text-zinc-500">Viewing as</p>
-                <p className="text-sm text-white font-medium capitalize">{currentUser.role}</p>
-              </div>
-            )}
-            <Select value={selectedView} onValueChange={setSelectedView}>
-              <SelectTrigger className="w-52 bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800 transition-colors">
-                <Settings size={16} className="mr-2 text-amber-500" />
-                <SelectValue placeholder="Select View" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="default" className="text-white">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    Default View
-                  </div>
-                </SelectItem>
-                <SelectItem value="executive" className="text-white">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-500" />
-                    Executive View
-                  </div>
-                </SelectItem>
-                <SelectItem value="operations" className="text-white">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    Operations View
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          </Button>
         </div>
-      </div>
 
-      {/* Enhanced KPI Cards */}
-      {widgetConfig.showKPIs && (
-        <DashboardKPIs 
-          projects={projects}
-          financials={financials}
-          drawings={drawings}
-          rfis={rfis}
-          tasks={tasks}
-          expenses={expenses}
-          laborHours={laborHours}
-          resources={resources}
-        />
-      )}
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Project Overview - Full Width */}
-        {widgetConfig.showProjectOverview && (
-          <div className="lg:col-span-3">
-            <ProjectOverview
-              projects={projects}
-              financials={financials}
-              tasks={tasks}
-              rfis={rfis}
-              changeOrders={changeOrders}
-              expenses={expenses}
-              laborHours={laborHours}
-              resources={resources}
-            />
-          </div>
+        {/* Critical Issues Alert */}
+        {criticalIssues.length > 0 && (
+          <Alert className="bg-red-500/10 border-red-500/20 mb-4">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AlertDescription className="text-sm">
+              <span className="font-medium">Action Required:</span> {criticalIssues.join(', ')}
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Recent Activity */}
-        {widgetConfig.showActivity && (
-          <RecentActivity
-            drawings={drawings}
-            rfis={rfis}
-            changeOrders={changeOrders}
-            tasks={tasks}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <KPICard
+            title="Active Projects"
+            value={portfolioHealth.activeProjects || activeProjects.length}
+            icon={Building2}
+            variant="blue"
+            onClick={() => navigate(createPageUrl('Projects'))}
+            loading={metricsLoading}
           />
-        )}
-
-        {/* At Risk Projects */}
-        {widgetConfig.showAtRisk && (
-          <Card className="bg-red-500/5 border-red-500/20">
-            <CardHeader className="border-b border-red-500/20 pb-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="text-red-500" size={18} />
-                <CardTitle className="text-lg font-semibold text-white">
-                  At Risk Projects ({atRiskProjects.length})
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {atRiskProjects.length === 0 ? (
-                <EmptyState
-                  icon={Target}
-                  title="All Projects On Track"
-                  description="Great news! No projects are currently at risk. Keep monitoring budgets, schedules, and RFIs to maintain healthy project status."
-                  variant="subtle"
-                />
-              ) : (
-                <div className="divide-y divide-red-500/10">
-                  {atRiskProjects.map((project) => {
-                    const projectFinancials = financials.filter(f => f.project_id === project.id);
-                    const projectBudget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-                    const projectActual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-                    const spendPercent = projectBudget > 0 ? ((projectActual / projectBudget) * 100).toFixed(0) : 0;
-                    
-                    return (
-                      <div 
-                        key={project.id} 
-                        className="p-4 hover:bg-red-500/5 cursor-pointer transition-colors"
-                        onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <p className="font-medium text-white">{project.name}</p>
-                            <p className="text-sm text-zinc-400">{project.project_number}</p>
-                          </div>
-                          <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">
-                            {spendPercent}% spent
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2 text-xs">
-                          {rfis.filter(r => r.project_id === project.id && r.status === 'pending').length > 0 && (
-                            <span className="text-amber-400">
-                              {rfis.filter(r => r.project_id === project.id && r.status === 'pending').length} open RFIs
-                            </span>
-                          )}
-                          {overdueDocs.filter(d => d.project_id === project.id).length > 0 && (
-                            <span className="text-red-400">
-                              {overdueDocs.filter(d => d.project_id === project.id).length} overdue drawings
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Financial Overview */}
-        {widgetConfig.showFinancial && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <DollarSign size={18} className="text-amber-500" />
-                Financial Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Total Budget</span>
-                  <span className="text-lg font-bold text-white">{formatFinancial(totalBudget)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Actual Spent</span>
-                  <span className="text-lg font-bold text-amber-400">{formatFinancial(totalActual)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Committed</span>
-                  <span className="text-lg font-bold text-blue-400">{formatFinancial(totalCommitted)}</span>
-                </div>
-                <div className="h-px bg-zinc-800" />
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Remaining</span>
-                  <span className={`text-lg font-bold ${budgetVariance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {formatFinancial(Math.abs(budgetVariance))}
-                  </span>
-                </div>
-                <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
-                  <div 
-                    className="bg-amber-500 h-full transition-all"
-                    style={{ width: `${totalBudget > 0 ? Math.min((totalActual / totalBudget) * 100, 100) : 0}%` }}
-                  />
-                </div>
-                <p className="text-xs text-zinc-500 text-center">
-                  {totalBudget > 0 ? Math.min(((totalActual / totalBudget) * 100), 100).toFixed(1) : '0'}% utilized
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Charts and Metrics Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Safety Metrics */}
-        {widgetConfig.showSafety && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <Shield size={18} className="text-green-500" />
-                Safety Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Incidents (30d)</span>
-                  <Badge variant="outline" className={safetyIncidents === 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
-                    {safetyIncidents}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Days Safe</span>
-                  <span className="text-xl font-bold text-green-400">
-                    {(() => {
-                      const incidentIndex = dailyLogs.findIndex(log => log.safety_incidents);
-                      return incidentIndex === -1 ? dailyLogs.length : incidentIndex;
-                    })()}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400 text-sm">Delays</span>
-                  <span className="text-lg font-medium text-amber-400">{recentDelays}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Schedule Overview */}
-        {widgetConfig.showSchedule && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <Calendar size={18} className="text-blue-500" />
-                Upcoming Milestones
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-zinc-400 text-sm">Next 30 Days</span>
-                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    {upcomingMilestones.length}
-                  </Badge>
-                </div>
-                {upcomingMilestones.slice(0, 3).map(project => {
-                  const targetDate = project.target_completion ? new Date(project.target_completion) : null;
-                  const isValidDate = targetDate && !isNaN(targetDate.getTime());
-                  return (
-                    <div key={project.id} className="text-sm">
-                      <p className="text-white font-medium truncate">{project.name}</p>
-                      <p className="text-zinc-500 text-xs">
-                        {isValidDate ? format(targetDate, 'MMM d, yyyy') : 'No date'} 
-                        {isValidDate && (
-                          <span className="text-amber-400 ml-2">
-                            ({differenceInDays(targetDate, new Date())}d)
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Materials */}
-        {widgetConfig.showDeliveries && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <Truck size={18} className="text-purple-500" />
-                Recent Deliveries
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-3">
-                {upcomingDeliveries.length === 0 ? (
-                  <div className="text-center py-4">
-                    <Truck className="text-zinc-600 mx-auto mb-2" size={24} />
-                    <p className="text-zinc-500 text-xs">No deliveries logged</p>
-                  </div>
-                ) : (
-                  upcomingDeliveries.map(delivery => {
-                    const project = projects.find(p => p.id === delivery.project_id);
-                    const deliveryDate = delivery.date ? new Date(delivery.date) : null;
-                    const isValidDate = deliveryDate && !isNaN(deliveryDate.getTime());
-                    return (
-                      <div key={delivery.id} className="text-sm">
-                        <p className="text-zinc-400 text-xs">
-                          {isValidDate ? format(deliveryDate, 'MMM d') : 'No date'}
-                        </p>
-                        <p className="text-white font-medium truncate">{project?.name}</p>
-                        <p className="text-zinc-500 text-xs line-clamp-1">{delivery.items}</p>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Charts Row */}
-      {widgetConfig.showCharts && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Change Order Chart */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <FileCheck size={18} className="text-amber-500" />
-                  Change Orders by Status
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(createPageUrl('ChangeOrders'))}
-                  className="text-amber-500 hover:text-amber-400 text-xs"
-                >
-                  View All →
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={coChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    onClick={() => navigate(createPageUrl('ChangeOrders'))}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {coChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Project Status Chart */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Building2 size={18} className="text-blue-500" />
-                  Project Status Distribution
-                </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(createPageUrl('Projects'))}
-                  className="text-amber-500 hover:text-amber-400 text-xs"
-                >
-                  View All →
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={statusChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
-                  <XAxis dataKey="name" stroke="#a1a1aa" />
-                  <YAxis stroke="#a1a1aa" />
-                  <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
-                  <Bar 
-                    dataKey="value" 
-                    fill="#f59e0b"
-                    onClick={() => navigate(createPageUrl('Projects'))}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <KPICard
+            title="Budget Used"
+            value={`${portfolioHealth.budgetUtilization || 0}%`}
+            icon={DollarSign}
+            variant="amber"
+            onClick={() => navigate(createPageUrl('Financials'))}
+            loading={metricsLoading}
+          />
+          <KPICard
+            title="Schedule"
+            value={`${portfolioHealth.scheduleAdherence || 0}%`}
+            icon={Calendar}
+            variant="green"
+            onClick={() => navigate(createPageUrl('Schedule'))}
+            loading={metricsLoading}
+          />
+          <KPICard
+            title="Completion"
+            value={`${portfolioHealth.completionRate || 0}%`}
+            icon={TrendingUp}
+            variant="default"
+            onClick={() => navigate(createPageUrl('Schedule'))}
+            loading={metricsLoading}
+          />
         </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => navigate(createPageUrl('Projects'))}
+          >
+            <Plus size={16} className="mr-2" />
+            New Project
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => navigate(createPageUrl('RFIs'))}
+          >
+            <MessageSquareWarning size={16} className="mr-2" />
+            New RFI
+          </Button>
+        </div>
+      </div>
+
+      {/* At Risk Projects */}
+      {upcomingMilestones.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target size={16} className="text-amber-500" />
+              Upcoming Milestones ({upcomingMilestones.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {upcomingMilestones.slice(0, 3).map(project => {
+                const days = differenceInDays(new Date(project.target_completion), new Date());
+                return (
+                  <div
+                    key={project.id}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0 cursor-pointer active:bg-secondary transition-colors"
+                    onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{project.name}</p>
+                      <p className="text-xs text-muted-foreground">{project.project_number}</p>
+                    </div>
+                    <Badge variant="outline" className="ml-2">
+                      {days}d
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Projects and Activity Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Active Projects */}
-        <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
-          <CardHeader className="border-b border-zinc-800 pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white">
-                Active Projects ({activeProjects.length})
-              </CardTitle>
-              <Link 
-                to={createPageUrl('Projects')} 
-                className="text-sm text-amber-500 hover:text-amber-400"
-              >
-                View all →
-              </Link>
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText size={16} className="text-amber-500" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {paginatedActivity.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText size={32} className="text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No recent activity</p>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {activeProjects.length === 0 ? (
-              <EmptyState
-                icon={Building2}
-                title="No Active Projects"
-                description="Get started by creating your first project. Track progress, manage budgets, and coordinate with your team."
-                actionLabel="Create Project"
-                actionPage="Projects"
-                variant="subtle"
-              />
-            ) : (
-              <div className="divide-y divide-zinc-800">
-                {activeProjects.slice(0, 5).map((project) => {
-                  const progress = calculateProjectProgress(project.id, tasks);
-                  return (
-                    <div
-                      key={project.id}
-                      onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
-                      className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-white">{project.name}</p>
-                        <p className="text-sm text-zinc-400 mb-2">{project.project_number} • {project.client}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 transition-all"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-zinc-400">{progress}%</span>
-                        </div>
-                      </div>
-                      <StatusBadge status={project.status} />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pending RFIs */}
-        <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
-          <CardHeader className="border-b border-zinc-800 pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white">Pending RFIs</CardTitle>
-              <Link 
-                to={createPageUrl('RFIs')} 
-                className="text-sm text-amber-500 hover:text-amber-400"
-              >
-                View all →
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {pendingRFIs.length === 0 ? (
-              <EmptyState
-                icon={MessageSquareWarning}
-                title="No Pending RFIs"
-                description="Request for Information (RFI) helps clarify project details. Create an RFI when you need answers from the GC or architect."
-                actionLabel="Create RFI"
-                actionPage="RFIs"
-                variant="subtle"
-              />
-            ) : (
-              <div className="divide-y divide-zinc-800">
-                {pendingRFIs.slice(0, 5).map((rfi) => {
-                  const project = projects.find(p => p.id === rfi.project_id);
-                  return (
-                    <Link 
-                      key={rfi.id}
-                      to={createPageUrl(`RFIs?id=${rfi.id}`)}
-                      className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors"
-                    >
-                      <div>
-                        <p className="font-medium text-white">RFI-{String(rfi.rfi_number).padStart(3, '0')}</p>
-                        <p className="text-sm text-zinc-400 line-clamp-1">{rfi.subject}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={rfi.priority} />
-                        {rfi.due_date && (() => {
-                          const dueDate = new Date(rfi.due_date);
-                          return !isNaN(dueDate.getTime()) && (
-                            <span className="text-xs text-zinc-500">
-                              {format(dueDate, 'MMM d')}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Overdue Drawings */}
-        {overdueDocs.length > 0 && (
-          <Card className="bg-red-500/5 border-red-500/20">
-            <CardHeader className="border-b border-red-500/20 pb-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="text-red-500" size={18} />
-                <CardTitle className="text-lg font-semibold text-white">Overdue Drawing Sets</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-red-500/10">
-                {overdueDocs.slice(0, 5).map((drawing) => {
-                  const project = projects.find(p => p.id === drawing.project_id);
-                  return (
-                    <div key={drawing.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-white">{drawing.set_name}</p>
-                          <p className="text-sm text-zinc-400">{project?.name || 'Unknown Project'}</p>
-                        </div>
-                        <div className="text-right">
-                          <StatusBadge status={drawing.status} />
-                          {drawing.due_date && (() => {
-                            const dueDate = new Date(drawing.due_date);
-                            return !isNaN(dueDate.getTime()) && (
-                              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                                <Clock size={12} />
-                                Due: {format(dueDate, 'MMM d')}
-                              </p>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Change Orders */}
-        <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
-          <CardHeader className="border-b border-zinc-800 pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white">Recent Change Orders</CardTitle>
-              <Link 
-                to={createPageUrl('ChangeOrders')} 
-                className="text-sm text-amber-500 hover:text-amber-400"
-              >
-                View all →
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {changeOrders.length === 0 ? (
-              <EmptyState
-                icon={FileCheck}
-                title="No Change Orders"
-                description="Track scope changes and cost impacts. Change orders document modifications to the original project scope and budget."
-                actionLabel="Create Change Order"
-                actionPage="ChangeOrders"
-                variant="subtle"
-              />
-            ) : (
-              <div className="divide-y divide-zinc-800">
-                {changeOrders.slice(0, 5).map((co) => {
-                  const project = projects.find(p => p.id === co.project_id);
-                  return (
-                    <Link 
-                      key={co.id}
-                      to={createPageUrl(`ChangeOrders?id=${co.id}`)}
-                      className="flex items-center justify-between p-4 hover:bg-zinc-800/50 transition-colors"
-                    >
-                      <div>
-                        <p className="font-medium text-white">CO-{String(co.co_number).padStart(3, '0')}</p>
-                        <p className="text-sm text-zinc-400 line-clamp-1">{co.title}</p>
-                      </div>
-                      <div className="text-right">
-                        <StatusBadge status={co.status} />
-                        <p className={`text-sm mt-1 ${(co.cost_impact || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {(co.cost_impact || 0) >= 0 ? '+' : ''}${(co.cost_impact || 0).toLocaleString()}
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          ) : (
+            <>
+              {paginatedActivity.map(item => (
+                <ActivityItem key={item.id} {...item} />
+              ))}
+              {hasMoreActivity && (
+                <Button
+                  variant="ghost"
+                  className="w-full mt-3"
+                  onClick={() => setActivityPage(p => p + 1)}
+                >
+                  Load More
+                </Button>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </ScreenContainer>
   );
 }

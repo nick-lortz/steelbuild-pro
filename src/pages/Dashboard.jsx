@@ -520,99 +520,36 @@ export default function Dashboard() {
 
       {/* Enhanced KPI Cards */}
       {widgetConfig.showKPIs && (
-        <div className="mb-8">
-          <DashboardKPIs 
-            projects={projects}
-            financials={financials}
-            drawings={drawings}
-            rfis={rfis}
-            tasks={tasks}
-            expenses={expenses}
-            laborHours={laborHours}
-            resources={resources}
-          />
-        </div>
-      )}
-
-      {/* Progress Cards */}
-      {widgetConfig.showProgress && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Completed</p>
-                <p className="text-xl font-bold text-green-400">
-                  {projects.filter(p => p.status === 'completed').length}
-                </p>
-              </div>
-              <Target className="text-green-500" size={20} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">On Time</p>
-                <p className="text-xl font-bold text-blue-400">
-                  {activeProjects.filter(p => {
-                    if (!p.target_completion) return true;
-                    return new Date(p.target_completion) > new Date();
-                  }).length}
-                </p>
-              </div>
-              <Clock className="text-blue-500" size={20} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Committed</p>
-                <p className="text-xl font-bold text-white">
-                  {formatFinancial(totalCommitted)}
-                </p>
-              </div>
-              <Activity className="text-zinc-500" size={20} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Forecast</p>
-                <p className="text-xl font-bold text-amber-400">
-                  {formatFinancial(totalForecast > 0 ? totalForecast : (totalActual + totalCommitted))}
-                </p>
-              </div>
-              <TrendingUp className="text-amber-500" size={20} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      )}
-
-      {/* Project Overview */}
-      {widgetConfig.showProjectOverview && (
-        <div className="mb-8">
-        <h2 className="text-xl font-bold text-white mb-4">Active Projects</h2>
-        <ProjectOverview
+        <DashboardKPIs 
           projects={projects}
           financials={financials}
-          tasks={tasks}
+          drawings={drawings}
           rfis={rfis}
-          changeOrders={changeOrders}
+          tasks={tasks}
           expenses={expenses}
           laborHours={laborHours}
           resources={resources}
         />
-      </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Project Overview - Full Width */}
+        {widgetConfig.showProjectOverview && (
+          <div className="lg:col-span-3">
+            <ProjectOverview
+              projects={projects}
+              financials={financials}
+              tasks={tasks}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              expenses={expenses}
+              laborHours={laborHours}
+              resources={resources}
+            />
+          </div>
+        )}
+
         {/* Recent Activity */}
         {widgetConfig.showActivity && (
           <RecentActivity
@@ -623,9 +560,7 @@ export default function Dashboard() {
           />
         )}
 
-
-
-        {/* At Risk List */}
+        {/* At Risk Projects */}
         {widgetConfig.showAtRisk && (
           <Card className="bg-red-500/5 border-red-500/20">
             <CardHeader className="border-b border-red-500/20 pb-4">
@@ -688,47 +623,159 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Financial Section */}
+        {/* Financial Overview */}
         {widgetConfig.showFinancial && (
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="border-b border-zinc-800 pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <DollarSign size={18} />
-                  Financial Overview
-                </CardTitle>
-              </div>
+              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                <DollarSign size={18} className="text-amber-500" />
+                Financial Overview
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Total Budget</span>
-                  <span className="text-xl font-bold text-white">{formatFinancial(totalBudget)}</span>
+                  <span className="text-zinc-400 text-sm">Total Budget</span>
+                  <span className="text-lg font-bold text-white">{formatFinancial(totalBudget)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Actual Spent</span>
-                  <span className="text-xl font-bold text-amber-400">{formatFinancial(totalActual)}</span>
+                  <span className="text-zinc-400 text-sm">Actual Spent</span>
+                  <span className="text-lg font-bold text-amber-400">{formatFinancial(totalActual)}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Committed</span>
-                  <span className="text-xl font-bold text-blue-400">{formatFinancial(totalCommitted)}</span>
+                  <span className="text-zinc-400 text-sm">Committed</span>
+                  <span className="text-lg font-bold text-blue-400">{formatFinancial(totalCommitted)}</span>
                 </div>
                 <div className="h-px bg-zinc-800" />
                 <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Remaining</span>
-                  <span className={`text-xl font-bold ${budgetVariance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <span className="text-zinc-400 text-sm">Remaining</span>
+                  <span className={`text-lg font-bold ${budgetVariance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {formatFinancial(Math.abs(budgetVariance))}
                   </span>
                 </div>
-                <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-zinc-800 rounded-full h-2.5 overflow-hidden">
                   <div 
                     className="bg-amber-500 h-full transition-all"
                     style={{ width: `${totalBudget > 0 ? Math.min((totalActual / totalBudget) * 100, 100) : 0}%` }}
                   />
                 </div>
-                <p className="text-sm text-zinc-500 text-center">
-                  {totalBudget > 0 ? Math.min(((totalActual / totalBudget) * 100), 100).toFixed(1) : '0'}% of budget utilized
+                <p className="text-xs text-zinc-500 text-center">
+                  {totalBudget > 0 ? Math.min(((totalActual / totalBudget) * 100), 100).toFixed(1) : '0'}% utilized
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Charts and Metrics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Safety Metrics */}
+        {widgetConfig.showSafety && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="border-b border-zinc-800 pb-4">
+              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                <Shield size={18} className="text-green-500" />
+                Safety Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400 text-sm">Incidents (30d)</span>
+                  <Badge variant="outline" className={safetyIncidents === 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
+                    {safetyIncidents}
+                  </Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400 text-sm">Days Safe</span>
+                  <span className="text-xl font-bold text-green-400">
+                    {(() => {
+                      const incidentIndex = dailyLogs.findIndex(log => log.safety_incidents);
+                      return incidentIndex === -1 ? dailyLogs.length : incidentIndex;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400 text-sm">Delays</span>
+                  <span className="text-lg font-medium text-amber-400">{recentDelays}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Schedule Overview */}
+        {widgetConfig.showSchedule && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="border-b border-zinc-800 pb-4">
+              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                <Calendar size={18} className="text-blue-500" />
+                Upcoming Milestones
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-zinc-400 text-sm">Next 30 Days</span>
+                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                    {upcomingMilestones.length}
+                  </Badge>
+                </div>
+                {upcomingMilestones.slice(0, 3).map(project => {
+                  const targetDate = project.target_completion ? new Date(project.target_completion) : null;
+                  const isValidDate = targetDate && !isNaN(targetDate.getTime());
+                  return (
+                    <div key={project.id} className="text-sm">
+                      <p className="text-white font-medium truncate">{project.name}</p>
+                      <p className="text-zinc-500 text-xs">
+                        {isValidDate ? format(targetDate, 'MMM d, yyyy') : 'No date'} 
+                        {isValidDate && (
+                          <span className="text-amber-400 ml-2">
+                            ({differenceInDays(targetDate, new Date())}d)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Recent Materials */}
+        {widgetConfig.showDeliveries && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader className="border-b border-zinc-800 pb-4">
+              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                <Truck size={18} className="text-purple-500" />
+                Recent Deliveries
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-3">
+                {upcomingDeliveries.length === 0 ? (
+                  <div className="text-center py-4">
+                    <Truck className="text-zinc-600 mx-auto mb-2" size={24} />
+                    <p className="text-zinc-500 text-xs">No deliveries logged</p>
+                  </div>
+                ) : (
+                  upcomingDeliveries.map(delivery => {
+                    const project = projects.find(p => p.id === delivery.project_id);
+                    const deliveryDate = delivery.date ? new Date(delivery.date) : null;
+                    const isValidDate = deliveryDate && !isNaN(deliveryDate.getTime());
+                    return (
+                      <div key={delivery.id} className="text-sm">
+                        <p className="text-zinc-400 text-xs">
+                          {isValidDate ? format(deliveryDate, 'MMM d') : 'No date'}
+                        </p>
+                        <p className="text-white font-medium truncate">{project?.name}</p>
+                        <p className="text-zinc-500 text-xs line-clamp-1">{delivery.items}</p>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
@@ -813,126 +860,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Safety Section */}
-        {widgetConfig.showSafety && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <Shield size={18} className="text-green-500" />
-                Safety Metrics
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Total Incidents (30d)</span>
-                  <Badge variant="outline" className={safetyIncidents === 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
-                    {safetyIncidents}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Days Since Incident</span>
-                  <span className="text-xl font-bold text-green-400">
-                    {(() => {
-                      const incidentIndex = dailyLogs.findIndex(log => log.safety_incidents);
-                      return incidentIndex === -1 ? dailyLogs.length : incidentIndex;
-                    })()}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Delays Reported</span>
-                  <span className="text-lg font-medium text-amber-400">{recentDelays}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Schedule Widget */}
-        {widgetConfig.showSchedule && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <Calendar size={18} className="text-blue-500" />
-                Schedule Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-400">Milestones (30d)</span>
-                  <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    {upcomingMilestones.length}
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  {upcomingMilestones.slice(0, 3).map(project => {
-                    const targetDate = project.target_completion ? new Date(project.target_completion) : null;
-                    const isValidDate = targetDate && !isNaN(targetDate.getTime());
-
-                    return (
-                      <div key={project.id} className="text-sm">
-                        <p className="text-white font-medium">{project.name}</p>
-                        <p className="text-zinc-500">
-                          {isValidDate ? format(targetDate, 'MMM d, yyyy') : 'No date'} 
-                          {isValidDate && (
-                            <span className="text-amber-400 ml-2">
-                              ({differenceInDays(targetDate, new Date())}d)
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Upcoming Deliveries */}
-        {widgetConfig.showDeliveries && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800 pb-4">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                <Truck size={18} className="text-purple-500" />
-                Recent Materials
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-3">
-                {upcomingDeliveries.length === 0 ? (
-                  <div className="text-center py-4">
-                    <Truck className="text-zinc-600 mx-auto mb-2" size={24} />
-                    <p className="text-zinc-500 text-sm">No recent material deliveries logged.</p>
-                    <p className="text-zinc-600 text-xs mt-1">Track deliveries in Daily Logs</p>
-                  </div>
-                ) : (
-                  upcomingDeliveries.map(delivery => {
-                    const project = projects.find(p => p.id === delivery.project_id);
-                    const deliveryDate = delivery.date ? new Date(delivery.date) : null;
-                    const isValidDate = deliveryDate && !isNaN(deliveryDate.getTime());
-
-                    return (
-                      <div key={delivery.id} className="text-sm">
-                        <p className="text-zinc-400 text-xs">
-                          {isValidDate ? format(deliveryDate, 'MMM d') : 'No date'}
-                        </p>
-                        <p className="text-white font-medium">{project?.name}</p>
-                        <p className="text-zinc-500 line-clamp-1">{delivery.items}</p>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Original Sections */}
+      {/* Projects and Activity Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Active Projects */}
         <Card className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">

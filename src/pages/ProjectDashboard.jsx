@@ -26,6 +26,8 @@ import ScheduleAdherenceWidget from '@/components/project-dashboard/ScheduleAdhe
 import RFIResponseTimeWidget from '@/components/project-dashboard/RFIResponseTimeWidget';
 import RiskRegister from '@/components/project-dashboard/RiskRegister';
 import ProjectAlerts from '@/components/project-dashboard/ProjectAlerts';
+import FinancialSummary from '@/components/project-dashboard/FinancialSummary';
+import RiskAssessmentModule from '@/components/project-dashboard/RiskAssessmentModule';
 import { format, differenceInDays } from 'date-fns';
 import { calculateProjectLaborTotals, identifyScopeRiskTasks } from '@/components/shared/laborScheduleUtils';
 
@@ -365,17 +367,35 @@ export default function ProjectDashboard() {
         onCloseConfig={() => setShowAlertConfig(false)}
       />
 
-      <Tabs defaultValue="kpis" className="mb-6">
+      <Tabs defaultValue="financial" className="mb-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="financial" className="data-[state=active]:bg-zinc-800">
+            <DollarSign size={14} className="mr-2" />
+            Financial Summary
+          </TabsTrigger>
+          <TabsTrigger value="risks" className="data-[state=active]:bg-zinc-800">
+            <AlertTriangle size={14} className="mr-2" />
+            Risk Assessment
+          </TabsTrigger>
           <TabsTrigger value="kpis" className="data-[state=active]:bg-zinc-800">
             <Activity size={14} className="mr-2" />
             KPI Widgets
           </TabsTrigger>
-          <TabsTrigger value="risks" className="data-[state=active]:bg-zinc-800">
-            <AlertTriangle size={14} className="mr-2" />
-            Risk Register
-          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="financial" className="space-y-6">
+          <FinancialSummary
+            project={project}
+            financials={financials}
+            costCodes={costCodes}
+            expenses={expenses}
+            changeOrders={changeOrders}
+          />
+        </TabsContent>
+
+        <TabsContent value="risks" className="space-y-6">
+          <RiskAssessmentModule projectId={projectId} />
+        </TabsContent>
 
         <TabsContent value="kpis" className="space-y-6">
           {/* Budget Variance by Cost Code */}
@@ -393,19 +413,6 @@ export default function ProjectDashboard() {
           {/* RFI Response Times */}
           <RFIResponseTimeWidget
             rfis={rfis}
-          />
-        </TabsContent>
-
-        <TabsContent value="risks">
-          <RiskRegister
-            project={project}
-            financials={financials}
-            tasks={tasks}
-            rfis={rfis}
-            drawings={drawings}
-            changeOrders={changeOrders}
-            projectTotals={projectTotals}
-            scheduleMetrics={scheduleMetrics}
           />
         </TabsContent>
       </Tabs>

@@ -24,7 +24,6 @@ import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import LaborScope from './pages/LaborScope';
 import __Layout from './Layout.jsx';
 
 
@@ -55,7 +54,6 @@ export const PAGES = {
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "LaborScope": LaborScope,
 }
 
 export const pagesConfig = {

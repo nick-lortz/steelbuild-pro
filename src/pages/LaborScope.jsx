@@ -326,23 +326,25 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={breakdown.shop_hours || 0}
+                          value={breakdown.shop_hours || ''}
                           onChange={(e) => updateBreakdownMutation.mutate({
                             id: breakdown.id,
                             data: { shop_hours: parseFloat(e.target.value) || 0 }
                           })}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
+                          placeholder="0"
                         />
                       </td>
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={breakdown.field_hours || 0}
+                          value={breakdown.field_hours || ''}
                           onChange={(e) => updateBreakdownMutation.mutate({
                             id: breakdown.id,
                             data: { field_hours: parseFloat(e.target.value) || 0 }
                           })}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
+                          placeholder="0"
                         />
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-amber-400">{total}</td>
@@ -437,23 +439,25 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={item.shop_hours || 0}
+                          value={item.shop_hours || ''}
                           onChange={(e) => updateSpecialtyMutation.mutate({
                             id: item.id,
                             data: { shop_hours: parseFloat(e.target.value) || 0 }
                           })}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
+                          placeholder="0"
                         />
                       </td>
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={item.field_hours || 0}
+                          value={item.field_hours || ''}
                           onChange={(e) => updateSpecialtyMutation.mutate({
                             id: item.id,
                             data: { field_hours: parseFloat(e.target.value) || 0 }
                           })}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
+                          placeholder="0"
                         />
                       </td>
                       <td className="py-3 px-4">
@@ -537,24 +541,26 @@ export default function LaborScope() {
                   <Label className="text-xs text-zinc-400">Baseline Shop Hours</Label>
                   <Input
                     type="number"
-                    value={project.baseline_shop_hours || 0}
+                    value={project.baseline_shop_hours || ''}
                     onChange={(e) => updateProjectMutation.mutate({
                       id: project.id,
                       data: { baseline_shop_hours: parseFloat(e.target.value) || 0 }
                     })}
                     className="bg-zinc-800 border-zinc-700 text-white"
+                    placeholder="0"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs text-zinc-400">Baseline Field Hours</Label>
                   <Input
                     type="number"
-                    value={project.baseline_field_hours || 0}
+                    value={project.baseline_field_hours || ''}
                     onChange={(e) => updateProjectMutation.mutate({
                       id: project.id,
                       data: { baseline_field_hours: parseFloat(e.target.value) || 0 }
                     })}
                     className="bg-zinc-800 border-zinc-700 text-white"
+                    placeholder="0"
                   />
                 </div>
               </div>
@@ -650,12 +656,13 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={gap.rough_cost || 0}
+                          value={gap.rough_cost || ''}
                           onChange={(e) => updateGapMutation.mutate({
                             id: gap.id,
                             data: { rough_cost: parseFloat(e.target.value) || 0 }
                           })}
                           className="bg-zinc-800 border-zinc-700 text-right"
+                          placeholder="0"
                         />
                       </td>
                       <td className="py-3 px-4">

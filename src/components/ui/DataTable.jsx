@@ -5,8 +5,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  TableRow } from
+"@/components/ui/table";
 import { cn } from "@/lib/utils";
 
 export default function DataTable({ columns, data, onRowClick, emptyMessage = "No data found" }) {
@@ -15,49 +15,49 @@ export default function DataTable({ columns, data, onRowClick, emptyMessage = "N
       <Table>
         <TableHeader>
           <TableRow className="border-zinc-800 hover:bg-transparent">
-            {columns.map((col, idx) => (
-              <TableHead 
-                key={idx} 
-                className={cn(
-                  "text-zinc-400 font-medium text-xs uppercase tracking-wider bg-zinc-900",
-                  col.className
-                )}
-              >
+            {columns.map((col, idx) =>
+            <TableHead
+              key={idx}
+              className={cn(
+                "text-zinc-400 font-medium text-xs uppercase tracking-wider bg-zinc-900",
+                col.className
+              )}>
+
                 {col.header}
               </TableHead>
-            ))}
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length === 0 ? (
-            <TableRow>
-              <TableCell 
-                colSpan={columns.length} 
-                className="text-center text-zinc-500 py-8"
-              >
+          {data.length === 0 ?
+          <TableRow>
+              <TableCell
+              colSpan={columns.length}
+              className="text-center text-zinc-500 py-8">
+
                 {emptyMessage}
               </TableCell>
-            </TableRow>
-          ) : (
-            data.map((row, rowIdx) => (
-              <TableRow 
-                key={row.id || rowIdx}
-                onClick={() => onRowClick?.(row)}
-                className={cn(
-                  "border-zinc-800",
-                  onRowClick && "cursor-pointer hover:bg-zinc-800/50"
-                )}
-              >
-                {columns.map((col, colIdx) => (
-                  <TableCell key={colIdx} className={cn("text-zinc-200", col.cellClassName)}>
+            </TableRow> :
+
+          data.map((row, rowIdx) =>
+          <TableRow
+            key={row.id || rowIdx}
+            onClick={() => onRowClick?.(row)}
+            className={cn(
+              "border-zinc-800",
+              onRowClick && "cursor-pointer hover:bg-zinc-800/50"
+            )}>
+
+                {columns.map((col, colIdx) =>
+            <TableCell key={colIdx} className="text-slate-50 p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
                     {col.render ? col.render(row) : row[col.accessor]}
                   </TableCell>
-                ))}
+            )}
               </TableRow>
-            ))
-          )}
+          )
+          }
         </TableBody>
       </Table>
-    </div>
-  );
+    </div>);
+
 }

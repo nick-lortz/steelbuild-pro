@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, AlertTriangle, Trash2, Save } from 'lucide-react';
+import { Plus, AlertTriangle, Trash2, Save, Zap, RefreshCw } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
+import LaborScheduleValidator from '@/components/labor/LaborScheduleValidator';
 
 export default function LaborScope() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -51,6 +52,13 @@ export default function LaborScope() {
   const { data: scopeGaps = [] } = useQuery({
     queryKey: ['scope-gaps', projectId],
     queryFn: () => base44.entities.ScopeGap.filter({ project_id: projectId }),
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', projectId],
+    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000
   });
@@ -139,6 +147,23 @@ export default function LaborScope() {
     }
   });
 
+  const allocateLaborMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('allocateLaborToSchedule', { project_id: projectId });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      toast.success(`Labor allocated to ${data.updated} tasks`);
+      if (data.warnings && data.warnings.length > 0) {
+        data.warnings.forEach(w => toast.warning(w));
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to allocate labor');
+    }
+  });
+
   // Calculate totals
   const totals = useMemo(() => {
     const categoryShop = breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0), 0);
@@ -195,6 +220,25 @@ export default function LaborScope() {
       <PageHeader
         title="Labor & Scope Breakdown"
         subtitle={`${project.project_number} - ${project.name}`}
+        actions={
+          <Button
+            onClick={() => allocateLaborMutation.mutate()}
+            disabled={allocateLaborMutation.isPending}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
+          >
+            {allocateLaborMutation.isPending ? (
+              <>
+                <RefreshCw size={16} className="mr-2 animate-spin" />
+                Allocating...
+              </>
+            ) : (
+              <>
+                <Zap size={16} className="mr-2" />
+                Allocate Labor to Schedule
+              </>
+            )}
+          </Button>
+        }
       />
 
       {/* Discrepancy Alert */}
@@ -210,6 +254,18 @@ export default function LaborScope() {
           </div>
         </div>
       )}
+
+      {/* Labor vs Schedule Validation */}
+      <div className="mb-6">
+        <LaborScheduleValidator
+          projectId={projectId}
+          breakdowns={breakdowns}
+          specialtyItems={specialtyItems}
+          tasks={tasks}
+          categories={categories}
+          scopeGaps={scopeGaps}
+        />
+      </div>
 
       {/* Section A: Specific Field Hours Breakout */}
       <Card className="bg-zinc-900/50 border-zinc-800 mb-6">

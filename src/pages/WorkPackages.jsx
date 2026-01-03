@@ -23,17 +23,17 @@ export default function WorkPackages() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => base44.entities.Project.list()
   });
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list('-created_date'),
+    queryFn: () => base44.entities.WorkPackage.list('-created_date')
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => base44.entities.Task.list()
   });
 
   const createMutation = useMutation({
@@ -42,7 +42,7 @@ export default function WorkPackages() {
       queryClient.invalidateQueries(['work-packages']);
       setShowForm(false);
       toast.success('Work package created');
-    },
+    }
   });
 
   const updateMutation = useMutation({
@@ -52,7 +52,7 @@ export default function WorkPackages() {
       setShowForm(false);
       setEditingPackage(null);
       toast.success('Work package updated');
-    },
+    }
   });
 
   const completePhase = useMutation({
@@ -71,7 +71,7 @@ export default function WorkPackages() {
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || 'Failed to complete phase');
-    },
+    }
   });
 
   const handleEdit = (pkg) => {
@@ -93,131 +93,131 @@ export default function WorkPackages() {
   };
 
   const getPackageTaskCount = (packageId) => {
-    return tasks.filter(t => t.work_package_id === packageId).length;
+    return tasks.filter((t) => t.work_package_id === packageId).length;
   };
 
   const columns = [
-    {
-      header: 'Package #',
-      accessor: 'package_number',
-      render: (pkg) => (
-        <div className="font-medium text-white">{pkg.package_number}</div>
-      ),
-    },
-    {
-      header: 'Name',
-      accessor: 'name',
-      render: (pkg) => {
-        const project = projects.find(p => p.id === pkg.project_id);
-        return (
-          <div>
+  {
+    header: 'Package #',
+    accessor: 'package_number',
+    render: (pkg) =>
+    <div className="font-medium text-white">{pkg.package_number}</div>
+
+  },
+  {
+    header: 'Name',
+    accessor: 'name',
+    render: (pkg) => {
+      const project = projects.find((p) => p.id === pkg.project_id);
+      return (
+        <div>
             <div className="text-white">{pkg.name}</div>
             <div className="text-xs text-zinc-400">{project?.project_number}</div>
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Phase',
-      render: (pkg) => <StatusBadge status={pkg.current_phase} />,
-    },
-    {
-      header: 'Progress',
-      render: (pkg) => {
-        const phases = ['detailing', 'fabrication', 'delivery', 'erection'];
-        const completedCount = phases.filter(p => pkg[`${p}_complete`]).length;
-        return (
-          <div className="space-y-1">
+          </div>);
+
+    }
+  },
+  {
+    header: 'Phase',
+    render: (pkg) => <StatusBadge status={pkg.current_phase} />
+  },
+  {
+    header: 'Progress',
+    render: (pkg) => {
+      const phases = ['detailing', 'fabrication', 'delivery', 'erection'];
+      const completedCount = phases.filter((p) => pkg[`${p}_complete`]).length;
+      return (
+        <div className="space-y-1">
             <div className="text-xs text-zinc-400">{completedCount}/4 phases</div>
             <div className="w-full bg-zinc-800 rounded-full h-1.5">
-              <div 
-                className="bg-amber-500 h-1.5 rounded-full"
-                style={{ width: `${(completedCount / 4) * 100}%` }}
-              />
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      header: 'Tonnage',
-      render: (pkg) => (
-        <div className="text-zinc-200">{pkg.tonnage || '-'} tons</div>
-      ),
-    },
-    {
-      header: 'Tasks',
-      render: (pkg) => (
-        <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
-      ),
-    },
-    {
-      header: 'Actions',
-      render: (pkg) => {
-        const canCompleteDetailing = !pkg.detailing_complete;
-        const canCompleteFabrication = pkg.detailing_complete && !pkg.fabrication_complete;
-        const canCompleteDelivery = pkg.fabrication_complete && !pkg.delivery_complete;
-        const canCompleteErection = pkg.delivery_complete && !pkg.erection_complete;
+              <div
+              className="bg-amber-500 h-1.5 rounded-full"
+              style={{ width: `${completedCount / 4 * 100}%` }} />
 
-        return (
-          <div className="flex items-center gap-2">
-            {canCompleteDetailing && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCompletePhase(pkg, 'detailing');
-                }}
-                className="border-green-700 text-green-400 hover:bg-green-500/10"
-              >
+            </div>
+          </div>);
+
+    }
+  },
+  {
+    header: 'Tonnage',
+    render: (pkg) =>
+    <div className="text-zinc-200">{pkg.tonnage || '-'} tons</div>
+
+  },
+  {
+    header: 'Tasks',
+    render: (pkg) =>
+    <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
+
+  },
+  {
+    header: 'Actions',
+    render: (pkg) => {
+      const canCompleteDetailing = !pkg.detailing_complete;
+      const canCompleteFabrication = pkg.detailing_complete && !pkg.fabrication_complete;
+      const canCompleteDelivery = pkg.fabrication_complete && !pkg.delivery_complete;
+      const canCompleteErection = pkg.delivery_complete && !pkg.erection_complete;
+
+      return (
+        <div className="flex items-center gap-2">
+            {canCompleteDetailing &&
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompletePhase(pkg, 'detailing');
+            }}
+            className="border-green-700 text-green-400 hover:bg-green-500/10">
+
                 Complete Detailing
               </Button>
-            )}
-            {canCompleteFabrication && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCompletePhase(pkg, 'fabrication');
-                }}
-                className="border-green-700 text-green-400 hover:bg-green-500/10"
-              >
+          }
+            {canCompleteFabrication &&
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompletePhase(pkg, 'fabrication');
+            }}
+            className="border-green-700 text-green-400 hover:bg-green-500/10">
+
                 Complete Fabrication
               </Button>
-            )}
-            {canCompleteDelivery && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCompletePhase(pkg, 'delivery');
-                }}
-                className="border-green-700 text-green-400 hover:bg-green-500/10"
-              >
+          }
+            {canCompleteDelivery &&
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompletePhase(pkg, 'delivery');
+            }}
+            className="border-green-700 text-green-400 hover:bg-green-500/10">
+
                 Complete Delivery
               </Button>
-            )}
-            {canCompleteErection && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCompletePhase(pkg, 'erection');
-                }}
-                className="border-green-700 text-green-400 hover:bg-green-500/10"
-              >
+          }
+            {canCompleteErection &&
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCompletePhase(pkg, 'erection');
+            }}
+            className="border-green-700 text-green-400 hover:bg-green-500/10">
+
                 Complete Erection
               </Button>
-            )}
-          </div>
-        );
-      },
-    },
-  ];
+          }
+          </div>);
+
+    }
+  }];
+
 
   return (
     <div>
@@ -225,23 +225,23 @@ export default function WorkPackages() {
         title="Work Packages"
         subtitle="Manage fabrication packages with automated phase transitions"
         actions={
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+        <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
             <Plus size={18} className="mr-2" />
             New Work Package
           </Button>
-        }
-      />
+        } />
 
-      {isLoading ? (
-        <div className="text-center text-zinc-400 py-12">Loading...</div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={workPackages}
-          onRowClick={handleEdit}
-          emptyMessage="No work packages found. Create one to get started."
-        />
-      )}
+
+      {isLoading ?
+      <div className="text-center text-zinc-400 py-12">Loading...</div> :
+
+      <DataTable
+        columns={columns}
+        data={workPackages}
+        onRowClick={handleEdit}
+        emptyMessage="No work packages found. Create one to get started." />
+
+      }
 
       <Sheet open={showForm} onOpenChange={(open) => {
         setShowForm(open);
@@ -267,8 +267,8 @@ export default function WorkPackages() {
               setShowForm(false);
               setEditingPackage(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-          />
+            isLoading={createMutation.isPending || updateMutation.isPending} />
+
         </SheetContent>
       </Sheet>
 
@@ -294,23 +294,23 @@ export default function WorkPackages() {
               <Button
                 variant="outline"
                 onClick={() => setCompletingPhase(null)}
-                className="border-zinc-700"
-              >
+                className="border-zinc-700">
+
                 Cancel
               </Button>
               <Button
                 onClick={confirmCompletePhase}
                 disabled={completePhase.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
+                className="bg-amber-500 hover:bg-amber-600 text-black">
+
                 {completePhase.isPending ? 'Processing...' : 'Complete Phase'}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }
 
 function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading }) {
@@ -322,7 +322,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
     tonnage: '',
     piece_count: '',
     priority: 'medium',
-    notes: '',
+    notes: ''
   });
 
   const handleChange = (field, value) => {
@@ -336,18 +336,18 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-      <div className="space-y-2">
+      <div className="text-slate-50 space-y-2">
         <Label>Project</Label>
         <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
           <SelectTrigger className="bg-zinc-800 border-zinc-700">
             <SelectValue placeholder="Select project" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-700">
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id} className="text-white">
+            {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id} className="text-white">
                 {p.project_number} - {p.name}
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -359,8 +359,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
           onChange={(e) => handleChange('package_number', e.target.value)}
           placeholder="e.g., WP-001, WP-L2-NORTH"
           className="bg-zinc-800 border-zinc-700 text-white"
-          required
-        />
+          required />
+
       </div>
 
       <div className="space-y-2">
@@ -370,8 +370,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="Descriptive name"
           className="bg-zinc-800 border-zinc-700 text-white"
-          required
-        />
+          required />
+
       </div>
 
       <div className="space-y-2">
@@ -381,8 +381,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Scope details..."
           className="bg-zinc-800 border-zinc-700 text-white"
-          rows={3}
-        />
+          rows={3} />
+
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -394,8 +394,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
             value={formData.tonnage}
             onChange={(e) => handleChange('tonnage', e.target.value)}
             placeholder="Total tons"
-            className="bg-zinc-800 border-zinc-700 text-white"
-          />
+            className="bg-zinc-800 border-zinc-700 text-white" />
+
         </div>
 
         <div className="space-y-2">
@@ -405,8 +405,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
             value={formData.piece_count}
             onChange={(e) => handleChange('piece_count', e.target.value)}
             placeholder="Number of pieces"
-            className="bg-zinc-800 border-zinc-700 text-white"
-          />
+            className="bg-zinc-800 border-zinc-700 text-white" />
+
         </div>
       </div>
 
@@ -432,8 +432,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
           onChange={(e) => handleChange('notes', e.target.value)}
           placeholder="Additional notes..."
           className="bg-zinc-800 border-zinc-700 text-white"
-          rows={2}
-        />
+          rows={2} />
+
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
@@ -444,6 +444,6 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
           {isLoading ? 'Saving...' : pkg ? 'Update' : 'Create'}
         </Button>
       </div>
-    </form>
-  );
+    </form>);
+
 }

@@ -269,8 +269,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
       const navItems = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
@@ -323,11 +325,53 @@ export default function Layout({ children, currentPageName }) {
   );
 
   return (
-    <ConfirmProvider>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
-        <Toaster />
+    <ThemeProvider>
+      <ConfirmProvider>
+        <div className="min-h-screen bg-background text-foreground">
+          <Toaster />
+          <style>{`
+            .dark {
+              --background: 0 0% 4%;
+              --foreground: 0 0% 95%;
+              --card: 0 0% 7%;
+              --card-foreground: 0 0% 95%;
+              --primary: 35 100% 50%;
+              --primary-foreground: 0 0% 0%;
+              --secondary: 0 0% 12%;
+              --secondary-foreground: 0 0% 95%;
+              --muted: 0 0% 15%;
+              --muted-foreground: 0 0% 65%;
+              --accent: 35 100% 50%;
+              --accent-foreground: 0 0% 0%;
+              --destructive: 0 62% 50%;
+              --destructive-foreground: 0 0% 95%;
+              --border: 0 0% 18%;
+              --input: 0 0% 15%;
+              --ring: 35 100% 50%;
+            }
+            
+            .light {
+              --background: 0 0% 100%;
+              --foreground: 0 0% 10%;
+              --card: 0 0% 98%;
+              --card-foreground: 0 0% 10%;
+              --primary: 35 100% 50%;
+              --primary-foreground: 0 0% 100%;
+              --secondary: 0 0% 95%;
+              --secondary-foreground: 0 0% 10%;
+              --muted: 0 0% 90%;
+              --muted-foreground: 0 0% 40%;
+              --accent: 35 100% 50%;
+              --accent-foreground: 0 0% 100%;
+              --destructive: 0 62% 50%;
+              --destructive-foreground: 0 0% 98%;
+              --border: 0 0% 85%;
+              --input: 0 0% 90%;
+              --ring: 35 100% 50%;
+            }
+          `}</style>
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -339,12 +383,13 @@ export default function Layout({ children, currentPageName }) {
             <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
               <Building2 size={18} className="text-black" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-white">SteelBuild Pro</span>
+            <span className="font-bold text-lg tracking-tight">SteelBuild Pro</span>
           </div>
         </div>
 
         {currentUser && (
-          <>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <NotificationPanel />
             <DropdownMenu>
               <DropdownMenuTrigger className="p-2">
@@ -377,12 +422,12 @@ export default function Layout({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-zinc-900 border-r border-zinc-800 transition-transform duration-200 flex flex-col',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-card border-r border-border transition-transform duration-200 flex flex-col',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="h-16 flex items-center px-4 border-b border-zinc-800 flex-shrink-0">
+        <div className="h-16 flex items-center px-4 border-b border-border flex-shrink-0">
           <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
             <Building2 size={18} className="text-black" />
           </div>
@@ -403,7 +448,7 @@ export default function Layout({ children, currentPageName }) {
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                 )}
               >
                 <Icon size={18} />
@@ -415,18 +460,19 @@ export default function Layout({ children, currentPageName }) {
         </nav>
 
         {currentUser && (
-          <div className="border-t border-zinc-800 p-3 flex-shrink-0">
+          <div className="border-t border-border p-3 flex-shrink-0">
             <div className="flex items-center justify-between mb-3 px-3">
+              <ThemeToggle />
               <NotificationPanel />
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-800">
+              <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary">
                 <UserCircle size={18} className="text-amber-500" />
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium truncate text-white">
+                  <p className="text-sm font-medium truncate">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
@@ -459,7 +505,8 @@ export default function Layout({ children, currentPageName }) {
       </main>
 
       <MobileNav currentPageName={currentPageName} />
-      </div>
+        </div>
       </ConfirmProvider>
-      );
+    </ThemeProvider>
+  );
 }

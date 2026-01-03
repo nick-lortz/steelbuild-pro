@@ -390,86 +390,43 @@ export default function LaborScope() {
         </CardContent>
       </Card>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-zinc-400">Total Shop Hours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{totals.totalShop}</div>
-            <p className="text-xs text-zinc-500">Baseline: {totals.baselineShop}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-zinc-400">Total Field Hours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{totals.totalField}</div>
-            <p className="text-xs text-zinc-500">Baseline: {totals.baselineField}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-zinc-400">Open Scope Gaps</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-400">{gapTotals.openCount}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-zinc-400">Total Gap Cost</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-400">
-              ${gapTotals.totalCost.toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Discrepancy Warnings */}
+      {/* Baseline vs Breakdown Warning */}
       {totals.hasDiscrepancy && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
           <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={20} />
           <div className="flex-1">
-            <p className="font-semibold text-red-400">Labor breakout does not match baseline</p>
+            <p className="font-semibold text-red-400">Labor breakdown does not match baseline</p>
             <p className="text-sm text-zinc-300 mt-1">
-              Shop Hours: {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy} hrs
+              Shop: {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy} hrs from baseline
               {' | '}
-              Field Hours: {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy} hrs
+              Field: {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy} hrs from baseline
             </p>
           </div>
         </div>
       )}
 
-      {/* Schedule Mismatch Warning */}
+      {/* Breakdown vs Schedule Warning */}
       {laborScheduleTotals.has_mismatch && (
         <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-3">
           <AlertTriangle className="text-amber-400 flex-shrink-0 mt-0.5" size={20} />
           <div className="flex-1">
-            <p className="font-semibold text-amber-400">Schedule labor does not match labor plan</p>
+            <p className="font-semibold text-amber-400">Scheduled labor hours do not match breakdown</p>
             <p className="text-sm text-zinc-300 mt-1">
-              Scheduled Shop: {laborScheduleTotals.scheduled_shop} hrs (Plan: {laborScheduleTotals.breakdown_shop} hrs, Δ {laborScheduleTotals.shop_variance > 0 ? '+' : ''}{laborScheduleTotals.shop_variance})
+              Shop: {laborScheduleTotals.scheduled_shop} hrs scheduled vs {laborScheduleTotals.breakdown_shop} hrs breakdown (Δ {laborScheduleTotals.shop_variance > 0 ? '+' : ''}{laborScheduleTotals.shop_variance})
               {' | '}
-              Scheduled Field: {laborScheduleTotals.scheduled_field} hrs (Plan: {laborScheduleTotals.breakdown_field} hrs, Δ {laborScheduleTotals.field_variance > 0 ? '+' : ''}{laborScheduleTotals.field_variance})
+              Field: {laborScheduleTotals.scheduled_field} hrs scheduled vs {laborScheduleTotals.breakdown_field} hrs breakdown (Δ {laborScheduleTotals.field_variance > 0 ? '+' : ''}{laborScheduleTotals.field_variance})
             </p>
           </div>
         </div>
       )}
 
-      {/* Category-Level Mismatches */}
+      {/* Category-Level Variances */}
       {laborScheduleMismatches.length > 0 && (
         <Card className="bg-zinc-900 border-zinc-800 mb-6">
           <CardHeader>
             <CardTitle className="text-amber-400 flex items-center gap-2">
               <AlertTriangle size={18} />
-              Labor vs Schedule Variances ({laborScheduleMismatches.length} categories)
+              Category-Level Variances ({laborScheduleMismatches.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -478,7 +435,7 @@ export default function LaborScope() {
                 <div key={mismatch.category_id} className="flex justify-between items-center p-2 bg-zinc-800/50 rounded">
                   <span className="text-white font-medium">{mismatch.category_name}</span>
                   <div className="text-sm text-zinc-400">
-                    Plan: {mismatch.breakdown_shop + mismatch.breakdown_field} hrs | 
+                    Breakdown: {mismatch.breakdown_shop + mismatch.breakdown_field} hrs | 
                     Scheduled: {mismatch.scheduled_shop + mismatch.scheduled_field} hrs | 
                     <span className={mismatch.total_variance > 0 ? 'text-red-400' : 'text-green-400'}>
                       {' '}Δ {mismatch.total_variance > 0 ? '+' : ''}{mismatch.total_variance} hrs
@@ -491,12 +448,12 @@ export default function LaborScope() {
         </Card>
       )}
 
-      {/* Section A: Specific Field Hours Breakout */}
+      {/* Labor Breakdown Table */}
       <Card className="bg-zinc-900 border-zinc-800 mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users size={18} />
-            Specific Field Hours Breakout
+            Labor Breakdown by Category
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -508,7 +465,7 @@ export default function LaborScope() {
         </CardContent>
       </Card>
 
-      {/* Section B: Specialty Items */}
+      {/* Specialty Items */}
       <Card className="bg-zinc-900 border-zinc-800 mb-6">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -531,36 +488,35 @@ export default function LaborScope() {
             columns={specialtyColumns}
             data={specialtyItems}
             emptyMessage="No specialty items"
-            onRowClick={(item) => {
-              // Could open edit dialog here
-            }}
           />
         </CardContent>
       </Card>
 
-      {/* Section C: Total Hours */}
+      {/* Total Hours Summary */}
       <Card className="bg-zinc-900 border-zinc-800 mb-6">
         <CardHeader>
-          <CardTitle>Total Hours Per Above Breakouts</CardTitle>
+          <CardTitle>Total Hours Summary</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <Label className="text-zinc-400">Total Shop Hours</Label>
-              <p className="text-2xl font-bold text-white mt-1">{totals.totalShop}</p>
+              <Label className="text-zinc-400 text-sm">Breakdown Shop</Label>
+              <p className="text-2xl font-bold text-blue-400 mt-1">{totals.totalShop}</p>
+              <p className="text-xs text-zinc-500">Baseline: {totals.baselineShop}</p>
             </div>
             <div>
-              <Label className="text-zinc-400">Total Field Hours</Label>
-              <p className="text-2xl font-bold text-white mt-1">{totals.totalField}</p>
+              <Label className="text-zinc-400 text-sm">Breakdown Field</Label>
+              <p className="text-2xl font-bold text-green-400 mt-1">{totals.totalField}</p>
+              <p className="text-xs text-zinc-500">Baseline: {totals.baselineField}</p>
             </div>
             <div>
-              <Label className="text-zinc-400">Shop Discrepancy</Label>
+              <Label className="text-zinc-400 text-sm">Shop Variance</Label>
               <p className={`text-2xl font-bold mt-1 ${totals.shopDiscrepancy !== 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Field Discrepancy</Label>
+              <Label className="text-zinc-400 text-sm">Field Variance</Label>
               <p className={`text-2xl font-bold mt-1 ${totals.fieldDiscrepancy !== 0 ? 'text-red-400' : 'text-green-400'}`}>
                 {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy}
               </p>
@@ -569,13 +525,13 @@ export default function LaborScope() {
         </CardContent>
       </Card>
 
-      {/* Section D: Misses/Gap in Scope */}
+      {/* Scope Gaps */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <AlertCircle size={18} />
-              Misses/Gap in Scope
+              Scope Gaps ({gapTotals.openCount} open, ${gapTotals.totalCost.toLocaleString()} total)
             </CardTitle>
             <Button
               onClick={() => setShowGapDialog(true)}

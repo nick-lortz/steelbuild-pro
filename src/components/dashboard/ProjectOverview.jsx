@@ -2,14 +2,34 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Building2, DollarSign, Calendar, AlertTriangle } from 'lucide-react';
+import { Building2, DollarSign, Calendar, AlertTriangle, Clock, FileWarning } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 
 export default function ProjectOverview({ projects, financials, tasks, rfis, changeOrders, expenses = [], laborHours = [], resources = [] }) {
   const activeProjects = projects.filter(p => 
     p.status === 'in_progress' || p.status === 'awarded'
   );
+
+  const { data: allLaborBreakdowns = [] } = useQuery({
+    queryKey: ['all-labor-breakdowns'],
+    queryFn: () => base44.entities.LaborBreakdown.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: allSpecialtyItems = [] } = useQuery({
+    queryKey: ['all-specialty-items'],
+    queryFn: () => base44.entities.SpecialtyDiscussionItem.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: allScopeGaps = [] } = useQuery({
+    queryKey: ['all-scope-gaps'],
+    queryFn: () => base44.entities.ScopeGap.list(),
+    staleTime: 5 * 60 * 1000
+  });
 
   const getProjectHealth = (project) => {
     const projectTasks = (tasks || []).filter(t => t && t.project_id === project.id);
@@ -99,6 +119,22 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
     at_risk: 'At Risk',
   };
 
+  const getProjectLaborMetrics = (project) => {
+    const breakdowns = allLaborBreakdowns.filter(b => b.project_id === project.id);
+    const specialties = allSpecialtyItems.filter(s => s.project_id === project.id);
+    const gaps = allScopeGaps.filter(g => g.project_id === project.id);
+    
+    const totalShop = breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0), 0) +
+                      specialties.reduce((sum, s) => sum + (s.shop_hours || 0), 0);
+    const totalField = breakdowns.reduce((sum, b) => sum + (b.field_hours || 0), 0) +
+                       specialties.reduce((sum, s) => sum + (s.field_hours || 0), 0);
+    
+    const openGaps = gaps.filter(g => g.status === 'open');
+    const totalGapCost = openGaps.reduce((sum, g) => sum + (g.rough_cost || 0), 0);
+    
+    return { totalShop, totalField, openGapsCount: openGaps.length, totalGapCost };
+  };
+
   const projectData = useMemo(() => {
     if (!activeProjects || !tasks || !financials || !rfis || !changeOrders) return [];
     
@@ -107,14 +143,15 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
       health: getProjectHealth(project),
       progress: getProjectProgress(project),
       finances: getProjectFinancials(project),
+      labor: getProjectLaborMetrics(project),
       projectRFIs: (rfis || []).filter(r => r && r.project_id === project.id && r.status !== 'closed'),
       projectCOs: (changeOrders || []).filter(co => co && co.project_id === project.id && co.status === 'pending'),
     }));
-  }, [activeProjects, tasks, financials, rfis, changeOrders, expenses, laborHours, resources]);
+  }, [activeProjects, tasks, financials, rfis, changeOrders, expenses, laborHours, resources, allLaborBreakdowns, allSpecialtyItems, allScopeGaps]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {projectData.map(({ project, health, progress, finances, projectRFIs, projectCOs }) => {
+      {projectData.map(({ project, health, progress, finances, labor, projectRFIs, projectCOs }) => {
 
         return (
           <Card key={project.id} className="bg-zinc-900 border-zinc-800 hover:border-amber-500/50 transition-colors">
@@ -163,6 +200,39 @@ export default function ProjectOverview({ projects, financials, tasks, rfis, cha
                   </p>
                 </div>
               </div>
+
+              {/* Labor & Scope Metrics */}
+              {labor.totalShop + labor.totalField > 0 && (
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800">
+                  <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Clock size={12} className="text-blue-400" />
+                      <p className="text-xs text-blue-400">Shop Hours</p>
+                    </div>
+                    <p className="text-lg font-bold text-blue-300">{labor.totalShop}</p>
+                  </div>
+                  <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Clock size={12} className="text-purple-400" />
+                      <p className="text-xs text-purple-400">Field Hours</p>
+                    </div>
+                    <p className="text-lg font-bold text-purple-300">{labor.totalField}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Scope Gaps Alert */}
+              {labor.openGapsCount > 0 && (
+                <div className="p-2 bg-red-500/10 border border-red-500/20 rounded flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileWarning size={14} className="text-red-400" />
+                    <span className="text-xs text-red-400">{labor.openGapsCount} Open Scope Gaps</span>
+                  </div>
+                  <span className="text-xs font-semibold text-red-300">
+                    ${labor.totalGapCost.toLocaleString()}
+                  </span>
+                </div>
+              )}
 
               {/* Key Metrics */}
               <div className="flex gap-4 text-xs">

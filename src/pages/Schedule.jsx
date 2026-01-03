@@ -26,11 +26,16 @@ export default function Schedule() {
   const queryClient = useQueryClient();
 
   // Fetch projects for filter
-  const { data: projects = [] } = useQuery({
+  const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000
   });
+
+  const projects = useMemo(() => 
+    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+    [rawProjects]
+  );
 
   // Fetch tasks via getFilteredTasks endpoint
   const { data: taskData, isLoading, refetch } = useQuery({

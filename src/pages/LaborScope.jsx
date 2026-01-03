@@ -347,7 +347,9 @@ export default function LaborScope() {
                           placeholder="0"
                         />
                       </td>
-                      <td className="py-3 px-4 text-right font-semibold text-amber-400">{total}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-amber-400">
+                        {total > 0 ? total : ''}
+                      </td>
                       <td className="py-3 px-4">
                         <Input
                           value={breakdown.notes || ''}
@@ -365,13 +367,13 @@ export default function LaborScope() {
                 <tr className="bg-zinc-800/50 font-bold">
                   <td className="py-3 px-4 text-white">Category Subtotal</td>
                   <td className="py-3 px-4 text-right text-amber-400">
-                    {breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0), 0)}
+                    {breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0), 0) || '--'}
                   </td>
                   <td className="py-3 px-4 text-right text-amber-400">
-                    {breakdowns.reduce((sum, b) => sum + (b.field_hours || 0), 0)}
+                    {breakdowns.reduce((sum, b) => sum + (b.field_hours || 0), 0) || '--'}
                   </td>
                   <td className="py-3 px-4 text-right text-amber-400">
-                    {breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0) + (b.field_hours || 0), 0)}
+                    {breakdowns.reduce((sum, b) => sum + (b.shop_hours || 0) + (b.field_hours || 0), 0) || '--'}
                   </td>
                   <td></td>
                 </tr>
@@ -520,15 +522,15 @@ export default function LaborScope() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-zinc-800/50 rounded">
                   <span className="text-zinc-300">Total Shop Hours</span>
-                  <span className="text-xl font-bold text-amber-400">{totals.totalShop}</span>
+                  <span className="text-xl font-bold text-amber-400">{totals.totalShop || '--'}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-zinc-800/50 rounded">
                   <span className="text-zinc-300">Total Field Hours</span>
-                  <span className="text-xl font-bold text-amber-400">{totals.totalField}</span>
+                  <span className="text-xl font-bold text-amber-400">{totals.totalField || '--'}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-zinc-800 rounded border border-zinc-700">
                   <span className="text-white font-semibold">Total Hours</span>
-                  <span className="text-2xl font-bold text-amber-500">{totals.totalHours}</span>
+                  <span className="text-2xl font-bold text-amber-500">{totals.totalHours || '--'}</span>
                 </div>
               </div>
             </div>
@@ -570,24 +572,24 @@ export default function LaborScope() {
             <div className="space-y-4">
               <h4 className="text-sm font-semibold text-zinc-400">Discrepancy</h4>
               <div className="space-y-3">
-                <div className={`flex justify-between items-center p-3 rounded ${
-                  totals.shopDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
-                  'bg-red-500/10 border border-red-500/30'
-                }`}>
-                  <span className="text-zinc-300">Shop Hours</span>
-                  <span className={`text-xl font-bold ${totals.shopDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy}
-                  </span>
-                </div>
-                <div className={`flex justify-between items-center p-3 rounded ${
-                  totals.fieldDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
-                  'bg-red-500/10 border border-red-500/30'
-                }`}>
-                  <span className="text-zinc-300">Field Hours</span>
-                  <span className={`text-xl font-bold ${totals.fieldDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy}
-                  </span>
-                </div>
+              <div className={`flex justify-between items-center p-3 rounded ${
+                totals.shopDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
+                'bg-red-500/10 border border-red-500/30'
+              }`}>
+                <span className="text-zinc-300">Shop Hours</span>
+                <span className={`text-xl font-bold ${totals.shopDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {totals.shopDiscrepancy === 0 ? '--' : (totals.shopDiscrepancy > 0 ? '+' : '') + totals.shopDiscrepancy}
+                </span>
+              </div>
+              <div className={`flex justify-between items-center p-3 rounded ${
+                totals.fieldDiscrepancy === 0 ? 'bg-green-500/10 border border-green-500/30' :
+                'bg-red-500/10 border border-red-500/30'
+              }`}>
+                <span className="text-zinc-300">Field Hours</span>
+                <span className={`text-xl font-bold ${totals.fieldDiscrepancy === 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {totals.fieldDiscrepancy === 0 ? '--' : (totals.fieldDiscrepancy > 0 ? '+' : '') + totals.fieldDiscrepancy}
+                </span>
+              </div>
               </div>
             </div>
           </div>

@@ -183,6 +183,13 @@ export default function Projects() {
     setFormData({
       ...project,
       contract_value: project.contract_value?.toString() || '',
+      rough_square_footage: project.rough_square_footage?.toString() || '',
+      rough_price_per_sqft: project.rough_price_per_sqft?.toString() || '',
+      crane_budget: project.crane_budget?.toString() || '',
+      sub_budget: project.sub_budget?.toString() || '',
+      rough_lift_hr_rate: project.rough_lift_hr_rate?.toString() || '',
+      baseline_shop_hours: project.baseline_shop_hours?.toString() || '',
+      baseline_field_hours: project.baseline_field_hours?.toString() || '',
       assigned_users: project.assigned_users || []
     });
     setSelectedProject(project);
@@ -560,87 +567,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('contract_value', e.target.value)}
             placeholder="0.00"
             className="bg-zinc-800 border-zinc-700" />
-
-          </div>
         </div>
-
-        {/* Estimating Kickoff Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white border-b border-zinc-800 pb-2">Estimating Kickoff</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Structure Anatomy/Job Type</Label>
-              <Input
-                value={formData.structure_anatomy_job_type}
-                onChange={(e) => handleChange('structure_anatomy_job_type', e.target.value)}
-                placeholder="e.g., MVD Renovation"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Rough Square Footage</Label>
-              <Input
-                type="number"
-                value={formData.rough_square_footage}
-                onChange={(e) => handleChange('rough_square_footage', e.target.value)}
-                placeholder="0"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Rough Price/SqFt</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.rough_price_per_sqft}
-                onChange={(e) => handleChange('rough_price_per_sqft', e.target.value)}
-                placeholder="0.00"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Overall Shop Hours</Label>
-              <Input
-                type="number"
-                value={formData.baseline_shop_hours}
-                onChange={(e) => handleChange('baseline_shop_hours', e.target.value)}
-                placeholder="0"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Overall Field Hours</Label>
-              <Input
-                type="number"
-                value={formData.baseline_field_hours}
-                onChange={(e) => handleChange('baseline_field_hours', e.target.value)}
-                placeholder="0"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Crane Budget</Label>
-              <Input
-                type="number"
-                value={formData.crane_budget}
-                onChange={(e) => handleChange('crane_budget', e.target.value)}
-                placeholder="0"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Sub Budget</Label>
-              <Input
-                type="number"
-                value={formData.sub_budget}
-                onChange={(e) => handleChange('sub_budget', e.target.value)}
-                placeholder="0"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
-            <div className="space-y-2">
-              <Label>Rough Lift/Hr Rate</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.rough_lift_hr_rate}
-                onChange={(e) => handleChange('rough_lift_hr_rate', e.target.value)}
-                placeholder="0.00"
-                className="bg-zinc-800 border-zinc-700" />
-            </div>
         <div className="space-y-2">
           <Label>Start Date</Label>
           <Input
@@ -648,7 +575,6 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.start_date}
             onChange={(e) => handleChange('start_date', e.target.value)}
             className="bg-zinc-800 border-zinc-700" />
-
         </div>
         <div className="space-y-2">
           <Label>Target Completion</Label>
@@ -657,7 +583,6 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.target_completion}
             onChange={(e) => handleChange('target_completion', e.target.value)}
             className="bg-zinc-800 border-zinc-700" />
-
         </div>
         <div className="space-y-2">
           <Label>Project Manager</Label>
@@ -666,7 +591,6 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('project_manager', e.target.value)}
             placeholder="PM name"
             className="bg-zinc-800 border-zinc-700" />
-
         </div>
         <div className="space-y-2">
           <Label>Superintendent</Label>
@@ -675,8 +599,88 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('superintendent', e.target.value)}
             placeholder="Superintendent name"
             className="bg-zinc-800 border-zinc-700" />
-
         </div>
+      </div>
+
+      {/* Estimating Kickoff Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-white border-b border-zinc-800 pb-2">Estimating Kickoff</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Structure Anatomy/Job Type</Label>
+            <Input
+              value={formData.structure_anatomy_job_type}
+              onChange={(e) => handleChange('structure_anatomy_job_type', e.target.value)}
+              placeholder="e.g., MVD Renovation"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Rough Square Footage</Label>
+            <Input
+              type="number"
+              value={formData.rough_square_footage}
+              onChange={(e) => handleChange('rough_square_footage', e.target.value)}
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Rough Price/SqFt</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.rough_price_per_sqft}
+              onChange={(e) => handleChange('rough_price_per_sqft', e.target.value)}
+              placeholder="0.00"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Overall Shop Hours</Label>
+            <Input
+              type="number"
+              value={formData.baseline_shop_hours}
+              onChange={(e) => handleChange('baseline_shop_hours', e.target.value)}
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Overall Field Hours</Label>
+            <Input
+              type="number"
+              value={formData.baseline_field_hours}
+              onChange={(e) => handleChange('baseline_field_hours', e.target.value)}
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Crane Budget</Label>
+            <Input
+              type="number"
+              value={formData.crane_budget}
+              onChange={(e) => handleChange('crane_budget', e.target.value)}
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Sub Budget</Label>
+            <Input
+              type="number"
+              value={formData.sub_budget}
+              onChange={(e) => handleChange('sub_budget', e.target.value)}
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+          <div className="space-y-2">
+            <Label>Rough Lift/Hr Rate</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.rough_lift_hr_rate}
+              onChange={(e) => handleChange('rough_lift_hr_rate', e.target.value)}
+              placeholder="0.00"
+              className="bg-zinc-800 border-zinc-700" />
+          </div>
+        </div>
+      </div>
       </div>
 
       <div className="border-t border-zinc-800 pt-4">

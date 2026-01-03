@@ -80,7 +80,8 @@ export default function Financials() {
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const projects = useMemo(() => 
@@ -91,43 +92,50 @@ export default function Financials() {
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
     queryFn: () => base44.entities.CostCode.list('code'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes - cost codes rarely change
   });
 
   const { data: financials = [], refetch: refetchFinancials, isRefetching: isRefetchingFinancials } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['laborHours'],
     queryFn: () => base44.entities.LaborHours.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: clientInvoices = [] } = useQuery({
     queryKey: ['clientInvoices'],
     queryFn: () => base44.entities.ClientInvoice.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const createMutation = useMutation({
@@ -137,6 +145,9 @@ export default function Financials() {
       setShowForm(false);
       resetForm();
     },
+    onError: (error) => {
+      console.error('Failed to create budget line:', error);
+    }
   });
 
   const updateMutation = useMutation({
@@ -147,6 +158,9 @@ export default function Financials() {
       setEditingFinancial(null);
       resetForm();
     },
+    onError: (error) => {
+      console.error('Failed to update budget line:', error);
+    }
   });
 
   const deleteMutation = useMutation({
@@ -154,6 +168,9 @@ export default function Financials() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
     },
+    onError: (error) => {
+      console.error('Failed to delete budget line:', error);
+    }
   });
 
   const createInvoiceMutation = useMutation({
@@ -163,6 +180,9 @@ export default function Financials() {
       setShowInvoiceForm(false);
       resetInvoiceForm();
     },
+    onError: (error) => {
+      console.error('Failed to create invoice:', error);
+    }
   });
 
   const updateInvoiceMutation = useMutation({
@@ -173,6 +193,9 @@ export default function Financials() {
       setEditingInvoice(null);
       resetInvoiceForm();
     },
+    onError: (error) => {
+      console.error('Failed to update invoice:', error);
+    }
   });
 
   const deleteInvoiceMutation = useMutation({
@@ -180,6 +203,9 @@ export default function Financials() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
     },
+    onError: (error) => {
+      console.error('Failed to delete invoice:', error);
+    }
   });
 
   const resetForm = () => {

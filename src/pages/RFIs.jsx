@@ -80,7 +80,9 @@ export default function RFIs() {
 
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name')
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const projects = React.useMemo(() => 
@@ -90,17 +92,23 @@ export default function RFIs() {
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('rfi_number')
+    queryFn: () => base44.entities.RFI.list('rfi_number'),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list('set_name')
+    queryFn: () => base44.entities.DrawingSet.list('set_name'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list('co_number')
+    queryFn: () => base44.entities.ChangeOrder.list('co_number'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const createMutation = useMutation({
@@ -109,6 +117,9 @@ export default function RFIs() {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setShowForm(false);
       setFormData(initialFormState);
+    },
+    onError: (error) => {
+      console.error('Failed to create RFI:', error);
     }
   });
 
@@ -118,6 +129,9 @@ export default function RFIs() {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setSelectedRFI(null);
       setFormData(initialFormState);
+    },
+    onError: (error) => {
+      console.error('Failed to update RFI:', error);
     }
   });
 
@@ -126,6 +140,9 @@ export default function RFIs() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setDeleteRFI(null);
+    },
+    onError: (error) => {
+      console.error('Failed to delete RFI:', error);
     }
   });
 

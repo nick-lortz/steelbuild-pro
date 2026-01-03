@@ -93,6 +93,9 @@ export default function ChangeOrders() {
       setShowForm(false);
       setFormData(initialFormState);
     },
+    onError: (error) => {
+      console.error('Failed to create change order:', error);
+    }
   });
 
   const updateMutation = useMutation({
@@ -102,6 +105,9 @@ export default function ChangeOrders() {
       setSelectedCO(null);
       setFormData(initialFormState);
     },
+    onError: (error) => {
+      console.error('Failed to update change order:', error);
+    }
   });
 
   const deleteMutation = useMutation({
@@ -110,6 +116,9 @@ export default function ChangeOrders() {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
       setDeleteCO(null);
     },
+    onError: (error) => {
+      console.error('Failed to delete change order:', error);
+    }
   });
 
   const getNextCONumber = (projectId) => {

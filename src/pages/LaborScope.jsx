@@ -392,7 +392,8 @@ export default function LaborScope() {
                       <td className="py-3 px-4">
                         <Input
                           type="number"
-                          value={breakdown.shop_hours || ''}
+                          defaultValue={breakdown.shop_hours || ''}
+                          key={`shop-${breakdown.id}-${breakdown.shop_hours}`}
                           onBlur={(e) => {
                             const val = parseFloat(e.target.value) || 0;
                             if (val !== breakdown.shop_hours) {

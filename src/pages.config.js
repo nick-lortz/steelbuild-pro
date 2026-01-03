@@ -10,6 +10,7 @@ import Fabrication from './pages/Fabrication';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Labor from './pages/Labor';
+import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
 import Meetings from './pages/Meetings';
 import Performance from './pages/Performance';
@@ -24,7 +25,6 @@ import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import LaborScope from './pages/LaborScope';
 import __Layout from './Layout.jsx';
 
 
@@ -41,6 +41,7 @@ export const PAGES = {
     "Financials": Financials,
     "Insights": Insights,
     "Labor": Labor,
+    "LaborScope": LaborScope,
     "LandingPage": LandingPage,
     "Meetings": Meetings,
     "Performance": Performance,
@@ -55,7 +56,6 @@ export const PAGES = {
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "LaborScope": LaborScope,
 }
 
 export const pagesConfig = {

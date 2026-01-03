@@ -62,12 +62,24 @@ export default function LaborScope() {
   // Initialize breakdown mutation
   const initializeMutation = useMutation({
     mutationFn: (projectId) => base44.functions.invoke('initializeLaborBreakdown', { project_id: projectId }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       refetchBreakdowns();
-      toast.success('Labor breakdown initialized');
+      toast.success(response.data.message);
     },
     onError: (error) => {
       toast.error(`Failed to initialize: ${error.message}`);
+    }
+  });
+
+  // Repair duplicates mutation
+  const repairMutation = useMutation({
+    mutationFn: (projectId) => base44.functions.invoke('repairLaborBreakdowns', { project_id: projectId }),
+    onSuccess: (response) => {
+      refetchBreakdowns();
+      toast.success(response.data.message);
+    },
+    onError: (error) => {
+      toast.error(`Repair failed: ${error.message}`);
     }
   });
 
@@ -292,6 +304,12 @@ export default function LaborScope() {
     );
   }
 
+  // Check for duplicates
+  const hasDuplicates = useMemo(() => {
+    const categoryIds = breakdowns.map(b => b.labor_category_id);
+    return categoryIds.length !== new Set(categoryIds).size;
+  }, [breakdowns]);
+
   if (breakdowns.length === 0) {
     return (
       <div>
@@ -307,6 +325,36 @@ export default function LaborScope() {
               className="bg-amber-500 hover:bg-amber-600 text-black"
             >
               Initialize Labor Breakdown
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Block UI if duplicates detected
+  if (hasDuplicates) {
+    return (
+      <div>
+        <PageHeader title="Labor & Scope Breakdown" subtitle={selectedProjectData?.name} />
+        <Card className="bg-red-500/10 border-red-500/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3 mb-4">
+              <AlertTriangle className="text-red-400 flex-shrink-0 mt-1" size={24} />
+              <div>
+                <p className="font-bold text-red-400 text-lg">Duplicate Labor Categories Detected</p>
+                <p className="text-zinc-300 mt-2">
+                  System integrity error: Multiple breakdown rows exist for the same category. 
+                  This must be repaired before continuing.
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => repairMutation.mutate(selectedProject)}
+              disabled={repairMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {repairMutation.isPending ? 'Repairing...' : 'Repair Duplicates'}
             </Button>
           </CardContent>
         </Card>

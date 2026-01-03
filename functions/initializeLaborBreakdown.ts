@@ -44,33 +44,53 @@ Deno.serve(async (req) => {
       categories = existingCategories;
     }
 
-    // Check if breakdowns already exist for this project
+    // Fetch existing breakdowns
     const existingBreakdowns = await base44.asServiceRole.entities.LaborBreakdown.filter({ project_id });
     
-    if (existingBreakdowns.length > 0) {
-      return Response.json({ 
-        message: 'Labor breakdowns already exist for this project',
-        breakdowns: existingBreakdowns 
-      });
+    // Build map of existing categories
+    const existingMap = new Map();
+    for (const breakdown of existingBreakdowns) {
+      existingMap.set(breakdown.labor_category_id, breakdown);
     }
 
-    // Create labor breakdown rows for each category
-    const breakdowns = await Promise.all(
-      categories.map(category => 
-        base44.asServiceRole.entities.LaborBreakdown.create({
+    // Find or create for each category
+    const results = [];
+    for (const category of categories) {
+      if (existingMap.has(category.id)) {
+        // Already exists, skip
+        results.push({
+          action: 'skipped',
+          category_id: category.id,
+          category_name: category.name,
+          breakdown_id: existingMap.get(category.id).id
+        });
+      } else {
+        // Create new
+        const breakdown = await base44.asServiceRole.entities.LaborBreakdown.create({
           project_id,
           labor_category_id: category.id,
           shop_hours: 0,
           field_hours: 0,
           notes: ''
-        })
-      )
-    );
+        });
+        results.push({
+          action: 'created',
+          category_id: category.id,
+          category_name: category.name,
+          breakdown_id: breakdown.id
+        });
+      }
+    }
+
+    const created = results.filter(r => r.action === 'created').length;
+    const skipped = results.filter(r => r.action === 'skipped').length;
 
     return Response.json({
       success: true,
-      message: `Created ${breakdowns.length} labor breakdown rows`,
-      breakdowns
+      message: `Created ${created}, skipped ${skipped} existing`,
+      created,
+      skipped,
+      details: results
     });
 
   } catch (error) {

@@ -25,7 +25,7 @@ import {
   SheetHeader,
   SheetTitle } from
 "@/components/ui/sheet";
-import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { Plus, Search, BarChart3, Copy, AlertTriangle, DollarSign, Clock, FileSpreadsheet, Trash2 } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from '@/components/ui/PageHeader';

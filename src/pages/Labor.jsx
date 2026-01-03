@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2, Pencil, Check, X } from 'lucide-react';
+import { Plus, Clock, CheckCircle, Users, MoreVertical, Trash2, Pencil, Check, X } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';

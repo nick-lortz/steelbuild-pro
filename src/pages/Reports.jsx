@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from '@/components/ui/PageHeader';
 import AutomatedReportScheduler from '@/components/reports/AutomatedReportScheduler';
 import DataTable from '@/components/ui/DataTable';
-import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, Play, Calendar, TrendingUp, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function Reports() {

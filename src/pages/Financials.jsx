@@ -28,9 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, DollarSign, TrendingUp, TrendingDown, AlertTriangle, BarChart3, Receipt, FileText, Calendar as CalendarIcon, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, TrendingDown, BarChart3, Receipt, FileText, Calendar as CalendarIcon, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -45,7 +44,6 @@ import ForecastAtCompletion from '@/components/financials/ForecastAtCompletion';
 import ExpensesManagement from '@/components/financials/ExpensesManagement';
 import DataIntegrityCheck from '@/components/financials/DataIntegrityCheck';
 import InvoiceTracking from '@/components/financials/InvoiceTracking';
-import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@/components/shared/dataValidation';
 
 export default function Financials() {
   const [showForm, setShowForm] = useState(false);
@@ -63,6 +61,7 @@ export default function Financials() {
     forecast_amount: '',
     notes: '',
   });
+  const [expandedBudgetProjects, setExpandedBudgetProjects] = useState(new Set());
   const [budgetLineItems, setBudgetLineItems] = useState([]);
   const [invoiceFormData, setInvoiceFormData] = useState({
     project_id: '',
@@ -891,7 +890,7 @@ export default function Financials() {
             const projectGroups = Object.values(budgetsByProject).sort((a, b) => 
               a.projectName.localeCompare(b.projectName)
             );
-            const [expandedBudgetProjects, setExpandedBudgetProjects] = React.useState(new Set());
+            // Moved to top level to follow React Hook rules
 
             const toggleBudgetProject = (projectId) => {
               const newExpanded = new Set(expandedBudgetProjects);

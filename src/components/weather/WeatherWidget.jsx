@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Cloud, CloudRain, Wind, Snowflake, Sun, CloudDrizzle } from 'lucide-react';
-import { format, parseISO, addDays } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function WeatherWidget({ tasks, projectLocation }) {
   const { data: weatherData, isLoading, error } = useQuery({

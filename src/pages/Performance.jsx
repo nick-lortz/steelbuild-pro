@@ -2,9 +2,9 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Target, DollarSign, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Target, DollarSign, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Performance() {
   const { data: projects = [] } = useQuery({

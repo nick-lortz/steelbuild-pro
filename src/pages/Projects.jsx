@@ -27,7 +27,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, Building2, MapPin, Calendar, User, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';

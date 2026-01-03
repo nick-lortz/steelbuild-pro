@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, differenceInDays, isPast, isBefore } from 'date-fns';
-import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X, CheckCircle, Trash2 } from 'lucide-react';
+import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Search, X, CheckCircle, Trash2 } from 'lucide-react';
 import DependencyEditor from './DependencyEditor';
 import {
   AlertDialog,

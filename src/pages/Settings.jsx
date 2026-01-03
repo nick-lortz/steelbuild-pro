@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send } from 'lucide-react';
+import { UserCircle, Shield, Users, Plus, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send } from 'lucide-react';
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import PageHeader from '@/components/ui/PageHeader';

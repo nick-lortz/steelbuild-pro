@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -9,9 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageHeader from '@/components/ui/PageHeader';
-import { Badge } from "@/components/ui/badge";
 import ProjectAssistant from '@/components/ai/ProjectAssistant';
 
 export default function Insights() {

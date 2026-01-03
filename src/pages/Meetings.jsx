@@ -24,7 +24,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, CheckCircle, Clock, Users, Bell, Repeat, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Bell, Repeat, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";

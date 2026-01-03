@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, DollarSign, Clock, FileText, MessageSquareWarning, TrendingDown } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { AlertTriangle, DollarSign, Clock, FileText, MessageSquareWarning } from 'lucide-react';
 import {
   Select,
   SelectContent,

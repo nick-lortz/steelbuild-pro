@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Building2, 
   DollarSign, 
-  FileText, 
   MessageSquareWarning, 
   FileCheck,
   TrendingUp,
@@ -19,7 +18,6 @@ import {
   Shield,
   Truck,
   Activity,
-  BarChart3,
   Settings
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
@@ -31,12 +29,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import WeatherWidget from '@/components/weather/WeatherWidget';
-import { format, differenceInDays, addDays, isAfter, isBefore } from 'date-fns';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { format, differenceInDays } from 'date-fns';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import DashboardKPIs from '@/components/dashboard/DashboardKPIs';
 import ProjectOverview from '@/components/dashboard/ProjectOverview';
 import RecentActivity from '@/components/dashboard/RecentActivity';

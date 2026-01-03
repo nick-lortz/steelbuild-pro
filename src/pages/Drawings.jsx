@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet, Upload, Zap, ChevronDown } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Clock, FileSpreadsheet, Upload, Zap, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';

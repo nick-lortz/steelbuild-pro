@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, XCircle, Clock } from 'lucide-react';
+import { XCircle, Clock } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 export default function DrawingDependencyAlert({ task, blockStatus, drawings }) {

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Clock, AlertCircle, CheckCircle2, DollarSign, Users } from 'lucide-react';
 import { format } from 'date-fns';
-import StatusBadge from '@/components/ui/StatusBadge';
 
 const statusColumns = [
   { id: 'not_started', label: 'Not Started', color: 'border-zinc-700' },

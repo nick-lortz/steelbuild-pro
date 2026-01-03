@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Calendar, Clock, Plus, FileText, AlertCircle, CheckCircle2, Users } from 'lucide-react';
-import { format, parseISO, isAfter, isBefore, addMinutes } from 'date-fns';
+import { format, parseISO, isAfter, addMinutes } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Calendar, Download, BarChart3, AlertTriangle, FileSpreadsheet, TrendingUp } from 'lucide-react';
+import { Plus, Download, BarChart3, AlertTriangle, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import CSVUpload from '@/components/shared/CSVUpload';
 import LookAheadSchedule from '@/components/schedule/LookAheadSchedule';
 import KanbanView from '@/components/schedule/KanbanView';

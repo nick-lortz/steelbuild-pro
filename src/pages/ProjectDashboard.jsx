@@ -1,32 +1,26 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
-  TrendingUp, 
-  TrendingDown, 
   AlertTriangle, 
   Settings,
   DollarSign,
   Clock,
   FileText,
   MessageSquareWarning,
-  Target,
   Activity
 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
-import StatusBadge from '@/components/ui/StatusBadge';
 import BudgetVarianceWidget from '@/components/project-dashboard/BudgetVarianceWidget';
 import ScheduleAdherenceWidget from '@/components/project-dashboard/ScheduleAdherenceWidget';
 import RFIResponseTimeWidget from '@/components/project-dashboard/RFIResponseTimeWidget';
 import RiskRegister from '@/components/project-dashboard/RiskRegister';
 import ProjectAlerts from '@/components/project-dashboard/ProjectAlerts';
-import { format, differenceInDays } from 'date-fns';
 
 export default function ProjectDashboard() {
   const navigate = useNavigate();

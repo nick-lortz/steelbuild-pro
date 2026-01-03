@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Activity, DollarSign, Clock } from 'lucide-react';
 
 export default function EquipmentKPIs({ bookings, equipment }) {

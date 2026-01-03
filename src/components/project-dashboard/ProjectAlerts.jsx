@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Bell, BellOff, X } from 'lucide-react';
+import { AlertTriangle, Bell } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 const DEFAULT_THRESHOLDS = {

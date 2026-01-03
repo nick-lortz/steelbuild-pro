@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import StatusBadge from '@/components/ui/StatusBadge';
 import { ChevronDown, ChevronRight, FileText, AlertCircle, Clock, FolderOpen } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function DrawingSetTable({ sets, sheets, revisions, projects, onSelectSet }) {

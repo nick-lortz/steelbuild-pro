@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Calendar } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { format, isWithinInterval } from 'date-fns';
 
 export default function ResourceAllocation() {

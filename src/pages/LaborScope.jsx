@@ -15,9 +15,16 @@ import LaborScheduleValidator from '@/components/labor/LaborScheduleValidator';
 
 export default function LaborScope() {
   const urlParams = new URLSearchParams(window.location.search);
-  const projectId = urlParams.get('project_id');
+  const initialProjectId = urlParams.get('project_id');
+  const [projectId, setProjectId] = useState(initialProjectId);
 
   const queryClient = useQueryClient();
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 5 * 60 * 1000
+  });
 
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
@@ -200,8 +207,30 @@ export default function LaborScope() {
 
   if (!projectId) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-zinc-400">No project selected</p>
+      <div>
+        <PageHeader
+          title="Labor & Scope Breakdown"
+          subtitle="Select a project to manage labor planning"
+        />
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-8">
+            <div className="max-w-md mx-auto space-y-4">
+              <Label className="text-white">Select Project</Label>
+              <Select value={projectId || ''} onValueChange={setProjectId}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue placeholder="Choose a project..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {allProjects.map(p => (
+                    <SelectItem key={p.id} value={p.id} className="text-white">
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

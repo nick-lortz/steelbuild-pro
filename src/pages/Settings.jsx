@@ -13,14 +13,14 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send } from 'lucide-react';
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -36,7 +36,7 @@ export default function Settings() {
     full_name: '',
     phone: '',
     title: '',
-    department: '',
+    department: ''
   });
   const [preferences, setPreferences] = useState({
     email_notifications: true,
@@ -45,14 +45,14 @@ export default function Settings() {
     change_order_notifications: true,
     theme: 'dark',
     date_format: 'MM/dd/yyyy',
-    time_zone: 'America/New_York',
+    time_zone: 'America/New_York'
   });
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function Settings() {
         full_name: currentUser.full_name || '',
         phone: currentUser.phone || '',
         title: currentUser.title || '',
-        department: currentUser.department || '',
+        department: currentUser.department || ''
       });
       if (currentUser.preferences) {
         setPreferences((prev) => ({ ...prev, ...currentUser.preferences }));
@@ -72,7 +72,7 @@ export default function Settings() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list('-created_date'),
-    enabled: currentUser?.role === 'admin',
+    enabled: currentUser?.role === 'admin'
   });
 
   const inviteMutation = useMutation({
@@ -82,7 +82,7 @@ export default function Settings() {
       setShowInviteDialog(false);
       setInviteEmail('');
       setInviteRole('user');
-    },
+    }
   });
 
   const updateProfileMutation = useMutation({
@@ -93,7 +93,7 @@ export default function Settings() {
     },
     onError: (error) => {
       toast.error('Failed to update profile');
-    },
+    }
   });
 
   const saveProfile = () => {
@@ -108,24 +108,24 @@ export default function Settings() {
     type: 'feature_request',
     title: '',
     description: '',
-    priority: 'medium',
+    priority: 'medium'
   });
 
   const submitFeedbackMutation = useMutation({
     mutationFn: (data) => base44.entities.Feedback.create({
       ...data,
       user_email: currentUser?.email || '',
-      user_name: currentUser?.full_name || currentUser?.email || '',
+      user_name: currentUser?.full_name || currentUser?.email || ''
     }),
     onSuccess: () => {
       setFeedbackForm({
         type: 'feature_request',
         title: '',
         description: '',
-        priority: 'medium',
+        priority: 'medium'
       });
       queryClient.invalidateQueries({ queryKey: ['feedback'] });
-    },
+    }
   });
 
   const handleFeedbackSubmit = (e) => {
@@ -137,7 +137,7 @@ export default function Settings() {
   const { data: myFeedback = [] } = useQuery({
     queryKey: ['feedback'],
     queryFn: () => base44.entities.Feedback.filter({ user_email: currentUser?.email }, '-created_date'),
-    enabled: !!currentUser?.email,
+    enabled: !!currentUser?.email
   });
 
   const handleInviteUser = (e) => {
@@ -149,11 +149,11 @@ export default function Settings() {
   const isAdmin = currentUser?.role === 'admin';
 
   const userColumns = [
-    {
-      header: 'User',
-      accessor: 'email',
-      render: (row) => (
-        <div className="flex items-center gap-3">
+  {
+    header: 'User',
+    accessor: 'email',
+    render: (row) =>
+    <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
             <UserCircle size={20} className="text-amber-500" />
           </div>
@@ -162,31 +162,31 @@ export default function Settings() {
             <p className="text-sm text-zinc-400">{row.email}</p>
           </div>
         </div>
-      ),
-    },
-    {
-      header: 'Role',
-      accessor: 'role',
-      render: (row) => (
-        <Badge variant="outline" className={row.role === 'admin' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}>
+
+  },
+  {
+    header: 'Role',
+    accessor: 'role',
+    render: (row) =>
+    <Badge variant="outline" className={row.role === 'admin' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}>
           <Shield size={12} className="mr-1" />
           {row.role}
         </Badge>
-      ),
-    },
-    {
-      header: 'Joined',
-      accessor: 'created_date',
-      render: (row) => row.created_date ? format(new Date(row.created_date), 'MMM d, yyyy') : '-',
-    },
-  ];
+
+  },
+  {
+    header: 'Joined',
+    accessor: 'created_date',
+    render: (row) => row.created_date ? format(new Date(row.created_date), 'MMM d, yyyy') : '-'
+  }];
+
 
   return (
     <div>
       <PageHeader
         title="Settings"
-        subtitle="Manage your profile and application settings"
-      />
+        subtitle="Manage your profile and application settings" />
+
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
@@ -194,12 +194,12 @@ export default function Settings() {
             <UserCircle size={14} className="mr-2" />
             Profile
           </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="users">
+          {isAdmin &&
+          <TabsTrigger value="users">
               <Users size={14} className="mr-2" />
               User Management
             </TabsTrigger>
-          )}
+          }
           <TabsTrigger value="preferences">
             <Bell size={14} className="mr-2" />
             Preferences
@@ -218,7 +218,7 @@ export default function Settings() {
         <TabsContent value="profile">
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle className="text-slate-50 font-semibold tracking-tight leading-none">Profile Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center gap-4">
@@ -228,60 +228,60 @@ export default function Settings() {
                 <div>
                   <p className="text-lg font-medium text-white">{currentUser?.full_name || 'No name set'}</p>
                   <p className="text-sm text-zinc-400">{currentUser?.email}</p>
-                  <Badge variant="outline" className="mt-2 capitalize">
+                  <Badge variant="outline" className="text-slate-50 mt-2 px-2.5 py-0.5 text-xs font-semibold capitalize rounded-md inline-flex items-center border transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                     {currentUser?.role}
                   </Badge>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="text-slate-50 space-y-4">
                 <div className="space-y-2">
-                  <Label>Full Name</Label>
+                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Full Name</Label>
                   <Input
                     value={profileData.full_name}
                     onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700"
-                  />
+                    className="bg-zinc-800 border-zinc-700" />
+
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</Label>
                   <Input
                     value={currentUser?.email || ''}
                     disabled
-                    className="bg-zinc-800 border-zinc-700 opacity-50"
-                  />
+                    className="bg-zinc-800 border-zinc-700 opacity-50" />
+
                   <p className="text-xs text-zinc-500">Email cannot be changed</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Job Title</Label>
+                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Job Title</Label>
                   <Input
                     value={profileData.title}
                     onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
                     placeholder="Project Manager"
-                    className="bg-zinc-800 border-zinc-700"
-                  />
+                    className="bg-zinc-800 border-zinc-700" />
+
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Department</Label>
+                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Department</Label>
                   <Input
                     value={profileData.department}
                     onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
                     placeholder="Engineering"
-                    className="bg-zinc-800 border-zinc-700"
-                  />
+                    className="bg-zinc-800 border-zinc-700" />
+
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Phone Number</Label>
+                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Phone Number</Label>
                   <Input
                     value={profileData.phone}
                     onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                     placeholder="+1 (555) 123-4567"
-                    className="bg-zinc-800 border-zinc-700"
-                  />
+                    className="bg-zinc-800 border-zinc-700" />
+
                 </div>
 
                 <div className="space-y-2">
@@ -289,8 +289,8 @@ export default function Settings() {
                   <Input
                     value={currentUser?.role || ''}
                     disabled
-                    className="bg-zinc-800 border-zinc-700 opacity-50 capitalize"
-                  />
+                    className="bg-zinc-800 border-zinc-700 opacity-50 capitalize" />
+
                   <p className="text-xs text-zinc-500">Contact an admin to change your role</p>
                 </div>
 
@@ -298,8 +298,8 @@ export default function Settings() {
                   <Button
                     onClick={saveProfile}
                     disabled={updateProfileMutation.isPending}
-                    className="bg-amber-500 hover:bg-amber-600 text-black"
-                  >
+                    className="bg-amber-500 hover:bg-amber-600 text-black">
+
                     <Save size={16} className="mr-2" />
                     {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
                   </Button>
@@ -310,16 +310,16 @@ export default function Settings() {
         </TabsContent>
 
         {/* User Management Tab (Admin Only) */}
-        {isAdmin && (
-          <TabsContent value="users">
+        {isAdmin &&
+        <TabsContent value="users">
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>User Management</CardTitle>
                   <Button
-                    onClick={() => setShowInviteDialog(true)}
-                    className="bg-amber-500 hover:bg-amber-600 text-black"
-                  >
+                  onClick={() => setShowInviteDialog(true)}
+                  className="bg-amber-500 hover:bg-amber-600 text-black">
+
                     <Plus size={16} className="mr-2" />
                     Invite User
                   </Button>
@@ -327,14 +327,14 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <DataTable
-                  columns={userColumns}
-                  data={allUsers}
-                  emptyMessage="No users found. Invite users to get started."
-                />
+                columns={userColumns}
+                data={allUsers}
+                emptyMessage="No users found. Invite users to get started." />
+
               </CardContent>
             </Card>
           </TabsContent>
-        )}
+        }
 
         {/* Preferences Tab */}
         <TabsContent value="preferences">
@@ -355,8 +355,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={preferences.email_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, email_notifications: checked })}
-                  />
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, email_notifications: checked })} />
+
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -366,8 +366,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={preferences.project_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, project_notifications: checked })}
-                  />
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, project_notifications: checked })} />
+
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -377,8 +377,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={preferences.rfi_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, rfi_notifications: checked })}
-                  />
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, rfi_notifications: checked })} />
+
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -388,8 +388,8 @@ export default function Settings() {
                   </div>
                   <Switch
                     checked={preferences.change_order_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, change_order_notifications: checked })}
-                  />
+                    onCheckedChange={(checked) => setPreferences({ ...preferences, change_order_notifications: checked })} />
+
                 </div>
               </CardContent>
             </Card>
@@ -451,8 +451,8 @@ export default function Settings() {
                   <Button
                     onClick={savePreferences}
                     disabled={updateProfileMutation.isPending}
-                    className="bg-amber-500 hover:bg-amber-600 text-black"
-                  >
+                    className="bg-amber-500 hover:bg-amber-600 text-black">
+
                     <Save size={16} className="mr-2" />
                     {updateProfileMutation.isPending ? 'Saving...' : 'Save Preferences'}
                   </Button>
@@ -479,8 +479,8 @@ export default function Settings() {
                     <Label>Feedback Type *</Label>
                     <Select
                       value={feedbackForm.type}
-                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}
-                    >
+                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}>
+
                       <SelectTrigger className="bg-zinc-800 border-zinc-700">
                         <SelectValue />
                       </SelectTrigger>
@@ -499,8 +499,8 @@ export default function Settings() {
                       onChange={(e) => setFeedbackForm({ ...feedbackForm, title: e.target.value })}
                       placeholder="Brief summary of your feedback"
                       required
-                      className="bg-zinc-800 border-zinc-700"
-                    />
+                      className="bg-zinc-800 border-zinc-700" />
+
                   </div>
 
                   <div className="space-y-2">
@@ -511,16 +511,16 @@ export default function Settings() {
                       placeholder="Provide detailed information about your feedback..."
                       required
                       rows={5}
-                      className="bg-zinc-800 border-zinc-700"
-                    />
+                      className="bg-zinc-800 border-zinc-700" />
+
                   </div>
 
                   <div className="space-y-2">
                     <Label>Priority</Label>
                     <Select
                       value={feedbackForm.priority}
-                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, priority: value })}
-                    >
+                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, priority: value })}>
+
                       <SelectTrigger className="bg-zinc-800 border-zinc-700">
                         <SelectValue />
                       </SelectTrigger>
@@ -536,18 +536,18 @@ export default function Settings() {
                     <Button
                       type="submit"
                       disabled={submitFeedbackMutation.isPending || !feedbackForm.title || !feedbackForm.description}
-                      className="bg-amber-500 hover:bg-amber-600 text-black"
-                    >
+                      className="bg-amber-500 hover:bg-amber-600 text-black">
+
                       <Send size={16} className="mr-2" />
                       {submitFeedbackMutation.isPending ? 'Submitting...' : 'Submit Feedback'}
                     </Button>
                   </div>
 
-                  {submitFeedbackMutation.isSuccess && (
-                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
+                  {submitFeedbackMutation.isSuccess &&
+                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
                       ✓ Thank you! Your feedback has been submitted successfully.
                     </div>
-                  )}
+                  }
                 </form>
               </CardContent>
             </Card>
@@ -558,12 +558,12 @@ export default function Settings() {
                 <CardTitle>My Feedback History</CardTitle>
               </CardHeader>
               <CardContent>
-                {myFeedback.length === 0 ? (
-                  <p className="text-center text-zinc-500 py-6">No feedback submitted yet</p>
-                ) : (
-                  <div className="space-y-3">
-                    {myFeedback.map((item) => (
-                      <div key={item.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-800">
+                {myFeedback.length === 0 ?
+                <p className="text-center text-zinc-500 py-6">No feedback submitted yet</p> :
+
+                <div className="space-y-3">
+                    {myFeedback.map((item) =>
+                  <div key={item.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-800">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
@@ -571,27 +571,27 @@ export default function Settings() {
                                 {item.type.replace('_', ' ')}
                               </Badge>
                               <Badge
-                                variant="outline"
-                                className={
-                                  item.status === 'completed'
-                                    ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                                    : item.status === 'in_progress'
-                                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                                    : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
-                                }
-                              >
+                            variant="outline"
+                            className={
+                            item.status === 'completed' ?
+                            'bg-green-500/20 text-green-400 border-green-500/30' :
+                            item.status === 'in_progress' ?
+                            'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                            'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                            }>
+
                                 {item.status.replace('_', ' ')}
                               </Badge>
                               <Badge
-                                variant="outline"
-                                className={
-                                  item.priority === 'high'
-                                    ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                                    : item.priority === 'medium'
-                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                                    : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                                }
-                              >
+                            variant="outline"
+                            className={
+                            item.priority === 'high' ?
+                            'bg-red-500/20 text-red-400 border-red-500/30' :
+                            item.priority === 'medium' ?
+                            'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                            'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                            }>
+
                                 {item.priority}
                               </Badge>
                             </div>
@@ -603,9 +603,9 @@ export default function Settings() {
                           Submitted {item.created_date ? format(new Date(item.created_date), 'MMM d, yyyy') : 'recently'}
                         </p>
                       </div>
-                    ))}
+                  )}
                   </div>
-                )}
+                }
               </CardContent>
             </Card>
           </div>
@@ -663,8 +663,8 @@ export default function Settings() {
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="user@example.com"
                 required
-                className="bg-zinc-800 border-zinc-700"
-              />
+                className="bg-zinc-800 border-zinc-700" />
+
             </div>
 
             <div className="space-y-2">
@@ -685,21 +685,21 @@ export default function Settings() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowInviteDialog(false)}
-                className="border-zinc-700"
-              >
+                className="border-zinc-700">
+
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={inviteMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
+                className="bg-amber-500 hover:bg-amber-600 text-black">
+
                 {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>);
+
 }

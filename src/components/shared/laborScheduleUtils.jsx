@@ -3,27 +3,34 @@
  * Returns mismatches and warnings
  */
 export function validateLaborScheduleAlignment(breakdowns, tasks, categories) {
-  const mismatches = [];
+  const mismatchMap = new Map();
   
   for (const breakdown of breakdowns) {
-    const category = categories.find(c => c.id === breakdown.labor_category_id);
+    const categoryId = breakdown.labor_category_id;
+    
+    // Skip if already processed
+    if (mismatchMap.has(categoryId)) continue;
+    
+    const category = categories.find(c => c.id === categoryId);
     const categoryName = category?.name || 'Unknown';
     
     // Sum up planned hours from tasks
-    const categoryTasks = tasks.filter(t => t.labor_category_id === breakdown.labor_category_id);
+    const categoryTasks = tasks.filter(t => t.labor_category_id === categoryId);
     
     const scheduledShop = categoryTasks.reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0), 0);
     const scheduledField = categoryTasks.reduce((sum, t) => sum + (Number(t.planned_field_hours) || 0), 0);
     
-    const breakdownShop = Number(breakdown.shop_hours) || 0;
-    const breakdownField = Number(breakdown.field_hours) || 0;
+    // Sum all breakdowns for this category
+    const categoryBreakdowns = breakdowns.filter(b => b.labor_category_id === categoryId);
+    const breakdownShop = categoryBreakdowns.reduce((sum, b) => sum + (Number(b.shop_hours) || 0), 0);
+    const breakdownField = categoryBreakdowns.reduce((sum, b) => sum + (Number(b.field_hours) || 0), 0);
     
     const shopVariance = scheduledShop - breakdownShop;
     const fieldVariance = scheduledField - breakdownField;
     
     if (shopVariance !== 0 || fieldVariance !== 0) {
-      mismatches.push({
-        category_id: breakdown.labor_category_id,
+      mismatchMap.set(categoryId, {
+        category_id: categoryId,
         category_name: categoryName,
         breakdown_shop: breakdownShop,
         breakdown_field: breakdownField,
@@ -36,7 +43,7 @@ export function validateLaborScheduleAlignment(breakdowns, tasks, categories) {
     }
   }
   
-  return mismatches;
+  return Array.from(mismatchMap.values());
 }
 
 /**

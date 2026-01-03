@@ -1,4 +1,4 @@
-import { Toaster } from "@/components/ui/Toaster"
+import { Toaster } from "@/components/ui/AppToaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'

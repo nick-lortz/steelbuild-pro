@@ -789,7 +789,10 @@ export default function Dashboard() {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="border-b border-zinc-800 pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white">Change Orders by Status</CardTitle>
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <FileCheck size={18} className="text-amber-500" />
+                  Change Orders by Status
+                </CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -829,7 +832,10 @@ export default function Dashboard() {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardHeader className="border-b border-zinc-800 pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white">Project Status Distribution</CardTitle>
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Building2 size={18} className="text-blue-500" />
+                  Project Status Distribution
+                </CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"

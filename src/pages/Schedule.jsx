@@ -37,41 +37,56 @@ export default function Schedule() {
     [rawProjects]
   );
 
-  // Fetch tasks via getFilteredTasks endpoint
-  const { data: taskData, isLoading, refetch } = useQuery({
-    queryKey: ['filtered-tasks', projectFilter, statusFilter, searchTerm, page],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: PAGE_SIZE.toString(),
-        sort_by: 'end_date',
-        sort_order: 'asc'
-      });
-
-      if (projectFilter !== 'all') params.append('project_id', projectFilter);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (searchTerm) params.append('search_term', searchTerm);
-
-      const response = await base44.functions.invoke('getFilteredTasks', {}, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      // Parse query params for the backend function
-      const url = new URL(response.config?.url || 'http://localhost');
-      params.forEach((value, key) => url.searchParams.set(key, value));
-      
-      const finalResponse = await fetch(url.toString(), {
-        headers: response.config?.headers || {}
-      });
-
-      return finalResponse.json();
-    },
+  // Fetch all tasks and filter on frontend
+  const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
+    queryKey: ['schedule-tasks'],
+    queryFn: () => base44.entities.Task.list('end_date'),
     staleTime: 2 * 60 * 1000
   });
 
-  const tasks = taskData?.tasks || [];
-  const hasMore = taskData?.hasMore || false;
+  // Filter and paginate tasks
+  const { tasks, hasMore, totalCount } = useMemo(() => {
+    let filtered = [...allScheduleTasks];
+
+    // Filter by project
+    if (projectFilter !== 'all') {
+      filtered = filtered.filter(t => t.project_id === projectFilter);
+    }
+
+    // Filter by status
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'overdue') {
+        const today = new Date().toISOString().split('T')[0];
+        filtered = filtered.filter(t => 
+          t.status !== 'completed' && 
+          t.end_date && 
+          t.end_date < today
+        );
+      } else {
+        filtered = filtered.filter(t => t.status === statusFilter);
+      }
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.name?.toLowerCase().includes(search) ||
+        t.wbs_code?.toLowerCase().includes(search)
+      );
+    }
+
+    // Paginate
+    const startIdx = 0;
+    const endIdx = page * PAGE_SIZE;
+    const paginated = filtered.slice(startIdx, endIdx);
+    
+    return {
+      tasks: paginated,
+      hasMore: endIdx < filtered.length,
+      totalCount: filtered.length
+    };
+  }, [allScheduleTasks, projectFilter, statusFilter, searchTerm, page]);
 
   // Fetch all resources for task form
   const { data: resources = [] } = useQuery({
@@ -107,7 +122,7 @@ export default function Schedule() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['filtered-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
@@ -118,7 +133,7 @@ export default function Schedule() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['filtered-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
@@ -149,13 +164,13 @@ export default function Schedule() {
 
   const statusCounts = useMemo(() => {
     return {
-      all: taskData?.total || 0,
+      all: totalCount,
       not_started: 0,
       in_progress: 0,
       completed: 0,
       overdue: 0
     };
-  }, [taskData]);
+  }, [totalCount]);
 
   return (
     <ScreenContainer>

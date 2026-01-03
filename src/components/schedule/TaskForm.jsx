@@ -287,7 +287,7 @@ export default function TaskForm({
           <Label>Work Package (Optional)</Label>
           <Select 
             value={formData.work_package_id || ''} 
-            onValueChange={(v) => handleChange('work_package_id', v)}
+            onValueChange={(v) => handleChange('work_package_id', v === '' ? '' : v)}
             disabled={!formData.project_id || (task?.is_phase_locked)}
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">

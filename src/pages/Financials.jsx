@@ -45,6 +45,9 @@ import ForecastAtCompletion from '@/components/financials/ForecastAtCompletion';
 import ExpensesManagement from '@/components/financials/ExpensesManagement';
 import DataIntegrityCheck from '@/components/financials/DataIntegrityCheck';
 import InvoiceTracking from '@/components/financials/InvoiceTracking';
+import EarnedValueMetrics from '@/components/financials/EarnedValueMetrics';
+import ProjectHealthScorecard from '@/components/financials/ProjectHealthScorecard';
+import BurnRateAnalysis from '@/components/financials/BurnRateAnalysis';
 import { calculateFinancialTotals, calculateVariance, rollupByCategory } from '@/components/shared/dataValidation';
 
 export default function Financials() {
@@ -136,6 +139,20 @@ export default function Financials() {
     queryFn: () => base44.entities.ClientInvoice.list(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis'],
+    queryFn: () => base44.entities.RFI.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -748,6 +765,15 @@ export default function Financials() {
             <BarChart3 size={14} className="mr-2" />
             Overview
           </TabsTrigger>
+          <TabsTrigger value="evm" className="data-[state=active]:bg-zinc-800">
+            Earned Value
+          </TabsTrigger>
+          <TabsTrigger value="health" className="data-[state=active]:bg-zinc-800">
+            Project Health
+          </TabsTrigger>
+          <TabsTrigger value="burn-rate" className="data-[state=active]:bg-zinc-800">
+            Burn Rate
+          </TabsTrigger>
           <TabsTrigger value="budget" className="data-[state=active]:bg-zinc-800">
             Budget Lines
           </TabsTrigger>
@@ -830,6 +856,86 @@ export default function Financials() {
 
           {/* Data Integrity Check */}
           <DataIntegrityCheck />
+        </TabsContent>
+
+        <TabsContent value="evm" className="space-y-6">
+          {/* Project Filter */}
+          <div className="mb-6 flex gap-3">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <EarnedValueMetrics 
+            financials={budgetLinesWithExpenses}
+            tasks={tasks}
+            projects={projects}
+            selectedProject={selectedProject}
+          />
+        </TabsContent>
+
+        <TabsContent value="health" className="space-y-6">
+          {/* Project Filter */}
+          <div className="mb-6 flex gap-3">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ProjectHealthScorecard
+            financials={budgetLinesWithExpenses}
+            tasks={tasks}
+            projects={projects}
+            rfis={rfis}
+            changeOrders={changeOrders}
+            selectedProject={selectedProject}
+          />
+        </TabsContent>
+
+        <TabsContent value="burn-rate" className="space-y-6">
+          {/* Project Filter */}
+          <div className="mb-6 flex gap-3">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <BurnRateAnalysis
+            expenses={expenses.filter(e => selectedProject === 'all' || e.project_id === selectedProject)}
+            financials={budgetLinesWithExpenses}
+            projects={projects}
+            selectedProject={selectedProject}
+          />
         </TabsContent>
 
         <TabsContent value="budget" className="space-y-4">

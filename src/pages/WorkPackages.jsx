@@ -364,15 +364,41 @@ export default function WorkPackages() {
 
 function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
-    project_id: pkg?.project_id || '',
-    package_number: pkg?.package_number || '',
-    name: pkg?.name || '',
-    description: pkg?.description || '',
-    tonnage: pkg?.tonnage || '',
-    piece_count: pkg?.piece_count || '',
-    priority: pkg?.priority || 'medium',
-    notes: pkg?.notes || ''
+    project_id: '',
+    package_number: '',
+    name: '',
+    description: '',
+    tonnage: '',
+    piece_count: '',
+    priority: 'medium',
+    notes: ''
   });
+
+  React.useEffect(() => {
+    if (pkg) {
+      setFormData({
+        project_id: pkg.project_id || '',
+        package_number: pkg.package_number || '',
+        name: pkg.name || '',
+        description: pkg.description || '',
+        tonnage: pkg.tonnage || '',
+        piece_count: pkg.piece_count || '',
+        priority: pkg.priority || 'medium',
+        notes: pkg.notes || ''
+      });
+    } else {
+      setFormData({
+        project_id: '',
+        package_number: '',
+        name: '',
+        description: '',
+        tonnage: '',
+        piece_count: '',
+        priority: 'medium',
+        notes: ''
+      });
+    }
+  }, [pkg]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });

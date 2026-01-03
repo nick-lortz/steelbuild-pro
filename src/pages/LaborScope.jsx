@@ -393,10 +393,15 @@ export default function LaborScope() {
                         <Input
                           type="number"
                           value={breakdown.shop_hours || ''}
-                          onChange={(e) => updateBreakdownMutation.mutate({
-                            id: breakdown.id,
-                            data: { shop_hours: parseFloat(e.target.value) || 0 }
-                          })}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (val !== breakdown.shop_hours) {
+                              updateBreakdownMutation.mutate({
+                                id: breakdown.id,
+                                data: { shop_hours: val }
+                              });
+                            }
+                          }}
                           className="bg-zinc-800 border-zinc-700 text-right w-28"
                           placeholder="0"
                         />

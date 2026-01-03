@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,8 @@ export default function ChangeOrders() {
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const projects = React.useMemo(() => 
@@ -80,6 +82,8 @@ export default function ChangeOrders() {
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list('co_number'),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const createMutation = useMutation({
@@ -114,14 +118,14 @@ export default function ChangeOrders() {
     return maxNumber + 1;
   };
 
-  const handleProjectChange = (projectId) => {
+  const handleProjectChange = useCallback((projectId) => {
     const nextNumber = getNextCONumber(projectId);
     setFormData(prev => ({ 
       ...prev, 
       project_id: projectId,
       co_number: nextNumber.toString()
     }));
-  };
+  }, [changeOrders]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

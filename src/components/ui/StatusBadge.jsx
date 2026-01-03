@@ -46,7 +46,7 @@ const statusStyles = {
   cancelled: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
 };
 
-export default function StatusBadge({ status, className }) {
+const StatusBadge = React.memo(function StatusBadge({ status, className }) {
   const style = statusStyles[status] || "bg-zinc-500/20 text-zinc-400 border-zinc-500/30";
   const displayText = status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
@@ -58,4 +58,6 @@ export default function StatusBadge({ status, className }) {
       {displayText}
     </Badge>
   );
-}
+});
+
+export default StatusBadge;

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 
-export default function PageHeader({ title, subtitle, actions, showBackButton = true, onRefresh, isRefreshing = false }) {
+const PageHeader = React.memo(function PageHeader({ title, subtitle, actions, showBackButton = true, onRefresh, isRefreshing = false }) {
   const navigate = useNavigate();
 
   return (
@@ -37,7 +37,9 @@ export default function PageHeader({ title, subtitle, actions, showBackButton = 
           </Button>
         }
         {actions}
-      </div>
-    </div>);
+        </div>
+        </div>);
 
-}
+        });
+
+        export default PageHeader;

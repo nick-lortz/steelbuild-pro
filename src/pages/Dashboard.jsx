@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -56,7 +56,7 @@ function formatFinancial(value) {
   return `$${value.toFixed(0)}`;
 }
 
-function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "default", onClick }) {
+const StatCard = React.memo(function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "default", onClick }) {
   const bgColors = {
     default: "bg-zinc-900 border-zinc-800",
     amber: "bg-amber-500/5 border-amber-500/20",
@@ -91,7 +91,7 @@ function StatCard({ title, value, icon: Icon, trend, trendValue, variant = "defa
       </CardContent>
     </Card>
   );
-}
+});
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -105,6 +105,8 @@ export default function Dashboard() {
         return null;
       }
     },
+    staleTime: 15 * 60 * 1000, // 15 minutes - user rarely changes
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   // Role-based default views
@@ -170,7 +172,8 @@ export default function Dashboard() {
   const { data: rawProjects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const allProjects = useMemo(() => 
@@ -210,55 +213,64 @@ export default function Dashboard() {
   const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list('-created_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: changeOrders = [], isLoading: changeOrdersLoading } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list('-created_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: financials = [], isLoading: financialsLoading } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: drawings = [], isLoading: drawingsLoading } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list('-created_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: dailyLogs = [], isLoading: dailyLogsLoading } = useQuery({
     queryKey: ['dailyLogs'],
     queryFn: () => base44.entities.DailyLog.list('-log_date'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 20 * 60 * 1000, // 20 minutes
   });
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutes - tasks change frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: expenses = [], isLoading: expensesLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: laborHours = [], isLoading: laborHoursLoading } = useQuery({
     queryKey: ['laborHours'],
     queryFn: () => base44.entities.LaborHours.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 15 * 60 * 1000, // 15 minutes
   });
 
   // Calculate all derived data with useMemo BEFORE any conditional returns

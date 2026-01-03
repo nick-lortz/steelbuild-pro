@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
@@ -71,16 +71,22 @@ export default function Projects() {
   const { data: projects = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list('full_name'),
+    staleTime: 10 * 60 * 1000, // 10 minutes - users change infrequently
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const createMutation = useMutation({
@@ -120,7 +126,7 @@ export default function Projects() {
     },
   });
 
-  const handleDelete = async (project) => {
+  const handleDelete = useCallback(async (project) => {
     if (!can.deleteProject) {
       toast.error('You do not have permission to delete projects');
       return;
@@ -136,7 +142,7 @@ export default function Projects() {
     if (confirmed) {
       deleteMutation.mutate(project.id);
     }
-  };
+  }, [can.deleteProject, confirm, deleteMutation]);
 
   const handleEdit = (project) => {
     if (!can.editProject) {

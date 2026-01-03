@@ -124,9 +124,9 @@ export default function InvoiceTracking({ financials, projects, costCodes, expen
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-2">
             <Receipt className="text-amber-500" size={20} />
-            <CardTitle className="text-lg">Invoice Tracking</CardTitle>
+            <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Invoice Tracking</CardTitle>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="text-slate-50 flex items-center gap-4">
             <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="w-48 bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Filter by project" />

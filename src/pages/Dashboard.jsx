@@ -623,13 +623,7 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Weather Widget */}
-        {widgetConfig.showSchedule && (
-          <WeatherWidget 
-            tasks={tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')} 
-            projectLocation="Chicago,US"
-          />
-        )}
+
 
         {/* At Risk List */}
         {widgetConfig.showAtRisk && (

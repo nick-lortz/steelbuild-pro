@@ -27,7 +27,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Search, Building2, MapPin, Calendar, User, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, Search, Building2, MapPin, Calendar, User, Trash2, TrendingUp, Eye } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import ProjectHealthWidget from '@/components/projects/ProjectHealthWidget';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
@@ -71,22 +73,43 @@ export default function Projects() {
   const { data: projects = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list('full_name'),
-    staleTime: 10 * 60 * 1000, // 10 minutes - users change infrequently
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials'],
+    queryFn: () => base44.entities.Financial.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['change-orders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis'],
+    queryFn: () => base44.entities.RFI.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -158,7 +181,7 @@ export default function Projects() {
   };
 
   const handleViewDashboard = (project, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     window.location.href = `/ProjectDashboard?id=${project.id}`;
   };
 
@@ -272,22 +295,57 @@ export default function Projects() {
       render: (row) => row.project_manager || '-',
     },
     {
-      header: '',
+      header: 'Actions',
       accessor: 'actions',
       render: (row) => (
-        can.deleteProject && (
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-zinc-700 text-zinc-400 hover:text-white"
+              >
+                <TrendingUp size={14} className="mr-1" />
+                Health
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-96 bg-zinc-900 border-zinc-800 p-0" align="end">
+              <ProjectHealthWidget
+                project={row}
+                tasks={tasks}
+                financials={financials}
+                changeOrders={changeOrders}
+                rfis={rfis}
+              />
+            </PopoverContent>
+          </Popover>
           <Button
-            variant="ghost"
-            size="icon"
+            size="sm"
+            variant="outline"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(row);
+              handleViewDashboard(row);
             }}
-            className="text-zinc-500 hover:text-red-500"
+            className="border-zinc-700 text-zinc-400 hover:text-white"
           >
-            <Trash2 size={16} />
+            <Eye size={14} className="mr-1" />
+            Dashboard
           </Button>
-        )
+          {can.deleteProject && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row);
+              }}
+              className="text-zinc-500 hover:text-red-500"
+            >
+              <Trash2 size={16} />
+            </Button>
+          )}
+        </div>
       ),
     },
   ];

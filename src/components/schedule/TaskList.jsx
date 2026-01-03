@@ -7,6 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from 'date-fns';
 import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import QuickAddSubtask from './QuickAddSubtask';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +27,16 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [collapsedParents, setCollapsedParents] = useState(new Set());
   const [addingSubtaskTo, setAddingSubtaskTo] = useState(null);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['labor-categories'],
+    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+  });
+
+  const getCategoryName = (categoryId) => {
+    const cat = categories.find(c => c.id === categoryId);
+    return cat?.name || '-';
+  };
 
   const toggleProject = (projectId) => {
     const newCollapsed = new Set(collapsedProjects);
@@ -370,6 +382,55 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
         return (
           <span className={float === 0 ? 'text-red-400 font-medium' : 'text-white'}>
             {float}d
+          </span>
+        );
+      },
+    },
+    {
+      header: 'Labor Category',
+      accessor: 'labor_category_id',
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return (
+          <span className="text-zinc-300 text-sm">
+            {row.labor_category_id ? getCategoryName(row.labor_category_id) : '-'}
+          </span>
+        );
+      },
+    },
+    {
+      header: 'Shop Hrs',
+      accessor: 'planned_shop_hours',
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return (
+          <span className="text-blue-400 font-mono text-sm">
+            {row.planned_shop_hours || 0}
+          </span>
+        );
+      },
+    },
+    {
+      header: 'Field Hrs',
+      accessor: 'planned_field_hours',
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        return (
+          <span className="text-green-400 font-mono text-sm">
+            {row.planned_field_hours || 0}
+          </span>
+        );
+      },
+    },
+    {
+      header: 'Total Hrs',
+      accessor: 'total_labor_hours',
+      render: (row, meta) => {
+        if (meta?.isProjectHeader || meta?.isPhaseHeader) return null;
+        const total = (Number(row.planned_shop_hours) || 0) + (Number(row.planned_field_hours) || 0);
+        return (
+          <span className="text-white font-semibold text-sm">
+            {total}
           </span>
         );
       },

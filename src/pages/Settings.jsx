@@ -464,19 +464,19 @@ export default function Settings() {
 
         {/* Feedback Tab */}
         <TabsContent value="feedback">
-          <div className="space-y-6">
+          <div className="text-slate-50 space-y-6">
             {/* Submit Feedback */}
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-slate-50 font-semibold tracking-tight leading-none flex items-center gap-2">
                   <MessageSquare size={20} />
                   Submit Feedback
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Feedback Type *</Label>
+                  <div className="text-slate-50 space-y-2">
+                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Feedback Type *</Label>
                     <Select
                       value={feedbackForm.type}
                       onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}>
@@ -493,18 +493,18 @@ export default function Settings() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Title *</Label>
+                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Title *</Label>
                     <Input
                       value={feedbackForm.title}
                       onChange={(e) => setFeedbackForm({ ...feedbackForm, title: e.target.value })}
                       placeholder="Brief summary of your feedback"
-                      required
-                      className="bg-zinc-800 border-zinc-700" />
+                      required className="bg-zinc-800 text-slate-50 px-3 py-1 text-base rounded-md flex h-9 w-full border shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm border-zinc-700" />
+
 
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Description *</Label>
+                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description *</Label>
                     <Textarea
                       value={feedbackForm.description}
                       onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })}
@@ -515,8 +515,8 @@ export default function Settings() {
 
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Priority</Label>
+                  <div className="text-slate-50 space-y-2">
+                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Priority</Label>
                     <Select
                       value={feedbackForm.priority}
                       onValueChange={(value) => setFeedbackForm({ ...feedbackForm, priority: value })}>
@@ -555,7 +555,7 @@ export default function Settings() {
             {/* My Feedback History */}
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
-                <CardTitle>My Feedback History</CardTitle>
+                <CardTitle className="text-slate-50 font-semibold tracking-tight leading-none">My Feedback History</CardTitle>
               </CardHeader>
               <CardContent>
                 {myFeedback.length === 0 ?

@@ -118,7 +118,7 @@ export default function Dashboard() {
   const [selectedView, setSelectedView] = useState('default');
 
   // Update view when user loads
-  useEffect(() => {
+  React.useEffect(() => {
     if (currentUser && selectedView === 'default') {
       setSelectedView(getDefaultView());
     }

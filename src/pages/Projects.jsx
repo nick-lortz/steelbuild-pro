@@ -681,7 +681,6 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
           </div>
         </div>
       </div>
-      </div>
 
       <div className="border-t border-zinc-800 pt-4">
         <h4 className="text-sm font-medium text-zinc-400 mb-3">Assigned Users</h4>

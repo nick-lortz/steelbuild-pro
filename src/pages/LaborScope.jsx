@@ -190,25 +190,29 @@ export default function LaborScope() {
       const currentGaps = await base44.entities.ScopeGap.filter({ project_id: projectId });
       
       // Reset all breakdowns to 0
-      const resetPromises = currentBreakdowns.map(b => 
-        base44.entities.LaborBreakdown.update(b.id, { 
+      for (const b of currentBreakdowns) {
+        await base44.entities.LaborBreakdown.update(b.id, { 
           shop_hours: 0, 
           field_hours: 0, 
           notes: '' 
-        })
-      );
+        });
+      }
       
       // Delete all specialty items
-      const deleteSpecialtyPromises = currentSpecialty.map(s => 
-        base44.entities.SpecialtyDiscussionItem.delete(s.id)
-      );
+      for (const s of currentSpecialty) {
+        await base44.entities.SpecialtyDiscussionItem.delete(s.id);
+      }
       
       // Delete all scope gaps
-      const deleteGapPromises = currentGaps.map(g => 
-        base44.entities.ScopeGap.delete(g.id)
-      );
+      for (const g of currentGaps) {
+        await base44.entities.ScopeGap.delete(g.id);
+      }
 
-      await Promise.all([...resetPromises, ...deleteSpecialtyPromises, ...deleteGapPromises]);
+      return { 
+        resetCount: currentBreakdowns.length, 
+        deletedSpecialty: currentSpecialty.length, 
+        deletedGaps: currentGaps.length 
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns', projectId] });
@@ -218,7 +222,8 @@ export default function LaborScope() {
       setShowResetDialog(false);
     },
     onError: (error) => {
-      toast.error('Failed to reset data');
+      console.error('Reset error:', error);
+      toast.error(error?.message || 'Failed to reset data');
     }
   });
 

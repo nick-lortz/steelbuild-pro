@@ -26,6 +26,7 @@ import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import Profile from './pages/Profile';
 import __Layout from './Layout.jsx';
 
 
@@ -58,6 +59,7 @@ export const PAGES = {
     "Settings": Settings,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Profile": Profile,
 }
 
 export const pagesConfig = {

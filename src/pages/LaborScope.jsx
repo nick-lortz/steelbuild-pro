@@ -13,6 +13,8 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { toast } from '@/components/ui/notifications';
 import { usePermissions } from '@/components/shared/usePermissions';
+import { validateLaborScheduleAlignment, calculateProjectLaborTotals } from '@/components/shared/laborScheduleUtils';
+import { ArrowRight } from 'lucide-react';
 
 export default function LaborScope() {
   const queryClient = useQueryClient();
@@ -51,6 +53,12 @@ export default function LaborScope() {
     enabled: !!selectedProject,
   });
 
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', selectedProject],
+    queryFn: () => selectedProject ? base44.entities.Task.filter({ project_id: selectedProject }) : [],
+    enabled: !!selectedProject,
+  });
+
   // Initialize breakdown mutation
   const initializeMutation = useMutation({
     mutationFn: (projectId) => base44.functions.invoke('initializeLaborBreakdown', { project_id: projectId }),
@@ -60,6 +68,21 @@ export default function LaborScope() {
     },
     onError: (error) => {
       toast.error(`Failed to initialize: ${error.message}`);
+    }
+  });
+
+  // Allocate labor to schedule mutation
+  const allocateLaborMutation = useMutation({
+    mutationFn: (projectId) => base44.functions.invoke('allocateLaborToSchedule', { project_id: projectId }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success(response.data.message);
+      if (response.data.warnings) {
+        response.data.warnings.forEach(w => toast.warning(w));
+      }
+    },
+    onError: (error) => {
+      toast.error(`Allocation failed: ${error.message}`);
     }
   });
 
@@ -143,6 +166,17 @@ export default function LaborScope() {
     const totalCost = scopeGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
     return { openCount: openGaps.length, totalCost };
   }, [scopeGaps]);
+
+  // Labor vs Schedule validation
+  const laborScheduleMismatches = useMemo(() => 
+    validateLaborScheduleAlignment(breakdowns, tasks, categories),
+    [breakdowns, tasks, categories]
+  );
+
+  const laborScheduleTotals = useMemo(() =>
+    calculateProjectLaborTotals(breakdowns, tasks),
+    [breakdowns, tasks]
+  );
 
   const handleUpdateBreakdown = (breakdownId, field, value) => {
     updateBreakdownMutation.mutate({ 
@@ -287,6 +321,14 @@ export default function LaborScope() {
         subtitle={selectedProjectData?.name}
         actions={
           <div className="flex gap-2">
+            <Button
+              onClick={() => allocateLaborMutation.mutate(selectedProject)}
+              disabled={allocateLaborMutation.isPending || !can.editProject}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <ArrowRight size={16} className="mr-1" />
+              Allocate Labor to Schedule
+            </Button>
             <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
                 <SelectValue />
@@ -346,7 +388,7 @@ export default function LaborScope() {
         </Card>
       </div>
 
-      {/* Discrepancy Warning */}
+      {/* Discrepancy Warnings */}
       {totals.hasDiscrepancy && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
           <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={20} />
@@ -359,6 +401,49 @@ export default function LaborScope() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Schedule Mismatch Warning */}
+      {laborScheduleTotals.has_mismatch && (
+        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-3">
+          <AlertTriangle className="text-amber-400 flex-shrink-0 mt-0.5" size={20} />
+          <div className="flex-1">
+            <p className="font-semibold text-amber-400">Schedule labor does not match labor plan</p>
+            <p className="text-sm text-zinc-300 mt-1">
+              Scheduled Shop: {laborScheduleTotals.scheduled_shop} hrs (Plan: {laborScheduleTotals.breakdown_shop} hrs, Δ {laborScheduleTotals.shop_variance > 0 ? '+' : ''}{laborScheduleTotals.shop_variance})
+              {' | '}
+              Scheduled Field: {laborScheduleTotals.scheduled_field} hrs (Plan: {laborScheduleTotals.breakdown_field} hrs, Δ {laborScheduleTotals.field_variance > 0 ? '+' : ''}{laborScheduleTotals.field_variance})
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Category-Level Mismatches */}
+      {laborScheduleMismatches.length > 0 && (
+        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+          <CardHeader>
+            <CardTitle className="text-amber-400 flex items-center gap-2">
+              <AlertTriangle size={18} />
+              Labor vs Schedule Variances ({laborScheduleMismatches.length} categories)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {laborScheduleMismatches.map(mismatch => (
+                <div key={mismatch.category_id} className="flex justify-between items-center p-2 bg-zinc-800/50 rounded">
+                  <span className="text-white font-medium">{mismatch.category_name}</span>
+                  <div className="text-sm text-zinc-400">
+                    Plan: {mismatch.breakdown_shop + mismatch.breakdown_field} hrs | 
+                    Scheduled: {mismatch.scheduled_shop + mismatch.scheduled_field} hrs | 
+                    <span className={mismatch.total_variance > 0 ? 'text-red-400' : 'text-green-400'}>
+                      {' '}Δ {mismatch.total_variance > 0 ? '+' : ''}{mismatch.total_variance} hrs
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Section A: Specific Field Hours Breakout */}

@@ -204,7 +204,7 @@ export default function Schedule() {
               <SelectItem value="all">All Projects</SelectItem>
               {projects.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.project_number}
+                  {p.name}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -30,8 +30,8 @@ const PageHeader = React.memo(function PageHeader({ title, subtitle, actions, sh
           variant="outline"
           size="icon"
           onClick={onRefresh}
-          disabled={isRefreshing}
-          className="border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800">
+          disabled={isRefreshing} className="bg-background text-slate-950 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm h-9 w-9 border-zinc-700 hover:text-white hover:bg-zinc-800">
+
 
             <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
           </Button>
@@ -40,6 +40,6 @@ const PageHeader = React.memo(function PageHeader({ title, subtitle, actions, sh
         </div>
         </div>);
 
-        });
+});
 
-        export default PageHeader;
+export default PageHeader;

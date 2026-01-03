@@ -67,16 +67,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate next phase tasks
+    // Generate next phase tasks ONLY for delivery and erection phases
     const nextPhase = updates.current_phase;
     if (nextPhase && nextPhase !== 'completed') {
-      const newTasks = await generatePhaseTasks(base44, pkg, nextPhase, phaseTasks);
+      // Auto-generate tasks for delivery and erection when fabrication is complete
+      if (phase_completed === 'fabrication' && (nextPhase === 'delivery' || nextPhase === 'erection')) {
+        const newTasks = await generatePhaseTasks(base44, pkg, nextPhase, phaseTasks);
+        
+        return Response.json({
+          success: true,
+          work_package: { ...pkg, ...updates },
+          locked_tasks: phaseTasks.length,
+          new_tasks: newTasks.length,
+          next_phase: nextPhase,
+          auto_generated: true
+        });
+      }
       
+      // For other phase transitions, just update status without auto-generating tasks
       return Response.json({
         success: true,
         work_package: { ...pkg, ...updates },
         locked_tasks: phaseTasks.length,
-        new_tasks: newTasks.length,
         next_phase: nextPhase
       });
     }
@@ -112,34 +124,29 @@ async function generatePhaseTasks(base44, workPackage, phase, previousTasks) {
     }
   }
 
-  // Define standard tasks for each phase
+  // Define standard tasks for delivery and erection phases only
   const phaseTemplates = {
-    fabrication: [
-      { name: 'Material Procurement', duration: 14 },
-      { name: 'Cutting & Drilling', duration: 7 },
-      { name: 'Welding & Assembly', duration: 10 },
-      { name: 'Surface Treatment', duration: 3 },
-      { name: 'QC Inspection', duration: 2 }
-    ],
     delivery: [
-      { name: 'Load Planning', duration: 2 },
-      { name: 'Loading & Securing', duration: 1 },
-      { name: 'Transport to Site', duration: 1 },
-      { name: 'Offloading & Staging', duration: 1 }
+      { name: 'Load Planning', duration: 2, estimated_hours: 8 },
+      { name: 'Loading & Securing', duration: 1, estimated_hours: 12 },
+      { name: 'Transport to Site', duration: 1, estimated_hours: 8 },
+      { name: 'Offloading & Staging', duration: 1, estimated_hours: 8 }
     ],
     erection: [
-      { name: 'Site Preparation', duration: 2 },
-      { name: 'Crane Setup', duration: 1 },
-      { name: 'Erection Operations', duration: 10 },
-      { name: 'Bolting & Connections', duration: 5 },
-      { name: 'Final Inspection', duration: 2 }
+      { name: 'Site Preparation', duration: 2, estimated_hours: 16 },
+      { name: 'Crane Setup', duration: 1, estimated_hours: 8 },
+      { name: 'Erection Operations', duration: 10, estimated_hours: 120 },
+      { name: 'Bolting & Connections', duration: 5, estimated_hours: 60 },
+      { name: 'Final Inspection', duration: 2, estimated_hours: 8 }
     ]
   };
 
   const templates = phaseTemplates[phase] || [];
   let currentStart = phaseStartDate;
+  let previousTaskId = null;
 
-  for (const template of templates) {
+  for (let i = 0; i < templates.length; i++) {
+    const template = templates[i];
     const endDate = addDays(currentStart, template.duration);
     
     const taskData = {
@@ -150,14 +157,23 @@ async function generatePhaseTasks(base44, workPackage, phase, previousTasks) {
       start_date: format(currentStart, 'yyyy-MM-dd'),
       end_date: format(endDate, 'yyyy-MM-dd'),
       duration_days: template.duration,
+      estimated_hours: template.estimated_hours || 0,
       status: 'not_started',
       progress_percent: 0,
-      is_phase_locked: false
+      is_phase_locked: false,
+      // Add FS (Finish-Start) dependency to previous task
+      predecessor_ids: previousTaskId ? [previousTaskId] : [],
+      predecessor_configs: previousTaskId ? [{
+        predecessor_id: previousTaskId,
+        type: 'FS',
+        lag_days: 0
+      }] : []
     };
 
     const created = await base44.asServiceRole.entities.Task.create(taskData);
     tasks.push(created);
     
+    previousTaskId = created.id;
     currentStart = addDays(endDate, 1);
   }
 

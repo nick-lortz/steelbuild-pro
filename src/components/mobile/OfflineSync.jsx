@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WifiOff, RefreshCw, Check, AlertCircle } from 'lucide-react';
-import useNetworkStatus from '@/components/shared/hooks/useNetworkStatus';
+import { useNetworkStatus } from '@/components/shared/hooks/useNetworkStatus';
 import { toast } from '@/components/ui/notifications';
 
 export default function OfflineSync() {
-  const isOnline = useNetworkStatus();
+  const { isOnline } = useNetworkStatus();
   const [pendingChanges, setPendingChanges] = useState([]);
   const [syncing, setSyncing] = useState(false);
 

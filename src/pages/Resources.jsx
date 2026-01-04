@@ -10,6 +10,8 @@ import { Search, RefreshCw, Filter, Plus } from 'lucide-react';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import ResourceCard from '@/components/resources/ResourceCard';
 import ResourceDetailView from '@/components/resources/ResourceDetailView';
+import Pagination from '@/components/ui/Pagination';
+import { usePagination } from '@/components/shared/hooks/usePagination';
 
 export default function Resources() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -118,6 +120,18 @@ export default function Resources() {
     };
   }, [resources]);
 
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedResources,
+    handlePageChange,
+    totalItems,
+  } = usePagination(filteredResources, 20);
+
+  const handleResourceClick = useCallback((resource) => {
+    setSelectedResource(resource);
+  }, []);
+
   return (
     <ScreenContainer>
       {/* Header */}
@@ -211,22 +225,34 @@ export default function Resources() {
           <p className="text-muted-foreground">No resources found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 mb-4">
-          {filteredResources.map((resource) => {
-            const project = projects.find(p => p.id === resource.current_project_id);
-            const allocation = resourceAllocations[resource.id];
-            
-            return (
-              <ResourceCard
-                key={resource.id}
-                resource={resource}
-                project={project}
-                allocation={allocation}
-                onClick={() => setSelectedResource(resource)}
-              />
-            );
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-3 mb-4">
+            {paginatedResources.map((resource) => {
+              const project = projects.find(p => p.id === resource.current_project_id);
+              const allocation = resourceAllocations[resource.id];
+              
+              return (
+                <ResourceCard
+                  key={resource.id}
+                  resource={resource}
+                  project={project}
+                  allocation={allocation}
+                  onClick={handleResourceClick}
+                />
+              );
+            })}
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              pageSize={20}
+              totalItems={totalItems}
+            />
+          )}
+        </>
       )}
 
       {/* Resource Detail Sheet */}

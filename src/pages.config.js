@@ -15,6 +15,7 @@ import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
 import Meetings from './pages/Meetings';
 import Performance from './pages/Performance';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
 import ProjectDashboard from './pages/ProjectDashboard';
@@ -25,10 +26,10 @@ import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
+import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
+import Messages from './pages/Messages';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +51,7 @@ export const PAGES = {
     "LandingPage": LandingPage,
     "Meetings": Meetings,
     "Performance": Performance,
+    "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
     "ProjectDashboard": ProjectDashboard,
@@ -60,10 +62,10 @@ export const PAGES = {
     "Resources": Resources,
     "Schedule": Schedule,
     "Settings": Settings,
+    "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "PrivacyPolicy": PrivacyPolicy,
-    "TermsOfService": TermsOfService,
+    "Messages": Messages,
 }
 
 export const pagesConfig = {

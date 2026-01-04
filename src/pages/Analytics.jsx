@@ -78,8 +78,12 @@ export default function Analytics() {
         showBackButton={false}
       />
 
-      <Tabs defaultValue="portfolio" className="space-y-6">
+      <Tabs defaultValue="risk-dashboard" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-zinc-800">
+            <AlertTriangle size={16} className="mr-2" />
+            Risk Dashboard
+          </TabsTrigger>
           <TabsTrigger value="portfolio" className="data-[state=active]:bg-zinc-800">
             <BarChart3 size={16} className="mr-2" />
             Portfolio Overview

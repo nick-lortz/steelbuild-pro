@@ -1,26 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Simple in-memory cache (5 min TTL)
-const cache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-function getCacheKey(timeframe, projectIds) {
-  return `${timeframe}_${projectIds ? projectIds.sort().join(',') : 'all'}`;
-}
-
-function getFromCache(key) {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
-  }
-  cache.delete(key);
-  return null;
-}
-
-function setCache(key, data) {
-  cache.set(key, { data, timestamp: Date.now() });
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -30,148 +9,136 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { timeframe = '12_months', project_ids } = await req.json();
-
-    // Check cache
-    const cacheKey = getCacheKey(timeframe, project_ids);
-    const cached = getFromCache(cacheKey);
-    if (cached) {
-      return Response.json({ ...cached, cached: true });
-    }
-
-    // Determine months to include
-    const monthsToInclude = timeframe === '3_months' ? 3 : timeframe === '6_months' ? 6 : 12;
+    // Fetch all projects
+    const projects = await base44.entities.Project.list();
     
-    // Fetch all required data in parallel
-    const [allProjects, allFinancials, allExpenses, allTasks] = await Promise.all([
-      base44.asServiceRole.entities.Project.list(),
-      base44.asServiceRole.entities.Financial.list(),
-      base44.asServiceRole.entities.Expense.list(),
-      base44.asServiceRole.entities.Task.list()
-    ]);
+    // Fetch financials for all projects
+    const financials = await base44.entities.Financial.list();
+    
+    // Fetch tasks for all projects
+    const tasks = await base44.entities.Task.list();
+    
+    // Fetch RFIs
+    const rfis = await base44.entities.RFI.list();
+    
+    // Fetch Change Orders
+    const changeOrders = await base44.entities.ChangeOrder.list();
 
-    // Filter projects if project_ids provided
-    const projects = project_ids && project_ids.length > 0
-      ? allProjects.filter(p => project_ids.includes(p.id))
-      : allProjects;
-
-    const projectIdSet = new Set(projects.map(p => p.id));
-
-    // Filter related data
-    const financials = allFinancials.filter(f => projectIdSet.has(f.project_id));
-    const expenses = allExpenses.filter(e => projectIdSet.has(e.project_id));
-    const tasks = allTasks.filter(t => projectIdSet.has(t.project_id));
-
-    // Generate month labels
-    const now = new Date();
-    const monthLabels = [];
-    for (let i = monthsToInclude - 1; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      monthLabels.push({
-        label: date.toLocaleDateString('en-US', { month: 'short' }),
-        year: date.getFullYear(),
-        month: date.getMonth()
-      });
-    }
-
-    // Initialize financial trends
-    const financialTrends = monthLabels.map(m => ({
-      month: m.label,
-      budget: 0,
-      committed: 0,
-      actual: 0
-    }));
-
-    // Aggregate financials by month (using created_date as proxy)
-    const totalBudget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
-    const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
-    const totalActualFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
-    const totalActualExpenses = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const totalActual = totalActualFinancials + totalActualExpenses;
-
-    // Distribute financial data across months (simplified - equal distribution)
-    const monthlyBudget = totalBudget / monthsToInclude;
-    const monthlyCommitted = totalCommitted / monthsToInclude;
-    const monthlyActual = totalActual / monthsToInclude;
-
-    for (let i = 0; i < monthsToInclude; i++) {
-      financialTrends[i].budget = Math.round(monthlyBudget / 1000); // in thousands
-      financialTrends[i].committed = Math.round(monthlyCommitted / 1000);
-      financialTrends[i].actual = Math.round(monthlyActual / 1000);
-    }
-
-    // Portfolio health metrics
+    // Calculate portfolio-level metrics
+    const totalContractValue = projects.reduce((sum, p) => sum + (Number(p.contract_value) || 0), 0);
     const activeProjects = projects.filter(p => p.status === 'in_progress').length;
-    const budgetUtilization = totalBudget > 0 ? Math.round((totalActual / totalBudget) * 100) : 0;
+    const totalProjects = projects.length;
+
+    // Financial rollup
+    let totalBudget = 0;
+    let totalActual = 0;
+    let totalCommitted = 0;
+
+    const financialByProject = {};
+    financials.forEach(f => {
+      if (!financialByProject[f.project_id]) {
+        financialByProject[f.project_id] = { budget: 0, actual: 0, committed: 0 };
+      }
+      financialByProject[f.project_id].budget += Number(f.budget_amount) || 0;
+      financialByProject[f.project_id].actual += Number(f.actual_amount) || 0;
+      financialByProject[f.project_id].committed += Number(f.committed_amount) || 0;
+      
+      totalBudget += Number(f.budget_amount) || 0;
+      totalActual += Number(f.actual_amount) || 0;
+      totalCommitted += Number(f.committed_amount) || 0;
+    });
 
     // Task metrics
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.status === 'completed').length;
-    const onTimeTasks = tasks.filter(t => {
-      if (t.status === 'completed') return true;
-      if (!t.end_date) return true;
-      return new Date(t.end_date) >= new Date();
+    const overdueTasks = tasks.filter(t => {
+      if (t.status === 'completed') return false;
+      const today = new Date().toISOString().split('T')[0];
+      return t.end_date && t.end_date < today;
     }).length;
 
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    const scheduleAdherence = totalTasks > 0 ? Math.round((onTimeTasks / totalTasks) * 100) : 100;
+    // RFI/CO metrics
+    const openRFIs = rfis.filter(r => r.status !== 'closed' && r.status !== 'answered').length;
+    const pendingCOs = changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').length;
 
-    // Project phase value
-    const phaseMap = new Map();
-    const statusLabels = {
-      'bidding': 'BIDDING',
-      'awarded': 'AWARDED',
-      'in_progress': 'IN PROGRESS',
-      'on_hold': 'ON HOLD',
-      'completed': 'COMPLETED',
-      'closed': 'CLOSED'
-    };
+    // Project health scoring
+    const projectMetrics = projects.map(p => {
+      const pFinancials = financialByProject[p.id] || { budget: 0, actual: 0, committed: 0 };
+      const pTasks = tasks.filter(t => t.project_id === p.id);
+      const pCompleted = pTasks.filter(t => t.status === 'completed').length;
+      const pOverdue = pTasks.filter(t => {
+        if (t.status === 'completed') return false;
+        const today = new Date().toISOString().split('T')[0];
+        return t.end_date && t.end_date < today;
+      }).length;
 
-    for (const project of projects) {
-      const status = project.status || 'unknown';
-      const label = statusLabels[status] || status.toUpperCase();
-      const value = Number(project.contract_value) || 0;
+      const budgetUsed = pFinancials.budget > 0 ? (pFinancials.actual / pFinancials.budget) * 100 : 0;
+      const scheduleProgress = pTasks.length > 0 ? (pCompleted / pTasks.length) * 100 : 0;
 
-      if (!phaseMap.has(label)) {
-        phaseMap.set(label, { value: 0, count: 0 });
-      }
+      // Health score: budget performance (50%) + schedule performance (30%) + overdue penalty (20%)
+      let healthScore = 100;
+      
+      // Budget factor
+      if (budgetUsed > 100) healthScore -= (budgetUsed - 100) * 0.5;
+      else if (budgetUsed > 90) healthScore -= 10;
+      
+      // Schedule factor
+      if (scheduleProgress < 50) healthScore -= 20;
+      else if (scheduleProgress < 75) healthScore -= 10;
+      
+      // Overdue penalty
+      if (pOverdue > 0) healthScore -= Math.min(pOverdue * 5, 30);
 
-      const current = phaseMap.get(label);
-      phaseMap.set(label, {
-        value: current.value + value,
-        count: current.count + 1
-      });
-    }
+      healthScore = Math.max(0, Math.min(100, healthScore));
 
-    const projectPhaseValue = Array.from(phaseMap.entries()).map(([phase, data]) => ({
-      phase,
-      value: Math.round(data.value / 1000), // in thousands
-      count: data.count
-    }));
+      return {
+        id: p.id,
+        project_number: p.project_number,
+        name: p.name,
+        status: p.status,
+        contract_value: p.contract_value,
+        budget: pFinancials.budget,
+        actual: pFinancials.actual,
+        budget_used_percent: budgetUsed,
+        schedule_progress: scheduleProgress,
+        total_tasks: pTasks.length,
+        completed_tasks: pCompleted,
+        overdue_tasks: pOverdue,
+        health_score: Math.round(healthScore),
+        at_risk: healthScore < 70 || budgetUsed > 95 || pOverdue > 5
+      };
+    });
 
-    const result = {
-      financialTrends,
-      portfolioHealth: {
-        activeProjects,
-        totalBudget: Math.round(totalBudget),
-        totalActual: Math.round(totalActual),
-        totalCommitted: Math.round(totalCommitted),
-        budgetUtilization,
-        scheduleAdherence,
-        completionRate
+    // Group by status
+    const byStatus = projects.reduce((acc, p) => {
+      acc[p.status] = (acc[p.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const atRiskCount = projectMetrics.filter(p => p.at_risk).length;
+
+    return Response.json({
+      summary: {
+        total_projects: totalProjects,
+        active_projects: activeProjects,
+        at_risk_projects: atRiskCount,
+        total_contract_value: totalContractValue,
+        total_budget: totalBudget,
+        total_actual: totalActual,
+        total_committed: totalCommitted,
+        budget_utilization: totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0,
+        total_tasks: totalTasks,
+        completed_tasks: completedTasks,
+        overdue_tasks: overdueTasks,
+        completion_rate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
+        open_rfis: openRFIs,
+        pending_change_orders: pendingCOs,
+        by_status: byStatus
       },
-      projectPhaseValue
-    };
-
-    // Cache the result
-    setCache(cacheKey, result);
-
-    return Response.json(result);
+      projects: projectMetrics.sort((a, b) => a.health_score - b.health_score)
+    });
 
   } catch (error) {
-    console.error('Error fetching portfolio metrics:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

@@ -9,120 +9,112 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const url = new URL(req.url);
-    const params = Object.fromEntries(url.searchParams);
+    const { searchParams } = new URL(req.url);
+    
+    // Parse filters
+    const filters = {
+      project_id: searchParams.get('project_id'),
+      status: searchParams.get('status'),
+      phase: searchParams.get('phase'),
+      assigned_resource: searchParams.get('assigned_resource'),
+      start_date_from: searchParams.get('start_date_from'),
+      start_date_to: searchParams.get('start_date_to'),
+      end_date_from: searchParams.get('end_date_from'),
+      end_date_to: searchParams.get('end_date_to'),
+      is_critical: searchParams.get('is_critical'),
+      search: searchParams.get('search')
+    };
 
-    const {
-      project_id,
-      status,
-      search_term,
-      sort_by = 'due_date',
-      sort_order = 'asc',
-      page = '1',
-      limit = '30'
-    } = params;
+    // Pagination
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Sorting
+    const sortBy = searchParams.get('sort_by') || 'end_date';
+    const sortOrder = searchParams.get('sort_order') || 'asc';
 
-    const pageNum = Math.max(1, parseInt(page) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 30));
+    // Build query object
+    const query = {};
+    if (filters.project_id) query.project_id = filters.project_id;
+    if (filters.status) query.status = filters.status;
+    if (filters.phase) query.phase = filters.phase;
+    if (filters.is_critical === 'true') query.is_critical = true;
 
-    // Fetch tasks with project_id filter if provided (optimize first fetch)
-    const fetchFilter = project_id ? { project_id } : {};
-    const allTasks = await base44.asServiceRole.entities.Task.filter(fetchFilter);
+    // Fetch all matching tasks (Base44 doesn't support server-side pagination on entities)
+    let tasks = await base44.entities.Task.filter(query);
 
-    // Filter tasks
-    let filtered = allTasks;
-
-    // Status filter (including 'overdue' virtual status)
-    if (status) {
-      if (status === 'overdue') {
-        const now = new Date();
-        filtered = filtered.filter(t => 
-          t.status !== 'completed' && 
-          t.status !== 'cancelled' &&
-          t.end_date && 
-          new Date(t.end_date) < now
-        );
-      } else {
-        filtered = filtered.filter(t => t.status === status);
-      }
+    // Apply additional filters client-side
+    if (filters.assigned_resource) {
+      tasks = tasks.filter(t => 
+        t.assigned_resources?.includes(filters.assigned_resource)
+      );
     }
 
-    // Search filter (case-insensitive on name and wbs_code)
-    if (search_term) {
-      const term = search_term.toLowerCase();
-      filtered = filtered.filter(t => 
-        (t.name && t.name.toLowerCase().includes(term)) ||
-        (t.wbs_code && t.wbs_code.toLowerCase().includes(term))
+    if (filters.start_date_from) {
+      tasks = tasks.filter(t => t.start_date >= filters.start_date_from);
+    }
+
+    if (filters.start_date_to) {
+      tasks = tasks.filter(t => t.start_date <= filters.start_date_to);
+    }
+
+    if (filters.end_date_from) {
+      tasks = tasks.filter(t => t.end_date >= filters.end_date_from);
+    }
+
+    if (filters.end_date_to) {
+      tasks = tasks.filter(t => t.end_date <= filters.end_date_to);
+    }
+
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      tasks = tasks.filter(t => 
+        t.name?.toLowerCase().includes(searchLower) ||
+        t.wbs_code?.toLowerCase().includes(searchLower) ||
+        t.notes?.toLowerCase().includes(searchLower)
       );
     }
 
     // Sort
-    filtered.sort((a, b) => {
-      let aVal, bVal;
+    tasks.sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
 
-      switch (sort_by) {
-        case 'due_date':
-        case 'end_date':
-          aVal = a.end_date ? new Date(a.end_date).getTime() : Infinity;
-          bVal = b.end_date ? new Date(b.end_date).getTime() : Infinity;
-          break;
-        case 'priority':
-          const priorityOrder = { high: 3, medium: 2, low: 1 };
-          aVal = priorityOrder[a.priority] || 0;
-          bVal = priorityOrder[b.priority] || 0;
-          break;
-        case 'name':
-          aVal = (a.name || '').toLowerCase();
-          bVal = (b.name || '').toLowerCase();
-          break;
-        case 'start_date':
-          aVal = a.start_date ? new Date(a.start_date).getTime() : Infinity;
-          bVal = b.start_date ? new Date(b.start_date).getTime() : Infinity;
-          break;
-        default:
-          aVal = a[sort_by] || '';
-          bVal = b[sort_by] || '';
+      // Handle nulls
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      // Compare
+      if (typeof aVal === 'string') {
+        return sortOrder === 'asc' 
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      } else if (typeof aVal === 'number') {
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      } else {
+        return 0;
       }
-
-      if (aVal < bVal) return sort_order === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sort_order === 'asc' ? 1 : -1;
-      return 0;
     });
 
-    // Pagination
-    const total = filtered.length;
-    const startIdx = (pageNum - 1) * limitNum;
-    const endIdx = startIdx + limitNum;
-    const paginatedTasks = filtered.slice(startIdx, endIdx);
+    const totalCount = tasks.length;
 
-    // Return only essential fields
-    const tasks = paginatedTasks.map(t => ({
-      id: t.id,
-      name: t.name,
-      wbs_code: t.wbs_code,
-      status: t.status,
-      start_date: t.start_date,
-      end_date: t.end_date,
-      priority: t.priority,
-      phase: t.phase,
-      project_id: t.project_id,
-      progress_percent: t.progress_percent,
-      estimated_hours: t.estimated_hours,
-      is_critical: t.is_critical,
-      is_milestone: t.is_milestone,
-      assigned_resources: t.assigned_resources
-    }));
+    // Apply pagination
+    const paginatedTasks = tasks.slice(offset, offset + limit);
 
     return Response.json({
-      tasks,
-      total,
-      page: pageNum,
-      limit: limitNum,
-      hasMore: endIdx < total
+      tasks: paginatedTasks,
+      pagination: {
+        total: totalCount,
+        limit,
+        offset,
+        has_more: offset + limit < totalCount
+      },
+      filters_applied: filters,
+      sort: { by: sortBy, order: sortOrder }
     });
 
   } catch (error) {
-    console.error('Error fetching filtered tasks:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

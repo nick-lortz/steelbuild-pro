@@ -11,6 +11,9 @@ import TaskCard from '@/components/schedule/TaskCard';
 import TaskForm from '@/components/schedule/TaskForm';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import WeatherWidget from '@/components/integrations/WeatherWidget';
+import BulkActions from '@/components/shared/BulkActions';
+import ViewConfiguration from '@/components/shared/ViewConfiguration';
+import { useKeyboardShortcuts } from '@/components/shared/hooks/useKeyboardShortcuts';
 import { toast } from '@/components/ui/notifications';
 
 export default function Schedule() {
@@ -22,6 +25,7 @@ export default function Schedule() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState([]);
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
@@ -163,6 +167,26 @@ export default function Schedule() {
     setShowTaskForm(true);
   };
 
+  const bulkUpdateStatus = (newStatus) => {
+    selectedTasks.forEach(taskId => {
+      updateMutation.mutate({ id: taskId, data: { status: newStatus } });
+    });
+    setSelectedTasks([]);
+    toast.success(`${selectedTasks.length} tasks updated`);
+  };
+
+  const loadView = (filters) => {
+    setProjectFilter(filters.projectFilter || 'all');
+    setStatusFilter(filters.statusFilter || 'all');
+    setSearchTerm(filters.searchTerm || '');
+  };
+
+  useKeyboardShortcuts([
+    { key: 'n', ctrl: true, action: handleCreateTask },
+    { key: 'r', ctrl: true, action: handleRefresh },
+    { key: 'f', ctrl: true, action: () => setShowFilters(!showFilters) }
+  ]);
+
   const statusCounts = useMemo(() => {
     return {
       all: totalCount,
@@ -217,19 +241,26 @@ export default function Schedule() {
       {/* Filters */}
       {showFilters && (
         <div className="space-y-4 mb-4">
-          <Select value={projectFilter} onValueChange={(v) => { setProjectFilter(v); setPage(1); }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center justify-between gap-2">
+            <Select value={projectFilter} onValueChange={(v) => { setProjectFilter(v); setPage(1); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <ViewConfiguration 
+              viewKey="schedule"
+              currentFilters={{ projectFilter, statusFilter, searchTerm }}
+              onLoadView={loadView}
+            />
+          </div>
           {projectFilter !== 'all' && <WeatherWidget projectId={projectFilter} />}
         </div>
       )}
@@ -262,13 +293,27 @@ export default function Schedule() {
           <div className="grid grid-cols-1 gap-3 mb-4">
             {tasks.map((task) => {
               const project = projects.find(p => p.id === task.project_id);
+              const isSelected = selectedTasks.includes(task.id);
               return (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  project={project}
-                  onClick={() => handleTaskClick(task)}
-                />
+                <div key={task.id} className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {
+                      setSelectedTasks(prev => 
+                        prev.includes(task.id) 
+                          ? prev.filter(id => id !== task.id)
+                          : [...prev, task.id]
+                      );
+                    }}
+                    className="absolute top-3 left-3 z-10 w-4 h-4"
+                  />
+                  <TaskCard
+                    task={task}
+                    project={project}
+                    onClick={() => handleTaskClick(task)}
+                  />
+                </div>
               );
             })}
           </div>
@@ -285,6 +330,17 @@ export default function Schedule() {
           )}
         </>
       )}
+
+      {/* Bulk Actions */}
+      <BulkActions
+        selectedCount={selectedTasks.length}
+        onClear={() => setSelectedTasks([])}
+        actions={[
+          { label: 'Complete', onClick: () => bulkUpdateStatus('completed') },
+          { label: 'In Progress', onClick: () => bulkUpdateStatus('in_progress') },
+          { label: 'Cancel', variant: 'ghost', onClick: () => setSelectedTasks([]) }
+        ]}
+      />
 
       {/* Floating Action Button */}
       <Button

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import TaskCard from '@/components/schedule/TaskCard';
 import TaskForm from '@/components/schedule/TaskForm';
 import ScreenContainer from '@/components/layout/ScreenContainer';
+import WeatherWidget from '@/components/integrations/WeatherWidget';
 import { toast } from '@/components/ui/notifications';
 
 export default function Schedule() {
@@ -215,7 +216,7 @@ export default function Schedule() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="space-y-4 mb-4">
           <Select value={projectFilter} onValueChange={(v) => { setProjectFilter(v); setPage(1); }}>
             <SelectTrigger>
               <SelectValue placeholder="Project" />
@@ -229,6 +230,7 @@ export default function Schedule() {
               ))}
             </SelectContent>
           </Select>
+          {projectFilter !== 'all' && <WeatherWidget projectId={projectFilter} />}
         </div>
       )}
 

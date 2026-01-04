@@ -304,6 +304,7 @@ import OfflineIndicator from '@/components/shared/OfflineIndicator';
         { name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
         { name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
         { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
+        { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
         { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
         { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
       ];

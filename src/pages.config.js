@@ -32,6 +32,7 @@ import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
 import CustomDashboard from './pages/CustomDashboard';
+import Integrations from './pages/Integrations';
 import __Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
     "CustomDashboard": CustomDashboard,
+    "Integrations": Integrations,
 }
 
 export const pagesConfig = {

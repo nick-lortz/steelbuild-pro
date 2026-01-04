@@ -4,124 +4,71 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
+    
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { action, eventData } = await req.json();
+    const { action, task_id, meeting_id } = await req.json();
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar');
 
-    if (action === 'fetchWeekEvents') {
-      // Get events for the current week
-      const now = new Date();
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-      
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 7);
+    if (action === 'sync_task') {
+      const task = await base44.entities.Task.list().then(t => t.find(tsk => tsk.id === task_id));
+      const project = await base44.entities.Project.list().then(p => p.find(pr => pr.id === task.project_id));
 
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-        `timeMin=${startOfWeek.toISOString()}&` +
-        `timeMax=${endOfWeek.toISOString()}&` +
-        `singleEvents=true&` +
-        `orderBy=startTime`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
+      const event = {
+        summary: `[SteelBuild] ${task.name}`,
+        description: `Project: ${project?.project_number}\nPhase: ${task.phase}\nStatus: ${task.status}\n\nTask ID: ${task_id}`,
+        start: {
+          date: task.start_date
+        },
+        end: {
+          date: task.end_date
         }
-      );
+      };
 
-      const data = await response.json();
-      return Response.json({ events: data.items || [] });
+      const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(event)
+      });
+
+      const calendarEvent = await response.json();
+      return Response.json({ success: true, eventId: calendarEvent.id });
     }
 
-    if (action === 'createEvent') {
-      // Check for double bookings first
-      const { start, end } = eventData;
-      const checkResponse = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?` +
-        `timeMin=${start}&` +
-        `timeMax=${end}&` +
-        `singleEvents=true`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
-      
-      const existingEvents = await checkResponse.json();
-      if (existingEvents.items && existingEvents.items.length > 0) {
-        return Response.json({ 
-          error: 'Double booking detected', 
-          conflictingEvents: existingEvents.items 
-        }, { status: 400 });
-      }
+    if (action === 'sync_meeting') {
+      const meeting = await base44.entities.Meeting.list().then(m => m.find(mtg => mtg.id === meeting_id));
+      const project = await base44.entities.Project.list().then(p => p.find(pr => pr.id === meeting.project_id));
 
-      // Create event with reminder
-      const response = await fetch(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...eventData,
-            reminders: {
-              useDefault: false,
-              overrides: [
-                { method: 'email', minutes: 30 },
-                { method: 'popup', minutes: 15 },
-              ],
-            },
-          }),
-        }
-      );
+      const event = {
+        summary: meeting.title,
+        description: `Project: ${project?.project_number}\nLocation: ${meeting.location || 'TBD'}\nAttendees: ${meeting.attendees?.join(', ') || 'N/A'}\n\nNotes:\n${meeting.notes || ''}`,
+        start: {
+          dateTime: new Date(meeting.meeting_date).toISOString(),
+          timeZone: Deno.env.get('TZ') || 'America/Phoenix'
+        },
+        end: {
+          dateTime: new Date(new Date(meeting.meeting_date).getTime() + (meeting.duration_minutes || 60) * 60000).toISOString(),
+          timeZone: Deno.env.get('TZ') || 'America/Phoenix'
+        },
+        attendees: meeting.attendees?.map(email => ({ email })) || []
+      };
 
-      const data = await response.json();
-      return Response.json({ event: data });
-    }
+      const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(event)
+      });
 
-    if (action === 'updateEvent') {
-      const { eventId, updates } = eventData;
-      
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updates),
-        }
-      );
-
-      const data = await response.json();
-      return Response.json({ event: data });
-    }
-
-    if (action === 'deleteEvent') {
-      const { eventId } = eventData;
-      
-      await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        }
-      );
-
-      return Response.json({ success: true });
+      const calendarEvent = await response.json();
+      return Response.json({ success: true, eventId: calendarEvent.id });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });

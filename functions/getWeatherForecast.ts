@@ -4,111 +4,87 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
+    
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const payload = await req.json();
-    const location = payload.location || 'Chicago,US'; // Default location
+    const { project_id } = await req.json();
+    
+    const project = await base44.entities.Project.list().then(p => p.find(pr => pr.id === project_id));
+    const location = project?.location || 'Phoenix, AZ';
 
-    const apiKey = Deno.env.get('OPENWEATHER_API_KEY');
-    if (!apiKey) {
-      return Response.json({ 
-        error: 'Weather API key not configured. Please set OPENWEATHER_API_KEY in Settings > Environment Variables.' 
-      }, { status: 500 });
+    // Use weather API (example with Open-Meteo - free, no API key needed)
+    const geocodeResponse = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`
+    );
+    const geocodeData = await geocodeResponse.json();
+    
+    if (!geocodeData.results?.[0]) {
+      return Response.json({ error: 'Location not found' }, { status: 404 });
     }
 
-    // Get coordinates from location
-    const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${apiKey}`;
-    const geoResponse = await fetch(geoUrl);
-    
-    if (!geoResponse.ok) {
-      return Response.json({ 
-        error: `OpenWeather API error: ${geoResponse.status} - ${geoResponse.statusText}. Check your API key.` 
-      }, { status: 500 });
-    }
-    
-    const geoData = await geoResponse.json();
+    const { latitude, longitude, name } = geocodeData.results[0];
 
-    if (!geoData || geoData.length === 0) {
-      return Response.json({ error: `Location not found: ${location}` }, { status: 404 });
-    }
+    const weatherResponse = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,windspeed_10m_max,weathercode&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch&timezone=auto&forecast_days=7`
+    );
+    const weatherData = await weatherResponse.json();
 
-    const { lat, lon } = geoData[0];
+    // Analyze weather risks for construction
+    const forecasts = weatherData.daily.time.map((date, i) => {
+      const temp_high = weatherData.daily.temperature_2m_max[i];
+      const temp_low = weatherData.daily.temperature_2m_min[i];
+      const precip = weatherData.daily.precipitation_sum[i];
+      const precip_prob = weatherData.daily.precipitation_probability_max[i];
+      const wind = weatherData.daily.windspeed_10m_max[i];
+      const weathercode = weatherData.daily.weathercode[i];
 
-    // Get 5-day forecast
-    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`;
-    const forecastResponse = await fetch(forecastUrl);
-    
-    if (!forecastResponse.ok) {
-      return Response.json({ 
-        error: `Weather forecast API error: ${forecastResponse.status}` 
-      }, { status: 500 });
-    }
-    
-    const forecastData = await forecastResponse.json();
-    
-    if (!forecastData.list || forecastData.list.length === 0) {
-      return Response.json({ error: 'No forecast data available' }, { status: 500 });
-    }
+      // Risk assessment for steel erection
+      const risks = [];
+      let severity = 'low';
 
-    // Process forecast data
-    const dailyForecasts = [];
-    const grouped = {};
-
-    forecastData.list.forEach(item => {
-      const date = item.dt_txt.split(' ')[0];
-      if (!grouped[date]) {
-        grouped[date] = {
-          date,
-          temps: [],
-          conditions: [],
-          wind_speeds: [],
-          precipitation: [],
-        };
+      if (temp_high > 105 || temp_low < 32) {
+        risks.push('Extreme temperature - worker safety concern');
+        severity = 'high';
       }
-      grouped[date].temps.push(item.main.temp);
-      grouped[date].conditions.push(item.weather[0].main);
-      grouped[date].wind_speeds.push(item.wind.speed);
-      grouped[date].precipitation.push(item.pop * 100); // Probability of precipitation
-    });
+      if (precip > 0.5 || precip_prob > 70) {
+        risks.push('Heavy rain - delays likely, crane operations unsafe');
+        severity = severity === 'high' ? 'high' : 'medium';
+      }
+      if (wind > 25) {
+        risks.push('High winds - crane lifts unsafe, erection delays');
+        severity = 'high';
+      }
+      if (weathercode >= 71 && weathercode <= 77) {
+        risks.push('Snow - site access issues, delays expected');
+        severity = 'high';
+      }
 
-    Object.values(grouped).forEach(day => {
-      const maxTemp = Math.round(Math.max(...day.temps));
-      const minTemp = Math.round(Math.min(...day.temps));
-      const avgWindSpeed = Math.round(day.wind_speeds.reduce((a, b) => a + b, 0) / day.wind_speeds.length);
-      const maxWindSpeed = Math.round(Math.max(...day.wind_speeds));
-      const avgPrecipitation = Math.round(day.precipitation.reduce((a, b) => a + b, 0) / day.precipitation.length);
-      
-      // Determine primary condition
-      const conditionCounts = {};
-      day.conditions.forEach(c => {
-        conditionCounts[c] = (conditionCounts[c] || 0) + 1;
-      });
-      const primaryCondition = Object.keys(conditionCounts).reduce((a, b) => 
-        conditionCounts[a] > conditionCounts[b] ? a : b
-      );
-
-      dailyForecasts.push({
-        date: day.date,
-        temp_high: maxTemp,
-        temp_low: minTemp,
-        avg_wind_speed: avgWindSpeed,
-        max_wind_speed: maxWindSpeed,
-        precipitation_chance: avgPrecipitation,
-        condition: primaryCondition,
-        is_high_wind: maxWindSpeed > 25, // Flag if winds exceed 25 mph
-        is_storm: ['Thunderstorm', 'Rain', 'Snow'].includes(primaryCondition) && avgPrecipitation > 50,
-        is_extreme_temp: maxTemp > 95 || minTemp < 20,
-      });
+      return {
+        date,
+        temp_high,
+        temp_low,
+        precipitation_inches: precip,
+        precipitation_probability: precip_prob,
+        wind_mph: wind,
+        weathercode,
+        risks,
+        severity,
+        safe_for_erection: risks.length === 0 && wind < 20
+      };
     });
 
     return Response.json({
-      location: geoData[0].name,
-      forecasts: dailyForecasts.slice(0, 7), // Return 7 days
+      location: name,
+      coordinates: { latitude, longitude },
+      forecasts,
+      summary: {
+        risky_days: forecasts.filter(f => f.severity === 'high').length,
+        caution_days: forecasts.filter(f => f.severity === 'medium').length,
+        safe_days: forecasts.filter(f => f.safe_for_erection).length
+      }
     });
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

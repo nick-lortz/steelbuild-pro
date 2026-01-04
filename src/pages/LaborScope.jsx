@@ -24,7 +24,7 @@ export default function LaborScope() {
   const [showGapDialog, setShowGapDialog] = useState(false);
   const [editingBreakdown, setEditingBreakdown] = useState(null);
 
-  // Queries
+  // Queries - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
@@ -37,25 +37,25 @@ export default function LaborScope() {
 
   const { data: breakdowns = [], refetch: refetchBreakdowns } = useQuery({
     queryKey: ['labor-breakdowns', selectedProject],
-    queryFn: () => selectedProject ? base44.entities.LaborBreakdown.filter({ project_id: selectedProject }) : [],
+    queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
   });
 
   const { data: specialtyItems = [] } = useQuery({
     queryKey: ['specialty-items', selectedProject],
-    queryFn: () => selectedProject ? base44.entities.SpecialtyDiscussionItem.filter({ project_id: selectedProject }) : [],
+    queryFn: () => base44.entities.SpecialtyDiscussionItem.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
   });
 
   const { data: scopeGaps = [] } = useQuery({
     queryKey: ['scope-gaps', selectedProject],
-    queryFn: () => selectedProject ? base44.entities.ScopeGap.filter({ project_id: selectedProject }) : [],
+    queryFn: () => base44.entities.ScopeGap.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', selectedProject],
-    queryFn: () => selectedProject ? base44.entities.Task.filter({ project_id: selectedProject }) : [],
+    queryFn: () => base44.entities.Task.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
   });
 
@@ -141,13 +141,14 @@ export default function LaborScope() {
     },
   });
 
-  // Calculations
+  // Calculations - ALL useMemo MUST BE CALLED UNCONDITIONALLY
   const selectedProjectData = useMemo(() => 
-    projects.find(p => p.id === selectedProject),
+    selectedProject ? projects.find(p => p.id === selectedProject) : null,
     [projects, selectedProject]
   );
 
   const totals = useMemo(() => {
+    if (!selectedProject) return { totalShop: 0, totalField: 0, baselineShop: 0, baselineField: 0, shopDiscrepancy: 0, fieldDiscrepancy: 0, hasDiscrepancy: false };
     const categoryShop = breakdowns.reduce((sum, b) => sum + (Number(b.shop_hours) || 0), 0);
     const categoryField = breakdowns.reduce((sum, b) => sum + (Number(b.field_hours) || 0), 0);
     const specialtyShop = specialtyItems.reduce((sum, s) => sum + (Number(s.shop_hours) || 0), 0);
@@ -174,21 +175,28 @@ export default function LaborScope() {
   }, [breakdowns, specialtyItems, selectedProjectData]);
 
   const gapTotals = useMemo(() => {
+    if (!selectedProject) return { openCount: 0, totalCost: 0 };
     const openGaps = scopeGaps.filter(g => g.status === 'open');
     const totalCost = scopeGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
     return { openCount: openGaps.length, totalCost };
-  }, [scopeGaps]);
+  }, [scopeGaps, selectedProject]);
 
   // Labor vs Schedule validation
   const laborScheduleMismatches = useMemo(() => 
-    validateLaborScheduleAlignment(breakdowns, tasks, categories),
-    [breakdowns, tasks, categories]
+    selectedProject ? validateLaborScheduleAlignment(breakdowns, tasks, categories) : [],
+    [breakdowns, tasks, categories, selectedProject]
   );
 
   const laborScheduleTotals = useMemo(() =>
-    calculateProjectLaborTotals(breakdowns, tasks),
-    [breakdowns, tasks]
+    selectedProject ? calculateProjectLaborTotals(breakdowns, tasks) : { has_mismatch: false, breakdown_shop: 0, breakdown_field: 0, scheduled_shop: 0, scheduled_field: 0, shop_variance: 0, field_variance: 0 },
+    [breakdowns, tasks, selectedProject]
   );
+
+  const hasDuplicates = useMemo(() => {
+    if (!selectedProject || breakdowns.length === 0) return false;
+    const categoryIds = breakdowns.map(b => b.labor_category_id);
+    return categoryIds.length !== new Set(categoryIds).size;
+  }, [breakdowns, selectedProject]);
 
   const handleUpdateBreakdown = (breakdownId, field, value) => {
     updateBreakdownMutation.mutate({ 
@@ -304,13 +312,8 @@ export default function LaborScope() {
     );
   }
 
-  // Check for duplicates
-  const hasDuplicates = useMemo(() => {
-    const categoryIds = breakdowns.map(b => b.labor_category_id);
-    return categoryIds.length !== new Set(categoryIds).size;
-  }, [breakdowns]);
-
-  if (breakdowns.length === 0) {
+  // NOW ALL CONDITIONAL RENDERING LOGIC
+  if (breakdowns.length === 0 && selectedProject) {
     return (
       <div className="p-6">
         <PageHeader title="Labor & Scope Breakdown" subtitle={selectedProjectData?.name} />

@@ -21,7 +21,9 @@ import {
   DialogHeader,
   DialogTitle } from
 "@/components/ui/dialog";
-import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send } from 'lucide-react';
+import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send, FileText, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import PageHeader from '@/components/ui/PageHeader';
@@ -642,6 +644,27 @@ export default function Settings() {
                   This application uses role-based access control. Users are assigned either 'admin' or 'user' roles. 
                   Admins have full access to all features including user management.
                 </p>
+              </div>
+
+              <div className="p-4 border border-zinc-800 rounded-lg">
+                <h3 className="font-medium text-white mb-2 flex items-center gap-2">
+                  <FileText size={16} />
+                  Legal & Policies
+                </h3>
+                <div className="space-y-2 mt-3">
+                  <Link to={createPageUrl('PrivacyPolicy')}>
+                    <Button variant="outline" className="w-full justify-between border-zinc-700">
+                      Privacy Policy
+                      <ExternalLink size={14} />
+                    </Button>
+                  </Link>
+                  <Link to={createPageUrl('TermsOfService')}>
+                    <Button variant="outline" className="w-full justify-between border-zinc-700">
+                      Terms of Service
+                      <ExternalLink size={14} />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </CardContent>
           </Card>

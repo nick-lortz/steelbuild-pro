@@ -303,6 +303,7 @@ import OfflineIndicator from '@/components/shared/OfflineIndicator';
         { name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
         { name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
         { name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
+        { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
         { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
         { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
       ];

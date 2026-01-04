@@ -8,12 +8,14 @@ import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import Fabrication from './pages/Fabrication';
+import FieldTools from './pages/FieldTools';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
 import Meetings from './pages/Meetings';
+import Messages from './pages/Messages';
 import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
@@ -29,8 +31,7 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import Messages from './pages/Messages';
-import FieldTools from './pages/FieldTools';
+import CustomDashboard from './pages/CustomDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -45,12 +46,14 @@ export const PAGES = {
     "Drawings": Drawings,
     "Equipment": Equipment,
     "Fabrication": Fabrication,
+    "FieldTools": FieldTools,
     "Financials": Financials,
     "Insights": Insights,
     "Labor": Labor,
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
     "Meetings": Meetings,
+    "Messages": Messages,
     "Performance": Performance,
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
@@ -66,8 +69,7 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "Messages": Messages,
-    "FieldTools": FieldTools,
+    "CustomDashboard": CustomDashboard,
 }
 
 export const pagesConfig = {

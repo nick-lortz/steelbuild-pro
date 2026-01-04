@@ -65,6 +65,11 @@ export default function Analytics() {
     queryFn: () => base44.entities.LaborBreakdown.list(),
   });
 
+  const { data: laborHours = [] } = useQuery({
+    queryKey: ['laborHours'],
+    queryFn: () => base44.entities.LaborHours.list(),
+  });
+
   return (
     <div>
       <PageHeader

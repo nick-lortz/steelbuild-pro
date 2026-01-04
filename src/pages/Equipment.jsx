@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
@@ -11,6 +11,8 @@ import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EquipmentCalendar from '@/components/equipment/EquipmentCalendar';
 import EquipmentKPIs from '@/components/equipment/EquipmentKPIs';
+import Pagination from '@/components/ui/Pagination';
+import { usePagination } from '@/components/shared/hooks/usePagination';
 
 export default function Equipment() {
   const [selectedEquipment, setSelectedEquipment] = useState(null);
@@ -33,10 +35,22 @@ export default function Equipment() {
     staleTime: 10 * 60 * 1000
   });
 
-  const equipment = React.useMemo(() =>
+  const equipment = useMemo(() =>
   resources.filter((r) => r.type === 'equipment'),
   [resources]
   );
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedEquipment,
+    handlePageChange,
+    totalItems,
+  } = usePagination(equipment, 20);
+
+  const handleSelectEquipment = useCallback((row) => {
+    setSelectedEquipment(row);
+  }, []);
 
   const columns = [
   {
@@ -97,7 +111,7 @@ export default function Equipment() {
       variant="outline"
       onClick={(e) => {
         e.stopPropagation();
-        setSelectedEquipment(row);
+        handleSelectEquipment(row);
       }} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
 
 
@@ -138,9 +152,18 @@ export default function Equipment() {
         <h3 className="text-lg font-medium text-white mb-3">Equipment Fleet</h3>
         <DataTable
           columns={columns}
-          data={equipment}
+          data={paginatedEquipment}
           emptyMessage="No equipment found. Add equipment resources to get started." />
 
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            pageSize={20}
+            totalItems={totalItems}
+          />
+        )}
       </div>
 
       {/* Selected Equipment Details */}

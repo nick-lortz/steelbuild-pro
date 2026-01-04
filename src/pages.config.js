@@ -30,6 +30,7 @@ import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
 import Messages from './pages/Messages';
+import FieldTools from './pages/FieldTools';
 import __Layout from './Layout.jsx';
 
 
@@ -66,6 +67,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
     "Messages": Messages,
+    "FieldTools": FieldTools,
 }
 
 export const pagesConfig = {

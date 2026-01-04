@@ -258,6 +258,7 @@ import {
   Settings,
   UserCircle,
   BarChart3,
+  Camera,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -300,6 +301,8 @@ import OfflineIndicator from '@/components/shared/OfflineIndicator';
         { name: 'Reports', page: 'Reports', icon: FileText, roles: ['admin', 'user'] },
         { name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
         { name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
+        { name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
+        { name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
         { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
         { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
       ];

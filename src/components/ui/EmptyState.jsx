@@ -1,44 +1,31 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { cn } from '@/lib/utils';
 
 export default function EmptyState({ 
   icon: Icon, 
   title, 
   description, 
-  actionLabel, 
-  actionPage,
-  variant = 'default' 
+  action,
+  actionLabel,
+  className 
 }) {
-  const bgColors = {
-    default: 'bg-zinc-800/30',
-    subtle: 'bg-transparent'
-  };
-
   return (
-    <div className={`${bgColors[variant]} rounded-lg p-8 text-center`}>
-      <div className="max-w-sm mx-auto">
-        {Icon && (
-          <div className="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Icon className="text-amber-500" size={24} />
-          </div>
-        )}
-        <h3 className="text-white font-semibold text-lg mb-2">{title}</h3>
-        <p className="text-zinc-400 text-sm mb-6">{description}</p>
-        {actionLabel && actionPage && (
-          <Button 
-            asChild
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Link to={createPageUrl(actionPage)}>
-              {actionLabel}
-              <ArrowRight size={16} className="ml-2" />
-            </Link>
-          </Button>
-        )}
-      </div>
+    <div className={cn("flex flex-col items-center justify-center py-12 px-4 text-center", className)}>
+      {Icon && (
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+          <Icon size={32} className="text-muted-foreground" />
+        </div>
+      )}
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      {description && (
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">{description}</p>
+      )}
+      {action && actionLabel && (
+        <Button onClick={action} className="bg-amber-500 hover:bg-amber-600 text-black">
+          {actionLabel}
+        </Button>
+      )}
     </div>
   );
 }

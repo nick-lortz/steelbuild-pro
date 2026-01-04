@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, RefreshCw, Filter, Plus } from 'lucide-react';
+import { Search, RefreshCw, Filter, Users as UsersIcon } from 'lucide-react';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import ResourceCard from '@/components/resources/ResourceCard';
 import ResourceDetailView from '@/components/resources/ResourceDetailView';
 import Pagination from '@/components/ui/Pagination';
 import { usePagination } from '@/components/shared/hooks/usePagination';
+import EmptyState from '@/components/ui/EmptyState';
+import { SkeletonList } from '@/components/ui/SkeletonCard';
 
 export default function Resources() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,7 +24,7 @@ export default function Resources() {
   const [selectedResource, setSelectedResource] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { data: resources = [], refetch: refetchResources } = useQuery({
+  const { data: resources = [], refetch: refetchResources, isLoading } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list('name'),
     staleTime: 5 * 60 * 1000
@@ -220,10 +222,14 @@ export default function Resources() {
       </Tabs>
 
       {/* Resource Cards */}
-      {filteredResources.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No resources found</p>
-        </div>
+      {isLoading ? (
+        <SkeletonList count={5} />
+      ) : filteredResources.length === 0 ? (
+        <EmptyState
+          icon={UsersIcon}
+          title="No resources found"
+          description="Try adjusting your filters or search term"
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 mb-4">

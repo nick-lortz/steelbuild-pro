@@ -7,6 +7,7 @@ import { BarChart3, Users, TrendingUp } from 'lucide-react';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
+import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 
 export default function Analytics() {
   const { data: projects = [] } = useQuery({

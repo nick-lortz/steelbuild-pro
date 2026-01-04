@@ -1,6 +1,7 @@
 import Analytics from './pages/Analytics';
 import ChangeOrders from './pages/ChangeOrders';
 import CostCodes from './pages/CostCodes';
+import CustomDashboard from './pages/CustomDashboard';
 import DailyLogs from './pages/DailyLogs';
 import Dashboard from './pages/Dashboard';
 import Deliveries from './pages/Deliveries';
@@ -11,6 +12,7 @@ import Fabrication from './pages/Fabrication';
 import FieldTools from './pages/FieldTools';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
+import Integrations from './pages/Integrations';
 import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
@@ -31,8 +33,6 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import CustomDashboard from './pages/CustomDashboard';
-import Integrations from './pages/Integrations';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +40,7 @@ export const PAGES = {
     "Analytics": Analytics,
     "ChangeOrders": ChangeOrders,
     "CostCodes": CostCodes,
+    "CustomDashboard": CustomDashboard,
     "DailyLogs": DailyLogs,
     "Dashboard": Dashboard,
     "Deliveries": Deliveries,
@@ -50,6 +51,7 @@ export const PAGES = {
     "FieldTools": FieldTools,
     "Financials": Financials,
     "Insights": Insights,
+    "Integrations": Integrations,
     "Labor": Labor,
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
@@ -70,8 +72,6 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "CustomDashboard": CustomDashboard,
-    "Integrations": Integrations,
 }
 
 export const pagesConfig = {

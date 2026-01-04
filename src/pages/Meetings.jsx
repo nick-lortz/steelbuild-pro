@@ -415,6 +415,7 @@ function MeetingForm({ formData, setFormData, projects, onSubmit, isLoading, isE
             <SelectValue placeholder="Select project" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="internal">S&H Steel</SelectItem>
             {projects.map(p => (
               <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
             ))}

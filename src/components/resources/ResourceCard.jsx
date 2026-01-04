@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowRight, User, Wrench, Users } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-export default function ResourceCard({ resource, project, allocation, onClick }) {
+const ResourceCard = React.memo(function ResourceCard({ resource, project, allocation, onClick }) {
   const statusColors = {
     available: 'bg-green-500/20 text-green-400 border-green-500/30',
     assigned: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
@@ -24,7 +24,7 @@ export default function ResourceCard({ resource, project, allocation, onClick })
   return (
     <Card 
       className="border-border cursor-pointer active:scale-[0.98] transition-all"
-      onClick={onClick}
+      onClick={() => onClick(resource)}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
@@ -87,4 +87,6 @@ export default function ResourceCard({ resource, project, allocation, onClick })
       </CardContent>
     </Card>
   );
-}
+});
+
+export default ResourceCard;

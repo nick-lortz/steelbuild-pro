@@ -98,6 +98,18 @@ export default function Analytics() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="risk-dashboard" className="space-y-6">
+          <ProjectRiskDashboard
+            projects={projects}
+            laborBreakdowns={laborBreakdowns}
+            scopeGaps={scopeGaps}
+            tasks={tasks}
+            financials={financials}
+            expenses={expenses}
+            changeOrders={changeOrders}
+          />
+        </TabsContent>
+
         <TabsContent value="portfolio" className="space-y-6">
           <PortfolioOverview
             projects={projects}

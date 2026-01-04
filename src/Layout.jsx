@@ -275,6 +275,7 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
+import CommandPalette from '@/components/shared/CommandPalette';
 
       const navItems = [
         { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
@@ -337,6 +338,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="min-h-screen bg-background text-foreground">
           <OfflineIndicator />
           <Toaster />
+          <CommandPalette />
           <style>{`
             .dark {
               --background: 0 0% 4%;

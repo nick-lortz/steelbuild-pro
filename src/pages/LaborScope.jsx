@@ -283,15 +283,15 @@ export default function LaborScope() {
 
   if (!selectedProject) {
     return (
-      <div>
+      <div className="p-6">
         <PageHeader title="Labor & Scope Breakdown" subtitle="Select a project to view labor breakdown" />
         <div className="max-w-md">
           <Label>Select Project</Label>
           <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="bg-zinc-900 border-zinc-800">
+            <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
               <SelectValue placeholder="Choose a project..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
               {projects.map(p => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.project_number} - {p.name}
@@ -312,7 +312,7 @@ export default function LaborScope() {
 
   if (breakdowns.length === 0) {
     return (
-      <div>
+      <div className="p-6">
         <PageHeader title="Labor & Scope Breakdown" subtitle={selectedProjectData?.name} />
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="pt-6">
@@ -335,7 +335,7 @@ export default function LaborScope() {
   // Block UI if duplicates detected
   if (hasDuplicates) {
     return (
-      <div>
+      <div className="p-6">
         <PageHeader title="Labor & Scope Breakdown" subtitle={selectedProjectData?.name} />
         <Card className="bg-red-500/10 border-red-500/30">
           <CardContent className="pt-6">
@@ -363,7 +363,7 @@ export default function LaborScope() {
   }
 
   return (
-    <div>
+    <div className="p-6">
       <PageHeader 
         title="Labor & Scope Breakdown" 
         subtitle={selectedProjectData?.name}

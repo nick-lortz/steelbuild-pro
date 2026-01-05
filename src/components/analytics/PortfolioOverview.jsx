@@ -28,10 +28,10 @@ export default function PortfolioOverview() {
     );
   }
 
-  const { financialTrends, portfolioHealth, projectPhaseValue } = metrics;
+  const { financialTrends = [], portfolioHealth = {}, projectPhaseValue = [] } = metrics || {};
 
   // Schedule data - using first 10 projects
-  const scheduleData = projectPhaseValue.slice(0, 10).map(p => ({
+  const scheduleData = (projectPhaseValue || []).slice(0, 10).map(p => ({
     name: p.phase.substring(0, 15),
     onTime: 85,
     completion: 70

@@ -7,6 +7,8 @@ import { format, eachMonthOfInterval, subMonths, startOfMonth } from 'date-fns';
 export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawings, tasks, scopeGaps, financials, laborBreakdowns }) {
   // RFI trends over time
   const rfiTrends = useMemo(() => {
+    if (!Array.isArray(rfis)) return [];
+    
     const now = new Date();
     const months = eachMonthOfInterval({
       start: subMonths(now, 11),
@@ -37,6 +39,8 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
   // Change order impact trends
   const coTrends = useMemo(() => {
+    if (!Array.isArray(changeOrders)) return [];
+    
     const now = new Date();
     const months = eachMonthOfInterval({
       start: subMonths(now, 11),
@@ -68,6 +72,8 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
   // Drawing risk trends
   const drawingRisks = useMemo(() => {
+    if (!Array.isArray(drawings)) return [];
+    
     const now = new Date();
     const months = eachMonthOfInterval({
       start: subMonths(now, 5),
@@ -101,6 +107,8 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
   // Schedule risk evolution
   const scheduleRisks = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
+    
     const now = new Date();
     const months = eachMonthOfInterval({
       start: subMonths(now, 11),
@@ -131,6 +139,8 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
   // Scope gap evolution
   const scopeGapTrends = useMemo(() => {
+    if (!Array.isArray(scopeGaps)) return [];
+    
     const now = new Date();
     const months = eachMonthOfInterval({
       start: subMonths(now, 5),
@@ -157,19 +167,19 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
   // Current risk summary
   const riskSummary = useMemo(() => {
-    const openRfis = rfis.filter(r => r.status === 'pending' || r.status === 'submitted').length;
-    const overdueRfis = rfis.filter(r => {
+    const openRfis = (rfis || []).filter(r => r.status === 'pending' || r.status === 'submitted').length;
+    const overdueRfis = (rfis || []).filter(r => {
       if (r.status === 'closed' || r.status === 'answered') return false;
       if (!r.due_date) return false;
       return new Date(r.due_date) < new Date();
     }).length;
 
-    const pendingCOs = changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').length;
-    const coValue = changeOrders
+    const pendingCOs = (changeOrders || []).filter(co => co.status === 'pending' || co.status === 'submitted').length;
+    const coValue = (changeOrders || [])
       .filter(co => co.status === 'pending' || co.status === 'submitted')
       .reduce((sum, co) => sum + (Number(co.cost_impact) || 0), 0);
 
-    const overdueDrawings = drawings.filter(d => {
+    const overdueDrawings = (drawings || []).filter(d => {
       if (!d.due_date) return false;
       return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
     }).length;
@@ -180,8 +190,8 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       return new Date(t.end_date) < new Date();
     }).length;
 
-    const openGaps = scopeGaps.filter(g => g.status === 'open').length;
-    const gapValue = scopeGaps
+    const openGaps = (scopeGaps || []).filter(g => g.status === 'open').length;
+    const gapValue = (scopeGaps || [])
       .filter(g => g.status === 'open')
       .reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
 
@@ -196,6 +206,18 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       gapValue
     };
   }, [rfis, changeOrders, drawings, tasks, scopeGaps]);
+
+  // Early return if no data
+  if (!rfis || !changeOrders || !drawings || !tasks || !scopeGaps) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center text-zinc-500">
+          <AlertTriangle size={40} className="mx-auto mb-3 opacity-50" />
+          <p>Loading risk analysis data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

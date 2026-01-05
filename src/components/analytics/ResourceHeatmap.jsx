@@ -10,6 +10,8 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
 
   // Calculate resource utilization over time
   const utilizationData = useMemo(() => {
+    if (!Array.isArray(resources) || !Array.isArray(tasks)) return [];
+    
     const startDate = startOfWeek(new Date());
     const days = eachDayOfInterval({
       start: startDate,

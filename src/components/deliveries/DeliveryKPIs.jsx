@@ -4,6 +4,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { differenceInDays, parseISO, format } from 'date-fns';
 
 export default function DeliveryKPIs({ deliveries, projects }) {
+  // Build project lookup map for faster access
+  const projectMap = useMemo(() => 
+    new Map(projects.map(p => [p.id, p])),
+    [projects]
+  );
+
   const chartData = useMemo(() => {
     const projectStats = {};
 

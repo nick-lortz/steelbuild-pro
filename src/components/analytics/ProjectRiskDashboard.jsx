@@ -17,6 +17,12 @@ export default function ProjectRiskDashboard({
 }) {
   const [selectedProject, setSelectedProject] = useState(null);
 
+  // Build project lookup map
+  const projectMap = useMemo(() => 
+    new Map(projects.map(p => [p.id, p])),
+    [projects]
+  );
+
   const riskAnalysis = useMemo(() => {
     return projects.map(project => {
       const projectLaborBreakdowns = laborBreakdowns.filter(lb => lb.project_id === project.id);

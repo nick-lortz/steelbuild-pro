@@ -46,29 +46,25 @@ export default function Deliveries() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000,
-    gcTime: 15 * 60 * 1000
+    staleTime: 30 * 60 * 1000,
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
     queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
+    queryFn: async () => {
+      if (!activeFilters.projects?.length) return [];
+      return base44.entities.Task.filter({ 
+        project_id: activeFilters.projects[0] 
+      });
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled: activeFilters.projects?.length > 0
   });
 
   const createMutation = useMutation({
@@ -110,6 +106,12 @@ export default function Deliveries() {
   const uniqueCarriers = useMemo(() => 
     [...new Set(deliveries.map(d => d.carrier).filter(Boolean))].sort(),
     [deliveries]
+  );
+
+  // Build project lookup map
+  const projectMap = useMemo(() => 
+    new Map(projects.map(p => [p.id, p])),
+    [projects]
   );
 
   const filteredDeliveries = useMemo(() => {
@@ -183,8 +185,8 @@ export default function Deliveries() {
         return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
       },
       project: (a, b) => {
-        const projA = projects.find(p => p.id === a.project_id)?.name || '';
-        const projB = projects.find(p => p.id === b.project_id)?.name || '';
+        const projA = projectMap.get(a.project_id)?.name || '';
+        const projB = projectMap.get(b.project_id)?.name || '';
         return sortOrder === 'asc' ? projA.localeCompare(projB) : projB.localeCompare(projA);
       },
       status: (a, b) => {
@@ -211,7 +213,7 @@ export default function Deliveries() {
 
     const sortFn = sortFunctions[sortBy] || sortFunctions.scheduled_date;
     return [...filtered].sort(sortFn);
-  }, [deliveries, searchTerm, activeFilters, sortBy, sortOrder, projects]);
+  }, [deliveries, searchTerm, activeFilters, sortBy, sortOrder, projectMap]);
 
   // Calculate KPIs
   const kpis = useMemo(() => {
@@ -286,7 +288,7 @@ export default function Deliveries() {
     header: 'Project',
     accessor: 'project_id',
     render: (row) => {
-      const project = projects.find((p) => p.id === row.project_id);
+      const project = projectMap.get(row.project_id);
       return project ?
       <div>
             <p className="text-sm">{project.name}</p>
@@ -527,9 +529,8 @@ export default function Deliveries() {
             filteredDeliveries.forEach(d => {
               const projectId = d.project_id || 'unassigned';
               if (!groupedByProject[projectId]) {
-                const project = projects.find(p => p.id === projectId);
                 groupedByProject[projectId] = {
-                  project,
+                  project: projectMap.get(projectId),
                   deliveries: []
                 };
               }

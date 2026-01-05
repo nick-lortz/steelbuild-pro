@@ -80,7 +80,24 @@ export default function Deliveries() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Delivery.update(id, data),
+    mutationFn: async ({ id, data, oldStatus }) => {
+      const updated = await base44.entities.Delivery.update(id, data);
+      
+      // Trigger notification if status changed
+      if (oldStatus && data.delivery_status && oldStatus !== data.delivery_status) {
+        try {
+          await base44.functions.invoke('notifyDeliveryStatusChange', {
+            delivery_id: id,
+            old_status: oldStatus,
+            new_status: data.delivery_status
+          });
+        } catch (notifError) {
+          console.error('Notification error:', notifError);
+        }
+      }
+      
+      return updated;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
@@ -613,7 +630,11 @@ export default function Deliveries() {
               }
 
               if (editingDelivery) {
-                updateMutation.mutate({ id: editingDelivery.id, data });
+                updateMutation.mutate({ 
+                  id: editingDelivery.id, 
+                  data,
+                  oldStatus: editingDelivery.delivery_status 
+                });
               } else {
                 createMutation.mutate(data);
               }

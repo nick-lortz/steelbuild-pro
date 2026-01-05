@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { format } from 'date-fns';
+import NotificationPreferences from '@/components/settings/NotificationPreferences';
 
 export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -205,6 +206,10 @@ export default function Settings() {
           <TabsTrigger value="preferences">
             <Bell size={14} className="mr-2" />
             Preferences
+          </TabsTrigger>
+          <TabsTrigger value="notifications">
+            <Truck size={14} className="mr-2" />
+            Notifications
           </TabsTrigger>
           <TabsTrigger value="feedback">
             <MessageSquare size={14} className="mr-2" />
@@ -462,6 +467,11 @@ export default function Settings() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications">
+          <NotificationPreferences />
         </TabsContent>
 
         {/* Feedback Tab */}

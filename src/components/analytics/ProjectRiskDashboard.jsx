@@ -24,6 +24,8 @@ export default function ProjectRiskDashboard({
   );
 
   const riskAnalysis = useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return [];
+    
     return projects.map(project => {
       const projectLaborBreakdowns = laborBreakdowns.filter(lb => lb.project_id === project.id);
       const projectScopeGaps = scopeGaps.filter(sg => sg.project_id === project.id);
@@ -209,7 +211,11 @@ export default function ProjectRiskDashboard({
       {/* Project Risk Cards */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-white">Project-Level Risk Enforcement</h3>
-        {riskAnalysis.map((analysis) => {
+        {riskAnalysis.length === 0 ? (
+          <div className="text-center py-8 text-zinc-500">
+            No projects available for risk analysis
+          </div>
+        ) : riskAnalysis.map((analysis) => {
           const { project, isBlocked, blockingIssues, laborMismatch, scopeGapRisk, scheduleDelta, financialRisk } = analysis;
           
           return (

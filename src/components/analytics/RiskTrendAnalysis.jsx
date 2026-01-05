@@ -184,7 +184,7 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
     }).length;
 
-    const overdueTasks = tasks.filter(t => {
+    const overdueTasks = (tasks || []).filter(t => {
       if (t.status === 'completed') return false;
       if (!t.end_date) return false;
       return new Date(t.end_date) < new Date();

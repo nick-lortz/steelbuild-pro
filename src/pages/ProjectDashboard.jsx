@@ -28,6 +28,8 @@ import RiskRegister from '@/components/project-dashboard/RiskRegister';
 import ProjectAlerts from '@/components/project-dashboard/ProjectAlerts';
 import FinancialSummary from '@/components/project-dashboard/FinancialSummary';
 import RiskAssessmentModule from '@/components/project-dashboard/RiskAssessmentModule';
+import GanttTimeline from '@/components/project-dashboard/GanttTimeline';
+import ProjectRiskSummary from '@/components/project-dashboard/ProjectRiskSummary';
 import { format, differenceInDays } from 'date-fns';
 import { calculateProjectLaborTotals, identifyScopeRiskTasks } from '@/components/shared/laborScheduleUtils';
 
@@ -367,8 +369,12 @@ export default function ProjectDashboard() {
         onCloseConfig={() => setShowAlertConfig(false)}
       />
 
-      <Tabs defaultValue="financial" className="mb-6">
+      <Tabs defaultValue="overview" className="mb-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800">
+            <Target size={14} className="mr-2" />
+            Overview
+          </TabsTrigger>
           <TabsTrigger value="financial" className="data-[state=active]:bg-zinc-800">
             <DollarSign size={14} className="mr-2" />
             Financial Summary
@@ -382,6 +388,24 @@ export default function ProjectDashboard() {
             KPI Widgets
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Risk Summary */}
+          <ProjectRiskSummary
+            project={project}
+            tasks={tasks}
+            rfis={rfis}
+            changeOrders={changeOrders}
+            financials={financials}
+            expenses={expenses}
+          />
+
+          {/* Gantt Timeline */}
+          <GanttTimeline
+            tasks={tasks}
+            project={project}
+          />
+        </TabsContent>
 
         <TabsContent value="financial" className="space-y-6">
           <FinancialSummary

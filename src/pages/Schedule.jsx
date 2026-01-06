@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TaskCard from '@/components/schedule/TaskCard';
 import TaskForm from '@/components/schedule/TaskForm';
-import ScreenContainer from '@/components/layout/ScreenContainer';
+
 import WeatherWidget from '@/components/integrations/WeatherWidget';
 import BulkActions from '@/components/shared/BulkActions';
 import ViewConfiguration from '@/components/shared/ViewConfiguration';
@@ -198,7 +198,7 @@ export default function Schedule() {
   }, [totalCount]);
 
   return (
-    <ScreenContainer>
+    <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -384,6 +384,6 @@ export default function Schedule() {
           </div>
         </SheetContent>
       </Sheet>
-    </ScreenContainer>
+    </div>
   );
 }

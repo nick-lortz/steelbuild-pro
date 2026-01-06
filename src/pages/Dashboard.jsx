@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import ScreenContainer from '@/components/layout/ScreenContainer';
+
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format, differenceInDays } from 'date-fns';
 
@@ -246,14 +246,14 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <ScreenContainer>
+      <div className="p-6">
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground">Loading dashboard...</p>
           </div>
         </div>
-      </ScreenContainer>
+      </div>
     );
   }
 
@@ -266,7 +266,7 @@ export default function Dashboard() {
   });
 
   return (
-    <ScreenContainer>
+    <div className="p-6">
       {/* Hero Section */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -419,6 +419,6 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
-    </ScreenContainer>
+    </div>
   );
 }

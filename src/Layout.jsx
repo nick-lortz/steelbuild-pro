@@ -386,20 +386,22 @@ export default function Layout({ children, currentPageName }) {
         {/* Mobile Header */}
         <header className="mobile-header">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="menu-btn">
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            <Menu size={24} />
           </button>
           <div className="logo">
             <div className="logo-icon">
-              <Building2 size={20} strokeWidth={2.5} />
+              <Building2 size={22} strokeWidth={2.5} />
             </div>
             <span className="logo-text">SteelBuild Pro</span>
           </div>
-          {currentUser && (
-            <div className="flex items-center gap-2 ml-auto">
-              <ThemeToggle />
-              <NotificationPanel />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {currentUser && (
+              <>
+                <ThemeToggle />
+                <NotificationPanel />
+              </>
+            )}
+          </div>
         </header>
 
         {/* Sidebar */}

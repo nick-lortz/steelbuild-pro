@@ -271,22 +271,54 @@ export default function LaborScope() {
   ];
 
   const specialtyColumns = [
-    { header: 'Location/Detail', accessor: 'location_detail' },
-    { header: 'Shop Hours', accessor: 'shop_hours' },
-    { header: 'Field Hours', accessor: 'field_hours' },
-    { header: 'Status', accessor: 'status', render: (row) => row.status?.toUpperCase() },
-    { header: 'Notes', accessor: 'notes' },
+    { 
+      header: 'Location/Detail', 
+      accessor: 'location_detail',
+      render: (row) => <span className="text-white">{row.location_detail || '—'}</span>
+    },
+    { 
+      header: 'Shop Hours', 
+      accessor: 'shop_hours',
+      render: (row) => <span className="text-white">{row.shop_hours || 0}</span>
+    },
+    { 
+      header: 'Field Hours', 
+      accessor: 'field_hours',
+      render: (row) => <span className="text-white">{row.field_hours || 0}</span>
+    },
+    { 
+      header: 'Status', 
+      accessor: 'status', 
+      render: (row) => <span className="text-white uppercase">{row.status || 'Open'}</span>
+    },
+    { 
+      header: 'Notes', 
+      accessor: 'notes',
+      render: (row) => <span className="text-zinc-400">{row.notes || '—'}</span>
+    },
   ];
 
   const gapColumns = [
-    { header: 'Location/Description', accessor: 'location_description' },
+    { 
+      header: 'Location/Description', 
+      accessor: 'location_description',
+      render: (row) => <span className="text-white">{row.location_description || '—'}</span>
+    },
     { 
       header: 'Rough Cost', 
       accessor: 'rough_cost',
-      render: (row) => `$${Number(row.rough_cost || 0).toLocaleString()}`
+      render: (row) => <span className="text-white">${Number(row.rough_cost || 0).toLocaleString()}</span>
     },
-    { header: 'Explanation', accessor: 'explanation' },
-    { header: 'Status', accessor: 'status', render: (row) => row.status?.toUpperCase() },
+    { 
+      header: 'Explanation', 
+      accessor: 'explanation',
+      render: (row) => <span className="text-zinc-400">{row.explanation || '—'}</span>
+    },
+    { 
+      header: 'Status', 
+      accessor: 'status', 
+      render: (row) => <span className="text-white uppercase">{row.status || 'Open'}</span>
+    },
   ];
 
   if (!selectedProject) {

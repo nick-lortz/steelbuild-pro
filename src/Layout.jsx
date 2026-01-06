@@ -239,28 +239,13 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
-  DollarSign,
-  FileText,
-  MessageSquareWarning,
-  FileCheck,
-  Users,
   Menu,
   X,
   ChevronDown,
   ChevronRight,
-  Hash,
-  Sparkles,
-  File,
-  Calendar,
-  Truck,
-  Clock,
-  TrendingUp,
   LogOut,
   Settings,
   UserCircle,
-  BarChart3,
-  Camera,
-  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -278,71 +263,7 @@ import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
-
-const navSections = [
-  {
-    title: 'Overview',
-    items: [
-      { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Project Management',
-    items: [
-      { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
-      { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
-      { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
-      { name: 'Drawings', page: 'Drawings', icon: FileText, roles: ['admin', 'user'] },
-      { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-      { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Operations',
-    items: [
-      { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
-      { name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
-      { name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Resources',
-    items: [
-      { name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
-      { name: 'Labor', page: 'Labor', icon: Clock, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Documentation',
-    items: [
-      { name: 'Documents', page: 'Documents', icon: File, roles: ['admin', 'user'] },
-      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar, roles: ['admin', 'user'] },
-      { name: 'Meetings', page: 'Meetings', icon: Users, roles: ['admin', 'user'] },
-      { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Financials',
-    items: [
-      { name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Analytics & Reports',
-    items: [
-      { name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
-      { name: 'Reports', page: 'Reports', icon: FileText, roles: ['admin', 'user'] },
-      { name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
-      { name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'System',
-    items: [
-      { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
-    ]
-  }
-];
+import { getVisibleNavigation } from '@/components/config/navigationConfig';
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -370,10 +291,10 @@ export default function Layout({ children, currentPageName }) {
     }));
   };
 
-  const visibleSections = navSections.map(section => ({
-    ...section,
-    items: section.items.filter(item => !item.roles || item.roles.includes(currentUser?.role))
-  })).filter(section => section.items.length > 0);
+  const visibleSections = React.useMemo(() => 
+    getVisibleNavigation(currentUser?.role || 'user'),
+    [currentUser?.role]
+  );
 
   return (
     <ThemeProvider>

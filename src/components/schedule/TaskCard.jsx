@@ -10,7 +10,7 @@ export default function TaskCard({ task, project, onClick }) {
 
   return (
     <Card 
-      className="border-border hover:border-amber-500/50 transition-all cursor-pointer active:scale-[0.98]"
+      className="border-zinc-700 hover:border-amber-500/60 transition-all cursor-pointer active:scale-[0.98] bg-zinc-900"
       onClick={onClick}
     >
       <CardContent className="p-4">
@@ -19,15 +19,15 @@ export default function TaskCard({ task, project, onClick }) {
           <div className="flex-1 min-w-0 mr-2">
             <div className="flex items-center gap-2 mb-1">
               {task.is_milestone && (
-                <CheckCircle2 size={14} className="text-amber-500 flex-shrink-0" />
+                <CheckCircle2 size={15} className="text-amber-400 flex-shrink-0" />
               )}
-              <h3 className="font-semibold text-sm truncate">{task.name}</h3>
+              <h3 className="font-semibold text-sm truncate text-white">{task.name}</h3>
             </div>
             {project && (
-              <p className="text-xs text-muted-foreground truncate">{project.project_number}</p>
+              <p className="text-xs text-zinc-400 truncate font-medium">{project.project_number}</p>
             )}
             {task.wbs_code && (
-              <p className="text-xs text-muted-foreground font-mono mt-0.5">{task.wbs_code}</p>
+              <p className="text-xs text-zinc-500 font-mono mt-0.5">{task.wbs_code}</p>
             )}
           </div>
           <StatusBadge status={task.status} className="text-xs flex-shrink-0" />
@@ -66,10 +66,10 @@ export default function TaskCard({ task, project, onClick }) {
           )}
           {task.end_date && (
             <div className="flex items-center gap-1.5">
-              <Clock size={12} className={`flex-shrink-0 ${isOverdue ? 'text-red-500' : 'text-muted-foreground'}`} />
+              <Clock size={12} className={`flex-shrink-0 ${isOverdue ? 'text-red-400' : 'text-zinc-400'}`} />
               <div>
-                <p className="text-xs text-muted-foreground">Due</p>
-                <p className={`text-xs font-medium ${isOverdue ? 'text-red-500' : ''}`}>
+                <p className="text-xs text-zinc-500">Due</p>
+                <p className={`text-xs font-semibold ${isOverdue ? 'text-red-300' : 'text-white'}`}>
                   {format(new Date(task.end_date), 'MMM d')}
                 </p>
               </div>
@@ -81,13 +81,13 @@ export default function TaskCard({ task, project, onClick }) {
         {(isOverdue || task.is_critical) && (
           <div className="flex items-center gap-2 mb-2">
             {isOverdue && (
-              <div className="flex items-center gap-1 text-xs text-red-500">
-                <AlertCircle size={12} />
+              <div className="flex items-center gap-1.5 text-xs text-red-300 bg-red-500/20 px-2 py-1 rounded border border-red-500/40 font-semibold">
+                <AlertCircle size={13} />
                 <span>Overdue {Math.abs(daysUntilDue)}d</span>
               </div>
             )}
             {task.is_critical && (
-              <div className="text-xs px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20">
+              <div className="text-xs px-2 py-1 rounded bg-red-500/25 text-red-200 border border-red-500/50 font-semibold">
                 Critical Path
               </div>
             )}

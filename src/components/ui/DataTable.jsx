@@ -11,15 +11,15 @@ import { cn } from "@/lib/utils";
 
 export default function DataTable({ columns, data, onRowClick, emptyMessage = "No data found" }) {
   return (
-    <div className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-900/50">
+    <div className="border border-zinc-700 rounded-lg overflow-hidden bg-zinc-900">
       <Table>
         <TableHeader>
-          <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableRow className="border-b-2 border-zinc-700 hover:bg-transparent">
             {columns.map((col, idx) =>
             <TableHead
               key={idx}
               className={cn(
-                "text-zinc-400 font-medium text-xs uppercase tracking-wider bg-zinc-900",
+                "text-zinc-200 font-semibold text-xs uppercase tracking-wide bg-zinc-800/80 h-11",
                 col.className
               )}>
 
@@ -33,7 +33,7 @@ export default function DataTable({ columns, data, onRowClick, emptyMessage = "N
           <TableRow>
               <TableCell
               colSpan={columns.length}
-              className="text-center text-zinc-500 py-8">
+              className="text-center text-zinc-400 py-12 text-sm">
 
                 {emptyMessage}
               </TableCell>
@@ -44,12 +44,13 @@ export default function DataTable({ columns, data, onRowClick, emptyMessage = "N
             key={row.id || rowIdx}
             onClick={() => onRowClick?.(row)}
             className={cn(
-              "border-zinc-800",
-              onRowClick && "cursor-pointer hover:bg-zinc-800/50"
+              "border-b border-zinc-800/60",
+              rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-900/40",
+              onRowClick && "cursor-pointer hover:bg-zinc-800 transition-colors"
             )}>
 
                 {columns.map((col, colIdx) =>
-            <TableCell key={colIdx} className="text-slate-50 p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
+            <TableCell key={colIdx} className="text-white py-3.5 px-4 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
                     {col.render ? col.render(row) : row[col.accessor]}
                   </TableCell>
             )}

@@ -222,7 +222,7 @@ export default function RFIs() {
     header: 'RFI #',
     accessor: 'rfi_number',
     render: (row) =>
-    <span className="font-mono text-amber-500 font-medium">
+    <span className="font-mono text-amber-400 font-bold text-sm">
           RFI-{String(row.rfi_number).padStart(3, '0')}
         </span>
 
@@ -234,8 +234,8 @@ export default function RFIs() {
       const project = projects.find((p) => p.id === row.project_id);
       return (
         <div>
-            <p className="font-medium line-clamp-1">{row.subject}</p>
-            <p className="text-xs text-zinc-500">{project?.name}</p>
+            <p className="font-semibold text-sm line-clamp-1 text-white">{row.subject}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{project?.name}</p>
           </div>);
 
     }
@@ -254,15 +254,15 @@ export default function RFIs() {
     header: 'Impact',
     accessor: 'impact',
     render: (row) =>
-    <div className="flex gap-1">
+    <div className="flex gap-1.5">
           {row.cost_impact &&
-      <span className="p-1 bg-green-500/20 rounded" title="Cost Impact">
-              <DollarSign size={14} className="text-green-400" />
+      <span className="p-1.5 bg-green-500/30 rounded border border-green-500/40" title="Cost Impact">
+              <DollarSign size={15} className="text-green-300" />
             </span>
       }
           {row.schedule_impact &&
-      <span className="p-1 bg-orange-500/20 rounded" title="Schedule Impact">
-              <Clock size={14} className="text-orange-400" />
+      <span className="p-1.5 bg-orange-500/30 rounded border border-orange-500/40" title="Schedule Impact">
+              <Clock size={15} className="text-orange-300" />
             </span>
       }
         </div>
@@ -272,26 +272,28 @@ export default function RFIs() {
     header: 'Due Date',
     accessor: 'due_date',
     render: (row) => {
-      if (!row.due_date) return '-';
+      if (!row.due_date) return <span className="text-zinc-500">—</span>;
       try {
         const dueDate = new Date(row.due_date);
-        if (isNaN(dueDate.getTime())) return '-';
+        if (isNaN(dueDate.getTime())) return <span className="text-zinc-500">—</span>;
         const isOverdue = dueDate < new Date() && row.status !== 'answered' && row.status !== 'closed';
         return (
-          <span className={isOverdue ? 'text-red-400 flex items-center gap-1' : ''}>
-              {isOverdue && <AlertTriangle size={14} />}
-              {format(dueDate, 'MMM d, yyyy')}
-            </span>);
+          <div className={isOverdue ? 'flex items-center gap-1.5' : ''}>
+              {isOverdue && <AlertTriangle size={15} className="text-red-400 flex-shrink-0" />}
+              <span className={isOverdue ? 'text-red-300 font-semibold' : 'text-white'}>
+                {format(dueDate, 'MMM d, yyyy')}
+              </span>
+            </div>);
 
       } catch {
-        return '-';
+        return <span className="text-zinc-500">—</span>;
       }
     }
   },
   {
     header: 'Assigned To',
     accessor: 'assigned_to',
-    render: (row) => row.assigned_to || '-'
+    render: (row) => <span className="text-zinc-300">{row.assigned_to || '—'}</span>
   },
   {
     header: '',
@@ -304,7 +306,7 @@ export default function RFIs() {
         e.stopPropagation();
         setDeleteRFI(row);
       }}
-      className="text-zinc-500 hover:text-red-500">
+      className="text-zinc-400 hover:text-red-400 hover:bg-red-500/10">
 
           <Trash2 size={16} />
         </Button>

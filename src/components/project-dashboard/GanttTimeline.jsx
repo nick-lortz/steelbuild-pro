@@ -123,26 +123,25 @@ export default function GanttTimeline({ tasks, project }) {
           })()}
         </div>
 
-        {/* Today Indicator */}
-        {(() => {
-          const today = new Date();
-          if (today >= rangeStart && today <= rangeEnd) {
-            const todayOffset = differenceInDays(today, rangeStart);
-            return (
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10 pointer-events-none"
-                style={{ left: `${(todayOffset / totalDays) * 100}%` }}
-              >
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs text-amber-500 font-medium whitespace-nowrap">
-                  Today
-                </div>
-              </div>
-            );
-          }
-        })()}
-
         {/* Task Rows by Phase */}
         <div className="space-y-6 mt-4 relative">
+          {/* Today Indicator */}
+          {(() => {
+            const today = new Date();
+            if (today >= rangeStart && today <= rangeEnd) {
+              const todayOffset = differenceInDays(today, rangeStart);
+              return (
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-10 pointer-events-none"
+                  style={{ left: `${(todayOffset / totalDays) * 100}%` }}
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-amber-500 font-medium whitespace-nowrap">
+                    Today
+                  </div>
+                </div>
+              );
+            }
+          })()}
           {Object.entries(tasksByPhase).map(([phase, phaseTasks]) => (
             <div key={phase}>
               <h4 className="text-sm font-medium text-zinc-400 mb-3">{phaseLabels[phase]}</h4>

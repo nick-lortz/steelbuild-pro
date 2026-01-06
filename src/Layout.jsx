@@ -406,7 +406,9 @@ export default function Layout({ children, currentPageName }) {
         <aside className={cn('sidebar', sidebarOpen && 'open')}>
           <div className="sidebar-header">
             <div className="logo">
-              <div className="logo-icon">SB</div>
+              <div className="logo-icon">
+                <Building2 size={20} strokeWidth={2.5} />
+              </div>
               <span className="logo-text">SteelBuild Pro</span>
             </div>
             <button onClick={() => setSidebarOpen(false)} className="close-btn">

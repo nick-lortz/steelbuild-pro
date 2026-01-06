@@ -389,7 +389,9 @@ export default function Layout({ children, currentPageName }) {
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="logo">
-            <div className="logo-icon">SB</div>
+            <div className="logo-icon">
+              <Building2 size={20} strokeWidth={2.5} />
+            </div>
             <span className="logo-text">SteelBuild Pro</span>
           </div>
           {currentUser && (

@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
-import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { usePermissions } from '@/components/shared/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +73,6 @@ export default function Projects() {
   const PAGE_SIZE = 20;
 
   const queryClient = useQueryClient();
-  const { confirm } = useConfirm();
   const { can } = usePermissions();
 
   const { data: projects = [], isLoading, refetch } = useQuery({
@@ -162,17 +160,14 @@ export default function Projects() {
       return;
     }
 
-    const confirmed = await confirm({
-      title: 'Delete Project?',
-      description: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will affect all related data.`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel'
-    });
+    const confirmed = window.confirm(
+      `Delete "${project.name}"?\n\nThis action cannot be undone and will affect all related data.`
+    );
 
     if (confirmed) {
       deleteMutation.mutate(project.id);
     }
-  }, [can.deleteProject, confirm, deleteMutation]);
+  }, [can.deleteProject, deleteMutation]);
 
   const handleEdit = (project) => {
     if (!can.editProject) {

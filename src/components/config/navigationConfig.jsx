@@ -53,12 +53,23 @@ export const navigationConfig = {
           enabled: true
         },
         {
+          id: 'project-dashboard',
+          name: 'Project Dashboard',
+          page: 'ProjectDashboard',
+          path: 'dashboard',
+          icon: Building2,
+          roles: ['admin', 'user'],
+          scope: 'project',
+          enabled: true
+        },
+        {
           id: 'schedule',
           name: 'Schedule',
           page: 'Schedule',
+          path: 'schedule',
           icon: Calendar,
           roles: ['admin', 'user'],
-          scope: 'global',
+          scope: 'both',
           enabled: true
         },
         {
@@ -74,27 +85,30 @@ export const navigationConfig = {
           id: 'drawings',
           name: 'Drawings',
           page: 'Drawings',
+          path: 'drawings',
           icon: FileText,
           roles: ['admin', 'user'],
-          scope: 'global',
+          scope: 'both',
           enabled: true
         },
         {
           id: 'rfis',
           name: 'RFIs',
           page: 'RFIs',
+          path: 'rfis',
           icon: MessageSquareWarning,
           roles: ['admin', 'user'],
-          scope: 'global',
+          scope: 'both',
           enabled: true
         },
         {
           id: 'change-orders',
           name: 'Change Orders',
           page: 'ChangeOrders',
+          path: 'change-orders',
           icon: FileCheck,
           roles: ['admin', 'user'],
-          scope: 'global',
+          scope: 'both',
           enabled: true
         }
       ]
@@ -107,18 +121,20 @@ export const navigationConfig = {
           id: 'fabrication',
           name: 'Fabrication',
           page: 'Fabrication',
+          path: 'fabrication',
           icon: TrendingUp,
           roles: ['admin', 'user'],
-          scope: 'global',
+          scope: 'both',
           enabled: true
         },
         {
           id: 'deliveries',
           name: 'Deliveries',
           page: 'Deliveries',
+          path: 'deliveries',
           icon: Truck,
           roles: ['admin', 'user'],
-          scope: 'global',
+          scope: 'both',
           enabled: true
         },
         {
@@ -274,9 +290,9 @@ export const navigationConfig = {
 };
 
 /**
- * Filter navigation items based on user role and feature flags
+ * Filter navigation items based on user role, feature flags, and scope
  */
-export function getVisibleNavigation(userRole, featureFlags = {}) {
+export function getVisibleNavigation(userRole, featureFlags = {}, isProjectScoped = false) {
   return navigationConfig.sections
     .map(section => ({
       ...section,
@@ -290,7 +306,14 @@ export function getVisibleNavigation(userRole, featureFlags = {}) {
         // Check feature flags if specified
         if (item.featureFlag && !featureFlags[item.featureFlag]) return false;
         
-        return true;
+        // Filter by scope
+        if (isProjectScoped) {
+          // In project context, show project and both-scoped items
+          return item.scope === 'project' || item.scope === 'both';
+        } else {
+          // In global context, show global and both-scoped items
+          return item.scope === 'global' || item.scope === 'both';
+        }
       })
     }))
     .filter(section => section.items.length > 0);

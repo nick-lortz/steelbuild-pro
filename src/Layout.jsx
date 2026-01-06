@@ -264,10 +264,14 @@ import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import { getVisibleNavigation } from '@/components/config/navigationConfig';
+import { ProjectProvider, useProject } from '@/components/providers/ProjectContext';
+import { useProjectNavigation } from '@/components/navigation/useProjectNavigation';
 
-export default function Layout({ children, currentPageName }) {
+function LayoutContent({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const { projectId, project, isProjectScoped } = useProject();
+  const { getUrl } = useProjectNavigation();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -292,8 +296,8 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const visibleSections = React.useMemo(() => 
-    getVisibleNavigation(currentUser?.role || 'user'),
-    [currentUser?.role]
+    getVisibleNavigation(currentUser?.role || 'user', {}, isProjectScoped),
+    [currentUser?.role, isProjectScoped]
   );
 
   return (
@@ -334,7 +338,14 @@ export default function Layout({ children, currentPageName }) {
               <div className="logo-icon">
                 <Building2 size={20} strokeWidth={2.5} />
               </div>
-              <span className="logo-text">SteelBuild Pro</span>
+              <div>
+                <span className="logo-text">SteelBuild Pro</span>
+                {project && (
+                  <p className="text-xs text-muted-foreground truncate max-w-[180px]">
+                    {project.name}
+                  </p>
+                )}
+              </div>
             </div>
             <button onClick={() => setSidebarOpen(false)} className="close-btn">
               <X size={20} />
@@ -356,12 +367,19 @@ export default function Layout({ children, currentPageName }) {
                     {section.items.map((item) => {
                       const isActive = currentPageName === item.page;
                       const Icon = item.icon;
+                      const url = getUrl(item);
+                      const isDisabled = url === '#';
+
                       return (
                         <Link
-                          key={item.page}
-                          to={createPageUrl(item.page)}
-                          onClick={() => setSidebarOpen(false)}
-                          className={cn('nav-item', isActive && 'active')}
+                          key={item.id}
+                          to={url}
+                          onClick={() => !isDisabled && setSidebarOpen(false)}
+                          className={cn(
+                            'nav-item', 
+                            isActive && 'active',
+                            isDisabled && 'opacity-50 cursor-not-allowed'
+                          )}
                         >
                           <Icon size={18} />
                           <span>{item.name}</span>
@@ -425,6 +443,14 @@ export default function Layout({ children, currentPageName }) {
         <MobileNav currentPageName={currentPageName} />
           </div>
         </ConfirmProvider>
-      </ThemeProvider>
-    );
-  }
+        </ThemeProvider>
+        );
+        }
+
+        export default function Layout(props) {
+        return (
+        <ProjectProvider>
+        <LayoutContent {...props} />
+        </ProjectProvider>
+        );
+        }

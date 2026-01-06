@@ -107,15 +107,15 @@ export default function TaskForm({
       // Auto-calculate duration when dates change
       if (field === 'start_date' || field === 'end_date') {
         if (updated.start_date && updated.end_date) {
-          const start = new Date(updated.start_date);
-          const end = new Date(updated.end_date);
+          const start = new Date(updated.start_date + 'T00:00:00');
+          const end = new Date(updated.end_date + 'T00:00:00');
           updated.duration_days = differenceInDays(end, start);
         }
       }
 
       // Auto-calculate end date when duration changes
       if (field === 'duration_days' && updated.start_date) {
-        const start = new Date(updated.start_date);
+        const start = new Date(updated.start_date + 'T00:00:00');
         const end = addDays(start, parseInt(value) || 0);
         updated.end_date = format(end, 'yyyy-MM-dd');
       }

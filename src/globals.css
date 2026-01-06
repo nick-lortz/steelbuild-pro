@@ -71,7 +71,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: 60px;
   background: hsl(var(--surface));
   border-bottom: 1px solid hsl(var(--border));
   padding: 0 16px;
@@ -79,18 +79,32 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
 
-.menu-btn {
+.mobile-header .menu-btn {
   color: hsl(var(--text-primary));
-  padding: 8px;
+  padding: 6px;
   background: none;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.mobile-header .logo {
+  margin-left: -4px;
+}
+
+.mobile-header .logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+}
+
+.mobile-header .logo-text {
+  font-size: 16px;
 }
 
 /* Sidebar */
@@ -278,6 +292,10 @@
 
   .main-content {
     margin-left: 0;
-    padding: 80px 16px 24px;
+    padding: 76px 16px 24px;
+  }
+  
+  .mobile-header .logo {
+    gap: 10px;
   }
 }

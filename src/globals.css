@@ -61,7 +61,8 @@
 
 .layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Mobile Header */
@@ -110,6 +111,7 @@
 /* Sidebar */
 .sidebar {
   width: 260px;
+  height: 100vh;
   background: hsl(var(--surface));
   border-right: 1px solid hsl(var(--border));
   display: flex;
@@ -117,8 +119,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  bottom: 0;
   z-index: 200;
+  overflow: hidden;
 }
 
 .sidebar-overlay {
@@ -184,6 +186,8 @@
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 /* Navigation Sections */
@@ -259,7 +263,8 @@
   flex: 1;
   margin-left: 260px;
   padding: 24px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 

@@ -286,7 +286,7 @@ export default function ChangeOrders() {
   ];
 
   return (
-    <div>
+    <div className="p-6">
       <PageHeader
         title="Change Orders"
         subtitle="Track contract modifications"

@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw, Filter } from 'lucide-react';
-import ScreenContainer from '@/components/layout/ScreenContainer';
 import FinancialSummaryCards from '@/components/financials/FinancialSummaryCards';
 import FinancialTrendChart from '@/components/financials/FinancialTrendChart';
 import ProjectBreakdownList from '@/components/financials/ProjectBreakdownList';
@@ -90,7 +89,7 @@ export default function Financials() {
   };
 
   return (
-    <ScreenContainer>
+    <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -157,6 +156,6 @@ export default function Financials() {
           onProjectClick={handleProjectClick}
         />
       </div>
-    </ScreenContainer>
+    </div>
   );
 }

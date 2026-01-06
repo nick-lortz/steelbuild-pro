@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Search, Trash2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -23,6 +24,7 @@ export default function Fabrication() {
   const [editingItem, setEditingItem] = useState(null);
 
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
 
   const { data: fabrications = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['fabrications'],
@@ -85,7 +87,14 @@ export default function Fabrication() {
   });
 
   const handleDelete = async (item) => {
-    if (window.confirm(`Delete ${item.package_name}? This cannot be undone.`)) {
+    const confirmed = await confirm({
+      title: 'Delete Fabrication Package?',
+      description: `Delete ${item.package_name}? This cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    });
+
+    if (confirmed) {
       deleteMutation.mutate(item.id);
     }
   };

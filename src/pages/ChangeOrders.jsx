@@ -67,7 +67,7 @@ export default function ChangeOrders() {
 
   const queryClient = useQueryClient();
 
-  const { data: rawProjects = [], isLoading: projectsLoading } = useQuery({
+  const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -79,7 +79,7 @@ export default function ChangeOrders() {
     [rawProjects]
   );
 
-  const { data: changeOrders = [], isLoading: cosLoading } = useQuery({
+  const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list('co_number'),
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -286,7 +286,7 @@ export default function ChangeOrders() {
   ];
 
   return (
-    <div className="p-6">
+    <div>
       <PageHeader
         title="Change Orders"
         subtitle="Track contract modifications"
@@ -400,21 +400,12 @@ export default function ChangeOrders() {
       </div>
 
       {/* Table */}
-      {projectsLoading || cosLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-zinc-400">Loading change orders...</p>
-          </div>
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={filteredCOs}
-          onRowClick={handleEdit}
-          emptyMessage="No change orders found. Create your first change order to get started."
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={filteredCOs}
+        onRowClick={handleEdit}
+        emptyMessage="No change orders found. Create your first change order to get started."
+      />
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

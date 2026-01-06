@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, Scan, MapPin, Bell, Cloud } from 'lucide-react';
+import ScreenContainer from '@/components/layout/ScreenContainer';
 import PageHeader from '@/components/ui/PageHeader';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
 import BarcodeScanner from '@/components/mobile/BarcodeScanner';
@@ -34,7 +35,7 @@ export default function FieldTools() {
   };
 
   return (
-    <div className="p-6">
+    <ScreenContainer>
       <PageHeader 
         title="Field Tools" 
         subtitle="Mobile tools for jobsite use"
@@ -101,6 +102,6 @@ export default function FieldTools() {
           <NotificationManager />
         </TabsContent>
       </Tabs>
-    </div>
+    </ScreenContainer>
   );
 }

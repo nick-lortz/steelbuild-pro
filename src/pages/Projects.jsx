@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { usePermissions } from '@/components/shared/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ import {
 import { Plus, Search, RefreshCw } from 'lucide-react';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
+import ScreenContainer from '@/components/layout/ScreenContainer';
 import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
 import { format } from 'date-fns';
 
@@ -73,6 +75,7 @@ export default function Projects() {
   const PAGE_SIZE = 20;
 
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
   const { can } = usePermissions();
 
   const { data: projects = [], isLoading, refetch } = useQuery({
@@ -160,14 +163,17 @@ export default function Projects() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Delete "${project.name}"?\n\nThis action cannot be undone and will affect all related data.`
-    );
+    const confirmed = await confirm({
+      title: 'Delete Project?',
+      description: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will affect all related data.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
+    });
 
     if (confirmed) {
       deleteMutation.mutate(project.id);
     }
-  }, [can.deleteProject, deleteMutation]);
+  }, [can.deleteProject, confirm, deleteMutation]);
 
   const handleEdit = (project) => {
     if (!can.editProject) {
@@ -265,7 +271,7 @@ export default function Projects() {
   }, [projects]);
 
   return (
-    <div className="p-6">
+    <ScreenContainer>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -415,7 +421,7 @@ export default function Projects() {
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </ScreenContainer>
   );
 }
 

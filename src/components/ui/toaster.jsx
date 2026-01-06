@@ -1,11 +1,3 @@
-import { Toaster as Sonner } from "sonner";
-
-export function Toaster({ ...props }) {
-  return (
-    <Sonner
-      theme="dark"
-      className="toaster group"
-      {...props}
-    />
-  );
-}
+// This file exports the Toaster component from Toaster.jsx
+// Created to avoid case-sensitivity issues
+export { Toaster } from './Toaster';

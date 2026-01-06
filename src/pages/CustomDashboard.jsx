@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, X, GripVertical, Save } from 'lucide-react';
-import ScreenContainer from '@/components/layout/ScreenContainer';
 import PageHeader from '@/components/ui/PageHeader';
 import EVMDashboard from '@/components/analytics/EVMDashboard';
 import ProjectComparison from '@/components/analytics/ProjectComparison';
@@ -100,7 +99,7 @@ export default function CustomDashboard() {
   }, []);
 
   return (
-    <ScreenContainer>
+    <div className="p-6">
       <PageHeader 
         title="Custom Dashboard" 
         subtitle="Build your personalized analytics view"
@@ -210,6 +209,6 @@ export default function CustomDashboard() {
           </Droppable>
         </DragDropContext>
       )}
-    </ScreenContainer>
+    </div>
   );
 }

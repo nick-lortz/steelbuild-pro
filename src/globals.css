@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
@@ -61,8 +71,12 @@
 
 .layout {
   display: flex;
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 /* Mobile Header */
@@ -270,6 +284,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+
   .mobile-header {
     display: flex !important;
   }
@@ -298,6 +316,8 @@
   .main-content {
     margin-left: 0;
     padding: 76px 16px 24px;
+    height: auto;
+    min-height: 100vh;
   }
   
   .mobile-header .logo {

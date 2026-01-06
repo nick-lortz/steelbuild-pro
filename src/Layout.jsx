@@ -259,7 +259,6 @@ import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
-import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
@@ -439,9 +438,7 @@ function LayoutContent({ children, currentPageName }) {
         <main className="main-content">
           {children}
         </main>
-
-        <MobileNav currentPageName={currentPageName} />
-          </div>
+        </div>
         </ConfirmProvider>
         </ThemeProvider>
         );

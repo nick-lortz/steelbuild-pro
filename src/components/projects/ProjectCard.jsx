@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import QuickStatusUpdate from './QuickStatusUpdate';
 
 export default function ProjectCard({ project, progress, onClick }) {
   const daysUntilCompletion = project.target_completion 
@@ -28,7 +29,9 @@ export default function ProjectCard({ project, progress, onClick }) {
               <p className="text-xs text-muted-foreground truncate mt-1">{project.client}</p>
             )}
           </div>
-          <StatusBadge status={project.status} className="text-xs flex-shrink-0" />
+          <div onClick={(e) => e.stopPropagation()}>
+            <QuickStatusUpdate project={project} compact />
+          </div>
         </div>
 
         {/* Metrics Grid */}

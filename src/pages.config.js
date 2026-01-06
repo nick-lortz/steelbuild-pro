@@ -28,12 +28,11 @@ import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
-import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import __Layout from './Layout.jsx';
+import Schedule from './pages/Schedule';
 
 
 export const PAGES = {
@@ -67,15 +66,14 @@ export const PAGES = {
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
     "Resources": Resources,
-    "Schedule": Schedule,
     "Settings": Settings,
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Schedule": Schedule,
 }
 
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: __Layout,
 };

@@ -295,24 +295,28 @@ export default function Schedule() {
               const project = projects.find(p => p.id === task.project_id);
               const isSelected = selectedTasks.includes(task.id);
               return (
-                <div key={task.id} className="relative">
+                <div key={task.id} className="flex items-start gap-2">
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => {
+                    onChange={(e) => {
+                      e.stopPropagation();
                       setSelectedTasks(prev => 
                         prev.includes(task.id) 
                           ? prev.filter(id => id !== task.id)
                           : [...prev, task.id]
                       );
                     }}
-                    className="absolute top-3 left-3 z-10 w-4 h-4"
+                    className="mt-3 w-4 h-4 flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
                   />
-                  <TaskCard
-                    task={task}
-                    project={project}
-                    onClick={() => handleTaskClick(task)}
-                  />
+                  <div className="flex-1" onClick={() => handleTaskClick(task)}>
+                    <TaskCard
+                      task={task}
+                      project={project}
+                      onClick={() => handleTaskClick(task)}
+                    />
+                  </div>
                 </div>
               );
             })}

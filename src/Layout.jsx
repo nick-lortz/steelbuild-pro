@@ -284,74 +284,61 @@ const navSections = [
     title: 'Overview',
     items: [
       { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
-      { name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
-      { name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
     ]
   },
   {
-    title: 'Projects',
+    title: 'Project Management',
     items: [
-      { name: 'All Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
-      { name: 'Work Packages', page: 'WorkPackages', icon: Package, roles: ['admin', 'user'] },
-      { name: 'Labor & Scope', page: 'LaborScope', icon: Users, roles: ['admin', 'user'] },
+      { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
+      { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
+      { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
+      { name: 'Drawings', page: 'Drawings', icon: FileText, roles: ['admin', 'user'] },
+      { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
+      { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
     ]
   },
   {
     title: 'Operations',
     items: [
-      { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
       { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
       { name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
-      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Documents',
-    items: [
-      { name: 'Drawings', page: 'Drawings', icon: FileText, roles: ['admin', 'user'] },
-      { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-      { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
-      { name: 'Documents', page: 'Documents', icon: File, roles: ['admin', 'user'] },
+      { name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },
     ]
   },
   {
     title: 'Resources',
     items: [
-      { name: 'Labor', page: 'Labor', icon: Clock, roles: ['admin', 'user'] },
       { name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
-      { name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },
-      { name: 'Resource Planning', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },
+      { name: 'Labor', page: 'Labor', icon: Clock, roles: ['admin', 'user'] },
+    ]
+  },
+  {
+    title: 'Documentation',
+    items: [
+      { name: 'Documents', page: 'Documents', icon: File, roles: ['admin', 'user'] },
+      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar, roles: ['admin', 'user'] },
+      { name: 'Meetings', page: 'Meetings', icon: Users, roles: ['admin', 'user'] },
+      { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar, roles: ['admin', 'user'] },
     ]
   },
   {
     title: 'Financials',
     items: [
       { name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
-      { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
+    ]
+  },
+  {
+    title: 'Analytics & Reports',
+    items: [
+      { name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
       { name: 'Reports', page: 'Reports', icon: FileText, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Communication',
-    items: [
-      { name: 'Meetings', page: 'Meetings', icon: Users, roles: ['admin', 'user'] },
-      { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar, roles: ['admin', 'user'] },
-      { name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-    ]
-  },
-  {
-    title: 'Tools',
-    items: [
+      { name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
       { name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
-      { name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
-      { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
     ]
   },
   {
-    title: 'Settings',
+    title: 'System',
     items: [
-      { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
-      { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
       { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
     ]
   }

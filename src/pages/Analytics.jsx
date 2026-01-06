@@ -71,7 +71,7 @@ export default function Analytics() {
   });
 
   return (
-    <div>
+    <div className="p-6">
       <PageHeader
         title="Analytics Dashboard"
         subtitle="Portfolio insights, resource utilization, and risk trends"

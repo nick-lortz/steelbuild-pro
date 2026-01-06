@@ -31,7 +31,6 @@ import {
 import { Plus, Search, RefreshCw } from 'lucide-react';
 import ProjectCard from '@/components/projects/ProjectCard';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
-import ScreenContainer from '@/components/layout/ScreenContainer';
 import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
 import { format } from 'date-fns';
 
@@ -271,7 +270,7 @@ export default function Projects() {
   }, [projects]);
 
   return (
-    <ScreenContainer>
+    <div className="p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -421,7 +420,7 @@ export default function Projects() {
           </div>
         </SheetContent>
       </Sheet>
-    </ScreenContainer>
+    </div>
   );
 }
 

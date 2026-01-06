@@ -43,7 +43,7 @@ export default function ProjectCard({ project, progress, onClick }) {
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Value</p>
                 <p className="text-sm font-semibold truncate">
-                  ${(project.contract_value / 1000).toFixed(0)}K
+                  ${project.contract_value.toLocaleString()}
                 </p>
               </div>
             </div>

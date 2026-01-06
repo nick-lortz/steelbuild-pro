@@ -1,3 +1,4 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -50,12 +51,6 @@
     --input: 0 0% 90%;
     --ring: 35 100% 50%;
     --radius: 0.5rem;
-
-    --surface: 0 0% 98%;
-    --surface-light: 0 0% 96%;
-    --text-primary: 0 0% 10%;
-    --text-secondary: 0 0% 40%;
-    --text-muted: 0 0% 60%;
   }
 
   .dark {
@@ -77,12 +72,6 @@
     --border: 0 0% 18%;
     --input: 0 0% 15%;
     --ring: 35 100% 50%;
-
-    --surface: 0 0% 7%;
-    --surface-light: 0 0% 12%;
-    --text-primary: 0 0% 95%;
-    --text-secondary: 0 0% 65%;
-    --text-muted: 0 0% 45%;
   }
 }
 

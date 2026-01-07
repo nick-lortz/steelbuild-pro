@@ -135,7 +135,12 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
   const saveEdit = (task) => {
     if (!editingCell) return;
     
-    const updates = { [editingCell.field]: editValue };
+    let value = editValue;
+    if (editingCell.field === 'assigned_resources') {
+      value = editValue ? [editValue] : [];
+    }
+    
+    const updates = { [editingCell.field]: value };
     onTaskUpdate(task.id, updates);
     setEditingCell(null);
     setEditValue('');

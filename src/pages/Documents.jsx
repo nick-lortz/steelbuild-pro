@@ -207,17 +207,14 @@ export default function Documents() {
       .sort((a, b) => (b.version || 1) - (a.version || 1));
   };
 
-  const filteredDocuments = React.useMemo(() => 
-    documents.filter(d => {
-      const matchesSearch = 
-        d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.file_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
-      const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
-      return matchesSearch && matchesCategory && matchesProject;
-    }).filter(d => d.is_current !== false),
-    [documents, searchTerm, categoryFilter, projectFilter]
-  );
+  const filteredDocuments = documents.filter(d => {
+    const matchesSearch = 
+      d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.file_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
+    const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
+    return matchesSearch && matchesCategory && matchesProject && d.is_current !== false;
+  });
 
   const columns = [
     {

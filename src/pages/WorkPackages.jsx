@@ -254,12 +254,10 @@ export default function WorkPackages() {
                 ))}
               </SelectContent>
             </Select>
-            {activeProjectId && (
-              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
-                <Plus size={18} className="mr-2" />
-                New Work Package
-              </Button>
-            )}
+            <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+              <Plus size={18} className="mr-2" />
+              New Work Package
+            </Button>
           </div>
         } />
 

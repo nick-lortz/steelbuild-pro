@@ -37,14 +37,14 @@ import {
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 
-      const navItems = [
+const navItems = [
         { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
         { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
         { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
@@ -75,9 +75,9 @@ import CommandPalette from '@/components/shared/CommandPalette';
         { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
         { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
         { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
-      ];
+];
 
-export default function Layout({ children, currentPageName }) {
+function LayoutContent({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();
 
@@ -313,7 +313,15 @@ export default function Layout({ children, currentPageName }) {
 
       <MobileNav currentPageName={currentPageName} />
         </div>
-        </ConfirmProvider>
-        </ThemeProvider>
-        );
-        }
+      </ConfirmProvider>
+    </ThemeProvider>
+  );
+}
+
+export default function Layout({ children, currentPageName }) {
+  return (
+    <ActiveProjectProvider>
+      <LayoutContent children={children} currentPageName={currentPageName} />
+    </ActiveProjectProvider>
+  );
+}

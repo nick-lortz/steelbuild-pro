@@ -430,13 +430,14 @@ export default function Settings() {
                     <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                      <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                      <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                      <SelectItem value="America/Anchorage">Alaska Time (AKT)</SelectItem>
-                      <SelectItem value="Pacific/Honolulu">Hawaii Time (HT)</SelectItem>
+                    <SelectContent className="max-h-60">
+                      <SelectItem value="America/New_York">Eastern (New York)</SelectItem>
+                      <SelectItem value="America/Chicago">Central (Chicago)</SelectItem>
+                      <SelectItem value="America/Denver">Mountain (Denver)</SelectItem>
+                      <SelectItem value="America/Phoenix">Mountain - No DST (Phoenix)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific (Los Angeles)</SelectItem>
+                      <SelectItem value="America/Anchorage">Alaska (Anchorage)</SelectItem>
+                      <SelectItem value="Pacific/Honolulu">Hawaii (Honolulu)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

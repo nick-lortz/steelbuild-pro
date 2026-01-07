@@ -323,7 +323,21 @@ export default function Deliveries() {
   }, [filteredDeliveries]);
 
   const handleEdit = (delivery) => {
-    setEditingDelivery(delivery);
+    if (delivery._isFromTask) {
+      // Convert task-based delivery to full delivery record on edit
+      const taskDelivery = {
+        project_id: delivery.project_id,
+        package_name: delivery.package_name,
+        package_number: delivery.package_number,
+        scheduled_date: delivery.scheduled_date,
+        delivery_status: delivery.delivery_status,
+        linked_task_ids: delivery.linked_task_ids,
+        notes: delivery.notes,
+      };
+      setEditingDelivery(taskDelivery);
+    } else {
+      setEditingDelivery(delivery);
+    }
     setShowForm(true);
   };
 

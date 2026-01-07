@@ -266,24 +266,24 @@ export default function Detailing() {
   };
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Detailing"
         subtitle="Manage drawing sets, submissions, revisions, and detailing coordination"
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={() => setShowCSVImport(true)}
-              className="border-zinc-700"
+              className="border-zinc-700 hover:bg-zinc-800"
             >
               <Upload size={18} className="mr-2" />
-              Import CSV
+              Import
             </Button>
             <Button
               variant="outline"
               onClick={exportDrawingRegistry}
-              className="border-zinc-700"
+              className="border-zinc-700 hover:bg-zinc-800"
             >
               <FileSpreadsheet size={18} className="mr-2" />
               Export
@@ -291,7 +291,7 @@ export default function Detailing() {
             <Button 
               onClick={() => setShowBulkEdit(true)}
               variant="outline"
-              className="border-zinc-700"
+              className="border-zinc-700 hover:bg-zinc-800"
               disabled={filteredSets.length === 0}
             >
               Bulk Edit
@@ -299,14 +299,14 @@ export default function Detailing() {
             <Button 
               onClick={() => setShowQuickAdd(true)}
               variant="outline"
-              className="border-zinc-700"
+              className="border-zinc-700 hover:bg-zinc-800"
             >
               <Zap size={18} className="mr-2" />
               Quick Add
             </Button>
             <Button 
               onClick={() => setShowForm(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg"
             >
               <Plus size={18} className="mr-2" />
               New Drawing Set
@@ -317,33 +317,31 @@ export default function Detailing() {
 
       {/* Detailing Readiness Panel */}
       {currentProject && (
-        <div className="mb-6">
-          <DetailingReadinessPanel
-            project={currentProject}
-            drawingSets={drawingSets}
-            rfis={rfis}
-            onRelease={() => {
-              queryClient.invalidateQueries({ queryKey: ['projects'] });
-            }}
-          />
-        </div>
+        <DetailingReadinessPanel
+          project={currentProject}
+          drawingSets={drawingSets}
+          rfis={rfis}
+          onRelease={() => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }}
+        />
       )}
 
       {/* Detailing Phase Context */}
       {detailingPhasePackages.length > 0 && (
-        <div className="mb-6 p-5 bg-blue-500/15 border-2 border-blue-500/30 rounded-xl shadow-lg">
+        <div className="p-5 bg-blue-500/10 border border-blue-500/30 rounded-xl">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-500/20 rounded-lg">
               <Package size={20} className="text-blue-400" />
             </div>
-            <h3 className="text-lg font-bold text-white">Active Detailing Work Packages</h3>
+            <h3 className="text-base font-bold text-white">Active Detailing Work Packages</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {detailingPhasePackages.map(wp => {
               const project = projects.find(p => p.id === wp.project_id);
               return (
-                <div key={wp.id} className="p-3 bg-zinc-900/70 border border-blue-500/20 rounded-lg hover:bg-zinc-900 transition-colors">
-                  <p className="font-semibold text-white">{wp.name}</p>
+                <div key={wp.id} className="p-3 bg-zinc-900/70 border border-blue-500/20 rounded-lg hover:bg-zinc-900 hover:border-blue-500/40 transition-all">
+                  <p className="font-semibold text-white text-sm">{wp.name}</p>
                   <p className="text-xs text-blue-300 mt-1">{project?.project_number || 'Unknown'}</p>
                 </div>
               );
@@ -354,43 +352,43 @@ export default function Detailing() {
 
       {/* Alert Summary */}
       {(overdueSets.length > 0 || pendingRelease.length > 0) && (
-        <div className="mb-6 space-y-3">
+        <div className="space-y-3">
           {overdueSets.length > 0 && (
-            <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl overflow-hidden shadow-lg">
-              <div className="p-4 flex items-center gap-3 bg-gradient-to-r from-red-500/5 to-transparent">
-                <div className="p-2 bg-red-500/20 rounded-lg">
-                  <AlertTriangle size={22} className="text-red-400 flex-shrink-0" />
+            <div className="bg-red-500/10 border border-red-500/40 rounded-xl overflow-hidden">
+              <div className="p-4 flex items-center gap-3">
+                <div className="p-2 bg-red-500/20 rounded-lg flex-shrink-0">
+                  <AlertTriangle size={20} className="text-red-400" />
                 </div>
                 <div>
-                  <p className="text-base font-bold text-red-300">{overdueSets.length} OVERDUE SET{overdueSets.length !== 1 ? 'S' : ''}</p>
-                  <p className="text-sm text-red-400/80">Immediate attention required</p>
+                  <p className="text-base font-bold text-red-300">{overdueSets.length} Overdue Set{overdueSets.length !== 1 ? 's' : ''}</p>
+                  <p className="text-sm text-red-400/70">Immediate attention required</p>
                 </div>
               </div>
               
-              <div className="border-t border-red-500/20 bg-zinc-900/50">
+              <div className="border-t border-red-500/20">
                 {Object.entries(overdueByProject).map(([projectId, { projectName, sets }]) => (
                   <Collapsible 
                     key={projectId}
                     open={expandedProjects[projectId]}
                     onOpenChange={(open) => setExpandedProjects(prev => ({ ...prev, [projectId]: open }))}
                   >
-                    <CollapsibleTrigger className="w-full p-3 hover:bg-zinc-800/50 transition-colors flex items-center justify-between text-left border-b border-zinc-800 last:border-b-0">
+                    <CollapsibleTrigger className="w-full p-3 hover:bg-zinc-800/30 transition-colors flex items-center justify-between text-left border-b border-zinc-800/50 last:border-b-0">
                       <div className="flex items-center gap-2">
                         <ChevronDown 
-                          size={16} 
+                          size={14} 
                           className={`text-zinc-500 transition-transform ${expandedProjects[projectId] ? 'rotate-180' : ''}`} 
                         />
                         <span className="text-sm text-white font-medium">{projectName}</span>
-                        <span className="text-xs text-zinc-500">({sets.length} set{sets.length !== 1 ? 's' : ''})</span>
+                        <span className="text-xs text-zinc-500">({sets.length})</span>
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="p-3 space-y-2 bg-zinc-900/30">
+                      <div className="p-2 space-y-1.5 bg-zinc-900/20">
                         {sets.map(set => (
                           <div 
                             key={set.id}
                             onClick={() => setSelectedSet(set)}
-                            className="p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded cursor-pointer transition-colors"
+                            className="p-2.5 bg-zinc-800/40 hover:bg-zinc-800/70 rounded border border-zinc-800 hover:border-zinc-700 cursor-pointer transition-all"
                           >
                             <div className="flex items-start justify-between">
                               <div>
@@ -402,11 +400,11 @@ export default function Detailing() {
                                   const dueDate = new Date(set.due_date);
                                   return !isNaN(dueDate.getTime()) && (
                                     <>
-                                      <p className="text-xs text-red-400">
-                                        Due: {format(dueDate, 'MMM d')}
+                                      <p className="text-xs text-red-400 font-medium">
+                                        {format(dueDate, 'MMM d')}
                                       </p>
-                                      <p className="text-xs text-zinc-500">
-                                        {Math.abs(differenceInDays(new Date(), dueDate))}d overdue
+                                      <p className="text-[10px] text-zinc-500">
+                                        {Math.abs(differenceInDays(new Date(), dueDate))}d late
                                       </p>
                                     </>
                                   );
@@ -424,13 +422,13 @@ export default function Detailing() {
           )}
           
           {pendingRelease.length > 0 && (
-            <div className="p-4 bg-amber-500/15 border-2 border-amber-500/40 rounded-xl flex items-center gap-3 shadow-lg">
-              <div className="p-2 bg-amber-500/20 rounded-lg">
-                <Clock size={22} className="text-amber-400 flex-shrink-0" />
+            <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center gap-3">
+              <div className="p-2 bg-amber-500/20 rounded-lg flex-shrink-0">
+                <Clock size={20} className="text-amber-400" />
               </div>
               <div>
-                <p className="text-base font-bold text-amber-300">{pendingRelease.length} READY FOR RELEASE</p>
-                <p className="text-sm text-amber-400/80">BFS → FFF Release Pending</p>
+                <p className="text-base font-bold text-amber-300">{pendingRelease.length} Ready for Release</p>
+                <p className="text-sm text-amber-400/70">BFS → FFF Release Pending</p>
               </div>
             </div>
           )}
@@ -438,53 +436,51 @@ export default function Detailing() {
       )}
 
       {/* Drawing Notifications */}
-      <div className="mb-6">
-        <DrawingNotifications drawingSets={drawingSets} projects={projects} />
-      </div>
+      <DrawingNotifications drawingSets={drawingSets} projects={projects} />
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="p-5 bg-zinc-900 border-2 border-zinc-700 rounded-xl">
-          <p className="text-sm font-medium text-zinc-400 mb-1">Total Sets</p>
-          <p className="text-3xl font-bold text-white">{filteredSets.length}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="p-4 bg-zinc-900 border border-zinc-700 rounded-lg hover:border-zinc-600 transition-colors">
+          <p className="text-xs font-medium text-zinc-400 mb-1">Total Sets</p>
+          <p className="text-2xl font-bold text-white">{filteredSets.length}</p>
         </div>
-        <div className="p-5 bg-blue-500/15 border-2 border-blue-500/30 rounded-xl">
-          <p className="text-sm font-medium text-blue-300 mb-1">In Review</p>
-          <p className="text-3xl font-bold text-blue-400">
+        <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg hover:border-blue-500/50 transition-colors">
+          <p className="text-xs font-medium text-blue-300 mb-1">In Review</p>
+          <p className="text-2xl font-bold text-blue-400">
             {filteredSets.filter(d => d.status === 'IFA' || d.status === 'BFA').length}
           </p>
-          <p className="text-xs text-blue-400/70 mt-1">IFA + BFA</p>
+          <p className="text-[10px] text-blue-400/60 mt-0.5">IFA + BFA</p>
         </div>
-        <div className="p-5 bg-green-500/15 border-2 border-green-500/30 rounded-xl">
-          <p className="text-sm font-medium text-green-300 mb-1">Released</p>
-          <p className="text-3xl font-bold text-green-400">
+        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg hover:border-green-500/50 transition-colors">
+          <p className="text-xs font-medium text-green-300 mb-1">Released</p>
+          <p className="text-2xl font-bold text-green-400">
             {filteredSets.filter(d => d.status === 'FFF' || d.status === 'As-Built').length}
           </p>
-          <p className="text-xs text-green-400/70 mt-1">FFF + As-Built</p>
+          <p className="text-[10px] text-green-400/60 mt-0.5">FFF + As-Built</p>
         </div>
-        <div className="p-5 bg-amber-500/15 border-2 border-amber-500/30 rounded-xl">
-          <p className="text-sm font-medium text-amber-300 mb-1">Need Action</p>
-          <p className="text-3xl font-bold text-amber-400">
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg hover:border-amber-500/50 transition-colors">
+          <p className="text-xs font-medium text-amber-300 mb-1">Need Action</p>
+          <p className="text-2xl font-bold text-amber-400">
             {overdueSets.length + pendingRelease.length}
           </p>
-          <p className="text-xs text-amber-400/70 mt-1">Overdue + Ready</p>
+          <p className="text-[10px] text-amber-400/60 mt-0.5">Overdue + Ready</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <Input
             placeholder="Search drawing sets..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-700 text-white h-11 text-base"
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white h-10 focus:border-amber-500 transition-colors"
           />
         </div>
         <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-52 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
-            <SelectValue placeholder="Filter by project" />
+          <SelectTrigger className="w-full sm:w-52 bg-zinc-900 border-zinc-800 text-white h-10">
+            <SelectValue placeholder="All Projects" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
@@ -494,20 +490,20 @@ export default function Detailing() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-44 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
-            <SelectValue placeholder="Filter by status" />
+          <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white h-10">
+            <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="IFA">IFA</SelectItem>
             <SelectItem value="BFA">BFA</SelectItem>
             <SelectItem value="BFS">BFS</SelectItem>
-            <SelectItem value="FFF">Released (FFF)</SelectItem>
+            <SelectItem value="FFF">FFF</SelectItem>
             <SelectItem value="As-Built">As-Built</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
+          <SelectTrigger className="w-full sm:w-44 bg-zinc-900 border-zinc-800 text-white h-10">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -520,12 +516,12 @@ export default function Detailing() {
           </SelectContent>
         </Select>
         <Select value={sortOrder} onValueChange={setSortOrder}>
-          <SelectTrigger className="w-full sm:w-36 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
+          <SelectTrigger className="w-full sm:w-32 bg-zinc-900 border-zinc-800 text-white h-10">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="asc">Oldest First</SelectItem>
-            <SelectItem value="desc">Newest First</SelectItem>
+            <SelectItem value="asc">Oldest</SelectItem>
+            <SelectItem value="desc">Newest</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Page background + base text */
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900;
+}
+
+/* Core surfaces */
+.card {
+  @apply bg-white rounded-2xl border border-slate-200 shadow-sm;
+}
+
+/* Card structure */
+.card-header {
+  @apply px-5 pt-4 pb-2 font-semibold text-slate-800;
+}
+
+.card-body {
+  @apply p-5;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium
+         transition hover:bg-slate-50 active:scale-[.98];
+}
+
+.btn-primary {
+  @apply bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-500;
+}
+
+.btn-outline {
+  @apply bg-white border-slate-300 text-slate-700;
+}
+
+/* Inputs */
+.input {
+  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm
+         focus:outline-none focus:ring-2 focus:ring-emerald-500/30;
+}
+
+/* Badges / pills */
+.badge {
+  @apply inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium;
+}
+
+/* Progress bars */
+.progress {
+  @apply h-2 rounded-full bg-slate-200 overflow-hidden;
+}
+
+.progress > div {
+  @apply h-full rounded-full bg-emerald-600;
+}

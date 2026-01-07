@@ -56,17 +56,20 @@ export default function Deliveries() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: async () => {
-      if (!activeFilters.projects?.length) return [];
-      return base44.entities.Task.filter({ 
-        project_id: activeFilters.projects[0] 
-      });
-    },
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ['all-tasks'],
+    queryFn: () => base44.entities.Task.list(),
     staleTime: 10 * 60 * 1000,
-    enabled: activeFilters.projects?.length > 0
   });
+
+  const tasks = useMemo(() => {
+    if (!activeFilters.projects?.length || activeFilters.projects.length === 0) {
+      return allTasks.filter(t => t.phase === 'delivery');
+    }
+    return allTasks.filter(t => 
+      t.phase === 'delivery' && activeFilters.projects.includes(t.project_id)
+    );
+  }, [allTasks, activeFilters.projects]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Delivery.create(data),

@@ -24,6 +24,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format, differenceInDays } from 'date-fns';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -88,12 +89,37 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const ACTIVITY_PER_PAGE = 10;
+  const { activeProjectId } = useActiveProject();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 15 * 60 * 1000,
   });
+
+  const { data: activeProject } = useQuery({
+    queryKey: ['activeProject', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId) return null;
+      const results = await base44.entities.Project.filter({ id: activeProjectId });
+      return results?.[0] || null;
+    },
+    enabled: !!activeProjectId,
+  });
+
+  React.useEffect(() => {
+    if (activeProject) {
+      if (activeProject.phase === 'detailing') {
+        navigate(createPageUrl('Detailing'));
+      } else if (activeProject.phase === 'fabrication') {
+        navigate(createPageUrl('Fabrication'));
+      } else if (activeProject.phase === 'delivery') {
+        navigate(createPageUrl('Deliveries'));
+      } else if (activeProject.phase === 'erection') {
+        navigate(createPageUrl('Schedule'));
+      }
+    }
+  }, [activeProject, navigate]);
 
   // Fetch portfolio metrics
   const { data: metricsData, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery({

@@ -327,9 +327,7 @@ export default function WorkPackages() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Work Package?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete "{deletePackage?.package_number} - {deletePackage?.name}"? 
-              This will also delete all associated tasks ({getPackageTaskCount(deletePackage?.id || '')} tasks). 
-              This action cannot be undone.
+              This will permanently delete the work package "{deletePackage?.package_number} - {deletePackage?.name}" and all {getPackageTaskCount(deletePackage?.id || '')} associated tasks across all phases. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

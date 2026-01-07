@@ -50,6 +50,12 @@ export default function ProjectDashboard() {
     staleTime: 5 * 60 * 1000
   });
 
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items'],
+    queryFn: () => base44.entities.SOVItem.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
   // Calculate project metrics
   const projectMetrics = useMemo(() => {
     const metrics = {};
@@ -102,13 +108,28 @@ export default function ProjectDashboard() {
         }
       });
 
-      // Financial metrics
-      const currentBudget = projectFinancials.reduce((sum, f) => 
-        sum + (f.original_budget || 0) + (f.approved_changes || 0), 0);
-      const actualCost = projectExpenses.filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
-      const costVariance = currentBudget - actualCost;
-      const percentSpent = currentBudget > 0 ? (actualCost / currentBudget) * 100 : 0;
+      // Financial metrics - prioritize SOV if exists, else use budget
+      const projectSOV = sovItems.filter(s => s.project_id === project.id);
+      let currentBudget, actualCost, costVariance, percentSpent;
+
+      if (projectSOV.length > 0) {
+        // Use SOV-based metrics
+        const earnedToDate = projectSOV.reduce((sum, s) => 
+          sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+        actualCost = projectExpenses.filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+          .reduce((sum, e) => sum + (e.amount || 0), 0);
+        currentBudget = projectSOV.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+        costVariance = earnedToDate - actualCost;
+        percentSpent = earnedToDate > 0 ? (actualCost / earnedToDate) * 100 : 0;
+      } else {
+        // Fallback to budget-based metrics
+        currentBudget = projectFinancials.reduce((sum, f) => 
+          sum + (f.original_budget || 0) + (f.approved_changes || 0), 0);
+        actualCost = projectExpenses.filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+          .reduce((sum, e) => sum + (e.amount || 0), 0);
+        costVariance = currentBudget - actualCost;
+        percentSpent = currentBudget > 0 ? (actualCost / currentBudget) * 100 : 0;
+      }
 
       let costHealth = 'green';
       if (percentSpent > 100 || costVariance < 0) costHealth = 'red';
@@ -133,7 +154,7 @@ export default function ProjectDashboard() {
     });
 
     return metrics;
-  }, [projects, allTasks, documents, financials, expenses]);
+  }, [projects, allTasks, documents, financials, expenses, sovItems]);
 
   // Portfolio summary
   const portfolioSummary = useMemo(() => {

@@ -19,7 +19,6 @@ import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
 import ExportButton from '@/components/shared/ExportButton';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 export default function Schedule() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +34,6 @@ export default function Schedule() {
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
-  const { activeProjectId } = useActiveProject();
 
   // Fetch projects for filter
   const { data: rawProjects = [] } = useQuery({
@@ -49,9 +47,10 @@ export default function Schedule() {
     [rawProjects]
   );
 
-  const activeProject = useMemo(() => {
-    return projects.find(p => p.id === activeProjectId);
-  }, [projects, activeProjectId]);
+  const selectedProject = useMemo(() => {
+    if (projectFilter === 'all') return null;
+    return projects.find(p => p.id === projectFilter);
+  }, [projects, projectFilter]);
 
   // Fetch all tasks and filter on frontend
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
@@ -173,7 +172,8 @@ export default function Schedule() {
   }, [refetch]);
 
   const handleTaskClick = (task) => {
-    if (activeProject?.phase === 'detailing' && task.phase !== 'detailing') {
+    const taskProject = projects.find(p => p.id === task.project_id);
+    if (taskProject?.phase === 'detailing' && task.phase !== 'detailing') {
       toast.error('Cannot edit non-detailing tasks during detailing phase');
       return;
     }
@@ -182,7 +182,7 @@ export default function Schedule() {
   };
 
   const handleCreateTask = () => {
-    if (activeProject?.phase === 'detailing') {
+    if (selectedProject?.phase === 'detailing') {
       toast.error('Cannot create tasks during detailing phase. Complete detailing first.');
       return;
     }
@@ -410,7 +410,7 @@ export default function Schedule() {
                 setEditingTask(null);
               }}
               isLoading={createMutation.isPending || updateMutation.isPending}
-              restrictPhase={activeProject?.phase === 'detailing' ? 'detailing' : null}
+              restrictPhase={selectedProject?.phase === 'detailing' ? 'detailing' : null}
             />
           </div>
         </SheetContent>

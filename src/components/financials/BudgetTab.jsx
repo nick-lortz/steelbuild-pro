@@ -1,0 +1,218 @@
+import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import DataTable from '@/components/ui/DataTable';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from '@/components/ui/notifications';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+export default function BudgetTab({ projectId, budgetLines = [], costCodes = [], canEdit }) {
+  const queryClient = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [formData, setFormData] = useState({ cost_code_id: '', category: 'labor', original_budget: 0 });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Financial.create({
+      ...data,
+      project_id: projectId,
+      current_budget: data.original_budget,
+      approved_changes: 0
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      toast.success('Budget line added');
+      setShowAddDialog(false);
+      setFormData({ cost_code_id: '', category: 'labor', original_budget: 0 });
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Financial.update(id, {
+      ...data,
+      current_budget: (data.original_budget || 0) + (data.approved_changes || 0)
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Financial.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      toast.success('Budget line deleted');
+    }
+  });
+
+  const getCostCodeName = (id) => costCodes.find(c => c.id === id)?.name || 'Unknown';
+
+  const columns = [
+    {
+      header: 'Cost Code',
+      accessor: 'cost_code_id',
+      render: (row) => getCostCodeName(row.cost_code_id)
+    },
+    {
+      header: 'Category',
+      accessor: 'category',
+      render: (row) => <span className="capitalize">{row.category}</span>
+    },
+    {
+      header: 'Original Budget',
+      accessor: 'original_budget',
+      render: (row) => (
+        <Input
+          type="number"
+          value={row.original_budget || 0}
+          onChange={(e) => updateMutation.mutate({
+            id: row.id,
+            data: { original_budget: Number(e.target.value), approved_changes: row.approved_changes || 0 }
+          })}
+          disabled={!canEdit}
+          className="w-32"
+        />
+      )
+    },
+    {
+      header: 'Approved Changes',
+      accessor: 'approved_changes',
+      render: (row) => (
+        <Input
+          type="number"
+          value={row.approved_changes || 0}
+          onChange={(e) => updateMutation.mutate({
+            id: row.id,
+            data: { approved_changes: Number(e.target.value), original_budget: row.original_budget || 0 }
+          })}
+          disabled={!canEdit}
+          className="w-32"
+        />
+      )
+    },
+    {
+      header: 'Current Budget',
+      accessor: 'current_budget',
+      render: (row) => (
+        <span className="font-semibold">
+          ${((row.original_budget || 0) + (row.approved_changes || 0)).toLocaleString()}
+        </span>
+      )
+    },
+    {
+      header: 'Actual',
+      accessor: 'actual_amount',
+      render: (row) => <span>${(row.actual_amount || 0).toLocaleString()}</span>
+    },
+    {
+      header: 'Variance',
+      accessor: 'variance',
+      render: (row) => {
+        const current = (row.original_budget || 0) + (row.approved_changes || 0);
+        const variance = current - (row.actual_amount || 0);
+        return (
+          <span className={variance < 0 ? 'text-red-400' : 'text-green-400'}>
+            ${variance.toLocaleString()}
+          </span>
+        );
+      }
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            if (window.confirm('Delete this budget line?')) {
+              deleteMutation.mutate(row.id);
+            }
+          }}
+          disabled={!canEdit}
+          className="text-red-400 hover:text-red-300"
+        >
+          <Trash2 size={16} />
+        </Button>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-base font-semibold">Budget Lines by Cost Code</h3>
+        <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
+          <Plus size={16} className="mr-1" />
+          Add Budget Line
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <DataTable
+            columns={columns}
+            data={budgetLines}
+            emptyMessage="No budget lines. Add budget allocations by cost code."
+          />
+        </CardContent>
+      </Card>
+
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Budget Line</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Cost Code</Label>
+              <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cost code" />
+                </SelectTrigger>
+                <SelectContent>
+                  {costCodes.map(cc => (
+                    <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Category</Label>
+              <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="labor">Labor</SelectItem>
+                  <SelectItem value="material">Material</SelectItem>
+                  <SelectItem value="equipment">Equipment</SelectItem>
+                  <SelectItem value="subcontract">Subcontract</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Original Budget</Label>
+              <Input
+                type="number"
+                value={formData.original_budget}
+                onChange={(e) => setFormData({ ...formData, original_budget: Number(e.target.value) })}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+              <Button onClick={() => createMutation.mutate(formData)} disabled={!formData.cost_code_id}>
+                Add Budget Line
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

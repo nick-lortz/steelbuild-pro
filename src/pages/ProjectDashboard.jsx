@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PageHeader from '@/components/ui/PageHeader';
 import ProjectScheduleWidget from '@/components/schedule/ProjectScheduleWidget';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight } from 'lucide-react';
+import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight, DollarSign } from 'lucide-react';
 import { format, parseISO, isPast, addDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -38,6 +38,18 @@ export default function ProjectDashboard() {
     staleTime: 5 * 60 * 1000
   });
 
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials'],
+    queryFn: () => base44.entities.Financial.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: () => base44.entities.Expense.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
   // Calculate project metrics
   const projectMetrics = useMemo(() => {
     const metrics = {};
@@ -45,6 +57,8 @@ export default function ProjectDashboard() {
     projects.forEach(project => {
       const projectTasks = allTasks.filter(t => t.project_id === project.id);
       const projectDocs = documents.filter(d => d.project_id === project.id && d.is_current);
+      const projectFinancials = financials.filter(f => f.project_id === project.id);
+      const projectExpenses = expenses.filter(e => e.project_id === project.id);
       
       const totalTasks = projectTasks.length;
       const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
@@ -88,6 +102,18 @@ export default function ProjectDashboard() {
         }
       });
 
+      // Financial metrics
+      const currentBudget = projectFinancials.reduce((sum, f) => 
+        sum + (f.original_budget || 0) + (f.approved_changes || 0), 0);
+      const actualCost = projectExpenses.filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+      const costVariance = currentBudget - actualCost;
+      const percentSpent = currentBudget > 0 ? (actualCost / currentBudget) * 100 : 0;
+
+      let costHealth = 'green';
+      if (percentSpent > 100 || costVariance < 0) costHealth = 'red';
+      else if (percentSpent > 90) costHealth = 'yellow';
+
       metrics[project.id] = {
         totalTasks,
         completedTasks,
@@ -97,12 +123,17 @@ export default function ProjectDashboard() {
         progressPercent,
         upcomingMilestones: upcomingMilestones.length,
         recentDocs: recentDocs.length,
-        pendingReview: projectDocs.filter(d => d.workflow_stage === 'pending_review').length
+        pendingReview: projectDocs.filter(d => d.workflow_stage === 'pending_review').length,
+        currentBudget,
+        actualCost,
+        costVariance,
+        percentSpent,
+        costHealth
       };
     });
 
     return metrics;
-  }, [projects, allTasks, documents]);
+  }, [projects, allTasks, documents, financials, expenses]);
 
   // Portfolio summary
   const portfolioSummary = useMemo(() => {
@@ -160,71 +191,71 @@ export default function ProjectDashboard() {
 
       {/* Portfolio Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/10 rounded">
-                <Building2 size={20} className="text-amber-500" />
+                <Building2 size={18} className="text-amber-500" />
               </div>
               <div>
-                <p className="text-xs text-zinc-400">Total Projects</p>
-                <p className="text-2xl font-bold text-white">{portfolioSummary.totalProjects}</p>
+                <p className="text-xs text-muted-foreground">Total Projects</p>
+                <p className="text-2xl font-bold">{portfolioSummary.totalProjects}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500/10 rounded">
-                <TrendingUp size={20} className="text-blue-500" />
+                <TrendingUp size={18} className="text-blue-500" />
               </div>
               <div>
-                <p className="text-xs text-zinc-400">Active</p>
-                <p className="text-2xl font-bold text-white">{portfolioSummary.activeProjects}</p>
+                <p className="text-xs text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">{portfolioSummary.activeProjects}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-red-500/5 border-red-500/20">
+        <Card className="bg-red-500/10 border-red-500/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-500/10 rounded">
-                <AlertTriangle size={20} className="text-red-400" />
+                <AlertTriangle size={18} className="text-red-400" />
               </div>
               <div>
-                <p className="text-xs text-zinc-400">At Risk</p>
+                <p className="text-xs text-muted-foreground">At Risk</p>
                 <p className="text-2xl font-bold text-red-400">{portfolioSummary.atRiskProjects}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-amber-500/5 border-amber-500/20">
+        <Card className="bg-amber-500/10 border-amber-500/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/10 rounded">
-                <AlertTriangle size={20} className="text-amber-400" />
+                <AlertTriangle size={18} className="text-amber-400" />
               </div>
               <div>
-                <p className="text-xs text-zinc-400">Overdue Tasks</p>
+                <p className="text-xs text-muted-foreground">Overdue Tasks</p>
                 <p className="text-2xl font-bold text-amber-400">{portfolioSummary.totalOverdueTasks}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-500/10 rounded">
-                <Calendar size={20} className="text-green-500" />
+                <Calendar size={18} className="text-green-500" />
               </div>
               <div>
-                <p className="text-xs text-zinc-400">Milestones (30d)</p>
-                <p className="text-2xl font-bold text-white">{portfolioSummary.totalUpcomingMilestones}</p>
+                <p className="text-xs text-muted-foreground">Milestones (30d)</p>
+                <p className="text-2xl font-bold">{portfolioSummary.totalUpcomingMilestones}</p>
               </div>
             </div>
           </CardContent>
@@ -239,11 +270,11 @@ export default function ProjectDashboard() {
             placeholder="Search projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800"
+            className="pl-10"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -256,7 +287,7 @@ export default function ProjectDashboard() {
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -298,42 +329,59 @@ export default function ProjectDashboard() {
             delayed: 'text-red-400 bg-red-500/10 border-red-500/20'
           }[metrics.healthStatus] || 'text-zinc-400';
 
+          const costHealthColor = {
+            green: 'text-green-400 bg-green-500/10 border-green-500/30',
+            yellow: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+            red: 'text-red-400 bg-red-500/10 border-red-500/30'
+          }[metrics.costHealth] || 'text-muted-foreground';
+
           return (
-            <Card key={project.id} className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">
+            <Card key={project.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <Link to={createPageUrl('Projects')}>
-                      <CardTitle className="text-base text-white truncate hover:text-amber-400 transition-colors">
+                      <CardTitle className="text-base truncate hover:text-amber-400">
                         {project.project_number}
                       </CardTitle>
                     </Link>
-                    <p className="text-sm text-zinc-400 truncate mt-1">{project.name}</p>
+                    <p className="text-sm text-muted-foreground truncate mt-1">{project.name}</p>
                   </div>
                   <StatusBadge status={project.status} className="ml-2" />
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                {/* Health Status */}
-                <div className={`p-3 rounded-lg border ${healthColor}`}>
+              <CardContent className="space-y-3">
+                {/* Cost Health */}
+                <div className={`p-2 rounded border ${costHealthColor}`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">Schedule Health</span>
-                    <Badge className={healthColor}>
-                      {metrics.healthStatus?.replace('_', ' ').toUpperCase()}
-                    </Badge>
+                    <span className="text-xs">Cost Health</span>
+                    <div className="flex items-center gap-2">
+                      <DollarSign size={14} />
+                      <span className="text-sm font-bold">{metrics.percentSpent?.toFixed(0) || 0}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Schedule Health */}
+                <div className={`p-2 rounded border ${healthColor}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs">Schedule Health</span>
+                    <span className="text-xs font-bold uppercase">
+                      {metrics.healthStatus?.replace('_', ' ')}
+                    </span>
                   </div>
                 </div>
 
                 {/* Progress */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-zinc-400">Progress</span>
-                    <span className="text-sm font-bold text-white">{metrics.progressPercent}%</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Progress</span>
+                    <span className="text-sm font-bold">{metrics.progressPercent}%</span>
                   </div>
-                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-amber-500 transition-all"
+                      className="h-full bg-amber-500"
                       style={{ width: `${metrics.progressPercent}%` }}
                     />
                   </div>
@@ -341,36 +389,46 @@ export default function ProjectDashboard() {
 
                 {/* Metrics Grid */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-2 bg-zinc-800/50 rounded">
-                    <p className="text-xs text-zinc-400">Tasks</p>
-                    <p className="text-lg font-bold text-white">
+                  <div className="p-2 bg-secondary rounded">
+                    <p className="text-xs text-muted-foreground">Tasks</p>
+                    <p className="text-lg font-bold">
                       {metrics.completedTasks}/{metrics.totalTasks}
                     </p>
                   </div>
-                  <div className={`p-2 rounded ${metrics.overdueTasks > 0 ? 'bg-red-500/10' : 'bg-zinc-800/50'}`}>
-                    <p className="text-xs text-zinc-400">Overdue</p>
-                    <p className={`text-lg font-bold ${metrics.overdueTasks > 0 ? 'text-red-400' : 'text-white'}`}>
+                  <div className={`p-2 rounded ${metrics.overdueTasks > 0 ? 'bg-red-500/10' : 'bg-secondary'}`}>
+                    <p className="text-xs text-muted-foreground">Overdue</p>
+                    <p className={`text-lg font-bold ${metrics.overdueTasks > 0 ? 'text-red-400' : ''}`}>
                       {metrics.overdueTasks}
                     </p>
                   </div>
-                  <div className="p-2 bg-zinc-800/50 rounded">
-                    <p className="text-xs text-zinc-400">Milestones</p>
-                    <p className="text-lg font-bold text-white">{metrics.upcomingMilestones}</p>
+                  <div className={`p-2 rounded ${
+                    metrics.costHealth === 'red' ? 'bg-red-500/10' : 
+                    metrics.costHealth === 'yellow' ? 'bg-amber-500/10' : 
+                    'bg-secondary'
+                  }`}>
+                    <p className="text-xs text-muted-foreground">Budget vs Actual</p>
+                    <p className={`text-lg font-bold ${
+                      metrics.costHealth === 'red' ? 'text-red-400' : 
+                      metrics.costHealth === 'yellow' ? 'text-amber-400' : 
+                      'text-green-400'
+                    }`}>
+                      {metrics.percentSpent?.toFixed(0) || 0}%
+                    </p>
                   </div>
-                  <div className={`p-2 rounded ${metrics.pendingReview > 0 ? 'bg-amber-500/10' : 'bg-zinc-800/50'}`}>
-                    <p className="text-xs text-zinc-400">Docs Review</p>
-                    <p className={`text-lg font-bold ${metrics.pendingReview > 0 ? 'text-amber-400' : 'text-white'}`}>
+                  <div className={`p-2 rounded ${metrics.pendingReview > 0 ? 'bg-amber-500/10' : 'bg-secondary'}`}>
+                    <p className="text-xs text-muted-foreground">Docs Review</p>
+                    <p className={`text-lg font-bold ${metrics.pendingReview > 0 ? 'text-amber-400' : ''}`}>
                       {metrics.pendingReview}
                     </p>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                <div className="flex gap-2 pt-2 border-t border-border">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 border-zinc-700"
+                    className="flex-1"
                     onClick={() => setSelectedProjectId(selectedProjectId === project.id ? null : project.id)}
                   >
                     {selectedProjectId === project.id ? 'Hide' : 'View'} Health
@@ -389,9 +447,9 @@ export default function ProjectDashboard() {
       </div>
 
       {filteredProjects.length === 0 && (
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-zinc-400">No projects found</p>
+            <p className="text-muted-foreground">No projects found</p>
           </CardContent>
         </Card>
       )}

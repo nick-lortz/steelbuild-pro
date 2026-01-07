@@ -5,7 +5,6 @@ import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, Users, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
@@ -13,7 +12,7 @@ import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 import EmptyState from '@/components/ui/EmptyState';
 
 export default function Analytics() {
-  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const [activeProjectId, setActiveProjectId] = React.useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

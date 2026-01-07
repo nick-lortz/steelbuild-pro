@@ -128,9 +128,8 @@ function LayoutInner({ children, currentPageName }) {
 
   return (
     <ThemeProvider>
-      <ActiveProjectProvider>
-        <ConfirmProvider>
-          <div className="min-h-screen bg-background text-foreground">
+      <ConfirmProvider>
+        <div className="min-h-screen bg-background text-foreground">
           <OfflineIndicator />
           <Toaster />
           <CommandPalette />
@@ -315,7 +314,6 @@ function LayoutInner({ children, currentPageName }) {
       <MobileNav currentPageName={currentPageName} />
         </div>
         </ConfirmProvider>
-        </ActiveProjectProvider>
         </ThemeProvider>
         );
         }

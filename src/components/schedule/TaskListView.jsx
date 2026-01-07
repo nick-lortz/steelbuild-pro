@@ -374,7 +374,11 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                               >
                                 <td className="p-3 sticky left-0 bg-zinc-900">
                                   <button
-                                    onClick={() => onTaskClick(task)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      onTaskClick(task);
+                                    }}
                                     className="text-left hover:text-amber-400 transition-colors flex items-center gap-2"
                                   >
                                     {atRisk && <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />}

@@ -37,7 +37,7 @@ import {
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { ActiveProjectProvider } from '@/components/shared/hooks/useActiveProject';
+import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -77,8 +77,9 @@ import CommandPalette from '@/components/shared/CommandPalette';
         { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
       ];
 
-export default function Layout({ children, currentPageName }) {
+function LayoutInner({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { activeProjectId } = useActiveProject();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -91,15 +92,39 @@ export default function Layout({ children, currentPageName }) {
     },
   });
 
+  const { data: activeProject } = useQuery({
+    queryKey: ['activeProject', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId) return null;
+      return await base44.entities.Project.filter({ id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    select: (data) => data?.[0] || null,
+  });
+
   const handleLogout = () => {
     base44.auth.logout();
   };
+
+  const projectPhase = activeProject?.phase || 'fabrication';
 
   const visibleNavItems = navItems.filter(
     (item) => !item.roles || item.roles.includes(currentUser?.role)
   );
 
-  const sortedNavItems = visibleNavItems;
+  const getNavItemPriority = (item) => {
+    if (projectPhase === 'detailing' && item.page === 'Detailing') return 1;
+    if (projectPhase === 'fabrication' && item.page === 'Fabrication') return 1;
+    if (projectPhase === 'delivery' && item.page === 'Deliveries') return 1;
+    if (projectPhase === 'erection' && item.page === 'Schedule') return 1;
+    return 2;
+  };
+
+  const sortedNavItems = [...visibleNavItems].sort((a, b) => {
+    const priorityA = getNavItemPriority(a);
+    const priorityB = getNavItemPriority(b);
+    return priorityA - priorityB;
+  });
 
   return (
     <ThemeProvider>
@@ -217,6 +242,7 @@ export default function Layout({ children, currentPageName }) {
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {sortedNavItems.map((item) => {
             const isActive = currentPageName === item.page;
+            const isPrimaryPhase = getNavItemPriority(item) === 1;
             const Icon = item.icon;
 
             return (
@@ -228,6 +254,8 @@ export default function Layout({ children, currentPageName }) {
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
                     ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                    : isPrimaryPhase
+                    ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/5'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                 )}
               >
@@ -289,5 +317,13 @@ export default function Layout({ children, currentPageName }) {
         </ConfirmProvider>
         </ActiveProjectProvider>
         </ThemeProvider>
+        );
+        }
+
+        export default function Layout(props) {
+        return (
+        <ActiveProjectProvider>
+        <LayoutInner {...props} />
+        </ActiveProjectProvider>
         );
         }

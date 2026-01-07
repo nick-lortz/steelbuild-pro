@@ -14,6 +14,7 @@ import WeatherWidget from '@/components/integrations/WeatherWidget';
 import BulkActions from '@/components/shared/BulkActions';
 import ViewConfiguration from '@/components/shared/ViewConfiguration';
 import { useKeyboardShortcuts } from '@/components/shared/hooks/useKeyboardShortcuts';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from '@/components/ui/notifications';
 import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
@@ -21,6 +22,7 @@ import TaskListView from '@/components/schedule/TaskListView';
 import ExportButton from '@/components/shared/ExportButton';
 
 export default function Schedule() {
+  const { activeProjectId } = useActiveProject();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');

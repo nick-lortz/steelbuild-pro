@@ -142,8 +142,8 @@ export default function WorkPackages() {
       const project = projects.find((p) => p.id === pkg.project_id);
       return (
         <div>
-            <div className="text-white">{pkg.name}</div>
-            <div className="text-xs text-zinc-400">{project?.project_number}</div>
+            <div className="text-white font-medium">{pkg.name}</div>
+            <div className="text-xs text-zinc-400">{project?.project_number} - {project?.name}</div>
           </div>);
 
     }

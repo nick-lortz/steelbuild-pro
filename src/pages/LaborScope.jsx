@@ -15,6 +15,7 @@ import { toast } from '@/components/ui/notifications';
 import { usePermissions } from '@/components/shared/usePermissions';
 import { validateLaborScheduleAlignment, calculateProjectLaborTotals } from '@/components/shared/laborScheduleUtils';
 import { ArrowRight } from 'lucide-react';
+import EditableHoursCell from '@/components/labor/EditableHoursCell';
 
 export default function LaborScope() {
   const queryClient = useQueryClient();
@@ -108,6 +109,9 @@ export default function LaborScope() {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
       toast.success('Updated');
     },
+    onError: (error) => {
+      toast.error(`Update failed: ${error.message}`);
+    }
   });
 
   // Delete breakdown mutation
@@ -151,6 +155,9 @@ export default function LaborScope() {
       setShowSpecialtyDialog(false);
       toast.success('Specialty item added');
     },
+    onError: (error) => {
+      toast.error(`Failed to add: ${error.message}`);
+    }
   });
 
   const updateSpecialtyMutation = useMutation({
@@ -158,6 +165,9 @@ export default function LaborScope() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
     },
+    onError: (error) => {
+      toast.error(`Update failed: ${error.message}`);
+    }
   });
 
   // Scope gap mutations
@@ -168,6 +178,9 @@ export default function LaborScope() {
       setShowGapDialog(false);
       toast.success('Scope gap added');
     },
+    onError: (error) => {
+      toast.error(`Failed to add: ${error.message}`);
+    }
   });
 
   const updateGapMutation = useMutation({
@@ -175,6 +188,9 @@ export default function LaborScope() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
     },
+    onError: (error) => {
+      toast.error(`Update failed: ${error.message}`);
+    }
   });
 
   // Calculations - ALL useMemo MUST BE CALLED UNCONDITIONALLY
@@ -235,23 +251,28 @@ export default function LaborScope() {
   }, [breakdowns, selectedProject]);
 
   const handleUpdateBreakdown = (breakdownId, field, value) => {
-    // Validate category change to prevent duplicates
-    if (field === 'labor_category_id') {
-      const existingBreakdown = breakdowns.find(b => b.labor_category_id === value && b.id !== breakdownId);
-      if (existingBreakdown) {
-        toast.error('A breakdown already exists for this category');
-        return;
+    try {
+      // Validate category change to prevent duplicates
+      if (field === 'labor_category_id') {
+        const existingBreakdown = breakdowns.find(b => b.labor_category_id === value && b.id !== breakdownId);
+        if (existingBreakdown) {
+          toast.error('A breakdown already exists for this category');
+          return;
+        }
       }
+      
+      const processedValue = field === 'shop_hours' || field === 'field_hours' 
+        ? Number(value) || 0 
+        : value;
+      
+      updateBreakdownMutation.mutate({ 
+        id: breakdownId, 
+        data: { [field]: processedValue } 
+      });
+    } catch (error) {
+      toast.error('Update failed');
+      console.error('Update breakdown error:', error);
     }
-    
-    const processedValue = field === 'shop_hours' || field === 'field_hours' 
-      ? Number(value) || 0 
-      : value;
-    
-    updateBreakdownMutation.mutate({ 
-      id: breakdownId, 
-      data: { [field]: processedValue } 
-    });
   };
 
   const handleBulkEdit = () => {
@@ -359,54 +380,24 @@ export default function LaborScope() {
     {
       header: 'Shop Hours',
       accessor: 'shop_hours',
-      render: (row) => {
-        const [localValue, setLocalValue] = React.useState(row.shop_hours || 0);
-        
-        React.useEffect(() => {
-          setLocalValue(row.shop_hours || 0);
-        }, [row.shop_hours]);
-
-        return (
-          <Input
-            type="number"
-            value={localValue}
-            onChange={(e) => setLocalValue(e.target.value)}
-            onBlur={() => {
-              if (Number(localValue) !== Number(row.shop_hours)) {
-                handleUpdateBreakdown(row.id, 'shop_hours', localValue);
-              }
-            }}
-            disabled={!can.editProject}
-            className="w-24 bg-zinc-800 border-zinc-700 text-white"
-          />
-        );
-      }
+      render: (row) => (
+        <EditableHoursCell
+          value={row.shop_hours}
+          onSave={(value) => handleUpdateBreakdown(row.id, 'shop_hours', value)}
+          disabled={!can.editProject}
+        />
+      )
     },
     {
       header: 'Field Hours',
       accessor: 'field_hours',
-      render: (row) => {
-        const [localValue, setLocalValue] = React.useState(row.field_hours || 0);
-        
-        React.useEffect(() => {
-          setLocalValue(row.field_hours || 0);
-        }, [row.field_hours]);
-
-        return (
-          <Input
-            type="number"
-            value={localValue}
-            onChange={(e) => setLocalValue(e.target.value)}
-            onBlur={() => {
-              if (Number(localValue) !== Number(row.field_hours)) {
-                handleUpdateBreakdown(row.id, 'field_hours', localValue);
-              }
-            }}
-            disabled={!can.editProject}
-            className="w-24 bg-zinc-800 border-zinc-700 text-white"
-          />
-        );
-      }
+      render: (row) => (
+        <EditableHoursCell
+          value={row.field_hours}
+          onSave={(value) => handleUpdateBreakdown(row.id, 'field_hours', value)}
+          disabled={!can.editProject}
+        />
+      )
     },
     {
       header: 'Total',

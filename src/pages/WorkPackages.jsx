@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function WorkPackages() {
+  const { activeProjectId } = useActiveProject();
   const [showForm, setShowForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [completingPhase, setCompletingPhase] = useState(null);
@@ -24,24 +26,48 @@ export default function WorkPackages() {
   const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryKey: ['projects', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Project.filter({ id: activeProjectId })
+      : base44.entities.Project.list(),
+    enabled: !!activeProjectId
   });
 
   const { data: workPackages = [], isLoading } = useQuery({
-    queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list('-created_date')
+    queryKey: ['work-packages', activeProjectId],
+    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
+    enabled: !!activeProjectId
   });
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list()
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
   });
 
+  if (!activeProjectId) {
+    return (
+      <div>
+        <PageHeader 
+          title="Work Packages" 
+          subtitle="Select a project to view work packages"
+          showBackButton={false}
+        />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Package size={48} className="mx-auto mb-4 text-zinc-600" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
+            <p className="text-zinc-400">Select a project from the dashboard to view its work packages.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+    mutationFn: (data) => base44.entities.WorkPackage.create({ ...data, project_id: activeProjectId }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages']);
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
     }
@@ -50,7 +76,7 @@ export default function WorkPackages() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages']);
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
       setEditingPackage(null);
       toast.success('Work package updated');
@@ -58,33 +84,37 @@ export default function WorkPackages() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.WorkPackage.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages']);
+    mutationFn: async (work_package_id) => {
+      const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries(['tasks', activeProjectId]);
       setDeletePackage(null);
-      toast.success('Work package deleted');
+      toast.success(data.message || 'Work package deleted');
     },
     onError: (error) => {
-      toast.error('Failed to delete work package');
+      toast.error(error.response?.data?.error || 'Failed to delete work package');
     }
   });
 
-  const completePhase = useMutation({
-    mutationFn: async ({ work_package_id, phase_completed }) => {
-      const response = await base44.functions.invoke('workPackageLifecycle', {
+  const advancePhase = useMutation({
+    mutationFn: async ({ work_package_id, next_phase }) => {
+      const response = await base44.functions.invoke('advanceWorkPackagePhase', {
         work_package_id,
-        phase_completed
+        next_phase
       });
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries(['work-packages']);
-      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries(['tasks', activeProjectId]);
       setCompletingPhase(null);
-      toast.success(`${data.next_phase ? `Advanced to ${data.next_phase}` : 'Package completed'} - ${data.new_tasks?.length || 0} tasks created`);
+      toast.success(data.message || 'Phase advanced');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to complete phase');
+      toast.error(error.response?.data?.error || 'Failed to advance phase');
     }
   });
 
@@ -93,15 +123,15 @@ export default function WorkPackages() {
     setShowForm(true);
   };
 
-  const handleCompletePhase = (pkg, phase) => {
-    setCompletingPhase({ package: pkg, phase });
+  const handleCompletePhase = (pkg, nextPhase) => {
+    setCompletingPhase({ package: pkg, nextPhase });
   };
 
   const confirmCompletePhase = () => {
     if (completingPhase) {
-      completePhase.mutate({
+      advancePhase.mutate({
         work_package_id: completingPhase.package.id,
-        phase_completed: completingPhase.phase
+        next_phase: completingPhase.nextPhase
       });
     }
   };
@@ -133,25 +163,11 @@ export default function WorkPackages() {
   },
   {
     header: 'Phase',
-    render: (pkg) => <StatusBadge status={pkg.current_phase} />
+    render: (pkg) => <StatusBadge status={pkg.phase} />
   },
   {
-    header: 'Progress',
-    render: (pkg) => {
-      const phases = ['detailing', 'fabrication', 'delivery', 'erection'];
-      const completedCount = phases.filter((p) => pkg[`${p}_complete`]).length;
-      return (
-        <div className="space-y-1">
-            <div className="text-xs text-zinc-400">{completedCount}/4 phases</div>
-            <div className="w-full bg-zinc-800 rounded-full h-1.5">
-              <div
-              className="bg-amber-500 h-1.5 rounded-full"
-              style={{ width: `${completedCount / 4 * 100}%` }} />
-
-            </div>
-          </div>);
-
-    }
+    header: 'Status',
+    render: (pkg) => <StatusBadge status={pkg.status} />
   },
   {
     header: 'Tonnage',
@@ -168,63 +184,28 @@ export default function WorkPackages() {
   {
     header: 'Actions',
     render: (pkg) => {
-      const canCompleteDetailing = !pkg.detailing_complete;
-      const canCompleteFabrication = pkg.detailing_complete && !pkg.fabrication_complete;
-      const canCompleteDelivery = pkg.fabrication_complete && !pkg.delivery_complete;
-      const canCompleteErection = pkg.delivery_complete && !pkg.erection_complete;
+      const phaseMap = {
+        'detailing': { next: 'fabrication', label: 'Advance to Fabrication' },
+        'fabrication': { next: 'delivery', label: 'Advance to Delivery' },
+        'delivery': { next: 'erection', label: 'Advance to Erection' },
+        'erection': { next: 'complete', label: 'Mark Complete' }
+      };
+
+      const currentPhase = phaseMap[pkg.phase];
 
       return (
         <div className="flex items-center gap-2">
-            {canCompleteDetailing &&
+            {currentPhase && pkg.status !== 'complete' &&
           <Button
             size="sm"
             variant="outline"
             onClick={(e) => {
               e.stopPropagation();
-              handleCompletePhase(pkg, 'detailing');
+              handleCompletePhase(pkg, currentPhase.next);
             }}
             className="border-green-700 text-green-400 hover:bg-green-500/10">
 
-                Complete Detailing
-              </Button>
-          }
-            {canCompleteFabrication &&
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCompletePhase(pkg, 'fabrication');
-            }}
-            className="border-green-700 text-green-400 hover:bg-green-500/10">
-
-                Complete Fabrication
-              </Button>
-          }
-            {canCompleteDelivery &&
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCompletePhase(pkg, 'delivery');
-            }}
-            className="border-green-700 text-green-400 hover:bg-green-500/10">
-
-                Complete Delivery
-              </Button>
-          }
-            {canCompleteErection &&
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCompletePhase(pkg, 'erection');
-            }}
-            className="border-green-700 text-green-400 hover:bg-green-500/10">
-
-                Complete Erection
+                {currentPhase.label}
               </Button>
           }
             <Button
@@ -308,8 +289,8 @@ export default function WorkPackages() {
               <div className="text-sm text-zinc-200">
                 <p className="font-medium mb-1">This will:</p>
                 <ul className="list-disc list-inside space-y-1 text-zinc-400">
-                  <li>Lock all {completingPhase?.phase} tasks as read-only</li>
-                  <li>Advance to the next phase</li>
+                  <li>Complete all tasks in current phase</li>
+                  <li>Advance to {completingPhase?.nextPhase} phase</li>
                   <li>Generate new tasks for the next phase</li>
                   <li>This action cannot be undone</li>
                 </ul>
@@ -325,10 +306,10 @@ export default function WorkPackages() {
               </Button>
               <Button
                 onClick={confirmCompletePhase}
-                disabled={completePhase.isPending}
+                disabled={advancePhase.isPending}
                 className="bg-amber-500 hover:bg-amber-600 text-black">
 
-                {completePhase.isPending ? 'Processing...' : 'Complete Phase'}
+                {advancePhase.isPending ? 'Processing...' : 'Advance Phase'}
               </Button>
             </div>
           </div>
@@ -363,42 +344,43 @@ export default function WorkPackages() {
 }
 
 function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading }) {
+  const { activeProjectId } = useActiveProject();
   const [formData, setFormData] = useState({
-    project_id: '',
-    package_number: '',
+    project_id: activeProjectId || '',
     name: '',
     description: '',
-    tonnage: '',
-    piece_count: '',
-    priority: 'medium',
+    start_date: '',
+    end_date: '',
+    estimated_hours: '',
+    estimated_cost: '',
     notes: ''
   });
 
   React.useEffect(() => {
     if (pkg) {
       setFormData({
-        project_id: pkg.project_id || '',
-        package_number: pkg.package_number || '',
+        project_id: pkg.project_id || activeProjectId || '',
         name: pkg.name || '',
         description: pkg.description || '',
-        tonnage: pkg.tonnage || '',
-        piece_count: pkg.piece_count || '',
-        priority: pkg.priority || 'medium',
+        start_date: pkg.start_date || '',
+        end_date: pkg.end_date || '',
+        estimated_hours: pkg.estimated_hours || '',
+        estimated_cost: pkg.estimated_cost || '',
         notes: pkg.notes || ''
       });
     } else {
       setFormData({
-        project_id: '',
-        package_number: '',
+        project_id: activeProjectId || '',
         name: '',
         description: '',
-        tonnage: '',
-        piece_count: '',
-        priority: 'medium',
+        start_date: '',
+        end_date: '',
+        estimated_hours: '',
+        estimated_cost: '',
         notes: ''
       });
     }
-  }, [pkg]);
+  }, [pkg, activeProjectId]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -407,20 +389,16 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!formData.project_id) {
-      toast.error('Please select a project');
-      return;
-    }
-    
-    if (!formData.package_number || !formData.name) {
-      toast.error('Package number and name are required');
+    if (!formData.name) {
+      toast.error('Name is required');
       return;
     }
     
     const submitData = {
       ...formData,
-      tonnage: formData.tonnage ? parseFloat(formData.tonnage) : null,
-      piece_count: formData.piece_count ? parseInt(formData.piece_count) : null
+      project_id: activeProjectId,
+      estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : 0,
+      estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : 0
     };
     
     onSubmit(submitData);
@@ -428,104 +406,78 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-      <div className="text-slate-50 space-y-2">
-        <Label>Project *</Label>
-        <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} required>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700">
-            <SelectValue placeholder="Select project" />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700">
-            {projects.map((p) =>
-            <SelectItem key={p.id} value={p.id} className="text-white">
-                {p.project_number} - {p.name}
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
-
       <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Number *</Label>
-        <Input
-          value={formData.package_number}
-          onChange={(e) => handleChange('package_number', e.target.value)}
-          placeholder="e.g., WP-001, WP-L2-NORTH"
-          className="bg-zinc-800 border-zinc-700 text-white"
-          required />
-
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Package Name *</Label>
+        <Label className="text-slate-50 text-sm font-medium">Name *</Label>
         <Input
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Descriptive name"
+          placeholder="e.g., Level 2 North Wing"
           className="bg-zinc-800 border-zinc-700 text-white"
           required />
-
       </div>
 
       <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description</Label>
+        <Label className="text-slate-50 text-sm font-medium">Description</Label>
         <Textarea
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Scope details..."
           className="bg-zinc-800 border-zinc-700 text-white"
           rows={3} />
-
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tonnage</Label>
+          <Label className="text-slate-50 text-sm font-medium">Start Date</Label>
           <Input
-            type="number"
-            step="0.01"
-            value={formData.tonnage}
-            onChange={(e) => handleChange('tonnage', e.target.value)}
-            placeholder="Total tons"
+            type="date"
+            value={formData.start_date}
+            onChange={(e) => handleChange('start_date', e.target.value)}
             className="bg-zinc-800 border-zinc-700 text-white" />
-
         </div>
 
         <div className="space-y-2">
-          <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Piece Count</Label>
+          <Label className="text-slate-50 text-sm font-medium">End Date</Label>
+          <Input
+            type="date"
+            value={formData.end_date}
+            onChange={(e) => handleChange('end_date', e.target.value)}
+            className="bg-zinc-800 border-zinc-700 text-white" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-slate-50 text-sm font-medium">Estimated Hours</Label>
           <Input
             type="number"
-            value={formData.piece_count}
-            onChange={(e) => handleChange('piece_count', e.target.value)}
-            placeholder="Number of pieces"
+            step="0.01"
+            value={formData.estimated_hours}
+            onChange={(e) => handleChange('estimated_hours', e.target.value)}
+            placeholder="0"
             className="bg-zinc-800 border-zinc-700 text-white" />
+        </div>
 
+        <div className="space-y-2">
+          <Label className="text-slate-50 text-sm font-medium">Estimated Cost</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={formData.estimated_cost}
+            onChange={(e) => handleChange('estimated_cost', e.target.value)}
+            placeholder="0.00"
+            className="bg-zinc-800 border-zinc-700 text-white" />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Priority</Label>
-        <Select value={formData.priority} onValueChange={(v) => handleChange('priority', v)}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700">
-            <SelectItem value="low" className="text-white">Low</SelectItem>
-            <SelectItem value="medium" className="text-white">Medium</SelectItem>
-            <SelectItem value="high" className="text-white">High</SelectItem>
-            <SelectItem value="critical" className="text-white">Critical</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Notes</Label>
+        <Label className="text-slate-50 text-sm font-medium">Notes</Label>
         <Textarea
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
           placeholder="Additional notes..."
           className="bg-zinc-800 border-zinc-700 text-white"
           rows={2} />
-
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">

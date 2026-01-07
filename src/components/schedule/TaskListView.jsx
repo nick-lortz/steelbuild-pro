@@ -3,17 +3,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronRight, AlertTriangle, ArrowUpDown, Pencil, Save, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, ArrowUpDown, Pencil, Save, X, Trash2 } from 'lucide-react';
 import { format, differenceInDays, isPast, parseISO } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export default function TaskListView({ tasks, projects, resources, onTaskUpdate, onTaskClick }) {
+export default function TaskListView({ tasks, projects, resources, onTaskUpdate, onTaskClick, onTaskDelete }) {
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [sortBy, setSortBy] = useState('end_date');
   const [sortDir, setSortDir] = useState('asc');
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [deleteTask, setDeleteTask] = useState(null);
 
   const toggleProject = (projectId) => {
     const newSet = new Set(collapsedProjects);
@@ -263,6 +274,8 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                 <th className="text-left p-3 text-zinc-300 font-semibold w-40">
                   RESPONSIBLE
                 </th>
+                <th className="text-right p-3 text-zinc-300 font-semibold w-16">
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -392,6 +405,19 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                                 <td className="p-3 text-zinc-300 text-xs">
                                   {renderCell(task, 'assigned_resources', assignedResource ? getResourceName(assignedResource) : '-')}
                                 </td>
+                                <td className="p-3 text-right">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteTask(task);
+                                    }}
+                                    className="h-7 w-7 text-zinc-500 hover:text-red-400"
+                                  >
+                                    <Trash2 size={14} />
+                                  </Button>
+                                </td>
                               </tr>
                             );
                           })}
@@ -404,6 +430,33 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
             </tbody>
           </table>
         </div>
+
+        <AlertDialog open={!!deleteTask} onOpenChange={() => setDeleteTask(null)}>
+          <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">Delete Task?</AlertDialogTitle>
+              <AlertDialogDescription className="text-zinc-400">
+                Delete "{deleteTask?.name}"? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deleteTask && onTaskDelete) {
+                    onTaskDelete(deleteTask.id);
+                  }
+                  setDeleteTask(null);
+                }}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

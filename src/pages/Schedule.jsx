@@ -150,6 +150,15 @@ export default function Schedule() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
+      toast.success('Task deleted');
+    }
+  });
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await refetch();
@@ -328,6 +337,7 @@ export default function Schedule() {
           resources={resources}
           onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           onTaskClick={handleTaskClick}
+          onTaskDelete={(id) => deleteMutation.mutate(id)}
         />
       )}
 

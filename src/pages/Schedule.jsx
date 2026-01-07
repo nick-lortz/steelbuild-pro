@@ -425,7 +425,9 @@ export default function Schedule() {
           workPackages={workPackages}
           onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           onTaskClick={handleTaskClick}
-          onTaskDelete={(id) => deleteMutation.mutate(id)}
+          onTaskDelete={(taskId) => {
+            deleteMutation.mutate(taskId);
+          }}
         />
       )}
 

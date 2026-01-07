@@ -432,8 +432,10 @@ export default function Schedule() {
 
       {/* Floating Action Button */}
       <Button
-        className="fixed right-4 bottom-20 lg:bottom-4 w-14 h-14 rounded-full shadow-lg bg-amber-500 hover:bg-amber-600 text-black z-40"
+        className="fixed right-4 bottom-20 lg:bottom-4 w-14 h-14 rounded-full shadow-lg bg-amber-500 hover:bg-amber-600 text-black z-40 disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={handleCreateTask}
+        disabled={!activeProjectId}
+        title={!activeProjectId ? 'Select a project first' : 'Create new task'}
       >
         <Plus size={24} />
       </Button>

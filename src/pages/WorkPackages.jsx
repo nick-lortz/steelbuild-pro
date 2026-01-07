@@ -268,9 +268,13 @@ export default function WorkPackages() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+            <Button 
+              onClick={() => setShowForm(true)} 
+              disabled={!activeProjectId}
+              className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
+            >
               <Plus size={18} className="mr-2" />
-              New Work Package
+              {activeProjectId ? 'New Work Package' : 'Select Project First'}
             </Button>
           </div>
         } />
@@ -283,7 +287,7 @@ export default function WorkPackages() {
         columns={columns}
         data={workPackages}
         onRowClick={handleEdit}
-        emptyMessage="No work packages found. Create one to get started." />
+        emptyMessage="No work packages exist for this project yet. Click 'New Work Package' above to create one and start organizing executable work." />
 
       }
 

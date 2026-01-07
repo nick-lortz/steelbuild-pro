@@ -318,10 +318,10 @@ function LayoutInner({ children, currentPageName }) {
         );
         }
 
-        export default function Layout(props) {
-        return (
-        <ActiveProjectProvider>
-        <LayoutInner {...props} />
-        </ActiveProjectProvider>
-        );
+        export default function Layout({ children, currentPageName }) {
+          return (
+            <ActiveProjectProvider>
+              <LayoutInner children={children} currentPageName={currentPageName} />
+            </ActiveProjectProvider>
+          );
         }

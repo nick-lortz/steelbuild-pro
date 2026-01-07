@@ -3,6 +3,8 @@ import { useState, useEffect, createContext, useContext } from 'react';
 const ActiveProjectContext = createContext();
 
 export function ActiveProjectProvider({ children }) {
+  console.log('ActiveProjectProvider mounted');
+  
   const [activeProjectId, setActiveProjectId] = useState(() => {
     return localStorage.getItem('activeProjectId') || null;
   });

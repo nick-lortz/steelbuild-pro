@@ -29,6 +29,7 @@ import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
 import { differenceInDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import DetailingReadinessPanel from '@/components/detailing/DetailingReadinessPanel';
 
 export default function Detailing() {
   const [showForm, setShowForm] = useState(false);
@@ -92,6 +93,12 @@ export default function Detailing() {
   const { data: workPackages = [] } = useQuery({
     queryKey: ['workPackages'],
     queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis'],
+    queryFn: () => base44.entities.RFI.list(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -200,6 +207,16 @@ export default function Detailing() {
     return workPackages.filter(wp => wp.phase === 'detailing');
   }, [workPackages]);
 
+  const currentProject = useMemo(() => {
+    if (activeProjectId) {
+      return projects.find(p => p.id === activeProjectId);
+    }
+    if (projectFilter !== 'all') {
+      return projects.find(p => p.id === projectFilter);
+    }
+    return null;
+  }, [activeProjectId, projectFilter, projects]);
+
   const exportDrawingRegistry = () => {
     const headers = [
       'Set Number',
@@ -297,6 +314,20 @@ export default function Detailing() {
           </div>
         }
       />
+
+      {/* Detailing Readiness Panel */}
+      {currentProject && (
+        <div className="mb-6">
+          <DetailingReadinessPanel
+            project={currentProject}
+            drawingSets={drawingSets}
+            rfis={rfis}
+            onRelease={() => {
+              queryClient.invalidateQueries({ queryKey: ['projects'] });
+            }}
+          />
+        </div>
+      )}
 
       {/* Detailing Phase Context */}
       {detailingPhasePackages.length > 0 && (

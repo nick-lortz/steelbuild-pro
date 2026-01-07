@@ -235,7 +235,7 @@ function LayoutContent({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-card border-r border-border transition-transform duration-200 flex flex-col',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-card border-r border-border flex flex-col',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -259,7 +259,7 @@ function LayoutContent({ children, currentPageName }) {
                 to={createPageUrl(item.page)}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium',
                   isActive
                     ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                     : isPrimaryPhase

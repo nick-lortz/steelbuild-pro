@@ -30,6 +30,7 @@ import {
 "@/components/ui/sheet";
 import { Plus, Search, RefreshCw } from 'lucide-react';
 import ProjectCard from '@/components/projects/ProjectCard';
+import DeleteProjectDialog from '@/components/projects/DeleteProjectDialog';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
@@ -72,6 +73,7 @@ export default function Projects() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deleteProject, setDeleteProject] = useState(null);
   const PAGE_SIZE = 20;
 
   const queryClient = useQueryClient();
@@ -157,23 +159,13 @@ export default function Projects() {
     }
   });
 
-  const handleDelete = useCallback(async (project) => {
+  const handleDelete = useCallback((project) => {
     if (!can.deleteProject) {
       toast.error('You do not have permission to delete projects');
       return;
     }
-
-    const confirmed = await confirm({
-      title: 'Delete Project?',
-      description: `Are you sure you want to delete "${project.name}"? This action cannot be undone and will affect all related data.`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel'
-    });
-
-    if (confirmed) {
-      deleteMutation.mutate(project.id);
-    }
-  }, [can.deleteProject, confirm, deleteMutation]);
+    setDeleteProject(project);
+  }, [can.deleteProject]);
 
   const handleEdit = (project) => {
     if (!can.editProject) {
@@ -369,6 +361,7 @@ export default function Projects() {
                   project={project}
                   progress={progress}
                   onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
+                  onDelete={() => handleDelete(project)}
                 />
               );
             })}
@@ -421,6 +414,20 @@ export default function Projects() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation with Cascade Warning */}
+      <DeleteProjectDialog
+        project={deleteProject}
+        open={!!deleteProject}
+        onOpenChange={(open) => !open && setDeleteProject(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['tasks'] });
+          queryClient.invalidateQueries({ queryKey: ['documents'] });
+          queryClient.invalidateQueries({ queryKey: ['rfis'] });
+          queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+        }}
+      />
     </ScreenContainer>
   );
 }

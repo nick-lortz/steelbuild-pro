@@ -6,7 +6,7 @@ import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight } from 'lucide-
 import { format, differenceInDays } from 'date-fns';
 import QuickStatusUpdate from './QuickStatusUpdate';
 
-export default function ProjectCard({ project, progress, onClick }) {
+export default function ProjectCard({ project, progress, onClick, onDelete }) {
   const daysUntilCompletion = project.target_completion 
     ? differenceInDays(new Date(project.target_completion), new Date())
     : null;

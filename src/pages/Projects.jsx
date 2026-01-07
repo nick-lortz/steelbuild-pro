@@ -382,7 +382,7 @@ export default function Projects() {
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
             <DialogTitle>New Project</DialogTitle>
           </DialogHeader>

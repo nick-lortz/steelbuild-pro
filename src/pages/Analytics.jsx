@@ -121,9 +121,11 @@ export default function Analytics() {
     enabled: !!activeProjectId,
   });
 
-  if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
-    setActiveProjectId(userProjects[0].id);
-  }
+  React.useEffect(() => {
+    if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
+      setActiveProjectId(userProjects[0].id);
+    }
+  }, [activeProjectId, userProjects, projectsLoading]);
 
   if (!activeProjectId) {
     return (

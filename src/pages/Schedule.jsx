@@ -18,6 +18,7 @@ import { toast } from '@/components/ui/notifications';
 import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
+import ExportButton from '@/components/shared/ExportButton';
 
 export default function Schedule() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -219,6 +220,11 @@ export default function Schedule() {
           <p className="text-sm text-muted-foreground">{statusCounts.all} tasks</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExportButton
+            data={viewMode === 'list' ? tasks : allScheduleTasks}
+            entityType="tasks"
+            filename="schedule"
+          />
           <Button
             variant="ghost"
             size="icon"

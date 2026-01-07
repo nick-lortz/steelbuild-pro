@@ -492,8 +492,11 @@ export default function DrawingSetDetails({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                onDelete?.();
+                if (onDelete) {
+                  onDelete();
+                }
                 setShowDeleteDialog(false);
+                onClose();
               }}
               className="bg-red-500 hover:bg-red-600"
             >

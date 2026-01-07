@@ -270,54 +270,153 @@ export default function LaborScope() {
     }
   ];
 
+  const handleUpdateSpecialty = (itemId, field, value) => {
+    updateSpecialtyMutation.mutate({ 
+      id: itemId, 
+      data: { [field]: field === 'shop_hours' || field === 'field_hours' ? Number(value) || 0 : value } 
+    });
+  };
+
   const specialtyColumns = [
     { 
       header: 'Location/Detail', 
       accessor: 'location_detail',
-      render: (row) => <span className="text-white">{row.location_detail || '—'}</span>
+      render: (row) => (
+        <Input
+          value={row.location_detail || ''}
+          onChange={(e) => handleUpdateSpecialty(row.id, 'location_detail', e.target.value)}
+          disabled={!can.editProject}
+          className="bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
     { 
       header: 'Shop Hours', 
       accessor: 'shop_hours',
-      render: (row) => <span className="text-white">{row.shop_hours || 0}</span>
+      render: (row) => (
+        <Input
+          type="number"
+          value={row.shop_hours || 0}
+          onChange={(e) => handleUpdateSpecialty(row.id, 'shop_hours', e.target.value)}
+          disabled={!can.editProject}
+          className="w-24 bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
     { 
       header: 'Field Hours', 
       accessor: 'field_hours',
-      render: (row) => <span className="text-white">{row.field_hours || 0}</span>
+      render: (row) => (
+        <Input
+          type="number"
+          value={row.field_hours || 0}
+          onChange={(e) => handleUpdateSpecialty(row.id, 'field_hours', e.target.value)}
+          disabled={!can.editProject}
+          className="w-24 bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
     { 
       header: 'Status', 
       accessor: 'status', 
-      render: (row) => <span className="text-white uppercase">{row.status || 'Open'}</span>
+      render: (row) => (
+        <Select 
+          value={row.status || 'open'} 
+          onValueChange={(v) => handleUpdateSpecialty(row.id, 'status', v)}
+          disabled={!can.editProject}
+        >
+          <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="reviewed">Reviewed</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+      )
     },
     { 
       header: 'Notes', 
       accessor: 'notes',
-      render: (row) => <span className="text-zinc-400">{row.notes || '—'}</span>
+      render: (row) => (
+        <Input
+          value={row.notes || ''}
+          onChange={(e) => handleUpdateSpecialty(row.id, 'notes', e.target.value)}
+          disabled={!can.editProject}
+          placeholder="Optional notes"
+          className="bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
   ];
+
+  const handleUpdateGap = (gapId, field, value) => {
+    updateGapMutation.mutate({ 
+      id: gapId, 
+      data: { [field]: field === 'rough_cost' ? Number(value) || 0 : value } 
+    });
+  };
 
   const gapColumns = [
     { 
       header: 'Location/Description', 
       accessor: 'location_description',
-      render: (row) => <span className="text-white">{row.location_description || '—'}</span>
+      render: (row) => (
+        <Input
+          value={row.location_description || ''}
+          onChange={(e) => handleUpdateGap(row.id, 'location_description', e.target.value)}
+          disabled={!can.editProject}
+          className="bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
     { 
       header: 'Rough Cost', 
       accessor: 'rough_cost',
-      render: (row) => <span className="text-white">${Number(row.rough_cost || 0).toLocaleString()}</span>
+      render: (row) => (
+        <Input
+          type="number"
+          value={row.rough_cost || 0}
+          onChange={(e) => handleUpdateGap(row.id, 'rough_cost', e.target.value)}
+          disabled={!can.editProject}
+          className="w-32 bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
     { 
       header: 'Explanation', 
       accessor: 'explanation',
-      render: (row) => <span className="text-zinc-400">{row.explanation || '—'}</span>
+      render: (row) => (
+        <Input
+          value={row.explanation || ''}
+          onChange={(e) => handleUpdateGap(row.id, 'explanation', e.target.value)}
+          disabled={!can.editProject}
+          placeholder="Explanation"
+          className="bg-zinc-800 border-zinc-700 text-white"
+        />
+      )
     },
     { 
       header: 'Status', 
       accessor: 'status', 
-      render: (row) => <span className="text-white uppercase">{row.status || 'Open'}</span>
+      render: (row) => (
+        <Select 
+          value={row.status || 'open'} 
+          onValueChange={(v) => handleUpdateGap(row.id, 'status', v)}
+          disabled={!can.editProject}
+        >
+          <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="priced">Priced</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+          </SelectContent>
+        </Select>
+      )
     },
   ];
 

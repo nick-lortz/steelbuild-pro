@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +17,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function WorkPackages() {
-  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const [activeProjectId, setActiveProjectId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [completingPhase, setCompletingPhase] = useState(null);

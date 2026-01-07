@@ -28,7 +28,6 @@ import CSVUpload from '@/components/shared/CSVUpload';
 import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
 import { differenceInDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DetailingReadinessPanel from '@/components/detailing/DetailingReadinessPanel';
 
 export default function Detailing() {
@@ -44,7 +43,6 @@ export default function Detailing() {
   const [sortBy, setSortBy] = useState('created_date');
   const [sortOrder, setSortOrder] = useState('desc');
 
-  const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -208,14 +206,11 @@ export default function Detailing() {
   }, [workPackages]);
 
   const currentProject = useMemo(() => {
-    if (activeProjectId) {
-      return projects.find(p => p.id === activeProjectId);
-    }
     if (projectFilter !== 'all') {
       return projects.find(p => p.id === projectFilter);
     }
     return null;
-  }, [activeProjectId, projectFilter, projects]);
+  }, [projectFilter, projects]);
 
   const exportDrawingRegistry = () => {
     const headers = [

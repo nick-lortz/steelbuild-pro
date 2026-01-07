@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight, Trash2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import QuickStatusUpdate from './QuickStatusUpdate';
 
@@ -94,7 +95,22 @@ export default function ProjectCard({ project, progress, onClick, onDelete }) {
               PM: {project.project_manager}
             </p>
           )}
-          <ArrowRight size={14} className="text-muted-foreground flex-shrink-0" />
+          <div className="flex items-center gap-1">
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="h-7 w-7 text-zinc-500 hover:text-red-500"
+              >
+                <Trash2 size={14} />
+              </Button>
+            )}
+            <ArrowRight size={14} className="text-muted-foreground flex-shrink-0" />
+          </div>
         </div>
       </CardContent>
     </Card>

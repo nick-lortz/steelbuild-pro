@@ -195,5 +195,33 @@ export const exportColumns = {
     { key: 'work_performed', label: 'Work Performed' },
     { key: 'safety_incidents', label: 'Safety Incidents', formatter: (row) => row.safety_incidents ? 'Yes' : 'No' },
     { key: 'delays', label: 'Delays', formatter: (row) => row.delays ? 'Yes' : 'No' }
+  ],
+  
+  fabrication: [
+    { key: 'package_name', label: 'Package' },
+    { key: 'fabrication_status', label: 'Status' },
+    { key: 'weight_tons', label: 'Weight (tons)' },
+    { key: 'piece_count', label: 'Pieces' },
+    { key: 'target_completion', label: 'Target' },
+    { key: 'actual_completion', label: 'Actual' },
+    { key: 'qc_status', label: 'QC Status' },
+    { key: 'priority', label: 'Priority' }
+  ],
+  
+  resources: [
+    { key: 'name', label: 'Name' },
+    { key: 'type', label: 'Type' },
+    { key: 'classification', label: 'Classification' },
+    { key: 'status', label: 'Status' },
+    { key: 'rate', label: 'Rate' },
+    { key: 'rate_type', label: 'Rate Type' }
+  ],
+  
+  laborHours: [
+    { key: 'work_date', label: 'Date' },
+    { key: 'hours', label: 'Hours' },
+    { key: 'overtime_hours', label: 'OT Hours' },
+    { key: 'description', label: 'Description' },
+    { key: 'approved', label: 'Approved', formatter: (row) => row.approved ? 'Yes' : 'No' }
   ]
 };

@@ -353,28 +353,54 @@ export default function LaborScope() {
     {
       header: 'Shop Hours',
       accessor: 'shop_hours',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.shop_hours || 0}
-          onChange={(e) => handleUpdateBreakdown(row.id, 'shop_hours', e.target.value)}
-          disabled={!can.editProject}
-          className="w-24 bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
+      render: (row) => {
+        const [localValue, setLocalValue] = React.useState(row.shop_hours || 0);
+        
+        React.useEffect(() => {
+          setLocalValue(row.shop_hours || 0);
+        }, [row.shop_hours]);
+
+        return (
+          <Input
+            type="number"
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={() => {
+              if (Number(localValue) !== Number(row.shop_hours)) {
+                handleUpdateBreakdown(row.id, 'shop_hours', localValue);
+              }
+            }}
+            disabled={!can.editProject}
+            className="w-24 bg-zinc-800 border-zinc-700 text-white"
+          />
+        );
+      }
     },
     {
       header: 'Field Hours',
       accessor: 'field_hours',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.field_hours || 0}
-          onChange={(e) => handleUpdateBreakdown(row.id, 'field_hours', e.target.value)}
-          disabled={!can.editProject}
-          className="w-24 bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
+      render: (row) => {
+        const [localValue, setLocalValue] = React.useState(row.field_hours || 0);
+        
+        React.useEffect(() => {
+          setLocalValue(row.field_hours || 0);
+        }, [row.field_hours]);
+
+        return (
+          <Input
+            type="number"
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={() => {
+              if (Number(localValue) !== Number(row.field_hours)) {
+                handleUpdateBreakdown(row.id, 'field_hours', localValue);
+              }
+            }}
+            disabled={!can.editProject}
+            className="w-24 bg-zinc-800 border-zinc-700 text-white"
+          />
+        );
+      }
     },
     {
       header: 'Total',

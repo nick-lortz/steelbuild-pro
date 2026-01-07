@@ -421,11 +421,8 @@ export default function Projects() {
         open={!!deleteProject}
         onOpenChange={(open) => !open && setDeleteProject(null)}
         onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-          queryClient.invalidateQueries({ queryKey: ['tasks'] });
-          queryClient.invalidateQueries({ queryKey: ['documents'] });
-          queryClient.invalidateQueries({ queryKey: ['rfis'] });
-          queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+          // Invalidate ALL queries to prevent stale data errors
+          queryClient.invalidateQueries();
         }}
       />
     </ScreenContainer>

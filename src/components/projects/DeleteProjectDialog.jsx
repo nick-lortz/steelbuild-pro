@@ -34,7 +34,7 @@ export default function DeleteProjectDialog({ project, open, onOpenChange, onSuc
       });
 
       if (response.data.success) {
-        toast.success('Project and all related data deleted');
+        toast.success(`Deleted project and ${response.data.totalDeleted} related records`);
         onSuccess?.();
         onOpenChange(false);
       } else {

@@ -25,13 +25,19 @@ export default function WorkPackages() {
   const [deletePackage, setDeletePackage] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects', activeProjectId],
-    queryFn: () => activeProjectId 
-      ? base44.entities.Project.filter({ id: activeProjectId })
-      : base44.entities.Project.list(),
-    enabled: !!activeProjectId
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
   });
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
+  const projects = currentUser?.role === 'admin' 
+    ? allProjects 
+    : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages', activeProjectId],
@@ -65,7 +71,7 @@ export default function WorkPackages() {
   }
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create({ ...data, project_id: activeProjectId }),
+    mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
@@ -344,9 +350,8 @@ export default function WorkPackages() {
 }
 
 function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading }) {
-  const { activeProjectId } = useActiveProject();
   const [formData, setFormData] = useState({
-    project_id: activeProjectId || '',
+    project_id: '',
     name: '',
     description: '',
     start_date: '',
@@ -359,7 +364,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
   React.useEffect(() => {
     if (pkg) {
       setFormData({
-        project_id: pkg.project_id || activeProjectId || '',
+        project_id: pkg.project_id || '',
         name: pkg.name || '',
         description: pkg.description || '',
         start_date: pkg.start_date || '',
@@ -368,19 +373,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
         estimated_cost: pkg.estimated_cost || '',
         notes: pkg.notes || ''
       });
-    } else {
-      setFormData({
-        project_id: activeProjectId || '',
-        name: '',
-        description: '',
-        start_date: '',
-        end_date: '',
-        estimated_hours: '',
-        estimated_cost: '',
-        notes: ''
-      });
     }
-  }, [pkg, activeProjectId]);
+  }, [pkg]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
@@ -389,6 +383,11 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    if (!formData.project_id) {
+      toast.error('Project is required');
+      return;
+    }
+    
     if (!formData.name) {
       toast.error('Name is required');
       return;
@@ -396,7 +395,6 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
     
     const submitData = {
       ...formData,
-      project_id: activeProjectId,
       estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : 0,
       estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : 0
     };
@@ -406,6 +404,22 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+      <div className="space-y-2">
+        <Label className="text-slate-50 text-sm font-medium">Project *</Label>
+        <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} required>
+          <SelectTrigger className="bg-zinc-800 border-zinc-700">
+            <SelectValue placeholder="Select project" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+            {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id} className="text-white">
+                {p.project_number} - {p.name}
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="space-y-2">
         <Label className="text-slate-50 text-sm font-medium">Name *</Label>
         <Input

@@ -12,7 +12,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight } from 'lucide-react';
 import { format, parseISO, isPast, addDays } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '../utils';
 
 export default function ProjectDashboard() {
   const [searchTerm, setSearchTerm] = useState('');

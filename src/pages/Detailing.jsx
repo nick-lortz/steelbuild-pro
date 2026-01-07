@@ -331,18 +331,20 @@ export default function Detailing() {
 
       {/* Detailing Phase Context */}
       {detailingPhasePackages.length > 0 && (
-        <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Package size={18} className="text-blue-400" />
-            <h3 className="font-semibold text-white">Active Detailing Work Packages</h3>
+        <div className="mb-6 p-5 bg-blue-500/15 border-2 border-blue-500/30 rounded-xl shadow-lg">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <Package size={20} className="text-blue-400" />
+            </div>
+            <h3 className="text-lg font-bold text-white">Active Detailing Work Packages</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {detailingPhasePackages.map(wp => {
               const project = projects.find(p => p.id === wp.project_id);
               return (
-                <div key={wp.id} className="p-2 bg-zinc-900/50 rounded text-sm">
-                  <p className="font-medium text-white">{wp.name}</p>
-                  <p className="text-xs text-zinc-400">{project?.project_number || 'Unknown'}</p>
+                <div key={wp.id} className="p-3 bg-zinc-900/70 border border-blue-500/20 rounded-lg hover:bg-zinc-900 transition-colors">
+                  <p className="font-semibold text-white">{wp.name}</p>
+                  <p className="text-xs text-blue-300 mt-1">{project?.project_number || 'Unknown'}</p>
                 </div>
               );
             })}
@@ -354,12 +356,14 @@ export default function Detailing() {
       {(overdueSets.length > 0 || pendingRelease.length > 0) && (
         <div className="mb-6 space-y-3">
           {overdueSets.length > 0 && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg overflow-hidden">
-              <div className="p-3 flex items-center gap-3">
-                <AlertTriangle size={18} className="text-red-400 flex-shrink-0" />
+            <div className="bg-red-500/15 border-2 border-red-500/40 rounded-xl overflow-hidden shadow-lg">
+              <div className="p-4 flex items-center gap-3 bg-gradient-to-r from-red-500/5 to-transparent">
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <AlertTriangle size={22} className="text-red-400 flex-shrink-0" />
+                </div>
                 <div>
-                  <p className="text-sm font-medium text-red-400">{overdueSets.length} Overdue Set{overdueSets.length !== 1 ? 's' : ''}</p>
-                  <p className="text-xs text-zinc-400">Requires immediate attention</p>
+                  <p className="text-base font-bold text-red-300">{overdueSets.length} OVERDUE SET{overdueSets.length !== 1 ? 'S' : ''}</p>
+                  <p className="text-sm text-red-400/80">Immediate attention required</p>
                 </div>
               </div>
               
@@ -420,11 +424,13 @@ export default function Detailing() {
           )}
           
           {pendingRelease.length > 0 && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-3">
-              <Clock size={18} className="text-amber-400 flex-shrink-0" />
+            <div className="p-4 bg-amber-500/15 border-2 border-amber-500/40 rounded-xl flex items-center gap-3 shadow-lg">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <Clock size={22} className="text-amber-400 flex-shrink-0" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-amber-400">{pendingRelease.length} Ready for Release</p>
-                <p className="text-xs text-zinc-400">Back from scrub, pending fabrication release</p>
+                <p className="text-base font-bold text-amber-300">{pendingRelease.length} READY FOR RELEASE</p>
+                <p className="text-sm text-amber-400/80">BFS → FFF Release Pending</p>
               </div>
             </div>
           )}
@@ -437,44 +443,47 @@ export default function Detailing() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
-        <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg">
-          <p className="text-xs text-zinc-500">Total Sets</p>
-          <p className="text-2xl font-bold text-white">{filteredSets.length}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="p-5 bg-zinc-900 border-2 border-zinc-700 rounded-xl">
+          <p className="text-sm font-medium text-zinc-400 mb-1">Total Sets</p>
+          <p className="text-3xl font-bold text-white">{filteredSets.length}</p>
         </div>
-        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <p className="text-xs text-zinc-500">In Review</p>
-          <p className="text-2xl font-bold text-blue-400">
+        <div className="p-5 bg-blue-500/15 border-2 border-blue-500/30 rounded-xl">
+          <p className="text-sm font-medium text-blue-300 mb-1">In Review</p>
+          <p className="text-3xl font-bold text-blue-400">
             {filteredSets.filter(d => d.status === 'IFA' || d.status === 'BFA').length}
           </p>
+          <p className="text-xs text-blue-400/70 mt-1">IFA + BFA</p>
         </div>
-        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <p className="text-xs text-zinc-500">Released</p>
-          <p className="text-2xl font-bold text-green-400">
+        <div className="p-5 bg-green-500/15 border-2 border-green-500/30 rounded-xl">
+          <p className="text-sm font-medium text-green-300 mb-1">Released</p>
+          <p className="text-3xl font-bold text-green-400">
             {filteredSets.filter(d => d.status === 'FFF' || d.status === 'As-Built').length}
           </p>
+          <p className="text-xs text-green-400/70 mt-1">FFF + As-Built</p>
         </div>
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-          <p className="text-xs text-zinc-500">Pending Action</p>
-          <p className="text-2xl font-bold text-amber-400">
+        <div className="p-5 bg-amber-500/15 border-2 border-amber-500/30 rounded-xl">
+          <p className="text-sm font-medium text-amber-300 mb-1">Need Action</p>
+          <p className="text-3xl font-bold text-amber-400">
             {overdueSets.length + pendingRelease.length}
           </p>
+          <p className="text-xs text-amber-400/70 mt-1">Overdue + Ready</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
           <Input
             placeholder="Search drawing sets..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+            className="pl-10 bg-zinc-900 border-zinc-700 text-white h-11 text-base"
           />
         </div>
         <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+          <SelectTrigger className="w-full sm:w-52 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
             <SelectValue placeholder="Filter by project" />
           </SelectTrigger>
           <SelectContent>
@@ -485,7 +494,7 @@ export default function Detailing() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
+          <SelectTrigger className="w-full sm:w-44 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -493,30 +502,30 @@ export default function Detailing() {
             <SelectItem value="IFA">IFA</SelectItem>
             <SelectItem value="BFA">BFA</SelectItem>
             <SelectItem value="BFS">BFS</SelectItem>
-            <SelectItem value="FFF">Released</SelectItem>
+            <SelectItem value="FFF">Released (FFF)</SelectItem>
             <SelectItem value="As-Built">As-Built</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-44 bg-zinc-900 border-zinc-800 text-white">
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="created_date">Created Date</SelectItem>
-            <SelectItem value="set_name">Set Name</SelectItem>
-            <SelectItem value="set_number">Set Number</SelectItem>
-            <SelectItem value="status">Status</SelectItem>
             <SelectItem value="due_date">Due Date</SelectItem>
             <SelectItem value="ifa_date">IFA Date</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="set_name">Set Name</SelectItem>
+            <SelectItem value="set_number">Set Number</SelectItem>
+            <SelectItem value="created_date">Created Date</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortOrder} onValueChange={setSortOrder}>
-          <SelectTrigger className="w-full sm:w-32 bg-zinc-900 border-zinc-800 text-white">
+          <SelectTrigger className="w-full sm:w-36 bg-zinc-900 border-zinc-700 text-white h-11 font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="asc">Ascending</SelectItem>
-            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Oldest First</SelectItem>
+            <SelectItem value="desc">Newest First</SelectItem>
           </SelectContent>
         </Select>
       </div>

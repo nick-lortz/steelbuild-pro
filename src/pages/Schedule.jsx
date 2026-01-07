@@ -15,6 +15,8 @@ import BulkActions from '@/components/shared/BulkActions';
 import ViewConfiguration from '@/components/shared/ViewConfiguration';
 import { useKeyboardShortcuts } from '@/components/shared/hooks/useKeyboardShortcuts';
 import { toast } from '@/components/ui/notifications';
+import CalendarView from '@/components/schedule/CalendarView';
+import GanttChart from '@/components/schedule/GanttChart';
 
 export default function Schedule() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +28,7 @@ export default function Schedule() {
   const [editingTask, setEditingTask] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
+  const [viewMode, setViewMode] = useState('list'); // 'list', 'gantt', 'calendar'
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
@@ -265,25 +268,54 @@ export default function Schedule() {
         </div>
       )}
 
-      {/* Status Filter Tabs */}
-      <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }} className="mb-4">
-        <TabsList className="grid w-full grid-cols-5 h-auto">
-          <TabsTrigger value="all" className="text-xs py-2">All</TabsTrigger>
-          <TabsTrigger value="not_started" className="text-xs py-2">To Do</TabsTrigger>
-          <TabsTrigger value="in_progress" className="text-xs py-2">Active</TabsTrigger>
-          <TabsTrigger value="completed" className="text-xs py-2">Done</TabsTrigger>
-          <TabsTrigger value="overdue" className="text-xs py-2">Late</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* View Mode and Status Tabs */}
+      <div className="space-y-4 mb-4">
+        <Tabs value={viewMode} onValueChange={setViewMode}>
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="list" className="text-xs py-2">List</TabsTrigger>
+            <TabsTrigger value="gantt" className="text-xs py-2">Gantt</TabsTrigger>
+            <TabsTrigger value="calendar" className="text-xs py-2">Calendar</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-      {/* Task Cards */}
+        {viewMode === 'list' && (
+          <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+            <TabsList className="grid w-full grid-cols-5 h-auto">
+              <TabsTrigger value="all" className="text-xs py-2">All</TabsTrigger>
+              <TabsTrigger value="not_started" className="text-xs py-2">To Do</TabsTrigger>
+              <TabsTrigger value="in_progress" className="text-xs py-2">Active</TabsTrigger>
+              <TabsTrigger value="completed" className="text-xs py-2">Done</TabsTrigger>
+              <TabsTrigger value="overdue" className="text-xs py-2">Late</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+      </div>
+
+      {/* Content Area */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading tasks...</p>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
+      ) : viewMode === 'calendar' ? (
+        <CalendarView
+          tasks={allScheduleTasks}
+          projects={projects}
+          onTaskClick={handleTaskClick}
+        />
+      ) : viewMode === 'gantt' ? (
+        <GanttChart
+          tasks={allScheduleTasks}
+          projects={projects}
+          viewMode="week"
+          onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+          onTaskEdit={handleTaskClick}
+          resources={resources}
+          rfis={rfis}
+          changeOrders={changeOrders}
+        />
       ) : tasks.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground">No tasks found</p>

@@ -23,6 +23,9 @@ export default function LaborScope() {
   const [showSpecialtyDialog, setShowSpecialtyDialog] = useState(false);
   const [showGapDialog, setShowGapDialog] = useState(false);
   const [editingBreakdown, setEditingBreakdown] = useState(null);
+  const [selectedBreakdowns, setSelectedBreakdowns] = useState(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [bulkEditData, setBulkEditData] = useState({ category_id: '', notes: '' });
 
   // Queries - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: projects = [] } = useQuery({
@@ -199,10 +202,78 @@ export default function LaborScope() {
   }, [breakdowns, selectedProject]);
 
   const handleUpdateBreakdown = (breakdownId, field, value) => {
+    // Validate category change to prevent duplicates
+    if (field === 'labor_category_id') {
+      const existingBreakdown = breakdowns.find(b => b.labor_category_id === value && b.id !== breakdownId);
+      if (existingBreakdown) {
+        toast.error('A breakdown already exists for this category');
+        return;
+      }
+    }
+    
+    const processedValue = field === 'shop_hours' || field === 'field_hours' 
+      ? Number(value) || 0 
+      : value;
+    
     updateBreakdownMutation.mutate({ 
       id: breakdownId, 
-      data: { [field]: Number(value) || 0 } 
+      data: { [field]: processedValue } 
     });
+  };
+
+  const handleBulkEdit = () => {
+    const promises = Array.from(selectedBreakdowns).map(breakdownId => {
+      const updateData = {};
+      if (bulkEditData.category_id) {
+        // Check if category already exists for other breakdowns
+        const targetBreakdown = breakdowns.find(b => b.id === breakdownId);
+        const existingBreakdown = breakdowns.find(
+          b => b.labor_category_id === bulkEditData.category_id && b.id !== breakdownId
+        );
+        if (existingBreakdown) {
+          toast.error(`Cannot assign category to multiple breakdowns`);
+          return Promise.reject();
+        }
+        updateData.labor_category_id = bulkEditData.category_id;
+      }
+      if (bulkEditData.notes) {
+        updateData.notes = bulkEditData.notes;
+      }
+      if (Object.keys(updateData).length === 0) return Promise.resolve();
+      return base44.entities.LaborBreakdown.update(breakdownId, updateData);
+    });
+
+    Promise.all(promises)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
+        toast.success(`Updated ${selectedBreakdowns.size} breakdowns`);
+        setSelectedBreakdowns(new Set());
+        setShowBulkEdit(false);
+        setBulkEditData({ category_id: '', notes: '' });
+      })
+      .catch(() => {
+        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
+      });
+  };
+
+  const toggleBreakdownSelection = (breakdownId) => {
+    setSelectedBreakdowns(prev => {
+      const next = new Set(prev);
+      if (next.has(breakdownId)) {
+        next.delete(breakdownId);
+      } else {
+        next.add(breakdownId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedBreakdowns.size === breakdowns.length) {
+      setSelectedBreakdowns(new Set());
+    } else {
+      setSelectedBreakdowns(new Set(breakdowns.map(b => b.id)));
+    }
   };
 
   const getCategoryName = (categoryId) => {
@@ -212,10 +283,44 @@ export default function LaborScope() {
 
   const breakdownColumns = [
     {
+      header: () => (
+        <input
+          type="checkbox"
+          checked={selectedBreakdowns.size === breakdowns.length && breakdowns.length > 0}
+          onChange={toggleSelectAll}
+          className="w-4 h-4"
+        />
+      ),
+      accessor: 'select',
+      render: (row) => (
+        <input
+          type="checkbox"
+          checked={selectedBreakdowns.has(row.id)}
+          onChange={() => toggleBreakdownSelection(row.id)}
+          className="w-4 h-4"
+        />
+      )
+    },
+    {
       header: 'Category',
       accessor: 'labor_category_id',
       render: (row) => (
-        <span className="font-medium text-white">{getCategoryName(row.labor_category_id)}</span>
+        <Select 
+          value={row.labor_category_id} 
+          onValueChange={(v) => handleUpdateBreakdown(row.id, 'labor_category_id', v)}
+          disabled={!can.editProject}
+        >
+          <SelectTrigger className="w-48 bg-zinc-800 border-zinc-700">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )
     },
     {
@@ -633,10 +738,21 @@ export default function LaborScope() {
       {/* Labor Breakdown Table */}
       <Card className="bg-zinc-900 border-zinc-800 mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users size={18} />
-            Labor Breakdown by Category
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users size={18} />
+              Labor Breakdown by Category
+            </CardTitle>
+            {selectedBreakdowns.size > 0 && (
+              <Button
+                onClick={() => setShowBulkEdit(true)}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Bulk Edit ({selectedBreakdowns.size})
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <DataTable 
@@ -749,6 +865,49 @@ export default function LaborScope() {
         projectId={selectedProject}
         onSubmit={(data) => createGapMutation.mutate(data)}
       />
+
+      {/* Bulk Edit Dialog */}
+      <Dialog open={showBulkEdit} onOpenChange={setShowBulkEdit}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Bulk Edit {selectedBreakdowns.size} Breakdowns</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Change Category (optional)</Label>
+              <Select value={bulkEditData.category_id} onValueChange={(v) => setBulkEditData({ ...bulkEditData, category_id: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select new category..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Update Notes (optional)</Label>
+              <Textarea
+                value={bulkEditData.notes}
+                onChange={(e) => setBulkEditData({ ...bulkEditData, notes: e.target.value })}
+                placeholder="Enter notes to apply to all selected breakdowns..."
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowBulkEdit(false)} className="border-zinc-700">
+                Cancel
+              </Button>
+              <Button onClick={handleBulkEdit} className="bg-blue-600 hover:bg-blue-700">
+                Apply Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

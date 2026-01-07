@@ -37,6 +37,7 @@ import {
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ActiveProjectProvider } from '@/components/shared/hooks/useActiveProject';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -100,8 +101,9 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <ThemeProvider>
-      <ConfirmProvider>
-        <div className="min-h-screen bg-background text-foreground">
+      <ActiveProjectProvider>
+        <ConfirmProvider>
+          <div className="min-h-screen bg-background text-foreground">
           <OfflineIndicator />
           <Toaster />
           <CommandPalette />
@@ -283,6 +285,7 @@ export default function Layout({ children, currentPageName }) {
       <MobileNav currentPageName={currentPageName} />
         </div>
       </ConfirmProvider>
-    </ThemeProvider>
+      </ActiveProjectProvider>
+      </ThemeProvider>
   );
 }

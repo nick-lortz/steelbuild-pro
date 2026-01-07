@@ -1,33 +1,64 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
 import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
+import EmptyState from '@/components/ui/EmptyState';
 
 export default function Analytics() {
-  const { data: projects = [] } = useQuery({
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
   });
 
+  const userProjects = currentUser?.role === 'admin' 
+    ? allProjects 
+    : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ['projects', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Project.filter({ id: activeProjectId })
+      : Promise.resolve(userProjects),
+    enabled: !!activeProjectId || userProjects.length > 0,
+  });
+
   const { data: financials = [] } = useQuery({
-    queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list(),
+    queryKey: ['financials', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Financial.filter({ project_id: activeProjectId })
+      : base44.entities.Financial.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
+      : base44.entities.Task.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: expenses = [] } = useQuery({
-    queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list(),
+    queryKey: ['expenses', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Expense.filter({ project_id: activeProjectId })
+      : base44.entities.Expense.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: resources = [] } = useQuery({
@@ -36,39 +67,77 @@ export default function Analytics() {
   });
 
   const { data: resourceAllocations = [] } = useQuery({
-    queryKey: ['resourceAllocations'],
-    queryFn: () => base44.entities.ResourceAllocation.list(),
+    queryKey: ['resourceAllocations', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
+      : base44.entities.ResourceAllocation.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date'),
+    queryKey: ['rfis', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
+      : base44.entities.RFI.list('-created_date'),
+    enabled: !!activeProjectId,
   });
 
   const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date'),
+    queryKey: ['changeOrders', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
+      : base44.entities.ChangeOrder.list('-created_date'),
+    enabled: !!activeProjectId,
   });
 
   const { data: drawings = [] } = useQuery({
-    queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list(),
+    queryKey: ['drawings', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+      : base44.entities.DrawingSet.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: scopeGaps = [] } = useQuery({
-    queryKey: ['scopeGaps'],
-    queryFn: () => base44.entities.ScopeGap.list(),
+    queryKey: ['scopeGaps', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ScopeGap.filter({ project_id: activeProjectId })
+      : base44.entities.ScopeGap.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: laborBreakdowns = [] } = useQuery({
-    queryKey: ['laborBreakdowns'],
-    queryFn: () => base44.entities.LaborBreakdown.list(),
+    queryKey: ['laborBreakdowns', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId })
+      : base44.entities.LaborBreakdown.list(),
+    enabled: !!activeProjectId,
   });
 
   const { data: laborHours = [] } = useQuery({
-    queryKey: ['laborHours'],
-    queryFn: () => base44.entities.LaborHours.list(),
+    queryKey: ['laborHours', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.LaborHours.filter({ project_id: activeProjectId })
+      : base44.entities.LaborHours.list(),
+    enabled: !!activeProjectId,
   });
+
+  if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
+    setActiveProjectId(userProjects[0].id);
+  }
+
+  if (!activeProjectId) {
+    return (
+      <div>
+        <PageHeader title="Analytics Dashboard" subtitle="Select a project to view analytics" showBackButton={false} />
+        <EmptyState 
+          icon={BarChart3}
+          title="No Project Selected"
+          description="Select a project from your list to view analytics data."
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -76,6 +145,20 @@ export default function Analytics() {
         title="Analytics Dashboard"
         subtitle="Portfolio insights, resource utilization, and risk trends"
         showBackButton={false}
+        actions={
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
+              <SelectValue placeholder="Select Project" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {userProjects.map(project => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.project_number} - {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
       />
 
       <Tabs defaultValue="risk-dashboard" className="space-y-6">

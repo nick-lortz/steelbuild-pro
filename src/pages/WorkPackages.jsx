@@ -27,17 +27,17 @@ export default function WorkPackages() {
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => base44.auth.me()
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => base44.entities.Project.list()
   });
 
-  const projects = currentUser?.role === 'admin' 
-    ? allProjects 
-    : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+  const projects = currentUser?.role === 'admin' ?
+  allProjects :
+  allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages', activeProjectId],
@@ -196,13 +196,13 @@ export default function WorkPackages() {
               </Button>
           }
             <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeletePackage(pkg);
-              }}
-              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10">
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeletePackage(pkg);
+            }}
+            className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10">
 
               <Trash2 size={16} />
             </Button>
@@ -212,30 +212,30 @@ export default function WorkPackages() {
   }];
 
 
-  const selectedProject = projects.find(p => p.id === activeProjectId);
+  const selectedProject = projects.find((p) => p.id === activeProjectId);
 
   if (!activeProjectId) {
     return (
       <div>
-        <PageHeader 
-          title="Work Packages" 
+        <PageHeader
+          title="Work Packages"
           subtitle="Select a project to view work packages"
           showBackButton={false}
           actions={
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="text-white">
+                {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id} className="text-white">
                     {p.project_number} - {p.name}
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
             </Select>
-          }
-        />
+          } />
+
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <Package size={48} className="mx-auto mb-4 text-zinc-600" />
@@ -243,8 +243,8 @@ export default function WorkPackages() {
             <p className="text-zinc-400">Select a project from the dropdown to view work packages.</p>
           </div>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -253,7 +253,7 @@ export default function WorkPackages() {
         title="Work Packages"
         subtitle="Manage fabrication packages with automated phase transitions"
         actions={
-          <div className="flex items-center gap-3">
+        <div className="text-slate-50 flex items-center gap-3">
             <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select project">
@@ -261,18 +261,18 @@ export default function WorkPackages() {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id} className="text-white">
+                {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id} className="text-white">
                     {p.project_number} - {p.name}
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
             </Select>
-            <Button 
-              onClick={() => setShowForm(true)} 
-              disabled={!activeProjectId}
-              className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50"
-            >
+            <Button
+            onClick={() => setShowForm(true)}
+            disabled={!activeProjectId}
+            className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50">
+
               <Plus size={18} className="mr-2" />
               {activeProjectId ? 'New Work Package' : 'Select Project First'}
             </Button>
@@ -410,7 +410,7 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
         notes: pkg.notes || ''
       });
     } else if (activeProjectId) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         project_id: activeProjectId
       }));
@@ -423,23 +423,23 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!formData.project_id) {
       toast.error('Project is required');
       return;
     }
-    
+
     if (!formData.name) {
       toast.error('Name is required');
       return;
     }
-    
+
     const submitData = {
       ...formData,
       estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : 0,
       estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : 0
     };
-    
+
     onSubmit(submitData);
   };
 

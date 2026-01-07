@@ -80,6 +80,7 @@ const navItems = [
 function LayoutContent({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -90,7 +91,13 @@ function LayoutContent({ children, currentPageName }) {
         return null;
       }
     },
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
+
+  React.useEffect(() => {
+    setIsInitialized(true);
+  }, []);
 
   const { data: activeProject } = useQuery({
     queryKey: ['activeProject', activeProjectId],
@@ -126,13 +133,15 @@ function LayoutContent({ children, currentPageName }) {
     return priorityA - priorityB;
   });
 
+  if (!isInitialized) {
+    return null;
+  }
+
   return (
-    <ThemeProvider>
-      <ConfirmProvider>
-        <div className="min-h-screen bg-background text-foreground">
-          <OfflineIndicator />
-          <Toaster />
-          <CommandPalette />
+    <div className="min-h-screen bg-background text-foreground">
+      <OfflineIndicator />
+      <Toaster />
+      <CommandPalette />
           <style>{`
             .dark {
               --background: 0 0% 4%;
@@ -312,16 +321,20 @@ function LayoutContent({ children, currentPageName }) {
       </main>
 
       <MobileNav currentPageName={currentPageName} />
-        </div>
-      </ConfirmProvider>
-    </ThemeProvider>
-  );
-}
+      </div>
+      );
+      }
 
-export default function Layout({ children, currentPageName }) {
-  return (
-    <ActiveProjectProvider>
-      <LayoutContent children={children} currentPageName={currentPageName} />
-    </ActiveProjectProvider>
-  );
-}
+      const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
+      return (
+      <ThemeProvider>
+      <ConfirmProvider>
+        <ActiveProjectProvider>
+          <LayoutContent children={children} currentPageName={currentPageName} />
+        </ActiveProjectProvider>
+      </ConfirmProvider>
+      </ThemeProvider>
+      );
+      });
+
+      export default LayoutWithProviders;

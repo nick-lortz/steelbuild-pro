@@ -37,7 +37,7 @@ import {
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
-import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -77,7 +77,7 @@ import CommandPalette from '@/components/shared/CommandPalette';
         { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
       ];
 
-function LayoutInner({ children, currentPageName }) {
+export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();
 
@@ -316,12 +316,4 @@ function LayoutInner({ children, currentPageName }) {
         </ConfirmProvider>
         </ThemeProvider>
         );
-        }
-
-        export default function Layout({ children, currentPageName }) {
-          return (
-            <ActiveProjectProvider>
-              <LayoutInner children={children} currentPageName={currentPageName} />
-            </ActiveProjectProvider>
-          );
         }

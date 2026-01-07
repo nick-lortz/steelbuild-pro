@@ -83,7 +83,7 @@ export default function PortfolioOverview({ projects = [], financials = [], task
       {/* Timeframe Selector */}
       <div className="flex justify-end">
         <Select value={timeframe} onValueChange={setTimeframe}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -96,70 +96,70 @@ export default function PortfolioOverview({ projects = [], financials = [], task
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <div className="card-body">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-xs font-medium">Active Projects</p>
-                <p className="text-2xl font-bold text-slate-900 mt-1">{portfolioHealth.activeProjects}</p>
+                <p className="text-zinc-400 text-xs font-medium">Active Projects</p>
+                <p className="text-2xl font-bold text-white mt-1">{portfolioHealth.activeProjects}</p>
               </div>
               <Target className="text-blue-500" size={20} />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card">
-          <div className="card-body">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-xs font-medium">Budget Utilization</p>
-                <p className="text-2xl font-bold text-amber-600 mt-1">
+                <p className="text-zinc-400 text-xs font-medium">Budget Utilization</p>
+                <p className="text-2xl font-bold text-amber-400 mt-1">
                   {portfolioHealth.budgetUtilization}%
                 </p>
               </div>
               <DollarSign className="text-amber-500" size={20} />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card">
-          <div className="card-body">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-xs font-medium">Schedule Adherence</p>
-                <p className={`text-2xl font-bold mt-1 ${portfolioHealth.scheduleAdherence >= 80 ? 'text-emerald-600' : 'text-red-600'}`}>
+                <p className="text-zinc-400 text-xs font-medium">Schedule Adherence</p>
+                <p className={`text-2xl font-bold mt-1 ${portfolioHealth.scheduleAdherence >= 80 ? 'text-green-400' : 'text-red-400'}`}>
                   {portfolioHealth.scheduleAdherence}%
                 </p>
               </div>
               <Clock className="text-blue-500" size={20} />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card">
-          <div className="card-body">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 text-xs font-medium">Task Completion</p>
-                <p className="text-2xl font-bold text-emerald-600 mt-1">
+                <p className="text-zinc-400 text-xs font-medium">Task Completion</p>
+                <p className="text-2xl font-bold text-green-400 mt-1">
                   {portfolioHealth.completionRate}%
                 </p>
               </div>
-              <TrendingUp className="text-emerald-500" size={20} />
+              <TrendingUp className="text-green-500" size={20} />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Financial Trends */}
-      <div className="card">
-        <div className="card-header">
-          <div className="flex items-center gap-2">
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader className="border-b border-zinc-800">
+          <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
             <DollarSign size={18} className="text-amber-500" />
             Financial Trends
-          </div>
-        </div>
-        <div className="card-body">
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={financialTrends}>
               <defs>
@@ -189,19 +189,19 @@ export default function PortfolioOverview({ projects = [], financials = [], task
               <Area type="monotone" dataKey="actual" stroke="#10b981" fillOpacity={1} fill="url(#colorActual)" name="Actual" />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Schedule Performance by Project */}
-        <div className="card">
-          <div className="card-header">
-            <div className="flex items-center gap-2">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="border-b border-zinc-800">
+            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
               <Clock size={18} className="text-blue-500" />
               Schedule Performance by Project
-            </div>
-          </div>
-          <div className="card-body">
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={scheduleData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
@@ -216,18 +216,18 @@ export default function PortfolioOverview({ projects = [], financials = [], task
                 <Bar dataKey="completion" fill="#60a5fa" name="Completion %" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Contract Value by Phase */}
-        <div className="card">
-          <div className="card-header">
-            <div className="flex items-center gap-2">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader className="border-b border-zinc-800">
+            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
               <Target size={18} className="text-purple-500" />
               Contract Value by Phase
-            </div>
-          </div>
-          <div className="card-body">
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={projectPhaseValue}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
@@ -245,8 +245,8 @@ export default function PortfolioOverview({ projects = [], financials = [], task
                 <Bar dataKey="count" fill="#f59e0b" name="Count" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -117,6 +117,9 @@ export default function LaborScope() {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
       toast.success('Breakdown deleted');
     },
+    onError: (error) => {
+      toast.error(`Delete failed: ${error.message}`);
+    }
   });
 
   const handleDeleteBreakdown = (breakdownId) => {
@@ -133,6 +136,9 @@ export default function LaborScope() {
         queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
         toast.success(`Deleted ${selectedBreakdowns.size} breakdowns`);
         setSelectedBreakdowns(new Set());
+      }).catch((error) => {
+        toast.error('Failed to delete some breakdowns');
+        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
       });
     }
   };
@@ -456,6 +462,9 @@ export default function LaborScope() {
       queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
       toast.success('Specialty item deleted');
     },
+    onError: (error) => {
+      toast.error(`Delete failed: ${error.message}`);
+    }
   });
 
   const handleDeleteSpecialty = (itemId) => {

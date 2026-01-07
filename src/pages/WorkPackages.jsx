@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function WorkPackages() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [showForm, setShowForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [completingPhase, setCompletingPhase] = useState(null);
@@ -231,16 +231,36 @@ export default function WorkPackages() {
   }];
 
 
+  const selectedProject = projects.find(p => p.id === activeProjectId);
+
   return (
     <div>
       <PageHeader
         title="Work Packages"
         subtitle="Manage fabrication packages with automated phase transitions"
         actions={
-        <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
-            <Plus size={18} className="mr-2" />
-            New Work Package
-          </Button>
+          <div className="flex items-center gap-3">
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Select project">
+                  {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id} className="text-white">
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {activeProjectId && (
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+                <Plus size={18} className="mr-2" />
+                New Work Package
+              </Button>
+            )}
+          </div>
         } />
 
 

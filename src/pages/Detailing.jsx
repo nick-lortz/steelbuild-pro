@@ -8,14 +8,14 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import { Plus, Search, AlertTriangle, Clock, FileSpreadsheet, Upload, Zap, ChevronDown, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
@@ -55,51 +55,51 @@ export default function Detailing() {
       } catch {
         return null;
       }
-    },
+    }
   });
 
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const projects = useMemo(() => {
     if (!currentUser) return [];
-    const userProjects = currentUser.role === 'admin'
-      ? rawProjects
-      : rawProjects.filter(p => p.assigned_users?.includes(currentUser.email));
+    const userProjects = currentUser.role === 'admin' ?
+    rawProjects :
+    rawProjects.filter((p) => p.assigned_users?.includes(currentUser.email));
     return [...userProjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [rawProjects, currentUser]);
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawingSets'],
     queryFn: () => base44.entities.DrawingSet.list('-created_date'),
-    staleTime: 2 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: drawingSheets = [] } = useQuery({
     queryKey: ['drawingSheets'],
     queryFn: () => base44.entities.DrawingSheet.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawingRevisions'],
     queryFn: () => base44.entities.DrawingRevision.list('-revision_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['workPackages'],
     queryFn: () => base44.entities.WorkPackage.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const handleFormSubmit = () => {
@@ -111,7 +111,7 @@ export default function Detailing() {
     mutationFn: ({ id, data }) => base44.entities.DrawingSet.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -119,14 +119,14 @@ export default function Detailing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
       setSelectedSet(null);
-    },
+    }
   });
 
   const filteredSets = useMemo(() => {
-    const filtered = drawingSets.filter(d => {
-      const matchesSearch = 
-        d.set_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.set_number?.toLowerCase().includes(searchTerm.toLowerCase());
+    const filtered = drawingSets.filter((d) => {
+      const matchesSearch =
+      d.set_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.set_number?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
       const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
       return matchesSearch && matchesStatus && matchesProject;
@@ -134,7 +134,7 @@ export default function Detailing() {
 
     return filtered.sort((a, b) => {
       let aVal, bVal;
-      
+
       switch (sortBy) {
         case 'set_name':
           aVal = a.set_name?.toLowerCase() || '';
@@ -163,7 +163,7 @@ export default function Detailing() {
           bVal = b.created_date ? new Date(b.created_date).getTime() : 0;
           break;
       }
-      
+
       if (sortOrder === 'asc') {
         return aVal > bVal ? 1 : -1;
       } else {
@@ -173,7 +173,7 @@ export default function Detailing() {
   }, [drawingSets, searchTerm, statusFilter, projectFilter, sortBy, sortOrder]);
 
   const overdueSets = useMemo(() => {
-    return filteredSets.filter(d => {
+    return filteredSets.filter((d) => {
       if (!d.due_date || d.status === 'FFF' || d.status === 'As-Built') return false;
       return differenceInDays(new Date(), new Date(d.due_date)) > 0;
     });
@@ -181,11 +181,11 @@ export default function Detailing() {
 
   const overdueByProject = useMemo(() => {
     const grouped = {};
-    overdueSets.forEach(set => {
-      const project = projects.find(p => p.id === set.project_id);
+    overdueSets.forEach((set) => {
+      const project = projects.find((p) => p.id === set.project_id);
       const projectKey = project?.id || 'unknown';
       const projectName = project ? `${project.project_number} - ${project.name}` : 'Unknown Project';
-      
+
       if (!grouped[projectKey]) {
         grouped[projectKey] = {
           projectName,
@@ -200,60 +200,60 @@ export default function Detailing() {
   }, [overdueSets, projects]);
 
   const pendingRelease = useMemo(() => {
-    return filteredSets.filter(d => d.status === 'BFS' && !d.released_for_fab_date);
+    return filteredSets.filter((d) => d.status === 'BFS' && !d.released_for_fab_date);
   }, [filteredSets]);
 
   const detailingPhasePackages = useMemo(() => {
-    return workPackages.filter(wp => wp.phase === 'detailing');
+    return workPackages.filter((wp) => wp.phase === 'detailing');
   }, [workPackages]);
 
   const currentProject = useMemo(() => {
     if (activeProjectId) {
-      return projects.find(p => p.id === activeProjectId);
+      return projects.find((p) => p.id === activeProjectId);
     }
     if (projectFilter !== 'all') {
-      return projects.find(p => p.id === projectFilter);
+      return projects.find((p) => p.id === projectFilter);
     }
     return null;
   }, [activeProjectId, projectFilter, projects]);
 
   const exportDrawingRegistry = () => {
     const headers = [
-      'Set Number',
-      'Set Name',
-      'Project',
-      'Discipline',
-      'Current Revision',
-      'Status',
-      'Sheet Count',
-      'IFA Date',
-      'BFA Date',
-      'Released Date',
-      'Due Date',
-      'Reviewer',
-      'AI Review Status'
-    ];
+    'Set Number',
+    'Set Name',
+    'Project',
+    'Discipline',
+    'Current Revision',
+    'Status',
+    'Sheet Count',
+    'IFA Date',
+    'BFA Date',
+    'Released Date',
+    'Due Date',
+    'Reviewer',
+    'AI Review Status'];
 
-    const rows = drawingSets.map(set => {
-      const project = projects.find(p => p.id === set.project_id);
+
+    const rows = drawingSets.map((set) => {
+      const project = projects.find((p) => p.id === set.project_id);
       return [
-        set.set_number || '',
-        set.set_name || '',
-        project?.project_number || '',
-        set.discipline || '',
-        set.current_revision || '',
-        set.status || '',
-        set.sheet_count || 0,
-        set.ifa_date || '',
-        set.bfa_date || '',
-        set.released_for_fab_date || '',
-        set.due_date || '',
-        set.reviewer || '',
-        set.ai_review_status || ''
-      ];
+      set.set_number || '',
+      set.set_name || '',
+      project?.project_number || '',
+      set.discipline || '',
+      set.current_revision || '',
+      set.status || '',
+      set.sheet_count || 0,
+      set.ifa_date || '',
+      set.bfa_date || '',
+      set.released_for_fab_date || '',
+      set.due_date || '',
+      set.reviewer || '',
+      set.ai_review_status || ''];
+
     });
 
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -271,65 +271,65 @@ export default function Detailing() {
         title="Detailing"
         subtitle="Manage drawing sets, submissions, revisions, and detailing coordination"
         actions={
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
             <Button
-              variant="outline"
-              onClick={() => setShowCSVImport(true)}
-              className="border-zinc-700 hover:bg-zinc-800"
-            >
+            variant="outline"
+            onClick={() => setShowCSVImport(true)} className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
+
+
               <Upload size={18} className="mr-2" />
               Import
             </Button>
             <Button
-              variant="outline"
-              onClick={exportDrawingRegistry}
-              className="border-zinc-700 hover:bg-zinc-800"
-            >
+            variant="outline"
+            onClick={exportDrawingRegistry} className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
+
+
               <FileSpreadsheet size={18} className="mr-2" />
               Export
             </Button>
-            <Button 
-              onClick={() => setShowBulkEdit(true)}
-              variant="outline"
-              className="border-zinc-700 hover:bg-zinc-800"
-              disabled={filteredSets.length === 0}
-            >
+            <Button
+            onClick={() => setShowBulkEdit(true)}
+            variant="outline" className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800"
+
+            disabled={filteredSets.length === 0}>
+
               Bulk Edit
             </Button>
-            <Button 
-              onClick={() => setShowQuickAdd(true)}
-              variant="outline"
-              className="border-zinc-700 hover:bg-zinc-800"
-            >
+            <Button
+            onClick={() => setShowQuickAdd(true)}
+            variant="outline" className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
+
+
               <Zap size={18} className="mr-2" />
               Quick Add
             </Button>
-            <Button 
-              onClick={() => setShowForm(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg"
-            >
+            <Button
+            onClick={() => setShowForm(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg">
+
               <Plus size={18} className="mr-2" />
               New Drawing Set
             </Button>
           </div>
-        }
-      />
+        } />
+
 
       {/* Detailing Readiness Panel */}
-      {currentProject && (
-        <DetailingReadinessPanel
-          project={currentProject}
-          drawingSets={drawingSets}
-          rfis={rfis}
-          onRelease={() => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-          }}
-        />
-      )}
+      {currentProject &&
+      <DetailingReadinessPanel
+        project={currentProject}
+        drawingSets={drawingSets}
+        rfis={rfis}
+        onRelease={() => {
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+        }} />
+
+      }
 
       {/* Detailing Phase Context */}
-      {detailingPhasePackages.length > 0 && (
-        <div className="p-5 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+      {detailingPhasePackages.length > 0 &&
+      <div className="p-5 bg-blue-500/10 border border-blue-500/30 rounded-xl">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-500/20 rounded-lg">
               <Package size={20} className="text-blue-400" />
@@ -337,24 +337,24 @@ export default function Detailing() {
             <h3 className="text-base font-bold text-white">Active Detailing Work Packages</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {detailingPhasePackages.map(wp => {
-              const project = projects.find(p => p.id === wp.project_id);
-              return (
-                <div key={wp.id} className="p-3 bg-zinc-900/70 border border-blue-500/20 rounded-lg hover:bg-zinc-900 hover:border-blue-500/40 transition-all">
+            {detailingPhasePackages.map((wp) => {
+            const project = projects.find((p) => p.id === wp.project_id);
+            return (
+              <div key={wp.id} className="p-3 bg-zinc-900/70 border border-blue-500/20 rounded-lg hover:bg-zinc-900 hover:border-blue-500/40 transition-all">
                   <p className="font-semibold text-white text-sm">{wp.name}</p>
                   <p className="text-xs text-blue-300 mt-1">{project?.project_number || 'Unknown'}</p>
-                </div>
-              );
-            })}
+                </div>);
+
+          })}
           </div>
         </div>
-      )}
+      }
 
       {/* Alert Summary */}
-      {(overdueSets.length > 0 || pendingRelease.length > 0) && (
-        <div className="space-y-3">
-          {overdueSets.length > 0 && (
-            <div className="bg-red-500/10 border border-red-500/40 rounded-xl overflow-hidden">
+      {(overdueSets.length > 0 || pendingRelease.length > 0) &&
+      <div className="space-y-3">
+          {overdueSets.length > 0 &&
+        <div className="bg-red-500/10 border border-red-500/40 rounded-xl overflow-hidden">
               <div className="p-4 flex items-center gap-3">
                 <div className="p-2 bg-red-500/20 rounded-lg flex-shrink-0">
                   <AlertTriangle size={20} className="text-red-400" />
@@ -366,30 +366,30 @@ export default function Detailing() {
               </div>
               
               <div className="border-t border-red-500/20">
-                {Object.entries(overdueByProject).map(([projectId, { projectName, sets }]) => (
-                  <Collapsible 
-                    key={projectId}
-                    open={expandedProjects[projectId]}
-                    onOpenChange={(open) => setExpandedProjects(prev => ({ ...prev, [projectId]: open }))}
-                  >
+                {Object.entries(overdueByProject).map(([projectId, { projectName, sets }]) =>
+            <Collapsible
+              key={projectId}
+              open={expandedProjects[projectId]}
+              onOpenChange={(open) => setExpandedProjects((prev) => ({ ...prev, [projectId]: open }))}>
+
                     <CollapsibleTrigger className="w-full p-3 hover:bg-zinc-800/30 transition-colors flex items-center justify-between text-left border-b border-zinc-800/50 last:border-b-0">
                       <div className="flex items-center gap-2">
-                        <ChevronDown 
-                          size={14} 
-                          className={`text-zinc-500 transition-transform ${expandedProjects[projectId] ? 'rotate-180' : ''}`} 
-                        />
+                        <ChevronDown
+                    size={14}
+                    className={`text-zinc-500 transition-transform ${expandedProjects[projectId] ? 'rotate-180' : ''}`} />
+
                         <span className="text-sm text-white font-medium">{projectName}</span>
                         <span className="text-xs text-zinc-500">({sets.length})</span>
                       </div>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="p-2 space-y-1.5 bg-zinc-900/20">
-                        {sets.map(set => (
-                          <div 
-                            key={set.id}
-                            onClick={() => setSelectedSet(set)}
-                            className="p-2.5 bg-zinc-800/40 hover:bg-zinc-800/70 rounded border border-zinc-800 hover:border-zinc-700 cursor-pointer transition-all"
-                          >
+                        {sets.map((set) =>
+                  <div
+                    key={set.id}
+                    onClick={() => setSelectedSet(set)}
+                    className="p-2.5 bg-zinc-800/40 hover:bg-zinc-800/70 rounded border border-zinc-800 hover:border-zinc-700 cursor-pointer transition-all">
+
                             <div className="flex items-start justify-between">
                               <div>
                                 <p className="text-sm font-medium text-white">{set.set_name}</p>
@@ -397,32 +397,32 @@ export default function Detailing() {
                               </div>
                               <div className="text-right">
                                 {(() => {
-                                  const dueDate = new Date(set.due_date);
-                                  return !isNaN(dueDate.getTime()) && (
-                                    <>
+                          const dueDate = new Date(set.due_date);
+                          return !isNaN(dueDate.getTime()) &&
+                          <>
                                       <p className="text-xs text-red-400 font-medium">
                                         {format(dueDate, 'MMM d')}
                                       </p>
                                       <p className="text-[10px] text-zinc-500">
                                         {Math.abs(differenceInDays(new Date(), dueDate))}d late
                                       </p>
-                                    </>
-                                  );
-                                })()}
+                                    </>;
+
+                        })()}
                               </div>
                             </div>
                           </div>
-                        ))}
+                  )}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
-                ))}
+            )}
               </div>
             </div>
-          )}
+        }
           
-          {pendingRelease.length > 0 && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center gap-3">
+          {pendingRelease.length > 0 &&
+        <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg flex-shrink-0">
                 <Clock size={20} className="text-amber-400" />
               </div>
@@ -431,9 +431,9 @@ export default function Detailing() {
                 <p className="text-sm text-amber-400/70">BFS → FFF Release Pending</p>
               </div>
             </div>
-          )}
+        }
         </div>
-      )}
+      }
 
       {/* Drawing Notifications */}
       <DrawingNotifications drawingSets={drawingSets} projects={projects} />
@@ -447,14 +447,14 @@ export default function Detailing() {
         <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg hover:border-blue-500/50 transition-colors">
           <p className="text-xs font-medium text-blue-300 mb-1">In Review</p>
           <p className="text-2xl font-bold text-blue-400">
-            {filteredSets.filter(d => d.status === 'IFA' || d.status === 'BFA').length}
+            {filteredSets.filter((d) => d.status === 'IFA' || d.status === 'BFA').length}
           </p>
           <p className="text-[10px] text-blue-400/60 mt-0.5">IFA + BFA</p>
         </div>
         <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg hover:border-green-500/50 transition-colors">
           <p className="text-xs font-medium text-green-300 mb-1">Released</p>
           <p className="text-2xl font-bold text-green-400">
-            {filteredSets.filter(d => d.status === 'FFF' || d.status === 'As-Built').length}
+            {filteredSets.filter((d) => d.status === 'FFF' || d.status === 'As-Built').length}
           </p>
           <p className="text-[10px] text-green-400/60 mt-0.5">FFF + As-Built</p>
         </div>
@@ -475,8 +475,8 @@ export default function Detailing() {
             placeholder="Search drawing sets..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white h-10 focus:border-amber-500 transition-colors"
-          />
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white h-10 focus:border-amber-500 transition-colors" />
+
         </div>
         <Select value={projectFilter} onValueChange={setProjectFilter}>
           <SelectTrigger className="w-full sm:w-52 bg-zinc-900 border-zinc-800 text-white h-10">
@@ -484,9 +484,9 @@ export default function Detailing() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-            ))}
+            {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+            )}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -532,8 +532,8 @@ export default function Detailing() {
         sheets={drawingSheets}
         revisions={revisions}
         projects={projects}
-        onSelectSet={setSelectedSet}
-      />
+        onSelectSet={setSelectedSet} />
+
 
       {/* Create Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -544,32 +544,32 @@ export default function Detailing() {
           <DrawingSetForm
             projects={projects}
             onSubmit={handleFormSubmit}
-            onCancel={() => setShowForm(false)}
-          />
+            onCancel={() => setShowForm(false)} />
+
         </DialogContent>
       </Dialog>
 
       {/* Details Sheet */}
-      {selectedSet && (
-        <DrawingSetDetails
-          drawingSet={selectedSet}
-          sheets={drawingSheets.filter(s => s.drawing_set_id === selectedSet.id)}
-          revisions={revisions.filter(r => r.drawing_set_id === selectedSet.id)}
-          projects={projects}
-          onClose={() => setSelectedSet(null)}
-          onUpdate={(data) => updateMutation.mutate({ id: selectedSet.id, data })}
-          onDelete={() => deleteMutation.mutate(selectedSet.id)}
-          isUpdating={updateMutation.isPending}
-        />
-      )}
+      {selectedSet &&
+      <DrawingSetDetails
+        drawingSet={selectedSet}
+        sheets={drawingSheets.filter((s) => s.drawing_set_id === selectedSet.id)}
+        revisions={revisions.filter((r) => r.drawing_set_id === selectedSet.id)}
+        projects={projects}
+        onClose={() => setSelectedSet(null)}
+        onUpdate={(data) => updateMutation.mutate({ id: selectedSet.id, data })}
+        onDelete={() => deleteMutation.mutate(selectedSet.id)}
+        isUpdating={updateMutation.isPending} />
+
+      }
 
       {/* Bulk Edit Dialog */}
       <BulkEditDrawings
         drawingSets={filteredSets}
         projects={projects}
         open={showBulkEdit}
-        onOpenChange={setShowBulkEdit}
-      />
+        onOpenChange={setShowBulkEdit} />
+
 
       {/* Quick Add Dialog */}
       <QuickAddDrawingSet
@@ -579,26 +579,26 @@ export default function Detailing() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
           setShowQuickAdd(false);
-        }}
-      />
+        }} />
+
 
       {/* CSV Import */}
       <CSVUpload
         entityName="DrawingSet"
         templateFields={[
-          { label: 'Project Number', key: 'project_number', example: 'P-001' },
-          { label: 'Set Number', key: 'set_number', example: 'S-101' },
-          { label: 'Set Name', key: 'set_name', example: 'Structural Steel - Level 1' },
-          { label: 'Discipline', key: 'discipline', example: 'structural' },
-          { label: 'Current Revision', key: 'current_revision', example: 'Rev 0' },
-          { label: 'Status', key: 'status', example: 'IFA' },
-          { label: 'IFA Date', key: 'ifa_date', example: '2025-01-15' },
-          { label: 'Due Date', key: 'due_date', example: '2025-01-25' },
-          { label: 'Sheet Count', key: 'sheet_count', example: '5' },
-          { label: 'Reviewer', key: 'reviewer', example: 'John Smith' },
-        ]}
+        { label: 'Project Number', key: 'project_number', example: 'P-001' },
+        { label: 'Set Number', key: 'set_number', example: 'S-101' },
+        { label: 'Set Name', key: 'set_name', example: 'Structural Steel - Level 1' },
+        { label: 'Discipline', key: 'discipline', example: 'structural' },
+        { label: 'Current Revision', key: 'current_revision', example: 'Rev 0' },
+        { label: 'Status', key: 'status', example: 'IFA' },
+        { label: 'IFA Date', key: 'ifa_date', example: '2025-01-15' },
+        { label: 'Due Date', key: 'due_date', example: '2025-01-25' },
+        { label: 'Sheet Count', key: 'sheet_count', example: '5' },
+        { label: 'Reviewer', key: 'reviewer', example: 'John Smith' }]
+        }
         transformRow={(row) => {
-          const project = projects.find(p => p.project_number === row.project_number);
+          const project = projects.find((p) => p.project_number === row.project_number);
           return {
             project_id: project?.id || '',
             set_number: row.set_number || '',
@@ -610,15 +610,15 @@ export default function Detailing() {
             due_date: row.due_date || '',
             sheet_count: parseInt(row.sheet_count) || 0,
             reviewer: row.reviewer || '',
-            ai_review_status: 'pending',
+            ai_review_status: 'pending'
           };
         }}
         onImportComplete={() => {
           queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
         }}
         open={showCSVImport}
-        onOpenChange={setShowCSVImport}
-      />
-    </div>
-  );
+        onOpenChange={setShowCSVImport} />
+
+    </div>);
+
 }

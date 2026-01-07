@@ -6,7 +6,6 @@ import DailyLogs from './pages/DailyLogs';
 import Dashboard from './pages/Dashboard';
 import Deliveries from './pages/Deliveries';
 import Documents from './pages/Documents';
-import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import Fabrication from './pages/Fabrication';
 import FieldTools from './pages/FieldTools';
@@ -33,6 +32,7 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import Detailing from './pages/Detailing';
 import __Layout from './Layout.jsx';
 
 
@@ -45,7 +45,6 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "Deliveries": Deliveries,
     "Documents": Documents,
-    "Drawings": Drawings,
     "Equipment": Equipment,
     "Fabrication": Fabrication,
     "FieldTools": FieldTools,
@@ -72,6 +71,7 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Detailing": Detailing,
 }
 
 export const pagesConfig = {

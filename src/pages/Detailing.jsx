@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, Clock, CheckCircle, FileSpreadsheet, Upload, Zap, ChevronDown } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Clock, FileSpreadsheet, Upload, Zap, ChevronDown, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';
@@ -28,6 +28,7 @@ import CSVUpload from '@/components/shared/CSVUpload';
 import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
 import { differenceInDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 export default function Detailing() {
   const [showForm, setShowForm] = useState(false);
@@ -42,7 +43,19 @@ export default function Detailing() {
   const [sortBy, setSortBy] = useState('created_date');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    },
+  });
 
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
@@ -50,10 +63,13 @@ export default function Detailing() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const projects = useMemo(() => 
-    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
-    [rawProjects]
-  );
+  const projects = useMemo(() => {
+    if (!currentUser) return [];
+    const userProjects = currentUser.role === 'admin'
+      ? rawProjects
+      : rawProjects.filter(p => p.assigned_users?.includes(currentUser.email));
+    return [...userProjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [rawProjects, currentUser]);
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawingSets'],
@@ -70,6 +86,12 @@ export default function Detailing() {
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawingRevisions'],
     queryFn: () => base44.entities.DrawingRevision.list('-revision_date'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['workPackages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -103,7 +125,6 @@ export default function Detailing() {
       return matchesSearch && matchesStatus && matchesProject;
     });
 
-    // Sort the filtered sets
     return filtered.sort((a, b) => {
       let aVal, bVal;
       
@@ -127,7 +148,7 @@ export default function Detailing() {
           break;
         case 'ifa_date':
           aVal = a.ifa_date ? new Date(a.ifa_date).getTime() : 0;
-          bVal = b.ifa_date ? new Date(b.ifa_date).getTime() : 0;
+          bVal = b.ifa_date ? new Date(a.ifa_date).getTime() : 0;
           break;
         case 'created_date':
         default:
@@ -144,7 +165,6 @@ export default function Detailing() {
     });
   }, [drawingSets, searchTerm, statusFilter, projectFilter, sortBy, sortOrder]);
 
-  // Calculate overdue sets
   const overdueSets = useMemo(() => {
     return filteredSets.filter(d => {
       if (!d.due_date || d.status === 'FFF' || d.status === 'As-Built') return false;
@@ -152,7 +172,6 @@ export default function Detailing() {
     });
   }, [filteredSets]);
 
-  // Group overdue sets by project
   const overdueByProject = useMemo(() => {
     const grouped = {};
     overdueSets.forEach(set => {
@@ -173,12 +192,14 @@ export default function Detailing() {
     );
   }, [overdueSets, projects]);
 
-  // Calculate pending releases
   const pendingRelease = useMemo(() => {
     return filteredSets.filter(d => d.status === 'BFS' && !d.released_for_fab_date);
   }, [filteredSets]);
 
-  // Export drawing registry
+  const detailingPhasePackages = useMemo(() => {
+    return workPackages.filter(wp => wp.phase === 'detailing');
+  }, [workPackages]);
+
   const exportDrawingRegistry = () => {
     const headers = [
       'Set Number',
@@ -271,11 +292,32 @@ export default function Detailing() {
               className="bg-amber-500 hover:bg-amber-600 text-black"
             >
               <Plus size={18} className="mr-2" />
-              Full Form
+              New Drawing Set
             </Button>
           </div>
         }
       />
+
+      {/* Detailing Phase Context */}
+      {detailingPhasePackages.length > 0 && (
+        <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Package size={18} className="text-blue-400" />
+            <h3 className="font-semibold text-white">Active Detailing Work Packages</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {detailingPhasePackages.map(wp => {
+              const project = projects.find(p => p.id === wp.project_id);
+              return (
+                <div key={wp.id} className="p-2 bg-zinc-900/50 rounded text-sm">
+                  <p className="font-medium text-white">{wp.name}</p>
+                  <p className="text-xs text-zinc-400">{project?.project_number || 'Unknown'}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Alert Summary */}
       {(overdueSets.length > 0 || pendingRelease.length > 0) && (
@@ -290,7 +332,6 @@ export default function Detailing() {
                 </div>
               </div>
               
-              {/* Overdue sets grouped by project */}
               <div className="border-t border-red-500/20 bg-zinc-900/50">
                 {Object.entries(overdueByProject).map(([projectId, { projectName, sets }]) => (
                   <Collapsible 
@@ -408,7 +449,7 @@ export default function Detailing() {
           <SelectContent>
             <SelectItem value="all">All Projects</SelectItem>
             {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

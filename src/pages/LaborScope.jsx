@@ -450,6 +450,20 @@ export default function LaborScope() {
     });
   };
 
+  const deleteSpecialtyMutation = useMutation({
+    mutationFn: (id) => base44.entities.SpecialtyDiscussionItem.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
+      toast.success('Specialty item deleted');
+    },
+  });
+
+  const handleDeleteSpecialty = (itemId) => {
+    if (window.confirm('Delete this specialty item?')) {
+      deleteSpecialtyMutation.mutate(itemId);
+    }
+  };
+
   const specialtyColumns = [
     { 
       header: 'Location/Detail', 
@@ -522,6 +536,21 @@ export default function LaborScope() {
         />
       )
     },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleDeleteSpecialty(row.id)}
+          disabled={!can.editProject}
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          <Trash2 size={16} />
+        </Button>
+      )
+    }
   ];
 
   const handleUpdateGap = (gapId, field, value) => {

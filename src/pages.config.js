@@ -4,6 +4,7 @@ import CostCodes from './pages/CostCodes';
 import CustomDashboard from './pages/CustomDashboard';
 import DailyLogs from './pages/DailyLogs';
 import Dashboard from './pages/Dashboard';
+import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import Documents from './pages/Documents';
 import Equipment from './pages/Equipment';
@@ -27,12 +28,11 @@ import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
+import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import Deliveries from './pages/Deliveries';
-import Schedule from './pages/Schedule';
 import __Layout from './Layout.jsx';
 
 
@@ -43,6 +43,7 @@ export const PAGES = {
     "CustomDashboard": CustomDashboard,
     "DailyLogs": DailyLogs,
     "Dashboard": Dashboard,
+    "Deliveries": Deliveries,
     "Detailing": Detailing,
     "Documents": Documents,
     "Equipment": Equipment,
@@ -66,12 +67,11 @@ export const PAGES = {
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
     "Resources": Resources,
+    "Schedule": Schedule,
     "Settings": Settings,
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "Deliveries": Deliveries,
-    "Schedule": Schedule,
 }
 
 export const pagesConfig = {

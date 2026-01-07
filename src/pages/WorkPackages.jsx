@@ -52,11 +52,17 @@ export default function WorkPackages() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+    mutationFn: async (data) => {
+      const response = await base44.functions.invoke('createWorkPackage', data);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to create work package');
     }
   });
 
@@ -87,10 +93,10 @@ export default function WorkPackages() {
   });
 
   const advancePhase = useMutation({
-    mutationFn: async ({ work_package_id, next_phase }) => {
+    mutationFn: async ({ work_package_id, target_phase }) => {
       const response = await base44.functions.invoke('advanceWorkPackagePhase', {
         work_package_id,
-        next_phase
+        target_phase
       });
       return response.data;
     },
@@ -118,7 +124,7 @@ export default function WorkPackages() {
     if (completingPhase) {
       advancePhase.mutate({
         work_package_id: completingPhase.package.id,
-        next_phase: completingPhase.nextPhase
+        target_phase: completingPhase.nextPhase
       });
     }
   };
@@ -172,7 +178,6 @@ export default function WorkPackages() {
     header: 'Actions',
     render: (pkg) => {
       const phaseMap = {
-        'detailing': { next: 'fabrication', label: 'Advance to Fabrication' },
         'fabrication': { next: 'delivery', label: 'Advance to Delivery' },
         'delivery': { next: 'erection', label: 'Advance to Erection' },
         'erection': { next: 'complete', label: 'Mark Complete' }

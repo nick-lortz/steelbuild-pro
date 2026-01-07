@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, AlertTriangle, Save, TrendingUp, Users, AlertCircle } from 'lucide-react';
+import { Plus, AlertTriangle, Save, TrendingUp, Users, AlertCircle, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { toast } from '@/components/ui/notifications';
@@ -109,6 +109,33 @@ export default function LaborScope() {
       toast.success('Updated');
     },
   });
+
+  // Delete breakdown mutation
+  const deleteBreakdownMutation = useMutation({
+    mutationFn: (id) => base44.entities.LaborBreakdown.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
+      toast.success('Breakdown deleted');
+    },
+  });
+
+  const handleDeleteBreakdown = (breakdownId) => {
+    if (window.confirm('Delete this labor breakdown entry?')) {
+      deleteBreakdownMutation.mutate(breakdownId);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (window.confirm(`Delete ${selectedBreakdowns.size} selected breakdowns?`)) {
+      Promise.all(
+        Array.from(selectedBreakdowns).map(id => base44.entities.LaborBreakdown.delete(id))
+      ).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
+        toast.success(`Deleted ${selectedBreakdowns.size} breakdowns`);
+        setSelectedBreakdowns(new Set());
+      });
+    }
+  };
 
   // Specialty item mutations
   const createSpecialtyMutation = useMutation({
@@ -371,6 +398,21 @@ export default function LaborScope() {
           placeholder="Optional notes"
           className="bg-zinc-800 border-zinc-700 text-white"
         />
+      )
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => handleDeleteBreakdown(row.id)}
+          disabled={!can.editProject}
+          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          <Trash2 size={16} />
+        </Button>
       )
     }
   ];
@@ -744,13 +786,24 @@ export default function LaborScope() {
               Labor Breakdown by Category
             </CardTitle>
             {selectedBreakdowns.size > 0 && (
-              <Button
-                onClick={() => setShowBulkEdit(true)}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Bulk Edit ({selectedBreakdowns.size})
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowBulkEdit(true)}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Bulk Edit ({selectedBreakdowns.size})
+                </Button>
+                <Button
+                  onClick={handleBulkDelete}
+                  size="sm"
+                  variant="outline"
+                  className="border-red-500 text-red-400 hover:bg-red-500/10"
+                >
+                  <Trash2 size={14} className="mr-1" />
+                  Delete ({selectedBreakdowns.size})
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>

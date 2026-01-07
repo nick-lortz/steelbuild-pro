@@ -8,12 +8,12 @@ import { Sparkles, Send, Loader2, AlertTriangle, FileText, MessageSquareWarning,
 import ReactMarkdown from 'react-markdown';
 
 export default function ProjectAssistant({
-  projects,
-  drawings,
-  rfis,
-  changeOrders,
-  tasks,
-  financials,
+  projects = [],
+  drawings = [],
+  rfis = [],
+  changeOrders = [],
+  tasks = [],
+  financials = [],
   expenses = [],
   fabrications = [],
   deliveries = [],

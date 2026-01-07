@@ -19,6 +19,7 @@ import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
 import ExportButton from '@/components/shared/ExportButton';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 export default function Schedule() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +35,7 @@ export default function Schedule() {
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
+  const { activeProjectId } = useActiveProject();
 
   // Fetch projects for filter
   const { data: rawProjects = [] } = useQuery({
@@ -46,6 +48,10 @@ export default function Schedule() {
     [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
     [rawProjects]
   );
+
+  const activeProject = useMemo(() => {
+    return projects.find(p => p.id === activeProjectId);
+  }, [projects, activeProjectId]);
 
   // Fetch all tasks and filter on frontend
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
@@ -176,6 +182,10 @@ export default function Schedule() {
   };
 
   const handleCreateTask = () => {
+    if (activeProject?.phase === 'detailing') {
+      toast.error('Cannot create tasks during detailing phase. Complete detailing first.');
+      return;
+    }
     setEditingTask({
       project_id: projectFilter !== 'all' ? projectFilter : '',
       phase: 'fabrication',
@@ -400,6 +410,7 @@ export default function Schedule() {
                 setEditingTask(null);
               }}
               isLoading={createMutation.isPending || updateMutation.isPending}
+              restrictPhase={activeProject?.phase === 'detailing' ? 'detailing' : null}
             />
           </div>
         </SheetContent>

@@ -17,6 +17,7 @@ import { useKeyboardShortcuts } from '@/components/shared/hooks/useKeyboardShort
 import { toast } from '@/components/ui/notifications';
 import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
+import TaskListView from '@/components/schedule/TaskListView';
 
 export default function Schedule() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -321,50 +322,13 @@ export default function Schedule() {
           <p className="text-muted-foreground">No tasks found</p>
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 gap-3 mb-4">
-            {tasks.map((task) => {
-              const project = projects.find(p => p.id === task.project_id);
-              const isSelected = selectedTasks.includes(task.id);
-              return (
-                <div key={task.id} className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setSelectedTasks(prev => 
-                        prev.includes(task.id) 
-                          ? prev.filter(id => id !== task.id)
-                          : [...prev, task.id]
-                      );
-                    }}
-                    className="mt-3 w-4 h-4 flex-shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <div className="flex-1" onClick={() => handleTaskClick(task)}>
-                    <TaskCard
-                      task={task}
-                      project={project}
-                      onClick={() => handleTaskClick(task)}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Load More */}
-          {hasMore && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setPage(p => p + 1)}
-            >
-              Load More
-            </Button>
-          )}
-        </>
+        <TaskListView
+          tasks={allScheduleTasks}
+          projects={projects}
+          resources={resources}
+          onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+          onTaskClick={handleTaskClick}
+        />
       )}
 
       {/* Bulk Actions */}

@@ -347,7 +347,14 @@ export default function Deliveries() {
     accessor: 'package_name',
     render: (row) =>
     <div>
-          <p className="font-medium">{row.package_name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium">{row.package_name}</p>
+            {row._isFromTask && (
+              <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/40">
+                SCHEDULE
+              </span>
+            )}
+          </div>
           <p className="text-xs text-zinc-500">{row.package_number}</p>
         </div>
 

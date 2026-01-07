@@ -11,6 +11,7 @@ import InvoicesTab from '@/components/financials/InvoicesTab';
 import SOVManager from '@/components/sov/SOVManager';
 import InvoiceManager from '@/components/sov/InvoiceManager';
 import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
+import JobStatusReport from '@/components/sov/JobStatusReport';
 import { usePermissions } from '@/components/shared/usePermissions';
 
 export default function Financials() {
@@ -51,6 +52,14 @@ export default function Financials() {
     queryFn: () => selectedProject
       ? base44.entities.SOVItem.filter({ project_id: selectedProject })
       : base44.entities.SOVItem.list(),
+    enabled: !!selectedProject
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['change-orders', selectedProject],
+    queryFn: () => selectedProject
+      ? base44.entities.ChangeOrder.filter({ project_id: selectedProject })
+      : base44.entities.ChangeOrder.list(),
     enabled: !!selectedProject
   });
 
@@ -124,6 +133,7 @@ export default function Financials() {
 
         <TabsContent value="sov">
           <div className="space-y-6">
+            <JobStatusReport sovItems={sovItems} expenses={expenses} changeOrders={changeOrders} />
             <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
             <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
             <SOVCostAlignment sovItems={sovItems} expenses={expenses} />

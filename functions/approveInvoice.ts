@@ -22,24 +22,32 @@ Deno.serve(async (req) => {
 
   const invoice = invoices[0];
 
+  if (invoice.status === 'approved' || invoice.status === 'paid') {
+    return Response.json({ error: 'Invoice already approved' }, { status: 400 });
+  }
+
   // Fetch all invoice lines
   const lines = await base44.entities.InvoiceLine.filter({ invoice_id });
 
-  // Step E: Update SOVItem.billed_to_date ONLY on approval
+  // Step E: Update SOVItem ONLY on approval (not draft, not preview)
+  // This permanently locks billed_to_date and earned_to_date
   for (const line of lines) {
+    const earned_to_date = (line.scheduled_value * line.current_percent) / 100;
+    
     await base44.asServiceRole.entities.SOVItem.update(line.sov_item_id, {
       billed_to_date: line.billed_to_date,
+      earned_to_date: earned_to_date,
       percent_complete: line.current_percent
     });
   }
 
-  // Update invoice status
+  // Update invoice status to approved
   await base44.asServiceRole.entities.Invoice.update(invoice_id, {
     status: 'approved'
   });
 
   return Response.json({
-    message: 'Invoice approved and SOV items updated',
+    message: 'Invoice approved, SOV items updated',
     invoice_id,
     lines_updated: lines.length
   });

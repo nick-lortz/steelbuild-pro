@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'No SOV items found for this project' }, { status: 400 });
   }
 
-  // Create invoice
+  // Create invoice (draft status)
   const invoice = await base44.entities.Invoice.create({
     project_id,
     period_start,
@@ -30,9 +30,9 @@ Deno.serve(async (req) => {
     total_amount: 0
   });
 
-  // Generate invoice lines with frozen math
   const invoiceLines = [];
   let totalAmount = 0;
+  const errors = [];
 
   for (const sov of sovItems) {
     const scheduled_value = Number(sov.scheduled_value) || 0;
@@ -45,37 +45,45 @@ Deno.serve(async (req) => {
     // Step C: Determine current period bill
     const current_billed = earned_to_date - previous_billed;
 
-    // Rule: Block if over-billing (negative billing not allowed)
+    // Block if over-billing (negative billing = trying to un-earn revenue)
     if (current_billed < 0) {
-      await base44.asServiceRole.entities.Invoice.delete(invoice.id);
-      return Response.json({ 
-        error: `Cannot over-bill SOV line ${sov.sov_code}. Earned: $${earned_to_date.toFixed(2)}, Already billed: $${previous_billed.toFixed(2)}. You cannot un-earn revenue.` 
-      }, { status: 400 });
-    }
-
-    // Edge case: Allow 100% complete but not fully billed
-    // No special handling needed - math naturally allows this
-
-    // Only include lines with billable progress
-    if (current_billed > 0) {
-      const billed_to_date = previous_billed + current_billed;
-      const remaining_value = scheduled_value - billed_to_date;
-
-      // Step D: Freeze values in InvoiceLine
-      const line = await base44.entities.InvoiceLine.create({
-        invoice_id: invoice.id,
-        sov_item_id: sov.id,
-        scheduled_value,
-        previous_billed,
-        current_percent: percent_complete,
-        current_billed,
-        billed_to_date,
-        remaining_value
+      errors.push({
+        sov_code: sov.sov_code,
+        description: sov.description,
+        earned: earned_to_date,
+        already_billed: previous_billed,
+        attempted: current_billed
       });
-
-      invoiceLines.push(line);
-      totalAmount += current_billed;
+      continue;
     }
+
+    // Include all lines (even $0) for complete audit trail
+    const billed_to_date = previous_billed + current_billed;
+    const remaining_value = scheduled_value - billed_to_date;
+
+    // Step D: Freeze values in InvoiceLine (immutable snapshot)
+    const line = await base44.entities.InvoiceLine.create({
+      invoice_id: invoice.id,
+      sov_item_id: sov.id,
+      scheduled_value,
+      previous_billed,
+      current_percent: percent_complete,
+      current_billed,
+      billed_to_date,
+      remaining_value
+    });
+
+    invoiceLines.push(line);
+    totalAmount += current_billed;
+  }
+
+  // If any overbilling detected, delete invoice and report errors
+  if (errors.length > 0) {
+    await base44.asServiceRole.entities.Invoice.delete(invoice.id);
+    return Response.json({ 
+      error: 'Cannot generate invoice: overbilling detected',
+      details: errors
+    }, { status: 400 });
   }
 
   // Update invoice total
@@ -84,7 +92,7 @@ Deno.serve(async (req) => {
   });
 
   return Response.json({
-    message: 'Invoice generated',
+    message: 'Invoice generated (draft)',
     invoice,
     lines: invoiceLines,
     total_amount: totalAmount

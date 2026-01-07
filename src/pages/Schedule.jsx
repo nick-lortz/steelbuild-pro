@@ -167,6 +167,10 @@ export default function Schedule() {
   }, [refetch]);
 
   const handleTaskClick = (task) => {
+    if (activeProject?.phase === 'detailing' && task.phase !== 'detailing') {
+      toast.error('Cannot edit non-detailing tasks during detailing phase');
+      return;
+    }
     setEditingTask(task);
     setShowTaskForm(true);
   };

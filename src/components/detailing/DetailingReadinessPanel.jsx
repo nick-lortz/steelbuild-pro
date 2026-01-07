@@ -91,7 +91,8 @@ export default function DetailingReadinessPanel({
   }, [project, drawingSets, rfis]);
 
   const allChecksPassed = checks.every(check => check.passed);
-  const isDetailingPhase = project?.status === 'in_progress' || project?.status === 'awarded';
+  const isDetailingPhase = project?.phase === 'detailing';
+  const detailingComplete = project?.phase && project.phase !== 'detailing';
 
   const releaseToFabricationMutation = useMutation({
     mutationFn: async () => {
@@ -99,6 +100,7 @@ export default function DetailingReadinessPanel({
       
       // Update project to fabrication phase
       await base44.entities.Project.update(project.id, {
+        phase: 'fabrication',
         status: 'in_progress',
         notes: `${project.notes || ''}\n\nReleased to Fabrication: ${new Date().toISOString()}`
       });
@@ -125,7 +127,10 @@ export default function DetailingReadinessPanel({
           Detailing Readiness
         </h3>
         <p className="text-sm text-zinc-400 mt-1">
-          All checks must pass before releasing to fabrication
+          {detailingComplete 
+            ? 'Detailing phase complete - now in fabrication'
+            : 'All checks must pass before releasing to fabrication'
+          }
         </p>
       </div>
 
@@ -160,7 +165,17 @@ export default function DetailingReadinessPanel({
         ))}
       </div>
 
-      {allChecksPassed ? (
+      {detailingComplete ? (
+        <div className="p-4 border-t border-zinc-800 bg-green-500/5">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 size={20} className="text-green-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-green-300">Released to Fabrication</p>
+              <p className="text-xs text-zinc-400">Project is now in fabrication phase</p>
+            </div>
+          </div>
+        </div>
+      ) : allChecksPassed ? (
         <div className="p-4 border-t border-zinc-800 bg-green-500/5">
           <div className="flex items-start gap-3 mb-3">
             <CheckCircle2 size={20} className="text-green-400 flex-shrink-0 mt-0.5" />

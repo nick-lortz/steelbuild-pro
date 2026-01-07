@@ -53,10 +53,14 @@ export default function Schedule() {
     return projects.find(p => p.id === activeProjectId);
   }, [projects, activeProjectId]);
 
-  // Fetch all tasks and filter on frontend
+  // Fetch tasks for active project only
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
-    queryKey: ['schedule-tasks'],
-    queryFn: () => base44.entities.Task.list('end_date'),
+    queryKey: ['schedule-tasks', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date');
+    },
+    enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
@@ -64,11 +68,8 @@ export default function Schedule() {
   const { tasks, hasMore, totalCount } = useMemo(() => {
     let filtered = [...allScheduleTasks];
 
-    // Filter by active project
-    if (activeProjectId) {
-      filtered = filtered.filter(t => t.project_id === activeProjectId);
-    }
-
+    // Project filtering already done in query - no need to filter again
+    
     // Filter by status
     if (statusFilter !== 'all') {
       if (statusFilter === 'overdue') {
@@ -102,7 +103,7 @@ export default function Schedule() {
       hasMore: endIdx < filtered.length,
       totalCount: filtered.length
     };
-  }, [allScheduleTasks, activeProjectId, statusFilter, searchTerm, page]);
+  }, [allScheduleTasks, statusFilter, searchTerm, page]);
 
   // Fetch all resources for task form
   const { data: resources = [] } = useQuery({
@@ -198,13 +199,25 @@ export default function Schedule() {
     setIsRefreshing(false);
   }, [refetch]);
 
-  const handleTaskClick = (task) => {
-    const taskProject = projects.find(p => p.id === task.project_id);
-    if (taskProject?.phase === 'detailing' && task.phase !== 'detailing') {
-      toast.error('Cannot edit non-detailing tasks during detailing phase');
+  const handleTaskClick = async (task) => {
+    // Get work package to determine editability
+    const workPackages = await base44.entities.WorkPackage.filter({ id: task.work_package_id });
+    const workPackage = workPackages[0];
+
+    if (!workPackage) {
+      toast.error('Work package not found');
       return;
     }
-    setEditingTask(task);
+
+    // Determine if task is editable
+    const isEditable = workPackage.status === 'active' && workPackage.phase === task.phase;
+    
+    setEditingTask({
+      ...task,
+      _isReadOnly: !isEditable,
+      _workPackageStatus: workPackage.status,
+      _workPackagePhase: workPackage.phase
+    });
     setShowTaskForm(true);
   };
 

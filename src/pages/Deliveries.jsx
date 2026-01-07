@@ -432,7 +432,10 @@ export default function Deliveries() {
   {
     header: 'Weight',
     accessor: 'weight_tons',
-    render: (row) => row.weight_tons ? `${row.weight_tons} tons` : '-'
+    render: (row) => {
+      const weight = row.weight_tons;
+      return weight ? `${weight} tons` : '-';
+    }
   },
   {
     header: 'Pieces',
@@ -441,7 +444,8 @@ export default function Deliveries() {
   },
   {
     header: 'Carrier',
-    accessor: 'carrier'
+    accessor: 'carrier',
+    render: (row) => row.carrier || '-'
   },
   {
     header: '',

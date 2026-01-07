@@ -50,6 +50,12 @@ export default function WorkPackages() {
     enabled: !!activeProjectId
   });
 
+  React.useEffect(() => {
+    if (!activeProjectId && projects.length > 0) {
+      setActiveProjectId(projects[0].id);
+    }
+  }, [activeProjectId, projects]);
+
   if (!activeProjectId) {
     return (
       <div>
@@ -62,7 +68,7 @@ export default function WorkPackages() {
           <div className="text-center">
             <Package size={48} className="mx-auto mb-4 text-zinc-600" />
             <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
-            <p className="text-zinc-400">Select a project from the dashboard to view its work packages.</p>
+            <p className="text-zinc-400">Select a project above to view its work packages.</p>
           </div>
         </div>
       </div>

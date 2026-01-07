@@ -92,8 +92,19 @@ export default function TaskForm({
         linked_drawing_set_ids: task.linked_drawing_set_ids || [],
         notes: task.notes || ''
       });
+    } else if (task?.work_package_id) {
+      // Pre-fill work package from context
+      const wp = workPackages.find(w => w.id === task.work_package_id);
+      if (wp) {
+        setFormData(prev => ({
+          ...prev,
+          work_package_id: wp.id,
+          project_id: wp.project_id,
+          phase: wp.phase
+        }));
+      }
     }
-  }, [task]);
+  }, [task, workPackages]);
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
@@ -126,6 +137,11 @@ export default function TaskForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.work_package_id) {
+      toast.error('Work package is required');
+      return;
+    }
 
     // Validate dependencies for circular references
     if (formData.predecessor_ids && formData.predecessor_ids.length > 0) {
@@ -284,26 +300,30 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-2">
-          <Label>Work Package (Optional)</Label>
+          <Label>Work Package *</Label>
           <Select 
             value={formData.work_package_id || ''} 
-            onValueChange={(v) => handleChange('work_package_id', v === '' ? '' : v)}
-            disabled={!formData.project_id || (task?.is_phase_locked)}
+            onValueChange={(v) => handleChange('work_package_id', v)}
+            disabled={!!task}
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="None" />
+              <SelectValue placeholder="Select work package" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
-              <SelectItem value={null} className="text-white">None</SelectItem>
               {workPackages
                 .filter(wp => wp.project_id === formData.project_id)
                 .map((wp) => (
                   <SelectItem key={wp.id} value={wp.id} className="text-white">
-                    {wp.package_number} - {wp.name}
+                    {wp.name} ({wp.phase})
                   </SelectItem>
                 ))}
             </SelectContent>
           </Select>
+          {!!task && (
+            <p className="text-xs text-zinc-500 mt-1">
+              🔒 Cannot change work package after creation
+            </p>
+          )}
         </div>
       </div>
 
@@ -337,27 +357,14 @@ export default function TaskForm({
 
         <div className="space-y-2">
           <Label>Phase *</Label>
-          <Select 
-            value={formData.phase} 
-            onValueChange={(v) => handleChange('phase', v)}
-            disabled={task?.is_phase_locked}
-          >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="detailing">Detailing</SelectItem>
-              <SelectItem value="fabrication">Fabrication</SelectItem>
-              <SelectItem value="delivery">Delivery</SelectItem>
-              <SelectItem value="erection">Erection</SelectItem>
-              <SelectItem value="closeout">Closeout</SelectItem>
-            </SelectContent>
-          </Select>
-          {task?.is_phase_locked && (
-            <p className="text-xs text-amber-400 mt-1">
-              🔒 This task is locked - phase completed
-            </p>
-          )}
+          <Input
+            value={formData.phase}
+            disabled
+            className="bg-zinc-900 border-zinc-700 text-zinc-500 cursor-not-allowed"
+          />
+          <p className="text-xs text-zinc-500 mt-1">
+            🔒 Phase inherited from work package
+          </p>
         </div>
       </div>
 

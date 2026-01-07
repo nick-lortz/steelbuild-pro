@@ -136,33 +136,59 @@ export default function Schedule() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: async (data) => {
+      const response = await base44.functions.invoke('createTaskForWorkPackage', {
+        work_package_id: data.work_package_id,
+        task_data: data
+      });
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task created');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to create task');
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const response = await base44.functions.invoke('updateTask', {
+        task_id: id,
+        task_data: data
+      });
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task updated');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to update task');
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
-    onSuccess: () => {
+    mutationFn: async (id) => {
+      const response = await base44.functions.invoke('deleteTask', {
+        task_id: id
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
-      toast.success('Task deleted');
+      toast.success(data.message || 'Task deleted');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to delete task');
     }
   });
 

@@ -406,7 +406,10 @@ export default function Schedule() {
         />
       ) : tasks.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No tasks found</p>
+          <p className="text-white font-medium mb-2">No tasks found</p>
+          <p className="text-zinc-400 text-sm">
+            Tasks can only be created inside work packages. Create a work package first, then add tasks to it.
+          </p>
         </div>
       ) : (
         <TaskListView

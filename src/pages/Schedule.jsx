@@ -22,10 +22,9 @@ import TaskListView from '@/components/schedule/TaskListView';
 import ExportButton from '@/components/shared/ExportButton';
 
 export default function Schedule() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [projectFilter, setProjectFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
@@ -50,9 +49,9 @@ export default function Schedule() {
   );
 
   const selectedProject = useMemo(() => {
-    if (projectFilter === 'all') return null;
-    return projects.find(p => p.id === projectFilter);
-  }, [projects, projectFilter]);
+    if (!activeProjectId) return null;
+    return projects.find(p => p.id === activeProjectId);
+  }, [projects, activeProjectId]);
 
   // Fetch all tasks and filter on frontend
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
@@ -65,9 +64,9 @@ export default function Schedule() {
   const { tasks, hasMore, totalCount } = useMemo(() => {
     let filtered = [...allScheduleTasks];
 
-    // Filter by project
-    if (projectFilter !== 'all') {
-      filtered = filtered.filter(t => t.project_id === projectFilter);
+    // Filter by active project
+    if (activeProjectId) {
+      filtered = filtered.filter(t => t.project_id === activeProjectId);
     }
 
     // Filter by status
@@ -103,7 +102,7 @@ export default function Schedule() {
       hasMore: endIdx < filtered.length,
       totalCount: filtered.length
     };
-  }, [allScheduleTasks, projectFilter, statusFilter, searchTerm, page]);
+  }, [allScheduleTasks, activeProjectId, statusFilter, searchTerm, page]);
 
   // Fetch all resources for task form
   const { data: resources = [] } = useQuery({
@@ -184,12 +183,16 @@ export default function Schedule() {
   };
 
   const handleCreateTask = () => {
+    if (!activeProjectId) {
+      toast.error('Please select a project first');
+      return;
+    }
     if (selectedProject?.phase === 'detailing') {
       toast.error('Cannot create tasks during detailing phase. Complete detailing first.');
       return;
     }
     setEditingTask({
-      project_id: projectFilter !== 'all' ? projectFilter : '',
+      project_id: activeProjectId,
       phase: 'fabrication',
       status: 'not_started',
       is_milestone: false
@@ -206,7 +209,9 @@ export default function Schedule() {
   };
 
   const loadView = (filters) => {
-    setProjectFilter(filters.projectFilter || 'all');
+    if (filters.projectFilter && filters.projectFilter !== 'all') {
+      setActiveProjectId(filters.projectFilter);
+    }
     setStatusFilter(filters.statusFilter || 'all');
     setSearchTerm(filters.searchTerm || '');
   };
@@ -233,13 +238,30 @@ export default function Schedule() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold">Schedule</h1>
-          <p className="text-sm text-muted-foreground">{statusCounts.all} tasks</p>
+          <p className="text-sm text-muted-foreground">
+            {activeProjectId ? `${statusCounts.all} tasks` : 'Select a project'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
+              <SelectValue placeholder="Select project">
+                {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+              {projects.map((p) => (
+                <SelectItem key={p.id} value={p.id} className="text-white">
+                  {p.project_number} - {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <ExportButton
             data={viewMode === 'list' ? tasks : allScheduleTasks}
             entityType="tasks"
             filename="schedule"
+            disabled={!activeProjectId}
           />
           <Button
             variant="ghost"
@@ -277,26 +299,13 @@ export default function Schedule() {
       {showFilters && (
         <div className="space-y-4 mb-4">
           <div className="flex items-center justify-between gap-2">
-            <Select value={projectFilter} onValueChange={(v) => { setProjectFilter(v); setPage(1); }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <ViewConfiguration 
               viewKey="schedule"
-              currentFilters={{ projectFilter, statusFilter, searchTerm }}
+              currentFilters={{ projectFilter: activeProjectId || 'all', statusFilter, searchTerm }}
               onLoadView={loadView}
             />
           </div>
-          {projectFilter !== 'all' && <WeatherWidget projectId={projectFilter} />}
+          {activeProjectId && <WeatherWidget projectId={activeProjectId} />}
         </div>
       )}
 
@@ -324,7 +333,15 @@ export default function Schedule() {
       </div>
 
       {/* Content Area */}
-      {isLoading ? (
+      {!activeProjectId ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Calendar size={48} className="mx-auto mb-4 text-zinc-600" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
+            <p className="text-zinc-400">Select a project from the dropdown to view schedule.</p>
+          </div>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />

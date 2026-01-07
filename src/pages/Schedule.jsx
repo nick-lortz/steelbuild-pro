@@ -35,14 +35,7 @@ export default function Schedule() {
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
-  
-  let activeProjectId = null;
-  try {
-    const context = useActiveProject();
-    activeProjectId = context?.activeProjectId;
-  } catch (e) {
-    // ActiveProjectProvider not available
-  }
+  const { activeProjectId } = useActiveProject();
 
   // Fetch projects for filter
   const { data: rawProjects = [] } = useQuery({

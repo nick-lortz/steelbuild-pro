@@ -1,9 +1,11 @@
 import { useState, useEffect, createContext, useContext } from 'react';
+import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
 
 const ActiveProjectContext = createContext();
 
 export function ActiveProjectProvider({ children }) {
-  console.log('ActiveProjectProvider mounted');
+  useRenderCount('ActiveProjectProvider');
+  useMountLogger('ActiveProjectProvider');
   
   const [activeProjectId, setActiveProjectId] = useState(() => {
     return localStorage.getItem('activeProjectId') || null;

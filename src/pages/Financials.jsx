@@ -8,6 +8,8 @@ import FinancialKPIs from '@/components/financials/FinancialKPIs';
 import BudgetTab from '@/components/financials/BudgetTab';
 import ActualsTab from '@/components/financials/ActualsTab';
 import InvoicesTab from '@/components/financials/InvoicesTab';
+import SOVManager from '@/components/sov/SOVManager';
+import InvoiceManager from '@/components/sov/InvoiceManager';
 import { usePermissions } from '@/components/shared/usePermissions';
 
 export default function Financials() {
@@ -98,12 +100,19 @@ export default function Financials() {
         <FinancialKPIs budgetLines={budgetLines} expenses={expenses} invoices={invoices} />
       </div>
 
-      <Tabs defaultValue="budget" className="space-y-4">
+      <Tabs defaultValue="sov" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="sov">SOV & Billing</TabsTrigger>
           <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="actuals">Actuals</TabsTrigger>
-          <TabsTrigger value="invoices">Invoices</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="sov">
+          <div className="space-y-6">
+            <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
+            <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
+          </div>
+        </TabsContent>
 
         <TabsContent value="budget">
           <BudgetTab
@@ -119,14 +128,6 @@ export default function Financials() {
             projectId={selectedProject}
             expenses={expenses}
             costCodes={costCodes}
-            canEdit={can.editFinancials}
-          />
-        </TabsContent>
-
-        <TabsContent value="invoices">
-          <InvoicesTab
-            projectId={selectedProject}
-            invoices={invoices}
             canEdit={can.editFinancials}
           />
         </TabsContent>

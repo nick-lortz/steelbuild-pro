@@ -40,6 +40,7 @@ import { Plus, Clock, CheckCircle, Users, TrendingUp, MoreVertical, Trash2, Penc
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import ExportButton from '@/components/shared/ExportButton';
 import { format } from 'date-fns';
 
 export default function Labor() {
@@ -375,13 +376,29 @@ export default function Labor() {
         title="Labor Management"
         subtitle="Track hours and labor costs"
         actions={
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            Log Hours
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton
+              data={laborHours}
+              columns={[
+                { key: 'work_date', label: 'Date' },
+                { key: 'resource_id', label: 'Worker', formatter: (row) => resources.find(r => r.id === row.resource_id)?.name || '-' },
+                { key: 'project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.project_id)?.name || '-' },
+                { key: 'hours', label: 'Hours' },
+                { key: 'overtime_hours', label: 'OT Hours' },
+                { key: 'cost_code_id', label: 'Cost Code', formatter: (row) => costCodes.find(c => c.id === row.cost_code_id)?.code || '-' },
+                { key: 'description', label: 'Description' },
+                { key: 'approved', label: 'Approved', formatter: (row) => row.approved ? 'Yes' : 'No' }
+              ]}
+              filename="labor_hours"
+            />
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              Log Hours
+            </Button>
+          </div>
         }
       />
 

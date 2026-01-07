@@ -13,6 +13,7 @@ import EquipmentCalendar from '@/components/equipment/EquipmentCalendar';
 import EquipmentKPIs from '@/components/equipment/EquipmentKPIs';
 import Pagination from '@/components/ui/Pagination';
 import { usePagination } from '@/components/shared/hooks/usePagination';
+import ExportButton from '@/components/shared/ExportButton';
 
 export default function Equipment() {
   const [selectedEquipment, setSelectedEquipment] = useState(null);
@@ -128,11 +129,25 @@ export default function Equipment() {
         title="Equipment Manager"
         subtitle="Track equipment availability and utilization"
         actions={
-        <Link to={createPageUrl('Resources')}>
+        <div className="flex gap-2">
+          <ExportButton
+            data={equipment}
+            columns={[
+              { key: 'name', label: 'Equipment' },
+              { key: 'classification', label: 'Type' },
+              { key: 'status', label: 'Status' },
+              { key: 'rate', label: 'Rate' },
+              { key: 'rate_type', label: 'Rate Type' },
+              { key: 'current_project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.current_project_id)?.name || 'Available' }
+            ]}
+            filename="equipment"
+          />
+          <Link to={createPageUrl('Resources')}>
             <Button className="bg-amber-500 hover:bg-amber-600 text-black">
               Manage Resources
             </Button>
           </Link>
+        </div>
         } />
 
 

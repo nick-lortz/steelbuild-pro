@@ -13,6 +13,7 @@ import DeliveryForm from '@/components/deliveries/DeliveryForm';
 import DeliveryKPIs from '@/components/deliveries/DeliveryKPIs';
 import FilterBar from '@/components/shared/FilterBar';
 import SortControl from '@/components/shared/SortControl';
+import ExportButton from '@/components/shared/ExportButton';
 import { format, parseISO, differenceInDays, isWithinInterval, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
@@ -410,16 +411,23 @@ export default function Deliveries() {
         title="Delivery Tracking"
         subtitle="Steel package deliveries and KPIs"
         actions={
-        <Button
-          onClick={() => {
-            setEditingDelivery(null);
-            setShowForm(true);
-          }}
-          className="bg-amber-500 hover:bg-amber-600 text-black">
+        <div className="flex gap-2">
+          <ExportButton
+            data={filteredDeliveries}
+            entityType="deliveries"
+            filename="deliveries"
+          />
+          <Button
+            onClick={() => {
+              setEditingDelivery(null);
+              setShowForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black">
 
             <Plus size={18} className="mr-2" />
             Add Delivery
           </Button>
+        </div>
         } />
 
 

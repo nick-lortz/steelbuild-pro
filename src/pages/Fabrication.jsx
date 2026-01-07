@@ -13,6 +13,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import FabricationForm from '@/components/fabrication/FabricationForm';
+import ExportButton from '@/components/shared/ExportButton';
 import { format } from 'date-fns';
 
 export default function Fabrication() {
@@ -219,16 +220,32 @@ export default function Fabrication() {
         onRefresh={refetch}
         isRefreshing={isRefetching}
         actions={
-          <Button
-            onClick={() => {
-              setEditingItem(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Item
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton
+              data={filteredFabrications}
+              columns={[
+                { key: 'package_name', label: 'Package' },
+                { key: 'project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.project_id)?.name || '-' },
+                { key: 'fabrication_status', label: 'Status' },
+                { key: 'weight_tons', label: 'Weight (tons)' },
+                { key: 'piece_count', label: 'Pieces' },
+                { key: 'target_completion', label: 'Target Date' },
+                { key: 'qc_status', label: 'QC Status' },
+                { key: 'priority', label: 'Priority' }
+              ]}
+              filename="fabrication"
+            />
+            <Button
+              onClick={() => {
+                setEditingItem(null);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              New Item
+            </Button>
+          </div>
         }
       />
 

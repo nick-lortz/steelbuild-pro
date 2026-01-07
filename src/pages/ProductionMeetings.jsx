@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import ProjectAssistant from '@/components/ai/ProjectAssistant';
+import ExportButton from '@/components/shared/ExportButton';
 import { format, startOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
 
 export default function ProductionMeetings() {
@@ -166,14 +167,42 @@ export default function ProductionMeetings() {
         title="Production Meeting Notes"
         subtitle="Weekly project notes that carry forward"
         actions={
-        <Button
-          onClick={() => setShowAI(!showAI)}
-          variant={showAI ? "default" : "outline"}
-          className={showAI ? "bg-amber-500 hover:bg-amber-600 text-black" : "border-zinc-700"}>
+        <div className="flex gap-2">
+          <ExportButton
+            data={activeProjects.map(project => {
+              const note = getNotesForProject(project.id);
+              return {
+                project_number: project.project_number,
+                project_name: project.name,
+                pm: project.project_manager,
+                week: format(currentWeek, 'MMM d, yyyy'),
+                status_summary: note?.status_summary || '',
+                notes: note?.notes || '',
+                concerns: note?.concerns || '',
+                action_items: note?.action_items?.map(a => `${a.status === 'completed' ? '✓' : '○'} ${a.item}`).join('; ') || ''
+              };
+            })}
+            columns={[
+              { key: 'project_number', label: 'Project #' },
+              { key: 'project_name', label: 'Project' },
+              { key: 'pm', label: 'PM' },
+              { key: 'week', label: 'Week' },
+              { key: 'status_summary', label: 'Status' },
+              { key: 'notes', label: 'Notes' },
+              { key: 'concerns', label: 'Concerns' },
+              { key: 'action_items', label: 'Actions' }
+            ]}
+            filename={`production_notes_${format(currentWeek, 'yyyy-MM-dd')}`}
+          />
+          <Button
+            onClick={() => setShowAI(!showAI)}
+            variant={showAI ? "default" : "outline"}
+            className={showAI ? "bg-amber-500 hover:bg-amber-600 text-black" : "border-zinc-700"}>
 
             <Sparkles size={18} className="mr-2" />
             {showAI ? 'Hide' : 'Show'} AI Assistant
           </Button>
+        </div>
         } />
 
 

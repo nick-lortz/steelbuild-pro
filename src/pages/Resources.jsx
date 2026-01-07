@@ -14,6 +14,7 @@ import Pagination from '@/components/ui/Pagination';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/SkeletonCard';
+import ExportButton from '@/components/shared/ExportButton';
 
 export default function Resources() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,6 +144,20 @@ export default function Resources() {
           <p className="text-sm text-muted-foreground">{filteredResources.length} resources</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExportButton
+            data={filteredResources}
+            columns={[
+              { key: 'name', label: 'Name' },
+              { key: 'type', label: 'Type' },
+              { key: 'classification', label: 'Classification' },
+              { key: 'status', label: 'Status' },
+              { key: 'rate', label: 'Rate' },
+              { key: 'rate_type', label: 'Rate Type' },
+              { key: 'contact_name', label: 'Contact' },
+              { key: 'contact_phone', label: 'Phone' }
+            ]}
+            filename="resources"
+          />
           <Button
             variant="ghost"
             size="icon"

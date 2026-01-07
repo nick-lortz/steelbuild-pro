@@ -3,11 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight, Trash2 } from 'lucide-react';
+import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight, Trash2, Settings2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import QuickStatusUpdate from './QuickStatusUpdate';
 
-export default function ProjectCard({ project, progress, onClick, onDelete }) {
+export default function ProjectCard({ project, progress, onClick, onDelete, onEdit }) {
   const daysUntilCompletion = project.target_completion 
     ? differenceInDays(new Date(project.target_completion), new Date())
     : null;
@@ -96,6 +96,19 @@ export default function ProjectCard({ project, progress, onClick, onDelete }) {
             </p>
           )}
           <div className="flex items-center gap-1">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="h-7 w-7 text-zinc-500 hover:text-amber-500"
+              >
+                <Settings2 size={14} />
+              </Button>
+            )}
             {onDelete && (
               <Button
                 variant="ghost"

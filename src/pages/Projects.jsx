@@ -362,6 +362,7 @@ export default function Projects() {
                   progress={progress}
                   onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
                   onDelete={() => handleDelete(project)}
+                  onEdit={() => handleEdit(project)}
                 />
               );
             })}

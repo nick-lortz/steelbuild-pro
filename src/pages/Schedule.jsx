@@ -136,6 +136,12 @@ export default function Schedule() {
     staleTime: 2 * 60 * 1000
   });
 
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['workPackages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const response = await base44.functions.invoke('createTaskForWorkPackage', {
@@ -416,6 +422,7 @@ export default function Schedule() {
           tasks={allScheduleTasks}
           projects={projects}
           resources={resources}
+          workPackages={workPackages}
           onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           onTaskClick={handleTaskClick}
           onTaskDelete={(id) => deleteMutation.mutate(id)}

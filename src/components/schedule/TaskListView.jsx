@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export default function TaskListView({ tasks, projects, resources, onTaskUpdate, onTaskClick, onTaskDelete }) {
+export default function TaskListView({ tasks, projects, resources, workPackages, onTaskUpdate, onTaskClick, onTaskDelete }) {
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [sortBy, setSortBy] = useState('end_date');
@@ -244,6 +244,9 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                 <th className="text-left p-3 text-zinc-300 font-semibold w-80 sticky left-0 bg-zinc-900">
                   TASK
                 </th>
+                <th className="text-left p-3 text-zinc-300 font-semibold w-48">
+                  WORK PACKAGE
+                </th>
                 <th className="text-left p-3 text-zinc-300 font-semibold w-28">
                   PHASE
                 </th>
@@ -290,7 +293,7 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                   <React.Fragment key={projectId}>
                     {/* Project Header */}
                     <tr className="bg-zinc-800/70 border-b border-zinc-700">
-                      <td colSpan={8} className="p-0">
+                      <td colSpan={9} className="p-0">
                         <button
                           onClick={() => toggleProject(projectId)}
                           className="w-full text-left p-3 flex items-center gap-2 hover:bg-zinc-800 transition-colors"
@@ -326,7 +329,7 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                         <React.Fragment key={phaseKey}>
                           {/* Phase Header */}
                           <tr className="bg-zinc-800/40 border-b border-zinc-800">
-                            <td colSpan={8} className="p-0">
+                            <td colSpan={9} className="p-0">
                               <button
                                 onClick={() => togglePhase(phaseKey)}
                                 className="w-full text-left p-2 pl-8 flex items-center gap-2 hover:bg-zinc-800/60 transition-colors"
@@ -355,6 +358,7 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                             const atRisk = isAtRisk(task);
                             const completed = task.status === 'completed';
                             const assignedResource = task.assigned_resources?.[0];
+                            const workPackage = workPackages?.find(wp => wp.id === task.work_package_id);
 
                             return (
                               <tr
@@ -379,6 +383,9 @@ export default function TaskListView({ tasks, projects, resources, onTaskUpdate,
                                       </span>
                                     )}
                                   </button>
+                                </td>
+                                <td className="p-3 text-zinc-400 text-xs">
+                                  {workPackage?.name || '-'}
                                 </td>
                                 <td className="p-3 text-zinc-400 text-xs capitalize">
                                   {phase}

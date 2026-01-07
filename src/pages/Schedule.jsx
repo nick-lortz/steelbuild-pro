@@ -105,6 +105,17 @@ export default function Schedule() {
     };
   }, [allScheduleTasks, statusFilter, searchTerm, page]);
 
+  // Fetch work packages first
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['workPackages', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.WorkPackage.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
+
   // Fetch all resources for task form
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
@@ -134,16 +145,6 @@ export default function Schedule() {
     queryKey: ['all-tasks'],
     queryFn: () => base44.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000
-  });
-
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['workPackages', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.WorkPackage.filter({ project_id: activeProjectId });
-    },
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
@@ -211,8 +212,8 @@ export default function Schedule() {
 
   const handleTaskClick = async (task) => {
     // Get work package to determine editability
-    const workPackages = await base44.entities.WorkPackage.filter({ id: task.work_package_id });
-    const workPackage = workPackages[0];
+    const workPackageData = await base44.entities.WorkPackage.filter({ id: task.work_package_id });
+    const workPackage = workPackageData[0];
 
     if (!workPackage) {
       toast.error('Work package not found');

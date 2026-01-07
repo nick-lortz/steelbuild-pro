@@ -453,40 +453,43 @@ export default function Schedule() {
       </Button>
 
       {/* Task Form Sheet */}
-      <Sheet open={showTaskForm} onOpenChange={(open) => {
-        setShowTaskForm(open);
-        if (!open) setEditingTask(null);
-      }}>
-        <SheetContent className="w-full overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingTask?.id ? 'Edit Task' : 'New Task'}</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            <TaskForm
-              task={editingTask}
-              projects={projects}
-              tasks={allTasks}
-              resources={resources}
-              rfis={rfis}
-              changeOrders={changeOrders}
-              drawingSets={drawingSets}
-              onSubmit={(data) => {
-                if (editingTask?.id) {
-                  updateMutation.mutate({ id: editingTask.id, data });
-                } else {
-                  createMutation.mutate(data);
-                }
-              }}
-              onCancel={() => {
-                setShowTaskForm(false);
-                setEditingTask(null);
-              }}
-              isLoading={createMutation.isPending || updateMutation.isPending}
-              restrictPhase={selectedProject?.phase === 'detailing' ? 'detailing' : null}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {showTaskForm && (
+        <Sheet open={showTaskForm} onOpenChange={(open) => {
+          setShowTaskForm(open);
+          if (!open) setEditingTask(null);
+        }}>
+          <SheetContent className="w-full overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>{editingTask?.id ? 'Edit Task' : 'New Task'}</SheetTitle>
+            </SheetHeader>
+            <div className="mt-4">
+              <TaskForm
+                task={editingTask}
+                projects={projects}
+                tasks={allTasks}
+                resources={resources}
+                rfis={rfis}
+                changeOrders={changeOrders}
+                drawingSets={drawingSets}
+                workPackages={workPackages}
+                onSubmit={(data) => {
+                  if (editingTask?.id) {
+                    updateMutation.mutate({ id: editingTask.id, data });
+                  } else {
+                    createMutation.mutate(data);
+                  }
+                }}
+                onCancel={() => {
+                  setShowTaskForm(false);
+                  setEditingTask(null);
+                }}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+                restrictPhase={selectedProject?.phase === 'detailing' ? 'detailing' : null}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </ScreenContainer>
   );
 }

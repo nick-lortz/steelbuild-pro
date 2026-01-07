@@ -45,13 +45,16 @@ Deno.serve(async (req) => {
     // Step C: Determine current period bill
     const current_billed = earned_to_date - previous_billed;
 
-    // Rule: Block if over-billing
+    // Rule: Block if over-billing (negative billing not allowed)
     if (current_billed < 0) {
       await base44.asServiceRole.entities.Invoice.delete(invoice.id);
       return Response.json({ 
-        error: `Cannot over-bill SOV line ${sov.sov_code}. Earned: $${earned_to_date.toFixed(2)}, Already billed: $${previous_billed.toFixed(2)}` 
+        error: `Cannot over-bill SOV line ${sov.sov_code}. Earned: $${earned_to_date.toFixed(2)}, Already billed: $${previous_billed.toFixed(2)}. You cannot un-earn revenue.` 
       }, { status: 400 });
     }
+
+    // Edge case: Allow 100% complete but not fully billed
+    // No special handling needed - math naturally allows this
 
     // Only include lines with billable progress
     if (current_billed > 0) {

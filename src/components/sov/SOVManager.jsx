@@ -47,12 +47,33 @@ export default function SOVManager({ projectId, canEdit }) {
     }
   });
 
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['invoices', projectId],
+    queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }),
+    enabled: !!projectId
+  });
+
   const handleUpdatePercent = (id, value) => {
     const numValue = Number(value) || 0;
     if (numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
+
+    // Check if decreasing percent and invoice exists
+    const sovItem = sovItems.find(s => s.id === id);
+    if (sovItem && numValue < (sovItem.percent_complete || 0)) {
+      // Check if any approved/paid invoices exist for this project
+      const hasApprovedInvoices = invoices.some(inv => 
+        inv.status === 'approved' || inv.status === 'paid'
+      );
+      
+      if (hasApprovedInvoices) {
+        toast.error('Cannot decrease % complete after billing. Un-earning revenue requires change order.');
+        return;
+      }
+    }
+
     updateMutation.mutate({ id, data: { percent_complete: numValue } });
   };
 
@@ -70,7 +91,12 @@ export default function SOVManager({ projectId, canEdit }) {
     { 
       header: 'Scheduled Value', 
       accessor: 'scheduled_value',
-      render: (row) => <span className="font-semibold">${row.scheduled_value.toLocaleString()}</span>
+      render: (row) => (
+        <div>
+          <span className="font-semibold">${row.scheduled_value.toLocaleString()}</span>
+          <p className="text-xs text-muted-foreground">Locked</p>
+        </div>
+      )
     },
     {
       header: '% Complete',

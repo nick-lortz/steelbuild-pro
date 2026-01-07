@@ -10,6 +10,7 @@ import ActualsTab from '@/components/financials/ActualsTab';
 import InvoicesTab from '@/components/financials/InvoicesTab';
 import SOVManager from '@/components/sov/SOVManager';
 import InvoiceManager from '@/components/sov/InvoiceManager';
+import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
 import { usePermissions } from '@/components/shared/usePermissions';
 
 export default function Financials() {
@@ -40,8 +41,16 @@ export default function Financials() {
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', selectedProject],
     queryFn: () => selectedProject
-      ? base44.entities.ClientInvoice.filter({ project_id: selectedProject }, '-invoice_date')
-      : base44.entities.ClientInvoice.list('-invoice_date'),
+      ? base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end')
+      : base44.entities.Invoice.list('-period_end'),
+    enabled: !!selectedProject
+  });
+
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', selectedProject],
+    queryFn: () => selectedProject
+      ? base44.entities.SOVItem.filter({ project_id: selectedProject })
+      : base44.entities.SOVItem.list(),
     enabled: !!selectedProject
   });
 
@@ -97,7 +106,13 @@ export default function Financials() {
       />
 
       <div className="mb-6">
-        <FinancialKPIs budgetLines={budgetLines} expenses={expenses} invoices={invoices} />
+        <FinancialKPIs 
+          budgetLines={budgetLines} 
+          expenses={expenses} 
+          invoices={invoices}
+          sovItems={sovItems}
+          useSOV={sovItems.length > 0}
+        />
       </div>
 
       <Tabs defaultValue="sov" className="space-y-4">
@@ -111,6 +126,7 @@ export default function Financials() {
           <div className="space-y-6">
             <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
             <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
+            <SOVCostAlignment sovItems={sovItems} expenses={expenses} />
           </div>
         </TabsContent>
 

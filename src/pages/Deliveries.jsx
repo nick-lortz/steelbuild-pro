@@ -522,7 +522,12 @@ export default function Deliveries() {
 
         <div className="flex justify-between items-center">
           <p className="text-sm text-zinc-400">
-            Showing {filteredDeliveries.length} of {deliveries.length} deliveries
+            Showing {filteredDeliveries.length} of {allDeliveries.length} deliveries
+            {deliveriesFromTasks.length > 0 && (
+              <span className="ml-2 text-xs text-blue-400">
+                ({deliveriesFromTasks.length} from schedule)
+              </span>
+            )}
           </p>
           <SortControl
             sortOptions={[

@@ -137,8 +137,12 @@ export default function Schedule() {
   });
 
   const { data: workPackages = [] } = useQuery({
-    queryKey: ['workPackages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryKey: ['workPackages', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.WorkPackage.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
@@ -462,29 +466,31 @@ export default function Schedule() {
             <SheetTitle>{editingTask?.id ? 'Edit Task' : 'New Task'}</SheetTitle>
           </SheetHeader>
           <div className="mt-4">
-            <TaskForm
-              task={editingTask}
-              projects={projects}
-              tasks={allTasks}
-              resources={resources}
-              rfis={rfis}
-              changeOrders={changeOrders}
-              drawingSets={drawingSets}
-              workPackages={workPackages}
-              onSubmit={(data) => {
-                if (editingTask?.id) {
-                  updateMutation.mutate({ id: editingTask.id, data });
-                } else {
-                  createMutation.mutate(data);
-                }
-              }}
-              onCancel={() => {
-                setShowTaskForm(false);
-                setEditingTask(null);
-              }}
-              isLoading={createMutation.isPending || updateMutation.isPending}
-              restrictPhase={selectedProject?.phase === 'detailing' ? 'detailing' : null}
-            />
+            {workPackages && (
+              <TaskForm
+                task={editingTask}
+                projects={projects}
+                tasks={allTasks}
+                resources={resources}
+                rfis={rfis}
+                changeOrders={changeOrders}
+                drawingSets={drawingSets}
+                workPackages={workPackages}
+                onSubmit={(data) => {
+                  if (editingTask?.id) {
+                    updateMutation.mutate({ id: editingTask.id, data });
+                  } else {
+                    createMutation.mutate(data);
+                  }
+                }}
+                onCancel={() => {
+                  setShowTaskForm(false);
+                  setEditingTask(null);
+                }}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+                restrictPhase={selectedProject?.phase === 'detailing' ? 'detailing' : null}
+              />
+            )}
           </div>
         </SheetContent>
       </Sheet>

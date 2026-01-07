@@ -447,18 +447,18 @@ export default function Deliveries() {
     header: '',
     accessor: 'actions',
     render: (row) =>
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={(e) => {
-        e.stopPropagation();
-        setDeleteDelivery(row);
-      }}
-      className="text-zinc-500 hover:text-red-500">
-
-          <Trash2 size={16} />
-        </Button>
-
+    !row._isFromTask ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          setDeleteDelivery(row);
+        }}
+        className="text-zinc-500 hover:text-red-500">
+            <Trash2 size={16} />
+          </Button>
+    ) : null
   }];
 
 

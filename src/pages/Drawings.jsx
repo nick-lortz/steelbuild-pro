@@ -29,7 +29,7 @@ import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
 import { differenceInDays } from 'date-fns';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export default function Drawings() {
+export default function Detailing() {
   const [showForm, setShowForm] = useState(false);
   const [selectedSet, setSelectedSet] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -230,8 +230,8 @@ export default function Drawings() {
   return (
     <div>
       <PageHeader
-        title="Drawing Sets"
-        subtitle="Manage drawing submissions and revisions"
+        title="Detailing"
+        subtitle="Manage drawing sets, submissions, revisions, and detailing coordination"
         actions={
           <div className="flex gap-2">
             <Button

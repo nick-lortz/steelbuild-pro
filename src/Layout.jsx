@@ -52,7 +52,7 @@ import CommandPalette from '@/components/shared/CommandPalette';
         { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
         { name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
         { name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
-        { name: 'Drawings', page: 'Drawings', icon: FileText, roles: ['admin', 'user'] },
+        { name: 'Detailing', page: 'Detailing', icon: FileText, roles: ['admin', 'user'] },
         { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
         { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
         { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },

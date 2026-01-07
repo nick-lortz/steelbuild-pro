@@ -109,63 +109,63 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Total Resources</p>
-                <p className="text-2xl font-bold text-white mt-1">{summary.totalResources}</p>
+                <p className="text-muted-foreground text-xs">Total Resources</p>
+                <p className="text-2xl font-bold mt-1">{summary.totalResources}</p>
               </div>
-              <Users className="text-blue-500" size={20} />
+              <Users className="text-blue-500" size={18} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Avg Utilization</p>
+                <p className="text-muted-foreground text-xs">Avg Utilization</p>
                 <p className="text-2xl font-bold text-green-400 mt-1">
                   {summary.avgUtilization.toFixed(0)}%
                 </p>
               </div>
-              <CheckCircle className="text-green-500" size={20} />
+              <CheckCircle className="text-green-500" size={18} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Overallocated</p>
+                <p className="text-muted-foreground text-xs">Overallocated</p>
                 <p className="text-2xl font-bold text-red-400 mt-1">{summary.overallocated}</p>
               </div>
-              <AlertTriangle className="text-red-500" size={20} />
+              <AlertTriangle className="text-red-500" size={18} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Underutilized</p>
+                <p className="text-muted-foreground text-xs">Underutilized</p>
                 <p className="text-2xl font-bold text-blue-400 mt-1">{summary.underutilized}</p>
               </div>
-              <Users className="text-blue-500" size={20} />
+              <Users className="text-blue-500" size={18} />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Heatmap */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader className="border-b border-zinc-800">
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-              <Users size={18} className="text-blue-500" />
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users size={16} className="text-blue-500" />
               Resource Utilization Heatmap ({viewWeeks} Weeks)
             </CardTitle>
             <div className="flex gap-2">
@@ -173,7 +173,7 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
                 onClick={() => setViewWeeks(2)}
                 className={cn(
                   "px-3 py-1 text-xs rounded",
-                  viewWeeks === 2 ? "bg-amber-500 text-black" : "bg-zinc-800 text-zinc-400"
+                  viewWeeks === 2 ? "bg-amber-500 text-black" : "bg-secondary text-muted-foreground"
                 )}
               >
                 2 Weeks
@@ -182,7 +182,7 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
                 onClick={() => setViewWeeks(4)}
                 className={cn(
                   "px-3 py-1 text-xs rounded",
-                  viewWeeks === 4 ? "bg-amber-500 text-black" : "bg-zinc-800 text-zinc-400"
+                  viewWeeks === 4 ? "bg-amber-500 text-black" : "bg-secondary text-muted-foreground"
                 )}
               >
                 4 Weeks
@@ -191,7 +191,7 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
                 onClick={() => setViewWeeks(8)}
                 className={cn(
                   "px-3 py-1 text-xs rounded",
-                  viewWeeks === 8 ? "bg-amber-500 text-black" : "bg-zinc-800 text-zinc-400"
+                  viewWeeks === 8 ? "bg-amber-500 text-black" : "bg-secondary text-muted-foreground"
                 )}
               >
                 8 Weeks
@@ -202,9 +202,9 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
         <CardContent className="pt-6 overflow-x-auto">
           {utilizationData.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="mx-auto text-zinc-600 mb-3" size={40} />
-              <p className="text-zinc-400">No labor resources found</p>
-              <p className="text-zinc-600 text-sm mt-1">Add labor resources to track utilization</p>
+              <Users className="mx-auto text-muted-foreground mb-3" size={40} />
+              <p className="text-muted-foreground">No labor resources found</p>
+              <p className="text-muted-foreground text-sm mt-1">Add labor resources to track utilization</p>
             </div>
           ) : (
             <div className="min-w-[800px]">
@@ -281,28 +281,28 @@ export default function ResourceHeatmap({ projects, resources, resourceAllocatio
               })}
 
               {/* Legend */}
-              <div className="mt-6 pt-4 border-t border-zinc-800">
-                <p className="text-zinc-400 text-xs font-medium mb-2">Utilization Legend:</p>
+              <div className="mt-6 pt-4 border-t border-border">
+                <p className="text-muted-foreground text-xs mb-2">Utilization Legend:</p>
                 <div className="flex gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-zinc-800"></div>
-                    <span className="text-xs text-zinc-400">0%</span>
+                    <span className="text-xs text-muted-foreground">0%</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-blue-500/20"></div>
-                    <span className="text-xs text-zinc-400">&lt;50%</span>
+                    <span className="text-xs text-muted-foreground">&lt;50%</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-green-500/40"></div>
-                    <span className="text-xs text-zinc-400">50-80%</span>
+                    <span className="text-xs text-muted-foreground">50-80%</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-amber-500/60"></div>
-                    <span className="text-xs text-zinc-400">80-100%</span>
+                    <span className="text-xs text-muted-foreground">80-100%</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-red-500/80"></div>
-                    <span className="text-xs text-zinc-400">&gt;100%</span>
+                    <span className="text-xs text-muted-foreground">&gt;100%</span>
                   </div>
                 </div>
               </div>

@@ -148,10 +148,10 @@ export default function Analytics() {
         showBackButton={false}
         actions={
           <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
+            <SelectTrigger className="w-64">
               <SelectValue placeholder="Select Project" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectContent>
               {userProjects.map(project => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.project_number} - {project.name}
@@ -163,20 +163,20 @@ export default function Analytics() {
       />
 
       <Tabs defaultValue="risk-dashboard" className="space-y-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-zinc-800">
+        <TabsList className="bg-card border border-border">
+          <TabsTrigger value="risk-dashboard">
             <AlertTriangle size={16} className="mr-2" />
             Risk Dashboard
           </TabsTrigger>
-          <TabsTrigger value="portfolio" className="data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="portfolio">
             <BarChart3 size={16} className="mr-2" />
             Portfolio Overview
           </TabsTrigger>
-          <TabsTrigger value="resources" className="data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="resources">
             <Users size={16} className="mr-2" />
             Resource Allocation
           </TabsTrigger>
-          <TabsTrigger value="risks" className="data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="risks">
             <TrendingUp size={16} className="mr-2" />
             Risk Trends
           </TabsTrigger>

@@ -223,68 +223,68 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     <div className="space-y-6">
       {/* Risk Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Open RFIs</p>
+                <p className="text-muted-foreground text-xs">Open RFIs</p>
                 <p className="text-2xl font-bold text-amber-400 mt-1">{riskSummary.openRfis}</p>
                 <p className="text-xs text-red-400 mt-1">{riskSummary.overdueRfis} overdue</p>
               </div>
-              <FileText className="text-amber-500" size={20} />
+              <FileText className="text-amber-500" size={18} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Pending COs</p>
+                <p className="text-muted-foreground text-xs">Pending COs</p>
                 <p className="text-2xl font-bold text-blue-400 mt-1">{riskSummary.pendingCOs}</p>
-                <p className="text-xs text-zinc-400 mt-1">${(riskSummary.coValue / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-muted-foreground mt-1">${(riskSummary.coValue / 1000).toFixed(0)}K</p>
               </div>
-              <DollarSign className="text-blue-500" size={20} />
+              <DollarSign className="text-blue-500" size={18} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Overdue Items</p>
+                <p className="text-muted-foreground text-xs">Overdue Items</p>
                 <p className="text-2xl font-bold text-red-400 mt-1">
                   {riskSummary.overdueDrawings + riskSummary.overdueTasks}
                 </p>
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {riskSummary.overdueDrawings} dwgs, {riskSummary.overdueTasks} tasks
                 </p>
               </div>
-              <AlertTriangle className="text-red-500" size={20} />
+              <AlertTriangle className="text-red-500" size={18} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-xs font-medium">Scope Gaps</p>
+                <p className="text-muted-foreground text-xs">Scope Gaps</p>
                 <p className="text-2xl font-bold text-purple-400 mt-1">{riskSummary.openGaps}</p>
-                <p className="text-xs text-zinc-400 mt-1">${(riskSummary.gapValue / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-muted-foreground mt-1">${(riskSummary.gapValue / 1000).toFixed(0)}K</p>
               </div>
-              <TrendingUp className="text-purple-500" size={20} />
+              <TrendingUp className="text-purple-500" size={18} />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* RFI Trends */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader className="border-b border-zinc-800">
-          <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-            <FileText size={18} className="text-amber-500" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText size={16} className="text-amber-500" />
             RFI Trend Analysis
           </CardTitle>
         </CardHeader>
@@ -306,10 +306,10 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Change Order Impact */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-              <DollarSign size={18} className="text-blue-500" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <DollarSign size={16} className="text-blue-500" />
               Change Order Impact
             </CardTitle>
           </CardHeader>
@@ -330,10 +330,10 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
         </Card>
 
         {/* Scope Gap Evolution */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-              <AlertTriangle size={18} className="text-purple-500" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle size={16} className="text-purple-500" />
               Scope Gap Evolution
             </CardTitle>
           </CardHeader>
@@ -353,10 +353,10 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
         </Card>
 
         {/* Schedule Risk */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-              <TrendingUp size={18} className="text-red-500" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp size={16} className="text-red-500" />
               Schedule Risk Evolution
             </CardTitle>
           </CardHeader>
@@ -376,10 +376,10 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
         </Card>
 
         {/* Drawing Risk */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-              <FileText size={18} className="text-green-500" />
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText size={16} className="text-green-500" />
               Drawing Release Performance
             </CardTitle>
           </CardHeader>

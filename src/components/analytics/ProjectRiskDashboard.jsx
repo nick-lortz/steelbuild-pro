@@ -163,56 +163,56 @@ export default function ProjectRiskDashboard({
   return (
     <div className="space-y-6">
       {/* Executive Summary */}
-      <Card className="bg-zinc-900 border-zinc-800 p-6">
-        <h2 className="text-xl font-bold text-white mb-4">Executive Risk Summary</h2>
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold mb-4">Executive Risk Summary</h2>
         <div className="grid grid-cols-4 gap-4">
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Lock size={18} className="text-red-400" />
-              <span className="text-sm text-zinc-400">Blocked Projects</span>
+              <Lock size={16} className="text-red-400" />
+              <span className="text-xs text-muted-foreground">Blocked Projects</span>
             </div>
-            <p className="text-3xl font-bold text-red-400">{executiveSummary.blocked}</p>
-            <p className="text-xs text-zinc-500 mt-1">Require immediate action</p>
+            <p className="text-2xl font-bold text-red-400">{executiveSummary.blocked}</p>
+            <p className="text-xs text-muted-foreground mt-1">Require immediate action</p>
           </div>
           
-          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle size={18} className="text-amber-400" />
-              <span className="text-sm text-zinc-400">Critical Issues</span>
+              <AlertTriangle size={16} className="text-amber-400" />
+              <span className="text-xs text-muted-foreground">Critical Issues</span>
             </div>
-            <p className="text-3xl font-bold text-amber-400">{executiveSummary.critical}</p>
-            <p className="text-xs text-zinc-500 mt-1">Projects with critical risks</p>
+            <p className="text-2xl font-bold text-amber-400">{executiveSummary.critical}</p>
+            <p className="text-xs text-muted-foreground mt-1">Projects with critical risks</p>
           </div>
           
-          <div className="p-4 bg-zinc-800 border border-zinc-700 rounded-lg">
+          <div className="p-4 bg-secondary rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign size={18} className="text-zinc-400" />
-              <span className="text-sm text-zinc-400">Total Exposure</span>
+              <DollarSign size={16} className="text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Total Exposure</span>
             </div>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-2xl font-bold">
               ${(executiveSummary.totalExposure / 1000).toFixed(0)}k
             </p>
-            <p className="text-xs text-zinc-500 mt-1">Unresolved financial risk</p>
+            <p className="text-xs text-muted-foreground mt-1">Unresolved financial risk</p>
           </div>
           
-          <div className="p-4 bg-zinc-800 border border-zinc-700 rounded-lg">
+          <div className="p-4 bg-secondary rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Clock size={18} className="text-zinc-400" />
-              <span className="text-sm text-zinc-400">Schedule Variance</span>
+              <Clock size={16} className="text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Schedule Variance</span>
             </div>
-            <p className="text-3xl font-bold text-white">
+            <p className="text-2xl font-bold">
               {executiveSummary.avgScheduleVariance.toFixed(0)}d
             </p>
-            <p className="text-xs text-zinc-500 mt-1">Average across portfolio</p>
+            <p className="text-xs text-muted-foreground mt-1">Average across portfolio</p>
           </div>
         </div>
       </Card>
 
       {/* Project Risk Cards */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white">Project-Level Risk Enforcement</h3>
+        <h3 className="text-base font-semibold">Project-Level Risk Enforcement</h3>
         {riskAnalysis.length === 0 ? (
-          <div className="text-center py-8 text-zinc-500">
+          <div className="text-center py-8 text-muted-foreground">
             No projects available for risk analysis
           </div>
         ) : riskAnalysis.map((analysis) => {
@@ -222,15 +222,15 @@ export default function ProjectRiskDashboard({
             <Card 
               key={project.id} 
               className={cn(
-                "bg-zinc-900 border-zinc-800 p-5",
-                isBlocked && "border-red-500/50 border-2"
+                "p-5",
+                isBlocked && "border-red-500/50"
               )}
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="text-lg font-bold text-white">{project.name}</h4>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="text-base font-semibold">{project.name}</h4>
                     {isBlocked && (
                       <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
                         <Lock size={12} className="mr-1" />
@@ -238,13 +238,12 @@ export default function ProjectRiskDashboard({
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-zinc-500">{project.project_number} • {project.client}</p>
+                  <p className="text-sm text-muted-foreground">{project.project_number} • {project.client}</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedProject(selectedProject === project.id ? null : project.id)}
-                  className="border-zinc-700"
                 >
                   {selectedProject === project.id ? 'Hide Details' : 'View Details'}
                 </Button>
@@ -270,7 +269,7 @@ export default function ProjectRiskDashboard({
               )}
 
               {/* Risk Grid */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-4">
                 {/* Labor Mismatch */}
                 <div className={cn(
                   "p-3 rounded-lg border",
@@ -278,12 +277,12 @@ export default function ProjectRiskDashboard({
                 )}>
                   <div className="flex items-center gap-2 mb-2">
                     <Users size={14} />
-                    <span className="text-xs font-medium">Labor Mismatch</span>
+                    <span className="text-xs">Labor Mismatch</span>
                   </div>
-                  <p className="text-xl font-bold">
+                  <p className="text-lg font-bold">
                     {laborMismatch.variancePct > 0 ? '+' : ''}{laborMismatch.variancePct.toFixed(1)}%
                   </p>
-                  <p className="text-xs opacity-80 mt-1">
+                  <p className="text-xs opacity-70 mt-1">
                     {laborMismatch.variance > 0 ? '+' : ''}{laborMismatch.variance.toFixed(0)}h variance
                   </p>
                 </div>
@@ -295,10 +294,10 @@ export default function ProjectRiskDashboard({
                 )}>
                   <div className="flex items-center gap-2 mb-2">
                     <FileText size={14} />
-                    <span className="text-xs font-medium">Open Scope Gaps</span>
+                    <span className="text-xs">Open Scope Gaps</span>
                   </div>
-                  <p className="text-xl font-bold">{scopeGapRisk.count}</p>
-                  <p className="text-xs opacity-80 mt-1">
+                  <p className="text-lg font-bold">{scopeGapRisk.count}</p>
+                  <p className="text-xs opacity-70 mt-1">
                     ${(scopeGapRisk.exposure / 1000).toFixed(0)}k exposure
                   </p>
                 </div>
@@ -311,12 +310,12 @@ export default function ProjectRiskDashboard({
                   )}>
                     <div className="flex items-center gap-2 mb-2">
                       <Clock size={14} />
-                      <span className="text-xs font-medium">Schedule Delta</span>
+                      <span className="text-xs">Schedule Delta</span>
                     </div>
-                    <p className="text-xl font-bold">
+                    <p className="text-lg font-bold">
                       {scheduleDelta.daysVariance > 0 ? '+' : ''}{scheduleDelta.daysVariance}d
                     </p>
-                    <p className="text-xs opacity-80 mt-1">
+                    <p className="text-xs opacity-70 mt-1">
                       {scheduleDelta.variance.toFixed(1)}% variance
                     </p>
                   </div>
@@ -329,12 +328,12 @@ export default function ProjectRiskDashboard({
                 )}>
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSign size={14} />
-                    <span className="text-xs font-medium">Budget Status</span>
+                    <span className="text-xs">Budget Status</span>
                   </div>
-                  <p className="text-xl font-bold">
+                  <p className="text-lg font-bold">
                     {financialRisk.overrunPct > 0 ? '+' : ''}{financialRisk.overrunPct.toFixed(1)}%
                   </p>
-                  <p className="text-xs opacity-80 mt-1">
+                  <p className="text-xs opacity-70 mt-1">
                     ${(financialRisk.overrun / 1000).toFixed(0)}k {financialRisk.overrun > 0 ? 'over' : 'under'}
                   </p>
                 </div>
@@ -342,29 +341,29 @@ export default function ProjectRiskDashboard({
 
               {/* Detailed Breakdown */}
               {selectedProject === project.id && (
-                <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
+                <div className="mt-4 pt-4 border-t border-border space-y-3">
                   {/* Labor Details */}
-                  <div className="p-3 bg-zinc-800/50 rounded">
-                    <h5 className="text-sm font-medium text-white mb-2">Labor Breakdown</h5>
+                  <div className="p-3 bg-secondary rounded">
+                    <h5 className="text-sm font-medium mb-2">Labor Breakdown</h5>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-zinc-500">Baseline Shop:</span>
-                        <span className="text-white ml-2">{project.baseline_shop_hours || 0}h</span>
+                        <span className="text-muted-foreground">Baseline Shop:</span>
+                        <span className="ml-2">{project.baseline_shop_hours || 0}h</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500">Allocated Shop:</span>
-                        <span className="text-white ml-2">
+                        <span className="text-muted-foreground">Allocated Shop:</span>
+                        <span className="ml-2">
                           {laborBreakdowns.filter(lb => lb.project_id === project.id)
                             .reduce((sum, lb) => sum + (lb.shop_hours || 0), 0)}h
                         </span>
                       </div>
                       <div>
-                        <span className="text-zinc-500">Baseline Field:</span>
-                        <span className="text-white ml-2">{project.baseline_field_hours || 0}h</span>
+                        <span className="text-muted-foreground">Baseline Field:</span>
+                        <span className="ml-2">{project.baseline_field_hours || 0}h</span>
                       </div>
                       <div>
-                        <span className="text-zinc-500">Allocated Field:</span>
-                        <span className="text-white ml-2">
+                        <span className="text-muted-foreground">Allocated Field:</span>
+                        <span className="ml-2">
                           {laborBreakdowns.filter(lb => lb.project_id === project.id)
                             .reduce((sum, lb) => sum + (lb.field_hours || 0), 0)}h
                         </span>
@@ -373,9 +372,9 @@ export default function ProjectRiskDashboard({
                   </div>
 
                   {/* Audit Trail Preview */}
-                  <div className="p-3 bg-zinc-800/50 rounded">
-                    <h5 className="text-sm font-medium text-white mb-2">Recent Activity</h5>
-                    <div className="space-y-1 text-xs text-zinc-400">
+                  <div className="p-3 bg-secondary rounded">
+                    <h5 className="text-sm font-medium mb-2">Recent Activity</h5>
+                    <div className="space-y-1 text-xs text-muted-foreground">
                       <p>• Last labor update: {format(new Date(project.updated_date), 'MMM d, h:mm a')} by {project.created_by}</p>
                       <p>• Project modified: {format(new Date(project.updated_date), 'MMM d, yyyy')}</p>
                     </div>

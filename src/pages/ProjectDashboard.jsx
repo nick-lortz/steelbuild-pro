@@ -1,445 +1,400 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Settings,
-  DollarSign,
-  Clock,
-  FileText,
-  MessageSquareWarning,
-  Target,
-  Activity
-} from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from '@/components/ui/PageHeader';
+import ProjectScheduleWidget from '@/components/schedule/ProjectScheduleWidget';
 import StatusBadge from '@/components/ui/StatusBadge';
-import BudgetVarianceWidget from '@/components/project-dashboard/BudgetVarianceWidget';
-import ScheduleAdherenceWidget from '@/components/project-dashboard/ScheduleAdherenceWidget';
-import RFIResponseTimeWidget from '@/components/project-dashboard/RFIResponseTimeWidget';
-import RiskRegister from '@/components/project-dashboard/RiskRegister';
-import ProjectAlerts from '@/components/project-dashboard/ProjectAlerts';
-import FinancialSummary from '@/components/project-dashboard/FinancialSummary';
-import RiskAssessmentModule from '@/components/project-dashboard/RiskAssessmentModule';
-import GanttTimeline from '@/components/project-dashboard/GanttTimeline';
-import ProjectRiskSummary from '@/components/project-dashboard/ProjectRiskSummary';
-import { format, differenceInDays } from 'date-fns';
-import { calculateProjectLaborTotals, identifyScopeRiskTasks } from '@/components/shared/laborScheduleUtils';
+import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight } from 'lucide-react';
+import { format, parseISO, isPast, addDays } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from './utils';
 
 export default function ProjectDashboard() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [showAlertConfig, setShowAlertConfig] = useState(false);
-  
-  // Get project ID from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const projectId = urlParams.get('id');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
 
-  const { data: project } = useQuery({
-    queryKey: ['project', projectId],
-    queryFn: async () => {
-      const projects = await base44.entities.Project.list();
-      return projects.find(p => p.id === projectId);
-    },
-    enabled: !!projectId,
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: financials = [] } = useQuery({
-    queryKey: ['financials', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.Financial.list();
-      return all.filter(f => f.project_id === projectId);
-    },
-    enabled: !!projectId,
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ['all-tasks'],
+    queryFn: () => base44.entities.Task.list('end_date'),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: costCodes = [] } = useQuery({
-    queryKey: ['costCodes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents'],
+    queryFn: () => base44.entities.Document.list('-created_date'),
+    staleTime: 5 * 60 * 1000
   });
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.Task.list();
-      return all.filter(t => t.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+  // Calculate project metrics
+  const projectMetrics = useMemo(() => {
+    const metrics = {};
+    
+    projects.forEach(project => {
+      const projectTasks = allTasks.filter(t => t.project_id === project.id);
+      const projectDocs = documents.filter(d => d.project_id === project.id && d.is_current);
+      
+      const totalTasks = projectTasks.length;
+      const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
+      const overdueTasks = projectTasks.filter(t => {
+        if (t.status === 'completed' || !t.end_date) return false;
+        try {
+          return isPast(parseISO(t.end_date));
+        } catch {
+          return false;
+        }
+      }).length;
 
-  const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.RFI.list();
-      return all.filter(r => r.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+      const blockedTasks = projectTasks.filter(t => t.status === 'blocked' || t.status === 'on_hold').length;
 
-  const { data: drawings = [] } = useQuery({
-    queryKey: ['drawings', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.DrawingSet.list();
-      return all.filter(d => d.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+      // Calculate simple health status
+      let healthStatus = 'on_track';
+      if (overdueTasks > 0 || blockedTasks > 2) healthStatus = 'at_risk';
+      if (overdueTasks > 2) healthStatus = 'delayed';
 
-  const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.ChangeOrder.list();
-      return all.filter(co => co.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+      const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const { data: expenses = [] } = useQuery({
-    queryKey: ['expenses', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.Expense.list();
-      return all.filter(e => e.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+      // Upcoming milestones (next 30 days)
+      const thirtyDaysOut = addDays(new Date(), 30);
+      const upcomingMilestones = projectTasks.filter(t => {
+        if (!t.is_milestone || !t.end_date) return false;
+        try {
+          const endDate = parseISO(t.end_date);
+          return endDate >= new Date() && endDate <= thirtyDaysOut;
+        } catch {
+          return false;
+        }
+      });
 
-  const { data: breakdowns = [] } = useQuery({
-    queryKey: ['labor-breakdowns', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.LaborBreakdown.list();
-      return all.filter(b => b.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+      // Recent docs (last 7 days)
+      const sevenDaysAgo = addDays(new Date(), -7);
+      const recentDocs = projectDocs.filter(d => {
+        try {
+          return parseISO(d.created_date) >= sevenDaysAgo;
+        } catch {
+          return false;
+        }
+      });
 
-  const { data: scopeGaps = [] } = useQuery({
-    queryKey: ['scope-gaps', projectId],
-    queryFn: async () => {
-      const all = await base44.entities.ScopeGap.list();
-      return all.filter(g => g.project_id === projectId);
-    },
-    enabled: !!projectId,
-  });
+      metrics[project.id] = {
+        totalTasks,
+        completedTasks,
+        overdueTasks,
+        blockedTasks,
+        healthStatus,
+        progressPercent,
+        upcomingMilestones: upcomingMilestones.length,
+        recentDocs: recentDocs.length,
+        pendingReview: projectDocs.filter(d => d.workflow_stage === 'pending_review').length
+      };
+    });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['labor-categories'],
-    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
-  });
+    return metrics;
+  }, [projects, allTasks, documents]);
 
-  // Calculate project totals
-  const projectTotals = useMemo(() => {
-    const budget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
-    const committed = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
-    const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
-    const actualFromExpenses = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const actual = actualFromFinancials + actualFromExpenses;
-    const remaining = budget - actual;
-    const percentSpent = budget > 0 ? (actual / budget) * 100 : 0;
-
-    return { budget, committed, actual, remaining, percentSpent };
-  }, [financials, expenses]);
-
-  // Calculate schedule metrics
-  const scheduleMetrics = useMemo(() => {
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.status === 'completed').length;
-    const onTrack = tasks.filter(t => {
-      if (t.status === 'completed') return true;
-      if (!t.end_date) return true;
-      return new Date(t.end_date) > new Date();
-    }).length;
-    const overdue = tasks.filter(t => {
-      if (t.status === 'completed') return false;
-      if (!t.end_date) return false;
-      return new Date(t.end_date) < new Date();
-    }).length;
-    const adherence = total > 0 ? (onTrack / total) * 100 : 100;
-
-    return { total, completed, onTrack, overdue, adherence };
-  }, [tasks]);
-
-  // Labor metrics
-  const laborMetrics = useMemo(() => {
-    const totals = calculateProjectLaborTotals(breakdowns, tasks);
-    const openGaps = scopeGaps.filter(g => g.status === 'open');
-    const totalGapCost = openGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
-    const scopeRisks = identifyScopeRiskTasks(tasks, breakdowns, scopeGaps, categories);
-    const categoriesAtRisk = scopeRisks.length;
+  // Portfolio summary
+  const portfolioSummary = useMemo(() => {
+    const activeProjects = projects.filter(p => p.status !== 'completed' && p.status !== 'closed');
+    const atRiskProjects = activeProjects.filter(p => projectMetrics[p.id]?.healthStatus === 'at_risk' || projectMetrics[p.id]?.healthStatus === 'delayed');
+    const totalOverdueTasks = Object.values(projectMetrics).reduce((sum, m) => sum + m.overdueTasks, 0);
+    const totalUpcomingMilestones = Object.values(projectMetrics).reduce((sum, m) => sum + m.upcomingMilestones, 0);
 
     return {
-      plannedShop: totals.scheduled_shop,
-      plannedField: totals.scheduled_field,
-      laborVariance: totals.shop_variance + totals.field_variance,
-      hasVariance: totals.has_mismatch,
-      openGapsCount: openGaps.length,
-      totalGapCost,
-      categoriesAtRisk,
-      scopeRisks
+      totalProjects: projects.length,
+      activeProjects: activeProjects.length,
+      atRiskProjects: atRiskProjects.length,
+      totalOverdueTasks,
+      totalUpcomingMilestones
     };
-  }, [breakdowns, tasks, scopeGaps, categories]);
+  }, [projects, projectMetrics]);
 
-  if (!project) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading project...</p>
-        </div>
-      </div>
-    );
-  }
+  // Filter and sort projects
+  const filteredProjects = useMemo(() => {
+    let filtered = projects.filter(p => {
+      const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           p.project_number?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    filtered.sort((a, b) => {
+      const aMetrics = projectMetrics[a.id] || {};
+      const bMetrics = projectMetrics[b.id] || {};
+
+      switch(sortBy) {
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '');
+        case 'progress':
+          return (bMetrics.progressPercent || 0) - (aMetrics.progressPercent || 0);
+        case 'health':
+          const healthOrder = { delayed: 0, at_risk: 1, on_track: 2 };
+          return healthOrder[aMetrics.healthStatus] - healthOrder[bMetrics.healthStatus];
+        case 'overdue':
+          return (bMetrics.overdueTasks || 0) - (aMetrics.overdueTasks || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [projects, projectMetrics, searchTerm, statusFilter, sortBy]);
 
   return (
     <div>
       <PageHeader
-        title={project.name}
-        subtitle={`${project.project_number} • ${project.client || 'No client'}`}
-        actions={
-          <div className="flex gap-2">
+        title="Project Dashboard"
+        subtitle="Portfolio-level overview and metrics"
+      />
+
+      {/* Portfolio Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500/10 rounded">
+                <Building2 size={20} className="text-amber-500" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">Total Projects</p>
+                <p className="text-2xl font-bold text-white">{portfolioSummary.totalProjects}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded">
+                <TrendingUp size={20} className="text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">Active</p>
+                <p className="text-2xl font-bold text-white">{portfolioSummary.activeProjects}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-red-500/5 border-red-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500/10 rounded">
+                <AlertTriangle size={20} className="text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">At Risk</p>
+                <p className="text-2xl font-bold text-red-400">{portfolioSummary.atRiskProjects}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-amber-500/5 border-amber-500/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500/10 rounded">
+                <AlertTriangle size={20} className="text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">Overdue Tasks</p>
+                <p className="text-2xl font-bold text-amber-400">{portfolioSummary.totalOverdueTasks}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded">
+                <Calendar size={20} className="text-green-500" />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">Milestones (30d)</p>
+                <p className="text-2xl font-bold text-white">{portfolioSummary.totalUpcomingMilestones}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Input
+            placeholder="Search projects..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-zinc-900 border-zinc-800"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="bidding">Bidding</SelectItem>
+            <SelectItem value="awarded">Awarded</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Name</SelectItem>
+            <SelectItem value="progress">Progress</SelectItem>
+            <SelectItem value="health">Health</SelectItem>
+            <SelectItem value="overdue">Overdue Tasks</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Selected Project Schedule Widget */}
+      {selectedProjectId && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-white">
+              {projects.find(p => p.id === selectedProjectId)?.name}
+            </h3>
             <Button
-              variant="outline"
-              onClick={() => setShowAlertConfig(true)}
-              className="border-zinc-700"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedProjectId(null)}
+              className="text-zinc-400"
             >
-              <Settings size={16} className="mr-2" />
-              Configure Alerts
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate(-1)}
-              className="border-zinc-700"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Back
+              Close
             </Button>
           </div>
-        }
-      />
+          <ProjectScheduleWidget projectId={selectedProjectId} />
+        </div>
+      )}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Budget Health</p>
-                <p className={`text-2xl font-bold ${projectTotals.remaining >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {projectTotals.percentSpent.toFixed(1)}%
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  ${Math.abs(projectTotals.remaining).toLocaleString()} {projectTotals.remaining >= 0 ? 'remaining' : 'over'}
-                </p>
-              </div>
-              <DollarSign className="text-amber-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Project Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        {filteredProjects.map(project => {
+          const metrics = projectMetrics[project.id] || {};
+          const healthColor = {
+            on_track: 'text-green-400 bg-green-500/10 border-green-500/20',
+            at_risk: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+            delayed: 'text-red-400 bg-red-500/10 border-red-500/20'
+          }[metrics.healthStatus] || 'text-zinc-400';
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Schedule</p>
-                <p className={`text-2xl font-bold ${scheduleMetrics.adherence >= 80 ? 'text-green-400' : 'text-red-400'}`}>
-                  {scheduleMetrics.adherence.toFixed(0)}%
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {scheduleMetrics.overdue} overdue tasks
-                </p>
-              </div>
-              <Clock className="text-blue-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
+          return (
+            <Card key={project.id} className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <Link to={createPageUrl('Projects')}>
+                      <CardTitle className="text-base text-white truncate hover:text-amber-400 transition-colors">
+                        {project.project_number}
+                      </CardTitle>
+                    </Link>
+                    <p className="text-sm text-zinc-400 truncate mt-1">{project.name}</p>
+                  </div>
+                  <StatusBadge status={project.status} className="ml-2" />
+                </div>
+              </CardHeader>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Open RFIs</p>
-                <p className="text-2xl font-bold text-white">
-                  {rfis.filter(r => r.status !== 'closed' && r.status !== 'answered').length}
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date() && r.status !== 'closed').length} overdue
-                </p>
-              </div>
-              <MessageSquareWarning className="text-purple-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
+              <CardContent className="space-y-4">
+                {/* Health Status */}
+                <div className={`p-3 rounded-lg border ${healthColor}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Schedule Health</span>
+                    <Badge className={healthColor}>
+                      {metrics.healthStatus?.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Drawings Status</p>
-                <p className="text-2xl font-bold text-white">
-                  {drawings.filter(d => d.status === 'FFF').length}/{drawings.length}
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Released for fabrication
-                </p>
-              </div>
-              <FileText className="text-green-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
+                {/* Progress */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-zinc-400">Progress</span>
+                    <span className="text-sm font-bold text-white">{metrics.progressPercent}%</span>
+                  </div>
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-amber-500 transition-all"
+                      style={{ width: `${metrics.progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-2 bg-zinc-800/50 rounded">
+                    <p className="text-xs text-zinc-400">Tasks</p>
+                    <p className="text-lg font-bold text-white">
+                      {metrics.completedTasks}/{metrics.totalTasks}
+                    </p>
+                  </div>
+                  <div className={`p-2 rounded ${metrics.overdueTasks > 0 ? 'bg-red-500/10' : 'bg-zinc-800/50'}`}>
+                    <p className="text-xs text-zinc-400">Overdue</p>
+                    <p className={`text-lg font-bold ${metrics.overdueTasks > 0 ? 'text-red-400' : 'text-white'}`}>
+                      {metrics.overdueTasks}
+                    </p>
+                  </div>
+                  <div className="p-2 bg-zinc-800/50 rounded">
+                    <p className="text-xs text-zinc-400">Milestones</p>
+                    <p className="text-lg font-bold text-white">{metrics.upcomingMilestones}</p>
+                  </div>
+                  <div className={`p-2 rounded ${metrics.pendingReview > 0 ? 'bg-amber-500/10' : 'bg-zinc-800/50'}`}>
+                    <p className="text-xs text-zinc-400">Docs Review</p>
+                    <p className={`text-lg font-bold ${metrics.pendingReview > 0 ? 'text-amber-400' : 'text-white'}`}>
+                      {metrics.pendingReview}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 border-zinc-700"
+                    onClick={() => setSelectedProjectId(selectedProjectId === project.id ? null : project.id)}
+                  >
+                    {selectedProjectId === project.id ? 'Hide' : 'View'} Health
+                  </Button>
+                  <Link to={createPageUrl('Schedule') + `?project=${project.id}`} className="flex-1">
+                    <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-black">
+                      Schedule
+                      <ChevronRight size={14} className="ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Labor KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Planned Shop Hrs</p>
-                <p className="text-2xl font-bold text-blue-400">{laborMetrics.plannedShop}</p>
-                <p className="text-xs text-zinc-500 mt-1">Allocated to tasks</p>
-              </div>
-              <TrendingUp className="text-blue-400" size={24} />
-            </div>
+      {filteredProjects.length === 0 && (
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-12 text-center">
+            <p className="text-zinc-400">No projects found</p>
           </CardContent>
         </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Planned Field Hrs</p>
-                <p className="text-2xl font-bold text-green-400">{laborMetrics.plannedField}</p>
-                <p className="text-xs text-zinc-500 mt-1">Allocated to tasks</p>
-              </div>
-              <TrendingUp className="text-green-400" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Labor Variance</p>
-                <p className={`text-2xl font-bold ${laborMetrics.hasVariance ? 'text-amber-400' : 'text-green-400'}`}>
-                  {laborMetrics.laborVariance > 0 ? '+' : ''}{laborMetrics.laborVariance} hrs
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {laborMetrics.categoriesAtRisk} categories at risk
-                </p>
-              </div>
-              {laborMetrics.hasVariance ? <AlertTriangle className="text-amber-400" size={24} /> : <Target className="text-green-400" size={24} />}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Scope Gaps</p>
-                <p className="text-2xl font-bold text-red-400">${(laborMetrics.totalGapCost / 1000).toFixed(0)}K</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {laborMetrics.openGapsCount} open items
-                </p>
-              </div>
-              <AlertTriangle className="text-red-400" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Alerts Component */}
-      <ProjectAlerts
-        project={project}
-        financials={financials}
-        tasks={tasks}
-        rfis={rfis}
-        projectTotals={projectTotals}
-        scheduleMetrics={scheduleMetrics}
-        showConfig={showAlertConfig}
-        onCloseConfig={() => setShowAlertConfig(false)}
-      />
-
-      <Tabs defaultValue="overview" className="mb-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800">
-            <Target size={14} className="mr-2" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="financial" className="data-[state=active]:bg-zinc-800">
-            <DollarSign size={14} className="mr-2" />
-            Financial Summary
-          </TabsTrigger>
-          <TabsTrigger value="risks" className="data-[state=active]:bg-zinc-800">
-            <AlertTriangle size={14} className="mr-2" />
-            Risk Assessment
-          </TabsTrigger>
-          <TabsTrigger value="kpis" className="data-[state=active]:bg-zinc-800">
-            <Activity size={14} className="mr-2" />
-            KPI Widgets
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          {/* Risk Summary */}
-          <ProjectRiskSummary
-            project={project}
-            tasks={tasks}
-            rfis={rfis}
-            changeOrders={changeOrders}
-            financials={financials}
-            expenses={expenses}
-          />
-
-          {/* Gantt Timeline */}
-          <GanttTimeline
-            tasks={tasks}
-            project={project}
-          />
-        </TabsContent>
-
-        <TabsContent value="financial" className="space-y-6">
-          <FinancialSummary
-            project={project}
-            financials={financials}
-            costCodes={costCodes}
-            expenses={expenses}
-            changeOrders={changeOrders}
-          />
-        </TabsContent>
-
-        <TabsContent value="risks" className="space-y-6">
-          <RiskAssessmentModule projectId={projectId} />
-        </TabsContent>
-
-        <TabsContent value="kpis" className="space-y-6">
-          {/* Budget Variance by Cost Code */}
-          <BudgetVarianceWidget
-            financials={financials}
-            costCodes={costCodes}
-            expenses={expenses}
-          />
-
-          {/* Schedule Adherence by Phase */}
-          <ScheduleAdherenceWidget
-            tasks={tasks}
-          />
-
-          {/* RFI Response Times */}
-          <RFIResponseTimeWidget
-            rfis={rfis}
-          />
-        </TabsContent>
-      </Tabs>
+      )}
     </div>
   );
 }

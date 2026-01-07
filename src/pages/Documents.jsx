@@ -25,11 +25,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import DocumentTreeView from '@/components/documents/DocumentTreeView';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -47,10 +49,15 @@ const initialFormState = {
   title: '',
   description: '',
   category: 'other',
+  phase: '',
   status: 'draft',
   workflow_stage: 'uploaded',
   reviewer: '',
+  review_due_date: '',
+  revision: '',
+  revision_notes: '',
   tags: [],
+  is_current: true,
 };
 
 export default function Documents() {
@@ -64,6 +71,7 @@ export default function Documents() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [deleteDoc, setDeleteDoc] = useState(null);
+  const [viewMode, setViewMode] = useState('tree');
 
   const queryClient = useQueryClient();
 
@@ -123,12 +131,13 @@ export default function Documents() {
           file_size: file.size,
           version: newVersion,
           parent_document_id: selectedDoc.parent_document_id || selectedDoc.id,
+          is_current: true,
         });
         
-        // Update old document status
+        // Mark old document as not current
         await updateMutation.mutateAsync({
           id: selectedDoc.id,
-          data: { status: 'superseded' }
+          data: { status: 'superseded', is_current: false }
         });
       } else {
         setFormData(prev => ({
@@ -206,7 +215,7 @@ export default function Documents() {
       const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
       const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
       return matchesSearch && matchesCategory && matchesProject;
-    }).filter(d => d.status !== 'superseded'),
+    }).filter(d => d.is_current !== false),
     [documents, searchTerm, categoryFilter, projectFilter]
   );
 
@@ -348,6 +357,14 @@ export default function Documents() {
         </div>
       </div>
 
+      {/* View Mode Toggle */}
+      <Tabs value={viewMode} onValueChange={setViewMode} className="mb-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2 h-auto">
+          <TabsTrigger value="tree" className="text-xs py-2">Tree View</TabsTrigger>
+          <TabsTrigger value="list" className="text-xs py-2">List View</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
@@ -376,24 +393,34 @@ export default function Documents() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="contract">Contract</SelectItem>
+            <SelectItem value="drawing">Drawing</SelectItem>
             <SelectItem value="specification">Specification</SelectItem>
+            <SelectItem value="rfi">RFI</SelectItem>
             <SelectItem value="submittal">Submittal</SelectItem>
-            <SelectItem value="correspondence">Correspondence</SelectItem>
+            <SelectItem value="contract">Contract</SelectItem>
             <SelectItem value="report">Report</SelectItem>
             <SelectItem value="photo">Photo</SelectItem>
+            <SelectItem value="correspondence">Correspondence</SelectItem>
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredDocuments}
-        onRowClick={handleEdit}
-        emptyMessage="No documents found. Upload your first document to get started."
-      />
+      {/* Content */}
+      {viewMode === 'tree' ? (
+        <DocumentTreeView
+          documents={filteredDocuments}
+          projects={projects}
+          onDocClick={handleEdit}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredDocuments}
+          onRowClick={handleEdit}
+          emptyMessage="No documents found. Upload your first document to get started."
+        />
+      )}
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -654,22 +681,43 @@ function DocumentForm({ formData, setFormData, projects, onSubmit, onFileUpload,
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Category</Label>
+          <Label>Category *</Label>
           <Select value={formData.category} onValueChange={(v) => handleChange('category', v)}>
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="contract">Contract</SelectItem>
+              <SelectItem value="drawing">Drawing</SelectItem>
               <SelectItem value="specification">Specification</SelectItem>
+              <SelectItem value="rfi">RFI</SelectItem>
               <SelectItem value="submittal">Submittal</SelectItem>
-              <SelectItem value="correspondence">Correspondence</SelectItem>
+              <SelectItem value="contract">Contract</SelectItem>
               <SelectItem value="report">Report</SelectItem>
               <SelectItem value="photo">Photo</SelectItem>
+              <SelectItem value="correspondence">Correspondence</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-2">
+          <Label>Phase</Label>
+          <Select value={formData.phase} onValueChange={(v) => handleChange('phase', v)}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue placeholder="Optional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>None</SelectItem>
+              <SelectItem value="detailing">Detailing</SelectItem>
+              <SelectItem value="fabrication">Fabrication</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="erection">Erection</SelectItem>
+              <SelectItem value="closeout">Closeout</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Status</Label>
           <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
@@ -678,13 +726,57 @@ function DocumentForm({ formData, setFormData, projects, onSubmit, onFileUpload,
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="review">Review</SelectItem>
+              <SelectItem value="issued">Issued</SelectItem>
+              <SelectItem value="for_review">For Review</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
+              <SelectItem value="void">Void</SelectItem>
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-2">
+          <Label>Revision</Label>
+          <Input
+            value={formData.revision}
+            onChange={(e) => handleChange('revision', e.target.value)}
+            placeholder="A, B, C or 1, 2, 3"
+            className="bg-zinc-800 border-zinc-700"
+          />
+        </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Reviewer</Label>
+          <Input
+            value={formData.reviewer}
+            onChange={(e) => handleChange('reviewer', e.target.value)}
+            placeholder="Email"
+            className="bg-zinc-800 border-zinc-700"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Review Due Date</Label>
+          <Input
+            type="date"
+            value={formData.review_due_date}
+            onChange={(e) => handleChange('review_due_date', e.target.value)}
+            className="bg-zinc-800 border-zinc-700"
+          />
+        </div>
+      </div>
+
+      {isEdit && (
+        <div className="space-y-2">
+          <Label>Revision Notes</Label>
+          <Textarea
+            value={formData.revision_notes}
+            onChange={(e) => handleChange('revision_notes', e.target.value)}
+            rows={2}
+            placeholder="What changed in this revision..."
+            className="bg-zinc-800 border-zinc-700"
+          />
+        </div>
+      )}
 
       {!isEdit && (
         <div className="space-y-2">

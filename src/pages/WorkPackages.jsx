@@ -51,25 +51,6 @@ export default function WorkPackages() {
     enabled: !!activeProjectId
   });
 
-  if (!activeProjectId) {
-    return (
-      <div>
-        <PageHeader 
-          title="Work Packages" 
-          subtitle="Select a project to view work packages"
-          showBackButton={false}
-        />
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <Package size={48} className="mx-auto mb-4 text-zinc-600" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
-            <p className="text-zinc-400">Select a project above to view its work packages.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
@@ -233,6 +214,39 @@ export default function WorkPackages() {
 
   const selectedProject = projects.find(p => p.id === activeProjectId);
 
+  if (!activeProjectId) {
+    return (
+      <div>
+        <PageHeader 
+          title="Work Packages" 
+          subtitle="Select a project to view work packages"
+          showBackButton={false}
+          actions={
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id} className="text-white">
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
+        />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Package size={48} className="mx-auto mb-4 text-zinc-600" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
+            <p className="text-zinc-400">Select a project from the dropdown to view work packages.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -377,6 +391,8 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
     notes: ''
   });
 
+  const { activeProjectId } = useActiveProject();
+
   React.useEffect(() => {
     if (pkg) {
       setFormData({
@@ -389,8 +405,13 @@ function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading
         estimated_cost: pkg.estimated_cost || '',
         notes: pkg.notes || ''
       });
+    } else if (activeProjectId) {
+      setFormData(prev => ({
+        ...prev,
+        project_id: activeProjectId
+      }));
     }
-  }, [pkg]);
+  }, [pkg, activeProjectId]);
 
   const handleChange = (field, value) => {
     setFormData({ ...formData, [field]: value });

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate, Link } from 'react-router-dom';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -85,9 +86,12 @@ const ActivityItem = ({ type, title, subtitle, badge, onClick }) => (
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { activeProjectId } = useActiveProject();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const ACTIVITY_PER_PAGE = 10;
+
+  console.log('Active project:', activeProjectId);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

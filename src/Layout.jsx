@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
 import {
   Building2,
   DollarSign,
@@ -78,6 +79,9 @@ const navItems = [
 ];
 
 function LayoutContent({ children, currentPageName }) {
+  useRenderCount('LayoutContent');
+  useMountLogger('LayoutContent');
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();
   const [isInitialized, setIsInitialized] = useState(false);

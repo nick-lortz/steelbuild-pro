@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DrawingSetForm from './DrawingSetForm';
 import AIDrawingProcessor from './AIDrawingProcessor';
-import { FileText, History, Brain, ExternalLink, Download, Sparkles, Trash2, Upload, Loader2, X } from 'lucide-react';
+import { FileText, History, Brain, ExternalLink, Download, Sparkles, Trash2, Upload, Loader2, X, MessageSquareWarning } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from '@tanstack/react-query';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,14 @@ export default function DrawingSetDetails({
   const [uploadingSheets, setUploadingSheets] = useState(false);
   const [uploadFiles, setUploadFiles] = useState([]);
   const project = projects.find(p => p.id === drawingSet.project_id);
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis'],
+    queryFn: () => base44.entities.RFI.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const linkedRFIs = rfis.filter(r => r.linked_drawing_set_id === drawingSet.id);
 
   const handleSubmit = (data) => {
     onUpdate(data);
@@ -256,6 +265,40 @@ export default function DrawingSetDetails({
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-zinc-300">{drawingSet.ai_summary}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Linked RFIs */}
+              {linkedRFIs.length > 0 && (
+                <Card className="bg-amber-500/10 border-amber-500/20">
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2 text-amber-400">
+                      <MessageSquareWarning size={16} />
+                      Blocking RFIs ({linkedRFIs.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {linkedRFIs.map(rfi => (
+                        <div key={rfi.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                          <div>
+                            <p className="text-sm font-medium">RFI-{String(rfi.rfi_number).padStart(3, '0')}</p>
+                            <p className="text-xs text-zinc-500">{rfi.subject}</p>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={
+                              rfi.status === 'closed' || rfi.status === 'answered'
+                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                : 'bg-red-500/10 text-red-400 border-red-500/20'
+                            }
+                          >
+                            {rfi.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               )}

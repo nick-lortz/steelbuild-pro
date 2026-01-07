@@ -20,6 +20,11 @@ export default function DetailingReadinessPanel({
     const projectDrawingSets = drawingSets.filter(d => d.project_id === project.id);
     const projectRFIs = rfis.filter(r => r.project_id === project.id);
 
+    const drawingLinkedRFIs = projectRFIs.filter(r => 
+      r.linked_drawing_set_id && 
+      (r.status !== 'closed' && r.status !== 'answered')
+    );
+
     const openRFIs = projectRFIs.filter(r => 
       r.status !== 'closed' && r.status !== 'answered'
     );
@@ -38,8 +43,17 @@ export default function DetailingReadinessPanel({
 
     return [
       {
+        id: 'drawing_rfis',
+        label: 'Drawing-Linked RFIs',
+        passed: drawingLinkedRFIs.length === 0,
+        count: drawingLinkedRFIs.length,
+        message: drawingLinkedRFIs.length === 0 
+          ? 'No drawing-related RFIs blocking release'
+          : `${drawingLinkedRFIs.length} RFI${drawingLinkedRFIs.length !== 1 ? 's' : ''} blocking drawings`
+      },
+      {
         id: 'rfis',
-        label: 'Open RFIs',
+        label: 'All Open RFIs',
         passed: openRFIs.length === 0,
         count: openRFIs.length,
         message: openRFIs.length === 0 

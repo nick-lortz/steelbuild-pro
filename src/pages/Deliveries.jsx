@@ -135,8 +135,41 @@ export default function Deliveries() {
     [projects]
   );
 
+  const deliveriesFromTasks = useMemo(() => {
+    return tasks
+      .filter(t => t.phase === 'delivery')
+      .map(task => {
+        const existingDelivery = deliveries.find(d => 
+          d.linked_task_ids?.includes(task.id) || 
+          (d.package_name === task.name && d.project_id === task.project_id)
+        );
+        
+        if (existingDelivery) return null;
+        
+        return {
+          _isFromTask: true,
+          _taskId: task.id,
+          project_id: task.project_id,
+          package_name: task.name,
+          package_number: task.wbs_code || '',
+          scheduled_date: task.start_date,
+          delivery_status: task.status === 'completed' ? 'delivered' : 'scheduled',
+          weight_tons: 0,
+          piece_count: 0,
+          carrier: '',
+          linked_task_ids: [task.id],
+          notes: `Auto-generated from delivery task`,
+        };
+      })
+      .filter(Boolean);
+  }, [tasks, deliveries]);
+
+  const allDeliveries = useMemo(() => {
+    return [...deliveries, ...deliveriesFromTasks];
+  }, [deliveries, deliveriesFromTasks]);
+
   const filteredDeliveries = useMemo(() => {
-    let filtered = deliveries;
+    let filtered = allDeliveries;
 
     // Search filter
     if (searchTerm) {

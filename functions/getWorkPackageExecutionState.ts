@@ -25,27 +25,13 @@ Deno.serve(async (req) => {
 
     // Determine editability
     const isEditable = wp.status === 'active' && wp.phase !== 'complete';
-    const canAdvancePhase = wp.phase !== 'complete' && wp.status !== 'complete';
-    const canDelete = wp.phase === 'fabrication' || wp.phase === 'delivery';
-    
-    let lockedReason = null;
-    if (!isEditable) {
-      if (wp.status === 'complete') {
-        lockedReason = 'Work Package is complete';
-      } else if (wp.status === 'on_hold') {
-        lockedReason = 'Work Package is on hold';
-      } else if (wp.phase === 'complete') {
-        lockedReason = 'Work Package phase is complete';
-      }
-    }
 
     return Response.json({
       phase: wp.phase,
-      status: wp.status,
       is_editable: isEditable,
-      can_advance_phase: canAdvancePhase,
-      can_delete: canDelete,
-      locked_reason: lockedReason
+      can_advance_phase: wp.phase !== 'complete',
+      can_delete: wp.phase === 'fabrication',
+      locked_reason: isEditable ? null : 'Work Package is complete'
     });
 
   } catch (error) {

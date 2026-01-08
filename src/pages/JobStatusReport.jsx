@@ -455,6 +455,10 @@ export default function JobStatusReport() {
         plannedMarginPercent={selectedProjectData?.planned_margin || 15}
         expenses={expenses}
         estimatedCosts={estimatedCosts}
+        sovItems={sovItems}
+        changeOrders={changeOrders}
+        costCodes={costCodes}
+        mappings={mappings}
       />
 
       {/* Earned vs Billed vs Cost Chart */}

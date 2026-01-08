@@ -145,7 +145,7 @@ export default function Analytics() {
     if (!activeProjectId && userProjects.length > 0) {
       setActiveProjectId(userProjects[0].id);
     }
-  }, [userProjects]);
+  }, [activeProjectId, userProjects]);
 
   const selectedProject = projects[0];
   const hasProject = !!activeProjectId;

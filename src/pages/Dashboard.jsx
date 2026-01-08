@@ -441,13 +441,10 @@ export default function Dashboard() {
       </div>
 
       {/* Cost Risk Indicator for Active Project */}
-      {activeProjectFinancials && (
+      {activeProjectId && (
         <div className="mb-6">
           <CostRiskIndicator
-            totalContract={activeProjectFinancials.totalContract}
-            actualCost={activeProjectFinancials.actualCost}
-            estimatedCostAtCompletion={activeProjectFinancials.estimatedCostAtCompletion}
-            plannedMarginPercent={activeProjectFinancials.plannedMargin}
+            projectId={activeProjectId}
             expenses={expenses}
             estimatedCosts={estimatedCosts}
           />

@@ -273,16 +273,6 @@ export default function Dashboard() {
     return items.sort((a, b) => b.date - a.date);
   }, [rfis, changeOrders, tasks, projects, navigate]);
 
-  const paginatedActivity = React.useMemo(() => 
-    activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE),
-    [activityFeed, activityPage]
-  );
-  
-  const hasMoreActivity = React.useMemo(() => 
-    activityFeed.length > paginatedActivity.length,
-    [activityFeed.length, paginatedActivity.length]
-  );
-
   const portfolioHealth = React.useMemo(() => 
     metricsData?.portfolioHealth || {},
     [metricsData]
@@ -300,6 +290,16 @@ export default function Dashboard() {
       return days >= 0 && days <= 30;
     }),
     [activeProjects]
+  );
+
+  const paginatedActivity = React.useMemo(() => 
+    activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE),
+    [activityFeed, activityPage]
+  );
+  
+  const hasMoreActivity = React.useMemo(() => 
+    activityFeed.length > paginatedActivity.length,
+    [activityFeed.length, paginatedActivity.length]
   );
 
   // Calculate financial summary for active project

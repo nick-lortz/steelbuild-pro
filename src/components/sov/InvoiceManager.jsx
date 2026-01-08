@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import DataTable from '@/components/ui/DataTable';
-import { Plus, CheckCircle, FileText, Eye } from 'lucide-react';
+import { Plus, CheckCircle, FileText, Eye, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +17,14 @@ export default function InvoiceManager({ projectId, canEdit }) {
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [showLinesDialog, setShowLinesDialog] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
-  const [periodStart, setPeriodStart] = useState('');
-  const [periodEnd, setPeriodEnd] = useState('');
+  
+  // Set default period dates
+  const today = new Date();
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+  
+  const [periodStart, setPeriodStart] = useState(lastMonth.toISOString().split('T')[0]);
+  const [periodEnd, setPeriodEnd] = useState(lastMonthEnd.toISOString().split('T')[0]);
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', projectId],
@@ -67,6 +73,18 @@ export default function InvoiceManager({ projectId, canEdit }) {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.functions.invoke('deleteInvoice', { invoice_id: id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice-lines'] });
+      toast.success('Draft invoice deleted');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to delete invoice');
+    }
+  });
+
   const handleGenerate = () => {
     generateMutation.mutate({ project_id: projectId, period_start: periodStart, period_end: periodEnd });
   };
@@ -91,7 +109,7 @@ export default function InvoiceManager({ projectId, canEdit }) {
     {
       header: 'Total Amount',
       accessor: 'total_amount',
-      render: (row) => <span className="font-semibold">${row.total_amount.toLocaleString()}</span>
+      render: (row) => <span className="font-semibold">${(row.total_amount || 0).toFixed(2).toLocaleString()}</span>
     },
     {
       header: 'Status',
@@ -120,18 +138,32 @@ export default function InvoiceManager({ projectId, canEdit }) {
             Lines
           </Button>
           {row.status === 'draft' && canEdit && (
-            <Button
-              size="sm"
-              onClick={() => {
-                if (window.confirm(`⚠️ Approve Invoice for ${format(new Date(row.period_end), 'MMM yyyy')}?\n\nThis will:\n• Lock all billed/earned amounts\n• Update SOV progress permanently\n• Make invoice read-only\n\nThis action cannot be undone.`)) {
-                  approveMutation.mutate(row.id);
-                }
-              }}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle size={16} className="mr-1" />
-              Approve
-            </Button>
+            <>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (window.confirm(`⚠️ Approve Invoice for ${format(new Date(row.period_end), 'MMM yyyy')}?\n\nThis will:\n• Lock all billed/earned amounts\n• Update SOV progress permanently\n• Make invoice read-only\n\nThis action cannot be undone.`)) {
+                    approveMutation.mutate(row.id);
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle size={16} className="mr-1" />
+                Approve
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (window.confirm(`Delete draft invoice for ${format(new Date(row.period_end), 'MMM yyyy')}?`)) {
+                    deleteMutation.mutate(row.id);
+                  }
+                }}
+                className="text-red-400 hover:text-red-300"
+              >
+                <Trash2 size={16} />
+              </Button>
+            </>
           )}
           {row.status === 'approved' && canEdit && (
             <Button
@@ -156,12 +188,12 @@ export default function InvoiceManager({ projectId, canEdit }) {
     {
       header: 'Scheduled',
       accessor: 'scheduled_value',
-      render: (row) => <span>${row.scheduled_value.toLocaleString()}</span>
+      render: (row) => <span>${(row.scheduled_value || 0).toFixed(2).toLocaleString()}</span>
     },
     {
       header: 'Previous',
       accessor: 'previous_billed',
-      render: (row) => <span>${row.previous_billed.toLocaleString()}</span>
+      render: (row) => <span>${(row.previous_billed || 0).toFixed(2).toLocaleString()}</span>
     },
     {
       header: '% Complete',
@@ -171,17 +203,17 @@ export default function InvoiceManager({ projectId, canEdit }) {
     {
       header: 'This Period',
       accessor: 'current_billed',
-      render: (row) => <span className="text-amber-400 font-bold">${row.current_billed.toLocaleString()}</span>
+      render: (row) => <span className="text-amber-400 font-bold">${(row.current_billed || 0).toFixed(2).toLocaleString()}</span>
     },
     {
       header: 'Total Billed',
       accessor: 'billed_to_date',
-      render: (row) => <span>${row.billed_to_date.toLocaleString()}</span>
+      render: (row) => <span>${(row.billed_to_date || 0).toFixed(2).toLocaleString()}</span>
     },
     {
       header: 'Remaining',
       accessor: 'remaining_value',
-      render: (row) => <span className="text-muted-foreground">${row.remaining_value.toLocaleString()}</span>
+      render: (row) => <span className="text-muted-foreground">${(row.remaining_value || 0).toFixed(2).toLocaleString()}</span>
     }
   ];
 

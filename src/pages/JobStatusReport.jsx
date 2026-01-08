@@ -14,6 +14,7 @@ import { toast } from '@/components/ui/notifications';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import CostVarianceTable from '@/components/sov/CostVarianceTable';
+import ChangeOrderImpact from '@/components/change-orders/ChangeOrderImpact';
 
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -435,6 +436,15 @@ export default function JobStatusReport() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Change Order Impact */}
+      <ChangeOrderImpact
+        project={selectedProjectData}
+        sovItems={sovItems}
+        changeOrders={changeOrders}
+        expenses={expenses}
+        estimatedCosts={estimatedCosts}
+      />
 
       {/* Cost Risk Indicator */}
       <CostRiskIndicator

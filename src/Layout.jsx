@@ -25,16 +25,16 @@ import {
   Settings,
   UserCircle,
   BarChart3,
-  Camera,
-} from 'lucide-react';
+  Camera } from
+'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  DropdownMenuTrigger } from
+'@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
@@ -46,42 +46,42 @@ import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 
 const navItems = [
-        { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
-        { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
-        { name: 'Detailing', page: 'Detailing', icon: FileText, roles: ['admin', 'user'] },
-        { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
-        { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-        { name: 'Documents', page: 'Documents', icon: File, roles: ['admin', 'user'] },
-        { name: 'Labor & Scope', page: 'LaborScope', icon: TrendingUp, roles: ['admin', 'user'] },
-        { name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
-        { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
-        { name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
-        { name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
-        { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar, roles: ['admin', 'user'] },
-        { name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
-        { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
-        { name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
-        { name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
-        { name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
-        { name: 'Resource Management', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },
-        { name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },
-        { name: 'Labor', page: 'Labor', icon: Clock, roles: ['admin', 'user'] },
-        { name: 'Meetings', page: 'Meetings', icon: Users, roles: ['admin', 'user'] },
-        { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar, roles: ['admin', 'user'] },
-        { name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-        { name: 'Reports', page: 'Reports', icon: FileText, roles: ['admin', 'user'] },
-        { name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
-        { name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
-        { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
-        { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
-        { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
-        { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
-];
+{ name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
+{ name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
+{ name: 'Detailing', page: 'Detailing', icon: FileText, roles: ['admin', 'user'] },
+{ name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
+{ name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
+{ name: 'Documents', page: 'Documents', icon: File, roles: ['admin', 'user'] },
+{ name: 'Labor & Scope', page: 'LaborScope', icon: TrendingUp, roles: ['admin', 'user'] },
+{ name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
+{ name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
+{ name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
+{ name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
+{ name: 'Daily Logs', page: 'DailyLogs', icon: Calendar, roles: ['admin', 'user'] },
+{ name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
+{ name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
+{ name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
+{ name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
+{ name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
+{ name: 'Resource Management', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },
+{ name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },
+{ name: 'Labor', page: 'Labor', icon: Clock, roles: ['admin', 'user'] },
+{ name: 'Meetings', page: 'Meetings', icon: Users, roles: ['admin', 'user'] },
+{ name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar, roles: ['admin', 'user'] },
+{ name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
+{ name: 'Reports', page: 'Reports', icon: FileText, roles: ['admin', 'user'] },
+{ name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
+{ name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
+{ name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
+{ name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
+{ name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
+{ name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }];
+
 
 function LayoutContent({ children, currentPageName }) {
   useRenderCount('LayoutContent');
   useMountLogger('LayoutContent');
-  
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -96,7 +96,7 @@ function LayoutContent({ children, currentPageName }) {
       }
     },
     staleTime: Infinity,
-    gcTime: Infinity,
+    gcTime: Infinity
   });
 
   React.useEffect(() => {
@@ -110,7 +110,7 @@ function LayoutContent({ children, currentPageName }) {
       return await base44.entities.Project.filter({ id: activeProjectId });
     },
     enabled: !!activeProjectId,
-    select: (data) => data?.[0] || null,
+    select: (data) => data?.[0] || null
   });
 
   const handleLogout = () => {
@@ -192,8 +192,8 @@ function LayoutContent({ children, currentPageName }) {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-zinc-400 hover:text-white"
-          >
+            className="p-2 text-zinc-400 hover:text-white">
+
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="flex items-center gap-2">
@@ -204,8 +204,8 @@ function LayoutContent({ children, currentPageName }) {
           </div>
         </div>
 
-        {currentUser && (
-          <div className="flex items-center gap-2">
+        {currentUser &&
+        <div className="flex items-center gap-2">
             <ThemeToggle />
             <NotificationPanel />
             <DropdownMenu>
@@ -233,7 +233,7 @@ function LayoutContent({ children, currentPageName }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        )}
+        }
       </header>
 
       {/* Sidebar */}
@@ -242,8 +242,8 @@ function LayoutContent({ children, currentPageName }) {
           'fixed top-0 left-0 z-40 h-full w-64 bg-card border-r border-border flex flex-col',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
-      >
+        )}>
+
         <div className="h-16 flex items-center px-4 border-b border-border flex-shrink-0">
           <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
             <Building2 size={18} className="text-black" />
@@ -264,23 +264,23 @@ function LayoutContent({ children, currentPageName }) {
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium',
-                  isActive
-                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                    : isPrimaryPhase
-                    ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/5'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                )}
-              >
+                  isActive ?
+                  'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                  isPrimaryPhase ?
+                  'text-amber-400 hover:text-amber-300 hover:bg-amber-500/5' :
+                  'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                )}>
+
                 <Icon size={18} />
                 {item.name}
                 {isActive && <ChevronRight size={16} className="ml-auto" />}
-              </Link>
-            );
+              </Link>);
+
           })}
         </nav>
 
-        {currentUser && (
-          <div className="border-t border-border p-3 flex-shrink-0">
+        {currentUser &&
+        <div className="border-t border-border p-3 flex-shrink-0">
             <div className="flex items-center justify-between mb-3 px-3">
               <ThemeToggle />
               <NotificationPanel />
@@ -310,35 +310,35 @@ function LayoutContent({ children, currentPageName }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        )}
+        }
       </aside>
 
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {sidebarOpen &&
+      <div
+        className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+        onClick={() => setSidebarOpen(false)} />
+
+      }
 
       <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0">
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="text-slate-50 p-4 lg:p-6">{children}</div>
       </main>
 
       <MobileNav currentPageName={currentPageName} />
-      </div>
-      );
-      }
+      </div>);
 
-      const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
-      return (
-      <ThemeProvider>
+}
+
+const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
+  return (
+    <ThemeProvider>
       <ConfirmProvider>
         <ActiveProjectProvider>
           <LayoutContent children={children} currentPageName={currentPageName} />
         </ActiveProjectProvider>
       </ConfirmProvider>
-      </ThemeProvider>
-      );
-      });
+      </ThemeProvider>);
 
-      export default LayoutWithProviders;
+});
+
+export default LayoutWithProviders;

@@ -165,12 +165,12 @@ export default function Analytics() {
         showBackButton={false}
         actions={
           <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
               <SelectValue placeholder="Select Project" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
               {userProjects.map(project => (
-                <SelectItem key={project.id} value={project.id}>
+                <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
                   {project.project_number} - {project.name}
                 </SelectItem>
               ))}
@@ -180,24 +180,24 @@ export default function Analytics() {
       />
 
       <Tabs defaultValue="risk-dashboard" className="space-y-6">
-        <TabsList className="bg-card border border-border">
-          <TabsTrigger value="risk-dashboard">
+        <TabsList className="bg-zinc-800 border border-zinc-700">
+          <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
             <AlertTriangle size={16} className="mr-2" />
             Risk Dashboard
           </TabsTrigger>
-          <TabsTrigger value="fab-field">
+          <TabsTrigger value="fab-field" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
             <BarChart3 size={16} className="mr-2" />
             Fab vs Field
           </TabsTrigger>
-          <TabsTrigger value="portfolio">
+          <TabsTrigger value="portfolio" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
             <BarChart3 size={16} className="mr-2" />
             Portfolio Overview
           </TabsTrigger>
-          <TabsTrigger value="resources">
+          <TabsTrigger value="resources" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
             <Users size={16} className="mr-2" />
             Resource Allocation
           </TabsTrigger>
-          <TabsTrigger value="risks">
+          <TabsTrigger value="risks" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
             <TrendingUp size={16} className="mr-2" />
             Risk Trends
           </TabsTrigger>

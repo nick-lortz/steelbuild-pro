@@ -43,10 +43,10 @@ function formatFinancial(value) {
 
 const KPICard = ({ title, value, icon: Icon, variant = "default", onClick, loading = false }) => {
   const variants = {
-    default: "bg-card border-border",
-    amber: "bg-amber-500/10 border-amber-500/20",
-    green: "bg-green-500/10 border-green-500/20",
-    blue: "bg-blue-500/10 border-blue-500/20",
+    default: "bg-zinc-800 border-zinc-700",
+    amber: "bg-amber-500/10 border-amber-500/30",
+    green: "bg-green-500/10 border-green-500/30",
+    blue: "bg-blue-500/10 border-blue-500/30",
   };
   
   return (
@@ -58,11 +58,11 @@ const KPICard = ({ title, value, icon: Icon, variant = "default", onClick, loadi
         <div className="flex items-center justify-between mb-2">
           <Icon size={20} className="text-amber-500" />
         </div>
-        <p className="text-sm text-muted-foreground mb-1">{title}</p>
+        <p className="text-sm text-zinc-400 mb-1">{title}</p>
         {loading ? (
-          <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+          <div className="h-8 w-20 bg-zinc-700 animate-pulse rounded" />
         ) : (
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-2xl font-bold text-white">{value}</p>
         )}
       </CardContent>
     </Card>
@@ -71,12 +71,12 @@ const KPICard = ({ title, value, icon: Icon, variant = "default", onClick, loadi
 
 const ActivityItem = ({ type, title, subtitle, badge, onClick }) => (
   <div 
-    className="flex items-center justify-between py-3 border-b border-border last:border-0 active:bg-secondary transition-colors cursor-pointer"
+    className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors cursor-pointer"
     onClick={onClick}
   >
     <div className="flex-1 min-w-0 mr-3">
-      <p className="text-sm font-medium truncate">{title}</p>
-      <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+      <p className="text-sm font-medium text-white truncate">{title}</p>
+      <p className="text-xs text-zinc-400 truncate">{subtitle}</p>
     </div>
     <div className="flex items-center gap-2 flex-shrink-0">
       {badge}
@@ -284,7 +284,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading dashboard...</p>
+            <p className="text-zinc-400">Loading dashboard...</p>
           </div>
         </div>
       </ScreenContainer>
@@ -334,8 +334,8 @@ export default function Dashboard() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+            <p className="text-sm text-zinc-400 mt-1">
               {currentUser?.full_name || 'Welcome'} • {format(new Date(), 'MMM d, yyyy')}
             </p>
           </div>
@@ -351,10 +351,10 @@ export default function Dashboard() {
 
         {/* Critical Issues Alert */}
         {criticalIssues.length > 0 && (
-          <Alert className="bg-red-500/10 border-red-500/20 mb-4">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-            <AlertDescription className="text-sm">
-              <span className="font-medium">Action Required:</span> {criticalIssues.join(', ')}
+          <Alert className="bg-red-500/10 border-red-500/30 mb-4">
+            <AlertTriangle className="h-4 w-4 text-red-400" />
+            <AlertDescription className="text-sm text-zinc-200">
+              <span className="font-medium text-white">Action Required:</span> {criticalIssues.join(', ')}
             </AlertDescription>
           </Alert>
         )}
@@ -446,12 +446,12 @@ export default function Dashboard() {
                 return (
                   <div
                     key={project.id}
-                    className="flex items-center justify-between py-2 border-b border-border last:border-0 cursor-pointer active:bg-secondary transition-colors"
+                    className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0 cursor-pointer hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
                     onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{project.name}</p>
-                      <p className="text-xs text-muted-foreground">{project.project_number}</p>
+                      <p className="text-sm font-medium text-white truncate">{project.name}</p>
+                      <p className="text-xs text-zinc-400">{project.project_number}</p>
                     </div>
                     <Badge variant="outline" className="ml-2">
                       {days}d
@@ -475,8 +475,8 @@ export default function Dashboard() {
         <CardContent className="pt-0">
           {paginatedActivity.length === 0 ? (
             <div className="text-center py-8">
-              <FileText size={32} className="text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No recent activity</p>
+              <FileText size={32} className="text-zinc-500 mx-auto mb-2" />
+              <p className="text-sm text-zinc-400">No recent activity</p>
             </div>
           ) : (
             <>

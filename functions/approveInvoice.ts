@@ -29,11 +29,12 @@ Deno.serve(async (req) => {
   // Fetch all invoice lines
   const lines = await base44.entities.InvoiceLine.filter({ invoice_id });
 
-  // Step E: Update SOVItem ONLY on approval (not draft, not preview)
-  // This permanently locks billed_to_date and earned_to_date
+  // FREEZE: Once approved, invoice data becomes immutable history
+  // This is the ONLY moment billed_to_date and earned_to_date are updated
   for (const line of lines) {
     const earned_to_date = (line.scheduled_value * line.current_percent) / 100;
     
+    // Write-once: Approval locks these values permanently
     await base44.asServiceRole.entities.SOVItem.update(line.sov_item_id, {
       billed_to_date: line.billed_to_date,
       earned_to_date: earned_to_date,

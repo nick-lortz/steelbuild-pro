@@ -21,6 +21,17 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'No SOV items found for this project' }, { status: 400 });
   }
 
+  // FREEZE CHECK: Prevent invoice generation if prior period is still draft
+  const priorInvoices = await base44.asServiceRole.entities.Invoice.filter({ 
+    project_id 
+  });
+  const hasDraftInvoices = priorInvoices.some(inv => inv.status === 'draft');
+  if (hasDraftInvoices) {
+    return Response.json({ 
+      error: 'Cannot generate new invoice while prior invoices are in draft status. Approve or delete draft invoices first.' 
+    }, { status: 400 });
+  }
+
   // Create invoice (draft status)
   const invoice = await base44.entities.Invoice.create({
     project_id,

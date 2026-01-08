@@ -159,6 +159,11 @@ export default function Financials() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* ETC Manager */}
+      <div className="mt-6">
+        <ETCManager projectId={selectedProject} expenses={expenses} />
+      </div>
     </div>
   );
 }

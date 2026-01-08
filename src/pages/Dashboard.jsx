@@ -416,6 +416,20 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Cost Risk Indicator for Active Project */}
+      {activeProjectFinancials && (
+        <div className="mb-6">
+          <CostRiskIndicator
+            totalContract={activeProjectFinancials.totalContract}
+            actualCost={activeProjectFinancials.actualCost}
+            estimatedCostAtCompletion={activeProjectFinancials.estimatedCostAtCompletion}
+            plannedMarginPercent={activeProjectFinancials.plannedMargin}
+            expenses={expenses}
+            estimatedCosts={estimatedCosts}
+          />
+        </div>
+      )}
+
       {/* At Risk Projects */}
       {upcomingMilestones.length > 0 && (
         <Card className="mb-6">

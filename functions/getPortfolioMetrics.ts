@@ -3,10 +3,22 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (authError) {
+      return Response.json({ 
+        error: 'UNAUTHORIZED',
+        message: 'User not authenticated'
+      }, { status: 401 });
+    }
 
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ 
+        error: 'UNAUTHORIZED',
+        message: 'User not authenticated'
+      }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -257,6 +269,11 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Portfolio metrics error:', error);
+    return Response.json({ 
+      error: 'INTERNAL_ERROR',
+      message: error.message || 'Failed to fetch portfolio metrics',
+      details: error.stack
+    }, { status: 500 });
   }
 });

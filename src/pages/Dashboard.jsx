@@ -101,15 +101,21 @@ export default function Dashboard() {
   });
 
   // Fetch portfolio metrics
-  const { data: metricsData, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery({
+  const { data: metricsData, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useQuery({
     queryKey: ['portfolioMetrics'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getPortfolioMetrics', {
-        timeframe: '12_months'
-      });
-      return response.data;
+      try {
+        const response = await base44.functions.invoke('getPortfolioMetrics', {
+          timeframe: '12_months'
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Portfolio metrics fetch failed:', error);
+        return null;
+      }
     },
     staleTime: 5 * 60 * 1000,
+    retry: false
   });
 
   // Fetch projects

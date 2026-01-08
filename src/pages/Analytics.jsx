@@ -14,6 +14,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
 
 export default function Analytics() {
+  const [activeProjectId, setActiveProjectId] = useState(null);
+
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -30,8 +32,6 @@ export default function Analytics() {
       ? allProjects 
       : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
   }, [currentUser, allProjects]);
-
-  const [activeProjectId, setActiveProjectId] = useState(null);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', activeProjectId],

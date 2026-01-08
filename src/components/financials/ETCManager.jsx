@@ -31,7 +31,10 @@ export default function ETCManager({ projectId, expenses = [] }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.EstimatedCostToComplete.create(data),
+    mutationFn: (data) => base44.functions.invoke('etcOperations', { 
+      operation: 'create', 
+      data 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['etc', projectId] });
       setShowDialog(false);
@@ -41,7 +44,10 @@ export default function ETCManager({ projectId, expenses = [] }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.EstimatedCostToComplete.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('etcOperations', { 
+      operation: 'update', 
+      data: { id, updates: data } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['etc', projectId] });
       setShowDialog(false);

@@ -28,7 +28,10 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Expense.create({ ...data, project_id: projectId }),
+    mutationFn: (data) => base44.functions.invoke('expenseOperations', { 
+      operation: 'create', 
+      data: { ...data, project_id: projectId } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -48,7 +51,10 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Expense.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('expenseOperations', { 
+      operation: 'update', 
+      data: { id, updates: data } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -56,7 +62,10 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Expense.delete(id),
+    mutationFn: (id) => base44.functions.invoke('expenseOperations', { 
+      operation: 'delete', 
+      data: { id } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });

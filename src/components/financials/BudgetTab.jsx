@@ -18,11 +18,14 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   const [editingValues, setEditingValues] = useState({});
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Financial.create({
-      ...data,
-      project_id: projectId,
-      current_budget: data.original_budget,
-      approved_changes: 0
+    mutationFn: (data) => base44.functions.invoke('budgetOperations', { 
+      operation: 'create', 
+      data: {
+        ...data,
+        project_id: projectId,
+        current_budget: data.original_budget,
+        approved_changes: 0
+      }
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -33,9 +36,15 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Financial.update(id, {
-      ...data,
-      current_budget: (data.original_budget || 0) + (data.approved_changes || 0)
+    mutationFn: ({ id, data }) => base44.functions.invoke('budgetOperations', { 
+      operation: 'update', 
+      data: { 
+        id, 
+        updates: {
+          ...data,
+          current_budget: (data.original_budget || 0) + (data.approved_changes || 0)
+        }
+      }
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -43,7 +52,10 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Financial.delete(id),
+    mutationFn: (id) => base44.functions.invoke('budgetOperations', { 
+      operation: 'delete', 
+      data: { id } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
       toast.success('Budget line deleted');

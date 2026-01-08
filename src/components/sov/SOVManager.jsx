@@ -35,7 +35,10 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
+    mutationFn: (data) => base44.functions.invoke('sovOperations', { 
+      operation: 'create', 
+      data: { ...data, project_id: projectId } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
       toast.success('SOV line added');
@@ -45,14 +48,20 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('sovOperations', { 
+      operation: 'update', 
+      data: { id, updates: data } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SOVItem.delete(id),
+    mutationFn: (id) => base44.functions.invoke('sovOperations', { 
+      operation: 'delete', 
+      data: { id } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
       toast.success('SOV line deleted');

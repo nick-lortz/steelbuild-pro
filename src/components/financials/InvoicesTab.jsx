@@ -23,7 +23,10 @@ export default function InvoicesTab({ projectId, invoices = [], canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ClientInvoice.create({ ...data, project_id: projectId }),
+    mutationFn: (data) => base44.functions.invoke('invoiceOperations', { 
+      operation: 'create', 
+      data: { ...data, project_id: projectId } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice created');
@@ -38,14 +41,20 @@ export default function InvoicesTab({ projectId, invoices = [], canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ClientInvoice.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('invoiceOperations', { 
+      operation: 'update', 
+      data: { id, updates: data } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClientInvoice.delete(id),
+    mutationFn: (id) => base44.functions.invoke('invoiceOperations', { 
+      operation: 'delete', 
+      data: { id } 
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice deleted');

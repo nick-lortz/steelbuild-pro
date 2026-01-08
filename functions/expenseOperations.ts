@@ -12,86 +12,103 @@ Deno.serve(async (req) => {
 
     switch (operation) {
       case 'create':
-        const created = await base44.asServiceRole.entities.Expense.create(data);
-        
-        // INTEGRITY: Update Financial actual_amount (Expenses are source of truth)
-        if (data.cost_code_id && (data.payment_status === 'paid' || data.payment_status === 'approved')) {
-          const allExpenses = await base44.asServiceRole.entities.Expense.filter({
-            project_id: data.project_id,
-            cost_code_id: data.cost_code_id
-          });
-          const actualTotal = allExpenses
-            .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-            .reduce((sum, e) => sum + (e.amount || 0), 0);
-          
+        // Validate project exists
+        const projects = await base44.asServiceRole.entities.Project.filter({ id: data.project_id });
+        if (projects.length === 0) {
+          return Response.json({ error: 'Invalid project_id' }, { status: 400 });
+        }
+
+        // Create expense
+        const created = await base44.asServiceRole.entities.Expense.create({
+          ...data,
+          amount: parseFloat(data.amount) || 0
+        });
+
+        // Update financial actuals
+        if (data.cost_code_id) {
           const financials = await base44.asServiceRole.entities.Financial.filter({
             project_id: data.project_id,
             cost_code_id: data.cost_code_id
           });
-          
+
           if (financials.length > 0) {
-            await base44.asServiceRole.entities.Financial.update(financials[0].id, {
-              actual_amount: actualTotal
+            const financial = financials[0];
+            const newActual = (financial.actual_amount || 0) + (parseFloat(data.amount) || 0);
+            await base44.asServiceRole.entities.Financial.update(financial.id, {
+              actual_amount: newActual
             });
           }
         }
-        
+
         return Response.json({ success: true, data: created });
 
       case 'update':
+        const oldExpenses = await base44.asServiceRole.entities.Expense.filter({ id: data.id });
+        if (oldExpenses.length === 0) {
+          return Response.json({ error: 'Expense not found' }, { status: 404 });
+        }
+        const oldExpense = oldExpenses[0];
+
+        // FREEZE: Cannot modify paid expenses
+        if (oldExpense.payment_status === 'paid' && data.updates.amount !== undefined) {
+          return Response.json({ 
+            error: 'Cannot modify amount of paid expense. Create adjustment entry instead.' 
+          }, { status: 403 });
+        }
+
+        // Update expense
         await base44.asServiceRole.entities.Expense.update(data.id, data.updates);
-        
-        // INTEGRITY: Recalculate Financial actual_amount if status changed
-        const updatedExpense = await base44.asServiceRole.entities.Expense.filter({ id: data.id });
-        if (updatedExpense.length > 0 && updatedExpense[0].cost_code_id) {
-          const allExpenses = await base44.asServiceRole.entities.Expense.filter({
-            project_id: updatedExpense[0].project_id,
-            cost_code_id: updatedExpense[0].cost_code_id
-          });
-          const actualTotal = allExpenses
-            .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-            .reduce((sum, e) => sum + (e.amount || 0), 0);
-          
+
+        // Update financials if amount changed
+        if (data.updates.amount !== undefined && oldExpense.cost_code_id) {
           const financials = await base44.asServiceRole.entities.Financial.filter({
-            project_id: updatedExpense[0].project_id,
-            cost_code_id: updatedExpense[0].cost_code_id
+            project_id: oldExpense.project_id,
+            cost_code_id: oldExpense.cost_code_id
           });
-          
+
           if (financials.length > 0) {
-            await base44.asServiceRole.entities.Financial.update(financials[0].id, {
-              actual_amount: actualTotal
+            const financial = financials[0];
+            const delta = (parseFloat(data.updates.amount) || 0) - (oldExpense.amount || 0);
+            const newActual = (financial.actual_amount || 0) + delta;
+            await base44.asServiceRole.entities.Financial.update(financial.id, {
+              actual_amount: newActual
             });
           }
         }
-        
+
         return Response.json({ success: true });
 
       case 'delete':
         const expenseToDelete = await base44.asServiceRole.entities.Expense.filter({ id: data.id });
-        await base44.asServiceRole.entities.Expense.delete(data.id);
-        
-        // INTEGRITY: Recalculate Financial actual_amount after deletion
-        if (expenseToDelete.length > 0 && expenseToDelete[0].cost_code_id) {
-          const allExpenses = await base44.asServiceRole.entities.Expense.filter({
-            project_id: expenseToDelete[0].project_id,
-            cost_code_id: expenseToDelete[0].cost_code_id
-          });
-          const actualTotal = allExpenses
-            .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-            .reduce((sum, e) => sum + (e.amount || 0), 0);
-          
+        if (expenseToDelete.length === 0) {
+          return Response.json({ error: 'Expense not found' }, { status: 404 });
+        }
+        const expense = expenseToDelete[0];
+
+        // FREEZE: Cannot delete paid expenses
+        if (expense.payment_status === 'paid') {
+          return Response.json({ 
+            error: 'Cannot delete paid expense. Create reversal entry instead.' 
+          }, { status: 403 });
+        }
+
+        // Update financials before deletion
+        if (expense.cost_code_id) {
           const financials = await base44.asServiceRole.entities.Financial.filter({
-            project_id: expenseToDelete[0].project_id,
-            cost_code_id: expenseToDelete[0].cost_code_id
+            project_id: expense.project_id,
+            cost_code_id: expense.cost_code_id
           });
-          
+
           if (financials.length > 0) {
-            await base44.asServiceRole.entities.Financial.update(financials[0].id, {
-              actual_amount: actualTotal
+            const financial = financials[0];
+            const newActual = (financial.actual_amount || 0) - (expense.amount || 0);
+            await base44.asServiceRole.entities.Financial.update(financial.id, {
+              actual_amount: Math.max(0, newActual)
             });
           }
         }
-        
+
+        await base44.asServiceRole.entities.Expense.delete(data.id);
         return Response.json({ success: true });
 
       default:

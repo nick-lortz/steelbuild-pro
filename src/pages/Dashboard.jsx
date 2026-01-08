@@ -273,31 +273,34 @@ export default function Dashboard() {
     return items.sort((a, b) => b.date - a.date);
   }, [rfis, changeOrders, tasks, projects, navigate]);
 
-  const paginatedActivity = activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE);
-  const hasMoreActivity = activityFeed.length > paginatedActivity.length;
+  const paginatedActivity = React.useMemo(() => 
+    activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE),
+    [activityFeed, activityPage]
+  );
+  
+  const hasMoreActivity = React.useMemo(() => 
+    activityFeed.length > paginatedActivity.length,
+    [activityFeed.length, paginatedActivity.length]
+  );
 
-  const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
-
-  if (isLoading) {
-    return (
-      <ScreenContainer>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-zinc-400">Loading dashboard...</p>
-          </div>
-        </div>
-      </ScreenContainer>
-    );
-  }
-
-  const portfolioHealth = metricsData?.portfolioHealth || {};
-  const activeProjects = projects.filter(p => p.status === 'in_progress');
-  const upcomingMilestones = activeProjects.filter(p => {
-    if (!p.target_completion) return false;
-    const days = differenceInDays(new Date(p.target_completion), new Date());
-    return days >= 0 && days <= 30;
-  });
+  const portfolioHealth = React.useMemo(() => 
+    metricsData?.portfolioHealth || {},
+    [metricsData]
+  );
+  
+  const activeProjects = React.useMemo(() => 
+    projects.filter(p => p.status === 'in_progress'),
+    [projects]
+  );
+  
+  const upcomingMilestones = React.useMemo(() => 
+    activeProjects.filter(p => {
+      if (!p.target_completion) return false;
+      const days = differenceInDays(new Date(p.target_completion), new Date());
+      return days >= 0 && days <= 30;
+    }),
+    [activeProjects]
+  );
 
   // Calculate financial summary for active project
   const activeProjectFinancials = React.useMemo(() => {
@@ -327,6 +330,21 @@ export default function Dashboard() {
       plannedMargin: activeProject?.planned_margin || 15
     };
   }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
+
+  const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
+
+  if (isLoading) {
+    return (
+      <ScreenContainer>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-zinc-400">Loading dashboard...</p>
+          </div>
+        </div>
+      </ScreenContainer>
+    );
+  }
 
   return (
     <ScreenContainer>

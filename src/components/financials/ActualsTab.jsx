@@ -125,12 +125,13 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
           variant="ghost"
           size="icon"
           onClick={() => {
-            if (window.confirm('Delete this expense?')) {
+            if (window.confirm(`⚠️ Delete expense: ${row.description}?\n\nAmount: $${row.amount.toLocaleString()}\nVendor: ${row.vendor || 'N/A'}\n\nThis will update actual costs and cannot be undone.`)) {
               deleteMutation.mutate(row.id);
             }
           }}
           disabled={!canEdit}
-          className="text-red-400 hover:text-red-300"
+          className="text-red-400 hover:text-red-300 disabled:opacity-50"
+          title={!canEdit ? '🔒 Editing disabled' : 'Delete expense'}
         >
           <Trash2 size={16} />
         </Button>

@@ -156,21 +156,25 @@ export default function SOVManager({ projectId, canEdit }) {
     {
       header: '',
       accessor: 'actions',
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            if (window.confirm(`Delete SOV line ${row.sov_code}?`)) {
-              deleteMutation.mutate(row.id);
-            }
-          }}
-          disabled={!canEdit || hasApprovedInvoices}
-          className="text-red-400 hover:text-red-300"
-        >
-          <Trash2 size={16} />
-        </Button>
-      )
+      render: (row) => {
+        const isLocked = hasApprovedInvoices;
+        return (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (window.confirm(`⚠️ Delete SOV line ${row.sov_code}?\n\nThis will permanently remove the line and all associated mappings. This action cannot be undone.`)) {
+                deleteMutation.mutate(row.id);
+              }
+            }}
+            disabled={!canEdit || isLocked}
+            className="text-red-400 hover:text-red-300 disabled:opacity-50"
+            title={isLocked ? '🔒 Locked — invoice already approved. Use Change Orders.' : 'Delete SOV line'}
+          >
+            <Trash2 size={16} />
+          </Button>
+        );
+      }
     }
   ];
 

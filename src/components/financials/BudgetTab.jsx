@@ -155,12 +155,13 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
           variant="ghost"
           size="icon"
           onClick={() => {
-            if (window.confirm('Delete this budget line?')) {
+            if (window.confirm(`⚠️ Delete budget line for ${getCostCodeName(row.cost_code_id)}?\n\nOriginal Budget: $${(row.original_budget || 0).toLocaleString()}\nCurrent Budget: $${((row.original_budget || 0) + (row.approved_changes || 0)).toLocaleString()}\n\nThis cannot be undone.`)) {
               deleteMutation.mutate(row.id);
             }
           }}
           disabled={!canEdit}
-          className="text-red-400 hover:text-red-300"
+          className="text-red-400 hover:text-red-300 disabled:opacity-50"
+          title={!canEdit ? '🔒 Editing disabled' : 'Delete budget line'}
         >
           <Trash2 size={16} />
         </Button>

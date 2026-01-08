@@ -122,7 +122,11 @@ export default function InvoiceManager({ projectId, canEdit }) {
           {row.status === 'draft' && canEdit && (
             <Button
               size="sm"
-              onClick={() => approveMutation.mutate(row.id)}
+              onClick={() => {
+                if (window.confirm(`⚠️ Approve Invoice for ${format(new Date(row.period_end), 'MMM yyyy')}?\n\nThis will:\n• Lock all billed/earned amounts\n• Update SOV progress permanently\n• Make invoice read-only\n\nThis action cannot be undone.`)) {
+                  approveMutation.mutate(row.id);
+                }
+              }}
               className="bg-green-600 hover:bg-green-700"
             >
               <CheckCircle size={16} className="mr-1" />

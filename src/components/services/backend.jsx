@@ -95,3 +95,10 @@ export const approveChangeOrder = (changeOrderId) =>
 // Data Integrity
 export const checkDataIntegrity = (projectId) =>
   base44.functions.invoke('dataIntegrityCheck', { projectId });
+
+// Drawing Operations
+export const supersedeDrawingSet = (oldSetId, newRevision, status, ifa_date, sheet_count) =>
+  base44.functions.invoke('drawingOperations', { operation: 'supersede', data: { oldSetId, newRevision, status, ifa_date, sheet_count } });
+
+export const releaseDrawingForFab = (setId) =>
+  base44.functions.invoke('drawingOperations', { operation: 'release_for_fab', data: { setId } });

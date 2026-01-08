@@ -142,6 +142,8 @@ export default function Analytics() {
     }
   }, [activeProjectId, userProjects, projectsLoading]);
 
+  const selectedProject = projects[0];
+
   if (!activeProjectId) {
     return (
       <div>
@@ -223,7 +225,7 @@ export default function Analytics() {
                 totalContract={totalContract}
                 actualCost={actualCost}
                 estimatedCostAtCompletion={estimatedCostAtCompletion}
-                plannedMarginPercent={projects[0]?.planned_margin || 15}
+                plannedMarginPercent={selectedProject?.planned_margin || 15}
               />
             );
           })()}

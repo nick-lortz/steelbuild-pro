@@ -25,14 +25,15 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', projectId],
-    queryFn: async () => {
-      const items = await base44.entities.SOVItem.filter({ project_id: projectId });
-      return items.sort((a, b) => {
+    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+    select: (items) => {
+      return [...items].sort((a, b) => {
         const codeA = String(a.sov_code || '');
         const codeB = String(b.sov_code || '');
         const numA = parseFloat(codeA.replace(/[^\d.]/g, '')) || 0;
         const numB = parseFloat(codeB.replace(/[^\d.]/g, '')) || 0;
-        return numA - numB;
+        if (numA !== numB) return numA - numB;
+        return codeA.localeCompare(codeB);
       });
     },
     enabled: !!projectId
@@ -56,8 +57,13 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => backend.updateSOVItem(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(['sov-items', projectId], (old) => {
+        if (!old) return old;
+        return old.map(item => 
+          item.id === variables.id ? { ...item, ...variables.data } : item
+        );
+      });
     }
   });
 

@@ -96,7 +96,7 @@ export default function ETCManager({ projectId, expenses = [] }) {
     setEditingETC(etc);
     setFormData({
       category: etc.category,
-      estimated_remaining_cost: etc.estimated_remaining_cost,
+      estimated_remaining_cost: etc.estimated_remaining_cost || 0,
       notes: etc.notes || '',
       last_reviewed_date: etc.last_reviewed_date || new Date().toISOString().split('T')[0]
     });
@@ -265,6 +265,7 @@ export default function ETCManager({ projectId, expenses = [] }) {
               <label className="text-sm font-medium">Estimated Remaining Cost</label>
               <Input
                 type="number"
+                step="0.01"
                 value={formData.estimated_remaining_cost}
                 onChange={(e) => setFormData({ ...formData, estimated_remaining_cost: e.target.value })}
                 placeholder="0"
@@ -300,7 +301,12 @@ export default function ETCManager({ projectId, expenses = [] }) {
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>Save</Button>
+              <Button 
+                onClick={handleSubmit}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </DialogContent>

@@ -118,9 +118,12 @@ function LayoutContent({ children, currentPageName }) {
 
   const projectPhase = activeProject?.phase || 'fabrication';
 
-  const visibleNavItems = navItems.filter(
-    (item) => !item.roles || item.roles.includes(currentUser?.role)
-  );
+  const visibleNavItems = React.useMemo(() => {
+    if (!currentUser) return navItems;
+    return navItems.filter(
+      (item) => !item.roles || item.roles.includes(currentUser.role)
+    );
+  }, [currentUser]);
 
   const getNavItemPriority = (item) => {
     if (projectPhase === 'detailing' && item.page === 'Detailing') return 1;
@@ -130,15 +133,13 @@ function LayoutContent({ children, currentPageName }) {
     return 2;
   };
 
-  const sortedNavItems = [...visibleNavItems].sort((a, b) => {
-    const priorityA = getNavItemPriority(a);
-    const priorityB = getNavItemPriority(b);
-    return priorityA - priorityB;
-  });
-
-  if (!isInitialized) {
-    return null;
-  }
+  const sortedNavItems = React.useMemo(() => {
+    return [...visibleNavItems].sort((a, b) => {
+      const priorityA = getNavItemPriority(a);
+      const priorityB = getNavItemPriority(b);
+      return priorityA - priorityB;
+    });
+  }, [visibleNavItems, projectPhase]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

@@ -9,6 +9,7 @@ import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
 import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
+import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
 
 export default function Analytics() {
@@ -121,6 +122,14 @@ export default function Analytics() {
     enabled: !!activeProjectId,
   });
 
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.SOVItem.filter({ project_id: activeProjectId })
+      : base44.entities.SOVItem.list(),
+    enabled: !!activeProjectId,
+  });
+
   React.useEffect(() => {
     if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
       setActiveProjectId(userProjects[0].id);
@@ -183,6 +192,32 @@ export default function Analytics() {
         </TabsList>
 
         <TabsContent value="risk-dashboard" className="space-y-6">
+          {sovItems.length > 0 && (() => {
+            const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+            const signedExtras = changeOrders
+              .filter(co => co.status === 'approved')
+              .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+            const totalContract = contractValue + signedExtras;
+            const earnedToDate = sovItems.reduce((sum, s) => 
+              sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+            const actualCost = expenses
+              .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+              .reduce((sum, e) => sum + (e.amount || 0), 0);
+            const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
+            const estimatedCostAtCompletion = percentComplete > 0 
+              ? (actualCost / percentComplete) * 100 
+              : actualCost;
+
+            return (
+              <CostRiskIndicator
+                totalContract={totalContract}
+                actualCost={actualCost}
+                estimatedCostAtCompletion={estimatedCostAtCompletion}
+                plannedMarginPercent={projects[0]?.planned_margin || 15}
+              />
+            );
+          })()}
+
           <ProjectRiskDashboard
             projects={projects}
             laborBreakdowns={laborBreakdowns}

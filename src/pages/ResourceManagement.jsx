@@ -46,6 +46,12 @@ export default function ResourceManagement() {
     staleTime: 5 * 60 * 1000
   });
 
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
   // Calculate resource utilization and allocation
   const resourceMetrics = useMemo(() => {
     if (!resources.length || !tasks.length) return null;
@@ -561,7 +567,9 @@ export default function ResourceManagement() {
           <ResourceLeveling
             tasks={tasks}
             resources={resources}
-            projects={projects} />
+            projects={projects}
+            allocations={allocations}
+            workPackages={workPackages} />
 
         </TabsContent>
 
@@ -569,7 +577,9 @@ export default function ResourceManagement() {
           <ResourceForecast
             tasks={tasks}
             resources={resources}
-            projects={projects} />
+            projects={projects}
+            allocations={allocations}
+            workPackages={workPackages} />
 
         </TabsContent>
       </Tabs>

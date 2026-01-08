@@ -18,19 +18,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Edit, Trash2 } from 'lucide-react';
 import { format, isWithinInterval } from 'date-fns';
+import AllocationForm from './AllocationForm';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ResourceAllocation() {
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    resource_id: '',
-    project_id: '',
-    start_date: '',
-    end_date: '',
-    allocation_percentage: '100',
-    notes: '',
-  });
+  const [selectedAllocation, setSelectedAllocation] = useState(null);
+  const [deleteAllocation, setDeleteAllocation] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -49,29 +54,43 @@ export default function ResourceAllocation() {
     queryFn: () => base44.entities.ResourceAllocation.list('-start_date'),
   });
 
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ResourceAllocation.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
       setShowForm(false);
-      setFormData({
-        resource_id: '',
-        project_id: '',
-        start_date: '',
-        end_date: '',
-        allocation_percentage: '100',
-        notes: '',
-      });
+      setSelectedAllocation(null);
     },
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const data = {
-      ...formData,
-      allocation_percentage: parseFloat(formData.allocation_percentage) || 100,
-    };
-    createMutation.mutate(data);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ResourceAllocation.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
+      setShowForm(false);
+      setSelectedAllocation(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.ResourceAllocation.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
+      setDeleteAllocation(null);
+    },
+  });
+
+  const handleSubmit = (data) => {
+    if (selectedAllocation) {
+      updateMutation.mutate({ id: selectedAllocation.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   // Group allocations by resource
@@ -95,7 +114,10 @@ export default function ResourceAllocation() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium text-white">Resource Allocation</h3>
         <Button 
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            setSelectedAllocation(null);
+            setShowForm(true);
+          }}
           size="sm"
           className="bg-amber-500 hover:bg-amber-600 text-black"
         >
@@ -124,12 +146,45 @@ export default function ResourceAllocation() {
                 <div className="space-y-2">
                   {allocations.slice(0, 3).map(allocation => {
                     const project = projects.find(p => p.id === allocation.project_id);
+                    const workPackage = workPackages.find(wp => wp.id === allocation.work_package_id);
                     return (
-                      <div key={allocation.id} className="p-2 bg-zinc-800/50 rounded text-sm">
-                        <p className="font-medium text-white">{project?.name}</p>
-                        <div className="flex items-center justify-between mt-1 text-xs text-zinc-500">
-                          <span>{format(new Date(allocation.start_date), 'MMM d')} - {format(new Date(allocation.end_date), 'MMM d')}</span>
-                          <span>{allocation.allocation_percentage}%</span>
+                      <div key={allocation.id} className="p-2 bg-zinc-800/50 rounded text-sm group hover:bg-zinc-800">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-white">{project?.name}</p>
+                            {workPackage && (
+                              <p className="text-xs text-zinc-500 mt-0.5">{workPackage.package_number} - {workPackage.name}</p>
+                            )}
+                            <div className="flex items-center justify-between mt-1 text-xs text-zinc-500">
+                              <span>{format(new Date(allocation.start_date), 'MMM d')} - {format(new Date(allocation.end_date), 'MMM d')}</span>
+                              <span>{allocation.allocation_percentage}%</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedAllocation(allocation);
+                                setShowForm(true);
+                              }}
+                              className="h-6 w-6 text-zinc-500 hover:text-white"
+                            >
+                              <Edit size={12} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteAllocation(allocation);
+                              }}
+                              className="h-6 w-6 text-zinc-500 hover:text-red-500"
+                            >
+                              <Trash2 size={12} />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -141,88 +196,52 @@ export default function ResourceAllocation() {
         ))}
       </div>
 
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white">
+      <Dialog open={showForm} onOpenChange={(open) => {
+        if (!open) {
+          setShowForm(false);
+          setSelectedAllocation(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Allocate Resource</DialogTitle>
+            <DialogTitle>{selectedAllocation ? 'Edit Allocation' : 'Allocate Resource'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Resource *</Label>
-              <Select value={formData.resource_id} onValueChange={(v) => setFormData({ ...formData, resource_id: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select resource" />
-                </SelectTrigger>
-                <SelectContent>
-                  {resources.map(r => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Project *</Label>
-              <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start Date *</Label>
-                <Input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  required
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>End Date *</Label>
-                <Input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  required
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Allocation % *</Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                value={formData.allocation_percentage}
-                onChange={(e) => setFormData({ ...formData, allocation_percentage: e.target.value })}
-                required
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-              <Button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {createMutation.isPending ? 'Saving...' : 'Allocate'}
-              </Button>
-            </div>
-          </form>
+          <AllocationForm
+            allocation={selectedAllocation}
+            resources={resources}
+            projects={projects}
+            workPackages={workPackages}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setShowForm(false);
+              setSelectedAllocation(null);
+            }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteAllocation} onOpenChange={() => setDeleteAllocation(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Allocation?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              This will remove the allocation. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteAllocation.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

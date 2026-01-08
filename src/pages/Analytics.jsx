@@ -11,6 +11,7 @@ import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
 import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
+import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
 
 export default function Analytics() {
   const [activeProjectId, setActiveProjectId] = React.useState(null);
@@ -130,6 +131,11 @@ export default function Analytics() {
     enabled: !!activeProjectId,
   });
 
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code')
+  });
+
   React.useEffect(() => {
     if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
       setActiveProjectId(userProjects[0].id);
@@ -176,6 +182,10 @@ export default function Analytics() {
           <TabsTrigger value="risk-dashboard">
             <AlertTriangle size={16} className="mr-2" />
             Risk Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="fab-field">
+            <BarChart3 size={16} className="mr-2" />
+            Fab vs Field
           </TabsTrigger>
           <TabsTrigger value="portfolio">
             <BarChart3 size={16} className="mr-2" />
@@ -226,6 +236,16 @@ export default function Analytics() {
             financials={financials}
             expenses={expenses}
             changeOrders={changeOrders}
+          />
+        </TabsContent>
+
+        <TabsContent value="fab-field" className="space-y-6">
+          <FabricationFieldDrift
+            expenses={expenses}
+            financials={financials}
+            costCodes={costCodes}
+            sovItems={sovItems}
+            projectId={activeProjectId}
           />
         </TabsContent>
 

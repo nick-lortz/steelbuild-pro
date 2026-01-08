@@ -16,6 +16,7 @@ import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import CostVarianceTable from '@/components/sov/CostVarianceTable';
 import ChangeOrderImpact from '@/components/change-orders/ChangeOrderImpact';
 import CostTrendProjection from '@/components/sov/CostTrendProjection';
+import WeeklyCostNarrative from '@/components/financials/WeeklyCostNarrative';
 
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -497,6 +498,19 @@ export default function JobStatusReport() {
       <CostTrendProjection
         sovItems={sovItems}
         expenses={expenses}
+        costCodes={costCodes}
+        mappings={mappings}
+      />
+
+      {/* Weekly Cost Narrative */}
+      <WeeklyCostNarrative
+        project={selectedProjectData}
+        currentWeek={currentWeekData}
+        priorWeek={null}
+        sovItems={sovItems}
+        changeOrders={changeOrders}
+        expenses={expenses}
+        estimatedCosts={estimatedCosts}
         costCodes={costCodes}
         mappings={mappings}
       />

@@ -82,33 +82,33 @@ export default function RFIs() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
-  const projects = React.useMemo(() => 
-    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
-    [rawProjects]
+  const projects = React.useMemo(() =>
+  [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+  [rawProjects]
   );
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
     queryFn: () => base44.entities.RFI.list('rfi_number'),
     staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000 // 5 minutes
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list('set_name'),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
     queryFn: () => base44.entities.ChangeOrder.list('co_number'),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
   const createMutation = useMutation({
@@ -198,24 +198,24 @@ export default function RFIs() {
 
   const filteredRFIs = React.useMemo(() => {
     return rfis.filter((r) => {
-      const project = projects.find(p => p.id === r.project_id);
+      const project = projects.find((p) => p.id === r.project_id);
       const matchesSearch =
-        r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(r.rfi_number).includes(searchTerm);
+      r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(r.rfi_number).includes(searchTerm);
       const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
       const matchesProject = projectFilter === 'all' || r.project_id === projectFilter;
       const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
       return matchesSearch && matchesStatus && matchesProject && matchesPm;
     }).sort((a, b) => {
-      const projectA = projects.find(p => p.id === a.project_id);
-      const projectB = projects.find(p => p.id === b.project_id);
+      const projectA = projects.find((p) => p.id === a.project_id);
+      const projectB = projects.find((p) => p.id === b.project_id);
       const nameComparison = (projectA?.name || '').localeCompare(projectB?.name || '');
       if (nameComparison !== 0) return nameComparison;
       return (a.rfi_number || 0) - (b.rfi_number || 0);
     });
   }, [rfis, projects, searchTerm, statusFilter, projectFilter, pmFilter]);
 
-  const uniquePMs = [...new Set(projects.map(p => p.project_manager).filter(Boolean))].sort();
+  const uniquePMs = [...new Set(projects.map((p) => p.project_manager).filter(Boolean))].sort();
 
   const columns = [
   {
@@ -323,10 +323,10 @@ export default function RFIs() {
         title="RFIs"
         subtitle="Requests for Information"
         actions={
-        <div className="flex gap-2">
+        <div className="text-slate-50 flex gap-2">
             <Button
             onClick={() => setShowCSVImport(true)}
-            variant="outline" className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
+            variant="outline" className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
 
 
               <FileSpreadsheet size={18} className="mr-2" />
@@ -407,9 +407,9 @@ export default function RFIs() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All PMs</SelectItem>
-            {uniquePMs.map(pm => (
-              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-            ))}
+            {uniquePMs.map((pm) =>
+                <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+                )}
           </SelectContent>
         </Select>
       </div>

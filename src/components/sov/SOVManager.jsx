@@ -166,8 +166,8 @@ export default function SOVManager({ projectId, canEdit }) {
       header: 'Earned to Date',
       accessor: 'earned',
       render: (row) => {
-        const earned = (row.scheduled_value * (row.percent_complete || 0)) / 100;
-        return <span className="text-green-400 font-semibold">${earned.toLocaleString()}</span>;
+        const earned = ((row.scheduled_value || 0) * (row.percent_complete || 0)) / 100;
+        return <span className="text-green-400 font-semibold">${earned.toFixed(2).toLocaleString()}</span>;
       }
     },
     {
@@ -179,11 +179,11 @@ export default function SOVManager({ projectId, canEdit }) {
       header: 'Ready to Bill',
       accessor: 'to_bill',
       render: (row) => {
-        const earned = (row.scheduled_value * (row.percent_complete || 0)) / 100;
+        const earned = ((row.scheduled_value || 0) * (row.percent_complete || 0)) / 100;
         const toBill = earned - (row.billed_to_date || 0);
         return (
           <span className={toBill < 0 ? 'text-red-400 font-bold' : toBill > 0 ? 'text-amber-400 font-bold' : 'text-muted-foreground'}>
-            ${toBill.toLocaleString()}
+            ${toBill.toFixed(2).toLocaleString()}
           </span>
         );
       }
@@ -214,10 +214,10 @@ export default function SOVManager({ projectId, canEdit }) {
   ];
 
   const totals = sovItems.reduce((acc, item) => {
-    const earned = (item.scheduled_value * (item.percent_complete || 0)) / 100;
+    const earned = ((item.scheduled_value || 0) * (item.percent_complete || 0)) / 100;
     const toBill = earned - (item.billed_to_date || 0);
     return {
-      scheduled: acc.scheduled + item.scheduled_value,
+      scheduled: acc.scheduled + (item.scheduled_value || 0),
       earned: acc.earned + earned,
       billed: acc.billed + (item.billed_to_date || 0),
       toBill: acc.toBill + toBill
@@ -225,7 +225,7 @@ export default function SOVManager({ projectId, canEdit }) {
   }, { scheduled: 0, earned: 0, billed: 0, toBill: 0 });
 
   const hasOverbilling = sovItems.some(item => {
-    const earned = (item.scheduled_value * (item.percent_complete || 0)) / 100;
+    const earned = ((item.scheduled_value || 0) * (item.percent_complete || 0)) / 100;
     return earned < (item.billed_to_date || 0);
   });
 
@@ -257,20 +257,20 @@ export default function SOVManager({ projectId, canEdit }) {
           <div className="grid grid-cols-4 gap-4 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Contract Value</p>
-              <p className="text-lg font-bold">${totals.scheduled.toLocaleString()}</p>
+              <p className="text-lg font-bold">${totals.scheduled.toFixed(2).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Earned to Date</p>
-              <p className="text-lg font-bold text-green-400">${totals.earned.toLocaleString()}</p>
+              <p className="text-lg font-bold text-green-400">${totals.earned.toFixed(2).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Billed to Date</p>
-              <p className="text-lg font-bold">${totals.billed.toLocaleString()}</p>
+              <p className="text-lg font-bold">${totals.billed.toFixed(2).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Ready to Bill</p>
               <p className={`text-lg font-bold ${totals.toBill < 0 ? 'text-red-400' : 'text-amber-400'}`}>
-                ${totals.toBill.toLocaleString()}
+                ${totals.toBill.toFixed(2).toLocaleString()}
               </p>
             </div>
           </div>

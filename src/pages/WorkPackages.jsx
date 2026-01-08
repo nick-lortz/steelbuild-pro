@@ -139,14 +139,6 @@ export default function WorkPackages() {
     return tasks.filter(t => t.work_package_id === packageId).length;
   };
 
-  const filteredPackages = useMemo(() => {
-    return workPackages.filter(wp => {
-      const matchesStatus = statusFilter === 'all' || wp.status === statusFilter;
-      const matchesPhase = phaseFilter === 'all' || wp.phase === phaseFilter;
-      return matchesStatus && matchesPhase;
-    });
-  }, [workPackages, statusFilter, phaseFilter]);
-
   const columns = [
     {
       header: 'Package',
@@ -246,6 +238,14 @@ export default function WorkPackages() {
   ];
 
   const selectedProject = projects.find(p => p.id === activeProjectId);
+
+  const filteredPackages = useMemo(() => {
+    return workPackages.filter(wp => {
+      const matchesStatus = statusFilter === 'all' || wp.status === statusFilter;
+      const matchesPhase = phaseFilter === 'all' || wp.phase === phaseFilter;
+      return matchesStatus && matchesPhase;
+    });
+  }, [workPackages, statusFilter, phaseFilter]);
 
   const summaryStats = useMemo(() => {
     const active = workPackages.filter(wp => wp.status === 'active').length;

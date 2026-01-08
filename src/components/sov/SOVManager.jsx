@@ -25,7 +25,16 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', projectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+    queryFn: async () => {
+      const items = await base44.entities.SOVItem.filter({ project_id: projectId });
+      return items.sort((a, b) => {
+        const codeA = String(a.sov_code || '');
+        const codeB = String(b.sov_code || '');
+        const numA = parseFloat(codeA.replace(/[^\d.]/g, '')) || 0;
+        const numB = parseFloat(codeB.replace(/[^\d.]/g, '')) || 0;
+        return numA - numB;
+      });
+    },
     enabled: !!projectId
   });
 
@@ -120,8 +129,14 @@ export default function SOVManager({ projectId, canEdit }) {
           min="0"
           max="100"
           step="0.1"
-          value={row.percent_complete || 0}
+          value={row.percent_complete === 0 || row.percent_complete === null || row.percent_complete === undefined ? '' : row.percent_complete}
+          placeholder="0"
           onChange={(e) => handleUpdatePercent(row, e.target.value)}
+          onBlur={(e) => {
+            if (e.target.value === '') {
+              handleUpdatePercent(row, '0');
+            }
+          }}
           disabled={!canEdit}
           className="w-20"
         />

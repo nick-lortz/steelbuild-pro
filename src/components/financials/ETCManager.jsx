@@ -20,6 +20,7 @@ export default function ETCManager({ projectId, expenses = [] }) {
     notes: '',
     last_reviewed_date: new Date().toISOString().split('T')[0]
   });
+  const [requiresComment, setRequiresComment] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -59,16 +60,33 @@ export default function ETCManager({ projectId, expenses = [] }) {
     setEditingETC(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const newEstimate = Number(formData.estimated_remaining_cost) || 0;
+    
+    // Validate large changes require comments
+    if (requiresComment && !formData.notes?.trim()) {
+      toast.error('Comment required for significant ETC changes');
+      return;
+    }
+
+    const user = await base44.auth.me();
+    
     const data = {
       ...formData,
       project_id: projectId,
-      estimated_remaining_cost: Number(formData.estimated_remaining_cost) || 0
+      estimated_remaining_cost: newEstimate,
+      last_updated_by: user.email
     };
 
+    // Track change for audit trail
     if (editingETC) {
+      const previousEstimate = editingETC.estimated_remaining_cost || 0;
+      data.previous_estimate = previousEstimate;
+      data.change_amount = newEstimate - previousEstimate;
       updateMutation.mutate({ id: editingETC.id, data });
     } else {
+      data.previous_estimate = 0;
+      data.change_amount = newEstimate;
       createMutation.mutate(data);
     }
   };
@@ -81,8 +99,26 @@ export default function ETCManager({ projectId, expenses = [] }) {
       notes: etc.notes || '',
       last_reviewed_date: etc.last_reviewed_date || new Date().toISOString().split('T')[0]
     });
+    setRequiresComment(false);
     setShowDialog(true);
   };
+
+  // Check if change is significant
+  React.useEffect(() => {
+    if (!editingETC) {
+      setRequiresComment(false);
+      return;
+    }
+
+    const newEstimate = Number(formData.estimated_remaining_cost) || 0;
+    const oldEstimate = editingETC.estimated_remaining_cost || 0;
+    const change = Math.abs(newEstimate - oldEstimate);
+    const percentChange = oldEstimate > 0 ? (change / oldEstimate) * 100 : 0;
+
+    // Require comment if change > $5000 OR > 20%
+    const isSignificant = change > 5000 || percentChange > 20;
+    setRequiresComment(isSignificant);
+  }, [formData.estimated_remaining_cost, editingETC]);
 
   // Calculate actual costs per category
   const costByCategory = React.useMemo(() => {
@@ -131,10 +167,15 @@ export default function ETCManager({ projectId, expenses = [] }) {
       header: 'Last Updated',
       accessor: 'last_reviewed_date',
       render: (row) => row.etc?.last_reviewed_date ? (
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <Calendar size={12} />
-          {row.etc.last_reviewed_date}
-        </span>
+        <div className="text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Calendar size={12} />
+            {row.etc.last_reviewed_date}
+          </div>
+          {row.etc.last_updated_by && (
+            <div className="text-[10px]">{row.etc.last_updated_by.split('@')[0]}</div>
+          )}
+        </div>
       ) : (
         <span className="text-xs text-muted-foreground">Not set</span>
       )
@@ -239,12 +280,20 @@ export default function ETCManager({ projectId, expenses = [] }) {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Notes / Assumptions</label>
+              <label className="text-sm font-medium">
+                Notes / Assumptions {requiresComment && <span className="text-red-400">*</span>}
+              </label>
+              {requiresComment && (
+                <p className="text-xs text-amber-400 mb-1">
+                  Comment required: significant change detected (&gt;$5K or &gt;20%)
+                </p>
+              )}
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="E.g., Based on current crew size, remaining tonnage estimate..."
                 rows={3}
+                className={requiresComment && !formData.notes?.trim() ? 'border-amber-500' : ''}
               />
             </div>
 

@@ -128,6 +128,12 @@ export default function Analytics() {
     queryFn: () => base44.entities.CostCode.list('code')
   });
 
+  useEffect(() => {
+    if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
+      setActiveProjectId(userProjects[0].id);
+    }
+  }, [activeProjectId, userProjects, projectsLoading]);
+
   const selectedProject = projects[0];
   const hasProject = !!activeProjectId;
 

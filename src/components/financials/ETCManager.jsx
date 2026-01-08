@@ -34,20 +34,26 @@ export default function ETCManager({ projectId, expenses = [] }) {
   const createMutation = useMutation({
     mutationFn: (data) => backend.createETC(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['etc', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['etc'] });
       setShowDialog(false);
       resetForm();
-      toast.success('ETC updated');
+      toast.success('ETC created');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to create ETC');
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => backend.updateETC(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['etc', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['etc'] });
       setShowDialog(false);
       resetForm();
       toast.success('ETC updated');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to update ETC');
     }
   });
 
@@ -80,15 +86,23 @@ export default function ETCManager({ projectId, expenses = [] }) {
     };
 
     // Track change for audit trail
-    if (editingETC) {
+    if (editingETC && editingETC.id) {
       const previousEstimate = editingETC.estimated_remaining_cost || 0;
       data.previous_estimate = previousEstimate;
       data.change_amount = newEstimate - previousEstimate;
       updateMutation.mutate({ id: editingETC.id, data });
     } else {
-      data.previous_estimate = 0;
-      data.change_amount = newEstimate;
-      createMutation.mutate(data);
+      // Check if record exists for this category
+      const existingRecord = etcRecords.find(r => r.category === data.category);
+      if (existingRecord) {
+        data.previous_estimate = existingRecord.estimated_remaining_cost || 0;
+        data.change_amount = newEstimate - data.previous_estimate;
+        updateMutation.mutate({ id: existingRecord.id, data });
+      } else {
+        data.previous_estimate = 0;
+        data.change_amount = newEstimate;
+        createMutation.mutate(data);
+      }
     }
   };
 

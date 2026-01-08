@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, AlertTriangle, Truck } from 'lucide-react';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';

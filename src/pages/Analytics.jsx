@@ -135,41 +135,62 @@ export default function Analytics() {
   }, [activeProjectId, userProjects, projectsLoading]);
 
   const selectedProject = projects[0];
-  const showContent = !!activeProjectId;
 
-  return (
-    <div>
-      <PageHeader
-        title="Analytics Dashboard"
-        subtitle={showContent ? "Portfolio insights, resource utilization, and risk trends" : "Select a project to view analytics"}
-        showBackButton={false}
-        actions={
-          userProjects.length > 0 ? (
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Select Project" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {userProjects.map(project => (
-                  <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
-                    {project.project_number} - {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null
-        }
-      />
-
-      {!showContent && (
+  if (!activeProjectId) {
+    return (
+      <div>
+        <PageHeader 
+          title="Analytics Dashboard" 
+          subtitle="Select a project to view analytics" 
+          showBackButton={false}
+          actions={
+            userProjects.length > 0 ? (
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue placeholder="Select Project" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {userProjects.map(project => (
+                    <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                      {project.project_number} - {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : null
+          }
+        />
         <EmptyState 
           icon={BarChart3}
           title="No Project Selected"
           description="Select a project from your list to view analytics data."
         />
-      )}
+      </div>
+    );
+  }
 
-      {showContent && (
+  return (
+    <div>
+      <PageHeader
+        title="Analytics Dashboard"
+        subtitle="Portfolio insights, resource utilization, and risk trends"
+        showBackButton={false}
+        actions={
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
+              <SelectValue placeholder="Select Project" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              {userProjects.map(project => (
+                <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                  {project.project_number} - {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
+
       <Tabs defaultValue="risk-dashboard" className="space-y-6">
         <TabsList className="bg-zinc-800 border border-zinc-700">
           <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
@@ -252,7 +273,6 @@ export default function Analytics() {
           />
         </TabsContent>
       </Tabs>
-      )}
     </div>
   );
 }

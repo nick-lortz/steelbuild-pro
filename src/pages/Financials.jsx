@@ -21,55 +21,55 @@ export default function Financials() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => base44.entities.Project.list('name')
   });
 
   const { data: budgetLines = [] } = useQuery({
     queryKey: ['financials', selectedProject],
-    queryFn: () => selectedProject 
-      ? base44.entities.Financial.filter({ project_id: selectedProject })
-      : base44.entities.Financial.list(),
+    queryFn: () => selectedProject ?
+    base44.entities.Financial.filter({ project_id: selectedProject }) :
+    base44.entities.Financial.list(),
     enabled: !!selectedProject
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', selectedProject],
-    queryFn: () => selectedProject
-      ? base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date')
-      : base44.entities.Expense.list('-expense_date'),
+    queryFn: () => selectedProject ?
+    base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date') :
+    base44.entities.Expense.list('-expense_date'),
     enabled: !!selectedProject
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', selectedProject],
-    queryFn: () => selectedProject
-      ? base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end')
-      : base44.entities.Invoice.list('-period_end'),
+    queryFn: () => selectedProject ?
+    base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end') :
+    base44.entities.Invoice.list('-period_end'),
     enabled: !!selectedProject
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', selectedProject],
-    queryFn: () => selectedProject
-      ? base44.entities.SOVItem.filter({ project_id: selectedProject })
-      : base44.entities.SOVItem.list(),
+    queryFn: () => selectedProject ?
+    base44.entities.SOVItem.filter({ project_id: selectedProject }) :
+    base44.entities.SOVItem.list(),
     enabled: !!selectedProject
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', selectedProject],
-    queryFn: () => selectedProject
-      ? base44.entities.ChangeOrder.filter({ project_id: selectedProject })
-      : base44.entities.ChangeOrder.list(),
+    queryFn: () => selectedProject ?
+    base44.entities.ChangeOrder.filter({ project_id: selectedProject }) :
+    base44.entities.ChangeOrder.list(),
     enabled: !!selectedProject
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+    queryFn: () => base44.entities.CostCode.list('code')
   });
 
-  const selectedProjectData = projects.find(p => p.id === selectedProject);
+  const selectedProjectData = projects.find((p) => p.id === selectedProject);
 
   if (!selectedProject) {
     return (
@@ -81,48 +81,48 @@ export default function Financials() {
               <SelectValue placeholder="Select a project..." />
             </SelectTrigger>
             <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
+              {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>
                   {p.project_number} - {p.name}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
-    <div>
+    <div className="text-slate-50">
       <PageHeader
         title="Financials"
         subtitle={selectedProjectData?.name}
         showBackButton={false}
         actions={
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
+        <Select value={selectedProject} onValueChange={setSelectedProject}>
             <SelectTrigger className="w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
+              {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id}>
                   {p.project_number} - {p.name}
                 </SelectItem>
-              ))}
+            )}
             </SelectContent>
           </Select>
-        }
-      />
+        } />
+
 
       <div className="mb-6">
-        <FinancialKPIs 
-          budgetLines={budgetLines} 
-          expenses={expenses} 
+        <FinancialKPIs
+          budgetLines={budgetLines}
+          expenses={expenses}
           invoices={invoices}
           sovItems={sovItems}
-          useSOV={sovItems.length > 0}
-        />
+          useSOV={sovItems.length > 0} />
+
       </div>
 
       <Tabs defaultValue="sov" className="space-y-4">
@@ -146,8 +146,8 @@ export default function Financials() {
             projectId={selectedProject}
             budgetLines={budgetLines}
             costCodes={costCodes}
-            canEdit={can.editFinancials}
-          />
+            canEdit={can.editFinancials} />
+
         </TabsContent>
 
         <TabsContent value="actuals">
@@ -155,8 +155,8 @@ export default function Financials() {
             projectId={selectedProject}
             expenses={expenses}
             costCodes={costCodes}
-            canEdit={can.editFinancials}
-          />
+            canEdit={can.editFinancials} />
+
         </TabsContent>
       </Tabs>
 
@@ -164,6 +164,6 @@ export default function Financials() {
       <div className="mt-6">
         <ETCManager projectId={selectedProject} expenses={expenses} />
       </div>
-    </div>
-  );
+    </div>);
+
 }

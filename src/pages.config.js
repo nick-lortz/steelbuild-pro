@@ -1,4 +1,5 @@
 import Analytics from './pages/Analytics';
+import Calendar from './pages/Calendar';
 import ChangeOrders from './pages/ChangeOrders';
 import CostCodes from './pages/CostCodes';
 import CustomDashboard from './pages/CustomDashboard';
@@ -35,12 +36,12 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import Calendar from './pages/Calendar';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Analytics": Analytics,
+    "Calendar": Calendar,
     "ChangeOrders": ChangeOrders,
     "CostCodes": CostCodes,
     "CustomDashboard": CustomDashboard,
@@ -77,7 +78,6 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "Calendar": Calendar,
 }
 
 export const pagesConfig = {

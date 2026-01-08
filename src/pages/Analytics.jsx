@@ -147,20 +147,18 @@ export default function Analytics() {
 
   const selectedProject = projects[0];
 
-  if (!activeProjectId) {
-    return (
-      <div>
-        <PageHeader title="Analytics Dashboard" subtitle="Select a project to view analytics" showBackButton={false} />
-        <EmptyState 
-          icon={BarChart3}
-          title="No Project Selected"
-          description="Select a project from your list to view analytics data."
-        />
-      </div>
-    );
-  }
-
   return (
+    <>
+      {!activeProjectId ? (
+        <div>
+          <PageHeader title="Analytics Dashboard" subtitle="Select a project to view analytics" showBackButton={false} />
+          <EmptyState 
+            icon={BarChart3}
+            title="No Project Selected"
+            description="Select a project from your list to view analytics data."
+          />
+        </div>
+      ) : (
     <div>
       <PageHeader
         title="Analytics Dashboard"
@@ -293,5 +291,7 @@ export default function Analytics() {
         </TabsContent>
       </Tabs>
     </div>
+      )}
+    </>
   );
 }

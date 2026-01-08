@@ -91,3 +91,7 @@ export const createSOVItem2 = (projectId, sovCode, description, scheduledValue, 
 // Change Order Operations
 export const approveChangeOrder = (changeOrderId) =>
   base44.functions.invoke('changeOrderOperations', { operation: 'approve', data: { changeOrderId } });
+
+// Data Integrity
+export const checkDataIntegrity = (projectId) =>
+  base44.functions.invoke('dataIntegrityCheck', { projectId });

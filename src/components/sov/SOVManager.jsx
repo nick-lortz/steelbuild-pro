@@ -71,9 +71,16 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const hasApprovedInvoices = invoices.some(inv => inv.status === 'approved' || inv.status === 'paid');
 
+  const [editingPercent, setEditingPercent] = useState({});
+
   const handleUpdatePercent = (sovItem, value) => {
-    const numValue = Number(value) || 0;
-    if (numValue < 0 || numValue > 100) {
+    if (value === '' || value === null || value === undefined) {
+      setEditingPercent({ ...editingPercent, [sovItem.id]: '' });
+      return;
+    }
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
@@ -84,6 +91,7 @@ export default function SOVManager({ projectId, canEdit }) {
       return;
     }
 
+    setEditingPercent({ ...editingPercent, [sovItem.id]: undefined });
     updateMutation.mutate({ id: sovItem.id, data: { percent_complete: numValue } });
   };
 
@@ -123,24 +131,30 @@ export default function SOVManager({ projectId, canEdit }) {
     {
       header: '% Complete',
       accessor: 'percent_complete',
-      render: (row) => (
-        <Input
-          type="number"
-          min="0"
-          max="100"
-          step="0.1"
-          value={row.percent_complete === 0 || row.percent_complete === null || row.percent_complete === undefined ? '' : row.percent_complete}
-          placeholder="0"
-          onChange={(e) => handleUpdatePercent(row, e.target.value)}
-          onBlur={(e) => {
-            if (e.target.value === '') {
-              handleUpdatePercent(row, '0');
-            }
-          }}
-          disabled={!canEdit}
-          className="w-20"
-        />
-      )
+      render: (row) => {
+        const displayValue = editingPercent[row.id] !== undefined 
+          ? editingPercent[row.id] 
+          : (row.percent_complete === 0 || row.percent_complete === null || row.percent_complete === undefined ? '' : row.percent_complete);
+        
+        return (
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={displayValue}
+            placeholder="0"
+            onChange={(e) => {
+              setEditingPercent({ ...editingPercent, [row.id]: e.target.value });
+            }}
+            onBlur={(e) => {
+              handleUpdatePercent(row, e.target.value === '' ? '0' : e.target.value);
+            }}
+            disabled={!canEdit}
+            className="w-20"
+          />
+        );
+      }
     },
     {
       header: 'Earned to Date',

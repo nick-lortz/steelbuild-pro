@@ -12,6 +12,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Target, TrendingUp, TrendingDown, DollarSign, Lock, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -416,6 +417,14 @@ export default function JobStatusReport() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Cost Risk Indicator */}
+      <CostRiskIndicator
+        totalContract={financialSummary.totalContract}
+        actualCost={financialSummary.actualCost}
+        estimatedCostAtCompletion={financialSummary.estimatedCostAtCompletion}
+        plannedMarginPercent={selectedProjectData?.planned_margin || 15}
+      />
 
       {/* Earned vs Billed vs Cost Chart */}
       <Card>

@@ -65,6 +65,14 @@ export default function Analytics() {
     enabled: !!activeProjectId
   });
 
+  const { data: estimatedCosts = [] } = useQuery({
+    queryKey: ['etc', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId })
+      : base44.entities.EstimatedCostToComplete.list(),
+    enabled: !!activeProjectId
+  });
+
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
@@ -211,6 +219,7 @@ export default function Analytics() {
             <CostRiskIndicator
               projectId={activeProjectId}
               expenses={expenses}
+              estimatedCosts={estimatedCosts}
             />
 
             <ProjectRiskDashboard

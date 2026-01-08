@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
 import {
-  Building2,
+  Columns,
   DollarSign,
   FileText,
   MessageSquareWarning,
@@ -46,8 +46,8 @@ import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 
 const navItems = [
-        { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
-        { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
+        { name: 'Dashboard', page: 'Dashboard', icon: BarChart3, roles: ['admin', 'user'] },
+        { name: 'Projects', page: 'Projects', icon: Columns, roles: ['admin', 'user'] },
         { name: 'Detailing', page: 'Detailing', icon: FileText, roles: ['admin', 'user'] },
         { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
         { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
@@ -199,7 +199,7 @@ function LayoutContent({ children, currentPageName }) {
           </button>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-              <Building2 size={18} className="text-black" />
+              <Columns size={18} className="text-black" />
             </div>
             <span className="font-bold text-lg tracking-tight">SteelBuild Pro</span>
           </div>
@@ -247,7 +247,7 @@ function LayoutContent({ children, currentPageName }) {
       >
         <div className="h-16 flex items-center px-4 border-b border-border flex-shrink-0">
           <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-            <Building2 size={18} className="text-black" />
+            <Columns size={18} className="text-black" />
           </div>
           <span className="font-bold text-lg tracking-tight ml-3">SteelBuild Pro</span>
         </div>

@@ -8,11 +8,13 @@ import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import Documents from './pages/Documents';
 import Equipment from './pages/Equipment';
+import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import Fabrication from './pages/Fabrication';
 import FieldTools from './pages/FieldTools';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
+import JobStatusReport from './pages/JobStatusReport';
 import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
@@ -33,8 +35,6 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import JobStatusReport from './pages/JobStatusReport';
-import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import __Layout from './Layout.jsx';
 
 
@@ -49,11 +49,13 @@ export const PAGES = {
     "Detailing": Detailing,
     "Documents": Documents,
     "Equipment": Equipment,
+    "ExecutiveRollUp": ExecutiveRollUp,
     "Fabrication": Fabrication,
     "FieldTools": FieldTools,
     "Financials": Financials,
     "Insights": Insights,
     "Integrations": Integrations,
+    "JobStatusReport": JobStatusReport,
     "Labor": Labor,
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
@@ -74,8 +76,6 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "JobStatusReport": JobStatusReport,
-    "ExecutiveRollUp": ExecutiveRollUp,
 }
 
 export const pagesConfig = {

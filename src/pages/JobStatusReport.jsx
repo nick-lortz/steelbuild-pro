@@ -13,6 +13,7 @@ import { Target, TrendingUp, TrendingDown, DollarSign, Lock, FileText, AlertTria
 import { toast } from '@/components/ui/notifications';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
+import CostVarianceTable from '@/components/sov/CostVarianceTable';
 
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -51,6 +52,17 @@ export default function JobStatusReport() {
   const { data: estimatedCosts = [] } = useQuery({
     queryKey: ['etc', selectedProject],
     queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
+    enabled: !!selectedProject
+  });
+
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code')
+  });
+
+  const { data: mappings = [] } = useQuery({
+    queryKey: ['sov-cost-mappings', selectedProject],
+    queryFn: () => base44.entities.SOVCostCodeMap.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
@@ -457,6 +469,14 @@ export default function JobStatusReport() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Cost Variance Table */}
+      <CostVarianceTable
+        sovItems={sovItems}
+        expenses={expenses}
+        costCodes={costCodes}
+        mappings={mappings}
+      />
 
       {/* SOV Table */}
       <Card>

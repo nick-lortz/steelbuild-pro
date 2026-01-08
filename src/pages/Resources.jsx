@@ -1,20 +1,38 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, RefreshCw, Filter, Users as UsersIcon } from 'lucide-react';
+import { Search, RefreshCw, Filter, Users as UsersIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import ResourceCard from '@/components/resources/ResourceCard';
 import ResourceDetailView from '@/components/resources/ResourceDetailView';
+import ResourceForm from '@/components/resources/ResourceForm';
 import Pagination from '@/components/ui/Pagination';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import EmptyState from '@/components/ui/EmptyState';
 import { SkeletonList } from '@/components/ui/SkeletonCard';
 import ExportButton from '@/components/shared/ExportButton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from '@/components/ui/notifications';
 
 export default function Resources() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +42,11 @@ export default function Resources() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
+  const [deleteResource, setDeleteResource] = useState(null);
+
+  const queryClient = useQueryClient();
 
   const { data: resources = [], refetch: refetchResources, isLoading } = useQuery({
     queryKey: ['resources'],
@@ -49,11 +72,50 @@ export default function Resources() {
     staleTime: 5 * 60 * 1000
   });
 
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Resource.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setShowForm(false);
+      setEditingResource(null);
+      toast.success('Resource created successfully');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Resource.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setShowForm(false);
+      setEditingResource(null);
+      setSelectedResource(null);
+      toast.success('Resource updated successfully');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Resource.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setDeleteResource(null);
+      setSelectedResource(null);
+      toast.success('Resource deleted successfully');
+    },
+  });
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await refetchResources();
     setIsRefreshing(false);
   }, [refetchResources]);
+
+  const handleSubmit = (data) => {
+    if (editingResource) {
+      updateMutation.mutate({ id: editingResource.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
 
   // Calculate allocation for each resource
   const resourceAllocations = useMemo(() => {
@@ -144,6 +206,16 @@ export default function Resources() {
           <p className="text-sm text-muted-foreground">{filteredResources.length} resources</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={() => {
+              setEditingResource(null);
+              setShowForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
+          >
+            <Plus size={18} className="mr-2" />
+            Add Resource
+          </Button>
           <ExportButton
             data={filteredResources}
             columns={[
@@ -279,8 +351,28 @@ export default function Resources() {
       {/* Resource Detail Sheet */}
       <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
         <SheetContent className="w-full overflow-y-auto">
-          <SheetHeader>
+          <SheetHeader className="flex flex-row items-center justify-between">
             <SheetTitle>Resource Details</SheetTitle>
+            <div className="flex gap-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => {
+                  setEditingResource(selectedResource);
+                  setShowForm(true);
+                }}
+              >
+                <Edit size={16} />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setDeleteResource(selectedResource)}
+                className="text-red-500 hover:text-red-600"
+              >
+                <Trash2 size={16} />
+              </Button>
+            </div>
           </SheetHeader>
           {selectedResource && (
             <ResourceDetailView
@@ -296,6 +388,53 @@ export default function Resources() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Resource Form Dialog */}
+      <Dialog open={showForm} onOpenChange={(open) => {
+        if (!open) {
+          setShowForm(false);
+          setEditingResource(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Resource'}</DialogTitle>
+          </DialogHeader>
+          <ResourceForm
+            resource={editingResource}
+            projects={projects}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingResource(null);
+            }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteResource} onOpenChange={() => setDeleteResource(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Resource?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete "{deleteResource?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(deleteResource.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ScreenContainer>
   );
 }

@@ -128,151 +128,125 @@ export default function Analytics() {
     queryFn: () => base44.entities.CostCode.list('code')
   });
 
-  useEffect(() => {
-    if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
-      setActiveProjectId(userProjects[0].id);
-    }
-  }, [activeProjectId, userProjects, projectsLoading]);
-
   const selectedProject = projects[0];
-
-  if (!activeProjectId) {
-    return (
-      <div>
-        <PageHeader 
-          title="Analytics Dashboard" 
-          subtitle="Select a project to view analytics" 
-          showBackButton={false}
-          actions={
-            userProjects.length > 0 ? (
-              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue placeholder="Select Project" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  {userProjects.map(project => (
-                    <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
-                      {project.project_number} - {project.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : null
-          }
-        />
-        <EmptyState 
-          icon={BarChart3}
-          title="No Project Selected"
-          description="Select a project from your list to view analytics data."
-        />
-      </div>
-    );
-  }
+  const hasProject = !!activeProjectId;
 
   return (
     <div>
       <PageHeader
         title="Analytics Dashboard"
-        subtitle="Portfolio insights, resource utilization, and risk trends"
+        subtitle={hasProject ? "Portfolio insights, resource utilization, and risk trends" : "Select a project to view analytics"}
         showBackButton={false}
         actions={
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
-              <SelectValue placeholder="Select Project" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
-              {userProjects.map(project => (
-                <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
-                  {project.project_number} - {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          userProjects.length > 0 ? (
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue placeholder="Select Project" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                {userProjects.map(project => (
+                  <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                    {project.project_number} - {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null
         }
       />
 
-      <Tabs defaultValue="risk-dashboard" className="space-y-6">
-        <TabsList className="bg-zinc-800 border border-zinc-700">
-          <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-            <AlertTriangle size={16} className="mr-2" />
-            Risk Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="fab-field" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-            <BarChart3 size={16} className="mr-2" />
-            Fab vs Field
-          </TabsTrigger>
-          <TabsTrigger value="portfolio" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-            <BarChart3 size={16} className="mr-2" />
-            Portfolio Overview
-          </TabsTrigger>
-          <TabsTrigger value="resources" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-            <Users size={16} className="mr-2" />
-            Resource Allocation
-          </TabsTrigger>
-          <TabsTrigger value="risks" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-            <TrendingUp size={16} className="mr-2" />
-            Risk Trends
-          </TabsTrigger>
-        </TabsList>
+      {!hasProject && (
+        <EmptyState 
+          icon={BarChart3}
+          title="No Project Selected"
+          description="Select a project from your list to view analytics data."
+        />
+      )}
 
-        <TabsContent value="risk-dashboard" className="space-y-6">
-          <CostRiskIndicator
-            projectId={activeProjectId}
-            expenses={expenses}
-          />
+      {hasProject && (
+        <Tabs defaultValue="risk-dashboard" className="space-y-6">
+          <TabsList className="bg-zinc-800 border border-zinc-700">
+            <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <AlertTriangle size={16} className="mr-2" />
+              Risk Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="fab-field" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <BarChart3 size={16} className="mr-2" />
+              Fab vs Field
+            </TabsTrigger>
+            <TabsTrigger value="portfolio" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <BarChart3 size={16} className="mr-2" />
+              Portfolio Overview
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <Users size={16} className="mr-2" />
+              Resource Allocation
+            </TabsTrigger>
+            <TabsTrigger value="risks" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <TrendingUp size={16} className="mr-2" />
+              Risk Trends
+            </TabsTrigger>
+          </TabsList>
 
-          <ProjectRiskDashboard
-            projects={projects}
-            laborBreakdowns={laborBreakdowns}
-            scopeGaps={scopeGaps}
-            tasks={tasks}
-            financials={financials}
-            expenses={expenses}
-            changeOrders={changeOrders}
-          />
-        </TabsContent>
+          <TabsContent value="risk-dashboard" className="space-y-6">
+            <CostRiskIndicator
+              projectId={activeProjectId}
+              expenses={expenses}
+            />
 
-        <TabsContent value="fab-field" className="space-y-6">
-          <FabricationFieldDrift
-            expenses={expenses}
-            financials={financials}
-            costCodes={costCodes}
-            sovItems={sovItems}
-            projectId={activeProjectId}
-          />
-        </TabsContent>
+            <ProjectRiskDashboard
+              projects={projects}
+              laborBreakdowns={laborBreakdowns}
+              scopeGaps={scopeGaps}
+              tasks={tasks}
+              financials={financials}
+              expenses={expenses}
+              changeOrders={changeOrders}
+            />
+          </TabsContent>
 
-        <TabsContent value="portfolio" className="space-y-6">
-          <PortfolioOverview
-            projects={projects}
-            financials={financials}
-            tasks={tasks}
-            expenses={expenses}
-          />
-        </TabsContent>
+          <TabsContent value="fab-field" className="space-y-6">
+            <FabricationFieldDrift
+              expenses={expenses}
+              financials={financials}
+              costCodes={costCodes}
+              sovItems={sovItems}
+              projectId={activeProjectId}
+            />
+          </TabsContent>
 
-        <TabsContent value="resources" className="space-y-6">
-          <ResourceHeatmap
-            projects={projects}
-            resources={resources}
-            resourceAllocations={resourceAllocations}
-            tasks={tasks}
-          />
-        </TabsContent>
+          <TabsContent value="portfolio" className="space-y-6">
+            <PortfolioOverview
+              projects={projects}
+              financials={financials}
+              tasks={tasks}
+              expenses={expenses}
+            />
+          </TabsContent>
 
-        <TabsContent value="risks" className="space-y-6">
-          <RiskTrendAnalysis
-            projects={projects}
-            rfis={rfis}
-            changeOrders={changeOrders}
-            drawings={drawings}
-            tasks={tasks}
-            scopeGaps={scopeGaps}
-            financials={financials}
-            laborBreakdowns={laborBreakdowns}
-          />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="resources" className="space-y-6">
+            <ResourceHeatmap
+              projects={projects}
+              resources={resources}
+              resourceAllocations={resourceAllocations}
+              tasks={tasks}
+            />
+          </TabsContent>
+
+          <TabsContent value="risks" className="space-y-6">
+            <RiskTrendAnalysis
+              projects={projects}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              drawings={drawings}
+              tasks={tasks}
+              scopeGaps={scopeGaps}
+              financials={financials}
+              laborBreakdowns={laborBreakdowns}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }

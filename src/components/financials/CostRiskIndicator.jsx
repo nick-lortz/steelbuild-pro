@@ -13,7 +13,7 @@ export default function CostRiskIndicator({
 }) {
   const [showDrilldown, setShowDrilldown] = useState(false);
   
-  const { data: analysis, isLoading } = useQuery({
+  const { data: analysis, isLoading, error } = useQuery({
     queryKey: ['cost-risk-signal', projectId],
     queryFn: async () => {
       const response = await base44.functions.invoke('getCostRiskSignal', { project_id: projectId });
@@ -22,8 +22,27 @@ export default function CostRiskIndicator({
     enabled: !!projectId
   });
 
-  if (isLoading || !analysis) {
-    return null;
+  if (isLoading) {
+    return (
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardContent className="p-6 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Loading cost risk analysis...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !analysis) {
+    return (
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardContent className="p-6">
+          <p className="text-sm text-muted-foreground">Cost risk data unavailable</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   const getIconAndColors = () => {

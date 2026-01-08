@@ -26,16 +26,19 @@ export default function Analytics() {
     queryFn: () => base44.entities.Project.list(),
   });
 
-  const userProjects = currentUser?.role === 'admin' 
-    ? allProjects 
-    : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+  const userProjects = React.useMemo(() => {
+    if (!currentUser) return [];
+    return currentUser.role === 'admin' 
+      ? allProjects 
+      : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+  }, [currentUser, allProjects]);
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', activeProjectId],
     queryFn: () => activeProjectId 
       ? base44.entities.Project.filter({ id: activeProjectId })
       : Promise.resolve(userProjects),
-    enabled: !!activeProjectId || userProjects.length > 0,
+    enabled: true,
   });
 
   const { data: financials = [] } = useQuery({

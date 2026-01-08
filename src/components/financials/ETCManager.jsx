@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from '@/components/ui/DataTable';
 import { Edit2, Plus, Calendar } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import * as backend from '@/services/backend';
+import * as backend from '@/components/services/backend';
 
 export default function ETCManager({ projectId, expenses = [] }) {
   const [showDialog, setShowDialog] = useState(false);

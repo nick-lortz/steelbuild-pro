@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from 'date-fns';
-import * as backend from '@/services/backend';
+import * as backend from '@/components/services/backend';
 
 export default function InvoicesTab({ projectId, invoices = [], canEdit }) {
   const queryClient = useQueryClient();

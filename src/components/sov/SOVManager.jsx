@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from '@/components/ui/DataTable';
 import { Plus, Trash2, Lock, AlertTriangle } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import * as backend from '@/services/backend';
 
 export default function SOVManager({ projectId, canEdit }) {
   const queryClient = useQueryClient();
@@ -35,10 +36,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('sovOperations', { 
-      operation: 'create', 
-      data: { ...data, project_id: projectId } 
-    }),
+    mutationFn: (data) => backend.createSOVItem({ ...data, project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
       toast.success('SOV line added');
@@ -48,20 +46,14 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('sovOperations', { 
-      operation: 'update', 
-      data: { id, updates: data } 
-    }),
+    mutationFn: ({ id, data }) => backend.updateSOVItem(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('sovOperations', { 
-      operation: 'delete', 
-      data: { id } 
-    }),
+    mutationFn: (id) => backend.deleteSOVItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
       toast.success('SOV line deleted');

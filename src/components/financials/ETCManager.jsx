@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from '@/components/ui/DataTable';
 import { Edit2, Plus, Calendar } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import * as backend from '@/services/backend';
 
 export default function ETCManager({ projectId, expenses = [] }) {
   const [showDialog, setShowDialog] = useState(false);
@@ -31,10 +32,7 @@ export default function ETCManager({ projectId, expenses = [] }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('etcOperations', { 
-      operation: 'create', 
-      data 
-    }),
+    mutationFn: (data) => backend.createETC(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['etc', projectId] });
       setShowDialog(false);
@@ -44,10 +42,7 @@ export default function ETCManager({ projectId, expenses = [] }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('etcOperations', { 
-      operation: 'update', 
-      data: { id, updates: data } 
-    }),
+    mutationFn: ({ id, data }) => backend.updateETC(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['etc', projectId] });
       setShowDialog(false);

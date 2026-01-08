@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from 'date-fns';
+import * as backend from '@/services/backend';
 
 export default function InvoicesTab({ projectId, invoices = [], canEdit }) {
   const queryClient = useQueryClient();
@@ -23,10 +23,7 @@ export default function InvoicesTab({ projectId, invoices = [], canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('invoiceOperations', { 
-      operation: 'create', 
-      data: { ...data, project_id: projectId } 
-    }),
+    mutationFn: (data) => backend.createInvoice({ ...data, project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice created');
@@ -41,20 +38,14 @@ export default function InvoicesTab({ projectId, invoices = [], canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('invoiceOperations', { 
-      operation: 'update', 
-      data: { id, updates: data } 
-    }),
+    mutationFn: ({ id, data }) => backend.updateInvoice(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('invoiceOperations', { 
-      operation: 'delete', 
-      data: { id } 
-    }),
+    mutationFn: (id) => backend.deleteInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Invoice deleted');

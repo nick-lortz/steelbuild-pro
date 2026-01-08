@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
+import * as backend from '@/services/backend';
 
 export default function ActualsTab({ projectId, expenses = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();
@@ -28,10 +28,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('expenseOperations', { 
-      operation: 'create', 
-      data: { ...data, project_id: projectId } 
-    }),
+    mutationFn: (data) => backend.createExpense({ ...data, project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -51,10 +48,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('expenseOperations', { 
-      operation: 'update', 
-      data: { id, updates: data } 
-    }),
+    mutationFn: ({ id, data }) => backend.updateExpense(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -62,10 +56,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('expenseOperations', { 
-      operation: 'delete', 
-      data: { id } 
-    }),
+    mutationFn: (id) => backend.deleteExpense(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });

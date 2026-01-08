@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,7 @@ import { toast } from '@/components/ui/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import * as backend from '@/services/backend';
 
 export default function BudgetTab({ projectId, budgetLines = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();
@@ -18,14 +18,11 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   const [editingValues, setEditingValues] = useState({});
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('budgetOperations', { 
-      operation: 'create', 
-      data: {
-        ...data,
-        project_id: projectId,
-        current_budget: data.original_budget,
-        approved_changes: 0
-      }
+    mutationFn: (data) => backend.createBudgetLine({
+      ...data,
+      project_id: projectId,
+      current_budget: data.original_budget,
+      approved_changes: 0
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -36,15 +33,9 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('budgetOperations', { 
-      operation: 'update', 
-      data: { 
-        id, 
-        updates: {
-          ...data,
-          current_budget: (data.original_budget || 0) + (data.approved_changes || 0)
-        }
-      }
+    mutationFn: ({ id, data }) => backend.updateBudgetLine(id, {
+      ...data,
+      current_budget: (data.original_budget || 0) + (data.approved_changes || 0)
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -52,10 +43,7 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('budgetOperations', { 
-      operation: 'delete', 
-      data: { id } 
-    }),
+    mutationFn: (id) => backend.deleteBudgetLine(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['financials'] });
       toast.success('Budget line deleted');

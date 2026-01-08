@@ -7,7 +7,7 @@ const PageHeader = React.memo(function PageHeader({ title, subtitle, actions, sh
   const navigate = useNavigate();
 
   return (
-    <div className="text-slate-50 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="text-slate-500 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         {showBackButton &&
         <Button

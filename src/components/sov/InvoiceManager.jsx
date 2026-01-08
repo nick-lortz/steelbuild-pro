@@ -17,14 +17,19 @@ export default function InvoiceManager({ projectId, canEdit }) {
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [showLinesDialog, setShowLinesDialog] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null);
-  
-  // Set default period dates
-  const today = new Date();
-  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-  
-  const [periodStart, setPeriodStart] = useState(lastMonth.toISOString().split('T')[0]);
-  const [periodEnd, setPeriodEnd] = useState(lastMonthEnd.toISOString().split('T')[0]);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+
+  // Reset dates when dialog opens
+  React.useEffect(() => {
+    if (showGenerateDialog) {
+      const today = new Date();
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+      setPeriodStart(lastMonth.toISOString().split('T')[0]);
+      setPeriodEnd(lastMonthEnd.toISOString().split('T')[0]);
+    }
+  }, [showGenerateDialog]);
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', projectId],

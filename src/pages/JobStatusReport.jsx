@@ -111,6 +111,56 @@ export default function JobStatusReport() {
     };
   }, [sovItems, expenses, changeOrders]);
 
+  // Weekly narrative data
+  const currentWeekData = useMemo(() => {
+    const marginVariance = financialSummary.projectedMargin - (selectedProjectData?.planned_margin || 15);
+    let riskStatus = 'Green';
+    if (marginVariance < -5) riskStatus = 'Red';
+    else if (marginVariance < -2) riskStatus = 'Yellow';
+
+    const drivers = [];
+    sovItems.forEach(sov => {
+      const earnedToDate = (sov.scheduled_value || 0) * ((sov.percent_complete || 0) / 100);
+      const sovMappings = mappings.filter(m => m.sov_item_id === sov.id);
+      const costCodeBreakdown = sovMappings.map(mapping => {
+        const ccExpenses = expenses.filter(e => 
+          e.cost_code_id === mapping.cost_code_id &&
+          (e.payment_status === 'paid' || e.payment_status === 'approved')
+        );
+        const actualCost = ccExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+        return actualCost * (mapping.allocation_percent / 100);
+      });
+      const unmappedExpenses = expenses.filter(e => 
+        e.sov_code === sov.sov_code &&
+        (e.payment_status === 'paid' || e.payment_status === 'approved') &&
+        !sovMappings.find(m => m.cost_code_id === e.cost_code_id)
+      );
+      const unmappedCost = unmappedExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const actualCost = costCodeBreakdown.reduce((sum, c) => sum + c, 0) + unmappedCost;
+      const variance = earnedToDate - actualCost;
+      const variancePercent = earnedToDate > 0 ? (variance / earnedToDate) * 100 : 0;
+
+      if ((variancePercent < -5 || variance < -5000) && earnedToDate > 0) {
+        drivers.push({
+          driver_type: 'cost_overrun',
+          description: `${sov.description} exceeding allocation by $${Math.abs(variance).toLocaleString()}`,
+          affected_sov: sov.sov_code,
+          variance_amount: variance,
+          severity: variance < -10000 ? 'high' : 'medium'
+        });
+      }
+    });
+
+    return {
+      riskStatus,
+      projectedMargin: financialSummary.projectedProfit,
+      projectedMarginPercent: financialSummary.projectedMargin,
+      totalContract: financialSummary.totalContract,
+      estimatedCostAtCompletion: financialSummary.estimatedCostAtCompletion,
+      riskDrivers: drivers.slice(0, 3)
+    };
+  }, [financialSummary, sovItems, expenses, mappings, selectedProjectData]);
+
   // SOV with Cost Alignment
   const sovWithCosts = useMemo(() => {
     return sovItems.map(sov => {

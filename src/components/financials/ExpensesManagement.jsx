@@ -71,7 +71,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Expense.create(data),
+    mutationFn: (data) => base44.functions.invoke('expenseOperations', { operation: 'create', data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -93,7 +93,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Expense.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('expenseOperations', { operation: 'update', data: { id, updates: data } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -115,7 +115,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Expense.delete(id),
+    mutationFn: (id) => base44.functions.invoke('expenseOperations', { operation: 'delete', data: { id } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });

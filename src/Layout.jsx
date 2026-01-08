@@ -84,9 +84,8 @@ function LayoutContent({ children, currentPageName }) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
       try {
@@ -102,10 +101,6 @@ function LayoutContent({ children, currentPageName }) {
     gcTime: Infinity,
     retry: false
   });
-
-  React.useEffect(() => {
-    setIsInitialized(true);
-  }, []);
 
   const { data: activeProject } = useQuery({
     queryKey: ['activeProject', activeProjectId],

@@ -87,3 +87,7 @@ export const updateSOVPercentComplete = (sovItemId, percentComplete) =>
 
 export const createSOVItem2 = (projectId, sovCode, description, scheduledValue, category) =>
   base44.functions.invoke('createSOVItem', { projectId, sovCode, description, scheduledValue, category });
+
+// Change Order Operations
+export const approveChangeOrder = (changeOrderId) =>
+  base44.functions.invoke('changeOrderOperations', { operation: 'approve', data: { changeOrderId } });

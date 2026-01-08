@@ -1,28 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Package, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react';
-import PageHeader from '../components/ui/PageHeader';
-import DataTable from '../components/ui/DataTable';
-import StatusBadge from '../components/ui/StatusBadge';
+import { Plus, Package, Trash2, FileText, Link as LinkIcon, ArrowRight } from 'lucide-react';
+import PageHeader from '@/components/ui/PageHeader';
+import DataTable from '@/components/ui/DataTable';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
+import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
 
 export default function WorkPackages() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [showForm, setShowForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
-  const [completingPhase, setCompletingPhase] = useState(null);
+  const [viewingPackage, setViewingPackage] = useState(null);
   const [deletePackage, setDeletePackage] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [phaseFilter, setPhaseFilter] = useState('all');
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -35,9 +35,9 @@ export default function WorkPackages() {
     queryFn: () => base44.entities.Project.list()
   });
 
-  const projects = currentUser?.role === 'admin' ?
-  allProjects :
-  allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
+  const projects = currentUser?.role === 'admin'
+    ? allProjects
+    : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages', activeProjectId],
@@ -51,18 +51,38 @@ export default function WorkPackages() {
     enabled: !!activeProjectId
   });
 
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', activeProjectId],
+    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code')
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents', activeProjectId],
+    queryFn: () => base44.entities.Document.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
+  const { data: drawings = [] } = useQuery({
+    queryKey: ['drawings', activeProjectId],
+    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const response = await base44.functions.invoke('createWorkPackage', data);
-      return response.data;
-    },
+    mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to create work package');
+      toast.error('Failed to create: ' + error.message);
     }
   });
 
@@ -72,6 +92,7 @@ export default function WorkPackages() {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
       setEditingPackage(null);
+      setViewingPackage(null);
       toast.success('Work package updated');
     }
   });
@@ -88,11 +109,11 @@ export default function WorkPackages() {
       toast.success(data.message || 'Work package deleted');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to delete work package');
+      toast.error(error.response?.data?.error || 'Failed to delete');
     }
   });
 
-  const advancePhase = useMutation({
+  const advancePhaseMutation = useMutation({
     mutationFn: async ({ work_package_id, target_phase }) => {
       const response = await base44.functions.invoke('advanceWorkPackagePhase', {
         work_package_id,
@@ -100,207 +121,274 @@ export default function WorkPackages() {
       });
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       queryClient.invalidateQueries(['tasks', activeProjectId]);
-      setCompletingPhase(null);
-      toast.success(data.message || 'Phase advanced');
+      toast.success('Phase advanced');
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || 'Failed to advance phase');
     }
   });
 
-  const handleEdit = (pkg) => {
-    setEditingPackage(pkg);
-    setShowForm(true);
-  };
-
-  const handleCompletePhase = (pkg, nextPhase) => {
-    setCompletingPhase({ package: pkg, nextPhase });
-  };
-
-  const confirmCompletePhase = () => {
-    if (completingPhase) {
-      advancePhase.mutate({
-        work_package_id: completingPhase.package.id,
-        target_phase: completingPhase.nextPhase
-      });
-    }
+  const handleAdvancePhase = (pkg, nextPhase) => {
+    advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: nextPhase });
   };
 
   const getPackageTaskCount = (packageId) => {
-    return tasks.filter((t) => t.work_package_id === packageId).length;
+    return tasks.filter(t => t.work_package_id === packageId).length;
   };
 
+  const filteredPackages = useMemo(() => {
+    return workPackages.filter(wp => {
+      const matchesStatus = statusFilter === 'all' || wp.status === statusFilter;
+      const matchesPhase = phaseFilter === 'all' || wp.phase === phaseFilter;
+      return matchesStatus && matchesPhase;
+    });
+  }, [workPackages, statusFilter, phaseFilter]);
+
   const columns = [
-  {
-    header: 'Package #',
-    accessor: 'package_number',
-    render: (pkg) =>
-    <div className="font-medium text-white">{pkg.package_number}</div>
-
-  },
-  {
-    header: 'Name',
-    accessor: 'name',
-    render: (pkg) => {
-      const project = projects.find((p) => p.id === pkg.project_id);
-      return (
+    {
+      header: 'Package',
+      accessor: 'package_number',
+      render: (pkg) => (
         <div>
-            <div className="text-white font-medium">{pkg.name}</div>
-            <div className="text-xs text-zinc-400">{project?.project_number} - {project?.name}</div>
-          </div>);
-
-    }
-  },
-  {
-    header: 'Phase',
-    render: (pkg) => <StatusBadge status={pkg.phase} />
-  },
-  {
-    header: 'Status',
-    render: (pkg) => <StatusBadge status={pkg.status} />
-  },
-  {
-    header: 'Tonnage',
-    render: (pkg) =>
-    <div className="text-zinc-200">{pkg.tonnage || '-'} tons</div>
-
-  },
-  {
-    header: 'Tasks',
-    render: (pkg) =>
-    <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
-
-  },
-  {
-    header: 'Actions',
-    render: (pkg) => {
-      const phaseMap = {
-        'fabrication': { next: 'delivery', label: 'Advance to Delivery' },
-        'delivery': { next: 'erection', label: 'Advance to Erection' },
-        'erection': { next: 'complete', label: 'Mark Complete' }
-      };
-
-      const currentPhase = phaseMap[pkg.phase];
-
-      return (
+          <div className="font-mono text-amber-500">{pkg.package_number || pkg.id.slice(0, 8)}</div>
+          <div className="text-sm text-white font-medium">{pkg.name}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Phase',
+      render: (pkg) => <StatusBadge status={pkg.phase} />
+    },
+    {
+      header: 'Status',
+      render: (pkg) => <StatusBadge status={pkg.status} />
+    },
+    {
+      header: 'Progress',
+      render: (pkg) => (
         <div className="flex items-center gap-2">
-            {currentPhase && pkg.status !== 'complete' &&
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCompletePhase(pkg, currentPhase.next);
-            }}
-            className="border-green-700 text-green-400 hover:bg-green-500/10">
+          <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-amber-500 transition-all" 
+              style={{ width: `${pkg.percent_complete || 0}%` }}
+            />
+          </div>
+          <span className="text-sm text-zinc-400">{pkg.percent_complete || 0}%</span>
+        </div>
+      )
+    },
+    {
+      header: 'Tonnage',
+      render: (pkg) => (
+        <div className="text-zinc-200">{pkg.tonnage ? `${pkg.tonnage} tons` : '-'}</div>
+      )
+    },
+    {
+      header: 'SOV Lines',
+      render: (pkg) => (
+        <div className="text-zinc-200">{pkg.sov_item_ids?.length || 0}</div>
+      )
+    },
+    {
+      header: 'Tasks',
+      render: (pkg) => (
+        <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
+      )
+    },
+    {
+      header: 'Target',
+      render: (pkg) => pkg.target_date ? format(new Date(pkg.target_date), 'MMM d') : '-'
+    },
+    {
+      header: '',
+      render: (pkg) => {
+        const phaseMap = {
+          'detailing': { next: 'fabrication', label: 'To Fab' },
+          'fabrication': { next: 'delivery', label: 'To Delivery' },
+          'delivery': { next: 'erection', label: 'To Erection' },
+          'erection': { next: 'complete', label: 'Complete' }
+        };
+        const currentPhase = phaseMap[pkg.phase];
 
-                {currentPhase.label}
+        return (
+          <div className="flex items-center gap-2">
+            {currentPhase && pkg.status !== 'complete' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAdvancePhase(pkg, currentPhase.next);
+                }}
+                className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
+              >
+                <ArrowRight size={16} />
               </Button>
-          }
+            )}
             <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeletePackage(pkg);
-            }}
-            className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10">
-
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeletePackage(pkg);
+              }}
+              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+            >
               <Trash2 size={16} />
             </Button>
-          </div>);
-
+          </div>
+        );
+      }
     }
-  }];
+  ];
 
+  const selectedProject = projects.find(p => p.id === activeProjectId);
 
-  const selectedProject = projects.find((p) => p.id === activeProjectId);
+  const summaryStats = useMemo(() => {
+    const active = workPackages.filter(wp => wp.status === 'active').length;
+    const complete = workPackages.filter(wp => wp.status === 'complete').length;
+    const totalTonnage = workPackages.reduce((sum, wp) => sum + (wp.tonnage || 0), 0);
+    const avgProgress = workPackages.length > 0
+      ? workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / workPackages.length
+      : 0;
+
+    return { active, complete, totalTonnage, avgProgress };
+  }, [workPackages]);
 
   if (!activeProjectId) {
     return (
       <div>
         <PageHeader
           title="Work Packages"
-          subtitle="Select a project to view work packages"
+          subtitle="Execution tracking - single source of truth"
           showBackButton={false}
           actions={
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map((p) =>
-              <SelectItem key={p.id} value={p.id} className="text-white">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id} className="text-white">
                     {p.project_number} - {p.name}
                   </SelectItem>
-              )}
+                ))}
               </SelectContent>
             </Select>
-          } />
-
+          }
+        />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <Package size={48} className="mx-auto mb-4 text-zinc-600" />
             <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
-            <p className="text-zinc-400">Select a project from the dropdown to view work packages.</p>
+            <p className="text-zinc-400">Select a project to manage work packages.</p>
           </div>
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   return (
     <div>
       <PageHeader
         title="Work Packages"
-        subtitle="Manage fabrication packages with automated phase transitions"
+        subtitle={`${selectedProject?.project_number || ''} - Execution tracking & progress`}
         actions={
-        <div className="text-slate-50 flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Select project">
+                <SelectValue>
                   {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map((p) =>
-              <SelectItem key={p.id} value={p.id} className="text-white">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id} className="text-white">
                     {p.project_number} - {p.name}
                   </SelectItem>
-              )}
+                ))}
               </SelectContent>
             </Select>
             <Button
-            onClick={() => setShowForm(true)}
-            disabled={!activeProjectId}
-            className="bg-amber-500 hover:bg-amber-600 text-black disabled:opacity-50">
-
+              onClick={() => setShowForm(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
               <Plus size={18} className="mr-2" />
-              {activeProjectId ? 'New Work Package' : 'Select Project First'}
+              New Package
             </Button>
           </div>
-        } />
+        }
+      />
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-sm text-muted-foreground">Active Packages</div>
+          <div className="text-2xl font-bold text-white mt-1">{summaryStats.active}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-sm text-muted-foreground">Complete</div>
+          <div className="text-2xl font-bold text-green-400 mt-1">{summaryStats.complete}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-sm text-muted-foreground">Total Tonnage</div>
+          <div className="text-2xl font-bold text-amber-500 mt-1">{summaryStats.totalTonnage.toFixed(1)}</div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="text-sm text-muted-foreground">Avg Progress</div>
+          <div className="text-2xl font-bold text-blue-400 mt-1">{summaryStats.avgProgress.toFixed(0)}%</div>
+        </div>
+      </div>
 
-      {isLoading ?
-      <div className="text-center text-zinc-400 py-12">Loading...</div> :
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Phases</SelectItem>
+            <SelectItem value="detailing">Detailing</SelectItem>
+            <SelectItem value="fabrication">Fabrication</SelectItem>
+            <SelectItem value="delivery">Delivery</SelectItem>
+            <SelectItem value="erection">Erection</SelectItem>
+            <SelectItem value="complete">Complete</SelectItem>
+          </SelectContent>
+        </Select>
 
-      <DataTable
-        columns={columns}
-        data={workPackages}
-        onRowClick={handleEdit}
-        emptyMessage="No work packages exist for this project yet. Click 'New Work Package' above to create one and start organizing executable work." />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
+            <SelectItem value="complete">Complete</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      }
+      {isLoading ? (
+        <div className="text-center text-zinc-400 py-12">Loading...</div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredPackages}
+          onRowClick={(pkg) => setViewingPackage(pkg)}
+          emptyMessage="No work packages yet. Create packages to track execution, link to SOV and cost codes."
+        />
+      )}
 
+      {/* Create/Edit Sheet */}
       <Sheet open={showForm} onOpenChange={(open) => {
         setShowForm(open);
         if (!open) setEditingPackage(null);
       }}>
-        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto">
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
             <SheetTitle className="text-white">
               {editingPackage ? 'Edit Work Package' : 'New Work Package'}
@@ -308,7 +396,11 @@ export default function WorkPackages() {
           </SheetHeader>
           <WorkPackageForm
             package={editingPackage}
-            projects={projects}
+            projectId={activeProjectId}
+            sovItems={sovItems}
+            costCodes={costCodes}
+            documents={documents}
+            drawings={drawings}
             onSubmit={(data) => {
               if (editingPackage) {
                 updateMutation.mutate({ id: editingPackage.id, data });
@@ -320,55 +412,47 @@ export default function WorkPackages() {
               setShowForm(false);
               setEditingPackage(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending} />
-
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
         </SheetContent>
       </Sheet>
 
-      <Dialog open={!!completingPhase} onOpenChange={() => setCompletingPhase(null)}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Complete Phase</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-              <AlertTriangle className="text-amber-400 flex-shrink-0 mt-0.5" size={20} />
-              <div className="text-sm text-zinc-200">
-                <p className="font-medium mb-1">This will:</p>
-                <ul className="list-disc list-inside space-y-1 text-zinc-400">
-                  <li>Complete all tasks in current phase</li>
-                  <li>Advance to {completingPhase?.nextPhase} phase</li>
-                  <li>Generate new tasks for the next phase</li>
-                  <li>This action cannot be undone</li>
-                </ul>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setCompletingPhase(null)}
-                className="border-zinc-700">
+      {/* Details Sheet */}
+      <Sheet open={!!viewingPackage} onOpenChange={(open) => {
+        if (!open) setViewingPackage(null);
+      }}>
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-3xl">
+          <SheetHeader>
+            <SheetTitle className="text-white">Work Package Details</SheetTitle>
+          </SheetHeader>
+          {viewingPackage && (
+            <WorkPackageDetails
+              package={viewingPackage}
+              projectId={activeProjectId}
+              tasks={tasks.filter(t => t.work_package_id === viewingPackage.id)}
+              sovItems={sovItems}
+              costCodes={costCodes}
+              documents={documents}
+              drawings={drawings}
+              onEdit={() => {
+                setEditingPackage(viewingPackage);
+                setViewingPackage(null);
+                setShowForm(true);
+              }}
+              onAdvancePhase={handleAdvancePhase}
+              onUpdate={(data) => updateMutation.mutate({ id: viewingPackage.id, data })}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmCompletePhase}
-                disabled={advancePhase.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                {advancePhase.isPending ? 'Processing...' : 'Advance Phase'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      {/* Delete Confirmation */}
       <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Work Package?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              This will permanently delete the work package "{deletePackage?.package_number} - {deletePackage?.name}" and all {getPackageTaskCount(deletePackage?.id || '')} associated tasks across all phases. This action cannot be undone.
+              Permanently delete "{deletePackage?.package_number} - {deletePackage?.name}" and {getPackageTaskCount(deletePackage?.id || '')} tasks. Cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -377,177 +461,13 @@ export default function WorkPackages() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deletePackage.id)}
-              className="bg-red-500 hover:bg-red-600">
-
+              className="bg-red-500 hover:bg-red-600"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>);
-
-}
-
-function WorkPackageForm({ package: pkg, projects, onSubmit, onCancel, isLoading }) {
-  const [formData, setFormData] = useState({
-    project_id: '',
-    name: '',
-    description: '',
-    start_date: '',
-    end_date: '',
-    estimated_hours: '',
-    estimated_cost: '',
-    notes: ''
-  });
-
-  const { activeProjectId } = useActiveProject();
-
-  React.useEffect(() => {
-    if (pkg) {
-      setFormData({
-        project_id: pkg.project_id || '',
-        name: pkg.name || '',
-        description: pkg.description || '',
-        start_date: pkg.start_date || '',
-        end_date: pkg.end_date || '',
-        estimated_hours: pkg.estimated_hours || '',
-        estimated_cost: pkg.estimated_cost || '',
-        notes: pkg.notes || ''
-      });
-    } else if (activeProjectId) {
-      setFormData((prev) => ({
-        ...prev,
-        project_id: activeProjectId
-      }));
-    }
-  }, [pkg, activeProjectId]);
-
-  const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (!formData.project_id) {
-      toast.error('Project is required');
-      return;
-    }
-
-    if (!formData.name) {
-      toast.error('Name is required');
-      return;
-    }
-
-    const submitData = {
-      ...formData,
-      estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : 0,
-      estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : 0
-    };
-
-    onSubmit(submitData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-      <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium">Project *</Label>
-        <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} required>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700">
-            <SelectValue placeholder="Select project" />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-            {projects.map((p) =>
-            <SelectItem key={p.id} value={p.id} className="text-white">
-                {p.project_number} - {p.name}
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium">Name *</Label>
-        <Input
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="e.g., Level 2 North Wing"
-          className="bg-zinc-800 border-zinc-700 text-white"
-          required />
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium">Description</Label>
-        <Textarea
-          value={formData.description}
-          onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Scope details..."
-          className="bg-zinc-800 border-zinc-700 text-white"
-          rows={3} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-slate-50 text-sm font-medium">Start Date</Label>
-          <Input
-            type="date"
-            value={formData.start_date}
-            onChange={(e) => handleChange('start_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700 text-white" />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-slate-50 text-sm font-medium">End Date</Label>
-          <Input
-            type="date"
-            value={formData.end_date}
-            onChange={(e) => handleChange('end_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700 text-white" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-slate-50 text-sm font-medium">Estimated Hours</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={formData.estimated_hours}
-            onChange={(e) => handleChange('estimated_hours', e.target.value)}
-            placeholder="0"
-            className="bg-zinc-800 border-zinc-700 text-white" />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-slate-50 text-sm font-medium">Estimated Cost</Label>
-          <Input
-            type="number"
-            step="0.01"
-            value={formData.estimated_cost}
-            onChange={(e) => handleChange('estimated_cost', e.target.value)}
-            placeholder="0.00"
-            className="bg-zinc-800 border-zinc-700 text-white" />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-slate-50 text-sm font-medium">Notes</Label>
-        <Textarea
-          value={formData.notes}
-          onChange={(e) => handleChange('notes', e.target.value)}
-          placeholder="Additional notes..."
-          className="bg-zinc-800 border-zinc-700 text-white"
-          rows={2} />
-      </div>
-
-      <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-        <Button type="button" variant="outline" onClick={onCancel} className="border-zinc-700">
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading} className="bg-amber-500 hover:bg-amber-600 text-black">
-          {isLoading ? 'Saving...' : pkg ? 'Update' : 'Create'}
-        </Button>
-      </div>
-    </form>);
-
+    </div>
+  );
 }

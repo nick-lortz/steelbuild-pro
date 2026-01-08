@@ -33,6 +33,7 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import JobStatusReport from './pages/JobStatusReport';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "JobStatusReport": JobStatusReport,
 }
 
 export const pagesConfig = {

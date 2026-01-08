@@ -207,31 +207,38 @@ export default function Analytics() {
         </TabsList>
 
         <TabsContent value="risk-dashboard" className="space-y-6">
-          {sovItems.length > 0 && (() => {
-            const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-            const signedExtras = changeOrders
-              .filter(co => co.status === 'approved')
-              .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-            const totalContract = contractValue + signedExtras;
-            const earnedToDate = sovItems.reduce((sum, s) => 
-              sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-            const actualCost = expenses
-              .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-              .reduce((sum, e) => sum + (e.amount || 0), 0);
-            const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
-            const estimatedCostAtCompletion = percentComplete > 0 
-              ? (actualCost / percentComplete) * 100 
-              : actualCost;
-
-            return (
-              <CostRiskIndicator
-                totalContract={totalContract}
-                actualCost={actualCost}
-                estimatedCostAtCompletion={estimatedCostAtCompletion}
-                plannedMarginPercent={selectedProject?.planned_margin || 15}
-              />
-            );
-          })()}
+          {sovItems.length > 0 && (
+            <CostRiskIndicator
+              totalContract={
+                sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0) +
+                changeOrders
+                  .filter(co => co.status === 'approved')
+                  .reduce((sum, co) => sum + (co.cost_impact || 0), 0)
+              }
+              actualCost={
+                expenses
+                  .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+                  .reduce((sum, e) => sum + (e.amount || 0), 0)
+              }
+              estimatedCostAtCompletion={
+                (() => {
+                  const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+                  const signedExtras = changeOrders
+                    .filter(co => co.status === 'approved')
+                    .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+                  const totalContract = contractValue + signedExtras;
+                  const earnedToDate = sovItems.reduce((sum, s) => 
+                    sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+                  const actualCost = expenses
+                    .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+                    .reduce((sum, e) => sum + (e.amount || 0), 0);
+                  const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
+                  return percentComplete > 0 ? (actualCost / percentComplete) * 100 : actualCost;
+                })()
+              }
+              plannedMarginPercent={selectedProject?.planned_margin || 15}
+            />
+          )}
 
           <ProjectRiskDashboard
             projects={projects}

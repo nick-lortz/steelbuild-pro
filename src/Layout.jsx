@@ -62,6 +62,7 @@ const navItems = [
         { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
         { name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
         { name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
+      { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: TrendingUp, roles: ['admin'] },
         { name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
         { name: 'Resource Management', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },
         { name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },

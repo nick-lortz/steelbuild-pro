@@ -34,6 +34,7 @@ import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
 import JobStatusReport from './pages/JobStatusReport';
+import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +75,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
     "JobStatusReport": JobStatusReport,
+    "ExecutiveRollUp": ExecutiveRollUp,
 }
 
 export const pagesConfig = {

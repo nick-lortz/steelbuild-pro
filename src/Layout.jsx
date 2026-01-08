@@ -91,12 +91,16 @@ function LayoutContent({ children, currentPageName }) {
     queryFn: async () => {
       try {
         return await base44.auth.me();
-      } catch {
+      } catch (error) {
+        if (error?.response?.status === 401) {
+          base44.auth.redirectToLogin(window.location.pathname);
+        }
         return null;
       }
     },
     staleTime: Infinity,
-    gcTime: Infinity
+    gcTime: Infinity,
+    retry: false
   });
 
   React.useEffect(() => {

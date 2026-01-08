@@ -102,3 +102,7 @@ export const supersedeDrawingSet = (oldSetId, newRevision, status, ifa_date, she
 
 export const releaseDrawingForFab = (setId) =>
   base44.functions.invoke('drawingOperations', { operation: 'release_for_fab', data: { setId } });
+
+// Governance
+export const validateSchemaChange = (entity_name, proposed_changes, justification) =>
+  base44.functions.invoke('validateSchemaChange', { entity_name, proposed_changes, justification });

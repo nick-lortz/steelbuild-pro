@@ -45,93 +45,82 @@ export default function Analytics() {
     queryKey: ['financials', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.Financial.filter({ project_id: activeProjectId })
-      : base44.entities.Financial.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.Financial.list()
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
-      : base44.entities.Task.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.Task.list()
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.Expense.filter({ project_id: activeProjectId })
-      : base44.entities.Expense.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.Expense.list()
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => base44.entities.Resource.list()
   });
 
   const { data: resourceAllocations = [] } = useQuery({
     queryKey: ['resourceAllocations', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
-      : base44.entities.ResourceAllocation.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.ResourceAllocation.list()
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
-      : base44.entities.RFI.list('-created_date'),
-    enabled: !!activeProjectId,
+      : base44.entities.RFI.list('-created_date')
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
-      : base44.entities.ChangeOrder.list('-created_date'),
-    enabled: !!activeProjectId,
+      : base44.entities.ChangeOrder.list('-created_date')
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
-      : base44.entities.DrawingSet.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.DrawingSet.list()
   });
 
   const { data: scopeGaps = [] } = useQuery({
     queryKey: ['scopeGaps', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.ScopeGap.filter({ project_id: activeProjectId })
-      : base44.entities.ScopeGap.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.ScopeGap.list()
   });
 
   const { data: laborBreakdowns = [] } = useQuery({
     queryKey: ['laborBreakdowns', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId })
-      : base44.entities.LaborBreakdown.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.LaborBreakdown.list()
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['laborHours', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.LaborHours.filter({ project_id: activeProjectId })
-      : base44.entities.LaborHours.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.LaborHours.list()
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.SOVItem.filter({ project_id: activeProjectId })
-      : base44.entities.SOVItem.list(),
-    enabled: !!activeProjectId,
+      : base44.entities.SOVItem.list()
   });
 
   const { data: costCodes = [] } = useQuery({

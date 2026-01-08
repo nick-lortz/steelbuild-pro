@@ -144,10 +144,10 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
+    if (!activeProjectId && userProjects.length > 0) {
       setActiveProjectId(userProjects[0].id);
     }
-  }, [activeProjectId, userProjects, projectsLoading]);
+  }, [userProjects]);
 
   const selectedProject = projects[0];
   const hasProject = !!activeProjectId;

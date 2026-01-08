@@ -15,6 +15,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import CostVarianceTable from '@/components/sov/CostVarianceTable';
 import ChangeOrderImpact from '@/components/change-orders/ChangeOrderImpact';
+import CostTrendProjection from '@/components/sov/CostTrendProjection';
 
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -482,6 +483,14 @@ export default function JobStatusReport() {
 
       {/* Cost Variance Table */}
       <CostVarianceTable
+        sovItems={sovItems}
+        expenses={expenses}
+        costCodes={costCodes}
+        mappings={mappings}
+      />
+
+      {/* Cost Trend Projections */}
+      <CostTrendProjection
         sovItems={sovItems}
         expenses={expenses}
         costCodes={costCodes}

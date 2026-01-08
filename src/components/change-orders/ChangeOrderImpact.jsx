@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 export default function ChangeOrderImpact({ 
   project,
@@ -10,17 +11,11 @@ export default function ChangeOrderImpact({
   expenses = [],
   estimatedCosts = []
 }) {
+  const [selectedCO, setSelectedCO] = useState(null);
+
   const analysis = useMemo(() => {
     // Original contract (baseline SOV)
     const originalContract = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-
-    // Approved change orders
-    const approvedCOs = changeOrders.filter(co => co.status === 'approved');
-    const approvedCOsRevenue = approvedCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-
-    // Pending change orders
-    const pendingCOs = changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted');
-    const pendingCOsRevenue = pendingCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
 
     // Actual costs
     const actualCost = expenses
@@ -29,71 +24,152 @@ export default function ChangeOrderImpact({
 
     // ETC
     const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
-    const estimatedCostAtCompletion = actualCost + totalETC;
+    const baseEAC = actualCost + totalETC;
 
-    // BEFORE (original contract only)
-    const beforeContract = originalContract;
-    const beforeEstCost = estimatedCostAtCompletion;
-    const beforeMargin = beforeContract - beforeEstCost;
-    const beforeMarginPercent = beforeContract > 0 ? (beforeMargin / beforeContract) * 100 : 0;
+    // Build cumulative contract value and EAC as COs are approved
+    let runningContract = originalContract;
+    let runningEAC = baseEAC;
 
-    // AFTER (with approved COs)
-    const afterContract = originalContract + approvedCOsRevenue;
-    const afterEstCost = estimatedCostAtCompletion; // Cost impacts are typically absorbed into ETC
-    const afterMargin = afterContract - afterEstCost;
-    const afterMarginPercent = afterContract > 0 ? (afterMargin / afterContract) * 100 : 0;
+    // Process each CO in order (sorted by approved date or created date)
+    const sortedCOs = [...changeOrders].sort((a, b) => {
+      const dateA = a.approved_date || a.created_date || '';
+      const dateB = b.approved_date || b.created_date || '';
+      return dateA.localeCompare(dateB);
+    });
 
-    // DELTAS
-    const contractDelta = afterContract - beforeContract;
-    const costDelta = afterEstCost - beforeEstCost;
-    const marginDelta = afterMargin - beforeMargin;
-    const marginPercentDelta = afterMarginPercent - beforeMarginPercent;
+    const coAnalysis = sortedCOs.map((co) => {
+      // Before this CO
+      const beforeContract = runningContract;
+      const beforeEAC = runningEAC;
+      const beforeMargin = beforeContract - beforeEAC;
+      const beforeMarginPercent = beforeContract > 0 ? (beforeMargin / beforeContract) * 100 : 0;
 
-    // WITH PENDING (what-if scenario)
-    const withPendingContract = afterContract + pendingCOsRevenue;
-    const withPendingMargin = withPendingContract - afterEstCost;
-    const withPendingMarginPercent = withPendingContract > 0 ? (withPendingMargin / withPendingContract) * 100 : 0;
+      // Revenue impact
+      const revenueValue = co.cost_impact || 0;
+
+      // Estimated cost impact (from cost_breakdown or assume 70% of revenue if not specified)
+      let estimatedCost = 0;
+      if (co.cost_breakdown && co.cost_breakdown.length > 0) {
+        estimatedCost = co.cost_breakdown.reduce((sum, item) => sum + (item.amount || 0), 0);
+      } else {
+        // Default assumption: 70% of revenue is cost
+        estimatedCost = revenueValue * 0.7;
+      }
+
+      // After this CO (only apply if approved)
+      let afterContract = beforeContract;
+      let afterEAC = beforeEAC;
+      if (co.status === 'approved') {
+        afterContract = beforeContract + revenueValue;
+        afterEAC = beforeEAC + estimatedCost;
+        // Update running totals
+        runningContract = afterContract;
+        runningEAC = afterEAC;
+      } else {
+        // Proposed/Pending: show forecast but don't update running totals
+        afterContract = beforeContract + revenueValue;
+        afterEAC = beforeEAC + estimatedCost;
+      }
+
+      const afterMargin = afterContract - afterEAC;
+      const afterMarginPercent = afterContract > 0 ? (afterMargin / afterContract) * 100 : 0;
+
+      // Net impact
+      const netMarginImpact = afterMargin - beforeMargin;
+      const marginPercentDelta = afterMarginPercent - beforeMarginPercent;
+
+      // Status color
+      let impactStatus = 'neutral';
+      if (netMarginImpact > 0) {
+        impactStatus = 'positive';
+      } else if (netMarginImpact < -1000) {
+        impactStatus = 'negative';
+      }
+
+      return {
+        ...co,
+        revenueValue,
+        estimatedCost,
+        netMarginImpact,
+        before: {
+          contract: beforeContract,
+          eac: beforeEAC,
+          margin: beforeMargin,
+          marginPercent: beforeMarginPercent
+        },
+        after: {
+          contract: afterContract,
+          eac: afterEAC,
+          margin: afterMargin,
+          marginPercent: afterMarginPercent
+        },
+        marginPercentDelta,
+        impactStatus
+      };
+    });
+
+    // Final totals (approved COs only)
+    const approvedCOs = coAnalysis.filter(co => co.status === 'approved');
+    const finalContract = runningContract;
+    const finalEAC = runningEAC;
+    const finalMargin = finalContract - finalEAC;
+    const finalMarginPercent = finalContract > 0 ? (finalMargin / finalContract) * 100 : 0;
+
+    const originalMargin = originalContract - baseEAC;
+    const originalMarginPercent = originalContract > 0 ? (originalMargin / originalContract) * 100 : 0;
 
     return {
       originalContract,
-      approvedCOsRevenue,
-      pendingCOsRevenue,
-      approvedCOsCount: approvedCOs.length,
-      pendingCOsCount: pendingCOs.length,
-      before: {
-        contract: beforeContract,
-        estCost: beforeEstCost,
-        margin: beforeMargin,
-        marginPercent: beforeMarginPercent
-      },
-      after: {
-        contract: afterContract,
-        estCost: afterEstCost,
-        margin: afterMargin,
-        marginPercent: afterMarginPercent
-      },
-      delta: {
-        contract: contractDelta,
-        cost: costDelta,
-        margin: marginDelta,
-        marginPercent: marginPercentDelta
-      },
-      withPending: {
-        contract: withPendingContract,
-        margin: withPendingMargin,
-        marginPercent: withPendingMarginPercent
-      },
-      hasPending: pendingCOs.length > 0
+      baseEAC,
+      originalMargin,
+      originalMarginPercent,
+      finalContract,
+      finalEAC,
+      finalMargin,
+      finalMarginPercent,
+      totalMarginDelta: finalMargin - originalMargin,
+      totalMarginPercentDelta: finalMarginPercent - originalMarginPercent,
+      coAnalysis,
+      approvedCount: approvedCOs.length,
+      pendingCount: coAnalysis.filter(co => co.status === 'pending' || co.status === 'submitted').length,
+      rejectedCount: coAnalysis.filter(co => co.status === 'rejected').length
     };
-  }, [project, sovItems, changeOrders, expenses, estimatedCosts]);
+  }, [sovItems, changeOrders, expenses, estimatedCosts]);
 
-  const formatCurrency = (value) => `$${value.toLocaleString()}`;
-  const formatPercent = (value) => `${value.toFixed(1)}%`;
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null) return '$0';
+    return `$${Math.abs(value).toLocaleString()}`;
+  };
+  
+  const formatPercent = (value) => {
+    if (value === undefined || value === null) return '0.0%';
+    return `${value.toFixed(1)}%`;
+  };
+  
   const formatDelta = (value, isCurrency = true) => {
-    const formatted = isCurrency ? formatCurrency(Math.abs(value)) : formatPercent(Math.abs(value));
+    if (value === undefined || value === null || value === 0) return isCurrency ? '$0' : '0.0%';
+    const formatted = isCurrency ? formatCurrency(value) : formatPercent(Math.abs(value));
     if (value > 0) return `+${formatted}`;
     if (value < 0) return `-${formatted}`;
     return formatted;
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'approved': return CheckCircle;
+      case 'pending':
+      case 'submitted': return Clock;
+      case 'rejected': return XCircle;
+      default: return AlertCircle;
+    }
+  };
+
+  const getImpactColor = (impactStatus) => {
+    switch (impactStatus) {
+      case 'positive': return 'text-green-400';
+      case 'negative': return 'text-red-400';
+      default: return 'text-muted-foreground';
+    }
   };
 
   return (
@@ -102,150 +178,162 @@ export default function ChangeOrderImpact({
         <CardHeader>
           <CardTitle className="text-base">Change Order Impact Analysis</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Margin impact of approved change orders vs baseline contract
+            Before/After margin impact for each change order
           </p>
         </CardHeader>
         <CardContent>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="p-3 bg-secondary rounded">
-              <p className="text-xs text-muted-foreground">Approved COs</p>
-              <p className="text-lg font-bold text-green-400">
-                {analysis.approvedCOsCount}
-              </p>
-              <p className="text-xs text-green-400">
-                {formatCurrency(analysis.approvedCOsRevenue)} revenue
-              </p>
+          {/* Summary Panel */}
+          <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-secondary/50 rounded-lg">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Before COs</p>
+              <p className="text-sm font-mono">{formatCurrency(analysis.originalContract)}</p>
+              <p className="text-lg font-bold">{formatCurrency(analysis.originalMargin)}</p>
+              <p className="text-xs text-muted-foreground">{formatPercent(analysis.originalMarginPercent)} margin</p>
             </div>
-            <div className="p-3 bg-secondary rounded">
-              <p className="text-xs text-muted-foreground">Pending COs</p>
-              <p className="text-lg font-bold text-amber-400">
-                {analysis.pendingCOsCount}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">After COs</p>
+              <p className="text-sm font-mono">{formatCurrency(analysis.finalContract)}</p>
+              <p className="text-lg font-bold">{formatCurrency(analysis.finalMargin)}</p>
+              <p className="text-xs text-muted-foreground">{formatPercent(analysis.finalMarginPercent)} margin</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase mb-1">Net Change</p>
+              <p className="text-sm font-mono">
+                {formatDelta(analysis.finalContract - analysis.originalContract)}
               </p>
-              <p className="text-xs text-amber-400">
-                {formatCurrency(analysis.pendingCOsRevenue)} potential
+              <p className={cn(
+                "text-lg font-bold flex items-center gap-1",
+                analysis.totalMarginDelta > 0 ? 'text-green-400' : 
+                analysis.totalMarginDelta < 0 ? 'text-red-400' : ''
+              )}>
+                {analysis.totalMarginDelta > 0 ? <TrendingUp size={16} /> : 
+                 analysis.totalMarginDelta < 0 ? <TrendingDown size={16} /> : null}
+                {formatDelta(analysis.totalMarginDelta)}
+              </p>
+              <p className={cn(
+                "text-xs",
+                analysis.totalMarginPercentDelta > 0 ? 'text-green-400' : 
+                analysis.totalMarginPercentDelta < 0 ? 'text-red-400' : 'text-muted-foreground'
+              )}>
+                {formatDelta(analysis.totalMarginPercentDelta, false)} margin
               </p>
             </div>
           </div>
 
-          {/* Comparison Table */}
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-2 bg-green-500/10 border border-green-500/30 rounded text-center">
+              <p className="text-xs text-muted-foreground">Approved</p>
+              <p className="text-lg font-bold text-green-400">{analysis.approvedCount}</p>
+            </div>
+            <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded text-center">
+              <p className="text-xs text-muted-foreground">Pending</p>
+              <p className="text-lg font-bold text-amber-400">{analysis.pendingCount}</p>
+            </div>
+            <div className="p-2 bg-red-500/10 border border-red-500/30 rounded text-center">
+              <p className="text-xs text-muted-foreground">Rejected</p>
+              <p className="text-lg font-bold text-red-400">{analysis.rejectedCount}</p>
+            </div>
+          </div>
+
+          {/* CO Line Detail Table */}
           <div className="border border-border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-secondary/50">
-                  <th className="text-left p-3 font-semibold">Metric</th>
-                  <th className="text-right p-3 font-semibold">Before COs</th>
-                  <th className="text-right p-3 font-semibold">After Approved COs</th>
-                  <th className="text-right p-3 font-semibold">Delta</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t border-border">
-                  <td className="p-3">Contract Value</td>
-                  <td className="p-3 text-right font-mono">
-                    {formatCurrency(analysis.before.contract)}
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold">
-                    {formatCurrency(analysis.after.contract)}
-                  </td>
-                  <td className={cn(
-                    "p-3 text-right font-mono font-semibold",
-                    analysis.delta.contract > 0 ? 'text-green-400' : 
-                    analysis.delta.contract < 0 ? 'text-red-400' : ''
-                  )}>
-                    {formatDelta(analysis.delta.contract)}
-                  </td>
-                </tr>
-
-                <tr className="border-t border-border">
-                  <td className="p-3">Estimated Cost</td>
-                  <td className="p-3 text-right font-mono">
-                    {formatCurrency(analysis.before.estCost)}
-                  </td>
-                  <td className="p-3 text-right font-mono font-semibold">
-                    {formatCurrency(analysis.after.estCost)}
-                  </td>
-                  <td className={cn(
-                    "p-3 text-right font-mono font-semibold",
-                    analysis.delta.cost < 0 ? 'text-green-400' : 
-                    analysis.delta.cost > 0 ? 'text-red-400' : ''
-                  )}>
-                    {formatDelta(analysis.delta.cost)}
-                  </td>
-                </tr>
-
-                <tr className="border-t border-border bg-secondary/30">
-                  <td className="p-3 font-semibold">Projected Margin ($)</td>
-                  <td className="p-3 text-right font-mono">
-                    {formatCurrency(analysis.before.margin)}
-                  </td>
-                  <td className="p-3 text-right font-mono font-bold">
-                    {formatCurrency(analysis.after.margin)}
-                  </td>
-                  <td className={cn(
-                    "p-3 text-right font-mono font-bold flex items-center justify-end gap-1",
-                    analysis.delta.margin > 0 ? 'text-green-400' : 
-                    analysis.delta.margin < 0 ? 'text-red-400' : ''
-                  )}>
-                    {analysis.delta.margin > 0 ? <TrendingUp size={14} /> : 
-                     analysis.delta.margin < 0 ? <TrendingDown size={14} /> : null}
-                    {formatDelta(analysis.delta.margin)}
-                  </td>
-                </tr>
-
-                <tr className="border-t border-border bg-secondary/30">
-                  <td className="p-3 font-semibold">Projected Margin (%)</td>
-                  <td className="p-3 text-right font-mono">
-                    {formatPercent(analysis.before.marginPercent)}
-                  </td>
-                  <td className="p-3 text-right font-mono font-bold">
-                    {formatPercent(analysis.after.marginPercent)}
-                  </td>
-                  <td className={cn(
-                    "p-3 text-right font-mono font-bold",
-                    analysis.delta.marginPercent > 0 ? 'text-green-400' : 
-                    analysis.delta.marginPercent < 0 ? 'text-red-400' : ''
-                  )}>
-                    {formatDelta(analysis.delta.marginPercent, false)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-secondary/50">
+                    <th className="text-left p-2 font-semibold">CO#</th>
+                    <th className="text-left p-2 font-semibold">Description</th>
+                    <th className="text-center p-2 font-semibold">Status</th>
+                    <th className="text-right p-2 font-semibold">Revenue</th>
+                    <th className="text-right p-2 font-semibold">Est Cost</th>
+                    <th className="text-right p-2 font-semibold">Margin Before</th>
+                    <th className="text-right p-2 font-semibold">Margin After</th>
+                    <th className="text-right p-2 font-semibold">Net Impact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analysis.coAnalysis.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-8 text-muted-foreground">
+                        No change orders found
+                      </td>
+                    </tr>
+                  ) : (
+                    analysis.coAnalysis.map((co) => {
+                      const StatusIcon = getStatusIcon(co.status);
+                      return (
+                        <tr 
+                          key={co.id} 
+                          className="border-t border-border hover:bg-secondary/30 transition-colors"
+                        >
+                          <td className="p-2 font-mono font-semibold">
+                            CO-{co.co_number}
+                          </td>
+                          <td className="p-2 max-w-xs truncate">
+                            {co.title || co.description || 'Untitled'}
+                          </td>
+                          <td className="p-2 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <StatusIcon size={12} className={cn(
+                                co.status === 'approved' ? 'text-green-400' :
+                                co.status === 'rejected' ? 'text-red-400' :
+                                'text-amber-400'
+                              )} />
+                              <StatusBadge status={co.status} />
+                            </div>
+                          </td>
+                          <td className="p-2 text-right font-mono">
+                            {formatCurrency(co.revenueValue)}
+                          </td>
+                          <td className="p-2 text-right font-mono text-red-400">
+                            {formatCurrency(co.estimatedCost)}
+                          </td>
+                          <td className="p-2 text-right font-mono text-muted-foreground">
+                            {formatCurrency(co.before.margin)}
+                            <span className="text-xs ml-1">
+                              ({formatPercent(co.before.marginPercent)})
+                            </span>
+                          </td>
+                          <td className="p-2 text-right font-mono">
+                            {formatCurrency(co.after.margin)}
+                            <span className="text-xs ml-1">
+                              ({formatPercent(co.after.marginPercent)})
+                            </span>
+                          </td>
+                          <td className={cn(
+                            "p-2 text-right font-mono font-bold",
+                            getImpactColor(co.impactStatus)
+                          )}>
+                            <div className="flex items-center justify-end gap-1">
+                              {co.netMarginImpact > 0 ? <TrendingUp size={12} /> : 
+                               co.netMarginImpact < -1000 ? <TrendingDown size={12} /> : null}
+                              {formatDelta(co.netMarginImpact)}
+                            </div>
+                            <div className="text-xs">
+                              {formatDelta(co.marginPercentDelta, false)}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          {/* Pending COs Impact */}
-          {analysis.hasPending && (
-            <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-              <div className="flex items-start gap-2 mb-3">
-                <AlertCircle size={16} className="text-amber-400 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-400">
-                    Pending Change Orders ({analysis.pendingCOsCount})
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    What-if scenario if all pending COs are approved
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">Contract Value</p>
-                  <p className="font-mono font-semibold">
-                    {formatCurrency(analysis.withPending.contract)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Projected Margin</p>
-                  <p className="font-mono font-semibold">
-                    {formatCurrency(analysis.withPending.margin)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Margin %</p>
-                  <p className="font-mono font-semibold">
-                    {formatPercent(analysis.withPending.marginPercent)}
-                  </p>
-                </div>
+          {/* Pending CO Warning */}
+          {analysis.pendingCount > 0 && (
+            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-2">
+              <AlertCircle size={14} className="text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs">
+                <p className="font-semibold text-amber-400">
+                  {analysis.pendingCount} Pending CO{analysis.pendingCount > 1 ? 's' : ''}
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  Margin impacts shown are forecasts only. Approve to update contract value and SOV.
+                </p>
               </div>
             </div>
           )}

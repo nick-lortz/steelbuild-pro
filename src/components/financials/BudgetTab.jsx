@@ -15,6 +15,7 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formData, setFormData] = useState({ cost_code_id: '', category: 'labor', original_budget: 0 });
+  const [editingValues, setEditingValues] = useState({});
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Financial.create({
@@ -51,6 +52,23 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
 
   const getCostCodeName = (id) => costCodes.find(c => c.id === id)?.name || 'Unknown';
 
+  const handleSave = (rowId, field, value) => {
+    const row = budgetLines.find(r => r.id === rowId);
+    if (!row) return;
+
+    const updates = field === 'original_budget'
+      ? { original_budget: Number(value), approved_changes: row.approved_changes || 0 }
+      : { approved_changes: Number(value), original_budget: row.original_budget || 0 };
+
+    updateMutation.mutate({ id: rowId, data: updates });
+    
+    setEditingValues(prev => {
+      const newState = { ...prev };
+      delete newState[`${rowId}_${field}`];
+      return newState;
+    });
+  };
+
   const columns = [
     {
       header: 'Cost Code',
@@ -65,34 +83,42 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
     {
       header: 'Original Budget',
       accessor: 'original_budget',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.original_budget || 0}
-          onChange={(e) => updateMutation.mutate({
-            id: row.id,
-            data: { original_budget: Number(e.target.value), approved_changes: row.approved_changes || 0 }
-          })}
-          disabled={!canEdit}
-          className="w-32"
-        />
-      )
+      render: (row) => {
+        const key = `${row.id}_original_budget`;
+        const displayValue = editingValues[key] ?? row.original_budget ?? 0;
+        
+        return (
+          <Input
+            type="number"
+            value={displayValue}
+            onChange={(e) => setEditingValues(prev => ({ ...prev, [key]: e.target.value }))}
+            onBlur={(e) => handleSave(row.id, 'original_budget', e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+            disabled={!canEdit}
+            className="w-32"
+          />
+        );
+      }
     },
     {
       header: 'Approved Changes',
       accessor: 'approved_changes',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.approved_changes || 0}
-          onChange={(e) => updateMutation.mutate({
-            id: row.id,
-            data: { approved_changes: Number(e.target.value), original_budget: row.original_budget || 0 }
-          })}
-          disabled={!canEdit}
-          className="w-32"
-        />
-      )
+      render: (row) => {
+        const key = `${row.id}_approved_changes`;
+        const displayValue = editingValues[key] ?? row.approved_changes ?? 0;
+        
+        return (
+          <Input
+            type="number"
+            value={displayValue}
+            onChange={(e) => setEditingValues(prev => ({ ...prev, [key]: e.target.value }))}
+            onBlur={(e) => handleSave(row.id, 'approved_changes', e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+            disabled={!canEdit}
+            className="w-32"
+          />
+        );
+      }
     },
     {
       header: 'Current Budget',

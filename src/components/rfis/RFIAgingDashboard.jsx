@@ -5,13 +5,13 @@ import { Clock, AlertTriangle } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 
 export default function RFIAgingDashboard({ rfis = [], projects = [] }) {
-  const openRFIs = rfis.filter(r => r.status === 'pending' || r.status === 'submitted');
+  const openRFIs = rfis.filter((r) => r.status === 'pending' || r.status === 'submitted');
 
-  const agingRFIs = openRFIs.map(rfi => {
-    const daysOpen = rfi.submitted_date 
-      ? differenceInDays(new Date(), new Date(rfi.submitted_date))
-      : 0;
-    
+  const agingRFIs = openRFIs.map((rfi) => {
+    const daysOpen = rfi.submitted_date ?
+    differenceInDays(new Date(), new Date(rfi.submitted_date)) :
+    0;
+
     return {
       ...rfi,
       daysOpen,
@@ -20,18 +20,18 @@ export default function RFIAgingDashboard({ rfis = [], projects = [] }) {
   }).sort((a, b) => b.daysOpen - a.daysOpen);
 
   const agingStats = {
-    critical: agingRFIs.filter(r => r.agingCategory === 'critical').length,
-    warning: agingRFIs.filter(r => r.agingCategory === 'warning').length,
-    watch: agingRFIs.filter(r => r.agingCategory === 'watch').length,
-    new: agingRFIs.filter(r => r.agingCategory === 'new').length,
+    critical: agingRFIs.filter((r) => r.agingCategory === 'critical').length,
+    warning: agingRFIs.filter((r) => r.agingCategory === 'warning').length,
+    watch: agingRFIs.filter((r) => r.agingCategory === 'watch').length,
+    new: agingRFIs.filter((r) => r.agingCategory === 'new').length
   };
 
   const getAgingColor = (category) => {
     switch (category) {
-      case 'critical': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'warning': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'watch': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      default: return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'critical':return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'warning':return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+      case 'watch':return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      default:return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
     }
   };
 
@@ -67,13 +67,13 @@ export default function RFIAgingDashboard({ rfis = [], projects = [] }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {agingRFIs.length === 0 ? (
-              <p className="text-center text-zinc-500 py-4">No open RFIs</p>
-            ) : (
-              agingRFIs.slice(0, 10).map(rfi => {
-                const project = projects.find(p => p.id === rfi.project_id);
-                return (
-                  <div key={rfi.id} className="flex items-start justify-between p-3 bg-zinc-800/50 rounded-lg">
+            {agingRFIs.length === 0 ?
+            <p className="text-center text-zinc-500 py-4">No open RFIs</p> :
+
+            agingRFIs.slice(0, 10).map((rfi) => {
+              const project = projects.find((p) => p.id === rfi.project_id);
+              return (
+                <div key={rfi.id} className="flex items-start justify-between p-3 bg-zinc-800/50 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-mono text-amber-500 text-sm">
@@ -82,30 +82,30 @@ export default function RFIAgingDashboard({ rfis = [], projects = [] }) {
                         <Badge variant="outline" className={`${getAgingColor(rfi.agingCategory)} border text-xs`}>
                           {rfi.daysOpen}d
                         </Badge>
-                        {rfi.priority === 'critical' && (
-                          <AlertTriangle size={14} className="text-red-500" />
-                        )}
+                        {rfi.priority === 'critical' &&
+                      <AlertTriangle size={14} className="text-red-500" />
+                      }
                       </div>
-                      <p className="text-sm font-medium text-white line-clamp-1">{rfi.subject}</p>
+                      <p className="text-slate-50 text-sm font-medium line-clamp-1">{rfi.subject}</p>
                       <p className="text-xs text-zinc-500">{project?.name}</p>
                     </div>
                     <div className="text-right text-xs text-zinc-500">
-                      {rfi.submitted_date && (
-                        <p>Submitted: {format(new Date(rfi.submitted_date), 'MMM d')}</p>
-                      )}
-                      {rfi.due_date && (
-                        <p className={new Date(rfi.due_date) < new Date() ? 'text-red-400' : ''}>
+                      {rfi.submitted_date &&
+                    <p>Submitted: {format(new Date(rfi.submitted_date), 'MMM d')}</p>
+                    }
+                      {rfi.due_date &&
+                    <p className={new Date(rfi.due_date) < new Date() ? 'text-red-400' : ''}>
                           Due: {format(new Date(rfi.due_date), 'MMM d')}
                         </p>
-                      )}
+                    }
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  </div>);
+
+            })
+            }
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }

@@ -78,9 +78,9 @@ export default function ProjectAssistant({
     const delayedFabs = projectFabrications.filter((f) => f.fabrication_status === 'delayed');
     const inProgressFabs = projectFabrications.filter((f) => f.fabrication_status === 'in_progress');
     const readyToShipFabs = projectFabrications.filter((f) => f.fabrication_status === 'ready_to_ship');
-    const overdueDeliveries = projectDeliveries.filter((d) => 
-      d.scheduled_date && new Date(d.scheduled_date) < new Date() && 
-      d.status !== 'delivered' && d.status !== 'completed'
+    const overdueDeliveries = projectDeliveries.filter((d) =>
+    d.scheduled_date && new Date(d.scheduled_date) < new Date() &&
+    d.status !== 'delivered' && d.status !== 'completed'
     );
 
     // Identify bottlenecks
@@ -289,7 +289,7 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
 
 
               <Icon size={18} className="text-amber-500" />
-              <span className="text-xs text-left">{analysis.label}</span>
+              <span className="text-slate-50 text-xs text-left">{analysis.label}</span>
             </Button>);
 
         })}

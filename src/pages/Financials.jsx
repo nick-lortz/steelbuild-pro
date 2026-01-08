@@ -7,6 +7,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import FinancialKPIs from '@/components/financials/FinancialKPIs';
 import BudgetTab from '@/components/financials/BudgetTab';
 import ActualsTab from '@/components/financials/ActualsTab';
+import ETCManager from '@/components/financials/ETCManager';
 import InvoicesTab from '@/components/financials/InvoicesTab';
 import SOVManager from '@/components/sov/SOVManager';
 import InvoiceManager from '@/components/sov/InvoiceManager';

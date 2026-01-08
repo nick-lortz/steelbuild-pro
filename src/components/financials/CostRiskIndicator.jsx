@@ -1,14 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, AlertCircle, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CostRiskDrilldown from './CostRiskDrilldown';
 
 export default function CostRiskIndicator({ 
   totalContract, 
   actualCost, 
   estimatedCostAtCompletion, 
-  plannedMarginPercent = 15 // Default industry standard
+  plannedMarginPercent = 15, // Default industry standard
+  expenses = [],
+  estimatedCosts = []
 }) {
+  const [showDrilldown, setShowDrilldown] = useState(false);
   const analysis = useMemo(() => {
     const projectedMargin = totalContract - estimatedCostAtCompletion;
     const projectedMarginPercent = totalContract > 0 ? (projectedMargin / totalContract) * 100 : 0;
@@ -66,9 +70,13 @@ export default function CostRiskIndicator({
   const Icon = analysis.icon;
 
   return (
-    <Card className={cn(analysis.bgColor, analysis.borderColor)}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+    <>
+      <Card 
+        className={cn(analysis.bgColor, analysis.borderColor, 'cursor-pointer hover:shadow-lg transition-shadow')}
+        onClick={() => setShowDrilldown(true)}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
           <CardTitle className="text-base">Cost Risk Status</CardTitle>
           <div className={cn("flex items-center gap-2 px-3 py-1 rounded-full", analysis.bgColor, analysis.borderColor, 'border')}>
             <Icon size={16} className={analysis.iconColor} />
@@ -148,5 +156,16 @@ export default function CostRiskIndicator({
         )}
       </CardContent>
     </Card>
+
+    <CostRiskDrilldown
+      open={showDrilldown}
+      onOpenChange={setShowDrilldown}
+      expenses={expenses}
+      estimatedCosts={estimatedCosts}
+      totalContract={totalContract}
+      actualCost={actualCost}
+      estimatedCostAtCompletion={estimatedCostAtCompletion}
+    />
+    </>
   );
 }

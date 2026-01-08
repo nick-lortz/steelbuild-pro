@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate, Link } from 'react-router-dom';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { createPageUrl } from '@/utils';
+import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Building2, 
@@ -152,6 +153,35 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fetch financial data for cost risk indicator
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['dashboardSOV', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.SOVItem.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['dashboardExpenses', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.Expense.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: projectChangeOrders = [] } = useQuery({
+    queryKey: ['dashboardProjectCOs', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: estimatedCosts = [] } = useQuery({
+    queryKey: ['dashboardETC', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -268,6 +298,35 @@ export default function Dashboard() {
     const days = differenceInDays(new Date(p.target_completion), new Date());
     return days >= 0 && days <= 30;
   });
+
+  // Calculate financial summary for active project
+  const activeProjectFinancials = React.useMemo(() => {
+    if (!activeProjectId || sovItems.length === 0) return null;
+
+    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+    const signedExtras = projectChangeOrders
+      .filter(co => co.status === 'approved')
+      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+    const totalContract = contractValue + signedExtras;
+    const earnedToDate = sovItems.reduce((sum, s) => 
+      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+    const actualCost = expenses
+      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    // Calculate EAC from ETC data
+    const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
+    const estimatedCostAtCompletion = actualCost + totalETC;
+
+    const activeProject = projects.find(p => p.id === activeProjectId);
+
+    return {
+      totalContract,
+      actualCost,
+      estimatedCostAtCompletion,
+      plannedMargin: activeProject?.planned_margin || 15
+    };
+  }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
 
   return (
     <ScreenContainer>

@@ -48,6 +48,12 @@ export default function JobStatusReport() {
     enabled: !!selectedProject
   });
 
+  const { data: estimatedCosts = [] } = useQuery({
+    queryKey: ['etc', selectedProject],
+    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
+    enabled: !!selectedProject
+  });
+
   const { data: invoiceLines = [] } = useQuery({
     queryKey: ['invoice-lines', selectedInvoice?.id],
     queryFn: () => base44.entities.InvoiceLine.filter({ invoice_id: selectedInvoice.id }),
@@ -424,6 +430,8 @@ export default function JobStatusReport() {
         actualCost={financialSummary.actualCost}
         estimatedCostAtCompletion={financialSummary.estimatedCostAtCompletion}
         plannedMarginPercent={selectedProjectData?.planned_margin || 15}
+        expenses={expenses}
+        estimatedCosts={estimatedCosts}
       />
 
       {/* Earned vs Billed vs Cost Chart */}

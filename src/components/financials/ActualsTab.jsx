@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
-import * as backend from '@/components/services/backend';
+import * as backend from '../services/backend';
 
 export default function ActualsTab({ projectId, expenses = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();

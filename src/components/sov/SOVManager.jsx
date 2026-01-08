@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from '@/components/ui/DataTable';
 import { Plus, Trash2, Lock, AlertTriangle } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import * as backend from '@/components/services/backend';
+import * as backend from '../services/backend';
 
 export default function SOVManager({ projectId, canEdit }) {
   const queryClient = useQueryClient();

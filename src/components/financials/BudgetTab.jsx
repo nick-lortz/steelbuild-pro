@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import * as backend from '@/components/services/backend';
+import * as backend from '../services/backend';
 
 export default function BudgetTab({ projectId, budgetLines = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();

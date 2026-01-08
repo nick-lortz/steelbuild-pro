@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
@@ -14,7 +14,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
 
 export default function Analytics() {
-  const [activeProjectId, setActiveProjectId] = React.useState(null);
+  const [activeProjectId, setActiveProjectId] = useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -26,7 +26,7 @@ export default function Analytics() {
     queryFn: () => base44.entities.Project.list(),
   });
 
-  const userProjects = React.useMemo(() => {
+  const userProjects = useMemo(() => {
     if (!currentUser) return [];
     return currentUser.role === 'admin' 
       ? allProjects 
@@ -139,7 +139,7 @@ export default function Analytics() {
     queryFn: () => base44.entities.CostCode.list('code')
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!activeProjectId && userProjects.length > 0 && !projectsLoading) {
       setActiveProjectId(userProjects[0].id);
     }

@@ -1,131 +1,118 @@
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Building2, DollarSign, Calendar, TrendingUp, ArrowRight, Trash2, Settings2 } from 'lucide-react';
+import { Trash2, Settings2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import QuickStatusUpdate from './QuickStatusUpdate';
 
-export default function ProjectCard({ project, progress, onClick, onDelete, onEdit }) {
+export default function ProjectCard({ project, progress, onClick, onDelete, onEdit, noBorder }) {
   const daysUntilCompletion = project.target_completion 
     ? differenceInDays(new Date(project.target_completion), new Date())
     : null;
 
+  const formatValue = (val) => {
+    if (!val) return '—';
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `$${(val / 1000).toFixed(0)}K`;
+    return `$${val.toLocaleString()}`;
+  };
+
   return (
-    <Card 
-      className="border-border hover:border-amber-500/50 transition-all cursor-pointer active:scale-[0.98]"
+    <div 
+      className={`group px-6 py-4 hover:bg-zinc-950 cursor-pointer transition-colors ${!noBorder ? 'border-b border-zinc-800' : ''}`}
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0 mr-2">
-            <div className="flex items-center gap-2 mb-1">
-              <Building2 size={16} className="text-amber-500 flex-shrink-0" />
-              <h3 className="font-semibold text-sm truncate">{project.name}</h3>
+      <div className="flex items-center justify-between gap-6">
+        {/* Project Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-xs text-white font-medium truncate">{project.name}</span>
+            <span className="text-[10px] text-zinc-600 font-mono flex-shrink-0">{project.project_number}</span>
+          </div>
+          {project.client && (
+            <span className="text-[10px] text-zinc-600 truncate block">{project.client}</span>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <QuickStatusUpdate project={project} compact />
+        </div>
+
+        {/* Value */}
+        <div className="text-right flex-shrink-0 w-24">
+          <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">VALUE</div>
+          <div className="text-sm font-bold text-white font-mono">
+            {formatValue(project.contract_value)}
+          </div>
+        </div>
+
+        {/* Target */}
+        {project.target_completion && (
+          <div className="text-right flex-shrink-0 w-24">
+            <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TARGET</div>
+            <div className="text-sm font-bold text-white">
+              {format(new Date(project.target_completion), 'MMM d')}
             </div>
-            <p className="text-xs text-muted-foreground font-mono">{project.project_number}</p>
-            {project.client && (
-              <p className="text-xs text-muted-foreground truncate mt-1">{project.client}</p>
+            {daysUntilCompletion !== null && (
+              <div className={`text-[10px] font-mono ${
+                daysUntilCompletion < 0 ? 'text-red-500' :
+                daysUntilCompletion < 30 ? 'text-amber-500' : 'text-zinc-600'
+              }`}>
+                {daysUntilCompletion > 0 ? `${daysUntilCompletion}d` : 'LATE'}
+              </div>
             )}
-          </div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <QuickStatusUpdate project={project} compact />
-          </div>
-        </div>
-
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {/* Contract Value */}
-          {project.contract_value && (
-            <div className="flex items-start gap-2">
-              <DollarSign size={14} className="text-green-500 mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Value</p>
-                <p className="text-sm font-semibold truncate">
-                  ${project.contract_value.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Target Date */}
-          {project.target_completion && (
-            <div className="flex items-start gap-2">
-              <Calendar size={14} className="text-blue-500 mt-0.5 flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Target</p>
-                <p className="text-sm font-semibold truncate">
-                  {format(new Date(project.target_completion), 'MMM d')}
-                </p>
-                {daysUntilCompletion !== null && (
-                  <p className={`text-xs ${daysUntilCompletion < 30 ? 'text-amber-500' : 'text-muted-foreground'}`}>
-                    {daysUntilCompletion > 0 ? `${daysUntilCompletion}d left` : 'Overdue'}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Progress Bar */}
-        {progress !== undefined && (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <TrendingUp size={12} className="text-amber-500" />
-                <span className="text-xs text-muted-foreground">Progress</span>
-              </div>
-              <span className="text-xs font-semibold">{progress}%</span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-amber-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
           </div>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-          {project.project_manager && (
-            <p className="text-xs text-muted-foreground truncate flex-1 mr-2">
-              PM: {project.project_manager}
-            </p>
-          )}
-          <div className="flex items-center gap-1">
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                className="h-7 w-7 text-zinc-500 hover:text-amber-500"
-              >
-                <Settings2 size={14} />
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete();
-                }}
-                className="h-7 w-7 text-zinc-500 hover:text-red-500"
-              >
-                <Trash2 size={14} />
-              </Button>
-            )}
-            <ArrowRight size={14} className="text-muted-foreground flex-shrink-0" />
+        {/* Progress */}
+        <div className="flex-shrink-0 w-32">
+          <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-2">PROGRESS</div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1 bg-zinc-900">
+              <div 
+                className="h-full bg-amber-500 transition-all"
+                style={{ width: `${progress || 0}%` }}
+              />
+            </div>
+            <span className="text-xs font-mono text-white w-8 text-right">{progress || 0}%</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        {/* PM */}
+        {project.project_manager && (
+          <div className="text-right flex-shrink-0 w-32">
+            <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">PM</div>
+            <div className="text-xs text-white truncate">{project.project_manager}</div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-2 text-zinc-600 hover:text-white"
+            >
+              <Settings2 size={14} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="p-2 text-zinc-600 hover:text-red-500"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+          <span className="text-zinc-700 group-hover:text-zinc-500 ml-1">→</span>
+        </div>
+      </div>
+    </div>
   );
 }

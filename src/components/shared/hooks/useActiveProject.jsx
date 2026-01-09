@@ -1,14 +1,13 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
+import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
 
 const ActiveProjectContext = createContext();
 
-export function ActiveProjectProvider({ children }) {
-  useRenderCount('ActiveProjectProvider');
-  useMountLogger('ActiveProjectProvider');
-  
+export const ActiveProjectProvider = React.memo(function ActiveProjectProvider({ children }) {
   const [activeProjectId, setActiveProjectId] = useState(() => {
-    return localStorage.getItem('activeProjectId') || null;
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('activeProjectId') || null;
+    }
+    return null;
   });
 
   useEffect(() => {
@@ -19,12 +18,14 @@ export function ActiveProjectProvider({ children }) {
     }
   }, [activeProjectId]);
 
+  const value = useMemo(() => ({ activeProjectId, setActiveProjectId }), [activeProjectId]);
+
   return (
-    <ActiveProjectContext.Provider value={{ activeProjectId, setActiveProjectId }}>
+    <ActiveProjectContext.Provider value={value}>
       {children}
     </ActiveProjectContext.Provider>
   );
-}
+});
 
 export function useActiveProject() {
   const context = useContext(ActiveProjectContext);

@@ -31,6 +31,8 @@ export default function Detailing() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const queryClient = useQueryClient();
   const [selectedReviewer, setSelectedReviewer] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedDiscipline, setSelectedDiscipline] = useState('all');
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

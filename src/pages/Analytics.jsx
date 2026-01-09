@@ -15,6 +15,8 @@ import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift'
 
 export default function Analytics() {
   const [activeProjectId, setActiveProjectId] = useState(null);
+  const [savedDashboard, setSavedDashboard] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

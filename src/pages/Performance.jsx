@@ -32,7 +32,7 @@ export default function Performance() {
   });
 
   // Performance Metrics with memoization
-  const performanceMetrics = React.useMemo(() => {
+  const performanceMetrics = useMemo(() => {
     const activeProjects = projects.filter(p => p.status === 'in_progress');
     const onTimeProjects = activeProjects.filter(p => {
       if (!p.target_completion) return true;

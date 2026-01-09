@@ -349,8 +349,8 @@ const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, 
           <LayoutContent children={children} currentPageName={currentPageName} />
         </ActiveProjectProvider>
       </ConfirmProvider>
-      </ThemeProvider>);
-
+    </ThemeProvider>
+  );
 });
 
 export default LayoutWithProviders;

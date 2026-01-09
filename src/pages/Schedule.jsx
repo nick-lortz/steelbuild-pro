@@ -48,10 +48,10 @@ export default function Schedule() {
     [rawProjects]
   );
 
-  const selectedProject = useMemo(() => {
-    if (!activeProjectId) return null;
-    return projects.find(p => p.id === activeProjectId);
-  }, [projects, activeProjectId]);
+  const selectedProject = useMemo(() => 
+    activeProjectId ? projects.find(p => p.id === activeProjectId) : null,
+    [projects, activeProjectId]
+  );
 
   // Fetch tasks for active project only
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
@@ -272,15 +272,13 @@ export default function Schedule() {
     { key: 'f', ctrl: true, action: () => setShowFilters(!showFilters) }
   ]);
 
-  const statusCounts = useMemo(() => {
-    return {
-      all: totalCount,
-      not_started: 0,
-      in_progress: 0,
-      completed: 0,
-      overdue: 0
-    };
-  }, [totalCount]);
+  const statusCounts = useMemo(() => ({
+    all: totalCount,
+    not_started: 0,
+    in_progress: 0,
+    completed: 0,
+    overdue: 0
+  }), [totalCount]);
 
   return (
     <ScreenContainer>

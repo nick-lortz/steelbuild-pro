@@ -29,34 +29,32 @@ export default function DataTable({ columns, data, onRowClick, emptyMessage = "N
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length === 0 ?
-          <TableRow>
+          {data.length === 0 ? (
+            <TableRow>
               <TableCell
-              colSpan={columns.length}
-              className="text-center text-zinc-400 py-12 text-sm">
-
+                colSpan={columns.length}
+                className="text-center text-zinc-400 py-12 text-sm">
                 {emptyMessage}
               </TableCell>
-            </TableRow> :
-
-          data.map((row, rowIdx) =>
-          <TableRow
-            key={row.id || rowIdx}
-            onClick={() => onRowClick?.(row)}
-            className={cn(
-              "border-b border-zinc-800/60",
-              rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-900/40",
-              onRowClick && "cursor-pointer hover:bg-zinc-800 transition-colors"
-            )}>
-
-                {columns.map((col, colIdx) =>
-            <TableCell key={colIdx} className="text-white py-3.5 px-4 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
+            </TableRow>
+          ) : (
+            data.map((row, rowIdx) => (
+              <TableRow
+                key={row.id || rowIdx}
+                onClick={() => onRowClick?.(row)}
+                className={cn(
+                  "border-b border-zinc-800/60",
+                  rowIdx % 2 === 0 ? "bg-zinc-900" : "bg-zinc-900/40",
+                  onRowClick && "cursor-pointer hover:bg-zinc-800 transition-colors"
+                )}>
+                {columns.map((col, colIdx) => (
+                  <TableCell key={colIdx} className="text-white py-3.5 px-4 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]">
                     {col.render ? col.render(row) : row[col.accessor]}
                   </TableCell>
-            )}
+                ))}
               </TableRow>
-          )
-          }
+            ))
+          )}
         </TableBody>
       </Table>
     </div>);

@@ -120,6 +120,8 @@ export default function Financials() {
     );
   }
 
+  const AlertDialogComponent = AlertDialog;
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header Bar */}

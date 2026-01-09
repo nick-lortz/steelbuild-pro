@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataTable from '@/components/ui/DataTable';
-import { Plus, Trash2, Lock, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import * as backend from '../services/backend';
 
 export default function SOVManager({ projectId, canEdit }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ 
     sov_code: '', 
     description: '', 
@@ -150,6 +151,17 @@ export default function SOVManager({ projectId, canEdit }) {
     );
   };
 
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setFormData({
+      sov_code: item.sov_code,
+      description: item.description,
+      sov_category: item.sov_category,
+      scheduled_value: item.scheduled_value
+    });
+    setShowAddDialog(true);
+  };
+
   const columns = [
     { 
       header: 'Code', 
@@ -243,20 +255,32 @@ export default function SOVManager({ projectId, canEdit }) {
       render: (row) => {
         const isLocked = lockedSovItemIds.has(row.id);
         return (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              if (window.confirm(`⚠️ Delete SOV line ${row.sov_code}?\n\nThis will permanently remove the line and all associated mappings. This action cannot be undone.`)) {
-                deleteMutation.mutate(row.id);
-              }
-            }}
-            disabled={!canEdit || isLocked}
-            className="text-red-400 hover:text-red-300 disabled:opacity-50"
-            title={isLocked ? '🔒 Locked — line has approved invoices. Use Change Orders.' : 'Delete SOV line'}
-          >
-            <Trash2 size={16} />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleEdit(row)}
+              disabled={!canEdit}
+              className="text-blue-400 hover:text-blue-300"
+              title="Edit SOV line"
+            >
+              <Edit size={16} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (window.confirm(`⚠️ Delete SOV line ${row.sov_code}?\n\nThis will permanently remove the line and all associated mappings. This action cannot be undone.`)) {
+                  deleteMutation.mutate(row.id);
+                }
+              }}
+              disabled={!canEdit || isLocked}
+              className="text-red-400 hover:text-red-300 disabled:opacity-50"
+              title={isLocked ? '🔒 Locked — line has approved invoices. Use Change Orders.' : 'Delete SOV line'}
+            >
+              <Trash2 size={16} />
+            </Button>
+          </div>
         );
       }
     }
@@ -336,12 +360,32 @@ export default function SOVManager({ projectId, canEdit }) {
         </CardContent>
       </Card>
 
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        setShowAddDialog(open);
+        if (!open) {
+          setEditingItem(null);
+          setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add SOV Line</DialogTitle>
+            <DialogTitle>{editingItem ? 'Edit SOV Line' : 'Add SOV Line'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(formData); }} className="space-y-4">
+          <form onSubmit={(e) => { 
+            e.preventDefault(); 
+            if (editingItem) {
+              updateMutation.mutate({ id: editingItem.id, data: formData }, {
+                onSuccess: () => {
+                  toast.success('SOV line updated');
+                  setShowAddDialog(false);
+                  setEditingItem(null);
+                  setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
+                }
+              });
+            } else {
+              createMutation.mutate(formData);
+            }
+          }} className="space-y-4">
             <div>
               <Label>SOV Code / Line #</Label>
               <Input
@@ -381,16 +425,23 @@ export default function SOVManager({ projectId, canEdit }) {
                 type="number"
                 value={formData.scheduled_value}
                 onChange={(e) => setFormData({ ...formData, scheduled_value: Number(e.target.value) })}
+                disabled={editingItem && lockedSovItemIds.has(editingItem.id)}
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
                 <Lock size={10} className="inline mr-1" />
-                Locked after creation. Changes via Change Orders only.
+                {editingItem && lockedSovItemIds.has(editingItem.id) 
+                  ? 'Locked — line has approved invoices. Use Change Orders.' 
+                  : 'Locked after invoicing. Changes via Change Orders only.'}
               </p>
             </div>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button type="submit">Add SOV Line</Button>
+              <Button type="button" variant="outline" onClick={() => {
+                setShowAddDialog(false);
+                setEditingItem(null);
+                setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
+              }}>Cancel</Button>
+              <Button type="submit">{editingItem ? 'Update' : 'Add'} SOV Line</Button>
             </div>
           </form>
         </DialogContent>

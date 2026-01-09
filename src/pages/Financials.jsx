@@ -77,6 +77,18 @@ export default function Financials() {
 
   const selectedProjectData = projects.find((p) => p.id === selectedProject);
 
+  const cleanupMutation = useMutation({
+    mutationFn: () => base44.functions.invoke('cleanupFinancialBudgetLines', { project_id: selectedProject }),
+    onSuccess: (response) => {
+      if (response.data.success) {
+        toast.success(`Deleted ${response.data.count} Financial budget lines`);
+        queryClient.invalidateQueries({ queryKey: ['financials'] });
+        setShowCleanupDialog(false);
+      }
+    },
+    onError: () => toast.error('Cleanup failed')
+  });
+
   if (!selectedProject) {
     return (
       <div className="min-h-screen bg-black">

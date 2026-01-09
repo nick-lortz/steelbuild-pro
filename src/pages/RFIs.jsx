@@ -317,120 +317,147 @@ export default function RFIs() {
   const projectDrawings = drawings.filter((d) => d.project_id === formData.project_id);
   const projectCOs = changeOrders.filter((co) => co.project_id === formData.project_id);
 
+  const rfiStats = useMemo(() => {
+    const pending = filteredRFIs.filter(r => r.status === 'pending' || r.status === 'submitted').length;
+    const overdue = filteredRFIs.filter(r => {
+      if (!r.due_date || r.status === 'answered' || r.status === 'closed') return false;
+      return new Date(r.due_date) < new Date();
+    }).length;
+    const withImpact = filteredRFIs.filter(r => r.cost_impact || r.schedule_impact).length;
+    return { pending, overdue, withImpact };
+  }, [filteredRFIs]);
+
   return (
-    <div>
-      <PageHeader
-        title="RFIs"
-        subtitle="Requests for Information"
-        actions={
-        <div className="text-slate-50 flex gap-2">
-            <Button
-            onClick={() => setShowCSVImport(true)}
-            variant="outline" className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
-
-
-              <FileSpreadsheet size={18} className="mr-2" />
-              Import CSV
-            </Button>
-            <Button
-            onClick={() => setShowBulkCreator(true)}
-            variant="outline"
-            className="border-zinc-700"
-            disabled={projectFilter === 'all'}>
-
-              <Copy size={18} className="mr-2" />
-              Bulk Create
-            </Button>
-            <Button
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black">
-
-              <Plus size={18} className="mr-2" />
-              New RFI
-            </Button>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">RFI Management</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredRFIs.length} TOTAL • {rfiStats.pending} PENDING</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowCSVImport(true)}
+                variant="outline"
+                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider">
+                <FileSpreadsheet size={14} className="mr-1" />
+                IMPORT
+              </Button>
+              <Button
+                onClick={() => setShowBulkCreator(true)}
+                variant="outline"
+                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+                disabled={projectFilter === 'all'}>
+                <Copy size={14} className="mr-1" />
+                BULK
+              </Button>
+              <Button
+                onClick={() => {
+                  setFormData(initialFormState);
+                  setShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                <Plus size={14} className="mr-1" />
+                NEW
+              </Button>
+            </div>
           </div>
-        } />
-
-
-      <Tabs defaultValue="list" className="mb-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="list">RFI List</TabsTrigger>
-          <TabsTrigger value="dashboard">
-            <BarChart3 size={14} className="mr-2" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="aging">Aging Report</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="list" className="space-y-6">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <Input
-                placeholder="Search RFIs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-white" />
-
         </div>
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map((p) =>
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                )}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="answered">Answered</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={pmFilter} onValueChange={setPmFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by PM" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All PMs</SelectItem>
-            {uniquePMs.map((pm) =>
-                <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-                )}
-          </SelectContent>
-        </Select>
       </div>
 
-      {/* Table */}
-      <DataTable
-            columns={columns}
-            data={filteredRFIs}
-            onRowClick={handleEdit}
-            emptyMessage="No RFIs found. Create your first RFI to get started." />
+      {/* KPI Strip */}
+      {rfiStats.overdue > 0 && (
+        <div className="border-b border-zinc-800 bg-red-950/20">
+          <div className="max-w-[1600px] mx-auto px-6 py-3">
+            <div className="flex items-center gap-2 text-red-500">
+              <AlertTriangle size={16} />
+              <span className="text-xs font-bold uppercase tracking-widest">{rfiStats.overdue} OVERDUE</span>
+            </div>
+          </div>
+        </div>
+      )}
 
-        </TabsContent>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <Tabs defaultValue="list" className="space-y-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="list">RFI List</TabsTrigger>
+            <TabsTrigger value="dashboard">
+              <BarChart3 size={14} className="mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="aging">Aging Report</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="dashboard" className="space-y-6">
-          <RFIKPIDashboard rfis={filteredRFIs} />
-        </TabsContent>
+          <TabsContent value="list" className="space-y-4">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <Input
+                  placeholder="SEARCH RFIS..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+                />
+              </div>
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="All Projects" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((p) =>
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="answered">Answered</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={pmFilter} onValueChange={setPmFilter}>
+                <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="All PMs" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All PMs</SelectItem>
+                  {uniquePMs.map((pm) =>
+                    <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <TabsContent value="aging" className="space-y-6">
-          <RFIAgingDashboard rfis={filteredRFIs} projects={projects} />
-        </TabsContent>
-      </Tabs>
+            {/* Table */}
+            <DataTable
+              columns={columns}
+              data={filteredRFIs}
+              onRowClick={handleEdit}
+              emptyMessage="No RFIs found. Create your first RFI to get started."
+            />
+          </TabsContent>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            <RFIKPIDashboard rfis={filteredRFIs} />
+          </TabsContent>
+
+          <TabsContent value="aging" className="space-y-6">
+            <RFIAgingDashboard rfis={filteredRFIs} projects={projects} />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

@@ -241,93 +241,93 @@ export default function DailyLogs() {
     },
   ];
 
+  const logStats = useMemo(() => {
+    const safetyIncidents = filteredLogs.filter(l => l.safety_incidents).length;
+    const delays = filteredLogs.filter(l => l.delays).length;
+    const avgCrew = filteredLogs.length > 0 
+      ? Math.round(filteredLogs.reduce((sum, l) => sum + (l.crew_count || 0), 0) / filteredLogs.length)
+      : 0;
+    return { safetyIncidents, delays, avgCrew };
+  }, [filteredLogs]);
+
   return (
-    <div>
-      <PageHeader
-        title="Daily Logs"
-        subtitle="Track field activities and progress"
-        actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Daily Log
-          </Button>
-        }
-      />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-zinc-400 text-sm">Total Logs</p>
-              <p className="text-2xl font-bold text-white">{filteredLogs.length}</p>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Daily Field Logs</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredLogs.length} LOGS</p>
             </div>
-            <Calendar className="text-zinc-500" size={24} />
-          </div>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-zinc-400 text-sm">Avg Crew Size</p>
-              <p className="text-2xl font-bold text-white">
-                {Math.round(filteredLogs.reduce((sum, l) => sum + (l.crew_count || 0), 0) / (filteredLogs.length || 1))}
-              </p>
-            </div>
-            <Users className="text-zinc-500" size={24} />
-          </div>
-        </div>
-        <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-zinc-400 text-sm">Safety Incidents</p>
-              <p className="text-2xl font-bold text-red-400">
-                {filteredLogs.filter(l => l.safety_incidents).length}
-              </p>
-            </div>
-            <AlertTriangle className="text-red-500" size={24} />
-          </div>
-        </div>
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-zinc-400 text-sm">Delays Reported</p>
-              <p className="text-2xl font-bold text-amber-400">
-                {filteredLogs.filter(l => l.delays).length}
-              </p>
-            </div>
-            <CloudRain className="text-amber-500" size={24} />
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+            >
+              <Plus size={14} className="mr-1" />
+              NEW LOG
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="mb-6">
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVG CREW</div>
+              <div className="text-2xl font-bold font-mono text-white">{logStats.avgCrew}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SAFETY INCIDENTS</div>
+              <div className={`text-2xl font-bold font-mono ${logStats.safetyIncidents > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                {logStats.safetyIncidents}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">DELAYS</div>
+              <div className={`text-2xl font-bold font-mono ${logStats.delays > 0 ? 'text-amber-500' : 'text-green-500'}`}>
+                {logStats.delays}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL LOGS</div>
+              <div className="text-2xl font-bold font-mono text-white">{filteredLogs.length}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredLogs}
-        onRowClick={handleEdit}
-        emptyMessage="No daily logs found. Create your first log to track field activities."
-      />
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <DataTable
+          columns={columns}
+          data={filteredLogs}
+          onRowClick={handleEdit}
+          emptyMessage="No daily logs found. Create your first log to track field activities."
+        />
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

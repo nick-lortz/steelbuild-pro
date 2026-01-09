@@ -35,73 +35,78 @@ export default function FieldTools() {
   };
 
   return (
-    <ScreenContainer>
-      <PageHeader 
-        title="Field Tools" 
-        subtitle="Mobile tools for jobsite use"
-        showBackButton={false}
-      />
-
-      <Tabs defaultValue="photo" className="space-y-4">
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="photo">
-            <Camera size={14} className="mr-2" />
-            Photo
-          </TabsTrigger>
-          <TabsTrigger value="scan">
-            <Scan size={14} className="mr-2" />
-            Scan
-          </TabsTrigger>
-          <TabsTrigger value="sync">
-            <Cloud size={14} className="mr-2" />
-            Sync
-          </TabsTrigger>
-          <TabsTrigger value="notify">
-            <Bell size={14} className="mr-2" />
-            Alerts
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="photo" className="space-y-4">
-          <PhotoCapture onPhotoCapture={handlePhotoCapture} />
-          <div className="p-4 bg-secondary rounded-lg text-sm">
-            <p className="font-medium mb-2">Tips:</p>
-            <ul className="space-y-1 text-xs text-muted-foreground">
-              <li>• Photos auto-tagged with GPS location</li>
-              <li>• Add annotations for context</li>
-              <li>• Works offline - syncs when online</li>
-              <li>• Attach photos to tasks, logs, or RFIs</li>
-            </ul>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div>
+            <h1 className="text-xl font-bold text-white uppercase tracking-wide">Field Tools</h1>
+            <p className="text-xs text-zinc-600 font-mono mt-1">JOBSITE UTILITIES</p>
           </div>
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value="scan" className="space-y-4">
-          <BarcodeScanner onScan={handleBarcodeScan} />
-          {scannedCode && (
-            <div className="p-4 bg-secondary rounded-lg">
-              <p className="text-sm font-medium mb-1">Last Scan:</p>
-              <p className="text-xs text-muted-foreground">{scannedCode}</p>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <Tabs defaultValue="photo" className="space-y-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="photo">
+              <Camera size={14} className="mr-2" />
+              Photo
+            </TabsTrigger>
+            <TabsTrigger value="scan">
+              <Scan size={14} className="mr-2" />
+              Scan
+            </TabsTrigger>
+            <TabsTrigger value="sync">
+              <Cloud size={14} className="mr-2" />
+              Sync
+            </TabsTrigger>
+            <TabsTrigger value="notify">
+              <Bell size={14} className="mr-2" />
+              Alerts
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="photo" className="space-y-4">
+            <PhotoCapture onPhotoCapture={handlePhotoCapture} />
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded text-xs">
+              <p className="font-bold text-zinc-400 uppercase tracking-widest mb-3">TIPS</p>
+              <ul className="space-y-1.5 text-zinc-500">
+                <li>• GPS auto-tagging</li>
+                <li>• Offline support</li>
+                <li>• Link to tasks/logs/RFIs</li>
+              </ul>
             </div>
-          )}
-          <div className="p-4 bg-secondary rounded-lg text-sm">
-            <p className="font-medium mb-2">Use Cases:</p>
-            <ul className="space-y-1 text-xs text-muted-foreground">
-              <li>• Track equipment by scanning asset tags</li>
-              <li>• Verify deliveries with QR codes</li>
-              <li>• Link materials to tasks</li>
-              <li>• Quick lookup by scanning barcodes</li>
-            </ul>
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="sync">
-          <OfflineSync />
-        </TabsContent>
+          <TabsContent value="scan" className="space-y-4">
+            <BarcodeScanner onScan={handleBarcodeScan} />
+            {scannedCode && (
+              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded">
+                <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">LAST SCAN</p>
+                <p className="text-sm text-white font-mono">{scannedCode}</p>
+              </div>
+            )}
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded text-xs">
+              <p className="font-bold text-zinc-400 uppercase tracking-widest mb-3">USE CASES</p>
+              <ul className="space-y-1.5 text-zinc-500">
+                <li>• Equipment asset tracking</li>
+                <li>• Delivery verification</li>
+                <li>• Material linkage</li>
+              </ul>
+            </div>
+          </TabsContent>
 
-        <TabsContent value="notify">
-          <NotificationManager />
-        </TabsContent>
-      </Tabs>
-    </ScreenContainer>
+          <TabsContent value="sync">
+            <OfflineSync />
+          </TabsContent>
+
+          <TabsContent value="notify">
+            <NotificationManager />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }

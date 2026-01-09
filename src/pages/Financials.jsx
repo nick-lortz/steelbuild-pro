@@ -73,64 +73,79 @@ export default function Financials() {
 
   if (!selectedProject) {
     return (
-      <div>
-        <PageHeader title="Financials" subtitle="Select a project to view financial data" showBackButton={false} />
-        <div className="max-w-md">
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a project..." />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((p) =>
-              <SelectItem key={p.id} value={p.id}>
-                  {p.project_number} - {p.name}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
+      <div className="min-h-screen bg-black">
+        <div className="border-b border-zinc-800 bg-black">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Financials</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">SELECT PROJECT</p>
+            </div>
+          </div>
         </div>
-      </div>);
-
+        <div className="max-w-[1600px] mx-auto px-6 py-12">
+          <div className="max-w-md">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="SELECT PROJECT..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map((p) =>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="text-slate-50">
-      <PageHeader
-        title="Financials"
-        subtitle={selectedProjectData?.name}
-        showBackButton={false}
-        actions={
-        <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-64">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((p) =>
-            <SelectItem key={p.id} value={p.id}>
-                  {p.project_number} - {p.name}
-                </SelectItem>
-            )}
-            </SelectContent>
-          </Select>
-        } />
-
-
-      <div className="mb-6">
-        <FinancialKPIs
-          budgetLines={budgetLines}
-          expenses={expenses}
-          invoices={invoices}
-          sovItems={sovItems}
-          useSOV={sovItems.length > 0} />
-
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Financials</h1>
+              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
+            </div>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map((p) =>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
-      <Tabs defaultValue="sov" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="sov">SOV & Billing</TabsTrigger>
-          <TabsTrigger value="budget">Budget</TabsTrigger>
-          <TabsTrigger value="actuals">Actuals</TabsTrigger>
-        </TabsList>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <div className="mb-6">
+          <FinancialKPIs
+            budgetLines={budgetLines}
+            expenses={expenses}
+            invoices={invoices}
+            sovItems={sovItems}
+            useSOV={sovItems.length > 0}
+          />
+        </div>
+
+        <Tabs defaultValue="sov" className="space-y-4">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="sov">SOV & Billing</TabsTrigger>
+            <TabsTrigger value="budget">Budget</TabsTrigger>
+            <TabsTrigger value="actuals">Actuals</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="sov">
           <div className="space-y-6">
@@ -160,10 +175,11 @@ export default function Financials() {
         </TabsContent>
       </Tabs>
 
-      {/* ETC Manager */}
-      <div className="mt-6">
-        <ETCManager projectId={selectedProject} expenses={expenses} />
+        {/* ETC Manager */}
+        <div className="mt-6">
+          <ETCManager projectId={selectedProject} expenses={expenses} />
+        </div>
       </div>
-    </div>);
-
+    </div>
+  );
 }

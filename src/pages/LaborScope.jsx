@@ -624,100 +624,22 @@ export default function LaborScope() {
 
   if (!selectedProject) {
     return (
-      <div className="p-6">
-        <PageHeader title="Labor & Scope Breakdown" subtitle="Select a project to view labor breakdown" />
-        <div className="max-w-md">
-          <Label>Select Project</Label>
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="Choose a project..." />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.project_number} - {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    );
-  }
-
-  // NOW ALL CONDITIONAL RENDERING LOGIC
-  if (breakdowns.length === 0 && selectedProject) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Labor & Scope Breakdown" subtitle={selectedProjectData?.name} />
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="pt-6">
-            <p className="text-zinc-400 mb-4">
-              Labor breakdown not initialized for this project.
-            </p>
-            <Button 
-              onClick={() => initializeMutation.mutate(selectedProject)}
-              disabled={initializeMutation.isPending}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              Initialize Labor Breakdown
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Block UI if duplicates detected
-  if (hasDuplicates) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Labor & Scope Breakdown" subtitle={selectedProjectData?.name} />
-        <Card className="bg-red-500/10 border-red-500/30">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3 mb-4">
-              <AlertTriangle className="text-red-400 flex-shrink-0 mt-1" size={24} />
-              <div>
-                <p className="font-bold text-red-400 text-lg">Duplicate Labor Categories Detected</p>
-                <p className="text-zinc-300 mt-2">
-                  System integrity error: Multiple breakdown rows exist for the same category. 
-                  This must be repaired before continuing.
-                </p>
-              </div>
+      <div className="min-h-screen bg-black">
+        <div className="border-b border-zinc-800 bg-black">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">SELECT PROJECT</p>
             </div>
-            <Button 
-              onClick={() => repairMutation.mutate(selectedProject)}
-              disabled={repairMutation.isPending}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {repairMutation.isPending ? 'Repairing...' : 'Repair Duplicates'}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6">
-      <PageHeader 
-        title="Labor & Scope Breakdown" 
-        subtitle={selectedProjectData?.name}
-        actions={
-          <div className="flex gap-2">
-            <Button
-              onClick={() => allocateLaborMutation.mutate(selectedProject)}
-              disabled={allocateLaborMutation.isPending || !can.editProject}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <ArrowRight size={16} className="mr-1" />
-              Allocate Labor to Schedule
-            </Button>
+          </div>
+        </div>
+        <div className="max-w-[1600px] mx-auto px-6 py-12">
+          <div className="max-w-md">
             <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
-                <SelectValue />
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="SELECT PROJECT..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
                 {projects.map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
@@ -726,11 +648,154 @@ export default function LaborScope() {
               </SelectContent>
             </Select>
           </div>
-        }
-      />
+        </div>
+      </div>
+    );
+  }
 
-      {/* Overall Project Info */}
-      <Card className="bg-zinc-900 border-zinc-800 mb-6">
+  if (breakdowns.length === 0 && selectedProject) {
+    return (
+      <div className="min-h-screen bg-black">
+        <div className="border-b border-zinc-800 bg-black">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
+              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-[1600px] mx-auto px-6 py-12">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="pt-6">
+              <p className="text-zinc-400 mb-4">Labor breakdown not initialized for this project.</p>
+              <Button 
+                onClick={() => initializeMutation.mutate(selectedProject)}
+                disabled={initializeMutation.isPending}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
+                {initializeMutation.isPending ? 'INITIALIZING...' : 'INITIALIZE'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasDuplicates) {
+    return (
+      <div className="min-h-screen bg-black">
+        <div className="border-b border-zinc-800 bg-black">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
+              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-[1600px] mx-auto px-6 py-12">
+          <Card className="bg-red-950/20 border-red-500/30">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertTriangle className="text-red-400 flex-shrink-0 mt-1" size={24} />
+                <div>
+                  <p className="font-bold text-red-400 text-lg uppercase tracking-wide">DUPLICATE CATEGORIES DETECTED</p>
+                  <p className="text-zinc-300 mt-2 text-sm">
+                    System integrity error: Multiple breakdown rows exist for the same category. 
+                    This must be repaired before continuing.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => repairMutation.mutate(selectedProject)}
+                disabled={repairMutation.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider"
+              >
+                {repairMutation.isPending ? 'REPAIRING...' : 'REPAIR'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
+              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => allocateLaborMutation.mutate(selectedProject)}
+                disabled={allocateLaborMutation.isPending || !can.editProject}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider"
+              >
+                <ArrowRight size={14} className="mr-1" />
+                ALLOCATE
+              </Button>
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SHOP HOURS</div>
+              <div className="text-2xl font-bold font-mono text-white">{totals.totalShop}</div>
+              <div className={`text-xs font-mono ${totals.shopDiscrepancy !== 0 ? 'text-red-500' : 'text-zinc-600'}`}>
+                BASELINE: {totals.baselineShop} {totals.shopDiscrepancy !== 0 && `(${totals.shopDiscrepancy > 0 ? '+' : ''}${totals.shopDiscrepancy})`}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FIELD HOURS</div>
+              <div className="text-2xl font-bold font-mono text-white">{totals.totalField}</div>
+              <div className={`text-xs font-mono ${totals.fieldDiscrepancy !== 0 ? 'text-red-500' : 'text-zinc-600'}`}>
+                BASELINE: {totals.baselineField} {totals.fieldDiscrepancy !== 0 && `(${totals.fieldDiscrepancy > 0 ? '+' : ''}${totals.fieldDiscrepancy})`}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SCOPE GAPS</div>
+              <div className={`text-2xl font-bold font-mono ${gapTotals.openCount > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                {gapTotals.openCount}
+              </div>
+              <div className="text-xs text-zinc-600">OPEN</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">GAP COST</div>
+              <div className="text-2xl font-bold font-mono text-amber-500">
+                ${(gapTotals.totalCost / 1000).toFixed(0)}K
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
+
+        {/* Overall Project Info */}
+        <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
           <CardTitle>Overall Project Info</CardTitle>
         </CardHeader>
@@ -774,189 +839,152 @@ export default function LaborScope() {
         </CardContent>
       </Card>
 
-      {/* Baseline vs Breakdown Warning */}
-      {totals.hasDiscrepancy && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
-          <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={20} />
-          <div className="flex-1">
-            <p className="font-semibold text-red-400">Labor breakdown does not match baseline</p>
-            <p className="text-sm text-zinc-300 mt-1">
-              Shop: {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy} hrs from baseline
-              {' | '}
-              Field: {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy} hrs from baseline
-            </p>
+        {/* Baseline vs Breakdown Warning */}
+        {totals.hasDiscrepancy && (
+          <div className="p-4 bg-red-950/20 border border-red-500/30 rounded flex items-start gap-3">
+            <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={18} />
+            <div className="flex-1">
+              <p className="font-bold text-red-400 text-xs uppercase tracking-widest">BASELINE MISMATCH</p>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">
+                SHOP: {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy}h | FIELD: {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy}h
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Breakdown vs Schedule Warning */}
-      {laborScheduleTotals.has_mismatch && (
-        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-3">
-          <AlertTriangle className="text-amber-400 flex-shrink-0 mt-0.5" size={20} />
-          <div className="flex-1">
-            <p className="font-semibold text-amber-400">Scheduled labor hours do not match breakdown</p>
-            <p className="text-sm text-zinc-300 mt-1">
-              Shop: {laborScheduleTotals.scheduled_shop} hrs scheduled vs {laborScheduleTotals.breakdown_shop} hrs breakdown (Δ {laborScheduleTotals.shop_variance > 0 ? '+' : ''}{laborScheduleTotals.shop_variance})
-              {' | '}
-              Field: {laborScheduleTotals.scheduled_field} hrs scheduled vs {laborScheduleTotals.breakdown_field} hrs breakdown (Δ {laborScheduleTotals.field_variance > 0 ? '+' : ''}{laborScheduleTotals.field_variance})
-            </p>
+        {/* Breakdown vs Schedule Warning */}
+        {laborScheduleTotals.has_mismatch && (
+          <div className="p-4 bg-amber-950/20 border border-amber-500/30 rounded flex items-start gap-3">
+            <AlertTriangle className="text-amber-400 flex-shrink-0 mt-0.5" size={18} />
+            <div className="flex-1">
+              <p className="font-bold text-amber-400 text-xs uppercase tracking-widest">SCHEDULE VARIANCE</p>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">
+                SHOP Δ{laborScheduleTotals.shop_variance}h | FIELD Δ{laborScheduleTotals.field_variance}h
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Category-Level Variances */}
-      {laborScheduleMismatches.length > 0 && (
-        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+        {/* Category-Level Variances */}
+        {laborScheduleMismatches.length > 0 && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader>
+              <CardTitle className="text-amber-400 flex items-center gap-2 text-sm uppercase tracking-wide">
+                <AlertTriangle size={16} />
+                Category Variances ({laborScheduleMismatches.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {laborScheduleMismatches.map(mismatch => (
+                  <div key={mismatch.category_id} className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
+                    <span className="text-white text-sm font-medium">{mismatch.category_name}</span>
+                    <div className="text-xs text-zinc-400 font-mono">
+                      BRK: {mismatch.breakdown_shop + mismatch.breakdown_field}h | 
+                      SCH: {mismatch.scheduled_shop + mismatch.scheduled_field}h | 
+                      <span className={mismatch.total_variance > 0 ? 'text-red-400' : 'text-green-400'}>
+                        {' '}Δ{mismatch.total_variance > 0 ? '+' : ''}{mismatch.total_variance}h
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Labor Breakdown */}
+        <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
-            <CardTitle className="text-amber-400 flex items-center gap-2">
-              <AlertTriangle size={18} />
-              Category-Level Variances ({laborScheduleMismatches.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
+                <Users size={16} />
+                Labor Breakdown
+              </CardTitle>
+              {selectedBreakdowns.size > 0 && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowBulkEdit(true)}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider"
+                  >
+                    EDIT ({selectedBreakdowns.size})
+                  </Button>
+                  <Button
+                    onClick={handleBulkDelete}
+                    size="sm"
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider"
+                  >
+                    <Trash2 size={12} className="mr-1" />
+                    DEL ({selectedBreakdowns.size})
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {laborScheduleMismatches.map(mismatch => (
-                <div key={mismatch.category_id} className="flex justify-between items-center p-2 bg-zinc-800/50 rounded">
-                  <span className="text-white font-medium">{mismatch.category_name}</span>
-                  <div className="text-sm text-zinc-400">
-                    Breakdown: {mismatch.breakdown_shop + mismatch.breakdown_field} hrs | 
-                    Scheduled: {mismatch.scheduled_shop + mismatch.scheduled_field} hrs | 
-                    <span className={mismatch.total_variance > 0 ? 'text-red-400' : 'text-green-400'}>
-                      {' '}Δ {mismatch.total_variance > 0 ? '+' : ''}{mismatch.total_variance} hrs
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <DataTable 
+              columns={breakdownColumns}
+              data={breakdowns}
+              emptyMessage="No breakdown data"
+            />
           </CardContent>
         </Card>
-      )}
 
-      {/* Labor Breakdown Table */}
-      <Card className="bg-zinc-900 border-zinc-800 mb-6">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users size={18} />
-              Labor Breakdown by Category
-            </CardTitle>
-            {selectedBreakdowns.size > 0 && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setShowBulkEdit(true)}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Bulk Edit ({selectedBreakdowns.size})
-                </Button>
-                <Button
-                  onClick={handleBulkDelete}
-                  size="sm"
-                  variant="outline"
-                  className="border-red-500 text-red-400 hover:bg-red-500/10"
-                >
-                  <Trash2 size={14} className="mr-1" />
-                  Delete ({selectedBreakdowns.size})
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable 
-            columns={breakdownColumns}
-            data={breakdowns}
-            emptyMessage="No breakdown data"
-          />
-        </CardContent>
-      </Card>
+        {/* Specialty Items */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
+                <TrendingUp size={16} />
+                Specialty Items
+              </CardTitle>
+              <Button
+                onClick={() => setShowSpecialtyDialog(true)}
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
+                <Plus size={12} className="mr-1" />
+                ADD
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <DataTable 
+              columns={specialtyColumns}
+              data={specialtyItems}
+              emptyMessage="No specialty items"
+            />
+          </CardContent>
+        </Card>
 
-      {/* Specialty Items */}
-      <Card className="bg-zinc-900 border-zinc-800 mb-6">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp size={18} />
-              Specialty Items for Discussion
-            </CardTitle>
-            <Button
-              onClick={() => setShowSpecialtyDialog(true)}
-              size="sm"
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={16} className="mr-1" />
-              Add Item
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable 
-            columns={specialtyColumns}
-            data={specialtyItems}
-            emptyMessage="No specialty items"
-          />
-        </CardContent>
-      </Card>
-
-      {/* Total Hours Summary */}
-      <Card className="bg-zinc-900 border-zinc-800 mb-6">
-        <CardHeader>
-          <CardTitle>Total Hours Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <Label className="text-zinc-400 text-sm">Breakdown Shop</Label>
-              <p className="text-2xl font-bold text-blue-400 mt-1">{totals.totalShop}</p>
-              <p className="text-xs text-zinc-500">Baseline: {totals.baselineShop}</p>
+        {/* Scope Gaps */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
+                <AlertCircle size={16} />
+                Scope Gaps
+              </CardTitle>
+              <Button
+                onClick={() => setShowGapDialog(true)}
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
+                <Plus size={12} className="mr-1" />
+                ADD
+              </Button>
             </div>
-            <div>
-              <Label className="text-zinc-400 text-sm">Breakdown Field</Label>
-              <p className="text-2xl font-bold text-green-400 mt-1">{totals.totalField}</p>
-              <p className="text-xs text-zinc-500">Baseline: {totals.baselineField}</p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-sm">Shop Variance</Label>
-              <p className={`text-2xl font-bold mt-1 ${totals.shopDiscrepancy !== 0 ? 'text-red-400' : 'text-green-400'}`}>
-                {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy}
-              </p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-sm">Field Variance</Label>
-              <p className={`text-2xl font-bold mt-1 ${totals.fieldDiscrepancy !== 0 ? 'text-red-400' : 'text-green-400'}`}>
-                {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Scope Gaps */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle size={18} />
-              Scope Gaps ({gapTotals.openCount} open, ${gapTotals.totalCost.toLocaleString()} total)
-            </CardTitle>
-            <Button
-              onClick={() => setShowGapDialog(true)}
-              size="sm"
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={16} className="mr-1" />
-              Add Gap
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable 
-            columns={gapColumns}
-            data={scopeGaps}
-            emptyMessage="No scope gaps identified"
-          />
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <DataTable 
+              columns={gapColumns}
+              data={scopeGaps}
+              emptyMessage="No scope gaps identified"
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Specialty Item Dialog */}
       <SpecialtyDialog

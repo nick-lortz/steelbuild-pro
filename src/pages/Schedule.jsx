@@ -281,158 +281,170 @@ export default function Schedule() {
   }), [totalCount]);
 
   return (
-    <ScreenContainer>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Schedule</h1>
-          <p className="text-sm text-muted-foreground">
-            {activeProjectId ? `${statusCounts.all} tasks` : 'Select a project'}
-          </p>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Schedule Management</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">
+                {activeProjectId ? `${statusCounts.all} TASKS` : 'SELECT PROJECT'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="SELECT PROJECT">
+                    {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'SELECT PROJECT'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id} className="text-white">
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <ExportButton
+                data={viewMode === 'list' ? tasks : allScheduleTasks}
+                entityType="tasks"
+                filename="schedule"
+                disabled={!activeProjectId}
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select project">
-                {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="text-white">
-                  {p.project_number} - {p.name}
-                </SelectItem>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Input
+                placeholder="SEARCH TASKS..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+              />
+            </div>
+
+            {/* View Mode */}
+            <div className="flex gap-1 border border-zinc-800 p-1">
+              {['list', 'gantt', 'calendar'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                    viewMode === mode ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
+                  }`}
+                >
+                  {mode}
+                </button>
               ))}
-            </SelectContent>
-          </Select>
-          <ExportButton
-            data={viewMode === 'list' ? tasks : allScheduleTasks}
-            entityType="tasks"
-            filename="schedule"
-            disabled={!activeProjectId}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={18} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-          </Button>
+            </div>
+
+            {/* Status Filter (for list view) */}
+            {viewMode === 'list' && (
+              <div className="flex gap-1 border border-zinc-800 p-1">
+                {[
+                  { value: 'all', label: 'ALL' },
+                  { value: 'not_started', label: 'TODO' },
+                  { value: 'in_progress', label: 'ACTIVE' },
+                  { value: 'completed', label: 'DONE' },
+                  { value: 'overdue', label: 'LATE' }
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => { setStatusFilter(value); setPage(1); }}
+                    className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                      statusFilter === value ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search tasks..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(1);
-          }}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <div className="space-y-4 mb-4">
-          <div className="flex items-center justify-between gap-2">
+      {/* Filters Panel */}
+      {showFilters && activeProjectId && (
+        <div className="border-b border-zinc-800 bg-zinc-950">
+          <div className="max-w-[1600px] mx-auto px-6 py-4 space-y-4">
             <ViewConfiguration 
               viewKey="schedule"
               currentFilters={{ projectFilter: activeProjectId || 'all', statusFilter, searchTerm }}
               onLoadView={loadView}
             />
+            <WeatherWidget projectId={activeProjectId} />
           </div>
-          {activeProjectId && <WeatherWidget projectId={activeProjectId} />}
         </div>
       )}
 
-      {/* View Mode and Status Tabs */}
-      <div className="space-y-4 mb-4">
-        <Tabs value={viewMode} onValueChange={setViewMode}>
-          <TabsList className="grid w-full grid-cols-3 h-auto">
-            <TabsTrigger value="list" className="text-xs py-2">List</TabsTrigger>
-            <TabsTrigger value="gantt" className="text-xs py-2">Gantt</TabsTrigger>
-            <TabsTrigger value="calendar" className="text-xs py-2">Calendar</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {viewMode === 'list' && (
-          <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-            <TabsList className="grid w-full grid-cols-5 h-auto">
-              <TabsTrigger value="all" className="text-xs py-2">All</TabsTrigger>
-              <TabsTrigger value="not_started" className="text-xs py-2">To Do</TabsTrigger>
-              <TabsTrigger value="in_progress" className="text-xs py-2">Active</TabsTrigger>
-              <TabsTrigger value="completed" className="text-xs py-2">Done</TabsTrigger>
-              <TabsTrigger value="overdue" className="text-xs py-2">Late</TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {!activeProjectId ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <Calendar size={40} className="mx-auto mb-3 text-zinc-700" />
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">NO PROJECT SELECTED</p>
+            </div>
+          </div>
+        ) : isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
+            </div>
+          </div>
+        ) : viewMode === 'calendar' ? (
+          <CalendarView
+            tasks={allScheduleTasks}
+            projects={projects}
+            onTaskClick={handleTaskClick}
+          />
+        ) : viewMode === 'gantt' ? (
+          <GanttChart
+            tasks={allScheduleTasks}
+            projects={projects}
+            viewMode="week"
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskEdit={handleTaskClick}
+            resources={resources}
+            rfis={rfis}
+            changeOrders={changeOrders}
+          />
+        ) : tasks.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-xs text-zinc-600 uppercase tracking-widest mb-2">NO TASKS FOUND</p>
+            <p className="text-xs text-zinc-700">
+              Tasks created inside work packages only
+            </p>
+          </div>
+        ) : (
+          <TaskListView
+            tasks={allScheduleTasks}
+            projects={projects}
+            resources={resources}
+            workPackages={workPackages}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskClick={handleTaskClick}
+            onTaskDelete={(taskId) => {
+              deleteMutation.mutate(taskId);
+            }}
+          />
         )}
       </div>
-
-      {/* Content Area */}
-      {!activeProjectId ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Calendar size={48} className="mx-auto mb-4 text-zinc-600" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
-            <p className="text-zinc-400">Select a project from the dropdown to view schedule.</p>
-          </div>
-        </div>
-      ) : isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-        </div>
-      ) : viewMode === 'calendar' ? (
-        <CalendarView
-          tasks={allScheduleTasks}
-          projects={projects}
-          onTaskClick={handleTaskClick}
-        />
-      ) : viewMode === 'gantt' ? (
-        <GanttChart
-          tasks={allScheduleTasks}
-          projects={projects}
-          viewMode="week"
-          onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
-          onTaskEdit={handleTaskClick}
-          resources={resources}
-          rfis={rfis}
-          changeOrders={changeOrders}
-        />
-      ) : tasks.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-white font-medium mb-2">No tasks found</p>
-          <p className="text-zinc-400 text-sm">
-            Tasks can only be created inside work packages. Create a work package first, then add tasks to it.
-          </p>
-        </div>
-      ) : (
-        <TaskListView
-          tasks={allScheduleTasks}
-          projects={projects}
-          resources={resources}
-          workPackages={workPackages}
-          onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
-          onTaskClick={handleTaskClick}
-          onTaskDelete={(taskId) => {
-            deleteMutation.mutate(taskId);
-          }}
-        />
-      )}
 
       {/* Bulk Actions */}
       <BulkActions
@@ -493,6 +505,6 @@ export default function Schedule() {
           </div>
         </SheetContent>
       </Sheet>
-    </ScreenContainer>
+    </div>
   );
 }

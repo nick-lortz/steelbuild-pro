@@ -347,133 +347,153 @@ export default function Documents() {
     },
   ];
 
-  return (
-    <div>
-      <PageHeader
-        title="Documents"
-        subtitle="Manage project documentation"
-        actions={
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setShowCSVImport(true)}
-              variant="outline"
-              className="border-zinc-700"
-            >
-              <FileSpreadsheet size={18} className="mr-2" />
-              Import CSV
-            </Button>
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={18} className="mr-2" />
-              New Document
-            </Button>
-          </div>
-        }
-      />
+  const docStats = useMemo(() => {
+    const current = documents.filter(d => d.status !== 'superseded');
+    const pendingReview = documents.filter(d => d.workflow_stage === 'pending_review').length;
+    const approved = documents.filter(d => d.status === 'approved').length;
+    return { total: current.length, pendingReview, approved };
+  }, [documents]);
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-zinc-400 text-sm">Total Documents</p>
-          <p className="text-2xl font-bold text-white">{documents.filter(d => d.status !== 'superseded').length}</p>
-        </div>
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
-          <p className="text-zinc-400 text-sm">Pending Review</p>
-          <p className="text-2xl font-bold text-amber-400">
-            {documents.filter(d => d.workflow_stage === 'pending_review').length}
-          </p>
-        </div>
-        <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
-          <p className="text-zinc-400 text-sm">Approved</p>
-          <p className="text-2xl font-bold text-green-400">
-            {documents.filter(d => d.status === 'approved').length}
-          </p>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-zinc-400 text-sm">Archived</p>
-          <p className="text-2xl font-bold text-zinc-400">
-            {documents.filter(d => d.status === 'archived').length}
-          </p>
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Document Library</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{docStats.total} TOTAL • {docStats.pendingReview} REVIEW</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowCSVImport(true)}
+                variant="outline"
+                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+              >
+                <FileSpreadsheet size={14} className="mr-1" />
+                IMPORT
+              </Button>
+              <Button 
+                onClick={() => {
+                  setFormData(initialFormState);
+                  setShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
+                <Plus size={14} className="mr-1" />
+                NEW
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* AI Search */}
-      <AISearchPanel 
-        projectId={projectFilter !== 'all' ? projectFilter : null} 
-        onDocumentClick={handleEdit}
-      />
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">PENDING REVIEW</div>
+              <div className={`text-2xl font-bold font-mono ${docStats.pendingReview > 0 ? 'text-amber-500' : 'text-green-500'}`}>
+                {docStats.pendingReview}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">APPROVED</div>
+              <div className="text-2xl font-bold font-mono text-green-500">{docStats.approved}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">CURRENT</div>
+              <div className="text-2xl font-bold font-mono text-white">{docStats.total}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* View Mode Toggle */}
-      <Tabs value={viewMode} onValueChange={setViewMode} className="mb-4 mt-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2 h-auto">
-          <TabsTrigger value="tree" className="text-xs py-2">Tree View</TabsTrigger>
-          <TabsTrigger value="list" className="text-xs py-2">List View</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder="Search documents..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* AI Search */}
+        <div className="mb-6">
+          <AISearchPanel 
+            projectId={projectFilter !== 'all' ? projectFilter : null} 
+            onDocumentClick={handleEdit}
           />
         </div>
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="drawing">Drawing</SelectItem>
-            <SelectItem value="specification">Specification</SelectItem>
-            <SelectItem value="rfi">RFI</SelectItem>
-            <SelectItem value="submittal">Submittal</SelectItem>
-            <SelectItem value="contract">Contract</SelectItem>
-            <SelectItem value="report">Report</SelectItem>
-            <SelectItem value="photo">Photo</SelectItem>
-            <SelectItem value="correspondence">Correspondence</SelectItem>
-            <SelectItem value="receipt">Receipt</SelectItem>
-            <SelectItem value="invoice">Invoice</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Content */}
-      {viewMode === 'tree' ? (
-        <DocumentTreeView
-          documents={filteredDocuments}
-          projects={projects}
-          onDocClick={handleEdit}
-        />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={filteredDocuments}
-          onRowClick={handleEdit}
-          emptyMessage="No documents found. Upload your first document to get started."
-        />
-      )}
+        {/* View Mode Toggle */}
+        <div className="flex gap-1 border border-zinc-800 p-1 mb-4 w-fit">
+          {['tree', 'list'].map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                viewMode === mode ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
+              }`}
+            >
+              {mode === 'tree' ? 'TREE' : 'LIST'}
+            </button>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <Input
+              placeholder="SEARCH DOCUMENTS..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+            />
+          </div>
+          <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="All Projects" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="drawing">Drawing</SelectItem>
+              <SelectItem value="specification">Specification</SelectItem>
+              <SelectItem value="rfi">RFI</SelectItem>
+              <SelectItem value="submittal">Submittal</SelectItem>
+              <SelectItem value="contract">Contract</SelectItem>
+              <SelectItem value="report">Report</SelectItem>
+              <SelectItem value="photo">Photo</SelectItem>
+              <SelectItem value="correspondence">Correspondence</SelectItem>
+              <SelectItem value="receipt">Receipt</SelectItem>
+              <SelectItem value="invoice">Invoice</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Content */}
+        {viewMode === 'tree' ? (
+          <DocumentTreeView
+            documents={filteredDocuments}
+            projects={projects}
+            onDocClick={handleEdit}
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filteredDocuments}
+            onRowClick={handleEdit}
+            emptyMessage="No documents found. Upload your first document to get started."
+          />
+        )}
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

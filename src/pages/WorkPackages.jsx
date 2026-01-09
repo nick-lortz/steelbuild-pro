@@ -260,128 +260,143 @@ export default function WorkPackages() {
 
   if (!activeProjectId) {
     return (
-      <div>
-        <PageHeader
-          title="Work Packages"
-          subtitle="Execution tracking - single source of truth"
-          showBackButton={false}
-          actions={
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map((p) =>
-              <SelectItem key={p.id} value={p.id} className="text-white">
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-              )}
-              </SelectContent>
-            </Select>
-          } />
-
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <Package size={48} className="mx-auto mb-4 text-zinc-600" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
-            <p className="text-zinc-400">Select a project to manage work packages.</p>
+      <div className="min-h-screen bg-black">
+        <div className="border-b border-zinc-800 bg-black">
+          <div className="max-w-[1600px] mx-auto px-6 py-4">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Work Packages</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">SELECT PROJECT</p>
+            </div>
           </div>
         </div>
-      </div>);
-
+        <div className="max-w-[1600px] mx-auto px-6 py-12">
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="SELECT PROJECT" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+              {projects.map((p) =>
+                <SelectItem key={p.id} value={p.id} className="text-white">
+                  {p.project_number} - {p.name}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <PageHeader
-        title="Work Packages"
-        subtitle={`${selectedProject?.project_number || ''} - Execution tracking & progress`}
-        actions={
-        <div className="text-slate-50 flex items-center gap-3">
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
-                <SelectValue>
-                  {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
-                </SelectValue>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Work Packages</h1>
+              <p className="text-xs text-zinc-600 mt-1">{selectedProject?.name}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue>
+                    {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+                  {projects.map((p) =>
+                    <SelectItem key={p.id} value={p.id} className="text-white">
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                <Plus size={14} className="mr-1" />
+                NEW
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ACTIVE</div>
+              <div className="text-2xl font-bold font-mono text-white">{summaryStats.active}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">COMPLETE</div>
+              <div className="text-2xl font-bold font-mono text-green-500">{summaryStats.complete}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TONNAGE</div>
+              <div className="text-2xl font-bold font-mono text-amber-500">{summaryStats.totalTonnage.toFixed(1)}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVG PROGRESS</div>
+              <div className="text-2xl font-bold font-mono text-white">{summaryStats.avgProgress.toFixed(0)}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <div className="flex gap-3">
+            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map((p) =>
-              <SelectItem key={p.id} value={p.id} className="text-white">
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-              )}
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Phases</SelectItem>
+                <SelectItem value="detailing">Detailing</SelectItem>
+                <SelectItem value="fabrication">Fabrication</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="erection">Erection</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-            onClick={() => setShowForm(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black">
-
-              <Plus size={18} className="mr-2" />
-              New Package
-            </Button>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        } />
-
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">Active Packages</div>
-          <div className="text-2xl font-bold text-white mt-1">{summaryStats.active}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">Complete</div>
-          <div className="text-2xl font-bold text-green-400 mt-1">{summaryStats.complete}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">Total Tonnage</div>
-          <div className="text-2xl font-bold text-amber-500 mt-1">{summaryStats.totalTonnage.toFixed(1)}</div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <div className="text-sm text-muted-foreground">Avg Progress</div>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{summaryStats.avgProgress.toFixed(0)}%</div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Phases</SelectItem>
-            <SelectItem value="detailing">Detailing</SelectItem>
-            <SelectItem value="fabrication">Fabrication</SelectItem>
-            <SelectItem value="delivery">Delivery</SelectItem>
-            <SelectItem value="erection">Erection</SelectItem>
-            <SelectItem value="complete">Complete</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="on_hold">On Hold</SelectItem>
-            <SelectItem value="complete">Complete</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
+            </div>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filteredPackages}
+            onRowClick={(pkg) => setViewingPackage(pkg)}
+            emptyMessage="No work packages yet. Create packages to track execution, link to SOV and cost codes."
+          />
+        )}
       </div>
-
-      {isLoading ?
-      <div className="text-center text-zinc-400 py-12">Loading...</div> :
-
-      <DataTable
-        columns={columns}
-        data={filteredPackages}
-        onRowClick={(pkg) => setViewingPackage(pkg)}
-        emptyMessage="No work packages yet. Create packages to track execution, link to SOV and cost codes." />
-
-      }
 
       {/* Create/Edit Sheet */}
       <Sheet open={showForm} onOpenChange={(open) => {

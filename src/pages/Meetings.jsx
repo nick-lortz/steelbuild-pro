@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,7 @@ export default function Meetings() {
   };
 
   // Check for upcoming meetings
-  React.useEffect(() => {
+  useEffect(() => {
     const checkUpcoming = () => {
       const now = new Date();
       meetings.forEach(meeting => {
@@ -270,7 +270,7 @@ export default function Meetings() {
     },
   ];
 
-  const { allActionItems, pendingActions } = React.useMemo(() => {
+  const { allActionItems, pendingActions } = useMemo(() => {
     const all = meetings.flatMap(m => 
       (m.action_items || []).map(ai => ({ ...ai, meetingTitle: m.title, meetingId: m.id }))
     );
@@ -278,7 +278,7 @@ export default function Meetings() {
     return { allActionItems: all, pendingActions: pending };
   }, [meetings]);
 
-  const meetingStats = React.useMemo(() => {
+  const meetingStats = useMemo(() => {
     const upcoming = meetings.filter(m => !isPast(new Date(m.meeting_date))).length;
     const today = meetings.filter(m => {
       const mDate = new Date(m.meeting_date);

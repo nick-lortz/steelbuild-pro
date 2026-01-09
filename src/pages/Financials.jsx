@@ -21,7 +21,9 @@ import { Trash2 } from 'lucide-react';
 
 export default function Financials() {
   const [selectedProject, setSelectedProject] = useState('');
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const { can } = usePermissions();
+  const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],

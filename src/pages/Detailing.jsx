@@ -6,15 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle2, 
-  FileText, 
-  User, 
+import {
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  FileText,
+  User,
   MessageSquare,
-  ChevronRight
-} from 'lucide-react';
+  ChevronRight } from
+'lucide-react';
 import { format, differenceInDays, isPast, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
@@ -37,7 +37,7 @@ export default function Detailing() {
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => base44.auth.me()
   });
 
   const { data: allProjects = [] } = useQuery({
@@ -48,16 +48,16 @@ export default function Detailing() {
 
   const userProjects = useMemo(() => {
     if (!currentUser) return [];
-    return currentUser.role === 'admin' 
-      ? allProjects 
-      : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+    return currentUser.role === 'admin' ?
+    allProjects :
+    allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
   }, [currentUser, allProjects]);
 
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => activeProjectId 
-      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date')
-      : [],
+    queryFn: () => activeProjectId ?
+    base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') :
+    [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
@@ -72,7 +72,7 @@ export default function Detailing() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, { 
+    mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, {
       status,
       [`${status.toLowerCase()}_date`]: new Date().toISOString().split('T')[0]
     }),
@@ -97,22 +97,22 @@ export default function Detailing() {
     if (!drawingSets.length) return { blocked: 0, dueSoon: 0, inProgress: 0, complete: 0 };
 
     const today = new Date();
-    const blocked = drawingSets.filter(ds => 
-      ds.status === 'BFA' && ds.due_date && differenceInDays(parseISO(ds.due_date), today) < 0
+    const blocked = drawingSets.filter((ds) =>
+    ds.status === 'BFA' && ds.due_date && differenceInDays(parseISO(ds.due_date), today) < 0
     ).length;
 
-    const dueSoon = drawingSets.filter(ds => 
-      ds.status !== 'FFF' && 
-      ds.due_date && 
-      differenceInDays(parseISO(ds.due_date), today) <= 3 && 
-      differenceInDays(parseISO(ds.due_date), today) >= 0
+    const dueSoon = drawingSets.filter((ds) =>
+    ds.status !== 'FFF' &&
+    ds.due_date &&
+    differenceInDays(parseISO(ds.due_date), today) <= 3 &&
+    differenceInDays(parseISO(ds.due_date), today) >= 0
     ).length;
 
-    const inProgress = drawingSets.filter(ds => 
-      ds.status === 'IFA' || ds.status === 'BFS'
+    const inProgress = drawingSets.filter((ds) =>
+    ds.status === 'IFA' || ds.status === 'BFS'
     ).length;
 
-    const complete = drawingSets.filter(ds => ds.status === 'FFF').length;
+    const complete = drawingSets.filter((ds) => ds.status === 'FFF').length;
 
     return { blocked, dueSoon, inProgress, complete };
   }, [drawingSets]);
@@ -120,12 +120,12 @@ export default function Detailing() {
   // Priority Queue (Blocked + Due Soon)
   const priorityQueue = useMemo(() => {
     const today = new Date();
-    return drawingSets.filter(ds => {
+    return drawingSets.filter((ds) => {
       if (ds.status === 'FFF') return false;
-      
+
       const isBlocked = ds.status === 'BFA' && ds.due_date && isPast(parseISO(ds.due_date));
       const isDueSoon = ds.due_date && differenceInDays(parseISO(ds.due_date), today) <= 3 && !isPast(parseISO(ds.due_date));
-      
+
       return isBlocked || isDueSoon;
     }).sort((a, b) => {
       // Sort: overdue first, then by due date
@@ -133,7 +133,7 @@ export default function Detailing() {
       const bDate = b.due_date ? parseISO(b.due_date) : new Date(9999, 0);
       const aOverdue = isPast(aDate);
       const bOverdue = isPast(bDate);
-      
+
       if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
       return aDate - bDate;
     });
@@ -141,16 +141,16 @@ export default function Detailing() {
 
   // Active Work Packages
   const activePackages = useMemo(() => {
-    let filtered = drawingSets.filter(ds => ds.status !== 'FFF');
-    
+    let filtered = drawingSets.filter((ds) => ds.status !== 'FFF');
+
     if (selectedReviewer !== 'all') {
-      filtered = filtered.filter(ds => ds.reviewer === selectedReviewer);
+      filtered = filtered.filter((ds) => ds.reviewer === selectedReviewer);
     }
     if (selectedStatus !== 'all') {
-      filtered = filtered.filter(ds => ds.status === selectedStatus);
+      filtered = filtered.filter((ds) => ds.status === selectedStatus);
     }
     if (selectedDiscipline !== 'all') {
-      filtered = filtered.filter(ds => ds.discipline === selectedDiscipline);
+      filtered = filtered.filter((ds) => ds.discipline === selectedDiscipline);
     }
 
     return filtered.sort((a, b) => {
@@ -160,26 +160,26 @@ export default function Detailing() {
     });
   }, [drawingSets, selectedReviewer, selectedStatus, selectedDiscipline]);
 
-  const selectedProject = allProjects.find(p => p.id === activeProjectId);
+  const selectedProject = allProjects.find((p) => p.id === activeProjectId);
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="bg-black text-slate-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <FileText size={48} className="mx-auto mb-4 text-zinc-700" />
           <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-2">No Project Selected</h3>
-          <p className="text-xs text-zinc-600 uppercase tracking-widest">Select a project to view detailing</p>
+          <p className="text-slate-50 text-xs uppercase tracking-widest">SELECT A PROJECT TO VIEW DETAILING</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -190,9 +190,9 @@ export default function Detailing() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Detailing</h1>
-              {selectedProject && (
-                <p className="text-xs text-zinc-600 font-mono mt-1">{selectedProject.project_number} • {selectedProject.name}</p>
-              )}
+              {selectedProject &&
+              <p className="text-xs text-zinc-600 font-mono mt-1">{selectedProject.project_number} • {selectedProject.name}</p>
+              }
             </div>
             <div className="flex items-center gap-2">
               <label className="text-xs text-zinc-400 uppercase tracking-widest font-bold">PROJECT:</label>
@@ -201,15 +201,15 @@ export default function Detailing() {
                   <SelectValue placeholder="Select a project..." />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {userProjects.length === 0 ? (
-                    <div className="p-2 text-xs text-zinc-500">No projects assigned</div>
-                  ) : (
-                    userProjects.map(project => (
-                      <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                  {userProjects.length === 0 ?
+                  <div className="p-2 text-xs text-zinc-500">No projects assigned</div> :
+
+                  userProjects.map((project) =>
+                  <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
                         {project.project_number} - {project.name}
                       </SelectItem>
-                    ))
-                  )}
+                  )
+                  }
                 </SelectContent>
               </Select>
             </div>
@@ -245,27 +245,27 @@ export default function Detailing() {
       <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
 
         {/* Priority Queue */}
-        {priorityQueue.length > 0 && (
-          <div className="bg-red-950/20 border border-red-500/30 rounded p-4">
+        {priorityQueue.length > 0 &&
+        <div className="bg-red-950/20 border border-red-500/30 rounded p-4">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle className="text-red-500" size={16} />
               <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest">PRIORITY QUEUE</h3>
             </div>
             <div className="space-y-2">
-              {priorityQueue.map(ds => {
-                const isOverdue = ds.due_date && isPast(parseISO(ds.due_date));
-                const daysUntilDue = ds.due_date ? differenceInDays(parseISO(ds.due_date), new Date()) : null;
+              {priorityQueue.map((ds) => {
+              const isOverdue = ds.due_date && isPast(parseISO(ds.due_date));
+              const daysUntilDue = ds.due_date ? differenceInDays(parseISO(ds.due_date), new Date()) : null;
 
-                return (
-                  <div 
-                    key={ds.id}
-                    className="flex items-center justify-between p-3 bg-zinc-950 border-b border-zinc-800"
-                  >
+              return (
+                <div
+                  key={ds.id}
+                  className="flex items-center justify-between p-3 bg-zinc-950 border-b border-zinc-800">
+
                     <div className="flex items-center gap-3 flex-1">
                       <Badge className={cn(
-                        "font-mono text-xs font-bold",
-                        isOverdue ? "bg-red-500" : "bg-amber-500"
-                      )}>
+                      "font-mono text-xs font-bold",
+                      isOverdue ? "bg-red-500" : "bg-amber-500"
+                    )}>
                         {isOverdue ? 'OVD' : `${daysUntilDue}D`}
                       </Badge>
                       <div className="flex-1">
@@ -280,20 +280,20 @@ export default function Detailing() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Select
-                        value={ds.reviewer || 'unassigned'}
-                        onValueChange={(val) => assignReviewerMutation.mutate({ 
-                          id: ds.id, 
-                          reviewer: val === 'unassigned' ? null : val 
-                        })}
-                      >
+                      value={ds.reviewer || 'unassigned'}
+                      onValueChange={(val) => assignReviewerMutation.mutate({
+                        id: ds.id,
+                        reviewer: val === 'unassigned' ? null : val
+                      })}>
+
                         <SelectTrigger className="w-36 h-8 text-xs bg-zinc-900 border-zinc-800">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-800">
                           <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {users.map(u => (
-                            <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
-                          ))}
+                          {users.map((u) =>
+                        <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
+                        )}
                         </SelectContent>
                       </Select>
                       <Button size="sm" variant="outline" className="h-8 gap-1 border-zinc-800 text-white hover:bg-zinc-800 text-xs uppercase">
@@ -301,12 +301,12 @@ export default function Detailing() {
                         RFI
                       </Button>
                     </div>
-                  </div>
-                );
-              })}
+                  </div>);
+
+            })}
             </div>
           </div>
-        )}
+        }
 
         {/* Filters */}
         <div className="flex items-center gap-2">
@@ -345,16 +345,16 @@ export default function Detailing() {
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
               <SelectItem value="all">All Reviewers</SelectItem>
-              {users.map(u => (
-                <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
-              ))}
+              {users.map((u) =>
+              <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
 
         {/* Active Work Packages */}
         <div className="space-y-2">
-          {activePackages.map(ds => {
+          {activePackages.map((ds) => {
             const statusInfo = STATUS_FLOW[ds.status];
             const daysUntilDue = ds.due_date ? differenceInDays(parseISO(ds.due_date), new Date()) : null;
             const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
@@ -371,12 +371,12 @@ export default function Detailing() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-bold text-white">{ds.set_name}</h4>
-                          {isOverdue && (
-                            <Badge variant="destructive" className="text-xs">
+                          {isOverdue &&
+                          <Badge variant="destructive" className="text-xs">
                               <AlertTriangle size={12} className="mr-1" />
                               OVD
                             </Badge>
-                          )}
+                          }
                         </div>
                         <div className="flex items-center gap-3 text-[10px] text-zinc-600 font-mono">
                           <span>{ds.set_number}</span>
@@ -384,15 +384,15 @@ export default function Detailing() {
                           <span>R{ds.current_revision || '—'}</span>
                           <span>•</span>
                           <span>{ds.sheet_count || 0}SH</span>
-                          {ds.due_date && (
-                            <>
+                          {ds.due_date &&
+                          <>
                               <span>•</span>
                               <span className={isOverdue ? 'text-red-500' : ''}>
                                 {format(parseISO(ds.due_date), 'MMM d')}
                                 {daysUntilDue !== null && ` (${Math.abs(daysUntilDue)}D)`}
                               </span>
                             </>
-                          )}
+                          }
                         </div>
                       </div>
 
@@ -406,35 +406,35 @@ export default function Detailing() {
                         <User size={14} className="text-zinc-600" />
                         <Select
                           value={ds.reviewer || 'unassigned'}
-                          onValueChange={(val) => assignReviewerMutation.mutate({ 
-                            id: ds.id, 
-                            reviewer: val === 'unassigned' ? null : val 
-                          })}
-                        >
+                          onValueChange={(val) => assignReviewerMutation.mutate({
+                            id: ds.id,
+                            reviewer: val === 'unassigned' ? null : val
+                          })}>
+
                           <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-800 text-white">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-zinc-900 border-zinc-800">
                             <SelectItem value="unassigned">Unassigned</SelectItem>
-                            {users.map(u => (
-                              <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
-                            ))}
+                            {users.map((u) =>
+                            <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
 
                       {/* Actions */}
                       <div className="flex items-center gap-2">
-                        {statusInfo?.next && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => updateStatusMutation.mutate({ id: ds.id, status: statusInfo.next })}
-                            className="bg-amber-500 hover:bg-amber-600 text-black font-bold gap-1 h-8 text-xs uppercase tracking-wider"
-                          >
+                        {statusInfo?.next &&
+                        <Button
+                          size="sm"
+                          onClick={() => updateStatusMutation.mutate({ id: ds.id, status: statusInfo.next })}
+                          className="bg-amber-500 hover:bg-amber-600 text-black font-bold gap-1 h-8 text-xs uppercase tracking-wider">
+
                             {STATUS_FLOW[statusInfo.next]?.label}
                             <ChevronRight size={14} />
                           </Button>
-                        )}
+                        }
                         <Button size="sm" variant="outline" className="h-8 gap-1 border-zinc-800 text-white hover:bg-zinc-800 text-xs uppercase">
                           <MessageSquare size={14} />
                           RFI
@@ -443,21 +443,21 @@ export default function Detailing() {
                     </div>
                   </div>
                 </div>
-              </div>
-            );
+              </div>);
+
           })}
         </div>
 
-        {activePackages.length === 0 && (
-          <div className="flex items-center justify-center py-20">
+        {activePackages.length === 0 &&
+        <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
               <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-2">All Sets Complete</h3>
               <p className="text-xs text-zinc-600 uppercase tracking-widest">No active drawing sets</p>
             </div>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }

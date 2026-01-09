@@ -73,7 +73,8 @@ export default function SOVManager({ projectId, canEdit }) {
           item.id === variables.id ? { ...item, ...variables.data } : item
         );
       });
-    }
+    },
+    onError: (err) => toast.error(err?.message ?? 'Update failed')
   });
 
   const deleteMutation = useMutation({

@@ -394,6 +394,7 @@ export default function DailyLogs() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Controls Bar */}
       <div className="border-b border-zinc-800 bg-black">

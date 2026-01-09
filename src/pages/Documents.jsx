@@ -32,7 +32,10 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DocumentTreeView from '@/components/documents/DocumentTreeView';
+import AISearchPanel from '@/components/documents/AISearchPanel';
+import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel';
 import { format } from 'date-fns';
+import { toast } from '@/components/ui/notifications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,6 +78,7 @@ export default function Documents() {
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [deleteDoc, setDeleteDoc] = useState(null);
   const [viewMode, setViewMode] = useState('tree');
+  const [processingOCR, setProcessingOCR] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -225,6 +229,20 @@ export default function Documents() {
         review_date: new Date().toISOString().split('T')[0],
       }
     });
+  };
+
+  const handleProcessOCR = async (docId) => {
+    setProcessingOCR(docId);
+    try {
+      await base44.functions.invoke('processDocumentOCR', { documentId: docId });
+      toast.success('Document processed with OCR');
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    } catch (error) {
+      console.error('OCR processing failed:', error);
+      toast.error('OCR processing failed');
+    } finally {
+      setProcessingOCR(null);
+    }
   };
 
   const getVersions = (doc) => {
@@ -384,8 +402,14 @@ export default function Documents() {
         </div>
       </div>
 
+      {/* AI Search */}
+      <AISearchPanel 
+        projectId={projectFilter !== 'all' ? projectFilter : null} 
+        onDocumentClick={handleEdit}
+      />
+
       {/* View Mode Toggle */}
-      <Tabs value={viewMode} onValueChange={setViewMode} className="mb-4">
+      <Tabs value={viewMode} onValueChange={setViewMode} className="mb-4 mt-6">
         <TabsList className="grid w-full max-w-md grid-cols-2 h-auto">
           <TabsTrigger value="tree" className="text-xs py-2">Tree View</TabsTrigger>
           <TabsTrigger value="list" className="text-xs py-2">List View</TabsTrigger>
@@ -491,41 +515,39 @@ export default function Documents() {
           </SheetHeader>
           
           <div className="mt-6 space-y-6">
-            {/* Workflow Actions */}
+            {/* Approval Workflow */}
             {selectedDoc && (
+              <ApprovalWorkflowPanel 
+                document={selectedDoc}
+                onWorkflowUpdate={() => {
+                  queryClient.invalidateQueries({ queryKey: ['documents'] });
+                  setSelectedDoc(null);
+                }}
+              />
+            )}
+
+            {/* OCR Processing */}
+            {selectedDoc?.file_url && (
               <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h4 className="text-sm font-medium text-zinc-400 mb-3">Workflow Actions</h4>
-                <div className="flex gap-2">
-                  {selectedDoc.workflow_stage === 'uploaded' && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleWorkflowAction('submit')}
-                      className="bg-blue-500 hover:bg-blue-600"
-                    >
-                      Submit for Review
-                    </Button>
-                  )}
-                  {selectedDoc.workflow_stage === 'pending_review' && (
+                <h4 className="text-sm font-medium text-zinc-400 mb-3">AI Document Processing</h4>
+                <Button
+                  size="sm"
+                  onClick={() => handleProcessOCR(selectedDoc.id)}
+                  disabled={processingOCR === selectedDoc.id}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  {processingOCR === selectedDoc.id ? (
                     <>
-                      <Button
-                        size="sm"
-                        onClick={() => handleWorkflowAction('approve')}
-                        className="bg-green-500 hover:bg-green-600"
-                      >
-                        <CheckCircle size={16} className="mr-2" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleWorkflowAction('reject')}
-                        className="bg-red-500 hover:bg-red-600"
-                      >
-                        <XCircle size={16} className="mr-2" />
-                        Reject
-                      </Button>
+                      <Loader2 size={16} className="mr-2 animate-spin" />
+                      Processing...
                     </>
+                  ) : (
+                    'Extract Text & Metadata (OCR)'
                   )}
-                </div>
+                </Button>
+                <p className="text-xs text-zinc-500 mt-2">
+                  Uses AI to extract searchable text and metadata
+                </p>
               </div>
             )}
 

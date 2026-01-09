@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -118,7 +118,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const projectPhase = activeProject?.phase || 'fabrication';
 
-  const visibleNavItems = React.useMemo(() => {
+  const visibleNavItems = useMemo(() => {
     if (!currentUser) return navItems;
     return navItems.filter(
       (item) => !item.roles || item.roles.includes(currentUser.role)
@@ -133,7 +133,7 @@ function LayoutContent({ children, currentPageName }) {
     return 2;
   };
 
-  const sortedNavItems = React.useMemo(() => {
+  const sortedNavItems = useMemo(() => {
     return [...visibleNavItems].sort((a, b) => {
       const priorityA = getNavItemPriority(a);
       const priorityB = getNavItemPriority(b);

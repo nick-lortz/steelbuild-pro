@@ -132,7 +132,7 @@ export default function Financials() {
       <div className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="mb-6">
           <FinancialKPIs
-            budgetLines={budgetLines}
+            budgetLines={sovItems.length > 0 ? [] : budgetLines}
             expenses={expenses}
             invoices={invoices}
             sovItems={sovItems}
@@ -140,30 +140,31 @@ export default function Financials() {
           />
         </div>
 
-        <Tabs defaultValue="sov" className="space-y-4">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="sov">SOV & Billing</TabsTrigger>
-            <TabsTrigger value="budget">Budget</TabsTrigger>
+        <Tabs defaultValue={sovItems.length > 0 ? "sov" : "budget"} className="space-y-4">
+           <TabsList className="bg-zinc-900 border border-zinc-800">
+            {sovItems.length > 0 && <TabsTrigger value="sov">SOV & Billing</TabsTrigger>}
+            {sovItems.length === 0 && <TabsTrigger value="budget">Budget</TabsTrigger>}
             <TabsTrigger value="actuals">Actuals</TabsTrigger>
-          </TabsList>
+           </TabsList>
 
-        <TabsContent value="sov">
-          <div className="space-y-6">
-            <JobStatusReport sovItems={sovItems} expenses={expenses} changeOrders={changeOrders} />
-            <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
-            <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
-            <SOVCostAlignment sovItems={sovItems} expenses={expenses} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="budget">
-          <BudgetTab
-            projectId={selectedProject}
-            budgetLines={budgetLines}
-            costCodes={costCodes}
-            canEdit={can.editFinancials} />
-
-        </TabsContent>
+        {sovItems.length > 0 ? (
+          <TabsContent value="sov">
+            <div className="space-y-6">
+              <JobStatusReport sovItems={sovItems} expenses={expenses} changeOrders={changeOrders} />
+              <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
+              <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
+              <SOVCostAlignment sovItems={sovItems} expenses={expenses} />
+            </div>
+          </TabsContent>
+        ) : (
+          <TabsContent value="budget">
+            <BudgetTab
+              projectId={selectedProject}
+              budgetLines={budgetLines}
+              costCodes={costCodes}
+              canEdit={can.editFinancials} />
+          </TabsContent>
+        )}
 
         <TabsContent value="actuals">
           <ActualsTab

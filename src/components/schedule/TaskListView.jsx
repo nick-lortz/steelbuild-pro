@@ -17,6 +17,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// Wrapper that accepts any props but only passes children through
+// Prevents "unknown prop" warnings when data-* attrs are injected by parent/HOC
+const GroupWrapper = ({ children }) => <>{children}</>;
+
 export default function TaskListView({ tasks, projects, resources, workPackages, onTaskUpdate, onTaskClick, onTaskDelete }) {
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
@@ -295,7 +299,7 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                 const atRiskCount = projectTasks.filter(isAtRisk).length;
 
                 return (
-                  <React.Fragment key={projectId}>
+                  <GroupWrapper key={projectId}>
                     {/* Project Header */}
                     <tr className="bg-zinc-800/70 border-b border-zinc-700">
                       <td colSpan={9} className="p-0">
@@ -331,7 +335,7 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                       const phaseAtRisk = phaseTasks.filter(isAtRisk).length;
 
                       return (
-                        <React.Fragment key={phaseKey}>
+                        <GroupWrapper key={phaseKey}>
                           {/* Phase Header */}
                           <tr className="bg-zinc-800/40 border-b border-zinc-800">
                             <td colSpan={9} className="p-0">
@@ -437,10 +441,10 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                               </tr>
                             );
                           })}
-                        </React.Fragment>
+                        </GroupWrapper>
                       );
                     })}
-                  </React.Fragment>
+                  </GroupWrapper>
                 );
               })}
             </tbody>

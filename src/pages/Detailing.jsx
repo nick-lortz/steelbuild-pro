@@ -302,11 +302,40 @@ export default function Detailing() {
           </div>
         )}
 
-        {/* Filter */}
+        {/* Filters */}
         <div className="flex items-center gap-2">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Filter by Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="IFA">Issued for Approval</SelectItem>
+              <SelectItem value="BFA">Back from Approval</SelectItem>
+              <SelectItem value="BFS">Back from Scrub</SelectItem>
+              <SelectItem value="FFF">Fit for Fabrication</SelectItem>
+              <SelectItem value="As-Built">As-Built</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedDiscipline} onValueChange={setSelectedDiscipline}>
+            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Filter by Discipline" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Disciplines</SelectItem>
+              <SelectItem value="structural">Structural</SelectItem>
+              <SelectItem value="misc_metals">Misc Metals</SelectItem>
+              <SelectItem value="stairs">Stairs</SelectItem>
+              <SelectItem value="handrails">Handrails</SelectItem>
+              <SelectItem value="connections">Connections</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={selectedReviewer} onValueChange={setSelectedReviewer}>
             <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue />
+              <SelectValue placeholder="Filter by Reviewer" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
               <SelectItem value="all">All Reviewers</SelectItem>

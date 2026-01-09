@@ -35,9 +35,9 @@ export default function WorkPackages() {
     queryFn: () => base44.entities.Project.list()
   });
 
-  const projects = currentUser?.role === 'admin'
-    ? allProjects
-    : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+  const projects = currentUser?.role === 'admin' ?
+  allProjects :
+  allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages', activeProjectId],
@@ -136,111 +136,111 @@ export default function WorkPackages() {
   };
 
   const getPackageTaskCount = (packageId) => {
-    return tasks.filter(t => t.work_package_id === packageId).length;
+    return tasks.filter((t) => t.work_package_id === packageId).length;
   };
 
   const columns = [
-    {
-      header: 'Package',
-      accessor: 'package_number',
-      render: (pkg) => (
-        <div>
+  {
+    header: 'Package',
+    accessor: 'package_number',
+    render: (pkg) =>
+    <div>
           <div className="font-mono text-amber-500">{pkg.package_number || pkg.id.slice(0, 8)}</div>
           <div className="text-sm text-white font-medium">{pkg.name}</div>
         </div>
-      )
-    },
-    {
-      header: 'Phase',
-      render: (pkg) => <StatusBadge status={pkg.phase} />
-    },
-    {
-      header: 'Status',
-      render: (pkg) => <StatusBadge status={pkg.status} />
-    },
-    {
-      header: 'Progress',
-      render: (pkg) => (
-        <div className="flex items-center gap-2">
+
+  },
+  {
+    header: 'Phase',
+    render: (pkg) => <StatusBadge status={pkg.phase} />
+  },
+  {
+    header: 'Status',
+    render: (pkg) => <StatusBadge status={pkg.status} />
+  },
+  {
+    header: 'Progress',
+    render: (pkg) =>
+    <div className="flex items-center gap-2">
           <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-amber-500 transition-all" 
-              style={{ width: `${pkg.percent_complete || 0}%` }}
-            />
+            <div
+          className="h-full bg-amber-500 transition-all"
+          style={{ width: `${pkg.percent_complete || 0}%` }} />
+
           </div>
           <span className="text-sm text-zinc-400">{pkg.percent_complete || 0}%</span>
         </div>
-      )
-    },
-    {
-      header: 'Tonnage',
-      render: (pkg) => (
-        <div className="text-zinc-200">{pkg.tonnage ? `${pkg.tonnage} tons` : '-'}</div>
-      )
-    },
-    {
-      header: 'SOV Lines',
-      render: (pkg) => (
-        <div className="text-zinc-200">{pkg.sov_item_ids?.length || 0}</div>
-      )
-    },
-    {
-      header: 'Tasks',
-      render: (pkg) => (
-        <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
-      )
-    },
-    {
-      header: 'Target',
-      render: (pkg) => pkg.target_date ? format(new Date(pkg.target_date), 'MMM d') : '-'
-    },
-    {
-      header: '',
-      render: (pkg) => {
-        const phaseMap = {
-          'detailing': { next: 'fabrication', label: 'To Fab' },
-          'fabrication': { next: 'delivery', label: 'To Delivery' },
-          'delivery': { next: 'erection', label: 'To Erection' },
-          'erection': { next: 'complete', label: 'Complete' }
-        };
-        const currentPhase = phaseMap[pkg.phase];
 
-        return (
-          <div className="flex items-center gap-2">
-            {currentPhase && pkg.status !== 'complete' && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAdvancePhase(pkg, currentPhase.next);
-                }}
-                className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
-              >
+  },
+  {
+    header: 'Tonnage',
+    render: (pkg) =>
+    <div className="text-zinc-200">{pkg.tonnage ? `${pkg.tonnage} tons` : '-'}</div>
+
+  },
+  {
+    header: 'SOV Lines',
+    render: (pkg) =>
+    <div className="text-zinc-200">{pkg.sov_item_ids?.length || 0}</div>
+
+  },
+  {
+    header: 'Tasks',
+    render: (pkg) =>
+    <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
+
+  },
+  {
+    header: 'Target',
+    render: (pkg) => pkg.target_date ? format(new Date(pkg.target_date), 'MMM d') : '-'
+  },
+  {
+    header: '',
+    render: (pkg) => {
+      const phaseMap = {
+        'detailing': { next: 'fabrication', label: 'To Fab' },
+        'fabrication': { next: 'delivery', label: 'To Delivery' },
+        'delivery': { next: 'erection', label: 'To Erection' },
+        'erection': { next: 'complete', label: 'Complete' }
+      };
+      const currentPhase = phaseMap[pkg.phase];
+
+      return (
+        <div className="flex items-center gap-2">
+            {currentPhase && pkg.status !== 'complete' &&
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAdvancePhase(pkg, currentPhase.next);
+            }}
+            className="text-green-400 hover:text-green-300 hover:bg-green-500/10">
+
                 <ArrowRight size={16} />
               </Button>
-            )}
+          }
             <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDeletePackage(pkg);
-              }}
-              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-            >
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeletePackage(pkg);
+            }}
+            className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10">
+
               <Trash2 size={16} />
             </Button>
-          </div>
-        );
-      }
-    }
-  ];
+          </div>);
 
-  const selectedProject = projects.find(p => p.id === activeProjectId);
+    }
+  }];
+
+
+  const selectedProject = projects.find((p) => p.id === activeProjectId);
 
   const filteredPackages = useMemo(() => {
-    return workPackages.filter(wp => {
+    return workPackages.filter((wp) => {
       const matchesStatus = statusFilter === 'all' || wp.status === statusFilter;
       const matchesPhase = phaseFilter === 'all' || wp.phase === phaseFilter;
       return matchesStatus && matchesPhase;
@@ -248,12 +248,12 @@ export default function WorkPackages() {
   }, [workPackages, statusFilter, phaseFilter]);
 
   const summaryStats = useMemo(() => {
-    const active = workPackages.filter(wp => wp.status === 'active').length;
-    const complete = workPackages.filter(wp => wp.status === 'complete').length;
+    const active = workPackages.filter((wp) => wp.status === 'active').length;
+    const complete = workPackages.filter((wp) => wp.status === 'complete').length;
     const totalTonnage = workPackages.reduce((sum, wp) => sum + (wp.tonnage || 0), 0);
-    const avgProgress = workPackages.length > 0
-      ? workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / workPackages.length
-      : 0;
+    const avgProgress = workPackages.length > 0 ?
+    workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / workPackages.length :
+    0;
 
     return { active, complete, totalTonnage, avgProgress };
   }, [workPackages]);
@@ -266,20 +266,20 @@ export default function WorkPackages() {
           subtitle="Execution tracking - single source of truth"
           showBackButton={false}
           actions={
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id} className="text-white">
+                {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id} className="text-white">
                     {p.project_number} - {p.name}
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
             </Select>
-          }
-        />
+          } />
+
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <Package size={48} className="mx-auto mb-4 text-zinc-600" />
@@ -287,8 +287,8 @@ export default function WorkPackages() {
             <p className="text-zinc-400">Select a project to manage work packages.</p>
           </div>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -297,7 +297,7 @@ export default function WorkPackages() {
         title="Work Packages"
         subtitle={`${selectedProject?.project_number || ''} - Execution tracking & progress`}
         actions={
-          <div className="flex items-center gap-3">
+        <div className="text-slate-50 flex items-center gap-3">
             <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-[280px] bg-zinc-800 border-zinc-700">
                 <SelectValue>
@@ -305,23 +305,23 @@ export default function WorkPackages() {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id} className="text-white">
+                {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id} className="text-white">
                     {p.project_number} - {p.name}
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
             </Select>
             <Button
-              onClick={() => setShowForm(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
+            onClick={() => setShowForm(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black">
+
               <Plus size={18} className="mr-2" />
               New Package
             </Button>
           </div>
-        }
-      />
+        } />
+
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
@@ -372,16 +372,16 @@ export default function WorkPackages() {
         </Select>
       </div>
 
-      {isLoading ? (
-        <div className="text-center text-zinc-400 py-12">Loading...</div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={filteredPackages}
-          onRowClick={(pkg) => setViewingPackage(pkg)}
-          emptyMessage="No work packages yet. Create packages to track execution, link to SOV and cost codes."
-        />
-      )}
+      {isLoading ?
+      <div className="text-center text-zinc-400 py-12">Loading...</div> :
+
+      <DataTable
+        columns={columns}
+        data={filteredPackages}
+        onRowClick={(pkg) => setViewingPackage(pkg)}
+        emptyMessage="No work packages yet. Create packages to track execution, link to SOV and cost codes." />
+
+      }
 
       {/* Create/Edit Sheet */}
       <Sheet open={showForm} onOpenChange={(open) => {
@@ -412,8 +412,8 @@ export default function WorkPackages() {
               setShowForm(false);
               setEditingPackage(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-          />
+            isLoading={createMutation.isPending || updateMutation.isPending} />
+
         </SheetContent>
       </Sheet>
 
@@ -425,24 +425,24 @@ export default function WorkPackages() {
           <SheetHeader>
             <SheetTitle className="text-white">Work Package Details</SheetTitle>
           </SheetHeader>
-          {viewingPackage && (
-            <WorkPackageDetails
-              package={viewingPackage}
-              projectId={activeProjectId}
-              tasks={tasks.filter(t => t.work_package_id === viewingPackage.id)}
-              sovItems={sovItems}
-              costCodes={costCodes}
-              documents={documents}
-              drawings={drawings}
-              onEdit={() => {
-                setEditingPackage(viewingPackage);
-                setViewingPackage(null);
-                setShowForm(true);
-              }}
-              onAdvancePhase={handleAdvancePhase}
-              onUpdate={(data) => updateMutation.mutate({ id: viewingPackage.id, data })}
-            />
-          )}
+          {viewingPackage &&
+          <WorkPackageDetails
+            package={viewingPackage}
+            projectId={activeProjectId}
+            tasks={tasks.filter((t) => t.work_package_id === viewingPackage.id)}
+            sovItems={sovItems}
+            costCodes={costCodes}
+            documents={documents}
+            drawings={drawings}
+            onEdit={() => {
+              setEditingPackage(viewingPackage);
+              setViewingPackage(null);
+              setShowForm(true);
+            }}
+            onAdvancePhase={handleAdvancePhase}
+            onUpdate={(data) => updateMutation.mutate({ id: viewingPackage.id, data })} />
+
+          }
         </SheetContent>
       </Sheet>
 
@@ -461,13 +461,13 @@ export default function WorkPackages() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deletePackage.id)}
-              className="bg-red-500 hover:bg-red-600"
-            >
+              className="bg-red-500 hover:bg-red-600">
+
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>);
+
 }

@@ -8,10 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Camera, Upload, MapPin, X, Check } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
-export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
+export default function PhotoCapture({ onPhotoCapture, entityType, entityId, projectId, allowMultiple = true }) {
   const [mode, setMode] = useState(null); // 'camera' | 'upload'
-  const [preview, setPreview] = useState(null);
-  const [annotation, setAnnotation] = useState('');
+  const [previews, setPreviews] = useState([]); // Array of {preview, file, annotation}
+  const [currentAnnotation, setCurrentAnnotation] = useState('');
   const [gpsLocation, setGpsLocation] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -20,18 +20,41 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
   const uploadMutation = useMutation({
     mutationFn: async (file) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      // Auto-create Document record if projectId provided
+      if (projectId) {
+        await base44.entities.Document.create({
+          project_id: projectId,
+          title: file.name || `Photo - ${new Date().toLocaleDateString()}`,
+          description: currentAnnotation,
+          category: 'photo',
+          file_url,
+          file_name: file.name,
+          status: 'issued'
+        }).catch(() => null); // Silent fail if document creation fails
+      }
+      
       return file_url;
     },
     onSuccess: (url) => {
-      onPhotoCapture?.({
+      const photo = {
         url,
-        annotation,
+        annotation: currentAnnotation,
         location: gpsLocation,
         entityType,
         entityId
-      });
-      resetCapture();
-      toast.success('Photo uploaded');
+      };
+      
+      onPhotoCapture?.(photo);
+      
+      if (allowMultiple) {
+        setPreviews(prev => prev.filter(p => p.preview !== previews[previews.length - 1]?.preview));
+        setCurrentAnnotation('');
+        toast.success('Photo uploaded');
+      } else {
+        resetCapture();
+        toast.success('Photo uploaded');
+      }
     }
   });
 
@@ -76,8 +99,17 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
     canvas.getContext('2d').drawImage(video, 0, 0);
     
     canvas.toBlob((blob) => {
-      setPreview(URL.createObjectURL(blob));
+      const preview = URL.createObjectURL(blob);
+      const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      
+      if (allowMultiple) {
+        setPreviews(prev => [...prev, { preview, file, annotation: '' }]);
+      } else {
+        setPreviews([{ preview, file, annotation: '' }]);
+      }
+      
       stopCamera();
+      setMode(null);
     });
   };
 
@@ -89,26 +121,36 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
   };
 
   const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    if (allowMultiple) {
+      files.forEach(file => {
+        const preview = URL.createObjectURL(file);
+        setPreviews(prev => [...prev, { preview, file, annotation: '' }]);
+      });
+      getLocation();
+    } else {
       setMode('upload');
+      setPreviews([{ preview: URL.createObjectURL(files[0]), file: files[0], annotation: '' }]);
       getLocation();
     }
   };
 
-  const savePhoto = () => {
-    const canvas = canvasRef.current;
-    canvas.toBlob((blob) => {
-      const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-      uploadMutation.mutate(file);
-    });
+  const savePhoto = (index) => {
+    const item = previews[index];
+    setCurrentAnnotation(item.annotation);
+    uploadMutation.mutate(item.file);
+  };
+
+  const removePhoto = (index) => {
+    setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetCapture = () => {
     setMode(null);
-    setPreview(null);
-    setAnnotation('');
+    setPreviews([]);
+    setCurrentAnnotation('');
     setGpsLocation(null);
     stopCamera();
   };
@@ -116,7 +158,7 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
   return (
     <Card>
       <CardContent className="p-4 space-y-4">
-        {!mode && !preview && (
+        {previews.length === 0 && !mode && (
           <div className="grid grid-cols-2 gap-3">
             <Button onClick={startCamera} className="h-24">
               <Camera size={24} />
@@ -132,13 +174,14 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
                 accept="image/*"
                 capture="environment"
                 onChange={handleFileUpload}
+                multiple={allowMultiple}
                 className="hidden"
               />
             </label>
           </div>
         )}
 
-        {mode === 'camera' && !preview && (
+        {mode === 'camera' && (
           <div className="space-y-3">
             <video ref={videoRef} autoPlay playsInline className="w-full rounded-lg" />
             <Button onClick={capturePhoto} className="w-full">
@@ -151,37 +194,59 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId }) {
           </div>
         )}
 
-        {preview && (
+        {previews.length > 0 && (
           <div className="space-y-3">
-            <img src={preview} alt="Preview" className="w-full rounded-lg" />
-            
-            <Textarea
-              placeholder="Add description or notes..."
-              value={annotation}
-              onChange={(e) => setAnnotation(e.target.value)}
-              rows={3}
-            />
+            {previews.map((item, index) => (
+              <div key={index} className="space-y-2 p-3 bg-zinc-800 rounded-lg">
+                <div className="relative">
+                  <img src={item.preview} alt={`Preview ${index + 1}`} className="w-full rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                
+                <Textarea
+                  placeholder="Add description or notes..."
+                  value={item.annotation}
+                  onChange={(e) => {
+                    const newPreviews = [...previews];
+                    newPreviews[index].annotation = e.target.value;
+                    setPreviews(newPreviews);
+                  }}
+                  rows={2}
+                  className="text-xs"
+                />
 
-            {gpsLocation && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-secondary rounded">
-                <MapPin size={12} />
-                <span>
-                  {gpsLocation.latitude.toFixed(6)}, {gpsLocation.longitude.toFixed(6)}
-                  {' '}(±{gpsLocation.accuracy.toFixed(0)}m)
-                </span>
+                {gpsLocation && (
+                  <div className="flex items-center gap-2 text-xs text-zinc-400 p-2 bg-zinc-900 rounded">
+                    <MapPin size={12} />
+                    <span>
+                      {gpsLocation.latitude.toFixed(6)}, {gpsLocation.longitude.toFixed(6)}
+                    </span>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={() => savePhoto(index)} 
+                  disabled={uploadMutation.isPending} 
+                  size="sm"
+                  className="w-full"
+                >
+                  <Check size={14} className="mr-1" />
+                  Upload
+                </Button>
               </div>
-            )}
+            ))}
 
-            <div className="flex gap-2">
-              <Button onClick={savePhoto} disabled={uploadMutation.isPending} className="flex-1">
-                <Check size={16} className="mr-2" />
-                Save
+            {allowMultiple && (
+              <Button variant="outline" onClick={() => setPreviews([])} className="w-full text-xs">
+                Clear All
               </Button>
-              <Button variant="outline" onClick={resetCapture} className="flex-1">
-                <X size={16} className="mr-2" />
-                Cancel
-              </Button>
-            </div>
+            )}
           </div>
         )}
 

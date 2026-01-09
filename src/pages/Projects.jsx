@@ -263,123 +263,136 @@ export default function Projects() {
   }, [projects]);
 
   return (
-    <ScreenContainer>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Projects</h1>
-          <p className="text-sm text-muted-foreground">{projects.length} total</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-          </Button>
-          {can.createProject && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={16} className="mr-1" />
-              New
-            </Button>
-          )}
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Project Portfolio</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{projects.length} TOTAL</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="px-3 py-1.5 text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold"
+              >
+                {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
+              </button>
+              {can.createProject && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setFormData(initialFormState);
+                    setShowForm(true);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                >
+                  <Plus size={14} className="mr-1" />
+                  NEW
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search projects..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(1);
-          }}
-          className="pl-10"
-        />
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Input
+                placeholder="SEARCH PROJECTS..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex gap-1 border border-zinc-800 p-1">
+              {[
+                { value: 'all', label: 'ALL', count: statusCounts.all },
+                { value: 'in_progress', label: 'ACTIVE', count: statusCounts.in_progress },
+                { value: 'bidding', label: 'BIDDING', count: statusCounts.bidding },
+                { value: 'completed', label: 'DONE', count: statusCounts.completed }
+              ].map(({ value, label, count }) => (
+                <button
+                  key={value}
+                  onClick={() => { setStatusFilter(value); setPage(1); }}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                    statusFilter === value
+                      ? 'bg-amber-500 text-black'
+                      : 'text-zinc-500 hover:text-white'
+                  }`}
+                >
+                  {label} <span className="font-mono">({count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Status Filter Tabs */}
-      <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }} className="mb-4">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
-          <TabsTrigger value="all" className="text-xs py-2">
-            All
-            <span className="ml-1 text-xs text-muted-foreground">({statusCounts.all})</span>
-          </TabsTrigger>
-          <TabsTrigger value="in_progress" className="text-xs py-2">
-            Active
-            <span className="ml-1 text-xs text-muted-foreground">({statusCounts.in_progress})</span>
-          </TabsTrigger>
-          <TabsTrigger value="bidding" className="text-xs py-2">
-            Bidding
-            <span className="ml-1 text-xs text-muted-foreground">({statusCounts.bidding})</span>
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="text-xs py-2">
-            Done
-            <span className="ml-1 text-xs text-muted-foreground">({statusCounts.completed})</span>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Demo Seeder */}
-      {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && (
-        <div className="mb-6">
-          <DemoProjectSeeder />
-        </div>
-      )}
-
-      {/* Project Cards */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading projects...</p>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* Demo Seeder */}
+        {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && (
+          <div className="mb-6">
+            <DemoProjectSeeder />
           </div>
-        </div>
-      ) : paginatedProjects.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No projects found</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-3 mb-4">
-            {paginatedProjects.map((project) => {
-              const progress = calculateProjectProgress(project.id, tasks);
-              return (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  progress={progress}
-                  onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
-                  onDelete={() => handleDelete(project)}
-                  onEdit={() => handleEdit(project)}
-                />
-              );
-            })}
-          </div>
+        )}
 
-          {/* Load More */}
-          {hasMore && (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setPage(p => p + 1)}
-            >
-              Load More ({filteredProjects.length - paginatedProjects.length} remaining)
-            </Button>
-          )}
-        </>
-      )}
+        {/* Project List */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
+            </div>
+          </div>
+        ) : paginatedProjects.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-xs text-zinc-600 uppercase tracking-widest">NO PROJECTS FOUND</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-0 border border-zinc-800 mb-6">
+              {paginatedProjects.map((project, idx) => {
+                const progress = calculateProjectProgress(project.id, tasks);
+                return (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    progress={progress}
+                    onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
+                    onDelete={() => handleDelete(project)}
+                    onEdit={() => handleEdit(project)}
+                    noBorder={idx === paginatedProjects.length - 1}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Load More */}
+            {hasMore && (
+              <button
+                onClick={() => setPage(p => p + 1)}
+                className="w-full py-3 text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold border border-zinc-800 hover:bg-zinc-950 transition-colors"
+              >
+                LOAD MORE ({filteredProjects.length - paginatedProjects.length} REMAINING)
+              </button>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -422,11 +435,10 @@ export default function Projects() {
         open={!!deleteProject}
         onOpenChange={(open) => !open && setDeleteProject(null)}
         onSuccess={() => {
-          // Invalidate ALL queries to prevent stale data errors
           queryClient.invalidateQueries();
         }}
       />
-    </ScreenContainer>
+    </div>
   );
 }
 

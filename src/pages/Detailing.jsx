@@ -162,29 +162,9 @@ export default function Detailing() {
 
   const selectedProject = allProjects.find((p) => p.id === activeProjectId);
 
-  if (!activeProjectId) {
-    return (
-      <div className="bg-black text-slate-50 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <FileText size={48} className="mx-auto mb-4 text-zinc-700" />
-          <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-2">No Project Selected</h3>
-          <p className="text-slate-50 text-xs uppercase tracking-widest">SELECT A PROJECT TO VIEW DETAILING</p>
-        </div>
-      </div>);
-
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-      </div>);
-
-  }
-
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
+    <div className="flex flex-col min-h-screen bg-black">
+      {/* Header Bar - Always visible */}
       <div className="border-b border-zinc-800 bg-black">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -217,32 +197,47 @@ export default function Detailing() {
         </div>
       </div>
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">BLOCKED</div>
-              <div className="text-2xl font-bold font-mono text-red-500">{kpis.blocked}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">DUE IN 3D</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">{kpis.dueSoon}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">IN PROGRESS</div>
-              <div className="text-2xl font-bold font-mono text-blue-500">{kpis.inProgress}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FFF</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{kpis.complete}</div>
-            </div>
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : !activeProjectId ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <FileText size={48} className="mx-auto mb-4 text-zinc-700" />
+            <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-2">No Project Selected</h3>
+            <p className="text-slate-50 text-xs uppercase tracking-widest">SELECT A PROJECT TO VIEW DETAILING</p>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* KPI Strip */}
+          <div className="border-b border-zinc-800 bg-black">
+            <div className="max-w-[1600px] mx-auto px-6 py-4">
+              <div className="grid grid-cols-4 gap-6">
+                <div>
+                  <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">BLOCKED</div>
+                  <div className="text-2xl font-bold font-mono text-red-500">{kpis.blocked}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">DUE IN 3D</div>
+                  <div className="text-2xl font-bold font-mono text-amber-500">{kpis.dueSoon}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">IN PROGRESS</div>
+                  <div className="text-2xl font-bold font-mono text-blue-500">{kpis.inProgress}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FFF</div>
+                  <div className="text-2xl font-bold font-mono text-green-500">{kpis.complete}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
+          {/* Main Content */}
+          <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
 
         {/* Priority Queue */}
         {priorityQueue.length > 0 &&
@@ -448,16 +443,19 @@ export default function Detailing() {
           })}
         </div>
 
-        {activePackages.length === 0 &&
-        <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
-              <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-2">All Sets Complete</h3>
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">No active drawing sets</p>
-            </div>
+            {activePackages.length === 0 &&
+            <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-2">All Sets Complete</h3>
+                  <p className="text-xs text-zinc-600 uppercase tracking-widest">No active drawing sets</p>
+                </div>
+              </div>
+            }
           </div>
-        }
-      </div>
-    </div>);
+        </>
+      )}
+    </div>
+  );
 
 }

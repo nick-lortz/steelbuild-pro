@@ -167,9 +167,9 @@ export default function ProductionMeetings() {
         title="Production Meeting Notes"
         subtitle="Weekly project notes that carry forward"
         actions={
-        <div className="flex gap-2">
+        <div className="text-slate-50 flex gap-2">
           <ExportButton
-            data={activeProjects.map(project => {
+            data={activeProjects.map((project) => {
               const note = getNotesForProject(project.id);
               return {
                 project_number: project.project_number,
@@ -179,21 +179,21 @@ export default function ProductionMeetings() {
                 status_summary: note?.status_summary || '',
                 notes: note?.notes || '',
                 concerns: note?.concerns || '',
-                action_items: note?.action_items?.map(a => `${a.status === 'completed' ? '✓' : '○'} ${a.item}`).join('; ') || ''
+                action_items: note?.action_items?.map((a) => `${a.status === 'completed' ? '✓' : '○'} ${a.item}`).join('; ') || ''
               };
             })}
             columns={[
-              { key: 'project_number', label: 'Project #' },
-              { key: 'project_name', label: 'Project' },
-              { key: 'pm', label: 'PM' },
-              { key: 'week', label: 'Week' },
-              { key: 'status_summary', label: 'Status' },
-              { key: 'notes', label: 'Notes' },
-              { key: 'concerns', label: 'Concerns' },
-              { key: 'action_items', label: 'Actions' }
-            ]}
-            filename={`production_notes_${format(currentWeek, 'yyyy-MM-dd')}`}
-          />
+            { key: 'project_number', label: 'Project #' },
+            { key: 'project_name', label: 'Project' },
+            { key: 'pm', label: 'PM' },
+            { key: 'week', label: 'Week' },
+            { key: 'status_summary', label: 'Status' },
+            { key: 'notes', label: 'Notes' },
+            { key: 'concerns', label: 'Concerns' },
+            { key: 'action_items', label: 'Actions' }]
+            }
+            filename={`production_notes_${format(currentWeek, 'yyyy-MM-dd')}`} />
+
           <Button
             onClick={() => setShowAI(!showAI)}
             variant={showAI ? "default" : "outline"}
@@ -254,7 +254,7 @@ export default function ProductionMeetings() {
         <Button
           variant="outline"
           size="sm"
-          onClick={goToPreviousWeek} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+          onClick={goToPreviousWeek} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
 
 
           <ChevronLeft size={16} className="mr-1" />
@@ -274,7 +274,7 @@ export default function ProductionMeetings() {
           <Button
             variant="outline"
             size="sm"
-            onClick={goToCurrentWeek} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+            onClick={goToCurrentWeek} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
 
 
             Today
@@ -284,7 +284,7 @@ export default function ProductionMeetings() {
         <Button
           variant="outline"
           size="sm"
-          onClick={goToNextWeek} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+          onClick={goToNextWeek} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
 
 
           Next Week

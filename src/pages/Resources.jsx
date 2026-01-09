@@ -451,6 +451,6 @@ export default function Resources() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </ScreenContainer>
+    </div>
   );
 }

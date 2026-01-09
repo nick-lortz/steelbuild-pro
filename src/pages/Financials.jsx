@@ -132,18 +132,31 @@ export default function Financials() {
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Financials</h1>
               <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
             </div>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {projects.map((p) =>
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-3">
+              {budgetLines.length > 0 && sovItems.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setShowCleanupDialog(true)}
+                  disabled={cleanupMutation.isPending}
+                  className="gap-2">
+                  <Trash2 size={16} />
+                  Clean Budget Lines
+                </Button>
+              )}
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {projects.map((p) =>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </div>

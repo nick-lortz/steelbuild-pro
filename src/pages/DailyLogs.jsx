@@ -27,10 +27,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, Users, AlertTriangle, Camera, Trash2, Clock, Zap } from 'lucide-react';
+import { Plus, Calendar, Users, AlertTriangle, Camera, Trash2, Clock, Zap, WifiOff, RefreshCw } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
-import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
 import { toast } from '@/components/ui/notifications';

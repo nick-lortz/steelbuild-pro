@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import FinancialKPIs from '@/components/financials/FinancialKPIs';
 import BudgetTab from '@/components/financials/BudgetTab';
@@ -16,14 +14,10 @@ import InvoiceManager from '@/components/sov/InvoiceManager';
 import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
 import JobStatusReport from '@/components/sov/JobStatusReport';
 import { usePermissions } from '@/components/shared/usePermissions';
-import { toast } from '@/components/ui/notifications';
-import { Trash2 } from 'lucide-react';
 
 export default function Financials() {
   const [selectedProject, setSelectedProject] = useState('');
-  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
   const { can } = usePermissions();
-  const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -77,18 +71,6 @@ export default function Financials() {
 
   const selectedProjectData = projects.find((p) => p.id === selectedProject);
 
-  const cleanupMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('cleanupFinancialBudgetLines', { project_id: selectedProject }),
-    onSuccess: (response) => {
-      if (response.data.success) {
-        toast.success(`Deleted ${response.data.count} Financial budget lines`);
-        queryClient.invalidateQueries({ queryKey: ['financials'] });
-        setShowCleanupDialog(false);
-      }
-    },
-    onError: () => toast.error('Cleanup failed')
-  });
-
   if (!selectedProject) {
     return (
       <div className="min-h-screen bg-black">
@@ -120,8 +102,6 @@ export default function Financials() {
     );
   }
 
-  const AlertDialogComponent = AlertDialog;
-
   return (
     <div className="min-h-screen bg-black">
       {/* Header Bar */}
@@ -132,31 +112,18 @@ export default function Financials() {
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Financials</h1>
               <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
             </div>
-            <div className="flex items-center gap-3">
-              {budgetLines.length > 0 && sovItems.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setShowCleanupDialog(true)}
-                  disabled={cleanupMutation.isPending}
-                  className="gap-2">
-                  <Trash2 size={16} />
-                  Clean Budget Lines
-                </Button>
-              )}
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {projects.map((p) =>
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map((p) =>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -165,7 +132,7 @@ export default function Financials() {
       <div className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="mb-6">
           <FinancialKPIs
-            budgetLines={sovItems.length > 0 ? [] : budgetLines}
+            budgetLines={budgetLines}
             expenses={expenses}
             invoices={invoices}
             sovItems={sovItems}
@@ -173,31 +140,30 @@ export default function Financials() {
           />
         </div>
 
-        <Tabs defaultValue={sovItems.length > 0 ? "sov" : "budget"} className="space-y-4">
-           <TabsList className="bg-zinc-900 border border-zinc-800">
-            {sovItems.length > 0 && <TabsTrigger value="sov">SOV & Billing</TabsTrigger>}
-            {sovItems.length === 0 && <TabsTrigger value="budget">Budget</TabsTrigger>}
+        <Tabs defaultValue="sov" className="space-y-4">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="sov">SOV & Billing</TabsTrigger>
+            <TabsTrigger value="budget">Budget</TabsTrigger>
             <TabsTrigger value="actuals">Actuals</TabsTrigger>
-           </TabsList>
+          </TabsList>
 
-        {sovItems.length > 0 ? (
-          <TabsContent value="sov">
-            <div className="space-y-6">
-              <JobStatusReport sovItems={sovItems} expenses={expenses} changeOrders={changeOrders} />
-              <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
-              <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
-              <SOVCostAlignment sovItems={sovItems} expenses={expenses} />
-            </div>
-          </TabsContent>
-        ) : (
-          <TabsContent value="budget">
-            <BudgetTab
-              projectId={selectedProject}
-              budgetLines={budgetLines}
-              costCodes={costCodes}
-              canEdit={can.editFinancials} />
-          </TabsContent>
-        )}
+        <TabsContent value="sov">
+          <div className="space-y-6">
+            <JobStatusReport sovItems={sovItems} expenses={expenses} changeOrders={changeOrders} />
+            <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
+            <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
+            <SOVCostAlignment sovItems={sovItems} expenses={expenses} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="budget">
+          <BudgetTab
+            projectId={selectedProject}
+            budgetLines={budgetLines}
+            costCodes={costCodes}
+            canEdit={can.editFinancials} />
+
+        </TabsContent>
 
         <TabsContent value="actuals">
           <ActualsTab
@@ -214,32 +180,6 @@ export default function Financials() {
           <ETCManager projectId={selectedProject} expenses={expenses} />
         </div>
       </div>
-
-      {/* Cleanup Confirmation Dialog */}
-      <AlertDialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Clean Financial Budget Lines</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              You have {budgetLines.length} legacy Financial budget lines while using SOV. These will be deleted to prevent double-counting.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="my-4 p-3 bg-zinc-950 rounded border border-zinc-800 text-xs text-zinc-400">
-            This action deletes the Financial records only. SOV data will remain intact.
-          </div>
-          <div className="flex gap-3 justify-end">
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => cleanupMutation.mutate()}
-              disabled={cleanupMutation.isPending}
-              className="bg-red-600 hover:bg-red-700">
-              {cleanupMutation.isPending ? 'Cleaning...' : 'Delete Budget Lines'}
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

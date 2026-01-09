@@ -6,7 +6,7 @@ export default function FinancialKPIs({ budgetLines = [], expenses = [], invoice
   let kpis = [];
 
   if (useSOV && sovItems.length > 0) {
-    // SOV-based KPIs only - do NOT mix with Financial budget lines
+    // SOV-based KPIs
     const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
     const earnedToDate = sovItems.reduce((sum, s) => 
       sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
@@ -29,7 +29,7 @@ export default function FinancialKPIs({ budgetLines = [], expenses = [], invoice
       { label: '% Earned', value: `${percentEarned.toFixed(1)}%`, icon: Target, color: percentEarned >= percentBilled ? 'text-green-400' : 'text-amber-400' }
     ];
   } else {
-    // Budget-based KPIs - only when NOT using SOV
+    // Budget-based KPIs (existing logic)
     const originalBudget = budgetLines.reduce((sum, b) => sum + (b.original_budget || 0), 0);
     const approvedChanges = budgetLines.reduce((sum, b) => sum + (b.approved_changes || 0), 0);
     const currentBudget = originalBudget + approvedChanges;
@@ -38,7 +38,7 @@ export default function FinancialKPIs({ budgetLines = [], expenses = [], invoice
     const costRemaining = currentBudget - actualCost;
     const costVariance = currentBudget - actualCost;
     const percentSpent = currentBudget > 0 ? (actualCost / currentBudget) * 100 : 0;
-    const billingToDate = invoices.filter(i => i.status === 'paid')
+    const billingToDate = invoices.filter(i => i.payment_status === 'paid')
       .reduce((sum, i) => sum + (i.total_amount || 0), 0);
 
     kpis = [

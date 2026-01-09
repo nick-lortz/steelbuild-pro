@@ -43,72 +43,24 @@ function formatFinancial(value) {
   return `$${value.toFixed(0)}`;
 }
 
-const KPICard = ({ title, value, icon: Icon, trend, trendValue, subtitle, variant = "default", onClick, loading = false }) => {
-  const variants = {
-    default: "bg-zinc-900 border-zinc-800 hover:border-zinc-700",
-    primary: "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
-    success: "bg-green-500/5 border-green-500/20 hover:border-green-500/30",
-    warning: "bg-orange-500/5 border-orange-500/20 hover:border-orange-500/30",
-    danger: "bg-red-500/5 border-red-500/20 hover:border-red-500/30",
-  };
-  
-  return (
-    <Card 
-      className={`${variants[variant]} border ${onClick ? 'cursor-pointer hover:shadow-lg' : ''} transition-all`}
-      onClick={onClick}
-    >
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="p-2 rounded bg-zinc-800/50">
-            <Icon size={20} className="text-amber-500" />
-          </div>
-          {trend && (
-            <div className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-zinc-400'}`}>
-              {trendValue && <span>{trendValue}</span>}
-              {trend === 'up' && '↑'}
-              {trend === 'down' && '↓'}
-            </div>
-          )}
-        </div>
-        <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2 font-medium">{title}</p>
-        {loading ? (
-          <div className="h-10 w-28 bg-zinc-800 animate-pulse rounded" />
-        ) : (
-          <>
-            <p className="text-3xl font-bold text-white mb-1">{value}</p>
-            {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
+// Removed - no longer using KPICard component
 
 const ActivityItem = ({ type, title, subtitle, badge, date, onClick }) => {
-  const typeIcons = {
-    rfi: MessageSquareWarning,
-    co: FileCheck,
-    task: Target,
-    drawing: FileText
-  };
-  const Icon = typeIcons[type] || FileText;
-  
   return (
     <div 
-      className="group px-6 py-3 hover:bg-zinc-900/50 cursor-pointer transition-colors"
+      className="group px-6 py-3 hover:bg-zinc-950 cursor-pointer transition-colors"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Icon size={14} className="text-zinc-600 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{title}</p>
-            <p className="text-xs text-zinc-500 truncate">{subtitle}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-xs text-white font-medium truncate">{title}</span>
           </div>
+          <span className="text-[10px] text-zinc-600 truncate">{subtitle}</span>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+        <div className="flex items-center gap-3 ml-3">
           {badge}
-          <ArrowRight size={12} className="text-zinc-600 group-hover:text-zinc-400" />
+          <span className="text-zinc-700 group-hover:text-zinc-500">→</span>
         </div>
       </div>
     </div>
@@ -415,282 +367,283 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Command Strip */}
-      <div className="border-b-2 border-zinc-800">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="grid grid-cols-4 gap-4">
+      {/* Status Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-6 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-green-500" />
+              <span className="text-zinc-500 font-mono uppercase tracking-wider">OPERATIONAL</span>
+            </div>
+            <span className="text-zinc-600 font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
+          </div>
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="text-zinc-500 hover:text-zinc-400 font-mono text-xs uppercase tracking-wider"
+          >
+            {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
+          </button>
+        </div>
+      </div>
+
+      {/* Command Panel */}
+      <div className="border-b-2 border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-8">
+          <div className="grid grid-cols-4 gap-6">
             {/* Action Required */}
             <div 
-              className={`p-4 border-2 cursor-pointer transition-all ${
+              className={`relative border-l-4 pl-5 pr-4 py-5 cursor-pointer transition-all ${
                 criticalIssues.length > 0 
-                  ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20' 
-                  : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900'
+                  ? 'border-red-500 bg-red-500/5 hover:bg-red-500/10' 
+                  : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
               }`}
               onClick={() => {
                 if (criticalIssues.length > 0) {
-                  // Navigate to most critical issue
                   if (criticalIssues[0].includes('RFI')) navigate(createPageUrl('RFIs'));
                   else if (criticalIssues[0].includes('drawing')) navigate(createPageUrl('Detailing'));
                   else navigate(createPageUrl('ChangeOrders'));
                 }
               }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <AlertTriangle size={18} className={criticalIssues.length > 0 ? 'text-red-400' : 'text-zinc-600'} />
-                {criticalIssues.length > 0 && (
-                  <span className="text-xs font-bold text-red-400 uppercase tracking-wider animate-pulse">Action</span>
-                )}
-              </div>
-              <div className="text-3xl font-bold text-white mb-1">{criticalIssues.length}</div>
-              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Issues Require Action</div>
               {criticalIssues.length > 0 && (
-                <div className="text-xs text-zinc-400 truncate">{criticalIssues[0]}</div>
+                <div className="absolute top-3 right-3 text-[10px] font-bold text-red-500 uppercase tracking-widest animate-pulse">
+                  ACTION
+                </div>
               )}
-            </div>
-
-            {/* Active Projects */}
-            <div 
-              className="p-4 bg-zinc-900/50 border-2 border-zinc-800 hover:bg-zinc-900 cursor-pointer transition-all"
-              onClick={() => navigate(createPageUrl('Projects'))}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <Building2 size={18} className="text-blue-400" />
+              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
+                {criticalIssues.length}
               </div>
-              <div className="text-3xl font-bold text-white mb-1">
-                {portfolioHealth.activeProjects || activeProjects.length}
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
+                REQUIRE ACTION
               </div>
-              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Active Projects</div>
-              <div className="text-xs text-zinc-400">{projects.length} total portfolio</div>
+              {criticalIssues.length > 0 && (
+                <div className="text-xs text-zinc-400 leading-tight truncate">
+                  {criticalIssues[0]}
+                </div>
+              )}
             </div>
 
             {/* Schedule Health */}
             <div 
-              className={`p-4 border-2 cursor-pointer transition-all ${
+              className={`relative border-l-4 pl-5 pr-4 py-5 cursor-pointer transition-all ${
                 scheduleHealth.status === 'critical' 
-                  ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20'
+                  ? 'border-red-500 bg-red-500/5 hover:bg-red-500/10'
                   : scheduleHealth.status === 'warning'
-                  ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20'
-                  : 'bg-green-500/10 border-green-500/50 hover:bg-green-500/20'
+                  ? 'border-amber-500 bg-amber-500/5 hover:bg-amber-500/10'
+                  : 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
               }`}
               onClick={() => navigate(createPageUrl('Schedule'))}
             >
-              <div className="flex items-center justify-between mb-2">
-                <Calendar size={18} className={
-                  scheduleHealth.status === 'critical' ? 'text-red-400' :
-                  scheduleHealth.status === 'warning' ? 'text-amber-400' : 'text-green-400'
-                } />
-                {scheduleHealth.overdueCount > 0 && (
-                  <span className="text-xs font-bold text-red-400">{scheduleHealth.overdueCount} Late</span>
-                )}
-              </div>
-              <div className="text-3xl font-bold text-white mb-1">{scheduleHealth.onTimePercentage}%</div>
-              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Schedule Health</div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${
-                      scheduleHealth.status === 'critical' ? 'bg-red-500' :
-                      scheduleHealth.status === 'warning' ? 'bg-amber-500' : 'bg-green-500'
-                    }`}
-                    style={{ width: `${scheduleHealth.onTimePercentage}%` }}
-                  />
+              {scheduleHealth.overdueCount > 0 && (
+                <div className="absolute top-3 right-3 text-[10px] font-bold text-red-500 uppercase tracking-widest">
+                  {scheduleHealth.overdueCount} LATE
                 </div>
+              )}
+              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
+                {scheduleHealth.onTimePercentage}%
+              </div>
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
+                SCHEDULE HEALTH
+              </div>
+              <div className="h-1 bg-zinc-900">
+                <div 
+                  className={`h-full transition-all ${
+                    scheduleHealth.status === 'critical' ? 'bg-red-500' :
+                    scheduleHealth.status === 'warning' ? 'bg-amber-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${scheduleHealth.onTimePercentage}%` }}
+                />
               </div>
             </div>
 
             {/* Cost Risk */}
             <div 
-              className={`p-4 border-2 cursor-pointer transition-all ${
+              className={`relative border-l-4 pl-5 pr-4 py-5 cursor-pointer transition-all ${
                 costRiskStatus.status === 'critical' 
-                  ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20'
+                  ? 'border-red-500 bg-red-500/5 hover:bg-red-500/10'
                   : costRiskStatus.status === 'warning'
-                  ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20'
+                  ? 'border-amber-500 bg-amber-500/5 hover:bg-amber-500/10'
                   : costRiskStatus.status === 'healthy'
-                  ? 'bg-green-500/10 border-green-500/50 hover:bg-green-500/20'
-                  : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900'
+                  ? 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
+                  : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
               }`}
               onClick={() => activeProjectId && navigate(createPageUrl('Financials'))}
             >
-              <div className="flex items-center justify-between mb-2">
-                <DollarSign size={18} className={
-                  costRiskStatus.status === 'critical' ? 'text-red-400' :
-                  costRiskStatus.status === 'warning' ? 'text-amber-400' : 
-                  costRiskStatus.status === 'healthy' ? 'text-green-400' : 'text-zinc-600'
-                } />
-                {activeProjectFinancials && (
-                  <span className={`text-xs font-bold ${
-                    costRiskStatus.status === 'critical' ? 'text-red-400' :
-                    costRiskStatus.status === 'warning' ? 'text-amber-400' : 'text-green-400'
-                  }`}>
-                    {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
-                  </span>
-                )}
-              </div>
-              <div className="text-3xl font-bold text-white mb-1">
-                {costRiskStatus.message}
-              </div>
-              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Cost Risk Status</div>
               {activeProjectFinancials && (
-                <div className="text-xs text-zinc-400">
-                  {formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)} EAC
+                <div className={`absolute top-3 right-3 text-[10px] font-bold uppercase tracking-widest ${
+                  costRiskStatus.status === 'critical' ? 'text-red-500' :
+                  costRiskStatus.status === 'warning' ? 'text-amber-500' : 'text-green-500'
+                }`}>
+                  {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
                 </div>
               )}
+              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
+                {costRiskStatus.message === 'No active project' ? '—' : costRiskStatus.message.toUpperCase()}
+              </div>
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
+                COST RISK
+              </div>
+              {activeProjectFinancials && (
+                <div className="text-xs text-zinc-500 font-mono">
+                  EAC {formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}
+                </div>
+              )}
+            </div>
+
+            {/* Active Projects */}
+            <div 
+              className="relative border-l-4 border-zinc-800 bg-zinc-950 hover:bg-zinc-900 pl-5 pr-4 py-5 cursor-pointer transition-all"
+              onClick={() => navigate(createPageUrl('Projects'))}
+            >
+              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
+                {portfolioHealth.activeProjects || activeProjects.length}
+              </div>
+              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
+                ACTIVE PROJECTS
+              </div>
+              <div className="text-xs text-zinc-500 font-mono">
+                {projects.length} total
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Operations Dashboard</h1>
-              <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                <span>{format(new Date(), 'MMM d, yyyy')}</span>
-              </div>
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* Secondary Metrics Bar */}
+        <div className="grid grid-cols-4 gap-0 border border-zinc-800 mb-6">
+          <div className="p-4 border-r border-zinc-800">
+            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
+              BUDGET CONSUMED
             </div>
-            <p className="text-xs text-zinc-500 mt-1">{currentUser?.full_name || 'User'}</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="h-8 text-xs text-zinc-400 hover:text-white"
-          >
-            <RefreshCw size={14} className={`mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh Data
-          </Button>
-        </div>
-
-        {/* Secondary Metrics */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs uppercase tracking-wider text-zinc-500">Budget Used</span>
-              <DollarSign size={14} className="text-zinc-600" />
+            <div className="flex items-baseline gap-2 mb-3">
+              <span className="text-3xl font-bold text-white tracking-tight">
+                {portfolioHealth.budgetUtilization || 0}%
+              </span>
             </div>
-            <div className="text-2xl font-bold text-white mb-2">{portfolioHealth.budgetUtilization || 0}%</div>
-            <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-1 bg-zinc-900">
               <div 
-                className={`h-full ${
+                className={`h-full transition-all ${
                   (portfolioHealth.budgetUtilization || 0) > 90 ? 'bg-red-500' :
-                  (portfolioHealth.budgetUtilization || 0) > 75 ? 'bg-amber-500' : 'bg-green-500'
+                  (portfolioHealth.budgetUtilization || 0) > 75 ? 'bg-amber-500' : 'bg-zinc-600'
                 }`}
                 style={{ width: `${Math.min(portfolioHealth.budgetUtilization || 0, 100)}%` }}
               />
             </div>
           </div>
           
-          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs uppercase tracking-wider text-zinc-500">Completion</span>
-              <TrendingUp size={14} className="text-zinc-600" />
+          <div className="p-4 border-r border-zinc-800">
+            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
+              COMPLETION
             </div>
-            <div className="text-2xl font-bold text-white mb-2">{portfolioHealth.completionRate || 0}%</div>
-            <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="flex items-baseline gap-2 mb-3">
+              <span className="text-3xl font-bold text-white tracking-tight">
+                {portfolioHealth.completionRate || 0}%
+              </span>
+            </div>
+            <div className="h-1 bg-zinc-900">
               <div 
-                className="h-full bg-blue-500"
+                className="h-full bg-zinc-600 transition-all"
                 style={{ width: `${Math.min(portfolioHealth.completionRate || 0, 100)}%` }}
               />
             </div>
           </div>
 
-          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs uppercase tracking-wider text-zinc-500">Open RFIs</span>
-              <MessageSquareWarning size={14} className="text-zinc-600" />
+          <div className="p-4 border-r border-zinc-800">
+            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
+              OPEN RFIs
             </div>
-            <div className="text-2xl font-bold text-white mb-2">
-              {rfis.filter(r => r.status === 'pending' || r.status === 'submitted').length}
-            </div>
-            <div className="text-xs text-zinc-500">
-              {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date()).length} overdue
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-3xl font-bold text-white tracking-tight">
+                {rfis.filter(r => r.status === 'pending' || r.status === 'submitted').length}
+              </span>
+              {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date()).length > 0 && (
+                <span className="text-xs font-bold text-red-500">
+                  {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date()).length} OVERDUE
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs uppercase tracking-wider text-zinc-500">Pending COs</span>
-              <FileCheck size={14} className="text-zinc-600" />
+          <div className="p-4">
+            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
+              PENDING COs
             </div>
-            <div className="text-2xl font-bold text-white mb-2">
-              {changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').length}
-            </div>
-            <div className="text-xs text-zinc-500">
-              {formatFinancial(changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').reduce((sum, co) => sum + (co.cost_impact || 0), 0))} value
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-3xl font-bold text-white tracking-tight">
+                {changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').length}
+              </span>
+              <span className="text-xs text-zinc-500 font-mono">
+                {formatFinancial(changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').reduce((sum, co) => sum + (co.cost_impact || 0), 0))}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Active Project Detail */}
+        {/* Active Project Financial Strip */}
         {activeProjectId && activeProjectFinancials && (
           <div className="mb-6 border-2 border-zinc-800">
-            <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
+            <div className="px-6 py-3 border-b border-zinc-800 bg-black">
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Active Project</h2>
-                    <Badge variant="outline" className="text-xs">
-                      {projects.find(p => p.id === activeProjectId)?.project_number}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-zinc-500 mt-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">ACTIVE PROJECT</span>
+                  <span className="text-xs text-white font-mono">
+                    {projects.find(p => p.id === activeProjectId)?.project_number}
+                  </span>
+                  <span className="text-xs text-zinc-500 truncate max-w-md">
                     {projects.find(p => p.id === activeProjectId)?.name}
-                  </p>
+                  </span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-amber-500 hover:text-amber-400 text-xs"
+                <button
+                  className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold"
                   onClick={() => navigate(createPageUrl('Financials'))}
                 >
-                  Full Details
-                  <ArrowRight size={12} className="ml-1" />
-                </Button>
+                  DETAILS →
+                </button>
               </div>
             </div>
-            <div className="grid grid-cols-5 divide-x divide-zinc-800">
+            <div className="grid grid-cols-5 divide-x divide-zinc-800 bg-zinc-950">
               <div className="px-6 py-4">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Contract</p>
-                <p className="text-xl font-bold text-white">{formatFinancial(activeProjectFinancials.totalContract)}</p>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">CONTRACT</div>
+                <div className="text-2xl font-bold text-white font-mono tracking-tight">
+                  {formatFinancial(activeProjectFinancials.totalContract)}
+                </div>
               </div>
               <div className="px-6 py-4">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Actual Cost</p>
-                <p className="text-xl font-bold text-white">{formatFinancial(activeProjectFinancials.actualCost)}</p>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">ACTUAL</div>
+                <div className="text-2xl font-bold text-white font-mono tracking-tight">
+                  {formatFinancial(activeProjectFinancials.actualCost)}
+                </div>
               </div>
               <div className="px-6 py-4">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">EAC</p>
-                <p className="text-xl font-bold text-white">{formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}</p>
+                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">EAC</div>
+                <div className="text-2xl font-bold text-white font-mono tracking-tight">
+                  {formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}
+                </div>
               </div>
               <div className="px-6 py-4">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Margin</p>
-                <p className={`text-xl font-bold ${
-                  ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100) > activeProjectFinancials.plannedMargin
-                    ? 'text-green-400'
-                    : 'text-red-400'
+                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">MARGIN</div>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-2xl font-bold font-mono tracking-tight ${
+                    ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100) > activeProjectFinancials.plannedMargin
+                      ? 'text-green-500'
+                      : 'text-red-500'
+                  }`}>
+                    {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
+                  </span>
+                  <span className="text-xs text-zinc-600 font-mono">
+                    / {activeProjectFinancials.plannedMargin}%
+                  </span>
+                </div>
+              </div>
+              <div className="px-6 py-4">
+                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">STATUS</div>
+                <div className={`inline-block text-xs font-bold font-mono uppercase tracking-wider ${
+                  costRiskStatus.status === 'healthy' ? 'text-green-500' :
+                  costRiskStatus.status === 'warning' ? 'text-amber-500' : 'text-red-500'
                 }`}>
-                  {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Target: {activeProjectFinancials.plannedMargin}%
-                </p>
-              </div>
-              <div className="px-6 py-4">
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Status</p>
-                <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-bold ${
-                  costRiskStatus.status === 'healthy' 
-                    ? 'bg-green-500/10 text-green-400'
-                    : costRiskStatus.status === 'warning'
-                    ? 'bg-amber-500/10 text-amber-400'
-                    : 'bg-red-500/10 text-red-400'
-                }`}>
-                  {costRiskStatus.status === 'healthy' && <CheckCircle2 size={12} />}
-                  {costRiskStatus.status === 'warning' && <AlertTriangle size={12} />}
-                  {costRiskStatus.status === 'critical' && <AlertTriangle size={12} />}
                   {costRiskStatus.message}
                 </div>
               </div>
@@ -698,40 +651,40 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Two Column Layout */}
+        {/* Data Tables */}
         <div className="grid grid-cols-2 gap-6">
-          {/* Approaching Deadlines */}
+          {/* Deadlines */}
           {upcomingMilestones.length > 0 ? (
-            <div className="border border-zinc-800">
-              <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/30">
+            <div className="border border-zinc-800 bg-black">
+              <div className="px-6 py-3 border-b border-zinc-800">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-bold text-white uppercase tracking-wider">Approaching Deadlines</h2>
-                  <Badge variant="outline" className="text-xs">{upcomingMilestones.length}</Badge>
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">APPROACHING DEADLINES</span>
+                  <span className="text-[10px] font-mono text-zinc-600">{upcomingMilestones.length}</span>
                 </div>
               </div>
-              <div className="divide-y divide-zinc-800/50">
-                {upcomingMilestones.slice(0, 6).map(project => {
+              <div className="divide-y divide-zinc-800">
+                {upcomingMilestones.slice(0, 8).map(project => {
                   const days = differenceInDays(new Date(project.target_completion), new Date());
                   return (
                     <div
                       key={project.id}
-                      className="group px-6 py-3 hover:bg-zinc-900/50 cursor-pointer transition-colors"
+                      className="group px-6 py-3 hover:bg-zinc-950 cursor-pointer transition-colors"
                       onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0 mr-3">
-                          <p className="text-sm font-medium text-white truncate">{project.name}</p>
-                          <p className="text-xs text-zinc-500">{project.project_number}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs text-white font-medium truncate">{project.name}</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-600 font-mono">{project.project_number}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            days < 7 ? 'bg-red-500/20 text-red-400' : 
-                            days < 14 ? 'bg-amber-500/20 text-amber-400' : 
-                            'bg-zinc-800 text-zinc-400'
+                        <div className="flex items-center gap-3 ml-3">
+                          <span className={`text-xs font-bold font-mono ${
+                            days < 7 ? 'text-red-500' : days < 14 ? 'text-amber-500' : 'text-zinc-500'
                           }`}>
                             {days}d
                           </span>
-                          <ArrowRight size={12} className="text-zinc-600 group-hover:text-zinc-400" />
+                          <span className="text-zinc-700 group-hover:text-zinc-500">→</span>
                         </div>
                       </div>
                     </div>
@@ -740,41 +693,35 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <div className="border border-zinc-800 flex items-center justify-center py-12">
-              <div className="text-center">
-                <Target size={32} className="text-zinc-700 mx-auto mb-2" />
-                <p className="text-xs text-zinc-500">No upcoming deadlines</p>
-              </div>
+            <div className="border border-zinc-800 bg-black flex items-center justify-center py-16">
+              <span className="text-xs text-zinc-700 uppercase tracking-widest">NO UPCOMING DEADLINES</span>
             </div>
           )}
 
-          {/* Recent Activity */}
-          <div className="border border-zinc-800">
-            <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/30">
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Recent Activity</h2>
+          {/* Activity */}
+          <div className="border border-zinc-800 bg-black">
+            <div className="px-6 py-3 border-b border-zinc-800">
+              <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">RECENT ACTIVITY</span>
             </div>
             {paginatedActivity.length === 0 ? (
-              <div className="text-center py-12">
-                <Activity size={32} className="text-zinc-700 mx-auto mb-2" />
-                <p className="text-xs text-zinc-500">No recent activity</p>
+              <div className="text-center py-16">
+                <span className="text-xs text-zinc-700 uppercase tracking-widest">NO RECENT ACTIVITY</span>
               </div>
             ) : (
               <>
-                <div className="divide-y divide-zinc-800/50">
-                  {paginatedActivity.slice(0, 6).map(item => (
+                <div className="divide-y divide-zinc-800">
+                  {paginatedActivity.slice(0, 8).map(item => (
                     <ActivityItem key={item.id} {...item} />
                   ))}
                 </div>
                 {hasMoreActivity && (
                   <div className="p-3 border-t border-zinc-800">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs text-zinc-400 hover:text-white"
+                    <button
+                      className="w-full text-[10px] text-zinc-600 hover:text-zinc-400 uppercase tracking-widest font-bold py-2"
                       onClick={() => setActivityPage(p => p + 1)}
                     >
-                      Load More
-                    </Button>
+                      LOAD MORE
+                    </button>
                   </div>
                 )}
               </>

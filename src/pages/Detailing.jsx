@@ -145,13 +145,19 @@ export default function Detailing() {
     if (selectedReviewer !== 'all') {
       filtered = filtered.filter(ds => ds.reviewer === selectedReviewer);
     }
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(ds => ds.status === selectedStatus);
+    }
+    if (selectedDiscipline !== 'all') {
+      filtered = filtered.filter(ds => ds.discipline === selectedDiscipline);
+    }
 
     return filtered.sort((a, b) => {
       const aDate = a.due_date ? parseISO(a.due_date) : new Date(9999, 0);
       const bDate = b.due_date ? parseISO(b.due_date) : new Date(9999, 0);
       return aDate - bDate;
     });
-  }, [drawingSets, selectedReviewer]);
+  }, [drawingSets, selectedReviewer, selectedStatus, selectedDiscipline]);
 
   const selectedProject = allProjects.find(p => p.id === activeProjectId);
 

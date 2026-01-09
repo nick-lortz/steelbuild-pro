@@ -72,8 +72,21 @@ export default function DailyLogs() {
   const [projectFilter, setProjectFilter] = useState('all');
   const [deleteLog, setDeleteLog] = useState(null);
   const [showPhotoTab, setShowPhotoTab] = useState(false);
+  const [deletingLog, setDeletingLog] = useState(null);
 
   const queryClient = useQueryClient();
+
+  const { 
+    isOnline, 
+    syncStatus, 
+    pendingCount, 
+    cacheData,
+    getCachedData, 
+    createOffline, 
+    updateOffline, 
+    deleteOffline,
+    syncPendingChanges 
+  } = useOfflineSync('DailyLog');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -83,33 +96,65 @@ export default function DailyLogs() {
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
-    queryFn: () => base44.entities.DailyLog.list('-log_date'),
+    queryFn: async () => {
+      if (!isOnline) {
+        return await getCachedData();
+      }
+      const data = await base44.entities.DailyLog.list('-log_date');
+      await cacheData(data);
+      return data;
+    },
     staleTime: 5 * 60 * 1000,
+    initialData: []
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.DailyLog.create(data),
+    mutationFn: async (data) => {
+      if (!isOnline) {
+        return await createOffline(data);
+      }
+      return await base44.entities.DailyLog.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setShowForm(false);
       setFormData(initialFormState);
+      if (!isOnline) {
+        toast.success('Log saved offline - will sync when connected');
+      }
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.DailyLog.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      if (!isOnline) {
+        return await updateOffline(id, data);
+      }
+      return await base44.entities.DailyLog.update(id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setSelectedLog(null);
       setFormData(initialFormState);
+      if (!isOnline) {
+        toast.success('Changes saved offline - will sync when connected');
+      }
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.DailyLog.delete(id),
+    mutationFn: async (id) => {
+      if (!isOnline) {
+        return await deleteOffline(id);
+      }
+      return await base44.entities.DailyLog.delete(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setDeleteLog(null);
+      if (!isOnline) {
+        toast.success('Deletion queued - will sync when connected');
+      }
     },
   });
 
@@ -275,9 +320,41 @@ export default function DailyLogs() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Daily Field Logs</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredLogs.length} LOGS</p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-xs text-zinc-600 font-mono">{filteredLogs.length} LOGS</p>
+                {!isOnline && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-400 gap-1.5">
+                    <WifiOff size={12} />
+                    OFFLINE
+                  </Badge>
+                )}
+                {pendingCount > 0 && (
+                  <Badge variant="outline" className="border-blue-500 text-blue-400 gap-1.5">
+                    <RefreshCw size={12} />
+                    {pendingCount} PENDING
+                  </Badge>
+                )}
+              </div>
             </div>
-            <Button 
+            <div className="flex gap-2">
+              {isOnline && pendingCount > 0 && (
+                <Button
+                  size="sm"
+                  onClick={syncPendingChanges}
+                  disabled={syncStatus === 'syncing'}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs"
+                >
+                  {syncStatus === 'syncing' ? (
+                    <>
+                      <RefreshCw size={14} className="mr-1 animate-spin" />
+                      SYNCING
+                    </>
+                  ) : (
+                    'SYNC NOW'
+                  )}
+                </Button>
+              )}
+              <Button 
               onClick={() => {
                 setFormData(initialFormState);
                 setShowForm(true);

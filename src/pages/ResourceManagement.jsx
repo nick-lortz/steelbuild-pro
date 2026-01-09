@@ -15,6 +15,8 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import ResourceLeveling from '@/components/resources/ResourceLeveling';
 import ResourceForecast from '@/components/resources/ResourceForecast';
+import ResourceCapacityPlanner from '@/components/resources/ResourceCapacityPlanner';
+import SkillMatrixView from '@/components/resources/SkillMatrixView';
 
 export default function ResourceManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -231,8 +233,16 @@ export default function ResourceManagement() {
         showBackButton={false} />
 
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="capacity" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="capacity">
+            <TrendingUp size={14} className="mr-2" />
+            Capacity Planning
+          </TabsTrigger>
+          <TabsTrigger value="skills">
+            <Users size={14} className="mr-2" />
+            Skill Matrix
+          </TabsTrigger>
           <TabsTrigger value="overview">
             <BarChart3 size={14} className="mr-2" />
             Overview
@@ -246,6 +256,23 @@ export default function ResourceManagement() {
             Forecast
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="capacity" className="space-y-6">
+          <ResourceCapacityPlanner
+            projects={projects}
+            resources={resources}
+            tasks={tasks}
+            resourceAllocations={allocations}
+          />
+        </TabsContent>
+
+        <TabsContent value="skills" className="space-y-6">
+          <SkillMatrixView
+            resources={resources}
+            tasks={tasks}
+            projects={projects}
+          />
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
       {/* KPI Cards */}

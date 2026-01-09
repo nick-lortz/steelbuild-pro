@@ -278,54 +278,97 @@ export default function Meetings() {
     return { allActionItems: all, pendingActions: pending };
   }, [meetings]);
 
-  return (
-    <div>
-      <PageHeader
-        title="Meetings"
-        subtitle="Track meetings and action items"
-        actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Meeting
-          </Button>
-        }
-      />
+  const meetingStats = React.useMemo(() => {
+    const upcoming = meetings.filter(m => !isPast(new Date(m.meeting_date))).length;
+    const today = meetings.filter(m => {
+      const mDate = new Date(m.meeting_date);
+      const now = new Date();
+      return mDate.toDateString() === now.toDateString();
+    }).length;
+    return { upcoming, today };
+  }, [meetings]);
 
-      {/* Action Items Summary */}
-      {pendingActions.length > 0 && (
-        <div className="mb-6 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-          <h3 className="text-sm font-medium text-amber-400 mb-3">Pending Action Items ({pendingActions.length})</h3>
-          <div className="space-y-2">
-            {pendingActions.slice(0, 5).map((action, idx) => (
-              <div key={idx} className="flex items-start justify-between text-sm">
-                <div className="flex-1">
-                  <p className="text-white">{action.item}</p>
-                  <p className="text-xs text-zinc-500">{action.meetingTitle} • {action.assignee}</p>
-                </div>
-                {action.due_date && (
-                  <span className="text-xs text-amber-400">
-                    Due: {format(new Date(action.due_date), 'MMM d')}
-                  </span>
-                )}
-              </div>
-            ))}
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Meetings</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{meetings.length} TOTAL • {pendingActions.length} ACTIONS</p>
+            </div>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+            >
+              <Plus size={14} className="mr-1" />
+              NEW
+            </Button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={meetings}
-        onRowClick={handleEdit}
-        emptyMessage="No meetings found. Schedule your first meeting to get started."
-      />
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TODAY</div>
+              <div className="text-2xl font-bold font-mono text-amber-500">{meetingStats.today}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">UPCOMING</div>
+              <div className="text-2xl font-bold font-mono text-white">{meetingStats.upcoming}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">PENDING ACTIONS</div>
+              <div className={`text-2xl font-bold font-mono ${pendingActions.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                {pendingActions.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* Action Items Alert */}
+        {pendingActions.length > 0 && (
+          <div className="mb-6 p-4 bg-amber-950/20 border border-amber-500/30 rounded">
+            <div className="flex items-center gap-2 mb-3">
+              <Bell size={16} className="text-amber-500" />
+              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-widest">OPEN ACTIONS ({pendingActions.length})</h3>
+            </div>
+            <div className="space-y-2">
+              {pendingActions.slice(0, 5).map((action, idx) => (
+                <div key={idx} className="flex items-start justify-between text-xs bg-zinc-950 p-2 border-b border-zinc-800">
+                  <div className="flex-1">
+                    <p className="text-white font-medium">{action.item}</p>
+                    <p className="text-zinc-600 font-mono mt-0.5">{action.meetingTitle} • {action.assignee}</p>
+                  </div>
+                  {action.due_date && (
+                    <span className="text-amber-400 font-mono text-[10px]">
+                      {format(new Date(action.due_date), 'MMM d')}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Table */}
+        <DataTable
+          columns={columns}
+          data={meetings}
+          onRowClick={handleEdit}
+          emptyMessage="No meetings found. Schedule your first meeting to get started."
+        />
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

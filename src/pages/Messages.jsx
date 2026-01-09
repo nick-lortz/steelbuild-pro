@@ -68,17 +68,27 @@ export default function Messages() {
   );
 
   return (
-    <ScreenContainer>
-      <PageHeader title="Messages & Activity" subtitle="Team communication and project activity" />
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div>
+            <h1 className="text-xl font-bold text-white uppercase tracking-wide">Communications</h1>
+            <p className="text-xs text-zinc-600 font-mono mt-1">MESSAGES & ACTIVITY</p>
+          </div>
+        </div>
+      </div>
 
-      <Tabs defaultValue="messages" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="messages">
-            <MessageSquare size={14} className="mr-2" />
-            Messages
-          </TabsTrigger>
-          <TabsTrigger value="activity">Activity Feed</TabsTrigger>
-        </TabsList>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <Tabs defaultValue="messages" className="space-y-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="messages">
+              <MessageSquare size={14} className="mr-2" />
+              Messages
+            </TabsTrigger>
+            <TabsTrigger value="activity">Activity Feed</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="messages">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -139,10 +149,11 @@ export default function Messages() {
           </div>
         </TabsContent>
 
-        <TabsContent value="activity">
-          <ActivityFeed />
-        </TabsContent>
-      </Tabs>
-    </ScreenContainer>
+          <TabsContent value="activity">
+            <ActivityFeed />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 }

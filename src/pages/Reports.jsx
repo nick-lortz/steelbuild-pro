@@ -440,74 +440,64 @@ export default function Reports() {
   const { totalReports, activeReports, scheduledReports } = reportStats;
 
   return (
-    <div>
-      <PageHeader
-        title="Reports"
-        subtitle="Generate and schedule project reports"
-        actions={
-          <Button 
-            onClick={() => {
-              resetForm();
-              setEditingReport(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <FileText size={18} className="mr-2" />
-            Create Report
-          </Button>
-        }
-      />
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Total Reports</p>
-                <p className="text-2xl font-bold text-white">{totalReports}</p>
-              </div>
-              <FileText className="text-amber-500" size={24} />
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Report Center</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{totalReports} REPORTS • {activeReports} ACTIVE</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Active Reports</p>
-                <p className="text-2xl font-bold text-white">{activeReports}</p>
-              </div>
-              <TrendingUp className="text-green-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-zinc-400 text-sm">Scheduled</p>
-                <p className="text-2xl font-bold text-white">{scheduledReports}</p>
-              </div>
-              <Calendar className="text-blue-500" size={24} />
-            </div>
-          </CardContent>
-        </Card>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setEditingReport(null);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+            >
+              <FileText size={14} className="mr-1" />
+              CREATE
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="dashboard">
-            <LayoutDashboard size={16} className="mr-2" />
-            Interactive Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="financial">Financial Reports</TabsTrigger>
-          <TabsTrigger value="progress">Progress Reports</TabsTrigger>
-          <TabsTrigger value="safety">Safety Reports</TabsTrigger>
-          <TabsTrigger value="quality">Quality Reports</TabsTrigger>
-          <TabsTrigger value="automated">Automated Reports</TabsTrigger>
-        </TabsList>
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL</div>
+              <div className="text-2xl font-bold font-mono text-white">{totalReports}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ACTIVE</div>
+              <div className="text-2xl font-bold font-mono text-green-500">{activeReports}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SCHEDULED</div>
+              <div className="text-2xl font-bold font-mono text-amber-500">{scheduledReports}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="dashboard">
+              <LayoutDashboard size={14} className="mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="financial">Financial</TabsTrigger>
+            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="safety">Safety</TabsTrigger>
+            <TabsTrigger value="quality">Quality</TabsTrigger>
+            <TabsTrigger value="automated">Automated</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="dashboard">
           <InteractiveDashboard
@@ -556,10 +546,11 @@ export default function Reports() {
           />
         </TabsContent>
 
-        <TabsContent value="automated">
-          <AutomatedReportScheduler />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="automated">
+            <AutomatedReportScheduler />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

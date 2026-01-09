@@ -292,9 +292,9 @@ export default function ProductionMeetings() {
         </Button>
       </div>
 
-      {/* Project Notes */}
-      <div className="space-y-4">
-        {activeProjects.map((project) => {
+        {/* Project Notes */}
+        <div className="space-y-4">
+          {activeProjects.map((project) => {
           const existingNote = getNotesForProject(project.id);
           const edits = editingNotes[project.id] || {};
           const notes = edits.notes !== undefined ? edits.notes : existingNote?.notes || '';
@@ -417,17 +417,16 @@ export default function ProductionMeetings() {
               </CardContent>
             </Card>);
 
-        })}
-      </div>
+          })}
+        </div>
 
-      {activeProjects.length === 0 &&
-      <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="py-12 text-center">
-            <p className="text-zinc-500">No active projects found</p>
-            <p className="text-xs text-zinc-600 mt-1">Projects with status "In Progress" or "Awarded" will appear here</p>
-          </CardContent>
-        </Card>
-      }
-    </div>);
+        {activeProjects.length === 0 && (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-xs text-zinc-600 uppercase tracking-widest">NO ACTIVE PROJECTS</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
 }

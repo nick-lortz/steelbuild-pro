@@ -251,19 +251,19 @@ function LayoutContent({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-card border-r border-border flex flex-col',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-black border-r border-zinc-800 flex flex-col',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}>
 
-        <div className="h-16 flex items-center px-4 border-b border-border flex-shrink-0">
-          <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
+        <div className="h-16 flex items-center px-4 border-b-2 border-zinc-800 flex-shrink-0">
+          <div className="w-8 h-8 bg-amber-500 flex items-center justify-center">
             <Building2 size={18} className="text-black" />
           </div>
-          <span className="font-bold text-lg tracking-tight ml-3">SteelBuild Pro</span>
+          <span className="font-bold text-lg tracking-tight ml-3 text-white">SteelBuild Pro</span>
         </div>
 
-        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
+        <nav className="p-2 space-y-0.5 flex-1 overflow-y-auto">
           {sortedNavItems.map((item) => {
             const isActive = currentPageName === item.page;
             const isPrimaryPhase = getNavItemPriority(item) === 1;
@@ -275,36 +275,35 @@ function LayoutContent({ children, currentPageName }) {
                 to={createPageUrl(item.page)}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium',
-                  isActive ?
-                  'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
-                  isPrimaryPhase ?
-                  'text-amber-400 hover:text-amber-300 hover:bg-amber-500/5' :
-                  'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                )}>
-
-                <Icon size={18} />
+                  'flex items-center gap-2.5 px-3 py-2 text-xs font-bold uppercase tracking-widest transition-colors',
+                  isActive
+                    ? 'bg-amber-500 text-black'
+                    : isPrimaryPhase
+                    ? 'text-amber-500 hover:bg-zinc-900'
+                    : 'text-zinc-500 hover:text-white hover:bg-zinc-900'
+                )}
+              >
+                <Icon size={14} />
                 {item.name}
-                {isActive && <ChevronRight size={16} className="ml-auto" />}
-              </Link>);
-
+              </Link>
+            );
           })}
         </nav>
 
         {currentUser &&
-        <div className="border-t border-border p-3 flex-shrink-0">
-            <div className="flex items-center justify-between mb-3 px-3">
+        <div className="border-t-2 border-zinc-800 p-2 flex-shrink-0">
+            <div className="flex items-center justify-between mb-2 px-2">
               <ThemeToggle />
               <NotificationPanel />
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary">
-                <UserCircle size={18} className="text-amber-500" />
+              <DropdownMenuTrigger className="w-full flex items-center gap-2 px-2 py-2 hover:bg-zinc-900 transition-colors">
+                <UserCircle size={14} className="text-amber-500" />
                 <div className="flex-1 text-left">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-xs font-bold text-white truncate uppercase tracking-wider">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
+                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">

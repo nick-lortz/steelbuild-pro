@@ -47,27 +47,27 @@ export default function Deliveries() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 30 * 60 * 1000,
+    staleTime: 30 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
     queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['all-tasks'],
     queryFn: () => base44.entities.Task.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   const tasks = useMemo(() => {
     if (!activeFilters.projects?.length || activeFilters.projects.length === 0) {
-      return allTasks.filter(t => t.phase === 'delivery');
+      return allTasks.filter((t) => t.phase === 'delivery');
     }
-    return allTasks.filter(t => 
-      t.phase === 'delivery' && activeFilters.projects.includes(t.project_id)
+    return allTasks.filter((t) =>
+    t.phase === 'delivery' && activeFilters.projects.includes(t.project_id)
     );
   }, [allTasks, activeFilters.projects]);
 
@@ -86,7 +86,7 @@ export default function Deliveries() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data, oldStatus }) => {
       const updated = await base44.entities.Delivery.update(id, data);
-      
+
       // Trigger notification if status changed
       if (oldStatus && data.delivery_status && oldStatus !== data.delivery_status) {
         try {
@@ -99,7 +99,7 @@ export default function Deliveries() {
           console.error('Notification error:', notifError);
         }
       }
-      
+
       return updated;
     },
     onSuccess: () => {
@@ -124,44 +124,44 @@ export default function Deliveries() {
   });
 
   // Get unique carriers for filter
-  const uniqueCarriers = useMemo(() => 
-    [...new Set(deliveries.map(d => d.carrier).filter(Boolean))].sort(),
-    [deliveries]
+  const uniqueCarriers = useMemo(() =>
+  [...new Set(deliveries.map((d) => d.carrier).filter(Boolean))].sort(),
+  [deliveries]
   );
 
   // Build project lookup map
-  const projectMap = useMemo(() => 
-    new Map(projects.map(p => [p.id, p])),
-    [projects]
+  const projectMap = useMemo(() =>
+  new Map(projects.map((p) => [p.id, p])),
+  [projects]
   );
 
   const deliveriesFromTasks = useMemo(() => {
-    return tasks
-      .filter(t => t.phase === 'delivery')
-      .map(task => {
-        const existingDelivery = deliveries.find(d => 
-          d.linked_task_ids?.includes(task.id) || 
-          (d.package_name === task.name && d.project_id === task.project_id)
-        );
-        
-        if (existingDelivery) return null;
-        
-        return {
-          _isFromTask: true,
-          _taskId: task.id,
-          project_id: task.project_id,
-          package_name: task.name,
-          package_number: task.wbs_code || '',
-          scheduled_date: task.start_date,
-          delivery_status: task.status === 'completed' ? 'delivered' : 'scheduled',
-          weight_tons: 0,
-          piece_count: 0,
-          carrier: '',
-          linked_task_ids: [task.id],
-          notes: `Auto-generated from delivery task`,
-        };
-      })
-      .filter(Boolean);
+    return tasks.
+    filter((t) => t.phase === 'delivery').
+    map((task) => {
+      const existingDelivery = deliveries.find((d) =>
+      d.linked_task_ids?.includes(task.id) ||
+      d.package_name === task.name && d.project_id === task.project_id
+      );
+
+      if (existingDelivery) return null;
+
+      return {
+        _isFromTask: true,
+        _taskId: task.id,
+        project_id: task.project_id,
+        package_name: task.name,
+        package_number: task.wbs_code || '',
+        scheduled_date: task.start_date,
+        delivery_status: task.status === 'completed' ? 'delivered' : 'scheduled',
+        weight_tons: 0,
+        piece_count: 0,
+        carrier: '',
+        linked_task_ids: [task.id],
+        notes: `Auto-generated from delivery task`
+      };
+    }).
+    filter(Boolean);
   }, [tasks, deliveries]);
 
   const allDeliveries = useMemo(() => {
@@ -173,33 +173,33 @@ export default function Deliveries() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(d =>
-        d.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.package_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.carrier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.load_number?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((d) =>
+      d.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.package_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.carrier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.load_number?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Multi-select project filter
     if (activeFilters.projects?.length > 0) {
-      filtered = filtered.filter(d => activeFilters.projects.includes(d.project_id));
+      filtered = filtered.filter((d) => activeFilters.projects.includes(d.project_id));
     }
 
     // Multi-select status filter
     if (activeFilters.statuses?.length > 0) {
-      filtered = filtered.filter(d => activeFilters.statuses.includes(d.delivery_status));
+      filtered = filtered.filter((d) => activeFilters.statuses.includes(d.delivery_status));
     }
 
     // Multi-select carrier filter
     if (activeFilters.carriers?.length > 0) {
-      filtered = filtered.filter(d => activeFilters.carriers.includes(d.carrier));
+      filtered = filtered.filter((d) => activeFilters.carriers.includes(d.carrier));
     }
 
     // Date range filter
     const today = new Date();
     if (activeFilters.dateRange === 'this_week') {
-      filtered = filtered.filter(d => {
+      filtered = filtered.filter((d) => {
         if (!d.scheduled_date) return false;
         return isWithinInterval(parseISO(d.scheduled_date), {
           start: startOfWeek(today),
@@ -207,19 +207,19 @@ export default function Deliveries() {
         });
       });
     } else if (activeFilters.dateRange === 'next_7_days') {
-      filtered = filtered.filter(d => {
+      filtered = filtered.filter((d) => {
         if (!d.scheduled_date) return false;
         const daysUntil = differenceInDays(parseISO(d.scheduled_date), today);
         return daysUntil >= 0 && daysUntil <= 7;
       });
     } else if (activeFilters.dateRange === 'next_14_days') {
-      filtered = filtered.filter(d => {
+      filtered = filtered.filter((d) => {
         if (!d.scheduled_date) return false;
         const daysUntil = differenceInDays(parseISO(d.scheduled_date), today);
         return daysUntil >= 0 && daysUntil <= 14;
       });
     } else if (activeFilters.dateRange === 'past_30_days') {
-      filtered = filtered.filter(d => {
+      filtered = filtered.filter((d) => {
         if (!d.scheduled_date) return false;
         const daysAgo = differenceInDays(today, parseISO(d.scheduled_date));
         return daysAgo >= 0 && daysAgo <= 30;
@@ -332,7 +332,7 @@ export default function Deliveries() {
         scheduled_date: delivery.scheduled_date,
         delivery_status: delivery.delivery_status,
         linked_task_ids: delivery.linked_task_ids,
-        notes: delivery.notes,
+        notes: delivery.notes
       };
       setEditingDelivery(taskDelivery);
     } else {
@@ -349,11 +349,11 @@ export default function Deliveries() {
     <div>
           <div className="flex items-center gap-2">
             <p className="font-medium">{row.package_name}</p>
-            {row._isFromTask && (
-              <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/40">
+            {row._isFromTask &&
+        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/40">
                 SCHEDULE
               </span>
-            )}
+        }
           </div>
           <p className="text-xs text-zinc-500">{row.package_number}</p>
         </div>
@@ -383,14 +383,14 @@ export default function Deliveries() {
       return (
         <div>
           <p>{format(date, 'MMM d, yyyy')}</p>
-          {isUpcoming && (
-            <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5">
+          {isUpcoming &&
+          <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5">
               <Calendar size={10} />
               in {daysUntil} days
             </p>
-          )}
-        </div>
-      );
+          }
+        </div>);
+
     }
   },
   {
@@ -416,17 +416,17 @@ export default function Deliveries() {
     header: 'Status',
     accessor: 'delivery_status',
     render: (row) => {
-      const isDelayed = row.delivery_status === 'delayed' || (
-        row.delivery_status === 'scheduled' && 
-        row.scheduled_date && 
-        differenceInDays(new Date(), parseISO(row.scheduled_date)) > 0
-      );
+      const isDelayed = row.delivery_status === 'delayed' ||
+      row.delivery_status === 'scheduled' &&
+      row.scheduled_date &&
+      differenceInDays(new Date(), parseISO(row.scheduled_date)) > 0;
+
       return (
         <div className="flex items-center gap-1">
           <StatusBadge status={row.delivery_status} />
           {isDelayed && <AlertTriangle size={14} className="text-red-400" />}
-        </div>
-      );
+        </div>);
+
     }
   },
   {
@@ -451,18 +451,18 @@ export default function Deliveries() {
     header: '',
     accessor: 'actions',
     render: (row) =>
-    !row._isFromTask ? (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          setDeleteDelivery(row);
-        }}
-        className="text-zinc-500 hover:text-red-500">
+    !row._isFromTask ?
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={(e) => {
+        e.stopPropagation();
+        setDeleteDelivery(row);
+      }}
+      className="text-zinc-500 hover:text-red-500">
             <Trash2 size={16} />
-          </Button>
-    ) : null
+          </Button> :
+    null
   }];
 
 
@@ -472,12 +472,12 @@ export default function Deliveries() {
         title="Delivery Tracking"
         subtitle="Steel package deliveries and KPIs"
         actions={
-        <div className="flex gap-2">
+        <div className="text-slate-50 flex gap-2">
           <ExportButton
             data={filteredDeliveries}
             entityType="deliveries"
-            filename="deliveries"
-          />
+            filename="deliveries" />
+
           <Button
             onClick={() => {
               setEditingDelivery(null);
@@ -499,78 +499,78 @@ export default function Deliveries() {
           onSearchChange={setSearchTerm}
           placeholder="Search packages, carriers, load numbers..."
           filterGroups={[
-            {
-              key: 'projects',
-              label: 'Projects',
-              multiSelect: true,
-              options: projects.map(p => ({
-                value: p.id,
-                label: `${p.project_number} - ${p.name}`
-              }))
-            },
-            {
-              key: 'statuses',
-              label: 'Status',
-              multiSelect: true,
-              options: [
-                { value: 'scheduled', label: 'Scheduled' },
-                { value: 'in_transit', label: 'In Transit' },
-                { value: 'delivered', label: 'Delivered' },
-                { value: 'delayed', label: 'Delayed' },
-                { value: 'cancelled', label: 'Cancelled' }
-              ]
-            },
-            {
-              key: 'carriers',
-              label: 'Carriers',
-              multiSelect: true,
-              options: uniqueCarriers.map(c => ({ value: c, label: c }))
-            },
-            {
-              key: 'dateRange',
-              label: 'Date Range',
-              multiSelect: false,
-              options: [
-                { value: 'this_week', label: 'This Week' },
-                { value: 'next_7_days', label: 'Next 7 Days' },
-                { value: 'next_14_days', label: 'Next 14 Days' },
-                { value: 'past_30_days', label: 'Past 30 Days' }
-              ]
-            }
-          ]}
+          {
+            key: 'projects',
+            label: 'Projects',
+            multiSelect: true,
+            options: projects.map((p) => ({
+              value: p.id,
+              label: `${p.project_number} - ${p.name}`
+            }))
+          },
+          {
+            key: 'statuses',
+            label: 'Status',
+            multiSelect: true,
+            options: [
+            { value: 'scheduled', label: 'Scheduled' },
+            { value: 'in_transit', label: 'In Transit' },
+            { value: 'delivered', label: 'Delivered' },
+            { value: 'delayed', label: 'Delayed' },
+            { value: 'cancelled', label: 'Cancelled' }]
+
+          },
+          {
+            key: 'carriers',
+            label: 'Carriers',
+            multiSelect: true,
+            options: uniqueCarriers.map((c) => ({ value: c, label: c }))
+          },
+          {
+            key: 'dateRange',
+            label: 'Date Range',
+            multiSelect: false,
+            options: [
+            { value: 'this_week', label: 'This Week' },
+            { value: 'next_7_days', label: 'Next 7 Days' },
+            { value: 'next_14_days', label: 'Next 14 Days' },
+            { value: 'past_30_days', label: 'Past 30 Days' }]
+
+          }]
+          }
           activeFilters={activeFilters}
           onFilterChange={setActiveFilters}
           savedConfigs={savedFilters}
           onSaveConfig={(config) => setSavedFilters([...savedFilters, config])}
-          onLoadConfig={(config) => setActiveFilters(config.filters)}
-        />
+          onLoadConfig={(config) => setActiveFilters(config.filters)} />
+
 
         <div className="flex justify-between items-center">
           <p className="text-sm text-zinc-400">
             Showing {filteredDeliveries.length} of {allDeliveries.length} deliveries
-            {deliveriesFromTasks.length > 0 && (
-              <span className="ml-2 text-xs text-blue-400">
+            {deliveriesFromTasks.length > 0 &&
+            <span className="ml-2 text-xs text-blue-400">
                 ({deliveriesFromTasks.length} from schedule)
               </span>
-            )}
+            }
           </p>
           <SortControl
             sortOptions={[
-              { value: 'scheduled_date', label: 'Scheduled Date' },
-              { value: 'actual_date', label: 'Actual Date' },
-              { value: 'project', label: 'Project' },
-              { value: 'status', label: 'Status' },
-              { value: 'weight', label: 'Weight' },
-              { value: 'carrier', label: 'Carrier' },
-              { value: 'variance', label: 'Variance' }
-            ]}
+            { value: 'scheduled_date', label: 'Scheduled Date' },
+            { value: 'actual_date', label: 'Actual Date' },
+            { value: 'project', label: 'Project' },
+            { value: 'status', label: 'Status' },
+            { value: 'weight', label: 'Weight' },
+            { value: 'carrier', label: 'Carrier' },
+            { value: 'variance', label: 'Variance' }]
+            }
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSortChange={(field, order) => {
               setSortBy(field);
               setSortOrder(order);
-            }}
-          />
+            }} />
+
         </div>
       </div>
 
@@ -617,7 +617,7 @@ export default function Deliveries() {
           {/* Grouped by Project */}
           {(() => {
             const groupedByProject = {};
-            filteredDeliveries.forEach(d => {
+            filteredDeliveries.forEach((d) => {
               const projectId = d.project_id || 'unassigned';
               if (!groupedByProject[projectId]) {
                 groupedByProject[projectId] = {
@@ -628,8 +628,8 @@ export default function Deliveries() {
               groupedByProject[projectId].deliveries.push(d);
             });
 
-            return Object.values(groupedByProject).map(group => (
-              <Card key={group.project?.id || 'unassigned'} className="bg-zinc-900/50 border-zinc-800">
+            return Object.values(groupedByProject).map((group) =>
+            <Card key={group.project?.id || 'unassigned'} className="bg-zinc-900/50 border-zinc-800">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -646,14 +646,14 @@ export default function Deliveries() {
                 </CardHeader>
                 <CardContent>
                   <DataTable
-                    columns={columns}
-                    data={group.deliveries}
-                    onRowClick={handleEdit}
-                    emptyMessage="No deliveries for this project"
-                  />
+                  columns={columns}
+                  data={group.deliveries}
+                  onRowClick={handleEdit}
+                  emptyMessage="No deliveries for this project" />
+
                 </CardContent>
               </Card>
-            ));
+            );
           })()}
         </TabsContent>
 
@@ -704,10 +704,10 @@ export default function Deliveries() {
               }
 
               if (editingDelivery) {
-                updateMutation.mutate({ 
-                  id: editingDelivery.id, 
+                updateMutation.mutate({
+                  id: editingDelivery.id,
                   data,
-                  oldStatus: editingDelivery.delivery_status 
+                  oldStatus: editingDelivery.delivery_status
                 });
               } else {
                 createMutation.mutate(data);

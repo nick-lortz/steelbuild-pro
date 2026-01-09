@@ -1,624 +1,417 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle } from
-"@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, Clock, FileSpreadsheet, Upload, Zap, ChevronDown, Package } from 'lucide-react';
-import { format } from 'date-fns';
-import PageHeader from '@/components/ui/PageHeader';
-import DrawingSetTable from '@/components/drawings/DrawingSetTable';
-import DrawingSetForm from '@/components/drawings/DrawingSetForm';
-import BulkEditDrawings from '@/components/drawings/BulkEditDrawings';
-import DrawingSetDetails from '@/components/drawings/DrawingSetDetails.jsx';
-import DrawingNotifications from '@/components/drawings/DrawingNotifications';
-import CSVUpload from '@/components/shared/CSVUpload';
-import QuickAddDrawingSet from '@/components/drawings/QuickAddDrawingSet';
-import { differenceInDays } from 'date-fns';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  AlertTriangle, 
+  Clock, 
+  CheckCircle2, 
+  FileText, 
+  User, 
+  MessageSquare,
+  ChevronRight
+} from 'lucide-react';
+import { format, differenceInDays, isPast, parseISO } from 'date-fns';
+import { toast } from '@/components/ui/notifications';
+import { cn } from '@/lib/utils';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import DetailingReadinessPanel from '@/components/detailing/DetailingReadinessPanel';
+
+const STATUS_FLOW = {
+  'IFA': { label: 'Issued for Approval', next: 'BFA', color: 'bg-blue-500' },
+  'BFA': { label: 'Back from Approval', next: 'BFS', color: 'bg-amber-500' },
+  'BFS': { label: 'Back from Scrub', next: 'FFF', color: 'bg-purple-500' },
+  'FFF': { label: 'Fit for Fabrication', next: null, color: 'bg-green-500' },
+  'As-Built': { label: 'As-Built', next: null, color: 'bg-zinc-500' }
+};
 
 export default function Detailing() {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedSet, setSelectedSet] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [projectFilter, setProjectFilter] = useState('all');
-  const [showBulkEdit, setShowBulkEdit] = useState(false);
-  const [showCSVImport, setShowCSVImport] = useState(false);
-  const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [expandedProjects, setExpandedProjects] = useState({});
-  const [sortBy, setSortBy] = useState('created_date');
-  const [sortOrder, setSortOrder] = useState('desc');
-
   const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
+  const [selectedReviewer, setSelectedReviewer] = useState('all');
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch {
-        return null;
-      }
-    }
-  });
-
-  const { data: rawProjects = [] } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => base44.entities.Project.list(),
     staleTime: 5 * 60 * 1000
   });
 
-  const projects = useMemo(() => {
-    if (!currentUser) return [];
-    const userProjects = currentUser.role === 'admin' ?
-    rawProjects :
-    rawProjects.filter((p) => p.assigned_users?.includes(currentUser.email));
-    return [...userProjects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [rawProjects, currentUser]);
-
-  const { data: drawingSets = [] } = useQuery({
-    queryKey: ['drawingSets'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date'),
+  const { data: drawingSets = [], isLoading } = useQuery({
+    queryKey: ['drawing-sets', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date')
+      : [],
+    enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
-  const { data: drawingSheets = [] } = useQuery({
-    queryKey: ['drawingSheets'],
-    queryFn: () => base44.entities.DrawingSheet.list(),
-    staleTime: 5 * 60 * 1000
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const allUsers = await base44.entities.User.list();
+      return allUsers;
+    },
+    staleTime: 10 * 60 * 1000
   });
 
-  const { data: revisions = [] } = useQuery({
-    queryKey: ['drawingRevisions'],
-    queryFn: () => base44.entities.DrawingRevision.list('-revision_date'),
-    staleTime: 5 * 60 * 1000
-  });
-
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['workPackages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
-    staleTime: 5 * 60 * 1000
-  });
-
-  const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
-    staleTime: 5 * 60 * 1000
-  });
-
-  const handleFormSubmit = () => {
-    queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-    setShowForm(false);
-  };
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.DrawingSet.update(id, data),
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, { 
+      status,
+      [`${status.toLowerCase()}_date`]: new Date().toISOString().split('T')[0]
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-    }
+      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+      toast.success('Status updated');
+    },
+    onError: () => toast.error('Update failed')
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+  const assignReviewerMutation = useMutation({
+    mutationFn: ({ id, reviewer }) => base44.entities.DrawingSet.update(id, { reviewer }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-      setSelectedSet(null);
-    }
+      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+      toast.success('Reviewer assigned');
+    },
+    onError: () => toast.error('Assignment failed')
   });
 
-  const filteredSets = useMemo(() => {
-    const filtered = drawingSets.filter((d) => {
-      const matchesSearch =
-      d.set_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.set_number?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
-      const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
-      return matchesSearch && matchesStatus && matchesProject;
+  // KPIs
+  const kpis = useMemo(() => {
+    if (!drawingSets.length) return { blocked: 0, dueSoon: 0, inProgress: 0, complete: 0 };
+
+    const today = new Date();
+    const blocked = drawingSets.filter(ds => 
+      ds.status === 'BFA' && ds.due_date && differenceInDays(parseISO(ds.due_date), today) < 0
+    ).length;
+
+    const dueSoon = drawingSets.filter(ds => 
+      ds.status !== 'FFF' && 
+      ds.due_date && 
+      differenceInDays(parseISO(ds.due_date), today) <= 3 && 
+      differenceInDays(parseISO(ds.due_date), today) >= 0
+    ).length;
+
+    const inProgress = drawingSets.filter(ds => 
+      ds.status === 'IFA' || ds.status === 'BFS'
+    ).length;
+
+    const complete = drawingSets.filter(ds => ds.status === 'FFF').length;
+
+    return { blocked, dueSoon, inProgress, complete };
+  }, [drawingSets]);
+
+  // Priority Queue (Blocked + Due Soon)
+  const priorityQueue = useMemo(() => {
+    const today = new Date();
+    return drawingSets.filter(ds => {
+      if (ds.status === 'FFF') return false;
+      
+      const isBlocked = ds.status === 'BFA' && ds.due_date && isPast(parseISO(ds.due_date));
+      const isDueSoon = ds.due_date && differenceInDays(parseISO(ds.due_date), today) <= 3 && !isPast(parseISO(ds.due_date));
+      
+      return isBlocked || isDueSoon;
+    }).sort((a, b) => {
+      // Sort: overdue first, then by due date
+      const aDate = a.due_date ? parseISO(a.due_date) : new Date(9999, 0);
+      const bDate = b.due_date ? parseISO(b.due_date) : new Date(9999, 0);
+      const aOverdue = isPast(aDate);
+      const bOverdue = isPast(bDate);
+      
+      if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+      return aDate - bDate;
     });
+  }, [drawingSets]);
+
+  // Active Work Packages
+  const activePackages = useMemo(() => {
+    let filtered = drawingSets.filter(ds => ds.status !== 'FFF');
+    
+    if (selectedReviewer !== 'all') {
+      filtered = filtered.filter(ds => ds.reviewer === selectedReviewer);
+    }
 
     return filtered.sort((a, b) => {
-      let aVal, bVal;
-
-      switch (sortBy) {
-        case 'set_name':
-          aVal = a.set_name?.toLowerCase() || '';
-          bVal = b.set_name?.toLowerCase() || '';
-          break;
-        case 'set_number':
-          aVal = a.set_number?.toLowerCase() || '';
-          bVal = b.set_number?.toLowerCase() || '';
-          break;
-        case 'status':
-          const statusOrder = { 'IFA': 1, 'BFA': 2, 'BFS': 3, 'FFF': 4, 'As-Built': 5 };
-          aVal = statusOrder[a.status] || 0;
-          bVal = statusOrder[b.status] || 0;
-          break;
-        case 'due_date':
-          aVal = a.due_date ? new Date(a.due_date).getTime() : 0;
-          bVal = b.due_date ? new Date(b.due_date).getTime() : 0;
-          break;
-        case 'ifa_date':
-          aVal = a.ifa_date ? new Date(a.ifa_date).getTime() : 0;
-          bVal = b.ifa_date ? new Date(a.ifa_date).getTime() : 0;
-          break;
-        case 'created_date':
-        default:
-          aVal = a.created_date ? new Date(a.created_date).getTime() : 0;
-          bVal = b.created_date ? new Date(b.created_date).getTime() : 0;
-          break;
-      }
-
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
+      const aDate = a.due_date ? parseISO(a.due_date) : new Date(9999, 0);
+      const bDate = b.due_date ? parseISO(b.due_date) : new Date(9999, 0);
+      return aDate - bDate;
     });
-  }, [drawingSets, searchTerm, statusFilter, projectFilter, sortBy, sortOrder]);
+  }, [drawingSets, selectedReviewer]);
 
-  const overdueSets = useMemo(() => {
-    return filteredSets.filter((d) => {
-      if (!d.due_date || d.status === 'FFF' || d.status === 'As-Built') return false;
-      return differenceInDays(new Date(), new Date(d.due_date)) > 0;
-    });
-  }, [filteredSets]);
+  const selectedProject = projects.find(p => p.id === activeProjectId);
 
-  const overdueByProject = useMemo(() => {
-    const grouped = {};
-    overdueSets.forEach((set) => {
-      const project = projects.find((p) => p.id === set.project_id);
-      const projectKey = project?.id || 'unknown';
-      const projectName = project ? `${project.project_number} - ${project.name}` : 'Unknown Project';
-
-      if (!grouped[projectKey]) {
-        grouped[projectKey] = {
-          projectName,
-          sets: []
-        };
-      }
-      grouped[projectKey].sets.push(set);
-    });
-    return Object.fromEntries(
-      Object.entries(grouped).sort(([, a], [, b]) => a.projectName.localeCompare(b.projectName))
+  if (!activeProjectId) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <FileText size={48} className="mx-auto mb-4 text-zinc-600" />
+          <h3 className="text-xl font-semibold mb-2">No Project Selected</h3>
+          <p className="text-zinc-400">Select a project to view detailing workflow.</p>
+        </div>
+      </div>
     );
-  }, [overdueSets, projects]);
+  }
 
-  const pendingRelease = useMemo(() => {
-    return filteredSets.filter((d) => d.status === 'BFS' && !d.released_for_fab_date);
-  }, [filteredSets]);
-
-  const detailingPhasePackages = useMemo(() => {
-    return workPackages.filter((wp) => wp.phase === 'detailing');
-  }, [workPackages]);
-
-  const currentProject = useMemo(() => {
-    if (activeProjectId) {
-      return projects.find((p) => p.id === activeProjectId);
-    }
-    if (projectFilter !== 'all') {
-      return projects.find((p) => p.id === projectFilter);
-    }
-    return null;
-  }, [activeProjectId, projectFilter, projects]);
-
-  const exportDrawingRegistry = () => {
-    const headers = [
-    'Set Number',
-    'Set Name',
-    'Project',
-    'Discipline',
-    'Current Revision',
-    'Status',
-    'Sheet Count',
-    'IFA Date',
-    'BFA Date',
-    'Released Date',
-    'Due Date',
-    'Reviewer',
-    'AI Review Status'];
-
-
-    const rows = drawingSets.map((set) => {
-      const project = projects.find((p) => p.id === set.project_id);
-      return [
-      set.set_number || '',
-      set.set_name || '',
-      project?.project_number || '',
-      set.discipline || '',
-      set.current_revision || '',
-      set.status || '',
-      set.sheet_count || 0,
-      set.ifa_date || '',
-      set.bfa_date || '',
-      set.released_for_fab_date || '',
-      set.due_date || '',
-      set.reviewer || '',
-      set.ai_review_status || ''];
-
-    });
-
-    const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `drawing_registry_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Detailing"
-        subtitle="Manage drawing sets, submissions, revisions, and detailing coordination"
-        actions={
-        <div className="flex flex-wrap gap-2">
-            <Button
-            variant="outline"
-            onClick={() => setShowCSVImport(true)} className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
-
-
-              <Upload size={18} className="mr-2" />
-              Import
-            </Button>
-            <Button
-            variant="outline"
-            onClick={exportDrawingRegistry} className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
-
-
-              <FileSpreadsheet size={18} className="mr-2" />
-              Export
-            </Button>
-            <Button
-            onClick={() => setShowBulkEdit(true)}
-            variant="outline" className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800"
-
-            disabled={filteredSets.length === 0}>
-
-              Bulk Edit
-            </Button>
-            <Button
-            onClick={() => setShowQuickAdd(true)}
-            variant="outline" className="bg-background text-slate-50 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:text-accent-foreground h-9 border-zinc-700 hover:bg-zinc-800">
-
-
-              <Zap size={18} className="mr-2" />
-              Quick Add
-            </Button>
-            <Button
-            onClick={() => setShowForm(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg">
-
-              <Plus size={18} className="mr-2" />
-              New Drawing Set
-            </Button>
-          </div>
-        } />
-
-
-      {/* Detailing Readiness Panel */}
-      {currentProject &&
-      <DetailingReadinessPanel
-        project={currentProject}
-        drawingSets={drawingSets}
-        rfis={rfis}
-        onRelease={() => {
-          queryClient.invalidateQueries({ queryKey: ['projects'] });
-        }} />
-
-      }
-
-      {/* Detailing Phase Context */}
-      {detailingPhasePackages.length > 0 &&
-      <div className="p-5 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Package size={20} className="text-blue-400" />
-            </div>
-            <h3 className="text-base font-bold text-white">Active Detailing Work Packages</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {detailingPhasePackages.map((wp) => {
-            const project = projects.find((p) => p.id === wp.project_id);
-            return (
-              <div key={wp.id} className="p-3 bg-zinc-900/70 border border-blue-500/20 rounded-lg hover:bg-zinc-900 hover:border-blue-500/40 transition-all">
-                  <p className="font-semibold text-white text-sm">{wp.name}</p>
-                  <p className="text-xs text-blue-300 mt-1">{project?.project_number || 'Unknown'}</p>
-                </div>);
-
-          })}
-          </div>
-        </div>
-      }
-
-      {/* Alert Summary */}
-      {(overdueSets.length > 0 || pendingRelease.length > 0) &&
-      <div className="space-y-3">
-          {overdueSets.length > 0 &&
-        <div className="bg-red-500/10 border border-red-500/40 rounded-xl overflow-hidden">
-              <div className="p-4 flex items-center gap-3">
-                <div className="p-2 bg-red-500/20 rounded-lg flex-shrink-0">
-                  <AlertTriangle size={20} className="text-red-400" />
-                </div>
-                <div>
-                  <p className="text-base font-bold text-red-300">{overdueSets.length} Overdue Set{overdueSets.length !== 1 ? 's' : ''}</p>
-                  <p className="text-sm text-red-400/70">Immediate attention required</p>
-                </div>
-              </div>
-              
-              <div className="border-t border-red-500/20">
-                {Object.entries(overdueByProject).map(([projectId, { projectName, sets }]) =>
-            <Collapsible
-              key={projectId}
-              open={expandedProjects[projectId]}
-              onOpenChange={(open) => setExpandedProjects((prev) => ({ ...prev, [projectId]: open }))}>
-
-                    <CollapsibleTrigger className="w-full p-3 hover:bg-zinc-800/30 transition-colors flex items-center justify-between text-left border-b border-zinc-800/50 last:border-b-0">
-                      <div className="flex items-center gap-2">
-                        <ChevronDown
-                    size={14}
-                    className={`text-zinc-500 transition-transform ${expandedProjects[projectId] ? 'rotate-180' : ''}`} />
-
-                        <span className="text-sm text-white font-medium">{projectName}</span>
-                        <span className="text-xs text-zinc-500">({sets.length})</span>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="p-2 space-y-1.5 bg-zinc-900/20">
-                        {sets.map((set) =>
-                  <div
-                    key={set.id}
-                    onClick={() => setSelectedSet(set)}
-                    className="p-2.5 bg-zinc-800/40 hover:bg-zinc-800/70 rounded border border-zinc-800 hover:border-zinc-700 cursor-pointer transition-all">
-
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <p className="text-sm font-medium text-white">{set.set_name}</p>
-                                <p className="text-xs text-zinc-500">{set.set_number}</p>
-                              </div>
-                              <div className="text-right">
-                                {(() => {
-                          const dueDate = new Date(set.due_date);
-                          return !isNaN(dueDate.getTime()) &&
-                          <>
-                                      <p className="text-xs text-red-400 font-medium">
-                                        {format(dueDate, 'MMM d')}
-                                      </p>
-                                      <p className="text-[10px] text-zinc-500">
-                                        {Math.abs(differenceInDays(new Date(), dueDate))}d late
-                                      </p>
-                                    </>;
-
-                        })()}
-                              </div>
-                            </div>
-                          </div>
-                  )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-            )}
-              </div>
-            </div>
-        }
-          
-          {pendingRelease.length > 0 &&
-        <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center gap-3">
-              <div className="p-2 bg-amber-500/20 rounded-lg flex-shrink-0">
-                <Clock size={20} className="text-amber-400" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-amber-300">{pendingRelease.length} Ready for Release</p>
-                <p className="text-sm text-amber-400/70">BFS → FFF Release Pending</p>
-              </div>
-            </div>
-        }
-        </div>
-      }
-
-      {/* Drawing Notifications */}
-      <DrawingNotifications drawingSets={drawingSets} projects={projects} />
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 bg-zinc-900 border border-zinc-700 rounded-lg hover:border-zinc-600 transition-colors">
-          <p className="text-xs font-medium text-zinc-400 mb-1">Total Sets</p>
-          <p className="text-2xl font-bold text-white">{filteredSets.length}</p>
-        </div>
-        <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg hover:border-blue-500/50 transition-colors">
-          <p className="text-xs font-medium text-blue-300 mb-1">In Review</p>
-          <p className="text-2xl font-bold text-blue-400">
-            {filteredSets.filter((d) => d.status === 'IFA' || d.status === 'BFA').length}
-          </p>
-          <p className="text-[10px] text-blue-400/60 mt-0.5">IFA + BFA</p>
-        </div>
-        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg hover:border-green-500/50 transition-colors">
-          <p className="text-xs font-medium text-green-300 mb-1">Released</p>
-          <p className="text-2xl font-bold text-green-400">
-            {filteredSets.filter((d) => d.status === 'FFF' || d.status === 'As-Built').length}
-          </p>
-          <p className="text-[10px] text-green-400/60 mt-0.5">FFF + As-Built</p>
-        </div>
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg hover:border-amber-500/50 transition-colors">
-          <p className="text-xs font-medium text-amber-300 mb-1">Need Action</p>
-          <p className="text-2xl font-bold text-amber-400">
-            {overdueSets.length + pendingRelease.length}
-          </p>
-          <p className="text-[10px] text-amber-400/60 mt-0.5">Overdue + Ready</p>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Detailing Workflow</h1>
+          {selectedProject && (
+            <p className="text-sm text-zinc-400">
+              {selectedProject.project_number} - {selectedProject.name}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder="Search drawing sets..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white h-10 focus:border-amber-500 transition-colors" />
+      {/* KPI Strip */}
+      <div className="grid grid-cols-4 gap-3">
+        <Card className="bg-red-900/20 border-red-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Blocked / Overdue</p>
+                <p className="text-3xl font-bold text-red-400">{kpis.blocked}</p>
+              </div>
+              <AlertTriangle className="text-red-400" size={32} />
+            </div>
+          </CardContent>
+        </Card>
 
-        </div>
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-52 bg-zinc-900 border-zinc-800 text-white h-10">
-            <SelectValue placeholder="All Projects" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map((p) =>
-            <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white h-10">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="IFA">IFA</SelectItem>
-            <SelectItem value="BFA">BFA</SelectItem>
-            <SelectItem value="BFS">BFS</SelectItem>
-            <SelectItem value="FFF">FFF</SelectItem>
-            <SelectItem value="As-Built">As-Built</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-44 bg-zinc-900 border-zinc-800 text-white h-10">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="due_date">Due Date</SelectItem>
-            <SelectItem value="ifa_date">IFA Date</SelectItem>
-            <SelectItem value="status">Status</SelectItem>
-            <SelectItem value="set_name">Set Name</SelectItem>
-            <SelectItem value="set_number">Set Number</SelectItem>
-            <SelectItem value="created_date">Created Date</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={sortOrder} onValueChange={setSortOrder}>
-          <SelectTrigger className="w-full sm:w-32 bg-zinc-900 border-zinc-800 text-white h-10">
+        <Card className="bg-amber-900/20 border-amber-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Due in 3 Days</p>
+                <p className="text-3xl font-bold text-amber-400">{kpis.dueSoon}</p>
+              </div>
+              <Clock className="text-amber-400" size={32} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-900/20 border-blue-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">In Progress</p>
+                <p className="text-3xl font-bold text-blue-400">{kpis.inProgress}</p>
+              </div>
+              <FileText className="text-blue-400" size={32} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-green-900/20 border-green-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-zinc-400 mb-1">Complete (FFF)</p>
+                <p className="text-3xl font-bold text-green-400">{kpis.complete}</p>
+              </div>
+              <CheckCircle2 className="text-green-400" size={32} />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Priority Queue */}
+      {priorityQueue.length > 0 && (
+        <Card className="bg-red-900/10 border-red-500/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="text-red-400" size={20} />
+              <h3 className="font-bold text-red-400">Priority: Blocked / Due Soon</h3>
+            </div>
+            <div className="space-y-2">
+              {priorityQueue.map(ds => {
+                const isOverdue = ds.due_date && isPast(parseISO(ds.due_date));
+                const daysUntilDue = ds.due_date ? differenceInDays(parseISO(ds.due_date), new Date()) : null;
+
+                return (
+                  <div 
+                    key={ds.id}
+                    className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <Badge className={cn(
+                        "font-mono text-xs",
+                        isOverdue ? "bg-red-500" : "bg-amber-500"
+                      )}>
+                        {isOverdue ? 'OVERDUE' : `${daysUntilDue}d`}
+                      </Badge>
+                      <div className="flex-1">
+                        <p className="font-semibold">{ds.set_name}</p>
+                        <p className="text-xs text-zinc-400">
+                          {ds.set_number} • Rev {ds.current_revision || '—'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {STATUS_FLOW[ds.status]?.label || ds.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={ds.reviewer || 'unassigned'}
+                        onValueChange={(val) => assignReviewerMutation.mutate({ 
+                          id: ds.id, 
+                          reviewer: val === 'unassigned' ? null : val 
+                        })}
+                      >
+                        <SelectTrigger className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700">
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {users.map(u => (
+                            <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" variant="outline" className="h-8 gap-1">
+                        <MessageSquare size={14} />
+                        RFI
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filter */}
+      <div className="flex items-center gap-2">
+        <Select value={selectedReviewer} onValueChange={setSelectedReviewer}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="asc">Oldest</SelectItem>
-            <SelectItem value="desc">Newest</SelectItem>
+          <SelectContent className="bg-zinc-900 border-zinc-700">
+            <SelectItem value="all">All Reviewers</SelectItem>
+            {users.map(u => (
+              <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Table */}
-      <DrawingSetTable
-        sets={filteredSets}
-        sheets={drawingSheets}
-        revisions={revisions}
-        projects={projects}
-        onSelectSet={setSelectedSet} />
+      {/* Active Work Packages */}
+      <div className="space-y-2">
+        {activePackages.map(ds => {
+          const statusInfo = STATUS_FLOW[ds.status];
+          const daysUntilDue = ds.due_date ? differenceInDays(parseISO(ds.due_date), new Date()) : null;
+          const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
 
+          return (
+            <Card key={ds.id} className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Status Indicator */}
+                    <div className={cn("w-1 h-16 rounded-full", statusInfo?.color || 'bg-zinc-700')} />
 
-      {/* Create Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>New Drawing Set</DialogTitle>
-          </DialogHeader>
-          <DrawingSetForm
-            projects={projects}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setShowForm(false)} />
+                    {/* Main Info */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold">{ds.set_name}</h4>
+                        {isOverdue && (
+                          <Badge variant="destructive" className="text-xs">
+                            <AlertTriangle size={12} className="mr-1" />
+                            Overdue
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-zinc-400">
+                        <span className="font-mono">{ds.set_number}</span>
+                        <span>•</span>
+                        <span>Rev {ds.current_revision || '—'}</span>
+                        <span>•</span>
+                        <span>{ds.sheet_count || 0} sheets</span>
+                        {ds.due_date && (
+                          <>
+                            <span>•</span>
+                            <span className={isOverdue ? 'text-red-400 font-semibold' : ''}>
+                              Due {format(parseISO(ds.due_date), 'MMM d')}
+                              {daysUntilDue !== null && ` (${Math.abs(daysUntilDue)}d)`}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
 
-        </DialogContent>
-      </Dialog>
+                    {/* Status Badge */}
+                    <Badge variant="secondary" className="text-xs px-3 py-1">
+                      {statusInfo?.label || ds.status}
+                    </Badge>
 
-      {/* Details Sheet */}
-      {selectedSet &&
-      <DrawingSetDetails
-        drawingSet={selectedSet}
-        sheets={drawingSheets.filter((s) => s.drawing_set_id === selectedSet.id)}
-        revisions={revisions.filter((r) => r.drawing_set_id === selectedSet.id)}
-        projects={projects}
-        onClose={() => setSelectedSet(null)}
-        onUpdate={(data) => updateMutation.mutate({ id: selectedSet.id, data })}
-        onDelete={() => deleteMutation.mutate(selectedSet.id)}
-        isUpdating={updateMutation.isPending} />
+                    {/* Reviewer */}
+                    <div className="flex items-center gap-2 min-w-[140px]">
+                      <User size={14} className="text-zinc-500" />
+                      <Select
+                        value={ds.reviewer || 'unassigned'}
+                        onValueChange={(val) => assignReviewerMutation.mutate({ 
+                          id: ds.id, 
+                          reviewer: val === 'unassigned' ? null : val 
+                        })}
+                      >
+                        <SelectTrigger className="h-8 text-xs bg-zinc-800 border-zinc-700">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-700">
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {users.map(u => (
+                            <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-      }
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      {statusInfo?.next && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => updateStatusMutation.mutate({ id: ds.id, status: statusInfo.next })}
+                          className="bg-amber-500 hover:bg-amber-600 text-black gap-1 h-8"
+                        >
+                          {STATUS_FLOW[statusInfo.next]?.label}
+                          <ChevronRight size={14} />
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" className="h-8 gap-1">
+                        <MessageSquare size={14} />
+                        RFI
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-      {/* Bulk Edit Dialog */}
-      <BulkEditDrawings
-        drawingSets={filteredSets}
-        projects={projects}
-        open={showBulkEdit}
-        onOpenChange={setShowBulkEdit} />
-
-
-      {/* Quick Add Dialog */}
-      <QuickAddDrawingSet
-        projects={projects}
-        open={showQuickAdd}
-        onOpenChange={setShowQuickAdd}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-          setShowQuickAdd(false);
-        }} />
-
-
-      {/* CSV Import */}
-      <CSVUpload
-        entityName="DrawingSet"
-        templateFields={[
-        { label: 'Project Number', key: 'project_number', example: 'P-001' },
-        { label: 'Set Number', key: 'set_number', example: 'S-101' },
-        { label: 'Set Name', key: 'set_name', example: 'Structural Steel - Level 1' },
-        { label: 'Discipline', key: 'discipline', example: 'structural' },
-        { label: 'Current Revision', key: 'current_revision', example: 'Rev 0' },
-        { label: 'Status', key: 'status', example: 'IFA' },
-        { label: 'IFA Date', key: 'ifa_date', example: '2025-01-15' },
-        { label: 'Due Date', key: 'due_date', example: '2025-01-25' },
-        { label: 'Sheet Count', key: 'sheet_count', example: '5' },
-        { label: 'Reviewer', key: 'reviewer', example: 'John Smith' }]
-        }
-        transformRow={(row) => {
-          const project = projects.find((p) => p.project_number === row.project_number);
-          return {
-            project_id: project?.id || '',
-            set_number: row.set_number || '',
-            set_name: row.set_name || '',
-            discipline: row.discipline || 'structural',
-            current_revision: row.current_revision || 'Rev 0',
-            status: row.status || 'IFA',
-            ifa_date: row.ifa_date || '',
-            due_date: row.due_date || '',
-            sheet_count: parseInt(row.sheet_count) || 0,
-            reviewer: row.reviewer || '',
-            ai_review_status: 'pending'
-          };
-        }}
-        onImportComplete={() => {
-          queryClient.invalidateQueries({ queryKey: ['drawingSets'] });
-        }}
-        open={showCSVImport}
-        onOpenChange={setShowCSVImport} />
-
-    </div>);
-
+      {activePackages.length === 0 && (
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-12 text-center">
+            <CheckCircle2 size={48} className="mx-auto mb-4 text-green-400" />
+            <h3 className="text-xl font-semibold mb-2">All Sets Complete</h3>
+            <p className="text-zinc-400">No active drawing sets in workflow.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }

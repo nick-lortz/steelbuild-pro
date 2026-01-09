@@ -467,37 +467,75 @@ export default function Deliveries() {
 
 
   return (
-    <div>
-      <PageHeader
-        title="Delivery Tracking"
-        subtitle="Steel package deliveries and KPIs"
-        actions={
-        <div className="text-slate-50 flex gap-2">
-          <ExportButton
-            data={filteredDeliveries}
-            entityType="deliveries"
-            filename="deliveries" />
-
-          <Button
-            onClick={() => {
-              setEditingDelivery(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black">
-
-            <Plus size={18} className="mr-2" />
-            Add Delivery
-          </Button>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Tracking</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{kpis.total} TOTAL • {kpis.upcoming} NEXT 14D</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <ExportButton
+                data={filteredDeliveries}
+                entityType="deliveries"
+                filename="deliveries"
+              />
+              <Button
+                onClick={() => {
+                  setEditingDelivery(null);
+                  setShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                <Plus size={14} className="mr-1" />
+                NEW
+              </Button>
+            </div>
+          </div>
         </div>
-        } />
+      </div>
 
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ON-TIME RATE</div>
+              <div className={`text-2xl font-bold font-mono ${kpis.onTimePercent >= 90 ? 'text-green-500' : 'text-red-500'}`}>
+                {kpis.onTimePercent.toFixed(0)}%
+              </div>
+              <div className="text-xs text-zinc-600 font-mono">{kpis.onTime}/{kpis.completed}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">DELAYED</div>
+              <div className={`text-2xl font-bold font-mono ${kpis.delayed > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                {kpis.delayed}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL WEIGHT</div>
+              <div className="text-2xl font-bold font-mono text-white">{kpis.totalWeight.toFixed(1)}</div>
+              <div className="text-xs text-zinc-600">TONS</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVG VARIANCE</div>
+              <div className={`text-2xl font-bold font-mono ${kpis.avgVariance > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                {kpis.avgVariance > 0 ? '+' : ''}{kpis.avgVariance}
+              </div>
+              <div className="text-xs text-zinc-600">DAYS</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Advanced Filters and Search */}
-      <div className="mb-6 space-y-4">
-        <FilterBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          placeholder="Search packages, carriers, load numbers..."
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <FilterBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            placeholder="SEARCH PACKAGES..."
           filterGroups={[
           {
             key: 'projects',
@@ -545,142 +583,62 @@ export default function Deliveries() {
           onLoadConfig={(config) => setActiveFilters(config.filters)} />
 
 
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-zinc-400">
-            Showing {filteredDeliveries.length} of {allDeliveries.length} deliveries
-            {deliveriesFromTasks.length > 0 &&
-            <span className="ml-2 text-xs text-blue-400">
-                ({deliveriesFromTasks.length} from schedule)
-              </span>
-            }
-          </p>
-          <SortControl
-            sortOptions={[
-            { value: 'scheduled_date', label: 'Scheduled Date' },
-            { value: 'actual_date', label: 'Actual Date' },
-            { value: 'project', label: 'Project' },
-            { value: 'status', label: 'Status' },
-            { value: 'weight', label: 'Weight' },
-            { value: 'carrier', label: 'Carrier' },
-            { value: 'variance', label: 'Variance' }]
-            }
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSortChange={(field, order) => {
-              setSortBy(field);
-              setSortOrder(order);
-            }} />
-
+          <div className="flex justify-between items-center mt-3">
+            <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-mono">
+              {filteredDeliveries.length} SHOWN • {allDeliveries.length} TOTAL
+            </p>
+            <SortControl
+              sortOptions={[
+                { value: 'scheduled_date', label: 'Scheduled' },
+                { value: 'actual_date', label: 'Actual' },
+                { value: 'project', label: 'Project' },
+                { value: 'status', label: 'Status' },
+                { value: 'weight', label: 'Weight' },
+                { value: 'carrier', label: 'Carrier' }
+              ]}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={(field, order) => {
+                setSortBy(field);
+                setSortOrder(order);
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="deliveries">All Deliveries</TabsTrigger>
-          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-        </TabsList>
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <Tabs defaultValue="deliveries" className="space-y-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="deliveries">All Deliveries</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsTrigger value="kpis">Extended KPIs</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KPICard
-              title="Total Deliveries"
-              value={kpis.total}
-              icon={Package} />
+          <TabsContent value="kpis" className="space-y-6">
+            <DeliveryKPIs deliveries={filteredDeliveries} projects={projects} />
+          </TabsContent>
 
-            <KPICard
-              title="On-Time Rate"
-              value={`${kpis.onTimePercent.toFixed(1)}%`}
-              trend={kpis.onTimePercent >= 90 ? 'up' : 'down'}
-              trendValue={`${kpis.onTime}/${kpis.completed}`}
-              icon={kpis.onTimePercent >= 90 ? TrendingUp : TrendingDown}
-              variant={kpis.onTimePercent >= 90 ? 'green' : 'red'} />
+          <TabsContent value="deliveries">
+            <DataTable
+              columns={columns}
+              data={filteredDeliveries}
+              onRowClick={handleEdit}
+              emptyMessage="No deliveries found."
+            />
+          </TabsContent>
 
-            <KPICard
-              title="Delayed"
-              value={kpis.delayed}
-              icon={Clock}
-              variant={kpis.delayed > 0 ? 'red' : 'green'} />
-
-            <KPICard
-              title="Upcoming (14 days)"
-              value={kpis.upcoming}
-              icon={Truck}
-              variant="blue" />
-
-          </div>
-
-          {/* Detailed KPIs */}
-          <DeliveryKPIs deliveries={filteredDeliveries} projects={projects} />
-
-          {/* Grouped by Project */}
-          {(() => {
-            const groupedByProject = {};
-            filteredDeliveries.forEach((d) => {
-              const projectId = d.project_id || 'unassigned';
-              if (!groupedByProject[projectId]) {
-                groupedByProject[projectId] = {
-                  project: projectMap.get(projectId),
-                  deliveries: []
-                };
-              }
-              groupedByProject[projectId].deliveries.push(d);
-            });
-
-            return Object.values(groupedByProject).map((group) =>
-            <Card key={group.project?.id || 'unassigned'} className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-white">
-                        {group.project?.project_number || 'Unassigned'}
-                      </CardTitle>
-                      <p className="text-sm text-zinc-400 mt-1">{group.project?.name || 'No project'}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-amber-500">{group.deliveries.length}</p>
-                      <p className="text-xs text-zinc-500">deliveries</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <DataTable
-                  columns={columns}
-                  data={group.deliveries}
-                  onRowClick={handleEdit}
-                  emptyMessage="No deliveries for this project" />
-
-                </CardContent>
-              </Card>
-            );
-          })()}
-        </TabsContent>
-
-        <TabsContent value="deliveries">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-6">
-              <DataTable
-                columns={columns}
-                data={filteredDeliveries}
-                onRowClick={handleEdit}
-                emptyMessage="No deliveries found." />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="upcoming">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-6">
-              <DataTable
-                columns={columns}
-                data={filteredDeliveries.filter((d) => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
-                onRowClick={handleEdit}
-                emptyMessage="No upcoming deliveries." />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="upcoming">
+            <DataTable
+              columns={columns}
+              data={filteredDeliveries.filter((d) => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
+              onRowClick={handleEdit}
+              emptyMessage="No upcoming deliveries."
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

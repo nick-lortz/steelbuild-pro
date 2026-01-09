@@ -16,10 +16,17 @@ export default function CostRiskIndicator({
   const { data: analysis, isLoading, error } = useQuery({
     queryKey: ['cost-risk-signal', projectId],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getCostRiskSignal', { project_id: projectId });
-      return response.data;
+      if (!projectId) return null;
+      try {
+        const response = await base44.functions.invoke('getCostRiskSignal', { project_id: projectId });
+        return response.data;
+      } catch (err) {
+        console.error('Cost risk signal error:', err);
+        return null;
+      }
     },
-    enabled: !!projectId
+    enabled: !!projectId,
+    retry: false
   });
 
   if (isLoading) {

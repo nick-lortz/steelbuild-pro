@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export default function RFIs() {
     gcTime: 10 * 60 * 1000 // 10 minutes
   });
 
-  const projects = React.useMemo(() =>
+  const projects = useMemo(() =>
   [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
   [rawProjects]
   );
@@ -196,7 +196,7 @@ export default function RFIs() {
     setSelectedRFI(rfi);
   };
 
-  const filteredRFIs = React.useMemo(() => {
+  const filteredRFIs = useMemo(() => {
     return rfis.filter((r) => {
       const project = projects.find((p) => p.id === r.project_id);
       const matchesSearch =

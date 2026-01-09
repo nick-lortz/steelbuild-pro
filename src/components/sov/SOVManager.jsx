@@ -377,7 +377,17 @@ export default function SOVManager({ projectId, canEdit }) {
           <form onSubmit={(e) => { 
             e.preventDefault(); 
             if (editingItem) {
-              updateMutation.mutate({ id: editingItem.id, data: formData }, {
+              // Only send non-locked fields
+              const updates = {
+                sov_code: formData.sov_code,
+                description: formData.description,
+                sov_category: formData.sov_category
+              };
+              // Only include scheduled_value if not locked
+              if (!lockedSovItemIds.has(editingItem.id)) {
+                updates.scheduled_value = formData.scheduled_value;
+              }
+              updateMutation.mutate({ id: editingItem.id, data: updates }, {
                 onSuccess: () => {
                   toast.success('SOV line updated');
                   setShowAddDialog(false);

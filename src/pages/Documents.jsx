@@ -32,6 +32,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DocumentTreeView from '@/components/documents/DocumentTreeView';
+import DocumentFolderTree from '@/components/documents/DocumentFolderTree';
 import AISearchPanel from '@/components/documents/AISearchPanel';
 import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel';
 import { format } from 'date-fns';
@@ -49,7 +50,10 @@ import {
 
 const initialFormState = {
   project_id: '',
+  folder_path: '/',
   work_package_id: '',
+  daily_log_id: '',
+  task_id: '',
   expense_id: '',
   sov_item_id: '',
   title: '',
@@ -79,6 +83,11 @@ export default function Documents() {
   const [deleteDoc, setDeleteDoc] = useState(null);
   const [viewMode, setViewMode] = useState('tree');
   const [processingOCR, setProcessingOCR] = useState(null);
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [sortBy, setSortBy] = useState('created_date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [phaseFilter, setPhaseFilter] = useState('all');
 
   const queryClient = useQueryClient();
 
@@ -109,6 +118,18 @@ export default function Documents() {
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items'],
     queryFn: () => base44.entities.SOVItem.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: dailyLogs = [] } = useQuery({
+    queryKey: ['daily-logs'],
+    queryFn: () => base44.entities.DailyLog.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => base44.entities.Task.list(),
     staleTime: 10 * 60 * 1000,
   });
 
@@ -191,7 +212,10 @@ export default function Documents() {
   const handleEdit = (doc) => {
     setFormData({
       project_id: doc.project_id || '',
+      folder_path: doc.folder_path || '/',
       work_package_id: doc.work_package_id || '',
+      daily_log_id: doc.daily_log_id || '',
+      task_id: doc.task_id || '',
       expense_id: doc.expense_id || '',
       sov_item_id: doc.sov_item_id || '',
       title: doc.title || '',
@@ -253,16 +277,36 @@ export default function Documents() {
       .sort((a, b) => (b.version || 1) - (a.version || 1));
   };
 
-  const filteredDocuments = documents.filter(d => {
-    const matchesSearch = 
-      d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
-    const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
-    return matchesSearch && matchesCategory && matchesProject && d.is_current !== false;
-  });
+  const filteredDocuments = useMemo(() => {
+    let filtered = documents.filter(d => {
+      const matchesSearch = 
+        d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory = categoryFilter === 'all' || d.category === categoryFilter;
+      const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
+      const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
+      const matchesPhase = phaseFilter === 'all' || d.phase === phaseFilter;
+      const matchesFolder = !selectedFolder || selectedFolder === 'root' || (d.folder_path || '/').startsWith(selectedFolder);
+      return matchesSearch && matchesCategory && matchesProject && matchesStatus && matchesPhase && matchesFolder && d.is_current !== false;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal, bVal;
+      switch(sortBy) {
+        case 'title': aVal = a.title?.toLowerCase(); bVal = b.title?.toLowerCase(); break;
+        case 'category': aVal = a.category; bVal = b.category; break;
+        case 'status': aVal = a.status; bVal = b.status; break;
+        case 'created_date': aVal = new Date(a.created_date); bVal = new Date(b.created_date); break;
+        default: aVal = a.created_date; bVal = b.created_date;
+      }
+      return sortOrder === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+    });
+
+    return filtered;
+  }, [documents, searchTerm, categoryFilter, projectFilter, statusFilter, phaseFilter, selectedFolder, sortBy, sortOrder]);
 
   const columns = [
     {
@@ -436,63 +480,102 @@ export default function Documents() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
+        <div className="space-y-3 mb-6">
+          <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
             <Input
               placeholder="SEARCH DOCUMENTS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+              className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9 w-full"
             />
           </div>
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="drawing">Drawing</SelectItem>
-              <SelectItem value="specification">Specification</SelectItem>
-              <SelectItem value="rfi">RFI</SelectItem>
-              <SelectItem value="submittal">Submittal</SelectItem>
-              <SelectItem value="contract">Contract</SelectItem>
-              <SelectItem value="report">Report</SelectItem>
-              <SelectItem value="photo">Photo</SelectItem>
-              <SelectItem value="correspondence">Correspondence</SelectItem>
-              <SelectItem value="receipt">Receipt</SelectItem>
-              <SelectItem value="invoice">Invoice</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Project" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="drawing">Drawing</SelectItem>
+                <SelectItem value="specification">Spec</SelectItem>
+                <SelectItem value="rfi">RFI</SelectItem>
+                <SelectItem value="photo">Photo</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="issued">Issued</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Phase" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Phases</SelectItem>
+                <SelectItem value="detailing">Detailing</SelectItem>
+                <SelectItem value="fabrication">Fab</SelectItem>
+                <SelectItem value="erection">Erection</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="created_date">Date</SelectItem>
+                <SelectItem value="title">Title</SelectItem>
+                <SelectItem value="category">Category</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Content */}
-        {viewMode === 'tree' ? (
-          <DocumentTreeView
-            documents={filteredDocuments}
-            projects={projects}
-            onDocClick={handleEdit}
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={filteredDocuments}
-            onRowClick={handleEdit}
-            emptyMessage="No documents found. Upload your first document to get started."
-          />
-        )}
+        {/* Content - Folder Tree + Documents */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-1">
+            <DocumentFolderTree
+              documents={documents.filter(d => projectFilter === 'all' || d.project_id === projectFilter)}
+              projects={projects}
+              onDocClick={handleEdit}
+              onFolderSelect={setSelectedFolder}
+            />
+          </div>
+
+          <div className="lg:col-span-3">
+            <DataTable
+              columns={columns}
+              data={filteredDocuments}
+              onRowClick={handleEdit}
+              emptyMessage="No documents found. Upload your first document or adjust filters."
+            />
+          </div>
+        </div>
       </div>
 
       {/* Create Dialog */}
@@ -506,6 +589,8 @@ export default function Documents() {
             setFormData={setFormData}
             projects={projects}
             workPackages={workPackages}
+            dailyLogs={dailyLogs}
+            tasks={tasks}
             expenses={expenses}
             sovItems={sovItems}
             onSubmit={handleSubmit}
@@ -648,6 +733,8 @@ export default function Documents() {
               setFormData={setFormData}
               projects={projects}
               workPackages={workPackages}
+              dailyLogs={dailyLogs}
+              tasks={tasks}
               expenses={expenses}
               sovItems={sovItems}
               onSubmit={handleSubmit}
@@ -713,7 +800,7 @@ export default function Documents() {
   );
 }
 
-function DocumentForm({ formData, setFormData, projects, workPackages, expenses, sovItems, onSubmit, onFileUpload, isLoading, uploading, isEdit }) {
+function DocumentForm({ formData, setFormData, projects, workPackages, dailyLogs, tasks, expenses, sovItems, onSubmit, onFileUpload, isLoading, uploading, isEdit }) {
   const [tagInput, setTagInput] = React.useState('');
   
   const handleChange = (field, value) => {
@@ -732,6 +819,8 @@ function DocumentForm({ formData, setFormData, projects, workPackages, expenses,
   };
 
   const projectWorkPackages = workPackages.filter(wp => wp.project_id === formData.project_id);
+  const projectDailyLogs = dailyLogs.filter(d => d.project_id === formData.project_id);
+  const projectTasks = tasks.filter(t => t.project_id === formData.project_id);
   const projectExpenses = expenses.filter(e => e.project_id === formData.project_id);
   const projectSOVItems = sovItems.filter(s => s.project_id === formData.project_id);
 
@@ -756,10 +845,22 @@ function DocumentForm({ formData, setFormData, projects, workPackages, expenses,
         </Select>
       </div>
 
+      {/* Folder Path */}
+      <div className="space-y-2">
+        <Label className="text-xs">Folder Path</Label>
+        <Input
+          value={formData.folder_path}
+          onChange={(e) => handleChange('folder_path', e.target.value)}
+          placeholder="/ or /Drawings/Structural/Level1"
+          className="bg-zinc-800 border-zinc-700 text-xs"
+        />
+        <p className="text-[10px] text-zinc-500">Use forward slashes to create hierarchical structure</p>
+      </div>
+
       {/* Associations */}
       {formData.project_id && (
         <div className="grid grid-cols-1 gap-4 p-4 bg-zinc-800/30 rounded-lg">
-          <p className="text-sm font-medium text-zinc-400">Associate with (optional)</p>
+          <p className="text-sm font-medium text-zinc-400">Link to (optional)</p>
           
           <div className="space-y-2">
             <Label className="text-xs">Work Package</Label>
@@ -772,6 +873,40 @@ function DocumentForm({ formData, setFormData, projects, workPackages, expenses,
                 {projectWorkPackages.map(wp => (
                   <SelectItem key={wp.id} value={wp.id}>
                     {wp.package_number || wp.id.slice(0, 8)} - {wp.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Daily Log</Label>
+            <Select value={formData.daily_log_id} onValueChange={(v) => handleChange('daily_log_id', v)}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value={null}>None</SelectItem>
+                {projectDailyLogs.slice(0, 50).map(d => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {format(new Date(d.log_date), 'MMM d, yyyy')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs">Task</Label>
+            <Select value={formData.task_id} onValueChange={(v) => handleChange('task_id', v)}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value={null}>None</SelectItem>
+                {projectTasks.slice(0, 50).map(t => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.title || t.id.slice(0, 8)}
                   </SelectItem>
                 ))}
               </SelectContent>

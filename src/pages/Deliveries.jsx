@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2, Calendar, AlertTriangle, Edit } from 'lucide-react';
+import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2, Calendar, AlertTriangle, Edit, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
@@ -14,6 +15,7 @@ import DeliveryKPIs from '@/components/deliveries/DeliveryKPIs';
 import FilterBar from '@/components/shared/FilterBar';
 import SortControl from '@/components/shared/SortControl';
 import ExportButton from '@/components/shared/ExportButton';
+import { useOfflineSync } from '@/components/shared/hooks/useOfflineSync';
 import { format, parseISO, differenceInDays, isWithinInterval, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import {
@@ -43,6 +45,18 @@ export default function Deliveries() {
   const [savedFilters, setSavedFilters] = useState([]);
 
   const queryClient = useQueryClient();
+  
+  const { 
+    isOnline, 
+    syncStatus, 
+    pendingCount, 
+    cacheData, 
+    getCachedData,
+    createOffline, 
+    updateOffline, 
+    deleteOffline,
+    syncPendingChanges 
+  } = useOfflineSync('Delivery');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -50,10 +64,20 @@ export default function Deliveries() {
     staleTime: 30 * 60 * 1000
   });
 
-  const { data: deliveries = [] } = useQuery({
+  const { data: deliveries = [], isLoading: deliveriesLoading } = useQuery({
     queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
-    staleTime: 5 * 60 * 1000
+    queryFn: async () => {
+      if (!isOnline) {
+        // Load from cache when offline
+        return await getCachedData();
+      }
+      const data = await base44.entities.Delivery.list('-scheduled_date');
+      // Cache for offline use
+      await cacheData(data);
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+    initialData: []
   });
 
   const { data: allTasks = [] } = useQuery({
@@ -72,19 +96,32 @@ export default function Deliveries() {
   }, [allTasks, activeFilters.projects]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Delivery.create(data),
+    mutationFn: async (data) => {
+      if (!isOnline) {
+        return await createOffline(data);
+      }
+      return await base44.entities.Delivery.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
+      if (!isOnline) {
+        toast.success('Delivery saved offline - will sync when connected');
+      }
     },
     onError: (error) => {
       console.error('Failed to create delivery:', error);
+      toast.error('Failed to save delivery');
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data, oldStatus }) => {
+      if (!isOnline) {
+        return await updateOffline(id, data);
+      }
+
       const updated = await base44.entities.Delivery.update(id, data);
 
       // Trigger notification if status changed
@@ -106,20 +143,33 @@ export default function Deliveries() {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowForm(false);
       setEditingDelivery(null);
+      if (!isOnline) {
+        toast.success('Changes saved offline - will sync when connected');
+      }
     },
     onError: (error) => {
       console.error('Failed to update delivery:', error);
+      toast.error('Failed to update delivery');
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Delivery.delete(id),
+    mutationFn: async (id) => {
+      if (!isOnline) {
+        return await deleteOffline(id);
+      }
+      return await base44.entities.Delivery.delete(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setDeleteDelivery(null);
+      if (!isOnline) {
+        toast.success('Deletion queued - will sync when connected');
+      }
     },
     onError: (error) => {
       console.error('Failed to delete delivery:', error);
+      toast.error('Failed to delete delivery');
     }
   });
 
@@ -450,31 +500,39 @@ export default function Deliveries() {
   {
     header: '',
     accessor: 'actions',
-    render: (row) =>
-    !row._isFromTask ? (
+    render: (row) => (
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEdit(row);
-          }}
-          className="text-zinc-500 hover:text-amber-400">
-          <Edit size={16} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteDelivery(row);
-          }}
-          className="text-zinc-500 hover:text-red-500">
-          <Trash2 size={16} />
-        </Button>
+        {row._offline && (
+          <Badge variant="outline" className="border-amber-500 text-amber-400 text-[10px] px-1 py-0">
+            OFFLINE
+          </Badge>
+        )}
+        {!row._isFromTask && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(row);
+              }}
+              className="text-zinc-500 hover:text-amber-400">
+              <Edit size={16} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteDelivery(row);
+              }}
+              className="text-zinc-500 hover:text-red-500">
+              <Trash2 size={16} />
+            </Button>
+          </>
+        )}
       </div>
-    ) : null
+    )
   }];
 
 
@@ -486,9 +544,40 @@ export default function Deliveries() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Tracking</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{kpis.total} TOTAL • {kpis.upcoming} NEXT 14D</p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-xs text-zinc-600 font-mono">{kpis.total} TOTAL • {kpis.upcoming} NEXT 14D</p>
+                {!isOnline && (
+                  <Badge variant="outline" className="border-amber-500 text-amber-400 gap-1.5">
+                    <WifiOff size={12} />
+                    OFFLINE
+                  </Badge>
+                )}
+                {pendingCount > 0 && (
+                  <Badge variant="outline" className="border-blue-500 text-blue-400 gap-1.5">
+                    <RefreshCw size={12} />
+                    {pendingCount} PENDING
+                  </Badge>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
+              {isOnline && pendingCount > 0 && (
+                <Button
+                  size="sm"
+                  onClick={syncPendingChanges}
+                  disabled={syncStatus === 'syncing'}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs"
+                >
+                  {syncStatus === 'syncing' ? (
+                    <>
+                      <RefreshCw size={14} className="mr-1 animate-spin" />
+                      SYNCING
+                    </>
+                  ) : (
+                    'SYNC NOW'
+                  )}
+                </Button>
+              )}
               <ExportButton
                 data={filteredDeliveries}
                 entityType="deliveries"

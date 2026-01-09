@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, Scan, MapPin, Bell, Cloud } from 'lucide-react';
+import { Camera, Scan, MapPin, Bell, Cloud, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import PageHeader from '@/components/ui/PageHeader';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
 import BarcodeScanner from '@/components/mobile/BarcodeScanner';
 import OfflineSync from '@/components/mobile/OfflineSync';
 import NotificationManager from '@/components/mobile/NotificationManager';
+import { useOfflineSync } from '@/components/shared/hooks/useOfflineSync';
 import { toast } from '@/components/ui/notifications';
 
 export default function FieldTools() {
   const [scannedCode, setScannedCode] = useState(null);
+  const { isOnline, syncStatus, pendingCount, syncPendingChanges } = useOfflineSync('DailyLog');
 
   const handlePhotoCapture = async (data) => {
     console.log('Photo captured:', data);
@@ -39,9 +43,35 @@ export default function FieldTools() {
       {/* Header Bar */}
       <div className="border-b border-zinc-800 bg-black">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div>
-            <h1 className="text-xl font-bold text-white uppercase tracking-wide">Field Tools</h1>
-            <p className="text-xs text-zinc-600 font-mono mt-1">JOBSITE UTILITIES</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Field Tools</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">JOBSITE UTILITIES</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {!isOnline && (
+                <Badge variant="outline" className="border-amber-500 text-amber-400 gap-1.5">
+                  <WifiOff size={12} />
+                  OFFLINE
+                </Badge>
+              )}
+              {pendingCount > 0 && (
+                <Badge variant="outline" className="border-blue-500 text-blue-400 gap-1.5">
+                  <RefreshCw size={12} />
+                  {pendingCount} PENDING
+                </Badge>
+              )}
+              {isOnline && pendingCount > 0 && (
+                <Button
+                  size="sm"
+                  onClick={syncPendingChanges}
+                  disabled={syncStatus === 'syncing'}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs h-7"
+                >
+                  {syncStatus === 'syncing' ? 'SYNCING...' : 'SYNC NOW'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

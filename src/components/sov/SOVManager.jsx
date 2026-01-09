@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +53,20 @@ export default function SOVManager({ projectId, canEdit }) {
     staleTime: 5 * 60 * 1000
   });
 
+  const { data: invoiceLines = [] } = useQuery({
+    queryKey: ['invoice-lines', projectId],
+    queryFn: async () => {
+      const lines = await base44.entities.InvoiceLine.list();
+      const approvedInvoiceIds = new Set(
+        invoices.filter(inv => inv.status === 'approved' || inv.status === 'paid').map(inv => inv.id)
+      );
+      return lines.filter(line => approvedInvoiceIds.has(line.invoice_id));
+    },
+    enabled: !!projectId && invoices.length > 0,
+    retry: 1,
+    staleTime: 5 * 60 * 1000
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => backend.createSOVItem({ ...data, project_id: projectId }),
     onSuccess: () => {
@@ -86,30 +100,54 @@ export default function SOVManager({ projectId, canEdit }) {
     onError: (err) => toast.error(err?.message ?? 'Delete failed')
   });
 
-  const hasApprovedInvoices = invoices.some(inv => inv.status === 'approved' || inv.status === 'paid');
+  const lockedSovItemIds = React.useMemo(() => {
+    const ids = new Set();
+    for (const line of invoiceLines ?? []) {
+      if (line?.sov_item_id) ids.add(line.sov_item_id);
+    }
+    return ids;
+  }, [invoiceLines]);
 
   const [editingPercent, setEditingPercent] = useState({});
 
-  const handleUpdatePercent = (sovItem, value) => {
-    if (value === '' || value === null || value === undefined) {
-      setEditingPercent({ ...editingPercent, [sovItem.id]: '' });
+  const handleUpdatePercent = async (sovItem, value) => {
+    if (value === '' || value == null) {
+      setEditingPercent(prev => ({ ...prev, [sovItem.id]: '' }));
       return;
     }
 
     const numValue = parseFloat(value);
-    if (isNaN(numValue) || numValue < 0 || numValue > 100) {
+    if (Number.isNaN(numValue) || numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
 
-    // Edge case: Percent decreases - block if invoices approved
-    if (numValue < (sovItem.percent_complete || 0) && hasApprovedInvoices) {
-      toast.error('Cannot decrease % complete after invoice approval. Use change order to adjust.');
+    // Per-line guard: only block if this specific line has approved/paid invoices
+    const prev = sovItem.percent_complete ?? 0;
+    if (numValue < prev && lockedSovItemIds.has(sovItem.id)) {
+      toast.error('Cannot decrease % complete for billed lines. Use change order.');
       return;
     }
 
-    setEditingPercent({ ...editingPercent, [sovItem.id]: undefined });
-    updateMutation.mutate({ id: sovItem.id, data: { percent_complete: numValue } });
+    setEditingPercent(prev => ({ ...prev, [sovItem.id]: undefined }));
+
+    // Optimistic update with rollback
+    updateMutation.mutate(
+      { id: sovItem.id, data: { percent_complete: numValue } },
+      {
+        onMutate: async () => {
+          await queryClient.cancelQueries({ queryKey: ['sov-items', projectId] });
+          const prevData = queryClient.getQueryData(['sov-items', projectId]);
+          queryClient.setQueryData(['sov-items', projectId], (old = []) =>
+            old.map(it => it.id === sovItem.id ? { ...it, percent_complete: numValue } : it)
+          );
+          return { prevData };
+        },
+        onError: (_err, _vars, ctx) => {
+          if (ctx?.prevData) queryClient.setQueryData(['sov-items', projectId], ctx.prevData);
+        }
+      }
+    );
   };
 
   const columns = [
@@ -203,7 +241,7 @@ export default function SOVManager({ projectId, canEdit }) {
       header: '',
       accessor: 'actions',
       render: (row) => {
-        const isLocked = hasApprovedInvoices;
+        const isLocked = lockedSovItemIds.has(row.id);
         return (
           <Button
             variant="ghost"
@@ -215,7 +253,7 @@ export default function SOVManager({ projectId, canEdit }) {
             }}
             disabled={!canEdit || isLocked}
             className="text-red-400 hover:text-red-300 disabled:opacity-50"
-            title={isLocked ? '🔒 Locked — invoice already approved. Use Change Orders.' : 'Delete SOV line'}
+            title={isLocked ? '🔒 Locked — line has approved invoices. Use Change Orders.' : 'Delete SOV line'}
           >
             <Trash2 size={16} />
           </Button>

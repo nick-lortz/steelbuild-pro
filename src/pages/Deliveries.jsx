@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2, Calendar, AlertTriangle, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
@@ -451,18 +451,30 @@ export default function Deliveries() {
     header: '',
     accessor: 'actions',
     render: (row) =>
-    !row._isFromTask ?
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={(e) => {
-        e.stopPropagation();
-        setDeleteDelivery(row);
-      }}
-      className="text-zinc-500 hover:text-red-500">
-            <Trash2 size={16} />
-          </Button> :
-    null
+    !row._isFromTask ? (
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEdit(row);
+          }}
+          className="text-zinc-500 hover:text-amber-400">
+          <Edit size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteDelivery(row);
+          }}
+          className="text-zinc-500 hover:text-red-500">
+          <Trash2 size={16} />
+        </Button>
+      </div>
+    ) : null
   }];
 
 

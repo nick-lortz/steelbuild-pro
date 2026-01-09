@@ -452,6 +452,8 @@ function DailyLogForm({ formData, setFormData, projects, onSubmit, isLoading, is
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const selectedProject = projects.find(p => p.id === formData.project_id);
+
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {/* Basic Info */}
@@ -480,6 +482,24 @@ function DailyLogForm({ formData, setFormData, projects, onSubmit, isLoading, is
           />
         </div>
       </div>
+
+      {/* Quick Stats */}
+      {selectedProject && (
+        <div className="grid grid-cols-3 gap-3 p-3 bg-zinc-800/30 rounded-lg text-xs">
+          <div>
+            <span className="text-zinc-500">Project: </span>
+            <span className="font-mono text-white">{selectedProject.project_number}</span>
+          </div>
+          <div>
+            <span className="text-zinc-500">Status: </span>
+            <Badge variant="outline" className="text-[10px]">{selectedProject.status}</Badge>
+          </div>
+          <div>
+            <span className="text-zinc-500">Phase: </span>
+            <Badge variant="outline" className="text-[10px] capitalize">{selectedProject.phase}</Badge>
+          </div>
+        </div>
+      )}
 
       {/* Weather */}
       <div className="p-4 bg-zinc-800/50 rounded-lg">
@@ -548,12 +568,13 @@ function DailyLogForm({ formData, setFormData, projects, onSubmit, isLoading, is
 
       {/* Work Performed */}
       <div className="space-y-2">
-        <Label>Work Performed</Label>
+        <Label>Work Performed *</Label>
         <Textarea
           value={formData.work_performed}
           onChange={(e) => handleChange('work_performed', e.target.value)}
           rows={4}
-          placeholder="Describe work completed today..."
+          placeholder="Describe work completed today (sequence, tonnage, pieces, etc.)..."
+          required
           className="bg-zinc-800 border-zinc-700"
         />
       </div>
@@ -566,17 +587,17 @@ function DailyLogForm({ formData, setFormData, projects, onSubmit, isLoading, is
             value={formData.materials_delivered}
             onChange={(e) => handleChange('materials_delivered', e.target.value)}
             rows={3}
-            placeholder="Materials received today..."
+            placeholder="Tonnage, piece counts, vendors, delivery status..."
             className="bg-zinc-800 border-zinc-700"
           />
         </div>
         <div className="space-y-2">
-          <Label>Visitors</Label>
+          <Label>Site Visitors / Inspectors</Label>
           <Textarea
             value={formData.visitors}
             onChange={(e) => handleChange('visitors', e.target.value)}
             rows={3}
-            placeholder="Site visitors, inspectors..."
+            placeholder="Owners, architects, subs, safety, inspectors..."
             className="bg-zinc-800 border-zinc-700"
           />
         </div>

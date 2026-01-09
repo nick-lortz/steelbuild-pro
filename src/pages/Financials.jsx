@@ -214,6 +214,32 @@ export default function Financials() {
           <ETCManager projectId={selectedProject} expenses={expenses} />
         </div>
       </div>
+
+      {/* Cleanup Confirmation Dialog */}
+      <AlertDialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Clean Financial Budget Lines</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              You have {budgetLines.length} legacy Financial budget lines while using SOV. These will be deleted to prevent double-counting.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="my-4 p-3 bg-zinc-950 rounded border border-zinc-800 text-xs text-zinc-400">
+            This action deletes the Financial records only. SOV data will remain intact.
+          </div>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cleanupMutation.mutate()}
+              disabled={cleanupMutation.isPending}
+              className="bg-red-600 hover:bg-red-700">
+              {cleanupMutation.isPending ? 'Cleaning...' : 'Delete Budget Lines'}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

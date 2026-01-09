@@ -12,7 +12,6 @@ import Equipment from './pages/Equipment';
 import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import Fabrication from './pages/Fabrication';
 import FieldTools from './pages/FieldTools';
-import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
 import JobStatusReport from './pages/JobStatusReport';
@@ -36,6 +35,7 @@ import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import Financials from './pages/Financials';
 import __Layout from './Layout.jsx';
 
 
@@ -54,7 +54,6 @@ export const PAGES = {
     "ExecutiveRollUp": ExecutiveRollUp,
     "Fabrication": Fabrication,
     "FieldTools": FieldTools,
-    "Financials": Financials,
     "Insights": Insights,
     "Integrations": Integrations,
     "JobStatusReport": JobStatusReport,
@@ -78,6 +77,7 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Financials": Financials,
 }
 
 export const pagesConfig = {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -25,11 +25,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, Users, AlertTriangle, CloudRain, Wrench, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, AlertTriangle, Camera, Trash2, Clock, Zap } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
+import PhotoCapture from '@/components/mobile/PhotoCapture';
+import { toast } from '@/components/ui/notifications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +60,7 @@ const initialFormState = {
   hours_worked: '',
   visitors: '',
   notes: '',
+  photos: [],
 };
 
 export default function DailyLogs() {
@@ -66,6 +69,7 @@ export default function DailyLogs() {
   const [formData, setFormData] = useState(initialFormState);
   const [projectFilter, setProjectFilter] = useState('all');
   const [deleteLog, setDeleteLog] = useState(null);
+  const [showPhotoTab, setShowPhotoTab] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -142,8 +146,18 @@ export default function DailyLogs() {
       hours_worked: log.hours_worked?.toString() || '',
       visitors: log.visitors || '',
       notes: log.notes || '',
+      photos: log.photos || [],
     });
     setSelectedLog(log);
+    setShowPhotoTab(false);
+  };
+
+  const handlePhotoCapture = (photo) => {
+    setFormData(prev => ({
+      ...prev,
+      photos: [...(prev.photos || []), photo.url]
+    }));
+    toast.success('Photo linked to log');
   };
 
   const filteredLogs = React.useMemo(() => 
@@ -244,10 +258,11 @@ export default function DailyLogs() {
   const logStats = useMemo(() => {
     const safetyIncidents = filteredLogs.filter(l => l.safety_incidents).length;
     const delays = filteredLogs.filter(l => l.delays).length;
+    const totalHours = filteredLogs.reduce((sum, l) => sum + (l.hours_worked || 0), 0);
     const avgCrew = filteredLogs.length > 0 
       ? Math.round(filteredLogs.reduce((sum, l) => sum + (l.crew_count || 0), 0) / filteredLogs.length)
       : 0;
-    return { safetyIncidents, delays, avgCrew };
+    return { safetyIncidents, delays, avgCrew, totalHours };
   }, [filteredLogs]);
 
   return (
@@ -283,6 +298,10 @@ export default function DailyLogs() {
               <div className="text-2xl font-bold font-mono text-white">{logStats.avgCrew}</div>
             </div>
             <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL HOURS</div>
+              <div className="text-2xl font-bold font-mono text-blue-500">{logStats.totalHours.toFixed(1)}h</div>
+            </div>
+            <div>
               <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SAFETY INCIDENTS</div>
               <div className={`text-2xl font-bold font-mono ${logStats.safetyIncidents > 0 ? 'text-red-500' : 'text-green-500'}`}>
                 {logStats.safetyIncidents}
@@ -293,10 +312,6 @@ export default function DailyLogs() {
               <div className={`text-2xl font-bold font-mono ${logStats.delays > 0 ? 'text-amber-500' : 'text-green-500'}`}>
                 {logStats.delays}
               </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL LOGS</div>
-              <div className="text-2xl font-bold font-mono text-white">{filteredLogs.length}</div>
             </div>
           </div>
         </div>
@@ -353,7 +368,47 @@ export default function DailyLogs() {
               Edit Daily Log - {selectedLog && format(new Date(selectedLog.log_date), 'MMM d, yyyy')}
             </SheetTitle>
           </SheetHeader>
-          <div className="mt-6">
+          <div className="mt-6 space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-zinc-400 uppercase">Photos</h3>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowPhotoTab(!showPhotoTab)}
+                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  <Camera size={14} className="mr-1" />
+                  {showPhotoTab ? 'Hide' : 'Add'}
+                </Button>
+              </div>
+              {showPhotoTab && (
+                <PhotoCapture 
+                  onPhotoCapture={handlePhotoCapture}
+                  projectId={formData.project_id}
+                  allowMultiple={true}
+                />
+              )}
+              {formData.photos?.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {formData.photos.map((photo, idx) => (
+                    <div key={idx} className="relative group">
+                      <img src={photo} alt={`Log photo ${idx + 1}`} className="w-full h-24 object-cover rounded border border-zinc-700" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          photos: prev.photos.filter((_, i) => i !== idx)
+                        }))}
+                        className="absolute top-1 right-1 bg-red-500/80 opacity-0 group-hover:opacity-100 text-white p-1 rounded text-xs transition-opacity"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <DailyLogForm
               formData={formData}
               setFormData={setFormData}

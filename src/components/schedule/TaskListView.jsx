@@ -295,7 +295,7 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                 const atRiskCount = projectTasks.filter(isAtRisk).length;
 
                 return (
-                  <React.Fragment key={projectId}>
+                  <tbody key={projectId}>
                     {/* Project Header */}
                     <tr className="bg-zinc-800/70 border-b border-zinc-700">
                       <td colSpan={9} className="p-0">
@@ -440,7 +440,7 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                         </React.Fragment>
                       );
                     })}
-                  </React.Fragment>
+                  </tbody>
                 );
               })}
             </tbody>

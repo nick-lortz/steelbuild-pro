@@ -27,14 +27,20 @@ export default function SOVManager({ projectId, canEdit }) {
     queryKey: ['sov-items', projectId],
     queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
     select: (items) => {
-      return [...items].sort((a, b) => {
-        const codeA = String(a.sov_code || '');
-        const codeB = String(b.sov_code || '');
-        const numA = parseFloat(codeA.replace(/[^\d.]/g, '')) || 0;
-        const numB = parseFloat(codeB.replace(/[^\d.]/g, '')) || 0;
-        if (numA !== numB) return numA - numB;
-        return codeA.localeCompare(codeB);
-      });
+      const seg = (s) => String(s ?? '').split(/[^\dA-Za-z]+/).filter(Boolean);
+      const cmp = (a, b) => {
+        const aa = seg(a), bb = seg(b);
+        const n = Math.max(aa.length, bb.length);
+        for (let i = 0; i < n; i++) {
+          const x = aa[i] ?? '', y = bb[i] ?? '';
+          const nx = Number(x), ny = Number(y);
+          const bothNum = !Number.isNaN(nx) && !Number.isNaN(ny);
+          if (bothNum && nx !== ny) return nx - ny;
+          if (x !== y) return String(x).localeCompare(String(y), undefined, { numeric: true });
+        }
+        return 0;
+      };
+      return [...items].sort((a, b) => cmp(a.sov_code, b.sov_code));
     },
     enabled: !!projectId
   });
@@ -42,17 +48,20 @@ export default function SOVManager({ projectId, canEdit }) {
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', projectId],
     queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }),
-    enabled: !!projectId
+    enabled: !!projectId,
+    retry: 1,
+    staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
     mutationFn: (data) => backend.createSOVItem({ ...data, project_id: projectId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
       toast.success('SOV line added');
       setShowAddDialog(false);
       setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
-    }
+    },
+    onError: (err) => toast.error(err?.message ?? 'Failed to add SOV line')
   });
 
   const updateMutation = useMutation({
@@ -70,9 +79,10 @@ export default function SOVManager({ projectId, canEdit }) {
   const deleteMutation = useMutation({
     mutationFn: (id) => backend.deleteSOVItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
       toast.success('SOV line deleted');
-    }
+    },
+    onError: (err) => toast.error(err?.message ?? 'Delete failed')
   });
 
   const hasApprovedInvoices = invoices.some(inv => inv.status === 'approved' || inv.status === 'paid');

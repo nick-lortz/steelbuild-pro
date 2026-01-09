@@ -187,27 +187,32 @@ export default function Detailing() {
       {/* Header Bar */}
       <div className="border-b border-zinc-800 bg-black">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Detailing</h1>
               {selectedProject && (
                 <p className="text-xs text-zinc-600 font-mono mt-1">{selectedProject.project_number} • {selectedProject.name}</p>
               )}
             </div>
-            {userProjects.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-zinc-400 uppercase tracking-widest font-bold">PROJECT:</label>
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
-                  <SelectValue placeholder="Select Project" />
+                <SelectTrigger className="w-80 bg-zinc-900 border-zinc-700 text-white">
+                  <SelectValue placeholder="Select a project..." />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {userProjects.map(project => (
-                    <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
-                      {project.project_number} - {project.name}
-                    </SelectItem>
-                  ))}
+                  {userProjects.length === 0 ? (
+                    <div className="p-2 text-xs text-zinc-500">No projects assigned</div>
+                  ) : (
+                    userProjects.map(project => (
+                      <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                        {project.project_number} - {project.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
-            )}
+            </div>
           </div>
         </div>
       </div>

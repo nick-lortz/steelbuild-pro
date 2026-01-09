@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle } from
 "@/components/ui/dialog";
-import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send, FileText, ExternalLink } from 'lucide-react';
+import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send, FileText, ExternalLink, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Textarea } from "@/components/ui/textarea";

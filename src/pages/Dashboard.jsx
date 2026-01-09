@@ -41,49 +41,75 @@ function formatFinancial(value) {
   return `$${value.toFixed(0)}`;
 }
 
-const KPICard = ({ title, value, icon: Icon, variant = "default", onClick, loading = false }) => {
+const KPICard = ({ title, value, icon: Icon, trend, trendValue, subtitle, variant = "default", onClick, loading = false }) => {
   const variants = {
-    default: "bg-zinc-800 border-zinc-700",
-    amber: "bg-amber-500/10 border-amber-500/30",
-    green: "bg-green-500/10 border-green-500/30",
-    blue: "bg-blue-500/10 border-blue-500/30",
+    default: "bg-zinc-900 border-zinc-800 hover:border-zinc-700",
+    primary: "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/30",
+    success: "bg-green-500/5 border-green-500/20 hover:border-green-500/30",
+    warning: "bg-orange-500/5 border-orange-500/20 hover:border-orange-500/30",
+    danger: "bg-red-500/5 border-red-500/20 hover:border-red-500/30",
   };
   
   return (
     <Card 
-      className={`${variants[variant]} border ${onClick ? 'cursor-pointer active:scale-95' : ''} transition-transform`}
+      className={`${variants[variant]} border ${onClick ? 'cursor-pointer hover:shadow-lg' : ''} transition-all`}
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <Icon size={20} className="text-amber-500" />
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="p-2 rounded bg-zinc-800/50">
+            <Icon size={20} className="text-amber-500" />
+          </div>
+          {trend && (
+            <div className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-zinc-400'}`}>
+              {trendValue && <span>{trendValue}</span>}
+              {trend === 'up' && '↑'}
+              {trend === 'down' && '↓'}
+            </div>
+          )}
         </div>
-        <p className="text-sm text-zinc-400 mb-1">{title}</p>
+        <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2 font-medium">{title}</p>
         {loading ? (
-          <div className="h-8 w-20 bg-zinc-700 animate-pulse rounded" />
+          <div className="h-10 w-28 bg-zinc-800 animate-pulse rounded" />
         ) : (
-          <p className="text-2xl font-bold text-white">{value}</p>
+          <>
+            <p className="text-3xl font-bold text-white mb-1">{value}</p>
+            {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
+          </>
         )}
       </CardContent>
     </Card>
   );
 };
 
-const ActivityItem = ({ type, title, subtitle, badge, onClick }) => (
-  <div 
-    className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0 hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors cursor-pointer"
-    onClick={onClick}
-  >
-    <div className="flex-1 min-w-0 mr-3">
-      <p className="text-sm font-medium text-white truncate">{title}</p>
-      <p className="text-xs text-zinc-400 truncate">{subtitle}</p>
+const ActivityItem = ({ type, title, subtitle, badge, date, onClick }) => {
+  const typeIcons = {
+    rfi: MessageSquareWarning,
+    co: FileCheck,
+    task: Target,
+    drawing: FileText
+  };
+  const Icon = typeIcons[type] || FileText;
+  
+  return (
+    <div 
+      className="group flex items-center gap-4 py-3 px-4 -mx-4 border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-all cursor-pointer"
+      onClick={onClick}
+    >
+      <div className="p-2 rounded bg-zinc-800/50 group-hover:bg-zinc-700/50 transition-colors">
+        <Icon size={14} className="text-zinc-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-white truncate">{title}</p>
+        <p className="text-xs text-zinc-500 truncate">{subtitle}</p>
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {badge}
+        <ArrowRight size={14} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+      </div>
     </div>
-    <div className="flex items-center gap-2 flex-shrink-0">
-      {badge}
-      <ArrowRight size={16} className="text-muted-foreground" />
-    </div>
-  </div>
-);
+  );
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -353,170 +379,266 @@ export default function Dashboard() {
   }
 
   return (
-    <ScreenContainer>
-      {/* Hero Section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-            <p className="text-sm text-zinc-400 mt-1">
-              {currentUser?.full_name || 'Welcome'} • {format(new Date(), 'MMM d, yyyy')}
-            </p>
+    <div className="min-h-screen bg-black">
+      {/* System Status Bar */}
+      <div className="border-b border-zinc-800 bg-zinc-950">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-xs text-zinc-400 font-medium">SYSTEM OPERATIONAL</span>
+            </div>
+            <div className="h-4 w-px bg-zinc-800" />
+            <span className="text-xs text-zinc-500">{format(new Date(), 'EEEE, MMMM d, yyyy • h:mm a')}</span>
           </div>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
+            className="h-7 text-xs text-zinc-400 hover:text-white"
           >
-            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-          </Button>
-        </div>
-
-        {/* Critical Issues Alert */}
-        {criticalIssues.length > 0 && (
-          <Alert className="bg-red-500/10 border-red-500/30 mb-4">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
-            <AlertDescription className="text-sm text-zinc-200">
-              <span className="font-medium text-white">Action Required:</span> {criticalIssues.join(', ')}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <KPICard
-            title="Active Projects"
-            value={portfolioHealth.activeProjects || activeProjects.length}
-            icon={Building2}
-            variant="blue"
-            onClick={() => navigate(createPageUrl('Projects'))}
-            loading={metricsLoading}
-          />
-          <KPICard
-            title="Budget Used"
-            value={`${portfolioHealth.budgetUtilization || 0}%`}
-            icon={DollarSign}
-            variant="amber"
-            onClick={() => navigate(createPageUrl('Financials'))}
-            loading={metricsLoading}
-          />
-          <KPICard
-            title="Schedule"
-            value={`${portfolioHealth.scheduleAdherence || 0}%`}
-            icon={Calendar}
-            variant="green"
-            onClick={() => navigate(createPageUrl('Schedule'))}
-            loading={metricsLoading}
-          />
-          <KPICard
-            title="Completion"
-            value={`${portfolioHealth.completionRate || 0}%`}
-            icon={TrendingUp}
-            variant="default"
-            onClick={() => navigate(createPageUrl('Schedule'))}
-            loading={metricsLoading}
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate(createPageUrl('Projects'))}
-          >
-            <Plus size={16} className="mr-2" />
-            New Project
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={() => navigate(createPageUrl('RFIs'))}
-          >
-            <MessageSquareWarning size={16} className="mr-2" />
-            New RFI
+            <RefreshCw size={12} className={`mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
         </div>
       </div>
 
-      {/* Cost Risk Indicator for Active Project */}
-      {activeProjectId && (
-        <div className="mb-6">
-          <CostRiskIndicator
-            projectId={activeProjectId}
-            expenses={expenses}
-            estimatedCosts={estimatedCosts}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Command Center</h1>
+          <p className="text-zinc-400">
+            Welcome back, <span className="text-white font-medium">{currentUser?.full_name || 'User'}</span>
+          </p>
+        </div>
+
+        {/* Critical Alerts */}
+        {criticalIssues.length > 0 && (
+          <div className="mb-8 p-4 bg-red-500/5 border border-red-500/20 rounded">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded bg-red-500/10">
+                <AlertTriangle size={16} className="text-red-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-400 mb-1">IMMEDIATE ATTENTION REQUIRED</p>
+                <p className="text-xs text-zinc-300">{criticalIssues.join(' • ')}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Core Metrics Grid */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          <KPICard
+            title="Active Projects"
+            value={portfolioHealth.activeProjects || activeProjects.length}
+            subtitle={`${projects.length} total`}
+            icon={Building2}
+            variant="primary"
+            onClick={() => navigate(createPageUrl('Projects'))}
+            loading={metricsLoading}
+          />
+          <KPICard
+            title="Budget Consumed"
+            value={`${portfolioHealth.budgetUtilization || 0}%`}
+            trend={portfolioHealth.budgetUtilization > 85 ? 'up' : portfolioHealth.budgetUtilization < 70 ? 'down' : null}
+            trendValue={portfolioHealth.budgetUtilization > 85 ? 'High' : ''}
+            icon={DollarSign}
+            variant={portfolioHealth.budgetUtilization > 90 ? 'danger' : portfolioHealth.budgetUtilization > 75 ? 'warning' : 'success'}
+            onClick={() => navigate(createPageUrl('Financials'))}
+            loading={metricsLoading}
+          />
+          <KPICard
+            title="Schedule Performance"
+            value={`${portfolioHealth.scheduleAdherence || 0}%`}
+            subtitle="On-time delivery"
+            trend={portfolioHealth.scheduleAdherence > 90 ? 'up' : 'down'}
+            icon={Calendar}
+            variant={portfolioHealth.scheduleAdherence > 85 ? 'success' : 'warning'}
+            onClick={() => navigate(createPageUrl('Schedule'))}
+            loading={metricsLoading}
+          />
+          <KPICard
+            title="Overall Progress"
+            value={`${portfolioHealth.completionRate || 0}%`}
+            subtitle="Portfolio completion"
+            icon={TrendingUp}
+            variant="default"
+            onClick={() => navigate(createPageUrl('Analytics'))}
+            loading={metricsLoading}
           />
         </div>
-      )}
 
-      {/* At Risk Projects */}
-      {upcomingMilestones.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target size={16} className="text-amber-500" />
-              Upcoming Milestones ({upcomingMilestones.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {upcomingMilestones.slice(0, 3).map(project => {
-                const days = differenceInDays(new Date(project.target_completion), new Date());
-                return (
-                  <div
-                    key={project.id}
-                    className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0 cursor-pointer hover:bg-zinc-800/50 active:bg-zinc-800 transition-colors"
-                    onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{project.name}</p>
-                      <p className="text-xs text-zinc-400">{project.project_number}</p>
+        {/* Active Project Financial Summary */}
+        {activeProjectId && activeProjectFinancials && (
+          <div className="mb-8 p-6 bg-zinc-900 border border-zinc-800 rounded">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-lg font-bold text-white">Active Project Financials</h2>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {projects.find(p => p.id === activeProjectId)?.name}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-amber-500 hover:text-amber-400"
+                onClick={() => navigate(createPageUrl('Financials'))}
+              >
+                View Details
+                <ArrowRight size={14} className="ml-1" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-4 gap-6">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Contract Value</p>
+                <p className="text-2xl font-bold text-white">{formatFinancial(activeProjectFinancials.totalContract)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Actual Cost</p>
+                <p className="text-2xl font-bold text-white">{formatFinancial(activeProjectFinancials.actualCost)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Est. at Completion</p>
+                <p className="text-2xl font-bold text-white">{formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Projected Margin</p>
+                <p className={`text-2xl font-bold ${
+                  ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100) > activeProjectFinancials.plannedMargin
+                    ? 'text-green-400'
+                    : 'text-red-400'
+                }`}>
+                  {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Milestones */}
+          {upcomingMilestones.length > 0 && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded">
+              <div className="p-6 border-b border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded bg-amber-500/10">
+                      <Target size={14} className="text-amber-500" />
                     </div>
-                    <Badge variant="outline" className="ml-2">
-                      {days}d
-                    </Badge>
+                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Approaching Deadlines</h2>
                   </div>
-                );
-              })}
+                  <Badge variant="outline" className="text-xs">{upcomingMilestones.length}</Badge>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="space-y-3">
+                  {upcomingMilestones.slice(0, 5).map(project => {
+                    const days = differenceInDays(new Date(project.target_completion), new Date());
+                    return (
+                      <div
+                        key={project.id}
+                        className="group flex items-center justify-between p-3 bg-zinc-950/50 hover:bg-zinc-800/50 border border-zinc-800/50 rounded cursor-pointer transition-all"
+                        onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
+                      >
+                        <div className="flex-1 min-w-0 mr-3">
+                          <p className="text-sm font-medium text-white truncate">{project.name}</p>
+                          <p className="text-xs text-zinc-500 mt-0.5">{project.project_number}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`px-2 py-1 rounded text-xs font-bold ${
+                            days < 7 ? 'bg-red-500/10 text-red-400' : days < 14 ? 'bg-amber-500/10 text-amber-400' : 'bg-zinc-800 text-zinc-400'
+                          }`}>
+                            {days}d
+                          </div>
+                          <ArrowRight size={12} className="text-zinc-600 group-hover:text-zinc-400" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText size={16} className="text-amber-500" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {paginatedActivity.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText size={32} className="text-zinc-500 mx-auto mb-2" />
-              <p className="text-sm text-zinc-400">No recent activity</p>
-            </div>
-          ) : (
-            <>
-              {paginatedActivity.map(item => (
-                <ActivityItem key={item.id} {...item} />
-              ))}
-              {hasMoreActivity && (
-                <Button
-                  variant="ghost"
-                  className="w-full mt-3"
-                  onClick={() => setActivityPage(p => p + 1)}
-                >
-                  Load More
-                </Button>
-              )}
-            </>
           )}
-        </CardContent>
-      </Card>
-    </ScreenContainer>
+
+          {/* Activity Stream */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded">
+            <div className="p-6 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded bg-amber-500/10">
+                  <FileText size={14} className="text-amber-500" />
+                </div>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Recent Activity</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              {paginatedActivity.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText size={32} className="text-zinc-700 mx-auto mb-3" />
+                  <p className="text-sm text-zinc-500">No activity to display</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    {paginatedActivity.slice(0, 8).map(item => (
+                      <ActivityItem key={item.id} {...item} />
+                    ))}
+                  </div>
+                  {hasMoreActivity && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-4 text-xs text-zinc-400 hover:text-white"
+                      onClick={() => setActivityPage(p => p + 1)}
+                    >
+                      Load More Activity
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions Bar */}
+        <div className="mt-8 p-4 bg-zinc-900 border border-zinc-800 rounded">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">Quick Actions</p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-zinc-700 hover:border-zinc-600"
+                onClick={() => navigate(createPageUrl('Projects'))}
+              >
+                <Plus size={14} className="mr-1.5" />
+                New Project
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-zinc-700 hover:border-zinc-600"
+                onClick={() => navigate(createPageUrl('RFIs'))}
+              >
+                <MessageSquareWarning size={14} className="mr-1.5" />
+                Create RFI
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-zinc-700 hover:border-zinc-600"
+                onClick={() => navigate(createPageUrl('Schedule'))}
+              >
+                <Calendar size={14} className="mr-1.5" />
+                View Schedule
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

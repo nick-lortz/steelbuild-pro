@@ -18,7 +18,9 @@ import {
   MessageSquareWarning,
   FileCheck,
   Target,
-  RefreshCw
+  RefreshCw,
+  Activity,
+  CheckCircle2
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,19 +95,21 @@ const ActivityItem = ({ type, title, subtitle, badge, date, onClick }) => {
   
   return (
     <div 
-      className="group flex items-center gap-4 py-3 px-4 -mx-4 border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-all cursor-pointer"
+      className="group px-6 py-3 hover:bg-zinc-900/50 cursor-pointer transition-colors"
       onClick={onClick}
     >
-      <div className="p-2 rounded bg-zinc-800/50 group-hover:bg-zinc-700/50 transition-colors">
-        <Icon size={14} className="text-zinc-400" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white truncate">{title}</p>
-        <p className="text-xs text-zinc-500 truncate">{subtitle}</p>
-      </div>
-      <div className="flex items-center gap-3 flex-shrink-0">
-        {badge}
-        <ArrowRight size={14} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Icon size={14} className="text-zinc-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">{title}</p>
+            <p className="text-xs text-zinc-500 truncate">{subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+          {badge}
+          <ArrowRight size={12} className="text-zinc-600 group-hover:text-zinc-400" />
+        </div>
       </div>
     </div>
   );
@@ -378,141 +382,317 @@ export default function Dashboard() {
     );
   }
 
+  // Calculate schedule health
+  const scheduleHealth = React.useMemo(() => {
+    const overdueCount = tasks.filter(t => 
+      t.due_date && 
+      new Date(t.due_date) < new Date() && 
+      t.status !== 'completed'
+    ).length;
+    const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
+    const onTimePercentage = totalActiveTasks > 0 
+      ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
+      : 100;
+    
+    return {
+      overdueCount,
+      onTimePercentage,
+      status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
+    };
+  }, [tasks]);
+
+  // Calculate cost risk status
+  const costRiskStatus = React.useMemo(() => {
+    if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
+    
+    const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
+    const variance = projectedMargin - activeProjectFinancials.plannedMargin;
+    
+    if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
+    if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
+    return { status: 'critical', message: 'At Risk', color: 'red' };
+  }, [activeProjectFinancials]);
+
   return (
     <div className="min-h-screen bg-black">
-      {/* System Status Bar */}
-      <div className="border-b border-zinc-800 bg-zinc-950">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs text-zinc-400 font-medium">SYSTEM OPERATIONAL</span>
+      {/* Command Strip */}
+      <div className="border-b-2 border-zinc-800">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="grid grid-cols-4 gap-4">
+            {/* Action Required */}
+            <div 
+              className={`p-4 border-2 cursor-pointer transition-all ${
+                criticalIssues.length > 0 
+                  ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20' 
+                  : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900'
+              }`}
+              onClick={() => {
+                if (criticalIssues.length > 0) {
+                  // Navigate to most critical issue
+                  if (criticalIssues[0].includes('RFI')) navigate(createPageUrl('RFIs'));
+                  else if (criticalIssues[0].includes('drawing')) navigate(createPageUrl('Detailing'));
+                  else navigate(createPageUrl('ChangeOrders'));
+                }
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <AlertTriangle size={18} className={criticalIssues.length > 0 ? 'text-red-400' : 'text-zinc-600'} />
+                {criticalIssues.length > 0 && (
+                  <span className="text-xs font-bold text-red-400 uppercase tracking-wider animate-pulse">Action</span>
+                )}
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">{criticalIssues.length}</div>
+              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Issues Require Action</div>
+              {criticalIssues.length > 0 && (
+                <div className="text-xs text-zinc-400 truncate">{criticalIssues[0]}</div>
+              )}
             </div>
-            <div className="h-4 w-px bg-zinc-800" />
-            <span className="text-xs text-zinc-500">{format(new Date(), 'EEEE, MMMM d, yyyy • h:mm a')}</span>
+
+            {/* Active Projects */}
+            <div 
+              className="p-4 bg-zinc-900/50 border-2 border-zinc-800 hover:bg-zinc-900 cursor-pointer transition-all"
+              onClick={() => navigate(createPageUrl('Projects'))}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <Building2 size={18} className="text-blue-400" />
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">
+                {portfolioHealth.activeProjects || activeProjects.length}
+              </div>
+              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Active Projects</div>
+              <div className="text-xs text-zinc-400">{projects.length} total portfolio</div>
+            </div>
+
+            {/* Schedule Health */}
+            <div 
+              className={`p-4 border-2 cursor-pointer transition-all ${
+                scheduleHealth.status === 'critical' 
+                  ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20'
+                  : scheduleHealth.status === 'warning'
+                  ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20'
+                  : 'bg-green-500/10 border-green-500/50 hover:bg-green-500/20'
+              }`}
+              onClick={() => navigate(createPageUrl('Schedule'))}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <Calendar size={18} className={
+                  scheduleHealth.status === 'critical' ? 'text-red-400' :
+                  scheduleHealth.status === 'warning' ? 'text-amber-400' : 'text-green-400'
+                } />
+                {scheduleHealth.overdueCount > 0 && (
+                  <span className="text-xs font-bold text-red-400">{scheduleHealth.overdueCount} Late</span>
+                )}
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">{scheduleHealth.onTimePercentage}%</div>
+              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Schedule Health</div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${
+                      scheduleHealth.status === 'critical' ? 'bg-red-500' :
+                      scheduleHealth.status === 'warning' ? 'bg-amber-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${scheduleHealth.onTimePercentage}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cost Risk */}
+            <div 
+              className={`p-4 border-2 cursor-pointer transition-all ${
+                costRiskStatus.status === 'critical' 
+                  ? 'bg-red-500/10 border-red-500/50 hover:bg-red-500/20'
+                  : costRiskStatus.status === 'warning'
+                  ? 'bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20'
+                  : costRiskStatus.status === 'healthy'
+                  ? 'bg-green-500/10 border-green-500/50 hover:bg-green-500/20'
+                  : 'bg-zinc-900/50 border-zinc-800 hover:bg-zinc-900'
+              }`}
+              onClick={() => activeProjectId && navigate(createPageUrl('Financials'))}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign size={18} className={
+                  costRiskStatus.status === 'critical' ? 'text-red-400' :
+                  costRiskStatus.status === 'warning' ? 'text-amber-400' : 
+                  costRiskStatus.status === 'healthy' ? 'text-green-400' : 'text-zinc-600'
+                } />
+                {activeProjectFinancials && (
+                  <span className={`text-xs font-bold ${
+                    costRiskStatus.status === 'critical' ? 'text-red-400' :
+                    costRiskStatus.status === 'warning' ? 'text-amber-400' : 'text-green-400'
+                  }`}>
+                    {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
+                  </span>
+                )}
+              </div>
+              <div className="text-3xl font-bold text-white mb-1">
+                {costRiskStatus.message}
+              </div>
+              <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Cost Risk Status</div>
+              {activeProjectFinancials && (
+                <div className="text-xs text-zinc-400">
+                  {formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)} EAC
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Operations Dashboard</h1>
+              <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span>{format(new Date(), 'MMM d, yyyy')}</span>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">{currentUser?.full_name || 'User'}</p>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="h-7 text-xs text-zinc-400 hover:text-white"
+            className="h-8 text-xs text-zinc-400 hover:text-white"
           >
-            <RefreshCw size={12} className={`mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw size={14} className={`mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh Data
           </Button>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white tracking-tight mb-2">Command Center</h1>
-          <p className="text-zinc-400">
-            Welcome back, <span className="text-white font-medium">{currentUser?.full_name || 'User'}</span>
-          </p>
-        </div>
-
-        {/* Critical Alerts */}
-        {criticalIssues.length > 0 && (
-          <div className="mb-8 p-4 bg-red-500/5 border border-red-500/20 rounded">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded bg-red-500/10">
-                <AlertTriangle size={16} className="text-red-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-red-400 mb-1">IMMEDIATE ATTENTION REQUIRED</p>
-                <p className="text-xs text-zinc-300">{criticalIssues.join(' • ')}</p>
-              </div>
+        {/* Secondary Metrics */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs uppercase tracking-wider text-zinc-500">Budget Used</span>
+              <DollarSign size={14} className="text-zinc-600" />
+            </div>
+            <div className="text-2xl font-bold text-white mb-2">{portfolioHealth.budgetUtilization || 0}%</div>
+            <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${
+                  (portfolioHealth.budgetUtilization || 0) > 90 ? 'bg-red-500' :
+                  (portfolioHealth.budgetUtilization || 0) > 75 ? 'bg-amber-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${Math.min(portfolioHealth.budgetUtilization || 0, 100)}%` }}
+              />
             </div>
           </div>
-        )}
+          
+          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs uppercase tracking-wider text-zinc-500">Completion</span>
+              <TrendingUp size={14} className="text-zinc-600" />
+            </div>
+            <div className="text-2xl font-bold text-white mb-2">{portfolioHealth.completionRate || 0}%</div>
+            <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-500"
+                style={{ width: `${Math.min(portfolioHealth.completionRate || 0, 100)}%` }}
+              />
+            </div>
+          </div>
 
-        {/* Core Metrics Grid */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <KPICard
-            title="Active Projects"
-            value={portfolioHealth.activeProjects || activeProjects.length}
-            subtitle={`${projects.length} total`}
-            icon={Building2}
-            variant="primary"
-            onClick={() => navigate(createPageUrl('Projects'))}
-            loading={metricsLoading}
-          />
-          <KPICard
-            title="Budget Consumed"
-            value={`${portfolioHealth.budgetUtilization || 0}%`}
-            trend={portfolioHealth.budgetUtilization > 85 ? 'up' : portfolioHealth.budgetUtilization < 70 ? 'down' : null}
-            trendValue={portfolioHealth.budgetUtilization > 85 ? 'High' : ''}
-            icon={DollarSign}
-            variant={portfolioHealth.budgetUtilization > 90 ? 'danger' : portfolioHealth.budgetUtilization > 75 ? 'warning' : 'success'}
-            onClick={() => navigate(createPageUrl('Financials'))}
-            loading={metricsLoading}
-          />
-          <KPICard
-            title="Schedule Performance"
-            value={`${portfolioHealth.scheduleAdherence || 0}%`}
-            subtitle="On-time delivery"
-            trend={portfolioHealth.scheduleAdherence > 90 ? 'up' : 'down'}
-            icon={Calendar}
-            variant={portfolioHealth.scheduleAdherence > 85 ? 'success' : 'warning'}
-            onClick={() => navigate(createPageUrl('Schedule'))}
-            loading={metricsLoading}
-          />
-          <KPICard
-            title="Overall Progress"
-            value={`${portfolioHealth.completionRate || 0}%`}
-            subtitle="Portfolio completion"
-            icon={TrendingUp}
-            variant="default"
-            onClick={() => navigate(createPageUrl('Analytics'))}
-            loading={metricsLoading}
-          />
+          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs uppercase tracking-wider text-zinc-500">Open RFIs</span>
+              <MessageSquareWarning size={14} className="text-zinc-600" />
+            </div>
+            <div className="text-2xl font-bold text-white mb-2">
+              {rfis.filter(r => r.status === 'pending' || r.status === 'submitted').length}
+            </div>
+            <div className="text-xs text-zinc-500">
+              {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date()).length} overdue
+            </div>
+          </div>
+
+          <div className="p-4 bg-zinc-900/30 border border-zinc-800/50">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs uppercase tracking-wider text-zinc-500">Pending COs</span>
+              <FileCheck size={14} className="text-zinc-600" />
+            </div>
+            <div className="text-2xl font-bold text-white mb-2">
+              {changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').length}
+            </div>
+            <div className="text-xs text-zinc-500">
+              {formatFinancial(changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').reduce((sum, co) => sum + (co.cost_impact || 0), 0))} value
+            </div>
+          </div>
         </div>
 
-        {/* Active Project Financial Summary */}
+        {/* Active Project Detail */}
         {activeProjectId && activeProjectFinancials && (
-          <div className="mb-8 p-6 bg-zinc-900 border border-zinc-800 rounded">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-bold text-white">Active Project Financials</h2>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {projects.find(p => p.id === activeProjectId)?.name}
-                </p>
+          <div className="mb-6 border-2 border-zinc-800">
+            <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Active Project</h2>
+                    <Badge variant="outline" className="text-xs">
+                      {projects.find(p => p.id === activeProjectId)?.project_number}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {projects.find(p => p.id === activeProjectId)?.name}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-amber-500 hover:text-amber-400 text-xs"
+                  onClick={() => navigate(createPageUrl('Financials'))}
+                >
+                  Full Details
+                  <ArrowRight size={12} className="ml-1" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-amber-500 hover:text-amber-400"
-                onClick={() => navigate(createPageUrl('Financials'))}
-              >
-                View Details
-                <ArrowRight size={14} className="ml-1" />
-              </Button>
             </div>
-            <div className="grid grid-cols-4 gap-6">
-              <div>
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Contract Value</p>
-                <p className="text-2xl font-bold text-white">{formatFinancial(activeProjectFinancials.totalContract)}</p>
+            <div className="grid grid-cols-5 divide-x divide-zinc-800">
+              <div className="px-6 py-4">
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Contract</p>
+                <p className="text-xl font-bold text-white">{formatFinancial(activeProjectFinancials.totalContract)}</p>
               </div>
-              <div>
+              <div className="px-6 py-4">
                 <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Actual Cost</p>
-                <p className="text-2xl font-bold text-white">{formatFinancial(activeProjectFinancials.actualCost)}</p>
+                <p className="text-xl font-bold text-white">{formatFinancial(activeProjectFinancials.actualCost)}</p>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Est. at Completion</p>
-                <p className="text-2xl font-bold text-white">{formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}</p>
+              <div className="px-6 py-4">
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">EAC</p>
+                <p className="text-xl font-bold text-white">{formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}</p>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Projected Margin</p>
-                <p className={`text-2xl font-bold ${
+              <div className="px-6 py-4">
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Margin</p>
+                <p className={`text-xl font-bold ${
                   ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100) > activeProjectFinancials.plannedMargin
                     ? 'text-green-400'
                     : 'text-red-400'
                 }`}>
                   {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
                 </p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Target: {activeProjectFinancials.plannedMargin}%
+                </p>
+              </div>
+              <div className="px-6 py-4">
+                <p className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Status</p>
+                <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-bold ${
+                  costRiskStatus.status === 'healthy' 
+                    ? 'bg-green-500/10 text-green-400'
+                    : costRiskStatus.status === 'warning'
+                    ? 'bg-amber-500/10 text-amber-400'
+                    : 'bg-red-500/10 text-red-400'
+                }`}>
+                  {costRiskStatus.status === 'healthy' && <CheckCircle2 size={12} />}
+                  {costRiskStatus.status === 'warning' && <AlertTriangle size={12} />}
+                  {costRiskStatus.status === 'critical' && <AlertTriangle size={12} />}
+                  {costRiskStatus.message}
+                </div>
               </div>
             </div>
           </div>
@@ -520,122 +700,85 @@ export default function Dashboard() {
 
         {/* Two Column Layout */}
         <div className="grid grid-cols-2 gap-6">
-          {/* Milestones */}
-          {upcomingMilestones.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded">
-              <div className="p-6 border-b border-zinc-800">
+          {/* Approaching Deadlines */}
+          {upcomingMilestones.length > 0 ? (
+            <div className="border border-zinc-800">
+              <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/30">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded bg-amber-500/10">
-                      <Target size={14} className="text-amber-500" />
-                    </div>
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Approaching Deadlines</h2>
-                  </div>
+                  <h2 className="text-xs font-bold text-white uppercase tracking-wider">Approaching Deadlines</h2>
                   <Badge variant="outline" className="text-xs">{upcomingMilestones.length}</Badge>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="space-y-3">
-                  {upcomingMilestones.slice(0, 5).map(project => {
-                    const days = differenceInDays(new Date(project.target_completion), new Date());
-                    return (
-                      <div
-                        key={project.id}
-                        className="group flex items-center justify-between p-3 bg-zinc-950/50 hover:bg-zinc-800/50 border border-zinc-800/50 rounded cursor-pointer transition-all"
-                        onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
-                      >
+              <div className="divide-y divide-zinc-800/50">
+                {upcomingMilestones.slice(0, 6).map(project => {
+                  const days = differenceInDays(new Date(project.target_completion), new Date());
+                  return (
+                    <div
+                      key={project.id}
+                      className="group px-6 py-3 hover:bg-zinc-900/50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
+                    >
+                      <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0 mr-3">
                           <p className="text-sm font-medium text-white truncate">{project.name}</p>
-                          <p className="text-xs text-zinc-500 mt-0.5">{project.project_number}</p>
+                          <p className="text-xs text-zinc-500">{project.project_number}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className={`px-2 py-1 rounded text-xs font-bold ${
-                            days < 7 ? 'bg-red-500/10 text-red-400' : days < 14 ? 'bg-amber-500/10 text-amber-400' : 'bg-zinc-800 text-zinc-400'
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                            days < 7 ? 'bg-red-500/20 text-red-400' : 
+                            days < 14 ? 'bg-amber-500/20 text-amber-400' : 
+                            'bg-zinc-800 text-zinc-400'
                           }`}>
                             {days}d
-                          </div>
+                          </span>
                           <ArrowRight size={12} className="text-zinc-600 group-hover:text-zinc-400" />
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="border border-zinc-800 flex items-center justify-center py-12">
+              <div className="text-center">
+                <Target size={32} className="text-zinc-700 mx-auto mb-2" />
+                <p className="text-xs text-zinc-500">No upcoming deadlines</p>
               </div>
             </div>
           )}
 
-          {/* Activity Stream */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded">
-            <div className="p-6 border-b border-zinc-800">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded bg-amber-500/10">
-                  <FileText size={14} className="text-amber-500" />
-                </div>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Recent Activity</h2>
-              </div>
+          {/* Recent Activity */}
+          <div className="border border-zinc-800">
+            <div className="px-6 py-4 border-b border-zinc-800 bg-zinc-900/30">
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Recent Activity</h2>
             </div>
-            <div className="p-6">
-              {paginatedActivity.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText size={32} className="text-zinc-700 mx-auto mb-3" />
-                  <p className="text-sm text-zinc-500">No activity to display</p>
+            {paginatedActivity.length === 0 ? (
+              <div className="text-center py-12">
+                <Activity size={32} className="text-zinc-700 mx-auto mb-2" />
+                <p className="text-xs text-zinc-500">No recent activity</p>
+              </div>
+            ) : (
+              <>
+                <div className="divide-y divide-zinc-800/50">
+                  {paginatedActivity.slice(0, 6).map(item => (
+                    <ActivityItem key={item.id} {...item} />
+                  ))}
                 </div>
-              ) : (
-                <>
-                  <div className="space-y-1">
-                    {paginatedActivity.slice(0, 8).map(item => (
-                      <ActivityItem key={item.id} {...item} />
-                    ))}
-                  </div>
-                  {hasMoreActivity && (
+                {hasMoreActivity && (
+                  <div className="p-3 border-t border-zinc-800">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full mt-4 text-xs text-zinc-400 hover:text-white"
+                      className="w-full text-xs text-zinc-400 hover:text-white"
                       onClick={() => setActivityPage(p => p + 1)}
                     >
-                      Load More Activity
+                      Load More
                     </Button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions Bar */}
-        <div className="mt-8 p-4 bg-zinc-900 border border-zinc-800 rounded">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wider text-zinc-500 font-medium">Quick Actions</p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs border-zinc-700 hover:border-zinc-600"
-                onClick={() => navigate(createPageUrl('Projects'))}
-              >
-                <Plus size={14} className="mr-1.5" />
-                New Project
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs border-zinc-700 hover:border-zinc-600"
-                onClick={() => navigate(createPageUrl('RFIs'))}
-              >
-                <MessageSquareWarning size={14} className="mr-1.5" />
-                Create RFI
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-xs border-zinc-700 hover:border-zinc-600"
-                onClick={() => navigate(createPageUrl('Schedule'))}
-              >
-                <Calendar size={14} className="mr-1.5" />
-                View Schedule
-              </Button>
-            </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

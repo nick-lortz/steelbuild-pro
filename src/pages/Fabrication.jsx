@@ -121,6 +121,13 @@ export default function Fabrication() {
 
   const uniquePMs = [...new Set(projects.map((p) => p.project_manager).filter(Boolean))].sort();
 
+  const fabStats = useMemo(() => ({
+    inProgress: fabrications.filter(f => f.fabrication_status === 'in_progress').length,
+    readyToShip: fabrications.filter(f => f.fabrication_status === 'ready_to_ship').length,
+    complete: fabrications.filter(f => f.fabrication_status === 'complete').length,
+    totalTons: fabrications.reduce((sum, f) => sum + (f.weight_tons || 0), 0),
+  }), [fabrications]);
+
   const getStatusIcon = (status) => {
     if (status === 'complete') return <CheckCircle size={16} className="text-green-500" />;
     if (status === 'on_hold') return <AlertCircle size={16} className="text-red-500" />;

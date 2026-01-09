@@ -197,156 +197,172 @@ export default function Resources() {
     setSelectedResource(resource);
   }, []);
 
+  const resourceStats = useMemo(() => ({
+    labor: resources.filter(r => r.type === 'labor').length,
+    equipment: resources.filter(r => r.type === 'equipment').length,
+    subcontractor: resources.filter(r => r.type === 'subcontractor').length,
+  }), [resources]);
+
   return (
-    <ScreenContainer>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-bold">Resources</h1>
-          <p className="text-sm text-muted-foreground">{filteredResources.length} resources</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => {
-              setEditingResource(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            Add Resource
-          </Button>
-          <ExportButton
-            data={filteredResources}
-            columns={[
-              { key: 'name', label: 'Name' },
-              { key: 'type', label: 'Type' },
-              { key: 'classification', label: 'Classification' },
-              { key: 'status', label: 'Status' },
-              { key: 'rate', label: 'Rate' },
-              { key: 'rate_type', label: 'Rate Type' },
-              { key: 'contact_name', label: 'Contact' },
-              { key: 'contact_phone', label: 'Phone' }
-            ]}
-            filename="resources"
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter size={18} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-          </Button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search resources..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Filters */}
-      {showFilters && (
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="labor">Labor</SelectItem>
-              <SelectItem value="equipment">Equipment</SelectItem>
-              <SelectItem value="subcontractor">Subcontractor</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Project" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Status Tabs */}
-      <Tabs value={statusFilter} onValueChange={setStatusFilter} className="mb-4">
-        <TabsList className="grid w-full grid-cols-4 h-auto">
-          <TabsTrigger value="all" className="text-xs py-2">
-            All ({statusCounts.all})
-          </TabsTrigger>
-          <TabsTrigger value="available" className="text-xs py-2">
-            Available ({statusCounts.available})
-          </TabsTrigger>
-          <TabsTrigger value="assigned" className="text-xs py-2">
-            Assigned ({statusCounts.assigned})
-          </TabsTrigger>
-          <TabsTrigger value="unavailable" className="text-xs py-2">
-            Out ({statusCounts.unavailable})
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Resource Cards */}
-      {isLoading ? (
-        <SkeletonList count={5} />
-      ) : filteredResources.length === 0 ? (
-        <EmptyState
-          icon={UsersIcon}
-          title="No resources found"
-          description="Try adjusting your filters or search term"
-        />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-3 mb-4">
-            {paginatedResources.map((resource) => {
-              const project = projects.find(p => p.id === resource.current_project_id);
-              const allocation = resourceAllocations[resource.id];
-              
-              return (
-                <ResourceCard
-                  key={resource.id}
-                  resource={resource}
-                  project={project}
-                  allocation={allocation}
-                  onClick={handleResourceClick}
-                />
-              );
-            })}
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Resource Directory</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredResources.length} RESOURCES</p>
+            </div>
+            <div className="flex gap-2">
+              <ExportButton
+                data={filteredResources}
+                columns={[
+                  { key: 'name', label: 'Name' },
+                  { key: 'type', label: 'Type' },
+                  { key: 'classification', label: 'Classification' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'rate', label: 'Rate' },
+                  { key: 'rate_type', label: 'Rate Type' },
+                  { key: 'contact_name', label: 'Contact' },
+                  { key: 'contact_phone', label: 'Phone' }
+                ]}
+                filename="resources"
+              />
+              <Button
+                onClick={() => {
+                  setEditingResource(null);
+                  setShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
+                <Plus size={14} className="mr-1" />
+                ADD
+              </Button>
+            </div>
           </div>
+        </div>
+      </div>
 
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              pageSize={20}
-              totalItems={totalItems}
-            />
-          )}
-        </>
-      )}
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVAILABLE</div>
+              <div className="text-2xl font-bold font-mono text-green-500">{statusCounts.available}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ASSIGNED</div>
+              <div className="text-2xl font-bold font-mono text-white">{statusCounts.assigned}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">LABOR</div>
+              <div className="text-2xl font-bold font-mono text-blue-500">{resourceStats.labor}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">EQUIPMENT</div>
+              <div className="text-2xl font-bold font-mono text-purple-500">{resourceStats.equipment}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Input
+                placeholder="SEARCH RESOURCES..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+              />
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="labor">Labor</SelectItem>
+                <SelectItem value="equipment">Equipment</SelectItem>
+                <SelectItem value="subcontractor">Subcontractor</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
+                <SelectItem value="unavailable">Unavailable</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
+            </div>
+          </div>
+        ) : filteredResources.length === 0 ? (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-xs text-zinc-600 uppercase tracking-widest">NO RESOURCES FOUND</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 gap-3 mb-4">
+              {paginatedResources.map((resource) => {
+                const project = projects.find(p => p.id === resource.current_project_id);
+                const allocation = resourceAllocations[resource.id];
+                
+                return (
+                  <ResourceCard
+                    key={resource.id}
+                    resource={resource}
+                    project={project}
+                    allocation={allocation}
+                    onClick={handleResourceClick}
+                  />
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={20}
+                totalItems={totalItems}
+              />
+            )}
+          </>
+        )}
+      </div>
 
       {/* Resource Detail Sheet */}
       <Sheet open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>

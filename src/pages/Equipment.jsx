@@ -123,124 +123,163 @@ export default function Equipment() {
   }];
 
 
+  const equipStats = useMemo(() => {
+    const activeBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'in_use').length;
+    const totalRevenue = bookings
+      .filter(b => b.status === 'completed')
+      .reduce((sum, b) => sum + (b.total_cost || 0), 0);
+    return { activeBookings, totalRevenue };
+  }, [bookings]);
+
   return (
-    <div>
-      <PageHeader
-        title="Equipment Manager"
-        subtitle="Track equipment availability and utilization"
-        actions={
-        <div className="flex gap-2">
-          <ExportButton
-            data={equipment}
-            columns={[
-              { key: 'name', label: 'Equipment' },
-              { key: 'classification', label: 'Type' },
-              { key: 'status', label: 'Status' },
-              { key: 'rate', label: 'Rate' },
-              { key: 'rate_type', label: 'Rate Type' },
-              { key: 'current_project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.current_project_id)?.name || 'Available' }
-            ]}
-            filename="equipment"
-          />
-          <Link to={createPageUrl('Resources')}>
-            <Button className="bg-amber-500 hover:bg-amber-600 text-black">
-              Manage Resources
-            </Button>
-          </Link>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Equipment Management</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{equipment.length} UNITS</p>
+            </div>
+            <div className="flex gap-2">
+              <ExportButton
+                data={equipment}
+                columns={[
+                  { key: 'name', label: 'Equipment' },
+                  { key: 'classification', label: 'Type' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'rate', label: 'Rate' },
+                  { key: 'rate_type', label: 'Rate Type' },
+                  { key: 'current_project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.current_project_id)?.name || 'Available' }
+                ]}
+                filename="equipment"
+              />
+              <Link to={createPageUrl('Resources')}>
+                <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                  MANAGE
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
-        } />
-
-
-      {/* Overall KPIs */}
-      {equipment.length > 0 &&
-      <div className="mb-6">
-          <h3 className="text-sm font-medium text-zinc-400 mb-3">Fleet Overview</h3>
-          <EquipmentKPIs
-          bookings={bookings}
-          equipment={equipment} />
-
-        </div>
-      }
-
-      {/* Equipment List */}
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-white mb-3">Equipment Fleet</h3>
-        <DataTable
-          columns={columns}
-          data={paginatedEquipment}
-          emptyMessage="No equipment found. Add equipment resources to get started." />
-
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            pageSize={20}
-            totalItems={totalItems}
-          />
-        )}
       </div>
 
-      {/* Selected Equipment Details */}
-      {selectedEquipment &&
-      <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-white">Equipment Details</h3>
-            <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setSelectedEquipment(null)}
-            className="border-zinc-700">
-
-              Close
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Calendar */}
-            <EquipmentCalendar
-            equipmentId={selectedEquipment.id}
-            equipmentName={selectedEquipment.name} />
-
-
-            {/* Equipment-specific KPIs */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <BarChart3 size={18} />
-                  Performance Metrics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EquipmentKPIs
-                bookings={bookings.filter((b) => b.resource_id === selectedEquipment.id)}
-                equipment={[selectedEquipment]} />
-
-                
-                {/* Additional Details */}
-                <div className="mt-6 space-y-3">
-                  <div className="flex justify-between items-center p-2 bg-zinc-800/50 rounded">
-                    <span className="text-sm text-zinc-400">Classification</span>
-                    <span className="text-sm font-medium text-white">{selectedEquipment.classification || '-'}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-zinc-800/50 rounded">
-                    <span className="text-sm text-zinc-400">Daily Rate</span>
-                    <span className="text-sm font-medium text-amber-400">
-                      ${selectedEquipment.rate?.toLocaleString() || 0}/{selectedEquipment.rate_type}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-zinc-800/50 rounded">
-                    <span className="text-sm text-zinc-400">Contact</span>
-                    <span className="text-sm font-medium text-white">
-                      {selectedEquipment.contact_name || selectedEquipment.contact_phone || '-'}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FLEET SIZE</div>
+              <div className="text-2xl font-bold font-mono text-white">{equipment.length}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVAILABLE</div>
+              <div className="text-2xl font-bold font-mono text-green-500">
+                {equipment.filter(e => e.status === 'available').length}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ACTIVE BOOKINGS</div>
+              <div className="text-2xl font-bold font-mono text-amber-500">{equipStats.activeBookings}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">REVENUE (TTD)</div>
+              <div className="text-2xl font-bold font-mono text-white">
+                ${(equipStats.totalRevenue / 1000).toFixed(0)}K
+              </div>
+            </div>
           </div>
         </div>
-      }
-    </div>);
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* Fleet Overview */}
+        {equipment.length > 0 && (
+          <div className="mb-6">
+            <EquipmentKPIs bookings={bookings} equipment={equipment} />
+          </div>
+        )}
+
+        {/* Equipment List */}
+        <div className="mb-6">
+          <DataTable
+            columns={columns}
+            data={paginatedEquipment}
+            emptyMessage="No equipment found. Add equipment resources to get started."
+          />
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              pageSize={20}
+              totalItems={totalItems}
+            />
+          )}
+        </div>
+
+        {/* Selected Equipment Details */}
+        {selectedEquipment && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">EQUIPMENT DETAILS</h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedEquipment(null)}
+                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+              >
+                CLOSE
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Calendar */}
+              <EquipmentCalendar
+                equipmentId={selectedEquipment.id}
+                equipmentName={selectedEquipment.name}
+              />
+
+              {/* Equipment-specific KPIs */}
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
+                    <BarChart3 size={16} />
+                    Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EquipmentKPIs
+                    bookings={bookings.filter((b) => b.resource_id === selectedEquipment.id)}
+                    equipment={[selectedEquipment]}
+                  />
+                  
+                  {/* Additional Details */}
+                  <div className="mt-6 space-y-3">
+                    <div className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
+                      <span className="text-xs text-zinc-600 uppercase tracking-widest">CLASSIFICATION</span>
+                      <span className="text-sm font-medium text-white">{selectedEquipment.classification || '-'}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
+                      <span className="text-xs text-zinc-600 uppercase tracking-widest">RATE</span>
+                      <span className="text-sm font-medium text-amber-400 font-mono">
+                        ${selectedEquipment.rate?.toLocaleString() || 0}/{selectedEquipment.rate_type}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
+                      <span className="text-xs text-zinc-600 uppercase tracking-widest">CONTACT</span>
+                      <span className="text-sm font-medium text-white">
+                        {selectedEquipment.contact_name || selectedEquipment.contact_phone || '-'}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

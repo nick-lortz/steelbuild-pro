@@ -175,59 +175,106 @@ export default function CostCodes() {
     },
   ];
 
-  return (
-    <div>
-      <PageHeader
-        title="Cost Codes"
-        subtitle="Universal cost codes used across all projects"
-        actions={
-          <Button 
-            onClick={() => {
-              setFormData(initialFormState);
-              setEditingCode(null);
-              setShowForm(true);
-            }}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            New Cost Code
-          </Button>
-        }
-      />
+  const categoryCounts = useMemo(() => ({
+    labor: costCodes.filter(c => c.category === 'labor').length,
+    material: costCodes.filter(c => c.category === 'material').length,
+    equipment: costCodes.filter(c => c.category === 'equipment').length,
+    subcontract: costCodes.filter(c => c.category === 'subcontract').length,
+    other: costCodes.filter(c => c.category === 'other').length,
+  }), [costCodes]);
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder="Search cost codes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-          />
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Cost Code Library</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredCodes.length} CODES</p>
+            </div>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setEditingCode(null);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+            >
+              <Plus size={14} className="mr-1" />
+              NEW
+            </Button>
+          </div>
         </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="labor">Labor</SelectItem>
-            <SelectItem value="material">Material</SelectItem>
-            <SelectItem value="equipment">Equipment</SelectItem>
-            <SelectItem value="subcontract">Subcontract</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredCodes}
-        onRowClick={handleEdit}
-        emptyMessage="No cost codes found. Create your first cost code to get started."
-      />
+      {/* KPI Strip */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-5 gap-6">
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">LABOR</div>
+              <div className="text-2xl font-bold font-mono text-blue-500">{categoryCounts.labor}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">MATERIAL</div>
+              <div className="text-2xl font-bold font-mono text-green-500">{categoryCounts.material}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">EQUIPMENT</div>
+              <div className="text-2xl font-bold font-mono text-purple-500">{categoryCounts.equipment}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SUBCONTRACT</div>
+              <div className="text-2xl font-bold font-mono text-orange-500">{categoryCounts.subcontract}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">OTHER</div>
+              <div className="text-2xl font-bold font-mono text-zinc-500">{categoryCounts.other}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Input
+                placeholder="SEARCH CODES..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="labor">Labor</SelectItem>
+                <SelectItem value="material">Material</SelectItem>
+                <SelectItem value="equipment">Equipment</SelectItem>
+                <SelectItem value="subcontract">Subcontract</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <DataTable
+          columns={columns}
+          data={filteredCodes}
+          onRowClick={handleEdit}
+          emptyMessage="No cost codes found. Create your first cost code to get started."
+        />
+      </div>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

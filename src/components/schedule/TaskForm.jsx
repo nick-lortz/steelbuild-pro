@@ -30,6 +30,11 @@ export default function TaskForm({
 }) {
   const [showDependencyConfig, setShowDependencyConfig] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+  });
+
   const [formData, setFormData] = useState({
     project_id: '',
     work_package_id: '',
@@ -106,11 +111,6 @@ export default function TaskForm({
       }
     }
   }, [task, workPackages]);
-
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
-  });
 
   const handleChange = (field, value) => {
     setFormData((prev) => {

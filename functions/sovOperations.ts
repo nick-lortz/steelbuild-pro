@@ -16,10 +16,20 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, data: created });
 
       case 'update':
-        // FREEZE: scheduled_value cannot be updated after creation
-        if (data.updates.scheduled_value !== undefined) {
+        // Check if item has approved invoices
+        const allInvoices = await base44.asServiceRole.entities.Invoice.list();
+        const approvedInvoiceIds = new Set(
+          allInvoices.filter(inv => inv.status === 'approved' || inv.status === 'paid').map(inv => inv.id)
+        );
+        const allInvoiceLines = await base44.asServiceRole.entities.InvoiceLine.list();
+        const isLocked = allInvoiceLines.some(
+          line => line.sov_item_id === data.id && approvedInvoiceIds.has(line.invoice_id)
+        );
+
+        // FREEZE: scheduled_value cannot be updated if item has approved invoices
+        if (data.updates.scheduled_value !== undefined && isLocked) {
           return Response.json({ 
-            error: 'Contract value is locked. Use Change Orders to modify scheduled_value.' 
+            error: 'Contract value is locked (item has approved invoices). Use Change Orders to modify scheduled_value.' 
           }, { status: 403 });
         }
 

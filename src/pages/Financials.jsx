@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageHeader from '@/components/ui/PageHeader';
 import FinancialKPIs from '@/components/financials/FinancialKPIs';
 import BudgetTab from '@/components/financials/BudgetTab';
@@ -14,6 +16,8 @@ import InvoiceManager from '@/components/sov/InvoiceManager';
 import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
 import JobStatusReport from '@/components/sov/JobStatusReport';
 import { usePermissions } from '@/components/shared/usePermissions';
+import { toast } from '@/components/ui/notifications';
+import { Trash2 } from 'lucide-react';
 
 export default function Financials() {
   const [selectedProject, setSelectedProject] = useState('');

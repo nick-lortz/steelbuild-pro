@@ -34,20 +34,20 @@ Deno.serve(async (req) => {
           approved_by: user.email,
         });
 
-        // Apply cost breakdown to SOV items (if cost_breakdown exists)
-        if (co.cost_breakdown && co.cost_breakdown.length > 0) {
-          for (const item of co.cost_breakdown) {
-            if (!item.sov_item_id) continue;
+        // Apply SOV allocations to SOV items (if sov_allocations exists)
+        if (co.sov_allocations && co.sov_allocations.length > 0) {
+          for (const allocation of co.sov_allocations) {
+            if (!allocation.sov_item_id) continue;
 
             const sovItem = await base44.asServiceRole.entities.SOVItem.filter({ 
-              id: item.sov_item_id 
+              id: allocation.sov_item_id 
             });
             if (sovItem && sovItem.length > 0) {
               const currentScheduledValue = sovItem[0].scheduled_value || 0;
-              const newScheduledValue = currentScheduledValue + (item.amount || 0);
+              const newScheduledValue = currentScheduledValue + (allocation.amount || 0);
 
               // THIS is the ONLY place scheduled_value can change after creation
-              await base44.asServiceRole.entities.SOVItem.update(item.sov_item_id, {
+              await base44.asServiceRole.entities.SOVItem.update(allocation.sov_item_id, {
                 scheduled_value: newScheduledValue,
               });
             }

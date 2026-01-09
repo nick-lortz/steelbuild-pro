@@ -164,6 +164,7 @@ export default function ChangeOrders() {
       submitted_date: co.submitted_date || '',
       approved_date: co.approved_date || '',
       approved_by: co.approved_by || '',
+      sov_allocations: co.sov_allocations || []
     });
     setSelectedCO(co);
   };
@@ -413,7 +414,7 @@ export default function ChangeOrders() {
           <DialogHeader>
             <DialogTitle>New Change Order</DialogTitle>
           </DialogHeader>
-          <COForm
+          <ChangeOrderForm
             formData={formData}
             setFormData={setFormData}
             projects={projects}
@@ -433,7 +434,7 @@ export default function ChangeOrders() {
             </SheetTitle>
           </SheetHeader>
           <div className="mt-6">
-            <COForm
+            <ChangeOrderForm
               formData={formData}
               setFormData={setFormData}
               projects={projects}
@@ -500,149 +501,5 @@ export default function ChangeOrders() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-}
-
-function COForm({ formData, setFormData, projects, onProjectChange, onSubmit, isLoading, isEdit }) {
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Project *</Label>
-          <Select 
-            value={formData.project_id} 
-            onValueChange={onProjectChange}
-            disabled={isEdit}
-          >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select project" />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>CO Number *</Label>
-          <Input
-            type="number"
-            value={formData.co_number}
-            onChange={(e) => handleChange('co_number', e.target.value)}
-            className="bg-zinc-800 border-zinc-700 font-mono"
-            required
-          />
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label>Title *</Label>
-        <Input
-          value={formData.title}
-          onChange={(e) => handleChange('title', e.target.value)}
-          placeholder="Change order title"
-          required
-          className="bg-zinc-800 border-zinc-700"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea
-          value={formData.description}
-          onChange={(e) => handleChange('description', e.target.value)}
-          rows={4}
-          placeholder="Detailed description of the change"
-          className="bg-zinc-800 border-zinc-700"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Status</Label>
-        <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-          <SelectTrigger className="bg-zinc-800 border-zinc-700">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="void">Void</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Cost Impact ($)</Label>
-          <Input
-            type="number"
-            value={formData.cost_impact}
-            onChange={(e) => handleChange('cost_impact', e.target.value)}
-            placeholder="0.00"
-            className="bg-zinc-800 border-zinc-700"
-          />
-          <p className="text-xs text-zinc-500">Positive = add, Negative = deduct</p>
-        </div>
-        <div className="space-y-2">
-          <Label>Schedule Impact (Days)</Label>
-          <Input
-            type="number"
-            value={formData.schedule_impact_days}
-            onChange={(e) => handleChange('schedule_impact_days', e.target.value)}
-            placeholder="0"
-            className="bg-zinc-800 border-zinc-700"
-          />
-          <p className="text-xs text-zinc-500">Positive = added time</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Submitted Date</Label>
-          <Input
-            type="date"
-            value={formData.submitted_date}
-            onChange={(e) => handleChange('submitted_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Approved Date</Label>
-          <Input
-            type="date"
-            value={formData.approved_date}
-            onChange={(e) => handleChange('approved_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Approved By</Label>
-        <Input
-          value={formData.approved_by}
-          onChange={(e) => handleChange('approved_by', e.target.value)}
-          placeholder="Name of approver"
-          className="bg-zinc-800 border-zinc-700"
-        />
-      </div>
-
-      <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="bg-amber-500 hover:bg-amber-600 text-black"
-        >
-          {isLoading ? 'Saving...' : isEdit ? 'Update CO' : 'Create CO'}
-        </Button>
-      </div>
-    </form>
   );
 }

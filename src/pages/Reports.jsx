@@ -22,9 +22,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import PageHeader from '@/components/ui/PageHeader';
 import AutomatedReportScheduler from '@/components/reports/AutomatedReportScheduler';
+import InteractiveDashboard from '@/components/reports/InteractiveDashboard';
 import DataTable from '@/components/ui/DataTable';
-import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2, LayoutDashboard } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from '@/components/ui/notifications';
 
 export default function Reports() {
   const [showForm, setShowForm] = useState(false);
@@ -94,6 +96,12 @@ export default function Reports() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: resources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: () => base44.entities.Resource.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Report.create(data),
     onSuccess: () => {
@@ -152,34 +160,59 @@ export default function Reports() {
     setShowForm(true);
   };
 
-  const generateReport = async (report) => {
+  const generateReport = async (report, exportFormat = 'csv') => {
     setGeneratingReport(report.id);
     
     try {
-      // Filter data based on report settings
-      const selectedProjects = report.filters?.project_ids?.length > 0
-        ? projects.filter(p => report.filters.project_ids.includes(p.id))
-        : projects;
+      if (exportFormat === 'pdf' || exportFormat === 'excel') {
+        // Use backend function for PDF/Excel generation
+        const response = await base44.functions.invoke('generateReport', {
+          reportType: report.report_type,
+          projectIds: report.filters?.project_ids || [],
+          dateRange: report.filters?.date_range || '30',
+          format: exportFormat
+        });
 
-      let reportData = '';
-
-      if (report.report_type === 'financial') {
-        reportData = generateFinancialReport(selectedProjects);
-      } else if (report.report_type === 'progress') {
-        reportData = generateProgressReport(selectedProjects);
-      } else if (report.report_type === 'safety') {
-        reportData = generateSafetyReport(selectedProjects);
-      } else if (report.report_type === 'quality') {
-        reportData = generateQualityReport(selectedProjects);
+        if (response.data) {
+          const blob = new Blob([response.data], { 
+            type: exportFormat === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+          });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${report.name}_${format(new Date(), 'yyyy-MM-dd')}.${exportFormat}`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+          toast.success(`${exportFormat.toUpperCase()} report generated`);
+        }
       } else {
-        reportData = generateCustomReport(selectedProjects, report);
-      }
+        // CSV generation (existing logic)
+        const selectedProjects = report.filters?.project_ids?.length > 0
+          ? projects.filter(p => report.filters.project_ids.includes(p.id))
+          : projects;
 
-      // Generate CSV
-      downloadCSV(reportData, `${report.name}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        let reportData = '';
+
+        if (report.report_type === 'financial') {
+          reportData = generateFinancialReport(selectedProjects);
+        } else if (report.report_type === 'progress') {
+          reportData = generateProgressReport(selectedProjects);
+        } else if (report.report_type === 'safety') {
+          reportData = generateSafetyReport(selectedProjects);
+        } else if (report.report_type === 'quality') {
+          reportData = generateQualityReport(selectedProjects);
+        } else {
+          reportData = generateCustomReport(selectedProjects, report);
+        }
+
+        downloadCSV(reportData, `${report.name}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        toast.success('CSV report downloaded');
+      }
     } catch (error) {
       console.error('Report generation failed:', error);
-      alert('Failed to generate report');
+      toast.error('Failed to generate report');
     } finally {
       setGeneratingReport(null);
     }
@@ -357,27 +390,42 @@ export default function Reports() {
       header: 'Actions',
       accessor: 'actions',
       render: (row) => (
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            generateReport(row);
-          }}
-          disabled={generatingReport === row.id}
-          className="bg-amber-500 hover:bg-amber-600 text-black"
-        >
-          {generatingReport === row.id ? (
-            <>
-              <Loader2 size={14} className="mr-1 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Play size={14} className="mr-1" />
-              Run Report
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              generateReport(row, 'csv');
+            }}
+            disabled={generatingReport === row.id}
+            className="border-zinc-700"
+          >
+            <FileSpreadsheet size={14} className="mr-1" />
+            CSV
+          </Button>
+          <Button
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              generateReport(row, 'pdf');
+            }}
+            disabled={generatingReport === row.id}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
+          >
+            {generatingReport === row.id ? (
+              <>
+                <Loader2 size={14} className="mr-1 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <FileText size={14} className="mr-1" />
+                PDF
+              </>
+            )}
+          </Button>
+        </div>
       ),
     },
   ];
@@ -448,14 +496,29 @@ export default function Reports() {
         </Card>
       </div>
 
-      <Tabs defaultValue="financial" className="space-y-6">
+      <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="dashboard">
+            <LayoutDashboard size={16} className="mr-2" />
+            Interactive Dashboard
+          </TabsTrigger>
           <TabsTrigger value="financial">Financial Reports</TabsTrigger>
           <TabsTrigger value="progress">Progress Reports</TabsTrigger>
           <TabsTrigger value="safety">Safety Reports</TabsTrigger>
           <TabsTrigger value="quality">Quality Reports</TabsTrigger>
           <TabsTrigger value="automated">Automated Reports</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard">
+          <InteractiveDashboard
+            projects={projects}
+            financials={financials}
+            expenses={expenses}
+            resources={resources}
+            tasks={tasks}
+            drawingSets={drawingSets}
+          />
+        </TabsContent>
 
         <TabsContent value="financial">
           <DataTable

@@ -162,135 +162,128 @@ export default function ProductionMeetings() {
   const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   return (
-    <div>
-      <PageHeader
-        title="Production Meeting Notes"
-        subtitle="Weekly project notes that carry forward"
-        actions={
-        <div className="text-slate-50 flex gap-2">
-          <ExportButton
-            data={activeProjects.map((project) => {
-              const note = getNotesForProject(project.id);
-              return {
-                project_number: project.project_number,
-                project_name: project.name,
-                pm: project.project_manager,
-                week: format(currentWeek, 'MMM d, yyyy'),
-                status_summary: note?.status_summary || '',
-                notes: note?.notes || '',
-                concerns: note?.concerns || '',
-                action_items: note?.action_items?.map((a) => `${a.status === 'completed' ? '✓' : '○'} ${a.item}`).join('; ') || ''
-              };
-            })}
-            columns={[
-            { key: 'project_number', label: 'Project #' },
-            { key: 'project_name', label: 'Project' },
-            { key: 'pm', label: 'PM' },
-            { key: 'week', label: 'Week' },
-            { key: 'status_summary', label: 'Status' },
-            { key: 'notes', label: 'Notes' },
-            { key: 'concerns', label: 'Concerns' },
-            { key: 'action_items', label: 'Actions' }]
-            }
-            filename={`production_notes_${format(currentWeek, 'yyyy-MM-dd')}`} />
-
-          <Button
-            onClick={() => setShowAI(!showAI)}
-            variant={showAI ? "default" : "outline"}
-            className={showAI ? "bg-amber-500 hover:bg-amber-600 text-black" : "border-zinc-700"}>
-
-            <Sparkles size={18} className="mr-2" />
-            {showAI ? 'Hide' : 'Show'} AI Assistant
-          </Button>
-        </div>
-        } />
-
-
-      {/* AI Assistant */}
-      {showAI &&
-      <Card className="bg-zinc-900 border-zinc-800 mb-6">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-500" />
-              Production AI Assistant
-            </CardTitle>
-            <p className="text-sm text-zinc-400">
-              Get insights on fabrication status, delivery schedules, task progress, and production metrics
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ProjectAssistant
-            projects={projects}
-            drawings={drawings}
-            rfis={rfis}
-            changeOrders={changeOrders}
-            tasks={tasks}
-            financials={financials}
-            fabrications={fabrications}
-            deliveries={deliveries}
-            selectedProject={null} />
-
-          </CardContent>
-        </Card>
-      }
-
-      {/* PM Filter */}
-      <div className="mb-6">
-        <Select value={pmFilter} onValueChange={setPmFilter}>
-          <SelectTrigger className="w-full sm:w-64 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by PM" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All PMs</SelectItem>
-            {uniquePMs.map((pm) =>
-            <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Week Navigation */}
-      <div className="mb-6 flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToPreviousWeek} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
-
-
-          <ChevronLeft size={16} className="mr-1" />
-          Previous Week
-        </Button>
-        
-        <div className="flex items-center gap-3">
-          <Calendar size={18} className="text-amber-500" />
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">
-              Week of {format(currentWeek, 'MMM d, yyyy')}
-            </p>
-            <p className="text-xs text-zinc-500">
-              {format(currentWeek, 'MMM d')} - {format(addWeeks(currentWeek, 1), 'MMM d')}
-            </p>
+    <div className="min-h-screen bg-black">
+      {/* Header Bar */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Production Notes</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">WEEK OF {format(currentWeek, 'MMM d').toUpperCase()}</p>
+            </div>
+            <div className="flex gap-2">
+              <ExportButton
+                data={activeProjects.map((project) => {
+                  const note = getNotesForProject(project.id);
+                  return {
+                    project_number: project.project_number,
+                    project_name: project.name,
+                    pm: project.project_manager,
+                    week: format(currentWeek, 'MMM d, yyyy'),
+                    status_summary: note?.status_summary || '',
+                    notes: note?.notes || '',
+                    concerns: note?.concerns || '',
+                    action_items: note?.action_items?.map((a) => `${a.status === 'completed' ? '✓' : '○'} ${a.item}`).join('; ') || ''
+                  };
+                })}
+                columns={[
+                  { key: 'project_number', label: 'Project #' },
+                  { key: 'project_name', label: 'Project' },
+                  { key: 'pm', label: 'PM' },
+                  { key: 'week', label: 'Week' },
+                  { key: 'status_summary', label: 'Status' },
+                  { key: 'notes', label: 'Notes' },
+                  { key: 'concerns', label: 'Concerns' },
+                  { key: 'action_items', label: 'Actions' }
+                ]}
+                filename={`production_notes_${format(currentWeek, 'yyyy-MM-dd')}`}
+              />
+              <Button
+                onClick={() => setShowAI(!showAI)}
+                variant={showAI ? "default" : "outline"}
+                className={showAI ? "bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider" : "border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"}
+              >
+                <Sparkles size={14} className="mr-1" />
+                {showAI ? 'HIDE' : 'AI'}
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToCurrentWeek} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
-
-
-            Today
-          </Button>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToNextWeek} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
-
-
-          Next Week
-          <ChevronRight size={16} className="ml-1" />
-        </Button>
       </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* AI Assistant */}
+        {showAI && (
+          <Card className="bg-zinc-900 border-zinc-800 mb-6">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2 text-sm uppercase tracking-wide">
+                <Sparkles size={16} className="text-amber-500" />
+                Production AI
+              </CardTitle>
+              <p className="text-xs text-zinc-500">
+                Insights on fabrication, delivery, tasks, and metrics
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ProjectAssistant
+                projects={projects}
+                drawings={drawings}
+                rfis={rfis}
+                changeOrders={changeOrders}
+                tasks={tasks}
+                financials={financials}
+                fabrications={fabrications}
+                deliveries={deliveries}
+                selectedProject={null}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Controls */}
+        <div className="mb-6 flex items-center justify-between">
+          <Select value={pmFilter} onValueChange={setPmFilter}>
+            <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="All PMs" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All PMs</SelectItem>
+              {uniquePMs.map((pm) =>
+                <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousWeek}
+              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+            >
+              <ChevronLeft size={14} className="mr-1" />
+              PREV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToCurrentWeek}
+              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+            >
+              TODAY
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextWeek}
+              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+            >
+              NEXT
+              <ChevronRight size={14} className="ml-1" />
+            </Button>
+          </div>
+        </div>
 
         {/* Project Notes */}
         <div className="space-y-4">

@@ -410,16 +410,15 @@ export default function ProductionMeetings() {
               </CardContent>
             </Card>);
 
-          })}
-        </div>
-
-        {activeProjects.length === 0 && (
-          <div className="flex items-center justify-center py-20">
-            <p className="text-xs text-zinc-600 uppercase tracking-widest">NO ACTIVE PROJECTS</p>
+            })}
           </div>
-        )}
-      </div>
-    </div>
-  );
 
-}
+          {activeProjects.length === 0 && (
+            <div className="flex items-center justify-center py-20">
+              <p className="text-xs text-zinc-600 uppercase tracking-widest">NO ACTIVE PROJECTS</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }

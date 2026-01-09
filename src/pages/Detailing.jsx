@@ -28,15 +28,27 @@ const STATUS_FLOW = {
 };
 
 export default function Detailing() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const queryClient = useQueryClient();
   const [selectedReviewer, setSelectedReviewer] = useState('all');
 
-  const { data: projects = [] } = useQuery({
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
     staleTime: 5 * 60 * 1000
   });
+
+  const userProjects = useMemo(() => {
+    if (!currentUser) return [];
+    return currentUser.role === 'admin' 
+      ? allProjects 
+      : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+  }, [currentUser, allProjects]);
 
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
@@ -139,7 +151,7 @@ export default function Detailing() {
     });
   }, [drawingSets, selectedReviewer]);
 
-  const selectedProject = projects.find(p => p.id === activeProjectId);
+  const selectedProject = allProjects.find(p => p.id === activeProjectId);
 
   if (!activeProjectId) {
     return (
@@ -164,7 +176,7 @@ export default function Detailing() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h1 className="text-2xl font-bold">Detailing Workflow</h1>
           {selectedProject && (
@@ -173,6 +185,20 @@ export default function Detailing() {
             </p>
           )}
         </div>
+        {userProjects.length > 0 && (
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
+              <SelectValue placeholder="Select Project" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              {userProjects.map(project => (
+                <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                  {project.project_number} - {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* KPI Strip */}

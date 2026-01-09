@@ -170,21 +170,7 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Pull to refresh handler
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await Promise.all([
-      refetchMetrics(),
-      refetchProjects(),
-      refetchRFIs(),
-      refetchCOs(),
-      refetchTasks(),
-      refetchDrawings()
-    ]);
-    setIsRefreshing(false);
-  }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings]);
-
-  // Calculate critical issues
+  // Calculate critical issues - MOVED BEFORE CONDITIONAL RETURN
   const criticalIssues = React.useMemo(() => {
     const issues = [];
     
@@ -214,6 +200,86 @@ export default function Dashboard() {
 
     return issues;
   }, [rfis, drawings, changeOrders]);
+
+  // Calculate schedule health - MOVED BEFORE CONDITIONAL RETURN
+  const scheduleHealth = React.useMemo(() => {
+    const overdueCount = tasks.filter(t => 
+      t.due_date && 
+      new Date(t.due_date) < new Date() && 
+      t.status !== 'completed'
+    ).length;
+    const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
+    const onTimePercentage = totalActiveTasks > 0 
+      ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
+      : 100;
+    
+    return {
+      overdueCount,
+      onTimePercentage,
+      status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
+    };
+  }, [tasks]);
+
+  // Calculate active projects and milestones - MOVED BEFORE CONDITIONAL RETURN
+  const activeProjects = React.useMemo(() => 
+    projects.filter(p => p.status === 'in_progress'),
+    [projects]
+  );
+  
+  const upcomingMilestones = React.useMemo(() => 
+    activeProjects.filter(p => {
+      if (!p.target_completion) return false;
+      const days = differenceInDays(new Date(p.target_completion), new Date());
+      return days >= 0 && days <= 30;
+    }),
+    [activeProjects]
+  );
+
+  // Calculate financial summary for active project - MOVED BEFORE CONDITIONAL RETURN
+  const activeProjectFinancials = React.useMemo(() => {
+    if (!activeProjectId || sovItems.length === 0) return null;
+
+    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+    const signedExtras = projectChangeOrders
+      .filter(co => co.status === 'approved')
+      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+    const totalContract = contractValue + signedExtras;
+    const earnedToDate = sovItems.reduce((sum, s) => 
+      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+    const actualCost = expenses
+      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    // Calculate EAC from ETC data
+    const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
+    const estimatedCostAtCompletion = actualCost + totalETC;
+
+    const activeProject = projects.find(p => p.id === activeProjectId);
+
+    return {
+      totalContract,
+      actualCost,
+      estimatedCostAtCompletion,
+      plannedMargin: activeProject?.planned_margin || 15
+    };
+  }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
+
+  // Calculate cost risk status - MOVED BEFORE CONDITIONAL RETURN
+  const costRiskStatus = React.useMemo(() => {
+    if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
+    
+    const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
+    const variance = projectedMargin - activeProjectFinancials.plannedMargin;
+    
+    if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
+    if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
+    return { status: 'critical', message: 'At Risk', color: 'red' };
+  }, [activeProjectFinancials]);
+
+  const portfolioHealth = React.useMemo(() => 
+    metricsData?.portfolioHealth || {},
+    [metricsData]
+  );
 
   // Combine activity feed
   const activityFeed = React.useMemo(() => {
@@ -261,25 +327,6 @@ export default function Dashboard() {
     return items.sort((a, b) => b.date - a.date);
   }, [rfis, changeOrders, tasks, projects, navigate]);
 
-  const portfolioHealth = React.useMemo(() => 
-    metricsData?.portfolioHealth || {},
-    [metricsData]
-  );
-  
-  const activeProjects = React.useMemo(() => 
-    projects.filter(p => p.status === 'in_progress'),
-    [projects]
-  );
-  
-  const upcomingMilestones = React.useMemo(() => 
-    activeProjects.filter(p => {
-      if (!p.target_completion) return false;
-      const days = differenceInDays(new Date(p.target_completion), new Date());
-      return days >= 0 && days <= 30;
-    }),
-    [activeProjects]
-  );
-
   const paginatedActivity = React.useMemo(() => 
     activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE),
     [activityFeed, activityPage]
@@ -290,80 +337,32 @@ export default function Dashboard() {
     [activityFeed.length, paginatedActivity.length]
   );
 
-  // Calculate financial summary for active project
-  const activeProjectFinancials = React.useMemo(() => {
-    if (!activeProjectId || sovItems.length === 0) return null;
-
-    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-    const signedExtras = projectChangeOrders
-      .filter(co => co.status === 'approved')
-      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-    const totalContract = contractValue + signedExtras;
-    const earnedToDate = sovItems.reduce((sum, s) => 
-      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-    const actualCost = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    // Calculate EAC from ETC data
-    const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
-    const estimatedCostAtCompletion = actualCost + totalETC;
-
-    const activeProject = projects.find(p => p.id === activeProjectId);
-
-    return {
-      totalContract,
-      actualCost,
-      estimatedCostAtCompletion,
-      plannedMargin: activeProject?.planned_margin || 15
-    };
-  }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([
+      refetchMetrics(),
+      refetchProjects(),
+      refetchRFIs(),
+      refetchCOs(),
+      refetchTasks(),
+      refetchDrawings()
+    ]);
+    setIsRefreshing(false);
+  }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings]);
 
   const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
 
   if (isLoading) {
     return (
-      <ScreenContainer>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-zinc-400">Loading dashboard...</p>
-          </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
+          <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
         </div>
-      </ScreenContainer>
+      </div>
     );
   }
-
-  // Calculate schedule health
-  const scheduleHealth = React.useMemo(() => {
-    const overdueCount = tasks.filter(t => 
-      t.due_date && 
-      new Date(t.due_date) < new Date() && 
-      t.status !== 'completed'
-    ).length;
-    const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
-    const onTimePercentage = totalActiveTasks > 0 
-      ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
-      : 100;
-    
-    return {
-      overdueCount,
-      onTimePercentage,
-      status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
-    };
-  }, [tasks]);
-
-  // Calculate cost risk status
-  const costRiskStatus = React.useMemo(() => {
-    if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
-    
-    const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
-    const variance = projectedMargin - activeProjectFinancials.plannedMargin;
-    
-    if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
-    if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
-    return { status: 'critical', message: 'At Risk', color: 'red' };
-  }, [activeProjectFinancials]);
 
   return (
     <div className="min-h-screen bg-black">

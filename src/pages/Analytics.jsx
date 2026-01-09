@@ -13,6 +13,7 @@ import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
 import DashboardBuilder from '@/components/analytics/DashboardBuilder';
+import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
@@ -165,6 +166,14 @@ export default function Analytics() {
     enabled: !!activeProjectId
   });
 
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['invoices', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Invoice.filter({ project_id: activeProjectId })
+      : base44.entities.Invoice.list(),
+    enabled: !!activeProjectId
+  });
+
   useEffect(() => {
     if (!activeProjectId && userProjects.length > 0) {
       setActiveProjectId(userProjects[0].id);
@@ -232,6 +241,10 @@ export default function Analytics() {
             <TabsTrigger value="risks" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <TrendingUp size={16} className="mr-2" />
               Risk Trends
+            </TabsTrigger>
+            <TabsTrigger value="evm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <TrendingUp size={16} className="mr-2" />
+              EVM Analysis
             </TabsTrigger>
           </TabsList>
 
@@ -302,6 +315,18 @@ export default function Analytics() {
               scopeGaps={scopeGaps}
               financials={financials}
               laborBreakdowns={laborBreakdowns}
+            />
+          </TabsContent>
+
+          <TabsContent value="evm" className="space-y-6">
+            <EVMDashboardEnhanced
+              projectFilter={activeProjectId}
+              projects={projects}
+              financials={financials}
+              tasks={tasks}
+              expenses={expenses}
+              sovItems={sovItems}
+              invoices={invoices}
             />
           </TabsContent>
         </Tabs>

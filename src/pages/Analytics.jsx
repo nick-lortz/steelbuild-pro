@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Users, TrendingUp, AlertTriangle, Truck } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard } from 'lucide-react';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
@@ -12,10 +12,11 @@ import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
+import DashboardBuilder from '@/components/analytics/DashboardBuilder';
+import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
   const [activeProjectId, setActiveProjectId] = useState(null);
-  const [savedDashboard, setSavedDashboard] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -26,6 +27,19 @@ export default function Analytics() {
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
+  });
+
+  const saveDashboardMutation = useMutation({
+    mutationFn: async (config) => {
+      await base44.auth.updateMe({ dashboard_config: config });
+      return config;
+    },
+    onSuccess: () => {
+      toast.success('Dashboard layout saved');
+    },
+    onError: () => {
+      toast.error('Failed to save dashboard');
+    }
   });
 
   const userProjects = useMemo(() => {
@@ -193,8 +207,12 @@ export default function Analytics() {
       )}
 
       {hasProject && (
-        <Tabs defaultValue="risk-dashboard" className="space-y-6">
+        <Tabs defaultValue="custom" className="space-y-6">
           <TabsList className="bg-zinc-800 border border-zinc-700">
+            <TabsTrigger value="custom" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <LayoutDashboard size={16} className="mr-2" />
+              Custom Dashboard
+            </TabsTrigger>
             <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <AlertTriangle size={16} className="mr-2" />
               Risk Dashboard
@@ -216,6 +234,17 @@ export default function Analytics() {
               Risk Trends
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="custom" className="space-y-6">
+            <DashboardBuilder
+              projectData={selectedProject ? [selectedProject] : userProjects}
+              tasks={tasks}
+              financials={financials}
+              resources={resources}
+              expenses={expenses}
+              onSaveConfig={(config) => saveDashboardMutation.mutate(config)}
+            />
+          </TabsContent>
 
           <TabsContent value="risk-dashboard" className="space-y-6">
             <CostRiskIndicator

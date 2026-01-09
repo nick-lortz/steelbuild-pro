@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate, Link } from 'react-router-dom';
@@ -171,7 +171,7 @@ export default function Dashboard() {
   });
 
   // Calculate critical issues - MOVED BEFORE CONDITIONAL RETURN
-  const criticalIssues = React.useMemo(() => {
+  const criticalIssues = useMemo(() => {
     const issues = [];
     
     // Check overdue RFIs
@@ -202,7 +202,7 @@ export default function Dashboard() {
   }, [rfis, drawings, changeOrders]);
 
   // Calculate schedule health - MOVED BEFORE CONDITIONAL RETURN
-  const scheduleHealth = React.useMemo(() => {
+  const scheduleHealth = useMemo(() => {
     const overdueCount = tasks.filter(t => 
       t.due_date && 
       new Date(t.due_date) < new Date() && 
@@ -221,12 +221,12 @@ export default function Dashboard() {
   }, [tasks]);
 
   // Calculate active projects and milestones - MOVED BEFORE CONDITIONAL RETURN
-  const activeProjects = React.useMemo(() => 
+  const activeProjects = useMemo(() => 
     projects.filter(p => p.status === 'in_progress'),
     [projects]
   );
   
-  const upcomingMilestones = React.useMemo(() => 
+  const upcomingMilestones = useMemo(() => 
     activeProjects.filter(p => {
       if (!p.target_completion) return false;
       const days = differenceInDays(new Date(p.target_completion), new Date());
@@ -236,7 +236,7 @@ export default function Dashboard() {
   );
 
   // Calculate financial summary for active project - MOVED BEFORE CONDITIONAL RETURN
-  const activeProjectFinancials = React.useMemo(() => {
+  const activeProjectFinancials = useMemo(() => {
     if (!activeProjectId || sovItems.length === 0) return null;
 
     const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
@@ -265,7 +265,7 @@ export default function Dashboard() {
   }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
 
   // Calculate cost risk status - MOVED BEFORE CONDITIONAL RETURN
-  const costRiskStatus = React.useMemo(() => {
+  const costRiskStatus = useMemo(() => {
     if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
     
     const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
@@ -276,13 +276,13 @@ export default function Dashboard() {
     return { status: 'critical', message: 'At Risk', color: 'red' };
   }, [activeProjectFinancials]);
 
-  const portfolioHealth = React.useMemo(() => 
+  const portfolioHealth = useMemo(() => 
     metricsData?.portfolioHealth || {},
     [metricsData]
   );
 
   // Combine activity feed
-  const activityFeed = React.useMemo(() => {
+  const activityFeed = useMemo(() => {
     const items = [];
 
     rfis.forEach(r => {
@@ -327,12 +327,12 @@ export default function Dashboard() {
     return items.sort((a, b) => b.date - a.date);
   }, [rfis, changeOrders, tasks, projects, navigate]);
 
-  const paginatedActivity = React.useMemo(() => 
+  const paginatedActivity = useMemo(() => 
     activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE),
     [activityFeed, activityPage]
   );
   
-  const hasMoreActivity = React.useMemo(() => 
+  const hasMoreActivity = useMemo(() => 
     activityFeed.length > paginatedActivity.length,
     [activityFeed.length, paginatedActivity.length]
   );

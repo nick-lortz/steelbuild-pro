@@ -431,7 +431,7 @@ export default function Reports() {
   ];
 
   // Quick Stats
-  const reportStats = React.useMemo(() => ({
+  const reportStats = useMemo(() => ({
     totalReports: reports.length,
     activeReports: reports.filter(r => r.active).length,
     scheduledReports: reports.filter(r => r.schedule !== 'on_demand').length,

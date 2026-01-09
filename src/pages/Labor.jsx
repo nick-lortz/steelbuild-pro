@@ -227,7 +227,7 @@ export default function Labor() {
     setShowForm(true);
   };
 
-  const laborResources = React.useMemo(() => 
+  const laborResources = useMemo(() => 
     resources.filter(r => r.type === 'labor' || r.type === 'subcontractor'),
     [resources]
   );
@@ -345,7 +345,7 @@ export default function Labor() {
     },
   ];
 
-  const laborMetrics = React.useMemo(() => {
+  const laborMetrics = useMemo(() => {
     const totalHours = laborHours.reduce((sum, l) => sum + (l.hours || 0), 0);
     const totalOT = laborHours.reduce((sum, l) => sum + (l.overtime_hours || 0), 0);
     const pendingApproval = laborHours.filter(l => !l.approved).length;

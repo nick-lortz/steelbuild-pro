@@ -1,37 +1,22 @@
-import React, { useState, useMemo, useEffect, lazy, Suspense, startTransition } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard } from 'lucide-react';
+import PortfolioOverview from '@/components/analytics/PortfolioOverview';
+import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
+import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
+import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
+import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
-import { AnalyticsSkeleton } from '@/components/ui/SkeletonUI';
+import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
+import DashboardBuilder from '@/components/analytics/DashboardBuilder';
+import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import { toast } from '@/components/ui/notifications';
-import { usePerformanceMonitor } from '@/components/shared/hooks/usePerformanceMonitor';
-import { useApiWithRetry } from '@/components/shared/hooks/useApiWithRetry';
-import { useProgressiveQueries } from '@/components/shared/hooks/useProgressiveQueries';
-import { useThrottledValue } from '@/components/shared/hooks/useThrottledState';
 
-// Lazy load heavy analytics components
-const PortfolioOverview = lazy(() => import('@/components/analytics/PortfolioOverview'));
-const ResourceHeatmap = lazy(() => import('@/components/analytics/ResourceHeatmap'));
-const RiskTrendAnalysis = lazy(() => import('@/components/analytics/RiskTrendAnalysis'));
-const ProjectRiskDashboard = lazy(() => import('@/components/analytics/ProjectRiskDashboard'));
-const CostRiskIndicator = lazy(() => import('@/components/financials/CostRiskIndicator'));
-const FabricationFieldDrift = lazy(() => import('@/components/analytics/FabricationFieldDrift'));
-const DashboardBuilder = lazy(() => import('@/components/analytics/DashboardBuilder'));
-const EVMDashboardEnhanced = lazy(() => import('@/components/analytics/EVMDashboardEnhanced'));
-
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center h-64">
-    <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-  </div>
-);
-
-const Analytics = React.memo(function Analytics() {
-  usePerformanceMonitor('Analytics');
-  const { executeWithRetry } = useApiWithRetry();
+export default function Analytics() {
   const [activeProjectId, setActiveProjectId] = useState(null);
   const queryClient = useQueryClient();
 
@@ -42,9 +27,7 @@ const Analytics = React.memo(function Analytics() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => executeWithRetry(() => base44.entities.Project.list()),
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    queryFn: () => base44.entities.Project.list(),
   });
 
   const saveDashboardMutation = useMutation({
@@ -67,135 +50,138 @@ const Analytics = React.memo(function Analytics() {
       : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
   }, [currentUser, allProjects]);
 
-  // Progressive loading to avoid 429 rate limits
-  const { results: analyticsQueries, isLoading: queriesLoading } = useProgressiveQueries([
-    {
-      key: ['projects', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.Project.filter({ id: activeProjectId }) : Promise.resolve([]),
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['financials', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.Financial.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['tasks', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date') : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['expenses', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.Expense.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['etc', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['resources'],
-      fn: () => base44.entities.Resource.list(),
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['resourceAllocations', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['rfis', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date') : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['changeOrders', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date') : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['drawings', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['scopeGaps', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.ScopeGap.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['laborBreakdowns', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['laborHours', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.LaborHours.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['sov-items', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.SOVItem.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['cost-codes'],
-      fn: () => base44.entities.CostCode.list('code'),
-      options: { enabled: !!activeProjectId }
-    },
-    {
-      key: ['invoices', activeProjectId],
-      fn: () => activeProjectId ? base44.entities.Invoice.filter({ project_id: activeProjectId }) : [],
-      options: { enabled: !!activeProjectId }
-    }
-  ]);
+  const { data: projects = [], isLoading: projectsLoading } = useQuery({
+    queryKey: ['projects', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Project.filter({ id: activeProjectId })
+      : Promise.resolve([]),
+    enabled: !!activeProjectId,
+  });
 
-  const projects = React.useMemo(() => analyticsQueries[0]?.data || [], [analyticsQueries[0]?.data]);
-  const financials = React.useMemo(() => analyticsQueries[1]?.data || [], [analyticsQueries[1]?.data]);
-  const tasks = React.useMemo(() => analyticsQueries[2]?.data || [], [analyticsQueries[2]?.data]);
-  const expenses = React.useMemo(() => analyticsQueries[3]?.data || [], [analyticsQueries[3]?.data]);
-  const estimatedCosts = React.useMemo(() => analyticsQueries[4]?.data || [], [analyticsQueries[4]?.data]);
-  const resources = React.useMemo(() => analyticsQueries[5]?.data || [], [analyticsQueries[5]?.data]);
-  const resourceAllocations = React.useMemo(() => analyticsQueries[6]?.data || [], [analyticsQueries[6]?.data]);
-  const rfis = React.useMemo(() => analyticsQueries[7]?.data || [], [analyticsQueries[7]?.data]);
-  const changeOrders = React.useMemo(() => analyticsQueries[8]?.data || [], [analyticsQueries[8]?.data]);
-  const drawings = React.useMemo(() => analyticsQueries[9]?.data || [], [analyticsQueries[9]?.data]);
-  const scopeGaps = React.useMemo(() => analyticsQueries[10]?.data || [], [analyticsQueries[10]?.data]);
-  const laborBreakdowns = React.useMemo(() => analyticsQueries[11]?.data || [], [analyticsQueries[11]?.data]);
-  const laborHours = React.useMemo(() => analyticsQueries[12]?.data || [], [analyticsQueries[12]?.data]);
-  const sovItems = React.useMemo(() => analyticsQueries[13]?.data || [], [analyticsQueries[13]?.data]);
-  const costCodes = React.useMemo(() => analyticsQueries[14]?.data || [], [analyticsQueries[14]?.data]);
-  const invoices = React.useMemo(() => analyticsQueries[15]?.data || [], [analyticsQueries[15]?.data]);
-  
-  const projectsLoading = queriesLoading;
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Financial.filter({ project_id: activeProjectId })
+      : base44.entities.Financial.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
+      : base44.entities.Task.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Expense.filter({ project_id: activeProjectId })
+      : base44.entities.Expense.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: estimatedCosts = [] } = useQuery({
+    queryKey: ['etc', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId })
+      : base44.entities.EstimatedCostToComplete.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: resources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: () => base44.entities.Resource.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: resourceAllocations = [] } = useQuery({
+    queryKey: ['resourceAllocations', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
+      : base44.entities.ResourceAllocation.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
+      : base44.entities.RFI.list('-created_date'),
+    enabled: !!activeProjectId
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['changeOrders', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
+      : base44.entities.ChangeOrder.list('-created_date'),
+    enabled: !!activeProjectId
+  });
+
+  const { data: drawings = [] } = useQuery({
+    queryKey: ['drawings', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+      : base44.entities.DrawingSet.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: scopeGaps = [] } = useQuery({
+    queryKey: ['scopeGaps', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ScopeGap.filter({ project_id: activeProjectId })
+      : base44.entities.ScopeGap.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: laborBreakdowns = [] } = useQuery({
+    queryKey: ['laborBreakdowns', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId })
+      : base44.entities.LaborBreakdown.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: laborHours = [] } = useQuery({
+    queryKey: ['laborHours', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.LaborHours.filter({ project_id: activeProjectId })
+      : base44.entities.LaborHours.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.SOVItem.filter({ project_id: activeProjectId })
+      : base44.entities.SOVItem.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code'),
+    enabled: !!activeProjectId
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['invoices', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Invoice.filter({ project_id: activeProjectId })
+      : base44.entities.Invoice.list(),
+    enabled: !!activeProjectId
+  });
 
   useEffect(() => {
     if (!activeProjectId && userProjects.length > 0) {
-      startTransition(() => {
-        setActiveProjectId(userProjects[0].id);
-      });
+      setActiveProjectId(userProjects[0].id);
     }
   }, [activeProjectId, userProjects]);
 
-  const selectedProject = useMemo(() => projects[0], [projects]);
+  const selectedProject = projects[0];
   const hasProject = !!activeProjectId;
-
-  // Throttle activeProjectId to prevent render thrashing - must be before early return
-  const throttledProjectId = useThrottledValue(activeProjectId, 300);
-
-  if (queriesLoading && hasProject) {
-    return (
-      <div>
-        <PageHeader
-          title="Analytics Dashboard"
-          subtitle="Loading analytics data..."
-          showBackButton={false}
-        />
-        <AnalyticsSkeleton />
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -263,36 +249,32 @@ const Analytics = React.memo(function Analytics() {
           </TabsList>
 
           <TabsContent value="custom" className="space-y-6">
-            <Suspense fallback={<LoadingFallback />}>
-              <DashboardBuilder
-                projectData={selectedProject ? [selectedProject] : userProjects}
-                tasks={tasks}
-                financials={financials}
-                resources={resources}
-                expenses={expenses}
-                onSaveConfig={(config) => saveDashboardMutation.mutate(config)}
-              />
-            </Suspense>
+            <DashboardBuilder
+              projectData={selectedProject ? [selectedProject] : userProjects}
+              tasks={tasks}
+              financials={financials}
+              resources={resources}
+              expenses={expenses}
+              onSaveConfig={(config) => saveDashboardMutation.mutate(config)}
+            />
           </TabsContent>
 
           <TabsContent value="risk-dashboard" className="space-y-6">
-            <Suspense fallback={<LoadingFallback />}>
-              <CostRiskIndicator
-                projectId={activeProjectId}
-                expenses={expenses}
-                estimatedCosts={estimatedCosts}
-              />
+            <CostRiskIndicator
+              projectId={activeProjectId}
+              expenses={expenses}
+              estimatedCosts={estimatedCosts}
+            />
 
-              <ProjectRiskDashboard
-                projects={projects}
-                laborBreakdowns={laborBreakdowns}
-                scopeGaps={scopeGaps}
-                tasks={tasks}
-                financials={financials}
-                expenses={expenses}
-                changeOrders={changeOrders}
-              />
-            </Suspense>
+            <ProjectRiskDashboard
+              projects={projects}
+              laborBreakdowns={laborBreakdowns}
+              scopeGaps={scopeGaps}
+              tasks={tasks}
+              financials={financials}
+              expenses={expenses}
+              changeOrders={changeOrders}
+            />
           </TabsContent>
 
           <TabsContent value="fab-field" className="space-y-6">
@@ -351,6 +333,4 @@ const Analytics = React.memo(function Analytics() {
       )}
     </div>
   );
-});
-
-export default Analytics;
+}

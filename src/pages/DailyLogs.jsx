@@ -1,9 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useOfflineSync } from '@/components/shared/hooks/useOfflineSync';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,9 +25,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Calendar, Users, AlertTriangle, Camera, Trash2, Clock, Zap, WifiOff, RefreshCw } from 'lucide-react';
+import { Plus, Calendar, Users, AlertTriangle, Camera, Trash2, Clock, Zap } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
+import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
 import { toast } from '@/components/ui/notifications';
@@ -71,21 +70,8 @@ export default function DailyLogs() {
   const [projectFilter, setProjectFilter] = useState('all');
   const [deleteLog, setDeleteLog] = useState(null);
   const [showPhotoTab, setShowPhotoTab] = useState(false);
-  const [deletingLog, setDeletingLog] = useState(null);
 
   const queryClient = useQueryClient();
-
-  const { 
-    isOnline, 
-    syncStatus, 
-    pendingCount, 
-    cacheData,
-    getCachedData, 
-    createOffline, 
-    updateOffline, 
-    deleteOffline,
-    syncPendingChanges 
-  } = useOfflineSync('DailyLog');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -95,65 +81,33 @@ export default function DailyLogs() {
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
-    queryFn: async () => {
-      if (!isOnline) {
-        return await getCachedData();
-      }
-      const data = await base44.entities.DailyLog.list('-log_date');
-      await cacheData(data);
-      return data;
-    },
+    queryFn: () => base44.entities.DailyLog.list('-log_date'),
     staleTime: 5 * 60 * 1000,
-    initialData: []
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data) => {
-      if (!isOnline) {
-        return await createOffline(data);
-      }
-      return await base44.entities.DailyLog.create(data);
-    },
+    mutationFn: (data) => base44.entities.DailyLog.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setShowForm(false);
       setFormData(initialFormState);
-      if (!isOnline) {
-        toast.success('Log saved offline - will sync when connected');
-      }
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      if (!isOnline) {
-        return await updateOffline(id, data);
-      }
-      return await base44.entities.DailyLog.update(id, data);
-    },
+    mutationFn: ({ id, data }) => base44.entities.DailyLog.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setSelectedLog(null);
       setFormData(initialFormState);
-      if (!isOnline) {
-        toast.success('Changes saved offline - will sync when connected');
-      }
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      if (!isOnline) {
-        return await deleteOffline(id);
-      }
-      return await base44.entities.DailyLog.delete(id);
-    },
+    mutationFn: (id) => base44.entities.DailyLog.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setDeleteLog(null);
-      if (!isOnline) {
-        toast.success('Deletion queued - will sync when connected');
-      }
     },
   });
 
@@ -319,41 +273,9 @@ export default function DailyLogs() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Daily Field Logs</h1>
-              <div className="flex items-center gap-3 mt-1">
-                <p className="text-xs text-zinc-600 font-mono">{filteredLogs.length} LOGS</p>
-                {!isOnline && (
-                  <Badge variant="outline" className="border-amber-500 text-amber-400 gap-1.5">
-                    <WifiOff size={12} />
-                    OFFLINE
-                  </Badge>
-                )}
-                {pendingCount > 0 && (
-                  <Badge variant="outline" className="border-blue-500 text-blue-400 gap-1.5">
-                    <RefreshCw size={12} />
-                    {pendingCount} PENDING
-                  </Badge>
-                )}
-              </div>
+              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredLogs.length} LOGS</p>
             </div>
-            <div className="flex gap-2">
-              {isOnline && pendingCount > 0 && (
-                <Button
-                  size="sm"
-                  onClick={syncPendingChanges}
-                  disabled={syncStatus === 'syncing'}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs"
-                >
-                  {syncStatus === 'syncing' ? (
-                    <>
-                      <RefreshCw size={14} className="mr-1 animate-spin" />
-                      SYNCING
-                    </>
-                  ) : (
-                    'SYNC NOW'
-                  )}
-                </Button>
-              )}
-              <Button 
+            <Button 
               onClick={() => {
                 setFormData(initialFormState);
                 setShowForm(true);
@@ -394,7 +316,6 @@ export default function DailyLogs() {
           </div>
         </div>
       </div>
-    </div>
 
       {/* Controls Bar */}
       <div className="border-b border-zinc-800 bg-black">

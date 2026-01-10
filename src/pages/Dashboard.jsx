@@ -4,9 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate, Link } from 'react-router-dom';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { createPageUrl } from '@/utils';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { DraggableWidget, WidgetContainer } from '@/components/dashboard/WidgetGrid';
+import { WidgetContainer } from '@/components/dashboard/WidgetGrid';
 import ProjectHealthWidget from '@/components/dashboard/ProjectHealthWidget';
 import DashboardNotificationCenter from '@/components/dashboard/DashboardNotificationCenter';
 import UpcomingDeadlinesWidget from '@/components/dashboard/UpcomingDeadlinesWidget';
@@ -29,7 +27,8 @@ import {
   Activity,
   CheckCircle2,
   Settings,
-  LayoutGrid
+  LayoutGrid,
+  X
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,14 +101,6 @@ export default function Dashboard() {
     const saved = localStorage.getItem('dashboard-widgets');
     return saved ? JSON.parse(saved) : ['project-health', 'notifications', 'deadlines'];
   });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
 
   console.log('Active project:', activeProjectId);
 
@@ -375,19 +366,6 @@ export default function Dashboard() {
   );
 
   // Widget management
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (active.id !== over.id) {
-      setWidgets((items) => {
-        const oldIndex = items.indexOf(active.id);
-        const newIndex = items.indexOf(over.id);
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        localStorage.setItem('dashboard-widgets', JSON.stringify(newOrder));
-        return newOrder;
-      });
-    }
-  };
-
   const handleRemoveWidget = (widgetId) => {
     const newWidgets = widgets.filter(w => w !== widgetId);
     setWidgets(newWidgets);
@@ -742,26 +720,26 @@ export default function Dashboard() {
                 Configure
               </Button>
             </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={widgets} strategy={rectSortingStrategy}>
-                <WidgetContainer>
-                  {widgets.map((widgetId) => {
-                    const widgetDef = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
-                    if (!widgetDef) return null;
-                    const WidgetComponent = widgetDef.component;
-                    return (
-                      <DraggableWidget
-                        key={widgetId}
-                        id={widgetId}
-                        onRemove={() => handleRemoveWidget(widgetId)}
-                      >
-                        <WidgetComponent projectId={activeProjectId} {...(widgetDef.props || {})} />
-                      </DraggableWidget>
-                    );
-                  })}
-                </WidgetContainer>
-              </SortableContext>
-            </DndContext>
+            <WidgetContainer>
+              {widgets.map((widgetId) => {
+                const widgetDef = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
+                if (!widgetDef) return null;
+                const WidgetComponent = widgetDef.component;
+                return (
+                  <div key={widgetId} className="relative">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRemoveWidget(widgetId)}
+                      className="absolute top-2 right-2 z-10 h-6 w-6 p-0 text-zinc-600 hover:text-red-500"
+                    >
+                      <X size={14} />
+                    </Button>
+                    <WidgetComponent projectId={activeProjectId} {...(widgetDef.props || {})} />
+                  </div>
+                );
+              })}
+            </WidgetContainer>
           </div>
         )}
 
@@ -874,7 +852,7 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="text-xs text-zinc-600">
-            Drag widgets to reorder them on your dashboard
+            Select which widgets to display on your dashboard
           </div>
         </DialogContent>
       </Dialog>

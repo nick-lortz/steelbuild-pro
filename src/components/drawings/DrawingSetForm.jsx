@@ -132,8 +132,23 @@ export default function DrawingSetForm({ projects, projectId, drawingSet, onSubm
           alert('Failed to create drawing set. Please try again.');
         }
       } else {
-        // No files - just create the set
-        onSubmit(setData);
+        // No files - just create the set and revision
+        try {
+          const createdSet = await base44.entities.DrawingSet.create(setData);
+          
+          await base44.entities.DrawingRevision.create({
+            drawing_set_id: createdSet.id,
+            revision_number: formData.current_revision,
+            revision_date: new Date().toISOString().split('T')[0],
+            description: 'Initial submission',
+            status: formData.status,
+          });
+
+          onSubmit(setData);
+        } catch (error) {
+          console.error('Failed to create drawing set:', error);
+          alert('Failed to create drawing set. Please try again.');
+        }
       }
     } else {
       // Editing existing set

@@ -351,4 +351,6 @@ const Analytics = React.memo(function Analytics() {
       )}
     </div>
   );
-}
+});
+
+export default Analytics;

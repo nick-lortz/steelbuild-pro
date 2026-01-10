@@ -77,8 +77,6 @@ export default function Dashboard() {
   const [activityPage, setActivityPage] = useState(1);
   const ACTIVITY_PER_PAGE = 10;
 
-  console.log('Active project:', activeProjectId);
-
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),

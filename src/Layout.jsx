@@ -25,7 +25,8 @@ import {
   Settings,
   UserCircle,
   BarChart3,
-  Camera } from
+  Camera,
+  Activity } from
 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -39,6 +40,7 @@ import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import GlobalErrorBoundary from '@/components/shared/GlobalErrorBoundary';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -75,6 +77,7 @@ const navItems = [
 { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
 { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
 { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
+{ name: 'Diagnostics', page: 'Diagnostics', icon: Activity, roles: ['admin'] },
 { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }];
 
 
@@ -342,13 +345,15 @@ function LayoutContent({ children, currentPageName }) {
 
 const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
   return (
-    <ThemeProvider>
-      <ConfirmProvider>
-        <ActiveProjectProvider>
-          <LayoutContent children={children} currentPageName={currentPageName} />
-        </ActiveProjectProvider>
-      </ConfirmProvider>
-    </ThemeProvider>
+    <GlobalErrorBoundary>
+      <ThemeProvider>
+        <ConfirmProvider>
+          <ActiveProjectProvider>
+            <LayoutContent children={children} currentPageName={currentPageName} />
+          </ActiveProjectProvider>
+        </ConfirmProvider>
+      </ThemeProvider>
+    </GlobalErrorBoundary>
   );
 });
 

@@ -60,75 +60,80 @@ export default function DrawingSetForm({ projects, projectId, drawingSet, onSubm
     };
 
     if (!drawingSet) {
-      // New drawing set - upload files
-      setUploading(true);
-      setUploadProgress(files.map(() => ({ status: 'uploading', name: '' })));
+      // New drawing set
+      if (files.length > 0) {
+        // Upload files
+        setUploading(true);
+        setUploadProgress(files.map(() => ({ status: 'uploading', name: '' })));
 
-      try {
-        // Create the set first
-        const createdSet = await base44.entities.DrawingSet.create(setData);
+        try {
+          // Create the set first
+          const createdSet = await base44.entities.DrawingSet.create(setData);
 
-        // Upload each file and create sheet records
-        const uploadPromises = files.map(async (file, index) => {
-          try {
-            setUploadProgress(prev => {
-              const updated = [...prev];
-              updated[index] = { status: 'uploading', name: file.name };
-              return updated;
-            });
+          // Upload each file and create sheet records
+          const uploadPromises = files.map(async (file, index) => {
+            try {
+              setUploadProgress(prev => {
+                const updated = [...prev];
+                updated[index] = { status: 'uploading', name: file.name };
+                return updated;
+              });
 
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+              const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-            // Extract sheet number from filename (e.g., S-101.pdf -> S-101)
-            const sheetNumber = file.name.replace('.pdf', '');
+              // Extract sheet number from filename (e.g., S-101.pdf -> S-101)
+              const sheetNumber = file.name.replace('.pdf', '');
 
-            await base44.entities.DrawingSheet.create({
-              drawing_set_id: createdSet.id,
-              sheet_number: sheetNumber,
-              sheet_name: file.name,
-              file_url,
-              file_name: file.name,
-              file_size: file.size,
-              uploaded_date: new Date().toISOString(),
-              ai_reviewed: false,
-            });
+              await base44.entities.DrawingSheet.create({
+                drawing_set_id: createdSet.id,
+                sheet_number: sheetNumber,
+                sheet_name: file.name,
+                file_url,
+                file_name: file.name,
+                file_size: file.size,
+                uploaded_date: new Date().toISOString(),
+                ai_reviewed: false,
+              });
 
-            setUploadProgress(prev => {
-              const updated = [...prev];
-              updated[index] = { status: 'done', name: file.name };
-              return updated;
-            });
+              setUploadProgress(prev => {
+                const updated = [...prev];
+                updated[index] = { status: 'done', name: file.name };
+                return updated;
+              });
 
-            // Queue AI review (non-blocking)
-            queueAIReview(createdSet.id, file_url, file.name);
-          } catch (error) {
-            setUploadProgress(prev => {
-              const updated = [...prev];
-              updated[index] = { status: 'error', name: file.name };
-              return updated;
-            });
-            console.error('Upload failed for', file.name, error);
-          }
-        });
+              // Queue AI review (non-blocking)
+              queueAIReview(createdSet.id, file_url, file.name);
+            } catch (error) {
+              setUploadProgress(prev => {
+                const updated = [...prev];
+                updated[index] = { status: 'error', name: file.name };
+                return updated;
+              });
+              console.error('Upload failed for', file.name, error);
+            }
+          });
 
-        await Promise.all(uploadPromises);
+          await Promise.all(uploadPromises);
 
-        // Create initial revision
-        await base44.entities.DrawingRevision.create({
-          drawing_set_id: createdSet.id,
-          revision_number: formData.current_revision,
-          revision_date: new Date().toISOString().split('T')[0],
-          description: 'Initial submission',
-          status: formData.status,
-        });
+          // Create initial revision
+          await base44.entities.DrawingRevision.create({
+            drawing_set_id: createdSet.id,
+            revision_number: formData.current_revision,
+            revision_date: new Date().toISOString().split('T')[0],
+            description: 'Initial submission',
+            status: formData.status,
+          });
 
-        setUploading(false);
-        // Don't pass data, just signal completion - the set is already created
-        onSubmit();
-      } catch (error) {
-        console.error('Failed to create drawing set:', error);
-        setUploading(false);
-        alert('Failed to create drawing set. Please try again.');
+          setUploading(false);
+          onSubmit(setData);
+        } catch (error) {
+          console.error('Failed to create drawing set:', error);
+          setUploading(false);
+          alert('Failed to create drawing set. Please try again.');
+        }
+      } else {
+        // No files - just create the set
+        onSubmit(setData);
       }
     } else {
       // Editing existing set

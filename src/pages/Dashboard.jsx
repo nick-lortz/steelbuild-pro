@@ -30,6 +30,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { format, differenceInDays } from 'date-fns';
 import { DashboardSkeleton } from '@/components/ui/SkeletonUI';
 import { useCoalescedQuery } from '@/components/shared/hooks/useEnhancedQuery';
+import { useProgressiveQueries } from '@/components/shared/hooks/useProgressiveQueries';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -121,59 +122,68 @@ export default function Dashboard() {
     }
   );
 
-  // Fetch recent activity data
-  const { data: rfis = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
-    queryKey: ['dashboardRFIs'],
-    queryFn: () => base44.entities.RFI.list('-created_date', 20),
-    staleTime: 2 * 60 * 1000,
-  });
+  // Progressive loading to avoid rate limits
+  const { results: activityResults, isLoading: activityLoading } = useProgressiveQueries([
+    {
+      key: ['dashboardRFIs'],
+      fn: () => base44.entities.RFI.list('-created_date', 20),
+      options: { staleTime: 2 * 60 * 1000 }
+    },
+    {
+      key: ['dashboardCOs'],
+      fn: () => base44.entities.ChangeOrder.list('-created_date', 20),
+      options: { staleTime: 2 * 60 * 1000 }
+    },
+    {
+      key: ['dashboardTasks'],
+      fn: () => base44.entities.Task.list('-updated_date', 20),
+      options: { staleTime: 2 * 60 * 1000 }
+    },
+    {
+      key: ['dashboardDrawings'],
+      fn: () => base44.entities.DrawingSet.list('-created_date', 20),
+      options: { staleTime: 5 * 60 * 1000 }
+    }
+  ]);
 
-  const { data: changeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
-    queryKey: ['dashboardCOs'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 20),
-    staleTime: 2 * 60 * 1000,
-  });
+  const rfis = activityResults[0]?.data || [];
+  const changeOrders = activityResults[1]?.data || [];
+  const tasks = activityResults[2]?.data || [];
+  const drawings = activityResults[3]?.data || [];
+  
+  const refetchRFIs = activityResults[0]?.refetch;
+  const refetchCOs = activityResults[1]?.refetch;
+  const refetchTasks = activityResults[2]?.refetch;
+  const refetchDrawings = activityResults[3]?.refetch;
 
-  const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
-    queryKey: ['dashboardTasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 20),
-    staleTime: 2 * 60 * 1000,
-  });
+  // Progressive loading for project-specific data
+  const { results: projectDataResults } = useProgressiveQueries([
+    {
+      key: ['dashboardSOV', activeProjectId],
+      fn: () => activeProjectId ? base44.entities.SOVItem.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+      options: { enabled: !!activeProjectId, staleTime: 5 * 60 * 1000 }
+    },
+    {
+      key: ['dashboardExpenses', activeProjectId],
+      fn: () => activeProjectId ? base44.entities.Expense.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+      options: { enabled: !!activeProjectId, staleTime: 5 * 60 * 1000 }
+    },
+    {
+      key: ['dashboardProjectCOs', activeProjectId],
+      fn: () => activeProjectId ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+      options: { enabled: !!activeProjectId, staleTime: 5 * 60 * 1000 }
+    },
+    {
+      key: ['dashboardETC', activeProjectId],
+      fn: () => activeProjectId ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+      options: { enabled: !!activeProjectId, staleTime: 5 * 60 * 1000 }
+    }
+  ]);
 
-  const { data: drawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
-    queryKey: ['dashboardDrawings'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date', 20),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch financial data for cost risk indicator
-  const { data: sovItems = [] } = useQuery({
-    queryKey: ['dashboardSOV', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.SOVItem.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: expenses = [] } = useQuery({
-    queryKey: ['dashboardExpenses', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.Expense.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: projectChangeOrders = [] } = useQuery({
-    queryKey: ['dashboardProjectCOs', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: estimatedCosts = [] } = useQuery({
-    queryKey: ['dashboardETC', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-  });
+  const sovItems = projectDataResults[0]?.data || [];
+  const expenses = projectDataResults[1]?.data || [];
+  const projectChangeOrders = projectDataResults[2]?.data || [];
+  const estimatedCosts = projectDataResults[3]?.data || [];
 
   // Calculate critical issues - MOVED BEFORE CONDITIONAL RETURN
   const criticalIssues = useMemo(() => {
@@ -356,7 +366,7 @@ export default function Dashboard() {
     setIsRefreshing(false);
   }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings]);
 
-  const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
+  const isLoading = projectsLoading || metricsLoading || activityLoading;
 
   if (isLoading) {
     return <DashboardSkeleton />;

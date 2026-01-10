@@ -223,8 +223,10 @@ class RUMMonitor {
   }
 
   sendToBackend(eventType, data) {
-    // Send to backend for aggregation
-    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    // Silently fail - don't block app on monitoring issues
+    try {
+      if (typeof navigator === 'undefined') return;
+      
       const payload = JSON.stringify({
         eventType,
         data,
@@ -235,7 +237,10 @@ class RUMMonitor {
       });
 
       // Use sendBeacon for non-blocking sends
+      // Ignore result - monitoring should never break the app
       navigator.sendBeacon('/api/rum', payload);
+    } catch (e) {
+      // Silently ignore monitoring errors
     }
   }
 

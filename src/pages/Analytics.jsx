@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
+import { AnalyticsSkeleton } from '@/components/ui/SkeletonUI';
 import { toast } from '@/components/ui/notifications';
 import { usePerformanceMonitor } from '@/components/shared/hooks/usePerformanceMonitor';
 import { useApiWithRetry } from '@/components/shared/hooks/useApiWithRetry';
@@ -66,7 +67,7 @@ export default function Analytics() {
   }, [currentUser, allProjects]);
 
   // Progressive loading to avoid 429 rate limits
-  const { results: analyticsQueries } = useProgressiveQueries([
+  const { results: analyticsQueries, isLoading: queriesLoading } = useProgressiveQueries([
     {
       key: ['projects', activeProjectId],
       fn: () => activeProjectId ? base44.entities.Project.filter({ id: activeProjectId }) : Promise.resolve([]),
@@ -149,24 +150,24 @@ export default function Analytics() {
     }
   ]);
 
-  const projects = analyticsQueries[0]?.data || [];
-  const financials = analyticsQueries[1]?.data || [];
-  const tasks = analyticsQueries[2]?.data || [];
-  const expenses = analyticsQueries[3]?.data || [];
-  const estimatedCosts = analyticsQueries[4]?.data || [];
-  const resources = analyticsQueries[5]?.data || [];
-  const resourceAllocations = analyticsQueries[6]?.data || [];
-  const rfis = analyticsQueries[7]?.data || [];
-  const changeOrders = analyticsQueries[8]?.data || [];
-  const drawings = analyticsQueries[9]?.data || [];
-  const scopeGaps = analyticsQueries[10]?.data || [];
-  const laborBreakdowns = analyticsQueries[11]?.data || [];
-  const laborHours = analyticsQueries[12]?.data || [];
-  const sovItems = analyticsQueries[13]?.data || [];
-  const costCodes = analyticsQueries[14]?.data || [];
-  const invoices = analyticsQueries[15]?.data || [];
+  const projects = React.useMemo(() => analyticsQueries[0]?.data || [], [analyticsQueries[0]?.data]);
+  const financials = React.useMemo(() => analyticsQueries[1]?.data || [], [analyticsQueries[1]?.data]);
+  const tasks = React.useMemo(() => analyticsQueries[2]?.data || [], [analyticsQueries[2]?.data]);
+  const expenses = React.useMemo(() => analyticsQueries[3]?.data || [], [analyticsQueries[3]?.data]);
+  const estimatedCosts = React.useMemo(() => analyticsQueries[4]?.data || [], [analyticsQueries[4]?.data]);
+  const resources = React.useMemo(() => analyticsQueries[5]?.data || [], [analyticsQueries[5]?.data]);
+  const resourceAllocations = React.useMemo(() => analyticsQueries[6]?.data || [], [analyticsQueries[6]?.data]);
+  const rfis = React.useMemo(() => analyticsQueries[7]?.data || [], [analyticsQueries[7]?.data]);
+  const changeOrders = React.useMemo(() => analyticsQueries[8]?.data || [], [analyticsQueries[8]?.data]);
+  const drawings = React.useMemo(() => analyticsQueries[9]?.data || [], [analyticsQueries[9]?.data]);
+  const scopeGaps = React.useMemo(() => analyticsQueries[10]?.data || [], [analyticsQueries[10]?.data]);
+  const laborBreakdowns = React.useMemo(() => analyticsQueries[11]?.data || [], [analyticsQueries[11]?.data]);
+  const laborHours = React.useMemo(() => analyticsQueries[12]?.data || [], [analyticsQueries[12]?.data]);
+  const sovItems = React.useMemo(() => analyticsQueries[13]?.data || [], [analyticsQueries[13]?.data]);
+  const costCodes = React.useMemo(() => analyticsQueries[14]?.data || [], [analyticsQueries[14]?.data]);
+  const invoices = React.useMemo(() => analyticsQueries[15]?.data || [], [analyticsQueries[15]?.data]);
   
-  const projectsLoading = analyticsQueries[0]?.isLoading || false;
+  const projectsLoading = queriesLoading;
 
   useEffect(() => {
     if (!activeProjectId && userProjects.length > 0) {

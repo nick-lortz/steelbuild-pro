@@ -59,7 +59,7 @@ export function RouteWatchdog({ children }) {
     paintTimeoutRef.current = setTimeout(() => {
       if (routeState === 'loading') {
         setRouteState('slow');
-        console.warn(`Route ${location.pathname} slow to paint (>1.5s)`);
+        // Silent - no console noise
       }
     }, PAINT_TIMEOUT);
 

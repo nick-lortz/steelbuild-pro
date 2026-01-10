@@ -17,16 +17,12 @@ class CrashReporter {
     
     if (window.Sentry) {
       this.provider = 'sentry';
-      console.log('Crash reporting: Sentry detected');
     } else if (window.firebase?.crashlytics) {
       this.provider = 'firebase';
-      console.log('Crash reporting: Firebase Crashlytics detected');
     } else if (window.Bugsnag) {
       this.provider = 'bugsnag';
-      console.log('Crash reporting: Bugsnag detected');
     } else {
       this.provider = 'local';
-      console.log('Crash reporting: Using local fallback');
       this.setupLocalReporting();
     }
   }

@@ -103,7 +103,20 @@ export default function Detailing() {
   });
 
   const createDrawingSetMutation = useMutation({
-    mutationFn: (data) => base44.entities.DrawingSet.create(data),
+    mutationFn: async (data) => {
+      const createdSet = await base44.entities.DrawingSet.create(data);
+      
+      // Create initial revision
+      await base44.entities.DrawingRevision.create({
+        drawing_set_id: createdSet.id,
+        revision_number: data.current_revision || 'Rev 0',
+        revision_date: new Date().toISOString().split('T')[0],
+        description: 'Initial submission',
+        status: data.status || 'IFA',
+      });
+      
+      return createdSet;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       setShowCreateDialog(false);

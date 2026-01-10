@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -15,13 +16,16 @@ import {
   User,
   MessageSquare,
   ChevronRight,
-  Plus } from
+  Plus,
+  History } from
 'lucide-react';
 import { format, differenceInDays, isPast, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
+import BatchActionsPanel from '@/components/drawings/BatchActionsPanel';
+import RevisionHistory from '@/components/drawings/RevisionHistory';
 
 const STATUS_FLOW = {
   'IFA': { label: 'Issued for Approval', next: 'BFA', color: 'bg-blue-500' },
@@ -38,6 +42,8 @@ export default function Detailing() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedDiscipline, setSelectedDiscipline] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedSets, setSelectedSets] = useState([]);
+  const [revisionHistorySetId, setRevisionHistorySetId] = useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -105,6 +111,37 @@ export default function Detailing() {
     },
     onError: () => toast.error('Creation failed')
   });
+
+  const batchUpdateMutation = useMutation({
+    mutationFn: async (updateData) => {
+      const promises = selectedSets.map(id => 
+        base44.entities.DrawingSet.update(id, updateData)
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+      setSelectedSets([]);
+      toast.success('Batch update complete');
+    },
+    onError: () => toast.error('Batch update failed')
+  });
+
+  const handleSelectSet = (setId, checked) => {
+    if (checked) {
+      setSelectedSets(prev => [...prev, setId]);
+    } else {
+      setSelectedSets(prev => prev.filter(id => id !== setId));
+    }
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedSets(activePackages.map(ds => ds.id));
+    } else {
+      setSelectedSets([]);
+    }
+  };
 
   // KPIs
   const kpis = useMemo(() => {
@@ -327,8 +364,21 @@ export default function Detailing() {
         }
 
         {/* Filters */}
-        <div className="flex items-center gap-2">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {activePackages.length > 0 && (
+              <div className="flex items-center gap-2 mr-4">
+                <Checkbox
+                  checked={selectedSets.length === activePackages.length && activePackages.length > 0}
+                  onCheckedChange={handleSelectAll}
+                  className="border-zinc-700"
+                />
+                <span className="text-xs text-zinc-400 uppercase tracking-widest font-bold">
+                  Select All
+                </span>
+              </div>
+            )}
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
@@ -367,8 +417,9 @@ export default function Detailing() {
               <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
               )}
             </SelectContent>
-          </Select>
-        </div>
+            </Select>
+            </div>
+            </div>
 
         {/* Active Work Packages */}
         <div className="space-y-2">
@@ -376,12 +427,23 @@ export default function Detailing() {
             const statusInfo = STATUS_FLOW[ds.status];
             const daysUntilDue = ds.due_date ? differenceInDays(parseISO(ds.due_date), new Date()) : null;
             const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
+            const isSelected = selectedSets.includes(ds.id);
 
             return (
-              <div key={ds.id} className="bg-zinc-900 border border-zinc-800 rounded hover:border-zinc-700 transition-colors">
+              <div key={ds.id} className={cn(
+                "bg-zinc-900 border rounded hover:border-zinc-700 transition-colors",
+                isSelected ? "border-amber-500" : "border-zinc-800"
+              )}>
                 <div className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
+                      {/* Checkbox */}
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleSelectSet(ds.id, checked)}
+                        className="border-zinc-700"
+                      />
+
                       {/* Status Indicator */}
                       <div className={cn("w-1 h-16 rounded", statusInfo?.color || 'bg-zinc-700')} />
 
@@ -443,6 +505,15 @@ export default function Detailing() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setRevisionHistorySetId(ds.id)}
+                          className="h-8 gap-1 text-zinc-400 hover:text-white hover:bg-zinc-800 text-xs uppercase"
+                        >
+                          <History size={14} />
+                          History
+                        </Button>
                         {statusInfo?.next &&
                         <Button
                           size="sm"
@@ -479,6 +550,21 @@ export default function Detailing() {
         </>
       )}
 
+      {/* Batch Actions Panel */}
+      <BatchActionsPanel
+        selectedSets={selectedSets}
+        onClearSelection={() => setSelectedSets([])}
+        onBatchUpdate={(data) => batchUpdateMutation.mutate(data)}
+        users={users}
+      />
+
+      {/* Revision History Dialog */}
+      <RevisionHistory
+        drawingSetId={revisionHistorySetId}
+        open={!!revisionHistorySetId}
+        onOpenChange={(open) => !open && setRevisionHistorySetId(null)}
+      />
+
       {/* Create Drawing Set Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
@@ -493,6 +579,6 @@ export default function Detailing() {
           />
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+      </div>
+      );
+      }

@@ -8,9 +8,9 @@ import { base44 } from '@/api/base44Client';
 import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
-export default function DrawingSetForm({ projects, drawingSet, onSubmit, onCancel, isLoading }) {
+export default function DrawingSetForm({ projects, projectId, drawingSet, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
-    project_id: drawingSet?.project_id || '',
+    project_id: drawingSet?.project_id || projectId || '',
     set_name: drawingSet?.set_name || '',
     set_number: drawingSet?.set_number || '',
     current_revision: drawingSet?.current_revision || 'Rev 0',
@@ -174,19 +174,21 @@ Keep the summary concise (2-3 sentences).`;
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Basic Info */}
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Project *</Label>
-          <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select project" />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!projectId && (
+          <div className="space-y-2">
+            <Label>Project *</Label>
+            <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects?.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">

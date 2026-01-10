@@ -181,6 +181,9 @@ const Analytics = React.memo(function Analytics() {
   const selectedProject = useMemo(() => projects[0], [projects]);
   const hasProject = !!activeProjectId;
 
+  // Throttle activeProjectId to prevent render thrashing - must be before early return
+  const throttledProjectId = useThrottledValue(activeProjectId, 300);
+
   if (queriesLoading && hasProject) {
     return (
       <div>
@@ -193,9 +196,6 @@ const Analytics = React.memo(function Analytics() {
       </div>
     );
   }
-
-  // Throttle activeProjectId to prevent render thrashing
-  const throttledProjectId = useThrottledValue(activeProjectId, 300);
 
   return (
     <div>

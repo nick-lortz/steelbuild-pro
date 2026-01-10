@@ -28,6 +28,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format, differenceInDays } from 'date-fns';
+import { DashboardSkeleton } from '@/components/ui/SkeletonUI';
+import { useCoalescedQuery } from '@/components/shared/hooks/useEnhancedQuery';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -100,21 +102,24 @@ export default function Dashboard() {
     retry: false
   });
 
-  // Fetch projects
-  const { data: projects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
-    queryKey: ['dashboardProjects'],
-    queryFn: () => base44.entities.Project.list('-updated_date'),
-    select: (data) => {
-      if (!currentUser) return data;
-      if (currentUser.role === 'admin') return data;
-      return data.filter(p => 
-        p.project_manager === currentUser.email || 
-        p.superintendent === currentUser.email ||
-        (p.assigned_users && p.assigned_users.includes(currentUser.email))
-      );
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  // Fetch projects with coalescing
+  const { data: projects = [], isLoading: projectsLoading, refetch: refetchProjects } = useCoalescedQuery(
+    ['dashboardProjects'],
+    () => base44.entities.Project.list('-updated_date'),
+    {
+      select: (data) => {
+        if (!currentUser) return data;
+        if (currentUser.role === 'admin') return data;
+        return data.filter(p => 
+          p.project_manager === currentUser.email || 
+          p.superintendent === currentUser.email ||
+          (p.assigned_users && p.assigned_users.includes(currentUser.email))
+        );
+      },
+      staleTime: 5 * 60 * 1000,
+      returnStaleOnError: true
+    }
+  );
 
   // Fetch recent activity data
   const { data: rfis = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
@@ -354,14 +359,7 @@ export default function Dashboard() {
   const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

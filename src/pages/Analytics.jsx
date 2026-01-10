@@ -229,7 +229,7 @@ export default function Analytics() {
         />
       )}
 
-      {hasProject && (
+      {hasProject && !projectsLoading && (
         <Tabs defaultValue="custom" className="space-y-6">
           <TabsList className="bg-zinc-800 border border-zinc-700">
             <TabsTrigger value="custom" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">

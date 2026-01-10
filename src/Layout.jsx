@@ -44,6 +44,7 @@ import GlobalErrorBoundary from '@/components/shared/GlobalErrorBoundary';
 import { RouteWatchdog } from '@/components/monitoring/RouteWatchdog';
 import crashReporter from '@/components/monitoring/CrashReporter';
 import rumMonitor from '@/components/monitoring/RUMMonitor';
+import { NetworkStatusBar } from '@/components/shared/NetworkStatusBar';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -168,6 +169,7 @@ function LayoutContent({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <NetworkStatusBar />
       <OfflineIndicator />
       <Toaster />
       <CommandPalette />

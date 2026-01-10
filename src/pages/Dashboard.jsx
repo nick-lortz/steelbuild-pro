@@ -1,9 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate, Link } from 'react-router-dom';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { createPageUrl } from '@/utils';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { DraggableWidget, WidgetContainer } from '@/components/dashboard/WidgetGrid';
+import ProjectHealthWidget from '@/components/dashboard/ProjectHealthWidget';
+import DashboardNotificationCenter from '@/components/dashboard/DashboardNotificationCenter';
+import UpcomingDeadlinesWidget from '@/components/dashboard/UpcomingDeadlinesWidget';
+import QuickMetricsWidget from '@/components/dashboard/QuickMetricsWidget';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -20,11 +27,15 @@ import {
   Target,
   RefreshCw,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Settings,
+  LayoutGrid
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { format, differenceInDays } from 'date-fns';
@@ -67,12 +78,38 @@ const ActivityItem = ({ type, title, subtitle, badge, date, onClick }) => {
   );
 };
 
+const AVAILABLE_WIDGETS = [
+  { id: 'project-health', label: 'Project Health', component: ProjectHealthWidget },
+  { id: 'notifications', label: 'Notification Center', component: DashboardNotificationCenter },
+  { id: 'deadlines', label: 'Upcoming Deadlines', component: UpcomingDeadlinesWidget },
+  { id: 'drawings', label: 'Drawing Metrics', component: QuickMetricsWidget, props: { metric: 'drawings' } },
+  { id: 'rfis', label: 'RFI Metrics', component: QuickMetricsWidget, props: { metric: 'rfis' } },
+  { id: 'costs', label: 'Cost Metrics', component: QuickMetricsWidget, props: { metric: 'costs' } },
+  { id: 'tasks', label: 'Task Metrics', component: QuickMetricsWidget, props: { metric: 'tasks' } }
+];
+
 export default function Dashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { activeProjectId } = useActiveProject();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
+  const [showWidgetConfig, setShowWidgetConfig] = useState(false);
   const ACTIVITY_PER_PAGE = 10;
+
+  // Widget state management
+  const [widgets, setWidgets] = useState(() => {
+    const saved = localStorage.getItem('dashboard-widgets');
+    return saved ? JSON.parse(saved) : ['project-health', 'notifications', 'deadlines'];
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   console.log('Active project:', activeProjectId);
 
@@ -337,6 +374,34 @@ export default function Dashboard() {
     [activityFeed.length, paginatedActivity.length]
   );
 
+  // Widget management
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      setWidgets((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        localStorage.setItem('dashboard-widgets', JSON.stringify(newOrder));
+        return newOrder;
+      });
+    }
+  };
+
+  const handleRemoveWidget = (widgetId) => {
+    const newWidgets = widgets.filter(w => w !== widgetId);
+    setWidgets(newWidgets);
+    localStorage.setItem('dashboard-widgets', JSON.stringify(newWidgets));
+  };
+
+  const handleAddWidget = (widgetId) => {
+    if (!widgets.includes(widgetId)) {
+      const newWidgets = [...widgets, widgetId];
+      setWidgets(newWidgets);
+      localStorage.setItem('dashboard-widgets', JSON.stringify(newWidgets));
+    }
+  };
+
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -348,8 +413,9 @@ export default function Dashboard() {
       refetchTasks(),
       refetchDrawings()
     ]);
+    queryClient.invalidateQueries();
     setIsRefreshing(false);
-  }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings]);
+  }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings, queryClient]);
 
   const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
 
@@ -376,13 +442,24 @@ export default function Dashboard() {
             </div>
             <span className="text-zinc-600 font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
           </div>
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="text-zinc-500 hover:text-zinc-400 font-mono text-xs uppercase tracking-wider"
-          >
-            {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
-          </button>
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowWidgetConfig(true)}
+              className="text-zinc-500 hover:text-zinc-400 h-7 gap-1"
+            >
+              <LayoutGrid size={14} />
+              <span className="text-xs uppercase tracking-wider">WIDGETS</span>
+            </Button>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="text-zinc-500 hover:text-zinc-400 font-mono text-xs uppercase tracking-wider"
+            >
+              {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -647,6 +724,44 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Customizable Widgets */}
+        {widgets.length > 0 && activeProjectId && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">DASHBOARD WIDGETS</h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowWidgetConfig(true)}
+                className="text-zinc-600 hover:text-white h-7 gap-1"
+              >
+                <Settings size={12} />
+                Configure
+              </Button>
+            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={widgets} strategy={rectSortingStrategy}>
+                <WidgetContainer>
+                  {widgets.map((widgetId) => {
+                    const widgetDef = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
+                    if (!widgetDef) return null;
+                    const WidgetComponent = widgetDef.component;
+                    return (
+                      <DraggableWidget
+                        key={widgetId}
+                        id={widgetId}
+                        onRemove={() => handleRemoveWidget(widgetId)}
+                      >
+                        <WidgetComponent projectId={activeProjectId} {...(widgetDef.props || {})} />
+                      </DraggableWidget>
+                    );
+                  })}
+                </WidgetContainer>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 

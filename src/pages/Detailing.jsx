@@ -188,10 +188,10 @@ export default function Detailing() {
               <p className="text-xs text-zinc-600 font-mono mt-1">{selectedProject.project_number} • {selectedProject.name}</p>
               }
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <label className="text-xs text-zinc-400 uppercase tracking-widest font-bold">PROJECT:</label>
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-80 bg-zinc-900 border-zinc-700 text-white">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-700 text-white">
                   <SelectValue placeholder="Select a project..." />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -209,10 +209,9 @@ export default function Detailing() {
               {activeProjectId && (
                 <Button 
                   onClick={() => setShowCreateDialog(true)}
-                  size="sm"
-                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider h-9 px-4"
                 >
-                  <Plus size={14} className="mr-1" />
+                  <Plus size={16} className="mr-2" />
                   NEW SET
                 </Button>
               )}

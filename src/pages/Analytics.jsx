@@ -175,8 +175,21 @@ export default function Analytics() {
     }
   }, [activeProjectId, userProjects]);
 
-  const selectedProject = projects[0];
+  const selectedProject = useMemo(() => projects[0], [projects]);
   const hasProject = !!activeProjectId;
+
+  if (queriesLoading && hasProject) {
+    return (
+      <div>
+        <PageHeader
+          title="Analytics Dashboard"
+          subtitle="Loading analytics data..."
+          showBackButton={false}
+        />
+        <AnalyticsSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -210,7 +223,7 @@ export default function Analytics() {
         />
       )}
 
-      {hasProject && !projectsLoading && (
+      {hasProject && (
         <Tabs defaultValue="custom" className="space-y-6">
           <TabsList className="bg-zinc-800 border border-zinc-700">
             <TabsTrigger value="custom" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">

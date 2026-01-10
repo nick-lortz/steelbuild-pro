@@ -843,6 +843,41 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Widget Configuration Dialog */}
+      <Dialog open={showWidgetConfig} onOpenChange={setShowWidgetConfig}>
+        <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutGrid size={18} />
+              Configure Dashboard Widgets
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {AVAILABLE_WIDGETS.map((widget) => (
+              <div key={widget.id} className="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800 rounded">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={widgets.includes(widget.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleAddWidget(widget.id);
+                      } else {
+                        handleRemoveWidget(widget.id);
+                      }
+                    }}
+                    className="border-zinc-700"
+                  />
+                  <span className="text-sm text-white">{widget.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-zinc-600">
+            Drag widgets to reorder them on your dashboard
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

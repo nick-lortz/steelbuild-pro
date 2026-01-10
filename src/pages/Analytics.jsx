@@ -1,22 +1,34 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard } from 'lucide-react';
-import PortfolioOverview from '@/components/analytics/PortfolioOverview';
-import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
-import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
-import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
-import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
-import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
-import DashboardBuilder from '@/components/analytics/DashboardBuilder';
-import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import { toast } from '@/components/ui/notifications';
+import { usePerformanceMonitor } from '@/components/shared/hooks/usePerformanceMonitor';
+import { useApiWithRetry } from '@/components/shared/hooks/useApiWithRetry';
+
+// Lazy load heavy analytics components
+const PortfolioOverview = lazy(() => import('@/components/analytics/PortfolioOverview'));
+const ResourceHeatmap = lazy(() => import('@/components/analytics/ResourceHeatmap'));
+const RiskTrendAnalysis = lazy(() => import('@/components/analytics/RiskTrendAnalysis'));
+const ProjectRiskDashboard = lazy(() => import('@/components/analytics/ProjectRiskDashboard'));
+const CostRiskIndicator = lazy(() => import('@/components/financials/CostRiskIndicator'));
+const FabricationFieldDrift = lazy(() => import('@/components/analytics/FabricationFieldDrift'));
+const DashboardBuilder = lazy(() => import('@/components/analytics/DashboardBuilder'));
+const EVMDashboardEnhanced = lazy(() => import('@/components/analytics/EVMDashboardEnhanced'));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 export default function Analytics() {
+  usePerformanceMonitor('Analytics');
+  const { executeWithRetry } = useApiWithRetry();
   const [activeProjectId, setActiveProjectId] = useState(null);
   const queryClient = useQueryClient();
 
@@ -27,7 +39,9 @@ export default function Analytics() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => executeWithRetry(() => base44.entities.Project.list()),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const saveDashboardMutation = useMutation({
@@ -249,32 +263,36 @@ export default function Analytics() {
           </TabsList>
 
           <TabsContent value="custom" className="space-y-6">
-            <DashboardBuilder
-              projectData={selectedProject ? [selectedProject] : userProjects}
-              tasks={tasks}
-              financials={financials}
-              resources={resources}
-              expenses={expenses}
-              onSaveConfig={(config) => saveDashboardMutation.mutate(config)}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <DashboardBuilder
+                projectData={selectedProject ? [selectedProject] : userProjects}
+                tasks={tasks}
+                financials={financials}
+                resources={resources}
+                expenses={expenses}
+                onSaveConfig={(config) => saveDashboardMutation.mutate(config)}
+              />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="risk-dashboard" className="space-y-6">
-            <CostRiskIndicator
-              projectId={activeProjectId}
-              expenses={expenses}
-              estimatedCosts={estimatedCosts}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+              <CostRiskIndicator
+                projectId={activeProjectId}
+                expenses={expenses}
+                estimatedCosts={estimatedCosts}
+              />
 
-            <ProjectRiskDashboard
-              projects={projects}
-              laborBreakdowns={laborBreakdowns}
-              scopeGaps={scopeGaps}
-              tasks={tasks}
-              financials={financials}
-              expenses={expenses}
-              changeOrders={changeOrders}
-            />
+              <ProjectRiskDashboard
+                projects={projects}
+                laborBreakdowns={laborBreakdowns}
+                scopeGaps={scopeGaps}
+                tasks={tasks}
+                financials={financials}
+                expenses={expenses}
+                changeOrders={changeOrders}
+              />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="fab-field" className="space-y-6">

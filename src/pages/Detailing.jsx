@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertTriangle,
   Clock,
@@ -13,12 +14,14 @@ import {
   FileText,
   User,
   MessageSquare,
-  ChevronRight } from
+  ChevronRight,
+  Plus } from
 'lucide-react';
 import { format, differenceInDays, isPast, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 
 const STATUS_FLOW = {
   'IFA': { label: 'Issued for Approval', next: 'BFA', color: 'bg-blue-500' },
@@ -34,6 +37,7 @@ export default function Detailing() {
   const [selectedReviewer, setSelectedReviewer] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedDiscipline, setSelectedDiscipline] = useState('all');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -90,6 +94,16 @@ export default function Detailing() {
       toast.success('Reviewer assigned');
     },
     onError: () => toast.error('Assignment failed')
+  });
+
+  const createDrawingSetMutation = useMutation({
+    mutationFn: (data) => base44.entities.DrawingSet.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+      setShowCreateDialog(false);
+      toast.success('Drawing set created');
+    },
+    onError: () => toast.error('Creation failed')
   });
 
   // KPIs
@@ -192,6 +206,16 @@ export default function Detailing() {
                   }
                 </SelectContent>
               </Select>
+              {activeProjectId && (
+                <Button 
+                  onClick={() => setShowCreateDialog(true)}
+                  size="sm"
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                >
+                  <Plus size={14} className="mr-1" />
+                  NEW SET
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -456,6 +480,21 @@ export default function Detailing() {
         </>
       )}
     </div>
-  );
 
-}
+    {/* Create Drawing Set Dialog */}
+    <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+    <DialogHeader>
+      <DialogTitle>New Drawing Set</DialogTitle>
+    </DialogHeader>
+    <DrawingSetForm
+      projectId={activeProjectId}
+      onSubmit={(data) => createDrawingSetMutation.mutate(data)}
+      onCancel={() => setShowCreateDialog(false)}
+      isLoading={createDrawingSetMutation.isPending}
+    />
+    </DialogContent>
+    </Dialog>
+    );
+
+    }

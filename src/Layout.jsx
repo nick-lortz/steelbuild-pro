@@ -86,8 +86,9 @@ const navItems = [
 
 
 function LayoutContent({ children, currentPageName }) {
-  useRenderCount('LayoutContent');
-  useMountLogger('LayoutContent');
+  // Diagnostics disabled in production
+  // useRenderCount('LayoutContent');
+  // useMountLogger('LayoutContent');
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { activeProjectId } = useActiveProject();

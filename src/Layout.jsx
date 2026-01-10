@@ -41,6 +41,9 @@ import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import GlobalErrorBoundary from '@/components/shared/GlobalErrorBoundary';
+import { RouteWatchdog } from '@/components/monitoring/RouteWatchdog';
+import crashReporter from '@/components/monitoring/CrashReporter';
+import rumMonitor from '@/components/monitoring/RUMMonitor';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -92,7 +95,14 @@ function LayoutContent({ children, currentPageName }) {
     queryKey: ['currentUser'],
     queryFn: async () => {
       try {
-        return await base44.auth.me();
+        const user = await base44.auth.me();
+        
+        // Set user context for crash reporting
+        if (user && crashReporter) {
+          crashReporter.setUser(user);
+        }
+        
+        return user;
       } catch (error) {
         if (error?.response?.status === 401) {
           base44.auth.redirectToLogin(window.location.pathname);
@@ -349,7 +359,9 @@ const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, 
       <ThemeProvider>
         <ConfirmProvider>
           <ActiveProjectProvider>
-            <LayoutContent children={children} currentPageName={currentPageName} />
+            <RouteWatchdog>
+              <LayoutContent children={children} currentPageName={currentPageName} />
+            </RouteWatchdog>
           </ActiveProjectProvider>
         </ConfirmProvider>
       </ThemeProvider>

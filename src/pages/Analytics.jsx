@@ -165,6 +165,8 @@ export default function Analytics() {
   const sovItems = analyticsQueries[13]?.data || [];
   const costCodes = analyticsQueries[14]?.data || [];
   const invoices = analyticsQueries[15]?.data || [];
+  
+  const projectsLoading = analyticsQueries[0]?.isLoading || false;
 
   useEffect(() => {
     if (!activeProjectId && userProjects.length > 0) {

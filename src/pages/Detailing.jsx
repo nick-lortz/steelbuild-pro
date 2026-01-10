@@ -479,22 +479,21 @@ export default function Detailing() {
           </div>
         </>
       )}
+
+      {/* Create Drawing Set Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>New Drawing Set</DialogTitle>
+          </DialogHeader>
+          <DrawingSetForm
+            projectId={activeProjectId}
+            onSubmit={(data) => createDrawingSetMutation.mutate(data)}
+            onCancel={() => setShowCreateDialog(false)}
+            isLoading={createDrawingSetMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
-
-    {/* Create Drawing Set Dialog */}
-    <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
-    <DialogHeader>
-      <DialogTitle>New Drawing Set</DialogTitle>
-    </DialogHeader>
-    <DrawingSetForm
-      projectId={activeProjectId}
-      onSubmit={(data) => createDrawingSetMutation.mutate(data)}
-      onCancel={() => setShowCreateDialog(false)}
-      isLoading={createDrawingSetMutation.isPending}
-    />
-    </DialogContent>
-    </Dialog>
-    );
-
-    }
+  );
+}

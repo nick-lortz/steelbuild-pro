@@ -5,6 +5,7 @@ const STAGGER_DELAY = 150; // ms between query initiations
 
 export function useProgressiveQueries(queries) {
   const [enabledQueries, setEnabledQueries] = useState(new Set());
+  const queriesLength = queries.length;
   
   useEffect(() => {
     // Progressively enable queries to avoid rate limits
@@ -13,7 +14,7 @@ export function useProgressiveQueries(queries) {
         setEnabledQueries(prev => new Set([...prev, query.key]));
       }, index * STAGGER_DELAY);
     });
-  }, [queries.length]);
+  }, [queriesLength]);
 
   const results = queries.map(({ key, fn, options = {} }) => 
     useQuery({

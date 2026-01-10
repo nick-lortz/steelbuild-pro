@@ -223,6 +223,13 @@ class RUMMonitor {
   }
 
   sendToBackend(eventType, data) {
+    // Disable RUM in preview/sandbox environments
+    if (typeof window === 'undefined') return;
+    if (window.location.hostname.includes('sandbox') || 
+        window.location.hostname.includes('preview')) {
+      return;
+    }
+
     // Silently fail - don't block app on monitoring issues
     try {
       if (typeof navigator === 'undefined') return;
@@ -237,7 +244,6 @@ class RUMMonitor {
       });
 
       // Use sendBeacon for non-blocking sends
-      // Ignore result - monitoring should never break the app
       navigator.sendBeacon('/api/rum', payload);
     } catch (e) {
       // Silently ignore monitoring errors

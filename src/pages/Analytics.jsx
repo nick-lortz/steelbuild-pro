@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, lazy, Suspense, startTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
@@ -11,6 +11,7 @@ import { toast } from '@/components/ui/notifications';
 import { usePerformanceMonitor } from '@/components/shared/hooks/usePerformanceMonitor';
 import { useApiWithRetry } from '@/components/shared/hooks/useApiWithRetry';
 import { useProgressiveQueries } from '@/components/shared/hooks/useProgressiveQueries';
+import { useThrottledValue } from '@/components/shared/hooks/useThrottledState';
 
 // Lazy load heavy analytics components
 const PortfolioOverview = lazy(() => import('@/components/analytics/PortfolioOverview'));
@@ -28,7 +29,7 @@ const LoadingFallback = () => (
   </div>
 );
 
-export default function Analytics() {
+const Analytics = React.memo(function Analytics() {
   usePerformanceMonitor('Analytics');
   const { executeWithRetry } = useApiWithRetry();
   const [activeProjectId, setActiveProjectId] = useState(null);
@@ -171,7 +172,9 @@ export default function Analytics() {
 
   useEffect(() => {
     if (!activeProjectId && userProjects.length > 0) {
-      setActiveProjectId(userProjects[0].id);
+      startTransition(() => {
+        setActiveProjectId(userProjects[0].id);
+      });
     }
   }, [activeProjectId, userProjects]);
 
@@ -190,6 +193,9 @@ export default function Analytics() {
       </div>
     );
   }
+
+  // Throttle activeProjectId to prevent render thrashing
+  const throttledProjectId = useThrottledValue(activeProjectId, 300);
 
   return (
     <div>

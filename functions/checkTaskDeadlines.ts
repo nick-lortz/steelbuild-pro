@@ -12,8 +12,8 @@ Deno.serve(async (req) => {
     const now = new Date();
     const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
 
-    // Get all incomplete tasks
-    const tasks = await base44.asServiceRole.entities.Task.filter({
+    // Get all incomplete todo items
+    const tasks = await base44.asServiceRole.entities.TodoItem.filter({
       status: { $ne: 'done' }
     });
 
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
         // Check if we already sent an overdue notification today
         const existingNotifs = await base44.asServiceRole.entities.Notification.filter({
           user_email: task.assigned_to,
-          related_entity: 'Task',
+          related_entity: 'TodoItem',
           related_id: task.id,
           type: 'task_overdue',
           created_date: { $gte: new Date(now.setHours(0, 0, 0, 0)).toISOString() }
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
             title: `Task Overdue: ${task.title}`,
             message: `Task "${task.title}" is ${Math.abs(daysUntilDue)} days overdue`,
             priority: 'high',
-            related_entity: 'Task',
+            related_entity: 'TodoItem',
             related_id: task.id,
             project_id: task.project_id,
             is_read: false
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
         // Check if we already sent a due soon notification today
         const existingNotifs = await base44.asServiceRole.entities.Notification.filter({
           user_email: task.assigned_to,
-          related_entity: 'Task',
+          related_entity: 'TodoItem',
           related_id: task.id,
           type: 'task_due_soon',
           created_date: { $gte: new Date(now.setHours(0, 0, 0, 0)).toISOString() }
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
             title: `Task Due Soon: ${task.title}`,
             message: `Task "${task.title}" is due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`,
             priority: daysUntilDue === 0 ? 'high' : 'medium',
-            related_entity: 'Task',
+            related_entity: 'TodoItem',
             related_id: task.id,
             project_id: task.project_id,
             is_read: false

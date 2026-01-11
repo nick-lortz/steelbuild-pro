@@ -51,9 +51,9 @@ export default function ToDoList() {
   }, [currentUser, allProjects]);
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', activeProjectId],
+    queryKey: ['todo-items', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.Task.filter({ project_id: activeProjectId }, '-due_date')
+      ? base44.entities.TodoItem.filter({ project_id: activeProjectId }, '-due_date')
       : [],
     enabled: !!activeProjectId
   });
@@ -65,12 +65,12 @@ export default function ToDoList() {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create({
+    mutationFn: (data) => base44.entities.TodoItem.create({
       ...data,
       project_id: activeProjectId
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['todo-items'] });
       setShowDialog(false);
       setQuickAddTitle('');
       resetForm();
@@ -80,9 +80,9 @@ export default function ToDoList() {
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['todo-items'] });
       setShowDialog(false);
       setEditingTask(null);
       resetForm();
@@ -92,9 +92,9 @@ export default function ToDoList() {
   });
 
   const deleteTaskMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: (id) => base44.entities.TodoItem.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['todo-items'] });
       toast.success('Task deleted');
     },
     onError: () => toast.error('Failed to delete task')

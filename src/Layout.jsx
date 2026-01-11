@@ -48,6 +48,7 @@ import CommandPalette from '@/components/shared/CommandPalette';
 const navItems = [
 { name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
 { name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
+{ name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2, roles: ['admin', 'user'] },
 { name: 'Detailing', page: 'Detailing', icon: FileText, roles: ['admin', 'user'] },
 { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
 { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },

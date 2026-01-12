@@ -64,9 +64,30 @@ export default function Schedule() {
     staleTime: 2 * 60 * 1000
   });
 
+  // Convert work packages to task-like format for display
+  const workPackagesAsTasks = useMemo(() => {
+    if (allScheduleTasks.length > 0) return [];
+    
+    return workPackages.map(wp => ({
+      id: wp.id,
+      name: `${wp.package_number}: ${wp.name}`,
+      project_id: wp.project_id,
+      work_package_id: wp.id,
+      phase: wp.phase,
+      status: wp.status === 'complete' ? 'completed' : wp.status === 'active' ? 'in_progress' : 'not_started',
+      start_date: wp.start_date,
+      end_date: wp.target_date,
+      is_work_package: true,
+      tonnage: wp.tonnage,
+      piece_count: wp.piece_count,
+      percent_complete: wp.percent_complete,
+      assigned_to: wp.assigned_to
+    }));
+  }, [workPackages, allScheduleTasks]);
+
   // Filter and paginate tasks
   const { tasks, hasMore, totalCount } = useMemo(() => {
-    let filtered = [...allScheduleTasks];
+    let filtered = allScheduleTasks.length > 0 ? [...allScheduleTasks] : [...workPackagesAsTasks];
 
     // Project filtering already done in query - no need to filter again
     
@@ -103,7 +124,7 @@ export default function Schedule() {
       hasMore: endIdx < filtered.length,
       totalCount: filtered.length
     };
-  }, [allScheduleTasks, statusFilter, searchTerm, page]);
+  }, [allScheduleTasks, workPackagesAsTasks, statusFilter, searchTerm, page]);
 
   // Fetch work packages first
   const { data: workPackages = [] } = useQuery({
@@ -211,6 +232,19 @@ export default function Schedule() {
   }, [refetch]);
 
   const handleTaskClick = async (task) => {
+    // If it's a work package display item, create a new task for it
+    if (task.is_work_package) {
+      setEditingTask({
+        project_id: task.project_id,
+        work_package_id: task.id,
+        phase: task.phase,
+        status: 'not_started',
+        is_milestone: false
+      });
+      setShowTaskForm(true);
+      return;
+    }
+
     // Get work package to determine editability
     const workPackageData = await base44.entities.WorkPackage.filter({ id: task.work_package_id });
     const workPackage = workPackageData[0];
@@ -409,13 +443,13 @@ export default function Schedule() {
           </div>
         ) : viewMode === 'calendar' ? (
           <CalendarView
-            tasks={allScheduleTasks}
+            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
             projects={projects}
             onTaskClick={handleTaskClick}
           />
         ) : viewMode === 'gantt' ? (
           <GanttChart
-            tasks={allScheduleTasks}
+            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
             projects={projects}
             viewMode="week"
             onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
@@ -426,21 +460,23 @@ export default function Schedule() {
           />
         ) : tasks.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-xs text-zinc-600 uppercase tracking-widest mb-2">NO TASKS FOUND</p>
+            <p className="text-xs text-zinc-600 uppercase tracking-widest mb-2">NO WORK PACKAGES</p>
             <p className="text-xs text-zinc-700">
-              Tasks created inside work packages only
+              Create work packages to start scheduling
             </p>
           </div>
         ) : (
           <TaskListView
-            tasks={allScheduleTasks}
+            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
             projects={projects}
             resources={resources}
             workPackages={workPackages}
             onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
             onTaskClick={handleTaskClick}
             onTaskDelete={(taskId) => {
-              deleteMutation.mutate(taskId);
+              if (allScheduleTasks.length > 0) {
+                deleteMutation.mutate(taskId);
+              }
             }}
           />
         )}

@@ -34,9 +34,9 @@ import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import TermsOfService from './pages/TermsOfService';
+import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ToDoList from './pages/ToDoList';
 import __Layout from './Layout.jsx';
 
 
@@ -77,9 +77,9 @@ export const PAGES = {
     "Schedule": Schedule,
     "Settings": Settings,
     "TermsOfService": TermsOfService,
+    "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ToDoList": ToDoList,
 }
 
 export const pagesConfig = {

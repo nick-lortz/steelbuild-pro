@@ -64,12 +64,42 @@ export default function Schedule() {
     staleTime: 2 * 60 * 1000
   });
 
+  // Fetch work packages
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['workPackages', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.WorkPackage.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Convert work packages to task-like format for display
+  const workPackagesAsTasks = useMemo(() => {
+    if (allScheduleTasks.length > 0) return [];
+    
+    return workPackages.map(wp => ({
+      id: wp.id,
+      name: `${wp.package_number}: ${wp.name}`,
+      project_id: wp.project_id,
+      work_package_id: wp.id,
+      phase: wp.phase,
+      status: wp.status === 'complete' ? 'completed' : wp.status === 'active' ? 'in_progress' : 'not_started',
+      start_date: wp.start_date,
+      end_date: wp.target_date,
+      is_work_package: true,
+      tonnage: wp.tonnage,
+      piece_count: wp.piece_count,
+      percent_complete: wp.percent_complete,
+      assigned_to: wp.assigned_to
+    }));
+  }, [workPackages, allScheduleTasks]);
+
   // Filter and paginate tasks
   const { tasks, hasMore, totalCount } = useMemo(() => {
     let filtered = allScheduleTasks.length > 0 ? [...allScheduleTasks] : [...workPackagesAsTasks];
 
-    // Project filtering already done in query - no need to filter again
-    
     // Filter by status
     if (statusFilter !== 'all') {
       if (statusFilter === 'overdue') {
@@ -104,38 +134,6 @@ export default function Schedule() {
       totalCount: filtered.length
     };
   }, [allScheduleTasks, workPackagesAsTasks, statusFilter, searchTerm, page]);
-
-  // Fetch work packages first
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['workPackages', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.WorkPackage.filter({ project_id: activeProjectId });
-    },
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
-  });
-
-  // Convert work packages to task-like format for display
-  const workPackagesAsTasks = useMemo(() => {
-    if (allScheduleTasks.length > 0) return [];
-    
-    return workPackages.map(wp => ({
-      id: wp.id,
-      name: `${wp.package_number}: ${wp.name}`,
-      project_id: wp.project_id,
-      work_package_id: wp.id,
-      phase: wp.phase,
-      status: wp.status === 'complete' ? 'completed' : wp.status === 'active' ? 'in_progress' : 'not_started',
-      start_date: wp.start_date,
-      end_date: wp.target_date,
-      is_work_package: true,
-      tonnage: wp.tonnage,
-      piece_count: wp.piece_count,
-      percent_complete: wp.percent_complete,
-      assigned_to: wp.assigned_to
-    }));
-  }, [workPackages, allScheduleTasks]);
 
   // Fetch all resources for task form
   const { data: resources = [] } = useQuery({

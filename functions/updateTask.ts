@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     }
 
     // Get task and work package
-    const tasks = await base44.asServiceRole.entities.Task.filter({ id: task_id });
+    const tasks = await base44.asServiceRole.entities.Task.filter({ id: { $eq: task_id } });
     if (!tasks.length) {
       return Response.json({ error: 'Task not found' }, { status: 404 });
     }
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     const task = tasks[0];
 
     const workPackages = await base44.asServiceRole.entities.WorkPackage.filter({ 
-      id: task.work_package_id 
+      id: { $eq: task.work_package_id }
     });
     if (!workPackages.length) {
       return Response.json({ error: 'Work package not found' }, { status: 404 });

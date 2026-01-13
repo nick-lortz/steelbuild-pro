@@ -15,12 +15,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'task_id and task_data required' }, { status: 400 });
     }
 
-    // Get task and work package
-    const tasks = await base44.asServiceRole.entities.Task.filter({ id: { $eq: task_id } });
-    if (!tasks.length) {
-      return Response.json({ error: 'Task not found' }, { status: 404 });
-    }
-
     // Update task directly without constraints
     const updatedTask = await base44.asServiceRole.entities.Task.update(task_id, task_data);
 

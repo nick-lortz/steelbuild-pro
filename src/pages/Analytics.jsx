@@ -23,6 +23,8 @@ export default function Analytics() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+    retry: false,
+    staleTime: 15 * 60 * 1000,
   });
 
   const { data: allProjects = [] } = useQuery({

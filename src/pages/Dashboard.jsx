@@ -108,6 +108,7 @@ export default function Dashboard() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: 15 * 60 * 1000,
+    retry: false,
   });
 
   // Fetch portfolio metrics

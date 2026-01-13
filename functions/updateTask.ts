@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'task_id and task_data required' }, { status: 400 });
     }
 
-    // Update task directly without constraints
+    // Update task
     const updatedTask = await base44.asServiceRole.entities.Task.update(task_id, task_data);
 
     return Response.json({

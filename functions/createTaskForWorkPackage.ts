@@ -23,31 +23,7 @@ Deno.serve(async (req) => {
 
     const workPackage = workPackages[0];
 
-    // Validate WP status
-    if (workPackage.status === 'complete') {
-      return Response.json({ error: 'Cannot create tasks in completed work package' }, { status: 400 });
-    }
-
-    if (workPackage.status === 'on_hold') {
-      return Response.json({ error: 'Cannot create tasks in work package on hold' }, { status: 400 });
-    }
-
-    // Validate dependencies are within same work package
-    if (task_data.predecessor_ids && task_data.predecessor_ids.length > 0) {
-      const predecessorTasks = await base44.asServiceRole.entities.Task.filter({
-        id: { $in: task_data.predecessor_ids }
-      });
-
-      const invalidDeps = predecessorTasks.filter(t => t.work_package_id !== work_package_id);
-      if (invalidDeps.length > 0) {
-        return Response.json({ 
-          error: 'Task dependencies cannot cross work packages',
-          invalid_dependencies: invalidDeps.map(t => t.id)
-        }, { status: 400 });
-      }
-    }
-
-    // Inject inherited fields from work package
+    // Inject work package fields
     const newTask = {
       ...task_data,
       project_id: workPackage.project_id,  // INHERITED

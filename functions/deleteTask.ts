@@ -23,40 +23,20 @@ Deno.serve(async (req) => {
 
     const task = tasks[0];
 
-    const workPackages = await base44.asServiceRole.entities.WorkPackage.filter({ 
-      id: task.work_package_id 
-    });
-    if (!workPackages.length) {
-      return Response.json({ error: 'Work package not found' }, { status: 404 });
-    }
-
-    const workPackage = workPackages[0];
-
-    // Enforce deletion rules
-    if (workPackage.status === 'complete') {
-      return Response.json({ 
-        error: 'Cannot delete tasks from completed work packages' 
-      }, { status: 400 });
-    }
-
-    // Only allow deletion in active phase
-    if (workPackage.phase !== task.phase) {
-      return Response.json({ 
-        error: 'Can only delete tasks from active phase' 
-      }, { status: 400 });
-    }
-
-    // Remove this task from all dependencies
-    const dependentTasks = await base44.asServiceRole.entities.Task.filter({
-      work_package_id: task.work_package_id,
-      predecessor_ids: { $contains: task_id }
-    });
-
-    for (const depTask of dependentTasks) {
-      const updatedPredecessors = depTask.predecessor_ids.filter(id => id !== task_id);
-      await base44.asServiceRole.entities.Task.update(depTask.id, {
-        predecessor_ids: updatedPredecessors
+    // Remove this task from all dependencies (optional cleanup)
+    try {
+      const dependentTasks = await base44.asServiceRole.entities.Task.filter({
+        predecessor_ids: { $contains: task_id }
       });
+
+      for (const depTask of dependentTasks) {
+        const updatedPredecessors = depTask.predecessor_ids.filter(id => id !== task_id);
+        await base44.asServiceRole.entities.Task.update(depTask.id, {
+          predecessor_ids: updatedPredecessors
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to clean up dependencies:', err);
     }
 
     // Delete task

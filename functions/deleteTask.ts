@@ -21,30 +21,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const task = tasks[0];
-
-    // Remove this task from all dependencies (optional cleanup)
-    try {
-      const dependentTasks = await base44.asServiceRole.entities.Task.filter({
-        predecessor_ids: { $contains: task_id }
-      });
-
-      for (const depTask of dependentTasks) {
-        const updatedPredecessors = depTask.predecessor_ids.filter(id => id !== task_id);
-        await base44.asServiceRole.entities.Task.update(depTask.id, {
-          predecessor_ids: updatedPredecessors
-        });
-      }
-    } catch (err) {
-      console.warn('Failed to clean up dependencies:', err);
-    }
-
-    // Delete task
+    // Delete task directly
     await base44.asServiceRole.entities.Task.delete(task_id);
 
     return Response.json({
       success: true,
-      updated_dependencies: dependentTasks.length,
       message: 'Task deleted successfully'
     });
 

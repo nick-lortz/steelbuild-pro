@@ -90,19 +90,21 @@ function LayoutContent({ children, currentPageName }) {
   const { data: currentUser, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
-      return await base44.auth.me();
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        // If unauthorized, redirect to login
+        if (error?.response?.status === 401 || error?.status === 401) {
+          base44.auth.redirectToLogin(window.location.pathname);
+          return null;
+        }
+        throw error;
+      }
     },
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false
   });
-
-  // Handle auth errors
-  React.useEffect(() => {
-    if (userError?.response?.status === 401) {
-      base44.auth.redirectToLogin(window.location.pathname);
-    }
-  }, [userError]);
 
   const { data: activeProject } = useQuery({
     queryKey: ['activeProject', activeProjectId],

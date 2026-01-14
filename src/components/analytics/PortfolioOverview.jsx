@@ -34,7 +34,11 @@ export default function PortfolioOverview({ projects = [], financials = [], task
 
   const onTimeTasks = tasks.filter(t => {
     if (!t.end_date) return true;
-    return new Date(t.end_date) >= new Date();
+    try {
+      return new Date(t.end_date) >= new Date();
+    } catch {
+      return true;
+    }
   }).length;
   const scheduleAdherence = allTasks > 0 ? Math.round((onTimeTasks / allTasks) * 100) : 0;
 

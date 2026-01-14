@@ -70,9 +70,12 @@ export default function Analytics() {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
-      : base44.entities.Task.list(),
+    queryFn: async () => {
+      const data = activeProjectId
+        ? await base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
+        : await base44.entities.Task.list();
+      return data; // Keep all tasks, validate dates when using them
+    },
     enabled: !!activeProjectId
   });
 
@@ -108,17 +111,23 @@ export default function Analytics() {
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
-      : base44.entities.RFI.list('-created_date'),
+    queryFn: async () => {
+      const data = activeProjectId
+        ? await base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
+        : await base44.entities.RFI.list('-created_date');
+      return data.filter(r => r.created_date); // Filter out invalid dates
+    },
     enabled: !!activeProjectId
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
-      : base44.entities.ChangeOrder.list('-created_date'),
+    queryFn: async () => {
+      const data = activeProjectId
+        ? await base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
+        : await base44.entities.ChangeOrder.list('-created_date');
+      return data.filter(co => co.created_date); // Filter out invalid dates
+    },
     enabled: !!activeProjectId
   });
 

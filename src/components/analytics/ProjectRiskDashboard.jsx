@@ -69,8 +69,20 @@ export default function ProjectRiskDashboard({
 
       // Schedule Delta
       const today = new Date();
-      const targetDate = project.target_completion ? new Date(project.target_completion) : null;
-      const startDate = project.start_date ? new Date(project.start_date) : null;
+      let targetDate = null;
+      let startDate = null;
+      
+      try {
+        targetDate = project.target_completion ? new Date(project.target_completion) : null;
+      } catch {
+        targetDate = null;
+      }
+      
+      try {
+        startDate = project.start_date ? new Date(project.start_date) : null;
+      } catch {
+        startDate = null;
+      }
       
       const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
       const totalTasks = projectTasks.length;

@@ -64,7 +64,7 @@ export default function Analytics() {
     queryKey: ['financials', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.Financial.filter({ project_id: activeProjectId })
-      : base44.entities.Financial.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -83,7 +83,7 @@ export default function Analytics() {
     queryKey: ['expenses', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.Expense.filter({ project_id: activeProjectId })
-      : base44.entities.Expense.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -91,7 +91,7 @@ export default function Analytics() {
     queryKey: ['etc', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId })
-      : base44.entities.EstimatedCostToComplete.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -105,7 +105,7 @@ export default function Analytics() {
     queryKey: ['resourceAllocations', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
-      : base44.entities.ResourceAllocation.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -135,7 +135,7 @@ export default function Analytics() {
     queryKey: ['drawings', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
-      : base44.entities.DrawingSet.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -143,7 +143,7 @@ export default function Analytics() {
     queryKey: ['scopeGaps', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.ScopeGap.filter({ project_id: activeProjectId })
-      : base44.entities.ScopeGap.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -151,7 +151,7 @@ export default function Analytics() {
     queryKey: ['laborBreakdowns', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId })
-      : base44.entities.LaborBreakdown.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -159,7 +159,7 @@ export default function Analytics() {
     queryKey: ['laborHours', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.LaborHours.filter({ project_id: activeProjectId })
-      : base44.entities.LaborHours.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -167,7 +167,7 @@ export default function Analytics() {
     queryKey: ['sov-items', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.SOVItem.filter({ project_id: activeProjectId })
-      : base44.entities.SOVItem.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 
@@ -181,7 +181,7 @@ export default function Analytics() {
     queryKey: ['invoices', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.Invoice.filter({ project_id: activeProjectId })
-      : base44.entities.Invoice.list(),
+      : Promise.resolve([]),
     enabled: !!activeProjectId
   });
 

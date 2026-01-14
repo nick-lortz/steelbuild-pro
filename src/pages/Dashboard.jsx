@@ -203,36 +203,42 @@ export default function Dashboard() {
   const criticalIssues = useMemo(() => {
     const issues = [];
     
-    // Check overdue RFIs
-    const overdueRFIs = rfis.filter(r => {
-      if (!r.due_date || (r.status !== 'pending' && r.status !== 'submitted')) return false;
-      try {
-        return new Date(r.due_date) < new Date();
-      } catch {
-        return false;
+    try {
+      // Check overdue RFIs
+      const overdueRFIs = (rfis || []).filter(r => {
+        if (!r || !r.due_date || (r.status !== 'pending' && r.status !== 'submitted')) return false;
+        try {
+          const dueDate = new Date(r.due_date);
+          return !isNaN(dueDate.getTime()) && dueDate < new Date();
+        } catch {
+          return false;
+        }
+      });
+      if (overdueRFIs.length > 0) {
+        issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
       }
-    });
-    if (overdueRFIs.length > 0) {
-      issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
-    }
 
-    // Check overdue drawings
-    const overdueDrawings = drawings.filter(d => {
-      if (!d.due_date || ['FFF', 'As-Built'].includes(d.status)) return false;
-      try {
-        return new Date(d.due_date) < new Date();
-      } catch {
-        return false;
+      // Check overdue drawings
+      const overdueDrawings = (drawings || []).filter(d => {
+        if (!d || !d.due_date || ['FFF', 'As-Built'].includes(d.status)) return false;
+        try {
+          const dueDate = new Date(d.due_date);
+          return !isNaN(dueDate.getTime()) && dueDate < new Date();
+        } catch {
+          return false;
+        }
+      });
+      if (overdueDrawings.length > 0) {
+        issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
       }
-    });
-    if (overdueDrawings.length > 0) {
-      issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
-    }
 
-    // Check pending COs
-    const pendingCOs = changeOrders.filter(co => co.status === 'pending');
-    if (pendingCOs.length > 3) {
-      issues.push(`${pendingCOs.length} pending change orders`);
+      // Check pending COs
+      const pendingCOs = (changeOrders || []).filter(co => co && co.status === 'pending');
+      if (pendingCOs.length > 3) {
+        issues.push(`${pendingCOs.length} pending change orders`);
+      }
+    } catch (error) {
+      console.error('Error calculating critical issues:', error);
     }
 
     return issues;
@@ -240,24 +246,30 @@ export default function Dashboard() {
 
   // Calculate schedule health - MOVED BEFORE CONDITIONAL RETURN
   const scheduleHealth = useMemo(() => {
-    const overdueCount = tasks.filter(t => {
-      if (!t.due_date || t.status === 'completed') return false;
-      try {
-        return new Date(t.due_date) < new Date();
-      } catch {
-        return false;
-      }
-    }).length;
-    const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
-    const onTimePercentage = totalActiveTasks > 0 
-      ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
-      : 100;
-    
-    return {
-      overdueCount,
-      onTimePercentage,
-      status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
-    };
+    try {
+      const overdueCount = (tasks || []).filter(t => {
+        if (!t || !t.due_date || t.status === 'completed') return false;
+        try {
+          const dueDate = new Date(t.due_date);
+          return !isNaN(dueDate.getTime()) && dueDate < new Date();
+        } catch {
+          return false;
+        }
+      }).length;
+      const totalActiveTasks = (tasks || []).filter(t => t && t.status !== 'completed').length;
+      const onTimePercentage = totalActiveTasks > 0 
+        ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
+        : 100;
+      
+      return {
+        overdueCount,
+        onTimePercentage,
+        status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
+      };
+    } catch (error) {
+      console.error('Error calculating schedule health:', error);
+      return { overdueCount: 0, onTimePercentage: 100, status: 'on-track' };
+    }
   }, [tasks]);
 
   // Calculate active projects and milestones - MOVED BEFORE CONDITIONAL RETURN
@@ -333,18 +345,20 @@ export default function Dashboard() {
     const items = [];
 
     rfis.forEach(r => {
+      if (!r || !r.id) return;
       const project = projects.find(p => p.id === r.project_id);
       let rfiDate;
       try {
         rfiDate = new Date(r.created_date);
+        if (isNaN(rfiDate.getTime())) rfiDate = new Date();
       } catch {
         rfiDate = new Date();
       }
       items.push({
         id: `rfi-${r.id}`,
         type: 'rfi',
-        title: `RFI-${String(r.rfi_number).padStart(3, '0')}`,
-        subtitle: project?.name || r.subject,
+        title: `RFI-${String(r.rfi_number || 0).padStart(3, '0')}`,
+        subtitle: project?.name || r.subject || 'RFI',
         badge: <StatusBadge status={r.status} className="text-xs" />,
         date: rfiDate,
         onClick: () => navigate(createPageUrl('RFIs'))
@@ -352,36 +366,40 @@ export default function Dashboard() {
     });
 
     changeOrders.forEach(co => {
+      if (!co || !co.id) return;
       const project = projects.find(p => p.id === co.project_id);
       let coDate;
       try {
         coDate = new Date(co.created_date);
+        if (isNaN(coDate.getTime())) coDate = new Date();
       } catch {
         coDate = new Date();
       }
       items.push({
         id: `co-${co.id}`,
         type: 'co',
-        title: `CO-${String(co.co_number).padStart(3, '0')}`,
-        subtitle: project?.name || co.title,
+        title: `CO-${String(co.co_number || 0).padStart(3, '0')}`,
+        subtitle: project?.name || co.title || 'Change Order',
         badge: <StatusBadge status={co.status} className="text-xs" />,
         date: coDate,
         onClick: () => navigate(createPageUrl('ChangeOrders'))
       });
     });
 
-    tasks.filter(t => t.status !== 'completed').forEach(t => {
+    tasks.filter(t => t && t.status !== 'completed').forEach(t => {
+      if (!t || !t.id) return;
       const project = projects.find(p => p.id === t.project_id);
       let taskDate;
       try {
         taskDate = new Date(t.updated_date || t.created_date);
+        if (isNaN(taskDate.getTime())) taskDate = new Date();
       } catch {
         taskDate = new Date();
       }
       items.push({
         id: `task-${t.id}`,
         type: 'task',
-        title: t.name,
+        title: t.name || 'Task',
         subtitle: project?.name || 'Task',
         badge: <StatusBadge status={t.status} className="text-xs" />,
         date: taskDate,

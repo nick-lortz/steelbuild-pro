@@ -20,7 +20,11 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       
       const monthRfis = rfis.filter(r => {
         if (!r.submitted_date) return false;
-        return format(new Date(r.submitted_date), 'yyyy-MM') === monthStr;
+        try {
+          return format(new Date(r.submitted_date), 'yyyy-MM') === monthStr;
+        } catch {
+          return false;
+        }
       });
 
       const open = monthRfis.filter(r => r.status === 'pending' || r.status === 'submitted').length;
@@ -52,7 +56,11 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       
       const monthCOs = changeOrders.filter(co => {
         if (!co.submitted_date) return false;
-        return format(new Date(co.submitted_date), 'yyyy-MM') === monthStr;
+        try {
+          return format(new Date(co.submitted_date), 'yyyy-MM') === monthStr;
+        } catch {
+          return false;
+        }
       });
 
       const costImpact = monthCOs.reduce((sum, co) => sum + (Number(co.cost_impact) || 0), 0);
@@ -94,7 +102,11 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
       const released = drawings.filter(d => {
         if (!d.released_for_fab_date) return false;
-        return format(new Date(d.released_for_fab_date), 'yyyy-MM') === format(month, 'yyyy-MM');
+        try {
+          return format(new Date(d.released_for_fab_date), 'yyyy-MM') === format(month, 'yyyy-MM');
+        } catch {
+          return false;
+        }
       }).length;
 
       return {
@@ -152,7 +164,11 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       
       const openGaps = scopeGaps.filter(g => {
         if (!g.created_date) return g.status === 'open';
-        return format(new Date(g.created_date), 'yyyy-MM') <= monthStr && g.status === 'open';
+        try {
+          return format(new Date(g.created_date), 'yyyy-MM') <= monthStr && g.status === 'open';
+        } catch {
+          return g.status === 'open';
+        }
       });
 
       const totalCost = openGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);

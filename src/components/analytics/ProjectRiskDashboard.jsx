@@ -375,8 +375,12 @@ export default function ProjectRiskDashboard({
                   <div className="p-3 bg-secondary rounded">
                     <h5 className="text-sm font-medium mb-2">Recent Activity</h5>
                     <div className="space-y-1 text-xs text-muted-foreground">
-                      <p>• Last labor update: {format(new Date(project.updated_date), 'MMM d, h:mm a')} by {project.created_by}</p>
-                      <p>• Project modified: {format(new Date(project.updated_date), 'MMM d, yyyy')}</p>
+                      {project.updated_date && (
+                        <>
+                          <p>• Last labor update: {format(new Date(project.updated_date), 'MMM d, h:mm a')} by {project.created_by}</p>
+                          <p>• Project modified: {format(new Date(project.updated_date), 'MMM d, yyyy')}</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

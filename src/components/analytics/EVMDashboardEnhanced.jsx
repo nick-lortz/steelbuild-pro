@@ -58,11 +58,15 @@ export default function EVMDashboardEnhanced({
     const ac = filteredExpenses
       .filter(e => {
         if (!e.expense_date) return false;
-        const expenseDate = parseISO(e.expense_date);
-        return isWithinInterval(expenseDate, {
-          start: parseISO(dateRange.start),
-          end: parseISO(dateRange.end)
-        });
+        try {
+          const expenseDate = parseISO(e.expense_date);
+          return isWithinInterval(expenseDate, {
+            start: parseISO(dateRange.start),
+            end: parseISO(dateRange.end)
+          });
+        } catch {
+          return false;
+        }
       })
       .reduce((sum, e) => sum + (e.amount || 0), 0);
 
@@ -79,12 +83,16 @@ export default function EVMDashboardEnhanced({
     let pv = 0;
     filteredProjects.forEach(project => {
       if (project.start_date && project.target_completion) {
-        const projectStart = parseISO(project.start_date);
-        const projectEnd = parseISO(project.target_completion);
-        const totalDuration = (projectEnd - projectStart) / (1000 * 60 * 60 * 24);
-        const elapsed = (new Date(dateRange.end) - projectStart) / (1000 * 60 * 60 * 24);
-        const percentElapsed = Math.min(Math.max(elapsed / totalDuration, 0), 1);
-        pv += (project.contract_value || 0) * percentElapsed;
+        try {
+          const projectStart = parseISO(project.start_date);
+          const projectEnd = parseISO(project.target_completion);
+          const totalDuration = (projectEnd - projectStart) / (1000 * 60 * 60 * 24);
+          const elapsed = (new Date(dateRange.end) - projectStart) / (1000 * 60 * 60 * 24);
+          const percentElapsed = Math.min(Math.max(elapsed / totalDuration, 0), 1);
+          pv += (project.contract_value || 0) * percentElapsed;
+        } catch {
+          // Skip projects with invalid dates
+        }
       }
     });
 

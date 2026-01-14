@@ -165,19 +165,23 @@ export default function FabricationFieldDrift({
     [...classified.fabrication.expenses, ...classified.field.expenses, ...classified.other.expenses].forEach(expense => {
       if (!expense.expense_date) return;
       
-      const date = new Date(expense.expense_date);
-      const weekStart = new Date(date);
-      weekStart.setDate(date.getDate() - date.getDay());
-      const weekKey = weekStart.toISOString().split('T')[0];
+      try {
+        const date = new Date(expense.expense_date);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        const weekKey = weekStart.toISOString().split('T')[0];
 
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = { week: weekKey, fabrication: 0, field: 0, other: 0 };
+        if (!weeks[weekKey]) {
+          weeks[weekKey] = { week: weekKey, fabrication: 0, field: 0, other: 0 };
+        }
+
+        const costCode = costCodes.find(cc => cc.id === expense.cost_code_id);
+        const classification = classifyExpense(expense, costCode);
+
+        weeks[weekKey][classification] += expense.amount || 0;
+      } catch {
+        // Skip expenses with invalid dates
       }
-
-      const costCode = costCodes.find(cc => cc.id === expense.cost_code_id);
-      const classification = classifyExpense(expense, costCode);
-
-      weeks[weekKey][classification] += expense.amount || 0;
     });
 
     return Object.values(weeks).sort((a, b) => a.week.localeCompare(b.week));
@@ -330,7 +334,13 @@ export default function FabricationFieldDrift({
                 dataKey="week" 
                 stroke="#9CA3AF" 
                 tick={{ fontSize: 11 }}
-                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                tickFormatter={(value) => {
+                  try {
+                    return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  } catch {
+                    return value;
+                  }
+                }}
               />
               <YAxis 
                 stroke="#9CA3AF" 
@@ -340,7 +350,13 @@ export default function FabricationFieldDrift({
               <Tooltip 
                 contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
                 formatter={(value) => `$${value.toLocaleString()}`}
-                labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                labelFormatter={(label) => {
+                  try {
+                    return new Date(label).toLocaleDateString();
+                  } catch {
+                    return label;
+                  }
+                }}
               />
               <Legend />
               <Line type="monotone" dataKey="fabrication" stroke="#3B82F6" strokeWidth={2} name="Fabrication" />

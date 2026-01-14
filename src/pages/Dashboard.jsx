@@ -258,8 +258,12 @@ export default function Dashboard() {
   const upcomingMilestones = useMemo(() => 
     activeProjects.filter(p => {
       if (!p.target_completion) return false;
-      const days = differenceInDays(new Date(p.target_completion), new Date());
-      return days >= 0 && days <= 30;
+      try {
+        const days = differenceInDays(new Date(p.target_completion), new Date());
+        return days >= 0 && days <= 30;
+      } catch {
+        return false;
+      }
     }),
     [activeProjects]
   );
@@ -757,7 +761,7 @@ export default function Dashboard() {
               </div>
               <div className="divide-y divide-zinc-800">
                 {upcomingMilestones.slice(0, 8).map(project => {
-                  const days = differenceInDays(new Date(project.target_completion), new Date());
+                  const days = project.target_completion ? differenceInDays(new Date(project.target_completion), new Date()) : 0;
                   return (
                     <div
                       key={project.id}

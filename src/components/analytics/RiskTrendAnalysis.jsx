@@ -96,8 +96,12 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       // Count drawings that were overdue at month end
       const overdue = drawings.filter(d => {
         if (!d.due_date) return false;
-        const dueDate = new Date(d.due_date);
-        return dueDate <= monthEnd && d.status !== 'FFF' && d.status !== 'As-Built';
+        try {
+          const dueDate = new Date(d.due_date);
+          return dueDate <= monthEnd && d.status !== 'FFF' && d.status !== 'As-Built';
+        } catch {
+          return false;
+        }
       }).length;
 
       const released = drawings.filter(d => {
@@ -135,8 +139,12 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       const overdueTasks = tasks.filter(t => {
         if (t.status === 'completed') return false;
         if (!t.end_date) return false;
-        const endDate = new Date(t.end_date);
-        return endDate <= monthEnd && endDate >= startOfMonth(month);
+        try {
+          const endDate = new Date(t.end_date);
+          return endDate <= monthEnd && endDate >= startOfMonth(month);
+        } catch {
+          return false;
+        }
       }).length;
 
       const critical = tasks.filter(t => t.is_critical).length;
@@ -187,7 +195,11 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     const overdueRfis = (rfis || []).filter(r => {
       if (r.status === 'closed' || r.status === 'answered') return false;
       if (!r.due_date) return false;
-      return new Date(r.due_date) < new Date();
+      try {
+        return new Date(r.due_date) < new Date();
+      } catch {
+        return false;
+      }
     }).length;
 
     const pendingCOs = (changeOrders || []).filter(co => co.status === 'pending' || co.status === 'submitted').length;
@@ -197,13 +209,21 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
 
     const overdueDrawings = (drawings || []).filter(d => {
       if (!d.due_date) return false;
-      return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
+      try {
+        return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
+      } catch {
+        return false;
+      }
     }).length;
 
     const overdueTasks = (tasks || []).filter(t => {
       if (t.status === 'completed') return false;
       if (!t.end_date) return false;
-      return new Date(t.end_date) < new Date();
+      try {
+        return new Date(t.end_date) < new Date();
+      } catch {
+        return false;
+      }
     }).length;
 
     const openGaps = (scopeGaps || []).filter(g => g.status === 'open').length;

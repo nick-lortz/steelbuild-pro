@@ -37,7 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox";
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { format, differenceInDays } from 'date-fns';
+import { format, differenceInDays, isValid } from 'date-fns';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -94,7 +94,18 @@ export default function Dashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const [showWidgetConfig, setShowWidgetConfig] = useState(false);
+  const [error, setError] = useState(null);
   const ACTIVITY_PER_PAGE = 10;
+
+  // Global error handler for dashboard calculations
+  useEffect(() => {
+    const handleError = (event) => {
+      console.error('Dashboard error:', event.error);
+      setError(event.error?.message || 'An error occurred');
+    };
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
   // Widget state management
   const [widgets, setWidgets] = useState(() => {
@@ -296,43 +307,55 @@ export default function Dashboard() {
 
   // Calculate financial summary for active project - MOVED BEFORE CONDITIONAL RETURN
   const activeProjectFinancials = useMemo(() => {
-    if (!activeProjectId || sovItems.length === 0) return null;
+    try {
+      if (!activeProjectId || !sovItems || sovItems.length === 0) return null;
 
-    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-    const signedExtras = projectChangeOrders
-      .filter(co => co.status === 'approved')
-      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-    const totalContract = contractValue + signedExtras;
-    const earnedToDate = sovItems.reduce((sum, s) => 
-      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-    const actualCost = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    // Calculate EAC from ETC data
-    const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
-    const estimatedCostAtCompletion = actualCost + totalETC;
+      const contractValue = (sovItems || []).reduce((sum, s) => sum + (Number(s?.scheduled_value) || 0), 0);
+      const signedExtras = (projectChangeOrders || [])
+        .filter(co => co && co.status === 'approved')
+        .reduce((sum, co) => sum + (Number(co?.cost_impact) || 0), 0);
+      const totalContract = contractValue + signedExtras;
+      const earnedToDate = (sovItems || []).reduce((sum, s) => 
+        sum + ((Number(s?.scheduled_value) || 0) * ((Number(s?.percent_complete) || 0) / 100)), 0);
+      const actualCost = (expenses || [])
+        .filter(e => e && (e.payment_status === 'paid' || e.payment_status === 'approved'))
+        .reduce((sum, e) => sum + (Number(e?.amount) || 0), 0);
+      
+      // Calculate EAC from ETC data
+      const totalETC = (estimatedCosts || []).reduce((sum, etc) => sum + (Number(etc?.estimated_remaining_cost) || 0), 0);
+      const estimatedCostAtCompletion = actualCost + totalETC;
 
-    const activeProject = projects.find(p => p.id === activeProjectId);
+      const activeProject = (projects || []).find(p => p && p.id === activeProjectId);
 
-    return {
-      totalContract,
-      actualCost,
-      estimatedCostAtCompletion,
-      plannedMargin: activeProject?.planned_margin || 15
-    };
+      return {
+        totalContract,
+        actualCost,
+        estimatedCostAtCompletion,
+        plannedMargin: Number(activeProject?.planned_margin) || 15
+      };
+    } catch (error) {
+      console.error('Error calculating project financials:', error);
+      return null;
+    }
   }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
 
   // Calculate cost risk status - MOVED BEFORE CONDITIONAL RETURN
   const costRiskStatus = useMemo(() => {
-    if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
-    
-    const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
-    const variance = projectedMargin - activeProjectFinancials.plannedMargin;
-    
-    if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
-    if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
-    return { status: 'critical', message: 'At Risk', color: 'red' };
+    try {
+      if (!activeProjectFinancials || activeProjectFinancials.totalContract === 0) {
+        return { status: 'unknown', message: 'No active project' };
+      }
+      
+      const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
+      const variance = projectedMargin - activeProjectFinancials.plannedMargin;
+      
+      if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
+      if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
+      return { status: 'critical', message: 'At Risk', color: 'red' };
+    } catch (error) {
+      console.error('Error calculating cost risk:', error);
+      return { status: 'unknown', message: 'No active project' };
+    }
   }, [activeProjectFinancials]);
 
   const portfolioHealth = useMemo(() => 
@@ -463,6 +486,21 @@ export default function Dashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Dashboard Error</h2>
+          <p className="text-zinc-400 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} className="bg-amber-500 text-black">
+            Reload Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black">
       {/* Status Bar */}
@@ -473,7 +511,15 @@ export default function Dashboard() {
               <div className="w-1.5 h-1.5 bg-green-500" />
               <span className="text-zinc-500 font-mono uppercase tracking-wider">OPERATIONAL</span>
             </div>
-            <span className="text-zinc-600 font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
+            <span className="text-zinc-600 font-mono">
+              {(() => {
+                try {
+                  return format(new Date(), 'yyyy-MM-dd HH:mm');
+                } catch {
+                  return new Date().toISOString().slice(0, 16).replace('T', ' ');
+                }
+              })()}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <Button

@@ -266,20 +266,21 @@ export default function Dashboard() {
     [projects]
   );
   
-  const upcomingMilestones = useMemo(() => 
-    activeProjects.filter(p => {
-      if (!p.target_completion) return false;
+  const upcomingMilestones = useMemo(() => {
+    if (!activeProjects || activeProjects.length === 0) return [];
+    return activeProjects.filter(p => {
+      if (!p || !p.target_completion) return false;
       try {
         const targetDate = new Date(p.target_completion);
         if (isNaN(targetDate.getTime())) return false;
-        const days = differenceInDays(targetDate, new Date());
+        const now = new Date();
+        const days = differenceInDays(targetDate, now);
         return days >= 0 && days <= 30;
       } catch {
         return false;
       }
-    }),
-    [activeProjects]
-  );
+    });
+  }, [activeProjects]);
 
   // Calculate financial summary for active project - MOVED BEFORE CONDITIONAL RETURN
   const activeProjectFinancials = useMemo(() => {

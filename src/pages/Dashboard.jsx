@@ -204,19 +204,27 @@ export default function Dashboard() {
     const issues = [];
     
     // Check overdue RFIs
-    const overdueRFIs = rfis.filter(r => 
-      r.due_date && new Date(r.due_date) < new Date() && 
-      (r.status === 'pending' || r.status === 'submitted')
-    );
+    const overdueRFIs = rfis.filter(r => {
+      if (!r.due_date || (r.status !== 'pending' && r.status !== 'submitted')) return false;
+      try {
+        return new Date(r.due_date) < new Date();
+      } catch {
+        return false;
+      }
+    });
     if (overdueRFIs.length > 0) {
       issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
     }
 
     // Check overdue drawings
-    const overdueDrawings = drawings.filter(d => 
-      d.due_date && new Date(d.due_date) < new Date() && 
-      !['FFF', 'As-Built'].includes(d.status)
-    );
+    const overdueDrawings = drawings.filter(d => {
+      if (!d.due_date || ['FFF', 'As-Built'].includes(d.status)) return false;
+      try {
+        return new Date(d.due_date) < new Date();
+      } catch {
+        return false;
+      }
+    });
     if (overdueDrawings.length > 0) {
       issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
     }
@@ -232,11 +240,14 @@ export default function Dashboard() {
 
   // Calculate schedule health - MOVED BEFORE CONDITIONAL RETURN
   const scheduleHealth = useMemo(() => {
-    const overdueCount = tasks.filter(t => 
-      t.due_date && 
-      new Date(t.due_date) < new Date() && 
-      t.status !== 'completed'
-    ).length;
+    const overdueCount = tasks.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      try {
+        return new Date(t.due_date) < new Date();
+      } catch {
+        return false;
+      }
+    }).length;
     const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
     const onTimePercentage = totalActiveTasks > 0 
       ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
@@ -320,39 +331,57 @@ export default function Dashboard() {
 
     rfis.forEach(r => {
       const project = projects.find(p => p.id === r.project_id);
+      let rfiDate;
+      try {
+        rfiDate = new Date(r.created_date);
+      } catch {
+        rfiDate = new Date();
+      }
       items.push({
         id: `rfi-${r.id}`,
         type: 'rfi',
         title: `RFI-${String(r.rfi_number).padStart(3, '0')}`,
         subtitle: project?.name || r.subject,
         badge: <StatusBadge status={r.status} className="text-xs" />,
-        date: new Date(r.created_date),
+        date: rfiDate,
         onClick: () => navigate(createPageUrl('RFIs'))
       });
     });
 
     changeOrders.forEach(co => {
       const project = projects.find(p => p.id === co.project_id);
+      let coDate;
+      try {
+        coDate = new Date(co.created_date);
+      } catch {
+        coDate = new Date();
+      }
       items.push({
         id: `co-${co.id}`,
         type: 'co',
         title: `CO-${String(co.co_number).padStart(3, '0')}`,
         subtitle: project?.name || co.title,
         badge: <StatusBadge status={co.status} className="text-xs" />,
-        date: new Date(co.created_date),
+        date: coDate,
         onClick: () => navigate(createPageUrl('ChangeOrders'))
       });
     });
 
     tasks.filter(t => t.status !== 'completed').forEach(t => {
       const project = projects.find(p => p.id === t.project_id);
+      let taskDate;
+      try {
+        taskDate = new Date(t.updated_date || t.created_date);
+      } catch {
+        taskDate = new Date();
+      }
       items.push({
         id: `task-${t.id}`,
         type: 'task',
         title: t.name,
         subtitle: project?.name || 'Task',
         badge: <StatusBadge status={t.status} className="text-xs" />,
-        date: new Date(t.updated_date || t.created_date),
+        date: taskDate,
         onClick: () => navigate(createPageUrl('Schedule'))
       });
     });
@@ -618,9 +647,23 @@ export default function Dashboard() {
               <span className="text-3xl font-bold text-white tracking-tight">
                 {rfis.filter(r => r.status === 'pending' || r.status === 'submitted').length}
               </span>
-              {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date()).length > 0 && (
+              {rfis.filter(r => {
+                if (!r.due_date) return false;
+                try {
+                  return new Date(r.due_date) < new Date();
+                } catch {
+                  return false;
+                }
+              }).length > 0 && (
                 <span className="text-xs font-bold text-red-500">
-                  {rfis.filter(r => r.due_date && new Date(r.due_date) < new Date()).length} OVERDUE
+                  {rfis.filter(r => {
+                    if (!r.due_date) return false;
+                    try {
+                      return new Date(r.due_date) < new Date();
+                    } catch {
+                      return false;
+                    }
+                  }).length} OVERDUE
                 </span>
               )}
             </div>

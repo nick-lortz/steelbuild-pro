@@ -37,7 +37,11 @@ export default function DashboardKPIs({ projects, financials, drawings, rfis, ta
   const overdueDrawings = drawings.filter(d => {
     if (d.status === 'FFF' || d.status === 'As-Built') return false;
     if (!d.due_date) return false;
-    return new Date(d.due_date) < new Date();
+    try {
+      return new Date(d.due_date) < new Date();
+    } catch {
+      return false;
+    }
   }).length;
 
   const openRFIs = rfis.filter(r => r.status !== 'closed' && r.status !== 'answered').length;
@@ -45,7 +49,11 @@ export default function DashboardKPIs({ projects, financials, drawings, rfis, ta
   const overdueRFIs = rfis.filter(r => {
     if (r.status === 'closed' || r.status === 'answered') return false;
     if (!r.due_date) return false;
-    return new Date(r.due_date) < new Date();
+    try {
+      return new Date(r.due_date) < new Date();
+    } catch {
+      return false;
+    }
   }).length;
 
   const completedTasks = tasks.filter(t => t.status === 'completed').length;

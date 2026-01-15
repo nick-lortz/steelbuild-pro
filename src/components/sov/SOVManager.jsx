@@ -119,7 +119,7 @@ export default function SOVManager({ projectId, canEdit }) {
     onError: (err) => toast.error(err?.message ?? 'Delete failed')
   });
 
-  const lockedSovItemIds = React.useMemo(() => {
+  const lockedSovItemIds = useMemo(() => {
     const ids = new Set();
     for (const line of invoiceLines ?? []) {
       if (line?.sov_item_id) ids.add(line.sov_item_id);

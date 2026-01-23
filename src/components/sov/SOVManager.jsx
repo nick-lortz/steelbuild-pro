@@ -46,24 +46,6 @@ export default function SOVManager({ projectId, canEdit }) {
     enabled: !!projectId
   });
 
-  // Get all SOV items across all projects for dropdown reference
-  const { data: allSOVItems = [] } = useQuery({
-    queryKey: ['all-sov-items'],
-    queryFn: () => base44.entities.SOVItem.list(),
-    select: (items) => {
-      const uniqueItems = new Map();
-      items.forEach(item => {
-        const key = `${item.sov_code}-${item.description}`;
-        if (!uniqueItems.has(key)) {
-          uniqueItems.set(key, { sov_code: item.sov_code, description: item.description });
-        }
-      });
-      return Array.from(uniqueItems.values()).sort((a, b) => 
-        String(a.sov_code).localeCompare(String(b.sov_code), undefined, { numeric: true })
-      );
-    }
-  });
-
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', projectId],
     queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }),
@@ -119,7 +101,7 @@ export default function SOVManager({ projectId, canEdit }) {
     onError: (err) => toast.error(err?.message ?? 'Delete failed')
   });
 
-  const lockedSovItemIds = useMemo(() => {
+  const lockedSovItemIds = React.useMemo(() => {
     const ids = new Set();
     for (const line of invoiceLines ?? []) {
       if (line?.sov_item_id) ids.add(line.sov_item_id);
@@ -419,65 +401,19 @@ export default function SOVManager({ projectId, canEdit }) {
           }} className="space-y-4">
             <div>
               <Label>SOV Code / Line #</Label>
-              <Select 
-                value={formData.sov_code} 
-                onValueChange={(v) => {
-                  const selected = allSOVItems.find(item => item.sov_code === v);
-                  setFormData({ 
-                    ...formData, 
-                    sov_code: v,
-                    description: selected?.description || formData.description
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select or enter code" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allSOVItems.map(item => (
-                    <SelectItem key={item.sov_code} value={item.sov_code}>
-                      {item.sov_code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Input
                 value={formData.sov_code}
                 onChange={(e) => setFormData({ ...formData, sov_code: e.target.value })}
-                placeholder="Or type custom code"
-                className="mt-2"
+                placeholder="e.g., 100, 05100"
                 required
               />
             </div>
             <div>
               <Label>Description</Label>
-              <Select 
-                value={formData.description} 
-                onValueChange={(v) => {
-                  const selected = allSOVItems.find(item => item.description === v);
-                  setFormData({ 
-                    ...formData, 
-                    description: v,
-                    sov_code: selected?.sov_code || formData.sov_code
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select or enter description" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allSOVItems.map((item, idx) => (
-                    <SelectItem key={`${item.description}-${idx}`} value={item.description}>
-                      {item.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Or type custom description"
-                className="mt-2"
+                placeholder="Work item description"
                 required
               />
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useNavigate, Link } from 'react-router-dom';
@@ -28,20 +28,16 @@ import {
   CheckCircle2,
   Settings,
   LayoutGrid,
-  X,
-  Filter,
-  Users
+  X
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { format, differenceInDays, isValid } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 function formatFinancial(value) {
   if (!value || value === 0) return '$0';
@@ -94,37 +90,11 @@ const AVAILABLE_WIDGETS = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const { activeProjectId } = useActiveProject();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const [showWidgetConfig, setShowWidgetConfig] = useState(false);
-  const [showProjectFilter, setShowProjectFilter] = useState(false);
-  const [error, setError] = useState(null);
   const ACTIVITY_PER_PAGE = 10;
-
-  // Dashboard view mode: 'single' | 'executive' | 'filtered'
-  const [viewMode, setViewMode] = useState(() => {
-    const saved = localStorage.getItem('dashboard-view-mode');
-    return saved || 'single';
-  });
-  const [selectedPM, setSelectedPM] = useState(() => {
-    const saved = localStorage.getItem('dashboard-selected-pm');
-    return saved || 'all';
-  });
-  const [selectedProjects, setSelectedProjects] = useState(() => {
-    const saved = localStorage.getItem('dashboard-selected-projects');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Global error handler for dashboard calculations
-  useEffect(() => {
-    const handleError = (event) => {
-      console.error('Dashboard error:', event.error);
-      setError(event.error?.message || 'An error occurred');
-    };
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
-  }, []);
 
   // Widget state management
   const [widgets, setWidgets] = useState(() => {
@@ -160,7 +130,7 @@ export default function Dashboard() {
   });
 
   // Fetch projects
-  const { data: allProjects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
+  const { data: projects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
     queryKey: ['dashboardProjects'],
     queryFn: () => base44.entities.Project.list('-updated_date'),
     select: (data) => {
@@ -175,137 +145,57 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Get filtered projects based on view mode
-  const projects = useMemo(() => {
-    if (viewMode === 'executive') {
-      if (selectedPM === 'all') return allProjects;
-      return allProjects.filter(p => p.project_manager === selectedPM);
-    }
-    if (viewMode === 'filtered') {
-      return allProjects.filter(p => selectedProjects.includes(p.id));
-    }
-    // Single project mode
-    return activeProjectId ? allProjects.filter(p => p.id === activeProjectId) : allProjects;
-  }, [viewMode, allProjects, selectedPM, selectedProjects, activeProjectId]);
-
-  // Get unique PMs
-  const projectManagers = useMemo(() => {
-    const pms = new Set();
-    allProjects.forEach(p => {
-      if (p.project_manager) pms.add(p.project_manager);
-    });
-    return Array.from(pms).sort();
-  }, [allProjects]);
-
-  // Update view mode handler
-  const handleViewModeChange = useCallback((mode, value) => {
-    setViewMode(mode);
-    localStorage.setItem('dashboard-view-mode', mode);
-    
-    if (mode === 'single' && value) {
-      setActiveProjectId(value);
-    } else if (mode === 'executive') {
-      if (value === 'all') {
-        setSelectedPM('all');
-        localStorage.setItem('dashboard-selected-pm', 'all');
-      }
-    }
-  }, [setActiveProjectId]);
-
   // Fetch recent activity data
-  const { data: allRFIs = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
+  const { data: rfis = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
     queryKey: ['dashboardRFIs'],
-    queryFn: () => base44.entities.RFI.list('-created_date', 100),
+    queryFn: () => base44.entities.RFI.list('-created_date', 20),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: allChangeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
+  const { data: changeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
     queryKey: ['dashboardCOs'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 100),
+    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 20),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: allTasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
+  const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
     queryKey: ['dashboardTasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 100),
+    queryFn: () => base44.entities.Task.list('-updated_date', 20),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: allDrawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
+  const { data: drawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
     queryKey: ['dashboardDrawings'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date', 100),
+    queryFn: () => base44.entities.DrawingSet.list('-created_date', 20),
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter activity data by selected projects
-  const rfis = useMemo(() => 
-    allRFIs.filter(r => dataProjectIds.includes(r.project_id)),
-    [allRFIs, dataProjectIds]
-  );
-
-  const changeOrders = useMemo(() => 
-    allChangeOrders.filter(co => dataProjectIds.includes(co.project_id)),
-    [allChangeOrders, dataProjectIds]
-  );
-
-  const tasks = useMemo(() => 
-    allTasks.filter(t => dataProjectIds.includes(t.project_id)),
-    [allTasks, dataProjectIds]
-  );
-
-  const drawings = useMemo(() => 
-    allDrawings.filter(d => dataProjectIds.includes(d.project_id)),
-    [allDrawings, dataProjectIds]
-  );
-
-  // Get project IDs for data fetching based on view mode
-  const dataProjectIds = useMemo(() => {
-    if (viewMode === 'single') return activeProjectId ? [activeProjectId] : [];
-    return projects.map(p => p.id);
-  }, [viewMode, activeProjectId, projects]);
-
   // Fetch financial data for cost risk indicator
   const { data: sovItems = [] } = useQuery({
-    queryKey: ['dashboardSOV', dataProjectIds],
-    queryFn: async () => {
-      if (dataProjectIds.length === 0) return [];
-      const items = await base44.entities.SOVItem.list();
-      return items.filter(item => dataProjectIds.includes(item.project_id));
-    },
-    enabled: dataProjectIds.length > 0,
+    queryKey: ['dashboardSOV', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.SOVItem.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: expenses = [] } = useQuery({
-    queryKey: ['dashboardExpenses', dataProjectIds],
-    queryFn: async () => {
-      if (dataProjectIds.length === 0) return [];
-      const items = await base44.entities.Expense.list();
-      return items.filter(item => dataProjectIds.includes(item.project_id));
-    },
-    enabled: dataProjectIds.length > 0,
+    queryKey: ['dashboardExpenses', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.Expense.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: projectChangeOrders = [] } = useQuery({
-    queryKey: ['dashboardProjectCOs', dataProjectIds],
-    queryFn: async () => {
-      if (dataProjectIds.length === 0) return [];
-      const items = await base44.entities.ChangeOrder.list();
-      return items.filter(item => dataProjectIds.includes(item.project_id));
-    },
-    enabled: dataProjectIds.length > 0,
+    queryKey: ['dashboardProjectCOs', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: estimatedCosts = [] } = useQuery({
-    queryKey: ['dashboardETC', dataProjectIds],
-    queryFn: async () => {
-      if (dataProjectIds.length === 0) return [];
-      const items = await base44.entities.EstimatedCostToComplete.list();
-      return items.filter(item => dataProjectIds.includes(item.project_id));
-    },
-    enabled: dataProjectIds.length > 0,
+    queryKey: ['dashboardETC', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId }) : Promise.resolve([]),
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -313,42 +203,36 @@ export default function Dashboard() {
   const criticalIssues = useMemo(() => {
     const issues = [];
     
-    try {
-      // Check overdue RFIs
-      const overdueRFIs = (rfis || []).filter(r => {
-        if (!r || !r.due_date || (r.status !== 'pending' && r.status !== 'submitted')) return false;
-        try {
-          const dueDate = new Date(r.due_date);
-          return !isNaN(dueDate.getTime()) && dueDate < new Date();
-        } catch {
-          return false;
-        }
-      });
-      if (overdueRFIs.length > 0) {
-        issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
+    // Check overdue RFIs
+    const overdueRFIs = rfis.filter(r => {
+      if (!r.due_date || (r.status !== 'pending' && r.status !== 'submitted')) return false;
+      try {
+        return new Date(r.due_date) < new Date();
+      } catch {
+        return false;
       }
+    });
+    if (overdueRFIs.length > 0) {
+      issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
+    }
 
-      // Check overdue drawings
-      const overdueDrawings = (drawings || []).filter(d => {
-        if (!d || !d.due_date || ['FFF', 'As-Built'].includes(d.status)) return false;
-        try {
-          const dueDate = new Date(d.due_date);
-          return !isNaN(dueDate.getTime()) && dueDate < new Date();
-        } catch {
-          return false;
-        }
-      });
-      if (overdueDrawings.length > 0) {
-        issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
+    // Check overdue drawings
+    const overdueDrawings = drawings.filter(d => {
+      if (!d.due_date || ['FFF', 'As-Built'].includes(d.status)) return false;
+      try {
+        return new Date(d.due_date) < new Date();
+      } catch {
+        return false;
       }
+    });
+    if (overdueDrawings.length > 0) {
+      issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
+    }
 
-      // Check pending COs
-      const pendingCOs = (changeOrders || []).filter(co => co && co.status === 'pending');
-      if (pendingCOs.length > 3) {
-        issues.push(`${pendingCOs.length} pending change orders`);
-      }
-    } catch (error) {
-      console.error('Error calculating critical issues:', error);
+    // Check pending COs
+    const pendingCOs = changeOrders.filter(co => co.status === 'pending');
+    if (pendingCOs.length > 3) {
+      issues.push(`${pendingCOs.length} pending change orders`);
     }
 
     return issues;
@@ -356,30 +240,24 @@ export default function Dashboard() {
 
   // Calculate schedule health - MOVED BEFORE CONDITIONAL RETURN
   const scheduleHealth = useMemo(() => {
-    try {
-      const overdueCount = (tasks || []).filter(t => {
-        if (!t || !t.due_date || t.status === 'completed') return false;
-        try {
-          const dueDate = new Date(t.due_date);
-          return !isNaN(dueDate.getTime()) && dueDate < new Date();
-        } catch {
-          return false;
-        }
-      }).length;
-      const totalActiveTasks = (tasks || []).filter(t => t && t.status !== 'completed').length;
-      const onTimePercentage = totalActiveTasks > 0 
-        ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
-        : 100;
-      
-      return {
-        overdueCount,
-        onTimePercentage,
-        status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
-      };
-    } catch (error) {
-      console.error('Error calculating schedule health:', error);
-      return { overdueCount: 0, onTimePercentage: 100, status: 'on-track' };
-    }
+    const overdueCount = tasks.filter(t => {
+      if (!t.due_date || t.status === 'completed') return false;
+      try {
+        return new Date(t.due_date) < new Date();
+      } catch {
+        return false;
+      }
+    }).length;
+    const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
+    const onTimePercentage = totalActiveTasks > 0 
+      ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
+      : 100;
+    
+    return {
+      overdueCount,
+      onTimePercentage,
+      status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
+    };
   }, [tasks]);
 
   // Calculate active projects and milestones - MOVED BEFORE CONDITIONAL RETURN
@@ -388,81 +266,60 @@ export default function Dashboard() {
     [projects]
   );
   
-  const upcomingMilestones = useMemo(() => {
-    if (!activeProjects || activeProjects.length === 0) return [];
-    return activeProjects.filter(p => {
-      if (!p || !p.target_completion) return false;
+  const upcomingMilestones = useMemo(() => 
+    activeProjects.filter(p => {
+      if (!p.target_completion) return false;
       try {
         const targetDate = new Date(p.target_completion);
         if (isNaN(targetDate.getTime())) return false;
-        const now = new Date();
-        const days = differenceInDays(targetDate, now);
+        const days = differenceInDays(targetDate, new Date());
         return days >= 0 && days <= 30;
       } catch {
         return false;
       }
-    });
-  }, [activeProjects]);
+    }),
+    [activeProjects]
+  );
 
   // Calculate financial summary for active project - MOVED BEFORE CONDITIONAL RETURN
   const activeProjectFinancials = useMemo(() => {
-    try {
-      if (sovItems.length === 0) return null;
+    if (!activeProjectId || sovItems.length === 0) return null;
 
-      const contractValue = (sovItems || []).reduce((sum, s) => sum + (Number(s?.scheduled_value) || 0), 0);
-      const signedExtras = (projectChangeOrders || [])
-        .filter(co => co && co.status === 'approved')
-        .reduce((sum, co) => sum + (Number(co?.cost_impact) || 0), 0);
-      const totalContract = contractValue + signedExtras;
-      const earnedToDate = (sovItems || []).reduce((sum, s) => 
-        sum + ((Number(s?.scheduled_value) || 0) * ((Number(s?.percent_complete) || 0) / 100)), 0);
-      const actualCost = (expenses || [])
-        .filter(e => e && (e.payment_status === 'paid' || e.payment_status === 'approved'))
-        .reduce((sum, e) => sum + (Number(e?.amount) || 0), 0);
-      
-      // Calculate EAC from ETC data
-      const totalETC = (estimatedCosts || []).reduce((sum, etc) => sum + (Number(etc?.estimated_remaining_cost) || 0), 0);
-      const estimatedCostAtCompletion = actualCost + totalETC;
+    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+    const signedExtras = projectChangeOrders
+      .filter(co => co.status === 'approved')
+      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+    const totalContract = contractValue + signedExtras;
+    const earnedToDate = sovItems.reduce((sum, s) => 
+      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+    const actualCost = expenses
+      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    // Calculate EAC from ETC data
+    const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
+    const estimatedCostAtCompletion = actualCost + totalETC;
 
-      // For executive view, use average planned margin
-      let plannedMargin = 15;
-      if (viewMode === 'single' && activeProjectId) {
-        const activeProject = (allProjects || []).find(p => p && p.id === activeProjectId);
-        plannedMargin = Number(activeProject?.planned_margin) || 15;
-      } else {
-        const margins = projects.map(p => Number(p?.planned_margin) || 15);
-        plannedMargin = margins.length > 0 ? margins.reduce((a, b) => a + b, 0) / margins.length : 15;
-      }
+    const activeProject = projects.find(p => p.id === activeProjectId);
 
-      return {
-        totalContract,
-        actualCost,
-        estimatedCostAtCompletion,
-        plannedMargin
-      };
-    } catch (error) {
-      console.error('Error calculating project financials:', error);
-      return null;
-    }
-  }, [sovItems, expenses, projectChangeOrders, estimatedCosts, projects, viewMode, activeProjectId, allProjects]);
+    return {
+      totalContract,
+      actualCost,
+      estimatedCostAtCompletion,
+      plannedMargin: activeProject?.planned_margin || 15
+    };
+  }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
 
   // Calculate cost risk status - MOVED BEFORE CONDITIONAL RETURN
   const costRiskStatus = useMemo(() => {
-    try {
-      if (!activeProjectFinancials || activeProjectFinancials.totalContract === 0) {
-        return { status: 'unknown', message: 'No active project' };
-      }
-      
-      const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
-      const variance = projectedMargin - activeProjectFinancials.plannedMargin;
-      
-      if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
-      if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
-      return { status: 'critical', message: 'At Risk', color: 'red' };
-    } catch (error) {
-      console.error('Error calculating cost risk:', error);
-      return { status: 'unknown', message: 'No active project' };
-    }
+    if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
+    
+    const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
+    const variance = projectedMargin - activeProjectFinancials.plannedMargin;
+    
+    if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
+    if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
+    return { status: 'critical', message: 'At Risk', color: 'red' };
   }, [activeProjectFinancials]);
 
   const portfolioHealth = useMemo(() => 
@@ -475,20 +332,18 @@ export default function Dashboard() {
     const items = [];
 
     rfis.forEach(r => {
-      if (!r || !r.id) return;
       const project = projects.find(p => p.id === r.project_id);
       let rfiDate;
       try {
         rfiDate = new Date(r.created_date);
-        if (isNaN(rfiDate.getTime())) rfiDate = new Date();
       } catch {
         rfiDate = new Date();
       }
       items.push({
         id: `rfi-${r.id}`,
         type: 'rfi',
-        title: `RFI-${String(r.rfi_number || 0).padStart(3, '0')}`,
-        subtitle: project?.name || r.subject || 'RFI',
+        title: `RFI-${String(r.rfi_number).padStart(3, '0')}`,
+        subtitle: project?.name || r.subject,
         badge: <StatusBadge status={r.status} className="text-xs" />,
         date: rfiDate,
         onClick: () => navigate(createPageUrl('RFIs'))
@@ -496,40 +351,36 @@ export default function Dashboard() {
     });
 
     changeOrders.forEach(co => {
-      if (!co || !co.id) return;
       const project = projects.find(p => p.id === co.project_id);
       let coDate;
       try {
         coDate = new Date(co.created_date);
-        if (isNaN(coDate.getTime())) coDate = new Date();
       } catch {
         coDate = new Date();
       }
       items.push({
         id: `co-${co.id}`,
         type: 'co',
-        title: `CO-${String(co.co_number || 0).padStart(3, '0')}`,
-        subtitle: project?.name || co.title || 'Change Order',
+        title: `CO-${String(co.co_number).padStart(3, '0')}`,
+        subtitle: project?.name || co.title,
         badge: <StatusBadge status={co.status} className="text-xs" />,
         date: coDate,
         onClick: () => navigate(createPageUrl('ChangeOrders'))
       });
     });
 
-    tasks.filter(t => t && t.status !== 'completed').forEach(t => {
-      if (!t || !t.id) return;
+    tasks.filter(t => t.status !== 'completed').forEach(t => {
       const project = projects.find(p => p.id === t.project_id);
       let taskDate;
       try {
         taskDate = new Date(t.updated_date || t.created_date);
-        if (isNaN(taskDate.getTime())) taskDate = new Date();
       } catch {
         taskDate = new Date();
       }
       items.push({
         id: `task-${t.id}`,
         type: 'task',
-        title: t.name || 'Task',
+        title: t.name,
         subtitle: project?.name || 'Task',
         badge: <StatusBadge status={t.status} className="text-xs" />,
         date: taskDate,
@@ -593,21 +444,6 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <div className="text-center max-w-md">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">Dashboard Error</h2>
-          <p className="text-zinc-400 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()} className="bg-amber-500 text-black">
-            Reload Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-black">
       {/* Status Bar */}
@@ -618,91 +454,9 @@ export default function Dashboard() {
               <div className="w-1.5 h-1.5 bg-green-500" />
               <span className="text-zinc-500 font-mono uppercase tracking-wider">OPERATIONAL</span>
             </div>
-            <span className="text-zinc-600 font-mono">
-              {(() => {
-                try {
-                  return format(new Date(), 'yyyy-MM-dd HH:mm');
-                } catch {
-                  return new Date().toISOString().slice(0, 16).replace('T', ' ');
-                }
-              })()}
-            </span>
+            <span className="text-zinc-600 font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
           </div>
           <div className="flex items-center gap-3">
-            {/* Project Selector */}
-            <div className="flex items-center gap-2">
-              <Select 
-                value={viewMode === 'single' ? activeProjectId || 'none' : viewMode}
-                onValueChange={(value) => {
-                  if (value === 'executive') {
-                    handleViewModeChange('executive');
-                  } else if (value === 'filtered') {
-                    setShowProjectFilter(true);
-                    handleViewModeChange('filtered');
-                  } else {
-                    handleViewModeChange('single', value);
-                  }
-                }}
-              >
-                <SelectTrigger className="h-7 w-[240px] text-xs bg-zinc-900 border-zinc-700">
-                  <SelectValue>
-                    {viewMode === 'executive' 
-                      ? selectedPM === 'all' 
-                        ? 'Executive View - All Projects'
-                        : `Executive View - ${selectedPM.split('@')[0]}`
-                      : viewMode === 'filtered'
-                      ? `Custom View (${selectedProjects.length})`
-                      : activeProjectId
-                      ? allProjects.find(p => p.id === activeProjectId)?.name || 'Select Project'
-                      : 'Select Project'
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  <SelectItem value="executive" className="text-amber-400 font-bold">
-                    <Users size={14} className="inline mr-2" />
-                    Executive View
-                  </SelectItem>
-                  <SelectItem value="filtered" className="text-blue-400 font-bold">
-                    <Filter size={14} className="inline mr-2" />
-                    Custom Filter
-                  </SelectItem>
-                  {allProjects.length > 0 && (
-                    <>
-                      <div className="h-px bg-zinc-700 my-1" />
-                      {allProjects.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.project_number} - {p.name}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              
-              {viewMode === 'executive' && (
-                <Select 
-                  value={selectedPM}
-                  onValueChange={(value) => {
-                    setSelectedPM(value);
-                    localStorage.setItem('dashboard-selected-pm', value);
-                  }}
-                >
-                  <SelectTrigger className="h-7 w-[180px] text-xs bg-zinc-900 border-zinc-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
-                    <SelectItem value="all">All PMs</SelectItem>
-                    {projectManagers.map(pm => (
-                      <SelectItem key={pm} value={pm}>
-                        {pm.split('@')[0]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
             <Button
               size="sm"
               variant="ghost"
@@ -833,13 +587,13 @@ export default function Dashboard() {
               onClick={() => navigate(createPageUrl('Projects'))}
             >
               <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {activeProjects.length}
+                {portfolioHealth.activeProjects || activeProjects.length}
               </div>
               <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
                 ACTIVE PROJECTS
               </div>
               <div className="text-xs text-zinc-500 font-mono">
-                {viewMode === 'single' ? allProjects.filter(p => p.status === 'in_progress').length : projects.length} in view
+                {projects.length} total
               </div>
             </div>
           </div>
@@ -933,36 +687,24 @@ export default function Dashboard() {
         </div>
 
         {/* Active Project Financial Strip */}
-        {activeProjectFinancials && (
+        {activeProjectId && activeProjectFinancials && (
           <div className="mb-6 border-2 border-zinc-800">
             <div className="px-6 py-3 border-b border-zinc-800 bg-black">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">
-                    {viewMode === 'single' ? 'ACTIVE PROJECT' : viewMode === 'executive' ? 'EXECUTIVE VIEW' : 'CUSTOM VIEW'}
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">ACTIVE PROJECT</span>
+                  <span className="text-xs text-white font-mono">
+                    {projects.find(p => p.id === activeProjectId)?.project_number}
                   </span>
-                  {viewMode === 'single' && activeProjectId && (
-                    <>
-                      <span className="text-xs text-white font-mono">
-                        {allProjects.find(p => p.id === activeProjectId)?.project_number}
-                      </span>
-                      <span className="text-xs text-zinc-500 truncate max-w-md">
-                        {allProjects.find(p => p.id === activeProjectId)?.name}
-                      </span>
-                    </>
-                  )}
-                  {(viewMode === 'executive' || viewMode === 'filtered') && (
-                    <span className="text-xs text-zinc-500">
-                      {projects.length} project{projects.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
+                  <span className="text-xs text-zinc-500 truncate max-w-md">
+                    {projects.find(p => p.id === activeProjectId)?.name}
+                  </span>
                 </div>
                 <button
                   className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold"
-                  onClick={() => viewMode === 'single' && activeProjectId ? navigate(createPageUrl('Financials')) : null}
-                  disabled={viewMode !== 'single'}
+                  onClick={() => navigate(createPageUrl('Financials'))}
                 >
-                  {viewMode === 'single' ? 'DETAILS →' : 'COMBINED VIEW'}
+                  DETAILS →
                 </button>
               </div>
             </div>
@@ -1014,7 +756,7 @@ export default function Dashboard() {
         )}
 
         {/* Customizable Widgets */}
-        {widgets.length > 0 && (viewMode === 'single' ? activeProjectId : true) && (
+        {widgets.length > 0 && activeProjectId && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">DASHBOARD WIDGETS</h2>
@@ -1043,7 +785,7 @@ export default function Dashboard() {
                     >
                       <X size={14} />
                     </Button>
-                    <WidgetComponent projectId={viewMode === 'single' ? activeProjectId : null} {...(widgetDef.props || {})} />
+                    <WidgetComponent projectId={activeProjectId} {...(widgetDef.props || {})} />
                   </div>
                 );
               })}
@@ -1074,7 +816,7 @@ export default function Dashboard() {
                     <div
                       key={project.id}
                       className="group px-6 py-3 hover:bg-zinc-950 cursor-pointer transition-colors"
-                      onClick={() => navigate(createPageUrl('ProjectDashboard') + `?id=${project.id}`)}
+                      onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
@@ -1166,65 +908,6 @@ export default function Dashboard() {
           </div>
           <div className="text-xs text-zinc-600">
             Select which widgets to display on your dashboard
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Project Filter Dialog */}
-      <Dialog open={showProjectFilter} onOpenChange={setShowProjectFilter}>
-        <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Filter size={18} />
-              Select Projects
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 py-4 max-h-96 overflow-y-auto">
-            {allProjects.map((project) => (
-              <div key={project.id} className="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800 rounded hover:bg-zinc-900">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <Checkbox
-                    checked={selectedProjects.includes(project.id)}
-                    onCheckedChange={(checked) => {
-                      const newSelected = checked
-                        ? [...selectedProjects, project.id]
-                        : selectedProjects.filter(id => id !== project.id);
-                      setSelectedProjects(newSelected);
-                      localStorage.setItem('dashboard-selected-projects', JSON.stringify(newSelected));
-                    }}
-                    className="border-zinc-700"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-mono text-white">{project.project_number}</div>
-                    <div className="text-xs text-zinc-500 truncate">{project.name}</div>
-                  </div>
-                </div>
-                <StatusBadge status={project.status} className="text-xs" />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="text-xs text-zinc-600">
-              {selectedProjects.length} project{selectedProjects.length !== 1 ? 's' : ''} selected
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSelectedProjects([]);
-                  localStorage.setItem('dashboard-selected-projects', JSON.stringify([]));
-                }}
-              >
-                Clear All
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => setShowProjectFilter(false)}
-              >
-                Apply
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

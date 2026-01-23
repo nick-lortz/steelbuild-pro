@@ -213,29 +213,50 @@ export default function Dashboard() {
   }, [setActiveProjectId]);
 
   // Fetch recent activity data
-  const { data: rfis = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
+  const { data: allRFIs = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
     queryKey: ['dashboardRFIs'],
-    queryFn: () => base44.entities.RFI.list('-created_date', 20),
+    queryFn: () => base44.entities.RFI.list('-created_date', 100),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: changeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
+  const { data: allChangeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
     queryKey: ['dashboardCOs'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 20),
+    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 100),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
+  const { data: allTasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
     queryKey: ['dashboardTasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 20),
+    queryFn: () => base44.entities.Task.list('-updated_date', 100),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: drawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
+  const { data: allDrawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
     queryKey: ['dashboardDrawings'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date', 20),
+    queryFn: () => base44.entities.DrawingSet.list('-created_date', 100),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Filter activity data by selected projects
+  const rfis = useMemo(() => 
+    allRFIs.filter(r => dataProjectIds.includes(r.project_id)),
+    [allRFIs, dataProjectIds]
+  );
+
+  const changeOrders = useMemo(() => 
+    allChangeOrders.filter(co => dataProjectIds.includes(co.project_id)),
+    [allChangeOrders, dataProjectIds]
+  );
+
+  const tasks = useMemo(() => 
+    allTasks.filter(t => dataProjectIds.includes(t.project_id)),
+    [allTasks, dataProjectIds]
+  );
+
+  const drawings = useMemo(() => 
+    allDrawings.filter(d => dataProjectIds.includes(d.project_id)),
+    [allDrawings, dataProjectIds]
+  );
 
   // Get project IDs for data fetching based on view mode
   const dataProjectIds = useMemo(() => {
@@ -812,13 +833,13 @@ export default function Dashboard() {
               onClick={() => navigate(createPageUrl('Projects'))}
             >
               <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {portfolioHealth.activeProjects || activeProjects.length}
+                {activeProjects.length}
               </div>
               <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
                 ACTIVE PROJECTS
               </div>
               <div className="text-xs text-zinc-500 font-mono">
-                {projects.length} total
+                {viewMode === 'single' ? allProjects.filter(p => p.status === 'in_progress').length : projects.length} in view
               </div>
             </div>
           </div>

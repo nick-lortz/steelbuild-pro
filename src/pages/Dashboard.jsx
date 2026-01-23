@@ -881,7 +881,7 @@ export default function Dashboard() {
                     <div
                       key={project.id}
                       className="group px-6 py-3 hover:bg-zinc-950 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
+                      onClick={() => navigate(createPageUrl('ProjectDashboard') + `?id=${project.id}`)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">

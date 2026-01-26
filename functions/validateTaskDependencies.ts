@@ -20,6 +20,22 @@ Deno.serve(async (req) => {
       return Response.json({ valid: true });
     }
 
+    // Verify user has access to the project
+    const projects = await base44.asServiceRole.entities.Project.filter({ id: project_id });
+    if (!projects.length) {
+      return Response.json({ error: 'Project not found' }, { status: 404 });
+    }
+    
+    const project = projects[0];
+    const hasAccess = user.role === 'admin' || 
+      project.project_manager === user.email || 
+      project.superintendent === user.email ||
+      (project.assigned_users && project.assigned_users.includes(user.email));
+
+    if (!hasAccess) {
+      return Response.json({ error: 'Access denied to this project' }, { status: 403 });
+    }
+
     // Fetch all project tasks for dependency graph
     const allTasks = await base44.asServiceRole.entities.Task.filter({ 
       project_id 

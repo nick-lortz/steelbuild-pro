@@ -36,17 +36,32 @@ export default function Schedule() {
 
   const queryClient = useQueryClient();
 
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
+
   // Fetch projects for filter
-  const { data: rawProjects = [] } = useQuery({
+  const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000
   });
 
-  const projects = useMemo(() => 
-    [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
-    [rawProjects]
-  );
+  // Filter projects by user access
+  const projects = useMemo(() => {
+    if (!currentUser) return [];
+    const filtered = currentUser.role === 'admin' 
+      ? allProjects 
+      : allProjects.filter(p => 
+          p.project_manager === currentUser.email || 
+          p.superintendent === currentUser.email ||
+          (p.assigned_users && p.assigned_users.includes(currentUser.email))
+        );
+    return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [currentUser, allProjects]);
 
   const selectedProject = useMemo(() => 
     activeProjectId ? projects.find(p => p.id === activeProjectId) : null,

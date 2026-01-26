@@ -47,6 +47,9 @@ export const createETC = (data) =>
 export const updateETC = (id, updates) =>
   base44.functions.invoke('etcOperations', { operation: 'update', data: { id, updates } });
 
+export const deleteETC = (id) =>
+  base44.functions.invoke('etcOperations', { operation: 'delete', data: { id } });
+
 // Invoice Generation & Approval
 export const generateInvoice = (projectId, periodStart, periodEnd) =>
   base44.functions.invoke('generateInvoice', { projectId, periodStart, periodEnd });

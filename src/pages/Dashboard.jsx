@@ -90,10 +90,11 @@ const AVAILABLE_WIDGETS = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activityPage, setActivityPage] = useState(1);
   const [showWidgetConfig, setShowWidgetConfig] = useState(false);
+  const [viewMode, setViewMode] = useState('all'); // 'all' or 'project'
   const ACTIVITY_PER_PAGE = 10;
 
   // Widget state management
@@ -101,8 +102,6 @@ export default function Dashboard() {
     const saved = localStorage.getItem('dashboard-widgets');
     return saved ? JSON.parse(saved) : ['project-health', 'notifications', 'deadlines'];
   });
-
-  console.log('Active project:', activeProjectId);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -129,75 +128,125 @@ export default function Dashboard() {
     retry: false
   });
 
-  // Fetch projects
-  const { data: projects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
+  // Fetch ALL projects first
+  const { data: allProjects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
     queryKey: ['dashboardProjects'],
     queryFn: () => base44.entities.Project.list('-updated_date'),
-    select: (data) => {
-      if (!currentUser) return data;
-      if (currentUser.role === 'admin') return data;
-      return data.filter(p => 
-        p.project_manager === currentUser.email || 
-        p.superintendent === currentUser.email ||
-        (p.assigned_users && p.assigned_users.includes(currentUser.email))
-      );
-    },
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch recent activity data
-  const { data: rfis = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
+  // Filter projects by user role and PM
+  const projects = useMemo(() => {
+    if (!currentUser) return allProjects;
+    if (currentUser.role === 'admin') return allProjects;
+    // Filter by PM, superintendent, or assigned users
+    return allProjects.filter(p => 
+      p.project_manager === currentUser.email || 
+      p.superintendent === currentUser.email ||
+      (p.assigned_users && p.assigned_users.includes(currentUser.email))
+    );
+  }, [currentUser, allProjects]);
+
+  // Fetch activity data - filtered by view mode
+  const projectIds = useMemo(() => projects.map(p => p.id), [projects]);
+
+  const { data: allRFIs = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
     queryKey: ['dashboardRFIs'],
-    queryFn: () => base44.entities.RFI.list('-created_date', 20),
+    queryFn: () => base44.entities.RFI.list('-created_date', 100),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: changeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
+  const { data: allChangeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
     queryKey: ['dashboardCOs'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 20),
+    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 100),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: tasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
+  const { data: allTasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
     queryKey: ['dashboardTasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 20),
+    queryFn: () => base44.entities.Task.list('-updated_date', 100),
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: drawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
+  const { data: allDrawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
     queryKey: ['dashboardDrawings'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date', 20),
+    queryFn: () => base44.entities.DrawingSet.list('-created_date', 100),
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch financial data for cost risk indicator
-  const { data: sovItems = [] } = useQuery({
-    queryKey: ['dashboardSOV', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.SOVItem.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
+  // Filter data based on view mode and selected project
+  const rfis = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allRFIs.filter(r => r.project_id === activeProjectId);
+    }
+    return allRFIs.filter(r => projectIds.includes(r.project_id));
+  }, [allRFIs, viewMode, activeProjectId, projectIds]);
+
+  const changeOrders = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allChangeOrders.filter(co => co.project_id === activeProjectId);
+    }
+    return allChangeOrders.filter(co => projectIds.includes(co.project_id));
+  }, [allChangeOrders, viewMode, activeProjectId, projectIds]);
+
+  const tasks = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allTasks.filter(t => t.project_id === activeProjectId);
+    }
+    return allTasks.filter(t => projectIds.includes(t.project_id));
+  }, [allTasks, viewMode, activeProjectId, projectIds]);
+
+  const drawings = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allDrawings.filter(d => d.project_id === activeProjectId);
+    }
+    return allDrawings.filter(d => projectIds.includes(d.project_id));
+  }, [allDrawings, viewMode, activeProjectId, projectIds]);
+
+  // Fetch financial data for all user's projects
+  const { data: allSOVItems = [] } = useQuery({
+    queryKey: ['dashboardSOV'],
+    queryFn: () => base44.entities.SOVItem.list(),
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: expenses = [] } = useQuery({
-    queryKey: ['dashboardExpenses', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.Expense.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
+  const { data: allExpenses = [] } = useQuery({
+    queryKey: ['dashboardExpenses'],
+    queryFn: () => base44.entities.Expense.list(),
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: projectChangeOrders = [] } = useQuery({
-    queryKey: ['dashboardProjectCOs', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
+  const { data: allEstimatedCosts = [] } = useQuery({
+    queryKey: ['dashboardETC'],
+    queryFn: () => base44.entities.EstimatedCostToComplete.list(),
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: estimatedCosts = [] } = useQuery({
-    queryKey: ['dashboardETC', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId }) : Promise.resolve([]),
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-  });
+  // Filter financials based on view mode
+  const sovItems = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allSOVItems.filter(s => s.project_id === activeProjectId);
+    }
+    return allSOVItems.filter(s => projectIds.includes(s.project_id));
+  }, [allSOVItems, viewMode, activeProjectId, projectIds]);
+
+  const expenses = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allExpenses.filter(e => e.project_id === activeProjectId);
+    }
+    return allExpenses.filter(e => projectIds.includes(e.project_id));
+  }, [allExpenses, viewMode, activeProjectId, projectIds]);
+
+  const estimatedCosts = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return allEstimatedCosts.filter(etc => etc.project_id === activeProjectId);
+    }
+    return allEstimatedCosts.filter(etc => projectIds.includes(etc.project_id));
+  }, [allEstimatedCosts, viewMode, activeProjectId, projectIds]);
+
+  const projectChangeOrders = useMemo(() => {
+    return changeOrders; // Already filtered above
+  }, [changeOrders]);
 
   // Calculate critical issues - MOVED BEFORE CONDITIONAL RETURN
   const criticalIssues = useMemo(() => {
@@ -261,10 +310,12 @@ export default function Dashboard() {
   }, [tasks]);
 
   // Calculate active projects and milestones - MOVED BEFORE CONDITIONAL RETURN
-  const activeProjects = useMemo(() => 
-    projects.filter(p => p.status === 'in_progress'),
-    [projects]
-  );
+  const activeProjects = useMemo(() => {
+    if (viewMode === 'project' && activeProjectId) {
+      return projects.filter(p => p.id === activeProjectId && p.status === 'in_progress');
+    }
+    return projects.filter(p => p.status === 'in_progress');
+  }, [projects, viewMode, activeProjectId]);
   
   const upcomingMilestones = useMemo(() => 
     activeProjects.filter(p => {
@@ -281,46 +332,76 @@ export default function Dashboard() {
     [activeProjects]
   );
 
-  // Calculate financial summary for active project - MOVED BEFORE CONDITIONAL RETURN
-  const activeProjectFinancials = useMemo(() => {
-    if (!activeProjectId || sovItems.length === 0) return null;
+  // Calculate financial summary - portfolio or single project
+  const dashboardFinancials = useMemo(() => {
+    if (viewMode === 'all') {
+      // Portfolio view - aggregate all user's projects
+      const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+      const signedExtras = changeOrders
+        .filter(co => co.status === 'approved')
+        .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+      const totalContract = contractValue + signedExtras;
+      const earnedToDate = sovItems.reduce((sum, s) => 
+        sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+      const actualCost = expenses
+        .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+      
+      const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
+      const estimatedCostAtCompletion = actualCost + totalETC;
 
-    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-    const signedExtras = projectChangeOrders
-      .filter(co => co.status === 'approved')
-      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-    const totalContract = contractValue + signedExtras;
-    const earnedToDate = sovItems.reduce((sum, s) => 
-      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-    const actualCost = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    // Calculate EAC from ETC data
-    const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
-    const estimatedCostAtCompletion = actualCost + totalETC;
+      return {
+        totalContract,
+        actualCost,
+        estimatedCostAtCompletion,
+        plannedMargin: 15,
+        isPortfolio: true
+      };
+    } else if (activeProjectId) {
+      // Single project view
+      const projectSOV = sovItems.filter(s => s.project_id === activeProjectId);
+      const projectExpenses = expenses.filter(e => e.project_id === activeProjectId);
+      const projectCOs = changeOrders.filter(co => co.project_id === activeProjectId);
+      const projectETC = estimatedCosts.filter(etc => etc.project_id === activeProjectId);
 
-    const activeProject = projects.find(p => p.id === activeProjectId);
+      const contractValue = projectSOV.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+      const signedExtras = projectCOs
+        .filter(co => co.status === 'approved')
+        .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+      const totalContract = contractValue + signedExtras;
+      const earnedToDate = projectSOV.reduce((sum, s) => 
+        sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
+      const actualCost = projectExpenses
+        .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+      
+      const totalETC = projectETC.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
+      const estimatedCostAtCompletion = actualCost + totalETC;
 
-    return {
-      totalContract,
-      actualCost,
-      estimatedCostAtCompletion,
-      plannedMargin: activeProject?.planned_margin || 15
-    };
-  }, [activeProjectId, sovItems, expenses, projectChangeOrders, estimatedCosts, projects]);
+      const activeProject = projects.find(p => p.id === activeProjectId);
+
+      return {
+        totalContract,
+        actualCost,
+        estimatedCostAtCompletion,
+        plannedMargin: activeProject?.planned_margin || 15,
+        isPortfolio: false
+      };
+    }
+    return null;
+  }, [viewMode, activeProjectId, sovItems, expenses, changeOrders, estimatedCosts, projects]);
 
   // Calculate cost risk status - MOVED BEFORE CONDITIONAL RETURN
   const costRiskStatus = useMemo(() => {
-    if (!activeProjectFinancials) return { status: 'unknown', message: 'No active project' };
+    if (!dashboardFinancials) return { status: 'unknown', message: 'No Data' };
     
-    const projectedMargin = ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100);
-    const variance = projectedMargin - activeProjectFinancials.plannedMargin;
+    const projectedMargin = ((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100);
+    const variance = projectedMargin - dashboardFinancials.plannedMargin;
     
     if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
     if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
     return { status: 'critical', message: 'At Risk', color: 'red' };
-  }, [activeProjectFinancials]);
+  }, [dashboardFinancials]);
 
   const portfolioHealth = useMemo(() => 
     metricsData?.portfolioHealth || {},
@@ -455,8 +536,47 @@ export default function Dashboard() {
               <span className="text-zinc-500 font-mono uppercase tracking-wider">OPERATIONAL</span>
             </div>
             <span className="text-zinc-600 font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
+            {currentUser?.role !== 'admin' && (
+              <span className="text-zinc-600 font-mono uppercase tracking-wider">
+                PM: {currentUser?.full_name || currentUser?.email}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3">
+            {/* View Mode Selector */}
+            <Select value={viewMode} onValueChange={(val) => {
+              setViewMode(val);
+              if (val === 'all') {
+                setActiveProjectId(null);
+              } else if (!activeProjectId && projects.length > 0) {
+                setActiveProjectId(projects[0].id);
+              }
+            }}>
+              <SelectTrigger className="w-40 h-7 bg-zinc-900 border-zinc-700 text-zinc-400 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectItem value="all" className="text-white text-xs">All Projects</SelectItem>
+                <SelectItem value="project" className="text-white text-xs">By Project</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Project Selector - only show when in project mode */}
+            {viewMode === 'project' && (
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 h-7 bg-zinc-900 border-zinc-700 text-zinc-400 text-xs">
+                  <SelectValue placeholder="Select Project" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id} className="text-white text-xs">
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <Button
               size="sm"
               variant="ghost"
@@ -558,25 +678,31 @@ export default function Dashboard() {
                   ? 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
                   : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
               }`}
-              onClick={() => activeProjectId && navigate(createPageUrl('Financials'))}
+              onClick={() => {
+                if (viewMode === 'project' && activeProjectId) {
+                  navigate(createPageUrl('Financials'));
+                } else {
+                  navigate(createPageUrl('Financials'));
+                }
+              }}
             >
-              {activeProjectFinancials && (
+              {dashboardFinancials && (
                 <div className={`absolute top-3 right-3 text-[10px] font-bold uppercase tracking-widest ${
                   costRiskStatus.status === 'critical' ? 'text-red-500' :
                   costRiskStatus.status === 'warning' ? 'text-amber-500' : 'text-green-500'
                 }`}>
-                  {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
+                  {((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100).toFixed(1)}%
                 </div>
               )}
               <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {costRiskStatus.message === 'No active project' ? '—' : costRiskStatus.message.toUpperCase()}
+                {costRiskStatus.message === 'No Data' ? '—' : costRiskStatus.message.toUpperCase()}
               </div>
               <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
-                COST RISK
+                COST RISK {dashboardFinancials?.isPortfolio ? '(PORTFOLIO)' : ''}
               </div>
-              {activeProjectFinancials && (
+              {dashboardFinancials && (
                 <div className="text-xs text-zinc-500 font-mono">
-                  EAC {formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}
+                  EAC {formatFinancial(dashboardFinancials.estimatedCostAtCompletion)}
                 </div>
               )}
             </div>
@@ -686,19 +812,30 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Active Project Financial Strip */}
-        {activeProjectId && activeProjectFinancials && (
+        {/* Financial Strip - Portfolio or Project */}
+        {dashboardFinancials && (
           <div className="mb-6 border-2 border-zinc-800">
             <div className="px-6 py-3 border-b border-zinc-800 bg-black">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">ACTIVE PROJECT</span>
-                  <span className="text-xs text-white font-mono">
-                    {projects.find(p => p.id === activeProjectId)?.project_number}
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">
+                    {viewMode === 'all' ? 'PORTFOLIO SUMMARY' : 'PROJECT SUMMARY'}
                   </span>
-                  <span className="text-xs text-zinc-500 truncate max-w-md">
-                    {projects.find(p => p.id === activeProjectId)?.name}
-                  </span>
+                  {viewMode === 'project' && activeProjectId && (
+                    <>
+                      <span className="text-xs text-white font-mono">
+                        {projects.find(p => p.id === activeProjectId)?.project_number}
+                      </span>
+                      <span className="text-xs text-zinc-500 truncate max-w-md">
+                        {projects.find(p => p.id === activeProjectId)?.name}
+                      </span>
+                    </>
+                  )}
+                  {viewMode === 'all' && (
+                    <span className="text-xs text-zinc-500">
+                      {projects.length} {currentUser?.role === 'admin' ? 'active' : 'assigned'} projects
+                    </span>
+                  )}
                 </div>
                 <button
                   className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold"
@@ -712,33 +849,33 @@ export default function Dashboard() {
               <div className="px-6 py-4">
                 <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">CONTRACT</div>
                 <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                  {formatFinancial(activeProjectFinancials.totalContract)}
+                  {formatFinancial(dashboardFinancials.totalContract)}
                 </div>
               </div>
               <div className="px-6 py-4">
                 <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">ACTUAL</div>
                 <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                  {formatFinancial(activeProjectFinancials.actualCost)}
+                  {formatFinancial(dashboardFinancials.actualCost)}
                 </div>
               </div>
               <div className="px-6 py-4">
                 <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">EAC</div>
                 <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                  {formatFinancial(activeProjectFinancials.estimatedCostAtCompletion)}
+                  {formatFinancial(dashboardFinancials.estimatedCostAtCompletion)}
                 </div>
               </div>
               <div className="px-6 py-4">
                 <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">MARGIN</div>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-2xl font-bold font-mono tracking-tight ${
-                    ((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100) > activeProjectFinancials.plannedMargin
+                    ((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100) > dashboardFinancials.plannedMargin
                       ? 'text-green-500'
                       : 'text-red-500'
                   }`}>
-                    {((activeProjectFinancials.totalContract - activeProjectFinancials.estimatedCostAtCompletion) / activeProjectFinancials.totalContract * 100).toFixed(1)}%
+                    {((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100).toFixed(1)}%
                   </span>
                   <span className="text-xs text-zinc-600 font-mono">
-                    / {activeProjectFinancials.plannedMargin}%
+                    / {dashboardFinancials.plannedMargin}%
                   </span>
                 </div>
               </div>
@@ -756,7 +893,7 @@ export default function Dashboard() {
         )}
 
         {/* Customizable Widgets */}
-        {widgets.length > 0 && activeProjectId && (
+        {widgets.length > 0 && viewMode === 'project' && activeProjectId && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">DASHBOARD WIDGETS</h2>

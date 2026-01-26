@@ -43,9 +43,14 @@ export default function ProjectHealthWidget({ projectId }) {
     // Drawing Status Score (40%)
     const totalSets = drawingSets.length;
     const fffSets = drawingSets.filter(ds => ds.status === 'FFF').length;
-    const overdueSets = drawingSets.filter(ds => 
-      ds.due_date && isPast(parseISO(ds.due_date)) && ds.status !== 'FFF'
-    ).length;
+    const overdueSets = drawingSets.filter(ds => {
+      if (!ds.due_date || ds.status === 'FFF') return false;
+      try {
+        return isPast(parseISO(ds.due_date));
+      } catch {
+        return false;
+      }
+    }).length;
     
     const drawingScore = totalSets > 0 
       ? ((fffSets / totalSets) * 100) - (overdueSets * 10)
@@ -57,7 +62,11 @@ export default function ProjectHealthWidget({ projectId }) {
       ? revisions.reduce((acc, rev) => {
           const set = drawingSets.find(ds => ds.id === rev.drawing_set_id);
           if (set?.ifa_date && rev.revision_date) {
-            return acc + Math.abs(differenceInDays(parseISO(rev.revision_date), parseISO(set.ifa_date)));
+            try {
+              return acc + Math.abs(differenceInDays(parseISO(rev.revision_date), parseISO(set.ifa_date)));
+            } catch {
+              return acc;
+            }
           }
           return acc;
         }, 0) / revisions.length
@@ -68,9 +77,14 @@ export default function ProjectHealthWidget({ projectId }) {
 
     // RFI Activity Score (30%)
     const openRFIs = rfis.filter(rfi => rfi.status !== 'closed' && rfi.status !== 'answered').length;
-    const overdueRFIs = rfis.filter(rfi => 
-      rfi.due_date && isPast(parseISO(rfi.due_date)) && rfi.status !== 'closed' && rfi.status !== 'answered'
-    ).length;
+    const overdueRFIs = rfis.filter(rfi => {
+      if (!rfi.due_date || rfi.status === 'closed' || rfi.status === 'answered') return false;
+      try {
+        return isPast(parseISO(rfi.due_date));
+      } catch {
+        return false;
+      }
+    }).length;
     
     const rfiScore = Math.max(0, 100 - (openRFIs * 5) - (overdueRFIs * 15));
     totalScore += rfiScore * (weights.rfi / 100);

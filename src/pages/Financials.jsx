@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,48 +19,61 @@ export default function Financials() {
   const [selectedProject, setSelectedProject] = useState('');
   const { can } = usePermissions();
 
-  const { data: projects = [] } = useQuery({
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
+
+  const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name')
   });
 
+  // Filter projects by user role
+  const projects = React.useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'admin') return allProjects;
+    return allProjects.filter(p => 
+      p.project_manager === currentUser.email || 
+      p.superintendent === currentUser.email ||
+      (p.assigned_users && p.assigned_users.includes(currentUser.email))
+    );
+  }, [currentUser, allProjects]);
+
   const { data: budgetLines = [] } = useQuery({
     queryKey: ['financials', selectedProject],
-    queryFn: () => selectedProject ?
-    base44.entities.Financial.filter({ project_id: selectedProject }) :
-    base44.entities.Financial.list(),
+    queryFn: () => base44.entities.Financial.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', selectedProject],
-    queryFn: () => selectedProject ?
-    base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date') :
-    base44.entities.Expense.list('-expense_date'),
+    queryFn: () => base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date'),
     enabled: !!selectedProject
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', selectedProject],
-    queryFn: () => selectedProject ?
-    base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end') :
-    base44.entities.Invoice.list('-period_end'),
+    queryFn: () => base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end'),
     enabled: !!selectedProject
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', selectedProject],
-    queryFn: () => selectedProject ?
-    base44.entities.SOVItem.filter({ project_id: selectedProject }) :
-    base44.entities.SOVItem.list(),
+    queryFn: () => base44.entities.SOVItem.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', selectedProject],
-    queryFn: () => selectedProject ?
-    base44.entities.ChangeOrder.filter({ project_id: selectedProject }) :
-    base44.entities.ChangeOrder.list(),
+    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: selectedProject }),
+    enabled: !!selectedProject
+  });
+
+  const { data: estimatedCosts = [] } = useQuery({
+    queryKey: ['etc', selectedProject],
+    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
@@ -177,7 +190,7 @@ export default function Financials() {
 
         {/* ETC Manager */}
         <div className="mt-6">
-          <ETCManager projectId={selectedProject} expenses={expenses} />
+          <ETCManager projectId={selectedProject} expenses={expenses} estimatedCosts={estimatedCosts} />
         </div>
       </div>
     </div>

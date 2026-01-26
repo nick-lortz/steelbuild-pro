@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataTable from '@/components/ui/DataTable';
-import { Edit2, Plus, Calendar } from 'lucide-react';
+import { Edit2, Plus, Calendar, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import * as backend from '../services/backend';
 
@@ -54,6 +54,17 @@ export default function ETCManager({ projectId, expenses = [] }) {
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || 'Failed to update ETC');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => backend.deleteETC(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['etc'] });
+      toast.success('ETC deleted');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to delete ETC');
     }
   });
 
@@ -199,13 +210,31 @@ export default function ETCManager({ projectId, expenses = [] }) {
       header: '',
       accessor: 'actions',
       render: (row) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => row.etc ? handleEdit(row.etc) : handleEdit({ category: row.category, estimated_remaining_cost: 0 })}
-        >
-          <Edit2 size={14} />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => row.etc ? handleEdit(row.etc) : handleEdit({ category: row.category, estimated_remaining_cost: 0 })}
+            title="Edit ETC"
+          >
+            <Edit2 size={14} />
+          </Button>
+          {row.etc && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                if (window.confirm(`⚠️ Delete ETC for ${row.category}?\n\nThis will remove the estimate. Actual costs remain. This cannot be undone.`)) {
+                  deleteMutation.mutate(row.etc.id);
+                }
+              }}
+              className="text-red-400 hover:text-red-300"
+              title="Delete ETC"
+            >
+              <Trash2 size={14} />
+            </Button>
+          )}
+        </div>
       )
     }
   ];

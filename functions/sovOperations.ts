@@ -12,10 +12,47 @@ Deno.serve(async (req) => {
 
     switch (operation) {
       case 'create':
+        // Verify user has access to the project
+        const createProjects = await base44.asServiceRole.entities.Project.filter({ id: data.project_id });
+        if (!createProjects.length) {
+          return Response.json({ error: 'Project not found' }, { status: 404 });
+        }
+        
+        const createProject = createProjects[0];
+        const createAccess = user.role === 'admin' || 
+          createProject.project_manager === user.email || 
+          createProject.superintendent === user.email ||
+          (createProject.assigned_users && createProject.assigned_users.includes(user.email));
+
+        if (!createAccess) {
+          return Response.json({ error: 'Access denied to this project' }, { status: 403 });
+        }
+
         const created = await base44.asServiceRole.entities.SOVItem.create(data);
         return Response.json({ success: true, data: created });
 
       case 'update':
+        // Get SOV item to verify access
+        const updateItems = await base44.asServiceRole.entities.SOVItem.filter({ id: data.id });
+        if (!updateItems.length) {
+          return Response.json({ error: 'SOV item not found' }, { status: 404 });
+        }
+
+        const updateProjects = await base44.asServiceRole.entities.Project.filter({ id: updateItems[0].project_id });
+        if (!updateProjects.length) {
+          return Response.json({ error: 'Project not found' }, { status: 404 });
+        }
+        
+        const updateProject = updateProjects[0];
+        const updateAccess = user.role === 'admin' || 
+          updateProject.project_manager === user.email || 
+          updateProject.superintendent === user.email ||
+          (updateProject.assigned_users && updateProject.assigned_users.includes(user.email));
+
+        if (!updateAccess) {
+          return Response.json({ error: 'Access denied to this project' }, { status: 403 });
+        }
+
         // Check if item has approved invoices
         const allInvoices = await base44.asServiceRole.entities.Invoice.list();
         const approvedInvoiceIds = new Set(
@@ -44,9 +81,30 @@ Deno.serve(async (req) => {
         return Response.json({ success: true });
 
       case 'delete':
+        // Get SOV item to verify access
+        const deleteItems = await base44.asServiceRole.entities.SOVItem.filter({ id: data.id });
+        if (!deleteItems.length) {
+          return Response.json({ error: 'SOV item not found' }, { status: 404 });
+        }
+
+        const deleteProjects = await base44.asServiceRole.entities.Project.filter({ id: deleteItems[0].project_id });
+        if (!deleteProjects.length) {
+          return Response.json({ error: 'Project not found' }, { status: 404 });
+        }
+        
+        const deleteProject = deleteProjects[0];
+        const deleteAccess = user.role === 'admin' || 
+          deleteProject.project_manager === user.email || 
+          deleteProject.superintendent === user.email ||
+          (deleteProject.assigned_users && deleteProject.assigned_users.includes(user.email));
+
+        if (!deleteAccess) {
+          return Response.json({ error: 'Access denied to this project' }, { status: 403 });
+        }
+
         // FREEZE: Cannot delete SOV items if any approved invoices exist
         const invoices = await base44.asServiceRole.entities.Invoice.filter({ 
-          project_id: data.project_id 
+          project_id: deleteItems[0].project_id 
         });
         const hasApprovedInvoices = invoices.some(inv => 
           inv.status === 'approved' || inv.status === 'paid'

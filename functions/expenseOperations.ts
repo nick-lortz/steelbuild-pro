@@ -12,10 +12,20 @@ Deno.serve(async (req) => {
 
     switch (operation) {
       case 'create':
-        // Validate project exists
+        // Validate project exists and user has access
         const projects = await base44.asServiceRole.entities.Project.filter({ id: data.project_id });
         if (projects.length === 0) {
           return Response.json({ error: 'Invalid project_id' }, { status: 400 });
+        }
+
+        const project = projects[0];
+        const hasAccess = user.role === 'admin' || 
+          project.project_manager === user.email || 
+          project.superintendent === user.email ||
+          (project.assigned_users && project.assigned_users.includes(user.email));
+
+        if (!hasAccess) {
+          return Response.json({ error: 'Access denied to this project' }, { status: 403 });
         }
 
         // Create expense
@@ -48,6 +58,22 @@ Deno.serve(async (req) => {
           return Response.json({ error: 'Expense not found' }, { status: 404 });
         }
         const oldExpense = oldExpenses[0];
+
+        // Verify user has access to the project
+        const updateProjects = await base44.asServiceRole.entities.Project.filter({ id: oldExpense.project_id });
+        if (!updateProjects.length) {
+          return Response.json({ error: 'Project not found' }, { status: 404 });
+        }
+        
+        const updateProject = updateProjects[0];
+        const updateAccess = user.role === 'admin' || 
+          updateProject.project_manager === user.email || 
+          updateProject.superintendent === user.email ||
+          (updateProject.assigned_users && updateProject.assigned_users.includes(user.email));
+
+        if (!updateAccess) {
+          return Response.json({ error: 'Access denied to this project' }, { status: 403 });
+        }
 
         // FREEZE: Cannot modify paid expenses
         if (oldExpense.payment_status === 'paid' && data.updates.amount !== undefined) {
@@ -84,6 +110,22 @@ Deno.serve(async (req) => {
           return Response.json({ error: 'Expense not found' }, { status: 404 });
         }
         const expense = expenseToDelete[0];
+
+        // Verify user has access to the project
+        const deleteProjects = await base44.asServiceRole.entities.Project.filter({ id: expense.project_id });
+        if (!deleteProjects.length) {
+          return Response.json({ error: 'Project not found' }, { status: 404 });
+        }
+        
+        const deleteProject = deleteProjects[0];
+        const deleteAccess = user.role === 'admin' || 
+          deleteProject.project_manager === user.email || 
+          deleteProject.superintendent === user.email ||
+          (deleteProject.assigned_users && deleteProject.assigned_users.includes(user.email));
+
+        if (!deleteAccess) {
+          return Response.json({ error: 'Access denied to this project' }, { status: 403 });
+        }
 
         // FREEZE: Cannot delete paid expenses
         if (expense.payment_status === 'paid') {

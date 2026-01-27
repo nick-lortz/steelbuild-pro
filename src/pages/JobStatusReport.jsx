@@ -89,6 +89,9 @@ export default function JobStatusReport() {
     const actualCost = expenses
       .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
       .reduce((sum, e) => sum + (e.amount || 0), 0);
+    // Committed + actual costs for risk assessment
+    const committedCosts = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const costRisk = committedCosts - actualCost;
     const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
     const estimatedCostAtCompletion = percentComplete > 0 
       ? (actualCost / percentComplete) * 100 
@@ -104,6 +107,8 @@ export default function JobStatusReport() {
       billedToDate,
       overUnderBilled,
       actualCost,
+      committedCosts,
+      costRisk,
       estimatedCostAtCompletion,
       projectedProfit,
       projectedMargin,
@@ -457,6 +462,16 @@ export default function JobStatusReport() {
             </div>
             <p className="text-xs text-muted-foreground">Actual Cost</p>
             <p className="text-lg font-bold text-red-400">${financialSummary.actualCost.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+
+        <Card className={financialSummary.costRisk > 0 ? 'bg-amber-500/10 border-amber-500/30' : ''}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-1">
+              <AlertTriangle size={14} className={financialSummary.costRisk > 0 ? 'text-amber-400' : 'text-green-400'} />
+            </div>
+            <p className="text-xs text-muted-foreground">Cost at Risk</p>
+            <p className={`text-lg font-bold ${financialSummary.costRisk > 0 ? 'text-amber-400' : 'text-green-400'}`}>${financialSummary.costRisk.toLocaleString()}</p>
           </CardContent>
         </Card>
 

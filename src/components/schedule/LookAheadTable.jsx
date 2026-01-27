@@ -1,0 +1,216 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import StatusBadge from '@/components/ui/StatusBadge';
+import { FileText, MessageSquareWarning, Wrench, AlertCircle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+
+export default function LookAheadTable({ activities, resources, users, drawingSets, rfis, onActivityClick, onUpdateActivity }) {
+  const getConstraints = (activity) => {
+    const constraints = [];
+
+    if (activity.linked_drawing_ids?.length > 0) {
+      const pendingDrawings = drawingSets.filter(ds => 
+        activity.linked_drawing_ids.includes(ds.id) && ds.status !== 'FFF'
+      );
+      if (pendingDrawings.length > 0) {
+        constraints.push({
+          type: 'drawing',
+          count: pendingDrawings.length,
+          label: `${pendingDrawings.length} drawing${pendingDrawings.length > 1 ? 's' : ''} not FFF`
+        });
+      }
+    }
+
+    if (activity.linked_rfi_ids?.length > 0) {
+      const openRFIs = rfis.filter(rfi => 
+        activity.linked_rfi_ids.includes(rfi.id) && rfi.status !== 'answered'
+      );
+      if (openRFIs.length > 0) {
+        constraints.push({
+          type: 'rfi',
+          count: openRFIs.length,
+          label: `${openRFIs.length} open RFI${openRFIs.length > 1 ? 's' : ''}`
+        });
+      }
+    }
+
+    if (activity.constraint_notes) {
+      constraints.push({
+        type: 'note',
+        label: activity.constraint_notes
+      });
+    }
+
+    return constraints;
+  };
+
+  const columns = [
+    {
+      header: 'Activity',
+      accessor: 'name',
+      render: (row) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{row.name}</span>
+            {row.is_critical && (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                CRITICAL
+              </Badge>
+            )}
+            {row.is_milestone && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-500/20 text-purple-400 border-purple-500/30">
+                Milestone
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-zinc-500 capitalize">{row.phase} • {row.activity_type}</p>
+        </div>
+      )
+    },
+    {
+      header: 'Start',
+      accessor: 'start_date',
+      render: (row) => (
+        <span className="text-sm">{format(parseISO(row.start_date), 'MMM d, yyyy')}</span>
+      )
+    },
+    {
+      header: 'End',
+      accessor: 'end_date',
+      render: (row) => (
+        <span className="text-sm">{format(parseISO(row.end_date), 'MMM d, yyyy')}</span>
+      )
+    },
+    {
+      header: 'Resources',
+      accessor: 'resource_ids',
+      render: (row) => {
+        const assignedResources = resources.filter(r => 
+          (row.resource_ids || []).includes(r.id)
+        );
+        return (
+          <div className="flex flex-wrap gap-1">
+            {assignedResources.length > 0 ? (
+              assignedResources.slice(0, 2).map(r => (
+                <Badge key={r.id} variant="outline" className="text-[10px] px-1.5 py-0">
+                  {r.name}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-xs text-zinc-500">None</span>
+            )}
+            {assignedResources.length > 2 && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                +{assignedResources.length - 2}
+              </Badge>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Constraints',
+      accessor: 'constraints',
+      render: (row) => {
+        const constraints = getConstraints(row);
+        return (
+          <div className="flex flex-wrap gap-1">
+            {constraints.length === 0 ? (
+              <span className="text-xs text-zinc-500">None</span>
+            ) : (
+              constraints.map((c, idx) => (
+                <div key={idx} className="flex items-center gap-1">
+                  {c.type === 'drawing' && <FileText size={12} className="text-blue-400" />}
+                  {c.type === 'rfi' && <MessageSquareWarning size={12} className="text-amber-400" />}
+                  {c.type === 'note' && <AlertCircle size={12} className="text-zinc-500" />}
+                  <span className="text-[10px] text-zinc-400">{c.label}</span>
+                </div>
+              ))
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Progress',
+      accessor: 'progress_percent',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 max-w-[80px]">
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500 transition-all"
+                style={{ width: `${row.progress_percent || 0}%` }}
+              />
+            </div>
+          </div>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            value={row.progress_percent || 0}
+            onChange={(e) => {
+              const val = parseInt(e.target.value) || 0;
+              if (val >= 0 && val <= 100) {
+                onUpdateActivity(row.id, { progress_percent: val });
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-14 h-7 text-xs bg-zinc-800 border-zinc-700 text-center"
+          />
+        </div>
+      )
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      render: (row) => <StatusBadge status={row.status} />
+    }
+  ];
+
+  return (
+    <Card className="bg-zinc-900 border-zinc-800">
+      <CardHeader>
+        <CardTitle className="text-lg">Look-Ahead Activities ({activities.length})</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {activities.length === 0 ? (
+          <div className="text-center py-12 text-zinc-500">
+            <p>No activities match current filters</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-zinc-800">
+                  {columns.map((col, idx) => (
+                    <th key={idx} className="text-left py-3 px-4 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                      {col.header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {activities.map(activity => (
+                  <tr
+                    key={activity.id}
+                    onClick={() => onActivityClick(activity)}
+                    className="border-b border-zinc-800 hover:bg-zinc-800/50 cursor-pointer transition-colors"
+                  >
+                    {columns.map((col, idx) => (
+                      <td key={idx} className="py-3 px-4">
+                        {col.render(activity)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

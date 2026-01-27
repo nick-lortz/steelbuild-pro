@@ -31,7 +31,6 @@ export default function JobStatusReport({ sovItems = [], expenses = [], changeOr
       .reduce((sum, e) => sum + (e.amount || 0), 0);
 
     // Estimated Cost at Completion (against total contract not just original value)
-    const totalContract = contractValue + (changeOrders.filter(co => co.status === 'approved').reduce((sum, co) => sum + (co.cost_impact || 0), 0) || 0);
     const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
     const estimatedCostAtCompletion = percentComplete > 0 
       ? (costToDate / percentComplete) * 100 

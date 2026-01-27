@@ -19,6 +19,8 @@ import { toast } from '@/components/ui/notifications';
 import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
+import PhaseGroupedView from '@/components/schedule/PhaseGroupedView';
+import TimelineView from '@/components/schedule/TimelineView';
 import ExportButton from '@/components/shared/ExportButton';
 
 export default function Schedule() {
@@ -31,7 +33,7 @@ export default function Schedule() {
   const [editingTask, setEditingTask] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
-  const [viewMode, setViewMode] = useState('list'); // 'list', 'gantt', 'calendar'
+  const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar'
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
@@ -385,21 +387,27 @@ export default function Schedule() {
 
             {/* View Mode */}
             <div className="flex gap-1 border border-zinc-800 p-1">
-              {['list', 'gantt', 'calendar'].map((mode) => (
+              {[
+                { value: 'phase', label: 'PHASE' },
+                { value: 'timeline', label: 'TIMELINE' },
+                { value: 'list', label: 'LIST' },
+                { value: 'gantt', label: 'GANTT' },
+                { value: 'calendar', label: 'CAL' }
+              ].map(({ value, label }) => (
                 <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
+                  key={value}
+                  onClick={() => setViewMode(value)}
                   className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                    viewMode === mode ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
+                    viewMode === value ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
                   }`}
                 >
-                  {mode}
+                  {label}
                 </button>
               ))}
             </div>
 
-            {/* Status Filter (for list view) */}
-            {viewMode === 'list' && (
+            {/* Status Filter (for list view only) */}
+            {(viewMode === 'list' || viewMode === 'phase' || viewMode === 'timeline') && (
               <div className="flex gap-1 border border-zinc-800 p-1">
                 {[
                   { value: 'all', label: 'ALL' },
@@ -454,6 +462,17 @@ export default function Schedule() {
               <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
             </div>
           </div>
+        ) : viewMode === 'phase' ? (
+          <PhaseGroupedView
+            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            workPackages={workPackages}
+            onTaskClick={handleTaskClick}
+          />
+        ) : viewMode === 'timeline' ? (
+          <TimelineView
+            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            onTaskClick={handleTaskClick}
+          />
         ) : viewMode === 'calendar' ? (
           <CalendarView
             tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}

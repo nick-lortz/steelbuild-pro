@@ -25,7 +25,8 @@ import {
   SheetHeader,
   SheetTitle } from
 "@/components/ui/sheet";
-import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet, Trash2, TrendingUp } from 'lucide-react';
+import { differenceInDays, parseISO } from 'date-fns';
 import CSVUpload from '@/components/shared/CSVUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from '@/components/ui/PageHeader';
@@ -34,6 +35,8 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import BulkRFICreator from '@/components/rfis/BulkRFICreator';
 import RFIKPIDashboard from '@/components/rfis/RFIKPIDashboard';
 import RFIAgingDashboard from '@/components/rfis/RFIAgingDashboard';
+import RFITrackingDashboard from '@/components/rfis/RFITrackingDashboard';
+import RFIResponseTracker from '@/components/rfis/RFIResponseTracker';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -55,14 +58,22 @@ const initialFormState = {
   status: 'draft',
   priority: 'medium',
   assigned_to: '',
+  response_owner: '',
   submitted_date: '',
   due_date: '',
   response_date: '',
+  closed_date: '',
+  days_to_respond: 5,
   linked_drawing_set_id: '',
   linked_change_order_id: '',
   linked_task_ids: [],
+  estimated_cost_impact: 0,
+  actual_cost_impact: 0,
+  schedule_impact_days: 0,
   cost_impact: false,
-  schedule_impact: false
+  schedule_impact: false,
+  escalation_flag: false,
+  resolution_notes: ''
 };
 
 export default function RFIs() {

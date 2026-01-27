@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, X } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
+import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 
 export default function ActivityForm({ 
   projectId, 
@@ -192,27 +193,16 @@ export default function ActivityForm({
 
       {/* Resources */}
       {resources.length > 0 && (
-        <Card className="bg-zinc-800/50 border-zinc-700">
-          <CardContent className="p-3">
-            <Label className="text-xs text-zinc-400 mb-2 block">Assigned Resources</Label>
-            <div className="flex flex-wrap gap-2">
-              {resources.slice(0, 10).map(r => (
-                <Badge
-                  key={r.id}
-                  variant="outline"
-                  className={`cursor-pointer text-xs ${
-                    (formData.resource_ids || []).includes(r.id)
-                      ? 'bg-amber-500/20 border-amber-500/50'
-                      : 'border-zinc-600'
-                  }`}
-                  onClick={() => toggleArrayItem('resource_ids', r.id)}
-                >
-                  {r.name}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-2">
+          <Label>Assigned Resources</Label>
+          <QuickResourceAssign
+            selectedResourceIds={formData.resource_ids || []}
+            resources={resources}
+            onChange={(ids) => handleChange('resource_ids', ids)}
+            placeholder="Assign resources..."
+            triggerClassName="w-full bg-zinc-800 border-zinc-700"
+          />
+        </div>
       )}
 
       {/* Linked Drawings */}

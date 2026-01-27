@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import AITaskHelper from './AITaskHelper';
 import DependencyConfigurator from './DependencyConfigurator';
 import TaskTemplateManager from './TaskTemplateManager';
+import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import { toast } from '@/components/ui/notifications';
 
 export default function TaskForm({
@@ -677,10 +678,9 @@ export default function TaskForm({
             type="button"
             size="sm"
             variant="outline"
-            onClick={handleAssignToMe} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
-
-
-
+            onClick={handleAssignToMe}
+            className="border-zinc-700"
+          >
             <User size={14} className="mr-1" />
             Assign to Me
           </Button>
@@ -688,62 +688,24 @@ export default function TaskForm({
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Labor / Subcontractors</Label>
-            <Select onValueChange={(v) => toggleArrayItem('assigned_resources', v)}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Assign labor/subs" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {laborResources.map((r) =>
-                <SelectItem key={r.id} value={r.id} className="text-white">
-                    {r.name} {r.type === 'subcontractor' ? '(Sub)' : ''}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2">
-              {(formData.assigned_resources || []).map((id) => {
-                const r = resources.find((res) => res.id === id);
-                return r ?
-                <Badge key={id} variant="outline" className="gap-1 bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    {r.name} {r.type === 'subcontractor' && '(Sub)'}
-                    <X
-                    size={12}
-                    className="cursor-pointer"
-                    onClick={() => toggleArrayItem('assigned_resources', id)} />
-
-                  </Badge> :
-                null;
-              })}
-            </div>
+            <QuickResourceAssign
+              selectedResourceIds={formData.assigned_resources || []}
+              resources={laborResources}
+              onChange={(ids) => handleChange('assigned_resources', ids)}
+              placeholder="Assign labor/subs..."
+              triggerClassName="w-full bg-zinc-800 border-zinc-700"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Equipment</Label>
-            <Select onValueChange={(v) => toggleArrayItem('assigned_equipment', v)}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Assign equipment" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {equipmentResources.map((r) =>
-                <SelectItem key={r.id} value={r.id} className="text-white">{r.name}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2">
-              {(formData.assigned_equipment || []).map((id) => {
-                const r = resources.find((res) => res.id === id);
-                return r ?
-                <Badge key={id} variant="outline" className="gap-1 bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    {r.name}
-                    <X
-                    size={12}
-                    className="cursor-pointer"
-                    onClick={() => toggleArrayItem('assigned_equipment', id)} />
-
-                  </Badge> :
-                null;
-              })}
-            </div>
+            <QuickResourceAssign
+              selectedResourceIds={formData.assigned_equipment || []}
+              resources={equipmentResources}
+              onChange={(ids) => handleChange('assigned_equipment', ids)}
+              placeholder="Assign equipment..."
+              triggerClassName="w-full bg-zinc-800 border-zinc-700"
+            />
           </div>
         </div>
       </div>

@@ -443,6 +443,7 @@ export default function ChangeOrders() {
               onSubmit={handleSubmit}
               isLoading={updateMutation.isPending}
               isEdit
+              changeOrder={selectedCO}
             />
           </div>
         </SheetContent>

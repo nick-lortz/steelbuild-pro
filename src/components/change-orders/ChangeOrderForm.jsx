@@ -7,10 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, Sparkles, FileText } from 'lucide-react';
+import AIImpactAnalysis from './AIImpactAnalysis';
+import ApprovalWorkflow from './ApprovalWorkflow';
 
-export default function ChangeOrderForm({ formData, setFormData, projects, onProjectChange, onSubmit, isLoading, isEdit }) {
+export default function ChangeOrderForm({ formData, setFormData, projects, onProjectChange, onSubmit, isLoading, isEdit, changeOrder }) {
   const [sovAllocations, setSovAllocations] = useState(formData.sov_allocations || []);
+  const [activeTab, setActiveTab] = useState('details');
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', formData.project_id],
@@ -49,8 +53,44 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
     onSubmit(e);
   };
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
+
+  const handleAIAnalysisComplete = (analysis) => {
+    // Store AI analysis in form data
+    setFormData(prev => ({ 
+      ...prev, 
+      ai_analysis: analysis,
+      cost_impact: prev.cost_impact || analysis.predicted_cost_impact?.toString() || '',
+      schedule_impact_days: prev.schedule_impact_days || analysis.predicted_schedule_impact?.toString() || ''
+    }));
+  };
+
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <TabsList className="bg-zinc-800 border-zinc-700 w-full">
+        <TabsTrigger value="details" className="flex-1">
+          <FileText size={14} className="mr-2" />
+          Details
+        </TabsTrigger>
+        {isEdit && changeOrder && (
+          <>
+            <TabsTrigger value="ai" className="flex-1">
+              <Sparkles size={14} className="mr-2" />
+              AI Analysis
+            </TabsTrigger>
+            <TabsTrigger value="approval" className="flex-1">
+              Approval
+            </TabsTrigger>
+          </>
+        )}
+      </TabsList>
+
+      <TabsContent value="details">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Project *</Label>
@@ -278,5 +318,29 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
         </Button>
       </div>
     </form>
+      </TabsContent>
+
+      {isEdit && changeOrder && (
+        <>
+          <TabsContent value="ai">
+            <AIImpactAnalysis
+              changeOrderData={changeOrder}
+              projectId={changeOrder.project_id}
+              onAnalysisComplete={handleAIAnalysisComplete}
+            />
+          </TabsContent>
+
+          <TabsContent value="approval">
+            <ApprovalWorkflow
+              changeOrder={changeOrder}
+              currentUser={currentUser}
+              onApprovalComplete={() => {
+                // Refresh data handled by parent
+              }}
+            />
+          </TabsContent>
+        </>
+      )}
+    </Tabs>
   );
 }

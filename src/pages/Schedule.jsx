@@ -12,6 +12,7 @@ import TaskForm from '@/components/schedule/TaskForm';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import WeatherWidget from '@/components/integrations/WeatherWidget';
 import BulkActions from '@/components/shared/BulkActions';
+import BulkResourceAssign from '@/components/resources/BulkResourceAssign';
 import ViewConfiguration from '@/components/shared/ViewConfiguration';
 import { useKeyboardShortcuts } from '@/components/shared/hooks/useKeyboardShortcuts';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
@@ -36,6 +37,7 @@ export default function Schedule() {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar'
   const [showAI, setShowAI] = useState(false);
+  const [showBulkAssign, setShowBulkAssign] = useState(false);
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
@@ -309,6 +311,33 @@ export default function Schedule() {
     toast.success(`${selectedTasks.length} tasks updated`);
   };
 
+  const handleBulkResourceAssign = (resourceIds) => {
+    selectedTasks.forEach(taskId => {
+      const task = allScheduleTasks.find(t => t.id === taskId);
+      if (task) {
+        const currentResources = task.assigned_resources || [];
+        const currentEquipment = task.assigned_equipment || [];
+        const laborIds = resourceIds.filter(rid => {
+          const r = resources.find(res => res.id === rid);
+          return r && (r.type === 'labor' || r.type === 'subcontractor');
+        });
+        const equipIds = resourceIds.filter(rid => {
+          const r = resources.find(res => res.id === rid);
+          return r && r.type === 'equipment';
+        });
+        
+        updateMutation.mutate({ 
+          id: taskId, 
+          data: { 
+            assigned_resources: [...new Set([...currentResources, ...laborIds])],
+            assigned_equipment: [...new Set([...currentEquipment, ...equipIds])]
+          } 
+        });
+      }
+    });
+    toast.success(`Resources assigned to ${selectedTasks.length} tasks`);
+  };
+
   const loadView = (filters) => {
     if (filters.projectFilter && filters.projectFilter !== 'all') {
       setActiveProjectId(filters.projectFilter);
@@ -543,10 +572,21 @@ export default function Schedule() {
         selectedCount={selectedTasks.length}
         onClear={() => setSelectedTasks([])}
         actions={[
+          { label: 'Assign Resources', onClick: () => setShowBulkAssign(true) },
           { label: 'Complete', onClick: () => bulkUpdateStatus('completed') },
           { label: 'In Progress', onClick: () => bulkUpdateStatus('in_progress') },
           { label: 'Cancel', variant: 'ghost', onClick: () => setSelectedTasks([]) }
         ]}
+      />
+
+      {/* Bulk Resource Assignment */}
+      <BulkResourceAssign
+        open={showBulkAssign}
+        onOpenChange={setShowBulkAssign}
+        selectedItems={allScheduleTasks.filter(t => selectedTasks.includes(t.id))}
+        resources={resources}
+        onAssign={handleBulkResourceAssign}
+        itemType="tasks"
       />
 
       {/* Floating Action Button */}

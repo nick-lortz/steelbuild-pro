@@ -530,7 +530,7 @@ export default function ResourceManagement() {
             )}
 
             {/* Charts */}
-            {resourceMetrics && resourceMetrics.typeDistribution.length > 0 && (
+            {resourceMetrics && resourceMetrics.typeDistribution && resourceMetrics.typeDistribution.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="bg-zinc-900 border-zinc-800">
                   <CardHeader>

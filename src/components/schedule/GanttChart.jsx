@@ -879,6 +879,9 @@ export default function GanttChart({
                           </React.Fragment>
                           );
                           })}
+                          </div>
+                          );
+                          })}
 
                           {/* Completed Tasks Section */}
                           {completedTasks.length > 0 && (

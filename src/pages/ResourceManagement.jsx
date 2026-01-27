@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, Zap, BarChart3 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, Zap, BarChart3, UserPlus } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, isAfter, isBefore, isWithinInterval, parseISO } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -17,11 +18,17 @@ import ResourceLeveling from '@/components/resources/ResourceLeveling';
 import ResourceForecast from '@/components/resources/ResourceForecast';
 import ResourceCapacityPlanner from '@/components/resources/ResourceCapacityPlanner';
 import SkillMatrixView from '@/components/resources/SkillMatrixView';
+import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
+import { toast } from '@/components/ui/notifications';
+import { cn } from '@/lib/utils';
 
 export default function ResourceManagement() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedTaskForAssign, setSelectedTaskForAssign] = useState(null);
 
   // Fetch data
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
@@ -54,9 +61,27 @@ export default function ResourceManagement() {
     staleTime: 5 * 60 * 1000
   });
 
+  // Quick assign mutation
+  const assignResourcesMutation = useMutation({
+    mutationFn: async ({ taskId, resourceIds, equipmentIds }) => {
+      const task = tasks.find(t => t.id === taskId);
+      return await base44.entities.Task.update(taskId, {
+        assigned_resources: resourceIds || [],
+        assigned_equipment: equipmentIds || []
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setAssignDialogOpen(false);
+      setSelectedTaskForAssign(null);
+      toast.success('Resources assigned');
+    },
+    onError: () => toast.error('Assignment failed')
+  });
+
   // Calculate resource utilization and allocation
   const resourceMetrics = useMemo(() => {
-    if (!resources.length || !tasks.length) return null;
+    if (!resources.length) return null;
 
     const today = new Date();
     const metrics = {
@@ -92,15 +117,19 @@ export default function ResourceManagement() {
         (task.assigned_resources || []).includes(resource.id) ||
         (task.assigned_equipment || []).includes(resource.id);
 
-        if (!isAssigned || !task.start_date || !task.end_date) return false;
+        if (!isAssigned) return false;
+        if (!task.start_date || !task.end_date) return false;
 
-        const taskStart = new Date(task.start_date);
-        const taskEnd = new Date(task.end_date);
-
-        // Check if task is active or upcoming (within 30 days)
-        const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-        return task.status !== 'completed' && task.status !== 'cancelled' &&
-        !isAfter(taskStart, thirtyDaysOut);
+        try {
+          const taskStart = parseISO(task.start_date);
+          const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          
+          return task.status !== 'completed' && 
+                 task.status !== 'cancelled' &&
+                 !isAfter(taskStart, thirtyDaysOut);
+        } catch {
+          return false;
+        }
       });
 
       const activeTaskCount = resourceTasks.filter((t) => t.status === 'in_progress').length;
@@ -201,8 +230,17 @@ export default function ResourceManagement() {
       const matchesStatus = statusFilter === 'all' || resource.status === statusFilter;
 
       return matchesSearch && matchesType && matchesStatus;
-    });
+    }).sort((a, b) => b.utilization - a.utilization);
   }, [resourceMetrics, searchTerm, typeFilter, statusFilter]);
+
+  // Unassigned tasks needing resources
+  const unassignedTasks = useMemo(() => {
+    return tasks.filter(t => 
+      t.status === 'not_started' &&
+      (!t.assigned_resources || t.assigned_resources.length === 0) &&
+      (!t.assigned_equipment || t.assigned_equipment.length === 0)
+    ).slice(0, 20);
+  }, [tasks]);
 
   if (resourcesLoading) {
     return (
@@ -215,9 +253,9 @@ export default function ResourceManagement() {
 
   }
 
-  if (!resourceMetrics) {
+  if (!resourceMetrics && resources.length === 0) {
     return (
-      <div>
+      <div className="min-h-screen bg-black p-6">
         <PageHeader title="Resource Management" subtitle="Manage and monitor resource utilization" showBackButton={false} />
         <EmptyState
           icon={Users}
@@ -225,63 +263,107 @@ export default function ResourceManagement() {
           description="Add resources to track utilization and allocation across projects."
           actionLabel="Manage Resources"
           actionPage="Resources" />
-
-      </div>);
-
+      </div>
+    );
   }
 
   return (
-    <div>
-      <PageHeader
-        title="Resource Management"
-        subtitle="Monitor allocation, leveling, and forecasting"
-        showBackButton={false} />
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Resource Management</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">
+                {resources.length} RESOURCES • {resourceMetrics?.assigned || 0} ASSIGNED
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-
-      <Tabs defaultValue="capacity" className="space-y-6">
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
+        <Tabs defaultValue="assign" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="capacity">
-            <TrendingUp size={14} className="mr-2" />
-            Capacity Planning
-          </TabsTrigger>
-          <TabsTrigger value="skills">
-            <Users size={14} className="mr-2" />
-            Skill Matrix
+          <TabsTrigger value="assign">
+            <UserPlus size={14} className="mr-2" />
+            Quick Assign
           </TabsTrigger>
           <TabsTrigger value="overview">
             <BarChart3 size={14} className="mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="leveling">
-            <Zap size={14} className="mr-2" />
-            Resource Leveling
-          </TabsTrigger>
-          <TabsTrigger value="forecast">
+          <TabsTrigger value="capacity">
             <TrendingUp size={14} className="mr-2" />
-            Forecast
+            Capacity
+          </TabsTrigger>
+          <TabsTrigger value="skills">
+            <Users size={14} className="mr-2" />
+            Skills
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="capacity" className="space-y-6">
-          <ResourceCapacityPlanner
-            projects={projects}
-            resources={resources}
-            tasks={tasks}
-            resourceAllocations={allocations}
-          />
-        </TabsContent>
-
-        <TabsContent value="skills" className="space-y-6">
-          <SkillMatrixView
-            resources={resources}
-            tasks={tasks}
-            projects={projects}
-          />
+        {/* Quick Assign Tab */}
+        <TabsContent value="assign" className="space-y-4">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardHeader>
+              <CardTitle className="text-base uppercase tracking-wider">Unassigned Tasks Needing Resources</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {unassignedTasks.length === 0 ? (
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="All Tasks Assigned"
+                  description="No tasks currently need resource assignment"
+                  variant="subtle"
+                />
+              ) : (
+                <div className="space-y-2">
+                  {unassignedTasks.map(task => {
+                    const project = projects.find(p => p.id === task.project_id);
+                    return (
+                      <div key={task.id} className="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800 rounded hover:border-zinc-700 transition-colors">
+                        <div className="flex-1">
+                          <p className="font-semibold text-white text-sm">{task.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              {project?.project_number || 'Unknown'}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
+                              {task.phase}
+                            </Badge>
+                            {task.start_date && (
+                              <span className="text-[10px] text-zinc-500">
+                                Start: {format(parseISO(task.start_date), 'MMM d')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTaskForAssign(task);
+                            setAssignDialogOpen(true);
+                          }}
+                          className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase"
+                        >
+                          <UserPlus size={14} className="mr-1" />
+                          Assign
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {resourceMetrics && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -346,8 +428,10 @@ export default function ResourceManagement() {
         </Card>
       </div>
 
+      )}
+
       {/* Alerts Section */}
-      {(resourceMetrics.overallocated.length > 0 || resourceMetrics.underutilized.length > 0) &&
+      {resourceMetrics && (resourceMetrics.overallocated.length > 0 || resourceMetrics.underutilized.length > 0) &&
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Overallocated Resources */}
           {resourceMetrics.overallocated.length > 0 &&
@@ -409,8 +493,11 @@ export default function ResourceManagement() {
         </div>
           }
 
+      }
+
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      {resourceMetrics && resourceMetrics.typeDistribution.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Resource Type Distribution */}
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>
@@ -462,9 +549,11 @@ export default function ResourceManagement() {
           </CardContent>
         </Card>
       </div>
+      )}
 
       {/* Utilization Chart */}
-      <Card className="bg-zinc-900 border-zinc-800 mb-8">
+      {resourceMetrics && utilizationChartData.length > 0 && (
+        <Card className="bg-zinc-900 border-zinc-800 mb-8">
         <CardHeader>
           <CardTitle className="text-slate-50 text-lg font-semibold tracking-tight">Resource Utilization (Top 15)</CardTitle>
         </CardHeader>
@@ -488,6 +577,7 @@ export default function ResourceManagement() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
@@ -600,7 +690,109 @@ export default function ResourceManagement() {
       </Card>
         </TabsContent>
 
-        <TabsContent value="leveling">
+        <TabsContent value="capacity" className="space-y-6">
+          {resourceMetrics ? (
+            <ResourceCapacityPlanner
+              projects={projects}
+              resources={resources}
+              tasks={tasks}
+              resourceAllocations={allocations}
+            />
+          ) : (
+            <EmptyState
+              icon={Users}
+              title="No Data Available"
+              description="Add resources and tasks to see capacity planning"
+              variant="subtle"
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="skills" className="space-y-6">
+          <SkillMatrixView
+            resources={resources}
+            tasks={tasks}
+            projects={projects}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Quick Assign Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Assign Resources to Task</DialogTitle>
+          </DialogHeader>
+          {selectedTaskForAssign && (
+            <div className="space-y-4">
+              <div className="p-3 bg-zinc-950 border border-zinc-800 rounded">
+                <p className="font-semibold text-white mb-1">{selectedTaskForAssign.name}</p>
+                <p className="text-xs text-zinc-500">
+                  {projects.find(p => p.id === selectedTaskForAssign.project_id)?.project_number || 'Unknown'} • 
+                  Phase: {selectedTaskForAssign.phase}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">Labor Resources</label>
+                  <QuickResourceAssign
+                    selectedResourceIds={selectedTaskForAssign.assigned_resources || []}
+                    resources={resources.filter(r => r.type === 'labor')}
+                    onChange={(ids) => setSelectedTaskForAssign({
+                      ...selectedTaskForAssign,
+                      assigned_resources: ids
+                    })}
+                    placeholder="Select labor resources..."
+                    triggerClassName="w-full bg-zinc-950 border-zinc-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">Equipment</label>
+                  <QuickResourceAssign
+                    selectedResourceIds={selectedTaskForAssign.assigned_equipment || []}
+                    resources={resources.filter(r => r.type === 'equipment')}
+                    onChange={(ids) => setSelectedTaskForAssign({
+                      ...selectedTaskForAssign,
+                      assigned_equipment: ids
+                    })}
+                    placeholder="Select equipment..."
+                    triggerClassName="w-full bg-zinc-950 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAssignDialogOpen(false);
+                    setSelectedTaskForAssign(null);
+                  }}
+                  className="border-zinc-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => assignResourcesMutation.mutate({
+                    taskId: selectedTaskForAssign.id,
+                    resourceIds: selectedTaskForAssign.assigned_resources || [],
+                    equipmentIds: selectedTaskForAssign.assigned_equipment || []
+                  })}
+                  disabled={assignResourcesMutation.isPending}
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+                >
+                  {assignResourcesMutation.isPending ? 'Assigning...' : 'Assign Resources'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
           <ResourceLeveling
             tasks={tasks}
             resources={resources}

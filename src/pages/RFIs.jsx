@@ -718,17 +718,64 @@ function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs,
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Assigned To</Label>
-        <Input
-          value={formData.assigned_to}
-          onChange={(e) => handleChange('assigned_to', e.target.value)}
-          placeholder="Person responsible for response"
-          className="bg-zinc-800 border-zinc-700" />
+      <div className="grid grid-cols-2 gap-4">
+         <div className="space-y-2">
+           <Label>Assigned To</Label>
+           <Input
+             value={formData.assigned_to}
+             onChange={(e) => handleChange('assigned_to', e.target.value)}
+             placeholder="Gets the answer"
+             className="bg-zinc-800 border-zinc-700" />
+         </div>
+         <div className="space-y-2">
+           <Label>Response Owner</Label>
+           <Input
+             value={formData.response_owner}
+             onChange={(e) => handleChange('response_owner', e.target.value)}
+             placeholder="Provides the answer"
+             className="bg-zinc-800 border-zinc-700" />
+         </div>
+       </div>
 
-      </div>
+       <div className="grid grid-cols-4 gap-3">
+         <div className="space-y-2">
+           <Label>SLA Days</Label>
+           <Input
+             type="number"
+             value={formData.days_to_respond}
+             onChange={(e) => handleChange('days_to_respond', parseInt(e.target.value))}
+             className="bg-zinc-800 border-zinc-700"
+             min="1" />
+         </div>
+         <div className="space-y-2">
+           <Label>Cost Impact $</Label>
+           <Input
+             type="number"
+             value={formData.estimated_cost_impact}
+             onChange={(e) => handleChange('estimated_cost_impact', parseFloat(e.target.value))}
+             className="bg-zinc-800 border-zinc-700"
+             placeholder="0" />
+         </div>
+         <div className="space-y-2">
+           <Label>Schedule Days</Label>
+           <Input
+             type="number"
+             value={formData.schedule_impact_days}
+             onChange={(e) => handleChange('schedule_impact_days', parseFloat(e.target.value))}
+             className="bg-zinc-800 border-zinc-700"
+             placeholder="0" />
+         </div>
+         <div className="space-y-2">
+           <Label>Closed Date</Label>
+           <Input
+             type="date"
+             value={formData.closed_date}
+             onChange={(e) => handleChange('closed_date', e.target.value)}
+             className="bg-zinc-800 border-zinc-700" />
+         </div>
+       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Submitted Date</Label>
           <Input
@@ -795,13 +842,22 @@ function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs,
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label>Resolution Notes</Label>
+        <Textarea
+          value={formData.resolution_notes}
+          onChange={(e) => handleChange('resolution_notes', e.target.value)}
+          rows={3}
+          placeholder="How was this RFI resolved/implemented?"
+          className="bg-zinc-800 border-zinc-700" />
+      </div>
+
       <div className="flex gap-6 py-2">
         <div className="flex items-center gap-2">
           <Checkbox
             id="cost_impact"
             checked={formData.cost_impact}
             onCheckedChange={(checked) => handleChange('cost_impact', checked)} />
-
           <Label htmlFor="cost_impact" className="cursor-pointer">Cost Impact</Label>
         </div>
         <div className="flex items-center gap-2">
@@ -809,8 +865,14 @@ function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs,
             id="schedule_impact"
             checked={formData.schedule_impact}
             onCheckedChange={(checked) => handleChange('schedule_impact', checked)} />
-
           <Label htmlFor="schedule_impact" className="cursor-pointer">Schedule Impact</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="escalation_flag"
+            checked={formData.escalation_flag}
+            onCheckedChange={(checked) => handleChange('escalation_flag', checked)} />
+          <Label htmlFor="escalation_flag" className="cursor-pointer">Escalated</Label>
         </div>
       </div>
 

@@ -51,9 +51,29 @@ export default function ResourceManagement() {
     staleTime: 5 * 60 * 1000
   });
 
-  // Quick assign mutation
+  // Quick assign mutation with validation
   const assignResourcesMutation = useMutation({
     mutationFn: async ({ taskId, resourceIds, equipmentIds }) => {
+      const task = tasks.find(t => t.id === taskId);
+      
+      // Validate resource assignment
+      const validation = await base44.functions.invoke('validateTaskResourceAssignment', {
+        task_id: taskId,
+        resource_ids: resourceIds || [],
+        equipment_ids: equipmentIds || [],
+        task_start_date: task?.start_date,
+        task_end_date: task?.end_date
+      });
+
+      if (!validation.data.valid) {
+        throw new Error(validation.data.errors.join('; '));
+      }
+
+      // Show warnings but allow assignment
+      if (validation.data.warnings && validation.data.warnings.length > 0) {
+        toast.warning(validation.data.warnings.join('; '));
+      }
+
       return await base44.entities.Task.update(taskId, {
         assigned_resources: resourceIds || [],
         assigned_equipment: equipmentIds || []
@@ -65,7 +85,7 @@ export default function ResourceManagement() {
       setSelectedTaskForAssign(null);
       toast.success('Resources assigned');
     },
-    onError: () => toast.error('Assignment failed')
+    onError: (error) => toast.error(error.message || 'Assignment failed')
   });
 
   // Calculate resource utilization and allocation

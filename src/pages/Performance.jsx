@@ -40,8 +40,9 @@ export default function Performance() {
     }).length;
     const onTimeRate = activeProjects.length > 0 ? ((onTimeProjects / activeProjects.length) * 100) : 100;
 
-    const totalBudget = financials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+    const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
     const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    // Positive = under budget, Negative = over budget
     const budgetPerformance = totalBudget > 0 ? ((totalBudget - totalActual) / totalBudget * 100) : 0;
 
     const safetyIncidents = dailyLogs.filter(log => log.safety_incidents).length;
@@ -54,8 +55,9 @@ export default function Performance() {
 
     const projectPerformance = activeProjects.slice(0, 6).map(project => {
       const projectFinancials = financials.filter(f => f.project_id === project.id);
-      const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+      const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      // Positive variance = under budget (good)
       const variance = budget > 0 ? ((budget - actual) / budget * 100) : 0;
       
       return {
@@ -221,9 +223,10 @@ export default function Performance() {
                 <span className="text-xl font-bold text-red-400">
                   {activeProjects.filter(p => {
                     const projectFinancials = financials.filter(f => f.project_id === p.id);
-                    const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+                    const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
                     const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-                    return actual > budget * 0.95;
+                    // At risk if spent >95% of budget
+                    return budget > 0 && actual > budget * 0.95;
                   }).length}
                 </span>
               </div>

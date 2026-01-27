@@ -222,13 +222,12 @@ export default function Reports() {
     const headers = ['Project', 'Project Number', 'Budget', 'Committed', 'Actual', 'Variance', 'Forecast'];
     const rows = selectedProjects.map(project => {
       const projectFinancials = financials.filter(f => f.project_id === project.id);
-      const projectExpenses = expenses.filter(e => e.project_id === project.id && (e.payment_status === 'paid' || e.payment_status === 'approved'));
       
-      const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+      const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const committed = projectFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
-      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0) + 
-                     projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const forecast = projectFinancials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0);
+      // Actual from Financial table (should already include expenses)
+      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      const forecast = projectFinancials.reduce((sum, f) => sum + (f.forecast_amount || actual), 0);
       const variance = budget - actual;
 
       return [
@@ -318,7 +317,7 @@ export default function Reports() {
     const headers = ['Project', 'Project Number', 'Status', 'Budget', 'Actual Costs'];
     const rows = selectedProjects.map(project => {
       const projectFinancials = financials.filter(f => f.project_id === project.id);
-      const budget = projectFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
+      const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
 
       return [

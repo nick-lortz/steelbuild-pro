@@ -96,19 +96,20 @@ export default function EVMDashboardEnhanced({
       }
     });
 
-    // Calculate indices
-    const cpi = ev > 0 && ac > 0 ? ev / ac : 1;
-    const spi = ev > 0 && pv > 0 ? ev / pv : 1;
+    // Calculate indices (handle zero cases properly)
+    const cpi = ac > 0 ? ev / ac : 1;
+    const spi = pv > 0 ? ev / pv : 1;
 
     // Variances
     const cv = ev - ac;
     const sv = ev - pv;
 
     // Forecasts
-    const eac = cpi > 0 ? bac / cpi : bac;
-    const etc = eac - ac;
+    const eac = cpi > 0 && cpi !== 1 ? bac / cpi : bac;
+    const etc = Math.max(0, eac - ac);
     const vac = bac - eac;
-    const tcpi = (bac - ev) / (bac - ac);
+    // TCPI = (Work Remaining) / (Funds Remaining)
+    const tcpi = (bac - ac) > 0 ? (bac - ev) / (bac - ac) : 1;
 
     return {
       bac,

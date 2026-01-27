@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from '@/components/ui/DataTable';
 import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import * as backend from '../services/backend';
 
 export default function SOVManager({ projectId, canEdit }) {
   const queryClient = useQueryClient();
@@ -69,7 +68,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => backend.createSOVItem({ ...data, project_id: projectId }),
+    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
       toast.success('SOV line added');
@@ -80,7 +79,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => backend.updateSOVItem(id, data),
+    mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
     onSuccess: (result, variables) => {
       queryClient.setQueryData(['sov-items', projectId], (old) => {
         if (!old) return old;
@@ -93,7 +92,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => backend.deleteSOVItem(id),
+    mutationFn: (id) => base44.entities.SOVItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
       toast.success('SOV line deleted');

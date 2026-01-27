@@ -367,7 +367,6 @@ export default function Projects() {
           canEdit={can.editProject}
         />
       )}
-      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

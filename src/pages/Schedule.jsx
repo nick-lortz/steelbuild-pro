@@ -21,6 +21,7 @@ import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
 import PhaseGroupedView from '@/components/schedule/PhaseGroupedView';
 import TimelineView from '@/components/schedule/TimelineView';
+import ScheduleAIAssistant from '@/components/schedule/ScheduleAIAssistant';
 import ExportButton from '@/components/shared/ExportButton';
 
 export default function Schedule() {
@@ -34,6 +35,7 @@ export default function Schedule() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar'
+  const [showAI, setShowAI] = useState(false);
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
@@ -356,6 +358,16 @@ export default function Schedule() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAI(!showAI)}
+                disabled={!activeProjectId}
+                className="gap-2"
+              >
+                <span className="text-amber-500">✨</span>
+                AI Assistant
+              </Button>
               <ExportButton
                 data={viewMode === 'list' ? tasks : allScheduleTasks}
                 entityType="tasks"
@@ -448,6 +460,18 @@ export default function Schedule() {
 
       {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* AI Assistant Panel */}
+        {showAI && activeProjectId && (
+          <div className="mb-6">
+            <ScheduleAIAssistant
+              tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+              workPackages={workPackages}
+              project={selectedProject}
+              resources={resources}
+            />
+          </div>
+        )}
+
         {!activeProjectId ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">

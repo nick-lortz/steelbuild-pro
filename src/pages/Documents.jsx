@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
@@ -88,6 +89,9 @@ export default function Documents() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [statusFilter, setStatusFilter] = useState('all');
   const [phaseFilter, setPhaseFilter] = useState('all');
+  const [selectedDocs, setSelectedDocs] = useState([]);
+  const [bulkActing, setBulkActing] = useState(false);
+  const [analyzingDoc, setAnalyzingDoc] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -269,6 +273,64 @@ export default function Documents() {
     }
   };
 
+  const handleAnalyzeDocument = async (doc) => {
+    setAnalyzingDoc(doc.id);
+    try {
+      const { data } = await base44.functions.invoke('analyzeDocumentContent', {
+        document_id: doc.id,
+        file_url: doc.file_url,
+        title: doc.title,
+        current_category: doc.category
+      });
+
+      if (data.auto_applied) {
+        toast.success('AI suggestions applied automatically');
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
+      } else {
+        toast.info(`Suggested: ${data.analysis.suggested_category}, Tags: ${data.analysis.suggested_tags.join(', ')}`);
+      }
+    } catch (error) {
+      toast.error('AI analysis failed');
+    } finally {
+      setAnalyzingDoc(null);
+    }
+  };
+
+  const handleBulkAction = async (action, rejectionReason) => {
+    if (selectedDocs.length === 0) return;
+    
+    setBulkActing(true);
+    try {
+      const { data } = await base44.functions.invoke('bulkUpdateDocuments', {
+        document_ids: selectedDocs,
+        action,
+        updates: action === 'reject' ? { rejection_reason: rejectionReason } : undefined
+      });
+
+      toast.success(`${data.processed} documents ${action}d`);
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setSelectedDocs([]);
+    } catch (error) {
+      toast.error(`Bulk ${action} failed`);
+    } finally {
+      setBulkActing(false);
+    }
+  };
+
+  const toggleDocSelection = (docId) => {
+    setSelectedDocs(prev =>
+      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedDocs.length === filteredDocuments.length) {
+      setSelectedDocs([]);
+    } else {
+      setSelectedDocs(filteredDocuments.map(d => d.id));
+    }
+  };
+
   const getVersions = (doc) => {
     if (!doc) return [];
     const rootId = doc.parent_document_id || doc.id;
@@ -310,12 +372,26 @@ export default function Documents() {
 
   const columns = [
     {
-      header: 'Document',
+      header: (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={selectedDocs.length === filteredDocuments.length && filteredDocuments.length > 0}
+            onCheckedChange={toggleSelectAll}
+          />
+          <span>Document</span>
+        </div>
+      ),
       accessor: 'title',
       render: (row) => {
         const project = projects.find(p => p.id === row.project_id);
+        const isSelected = selectedDocs.includes(row.id);
         return (
           <div className="flex items-center gap-3">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => toggleDocSelection(row.id)}
+              onClick={(e) => e.stopPropagation()}
+            />
             <div className="p-2 bg-zinc-800 rounded">
               <File size={18} className="text-amber-500" />
             </div>
@@ -362,6 +438,22 @@ export default function Documents() {
       header: 'Actions',
       render: (row) => (
         <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAnalyzeDocument(row);
+            }}
+            disabled={analyzingDoc === row.id}
+            className="text-blue-400 hover:text-blue-300"
+          >
+            {analyzingDoc === row.id ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Sparkles size={16} />
+            )}
+          </Button>
           {row.file_url && (
             <Button
               size="sm"
@@ -409,6 +501,40 @@ export default function Documents() {
               <p className="text-xs text-zinc-600 font-mono mt-1">{docStats.total} TOTAL • {docStats.pendingReview} REVIEW</p>
             </div>
             <div className="flex gap-2">
+              {selectedDocs.length > 0 && (
+                <div className="flex gap-2 items-center mr-2 px-3 py-1.5 bg-zinc-800 rounded border border-zinc-700">
+                  <span className="text-xs font-bold text-amber-500">{selectedDocs.length} SELECTED</span>
+                  <Button
+                    size="sm"
+                    onClick={() => handleBulkAction('approve')}
+                    disabled={bulkActing}
+                    className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs px-2"
+                  >
+                    <CheckCircle size={12} className="mr-1" />
+                    APPROVE
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const reason = prompt('Rejection reason (optional):');
+                      handleBulkAction('reject', reason);
+                    }}
+                    disabled={bulkActing}
+                    className="bg-red-600 hover:bg-red-700 text-white h-7 text-xs px-2"
+                  >
+                    <XCircle size={12} className="mr-1" />
+                    REJECT
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setSelectedDocs([])}
+                    variant="ghost"
+                    className="text-zinc-400 hover:text-white h-7 text-xs px-2"
+                  >
+                    CLEAR
+                  </Button>
+                </div>
+              )}
               <Button 
                 onClick={() => setShowCSVImport(true)}
                 variant="outline"

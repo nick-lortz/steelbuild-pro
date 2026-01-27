@@ -112,9 +112,8 @@ export default function Schedule() {
 
   // Convert work packages to task-like format for display
   const workPackagesAsTasks = useMemo(() => {
-    if (allScheduleTasks.length > 0) return [];
-    
-    return workPackages.map(wp => ({
+    if (allScheduleTasks.length === 0) {
+      return workPackages.map(wp => ({
       id: wp.id,
       name: `${wp.package_number}: ${wp.name}`,
       project_id: wp.project_id,
@@ -128,7 +127,9 @@ export default function Schedule() {
       piece_count: wp.piece_count,
       percent_complete: wp.percent_complete,
       assigned_to: wp.assigned_to
-    }));
+      }));
+    }
+    return [];
   }, [workPackages, allScheduleTasks]);
 
   // Filter and paginate tasks
@@ -159,7 +160,7 @@ export default function Schedule() {
     }
 
     // Paginate
-    const startIdx = 0;
+    const startIdx = (page - 1) * PAGE_SIZE;
     const endIdx = page * PAGE_SIZE;
     const paginated = filtered.slice(startIdx, endIdx);
     
@@ -366,13 +367,28 @@ export default function Schedule() {
     { key: 'f', ctrl: true, action: () => setShowFilters(!showFilters) }
   ]);
 
-  const statusCounts = useMemo(() => ({
-    all: totalCount,
-    not_started: 0,
-    in_progress: 0,
-    completed: 0,
-    overdue: 0
-  }), [totalCount]);
+  const statusCounts = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const counts = {
+      all: totalCount,
+      not_started: 0,
+      in_progress: 0,
+      completed: 0,
+      overdue: 0
+    };
+    
+    (allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks).forEach(t => {
+      if (t.status === 'not_started') counts.not_started++;
+      else if (t.status === 'in_progress') counts.in_progress++;
+      else if (t.status === 'completed') counts.completed++;
+      
+      if (t.status !== 'completed' && t.end_date && t.end_date < today) {
+        counts.overdue++;
+      }
+    });
+    
+    return counts;
+  }, [allScheduleTasks, workPackagesAsTasks, totalCount]);
 
   return (
     <div className="min-h-screen bg-black">

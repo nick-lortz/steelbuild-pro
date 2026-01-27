@@ -1,0 +1,88 @@
+import React from 'react';
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Search, Filter, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export default function ProjectFiltersBar({ 
+  searchTerm, 
+  onSearchChange, 
+  statusFilter, 
+  onStatusChange,
+  riskFilter,
+  onRiskChange,
+  sortBy,
+  onSortChange,
+  onClearFilters,
+  hasActiveFilters 
+}) {
+  return (
+    <div className="flex flex-col sm:flex-row gap-3">
+      {/* Search */}
+      <div className="relative flex-1 max-w-md">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="SEARCH PROJECTS..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-9 bg-background border-border h-9 placeholder:text-xs placeholder:text-muted-foreground"
+        />
+      </div>
+
+      {/* Status Filter */}
+      <Select value={statusFilter} onValueChange={onStatusChange}>
+        <SelectTrigger className="w-40 h-9 bg-background border-border">
+          <SelectValue placeholder="All Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="in_progress">In Progress</SelectItem>
+          <SelectItem value="awarded">Awarded</SelectItem>
+          <SelectItem value="bidding">Bidding</SelectItem>
+          <SelectItem value="on_hold">On Hold</SelectItem>
+          <SelectItem value="completed">Completed</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Risk Filter */}
+      <Select value={riskFilter} onValueChange={onRiskChange}>
+        <SelectTrigger className="w-40 h-9 bg-background border-border">
+          <SelectValue placeholder="All Projects" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Projects</SelectItem>
+          <SelectItem value="at_risk">At Risk Only</SelectItem>
+          <SelectItem value="healthy">Healthy Only</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Sort */}
+      <Select value={sortBy} onValueChange={onSortChange}>
+        <SelectTrigger className="w-40 h-9 bg-background border-border">
+          <SelectValue placeholder="Sort by" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="risk">Risk First</SelectItem>
+          <SelectItem value="name">Name (A-Z)</SelectItem>
+          <SelectItem value="progress">Progress</SelectItem>
+          <SelectItem value="budget">Budget Status</SelectItem>
+          <SelectItem value="schedule">Schedule Status</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Clear Filters */}
+      {hasActiveFilters && (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={onClearFilters}
+          className="h-9 px-3"
+        >
+          <X size={14} className="mr-1" />
+          Clear
+        </Button>
+      )}
+    </div>
+  );
+}

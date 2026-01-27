@@ -102,23 +102,28 @@ export default function Analytics() {
     enabled: !!activeProjectId,
   });
 
+  // Use backend metrics when available, fallback to direct queries
   const { data: financials = [] } = useQuery({
     queryKey: ['financials', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.Financial.filter({ project_id: activeProjectId })
-      : base44.entities.Financial.list(),
-    enabled: !!activeProjectId
+    queryFn: () => {
+      if (portfolioMetrics?.metrics) return [];
+      return activeProjectId
+        ? base44.entities.Financial.filter({ project_id: activeProjectId })
+        : base44.entities.Financial.list();
+    },
+    enabled: !!activeProjectId && !portfolioMetrics?.metrics
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: async () => {
+      if (portfolioMetrics?.metrics) return [];
       const data = activeProjectId
         ? await base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
         : await base44.entities.Task.list();
-      return data; // Keep all tasks, validate dates when using them
+      return data;
     },
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId && !portfolioMetrics?.metrics
   });
 
   const { data: expenses = [] } = useQuery({
@@ -354,6 +359,7 @@ export default function Analytics() {
               financials={financials}
               tasks={tasks}
               expenses={expenses}
+              portfolioMetrics={portfolioMetrics}
             />
           </TabsContent>
 

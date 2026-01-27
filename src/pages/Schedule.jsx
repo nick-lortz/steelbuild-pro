@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,20 @@ export default function Schedule() {
     activeProjectId ? projects.find(p => p.id === activeProjectId) : null,
     [projects, activeProjectId]
   );
+
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!activeProjectId) return;
+
+    const unsubscribe = base44.entities.Task.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
+      }
+    });
+
+    return unsubscribe;
+  }, [activeProjectId, queryClient]);
 
   // Fetch tasks for active project only
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({

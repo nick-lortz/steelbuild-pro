@@ -237,7 +237,7 @@ export default function ResourceManagement() {
   }, [resourceMetrics, projects]);
 
   const utilizationChartData = useMemo(() => {
-    if (!resourceMetrics) return [];
+    if (!resourceMetrics || !resourceMetrics.utilizationByResource) return [];
 
     return resourceMetrics.utilizationByResource
       .filter(r => r.type === 'labor' || r.activeTasks > 0)
@@ -251,7 +251,7 @@ export default function ResourceManagement() {
   }, [resourceMetrics]);
 
   const filteredResources = useMemo(() => {
-    if (!resourceMetrics) return [];
+    if (!resourceMetrics || !resourceMetrics.utilizationByResource) return [];
 
     return resourceMetrics.utilizationByResource.filter((resource) => {
       const matchesSearch = resource.name.toLowerCase().includes(searchTerm.toLowerCase());

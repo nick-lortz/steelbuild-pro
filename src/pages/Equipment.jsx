@@ -46,7 +46,7 @@ export default function Equipment() {
     totalPages,
     paginatedItems: paginatedEquipment,
     handlePageChange,
-    totalItems,
+    totalItems
   } = usePagination(equipment, 20);
 
   const handleSelectEquipment = useCallback((row) => {
@@ -113,7 +113,7 @@ export default function Equipment() {
       onClick={(e) => {
         e.stopPropagation();
         handleSelectEquipment(row);
-      }} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
+      }} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
 
 
           <Calendar size={14} className="mr-2" />
@@ -124,10 +124,10 @@ export default function Equipment() {
 
 
   const equipStats = useMemo(() => {
-    const activeBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'in_use').length;
-    const totalRevenue = bookings
-      .filter(b => b.status === 'completed')
-      .reduce((sum, b) => sum + (b.total_cost || 0), 0);
+    const activeBookings = bookings.filter((b) => b.status === 'confirmed' || b.status === 'in_use').length;
+    const totalRevenue = bookings.
+    filter((b) => b.status === 'completed').
+    reduce((sum, b) => sum + (b.total_cost || 0), 0);
     return { activeBookings, totalRevenue };
   }, [bookings]);
 
@@ -145,15 +145,15 @@ export default function Equipment() {
               <ExportButton
                 data={equipment}
                 columns={[
-                  { key: 'name', label: 'Equipment' },
-                  { key: 'classification', label: 'Type' },
-                  { key: 'status', label: 'Status' },
-                  { key: 'rate', label: 'Rate' },
-                  { key: 'rate_type', label: 'Rate Type' },
-                  { key: 'current_project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.current_project_id)?.name || 'Available' }
-                ]}
-                filename="equipment"
-              />
+                { key: 'name', label: 'Equipment' },
+                { key: 'classification', label: 'Type' },
+                { key: 'status', label: 'Status' },
+                { key: 'rate', label: 'Rate' },
+                { key: 'rate_type', label: 'Rate Type' },
+                { key: 'current_project_id', label: 'Project', formatter: (row) => projects.find((p) => p.id === row.current_project_id)?.name || 'Available' }]
+                }
+                filename="equipment" />
+
               <Link to={createPageUrl('Resources')}>
                 <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
                   MANAGE
@@ -175,7 +175,7 @@ export default function Equipment() {
             <div>
               <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVAILABLE</div>
               <div className="text-2xl font-bold font-mono text-green-500">
-                {equipment.filter(e => e.status === 'available').length}
+                {equipment.filter((e) => e.status === 'available').length}
               </div>
             </div>
             <div>
@@ -195,41 +195,41 @@ export default function Equipment() {
       {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-6 py-6">
         {/* Fleet Overview */}
-        {equipment.length > 0 && (
-          <div className="mb-6">
+        {equipment.length > 0 &&
+        <div className="mb-6">
             <EquipmentKPIs bookings={bookings} equipment={equipment} />
           </div>
-        )}
+        }
 
         {/* Equipment List */}
         <div className="mb-6">
           <DataTable
             columns={columns}
             data={paginatedEquipment}
-            emptyMessage="No equipment found. Add equipment resources to get started."
-          />
-          {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              pageSize={20}
-              totalItems={totalItems}
-            />
-          )}
+            emptyMessage="No equipment found. Add equipment resources to get started." />
+
+          {totalPages > 1 &&
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            pageSize={20}
+            totalItems={totalItems} />
+
+          }
         </div>
 
         {/* Selected Equipment Details */}
-        {selectedEquipment && (
-          <div className="space-y-6">
+        {selectedEquipment &&
+        <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">EQUIPMENT DETAILS</h3>
               <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectedEquipment(null)}
-                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
-              >
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedEquipment(null)}
+              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider">
+
                 CLOSE
               </Button>
             </div>
@@ -237,9 +237,9 @@ export default function Equipment() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Calendar */}
               <EquipmentCalendar
-                equipmentId={selectedEquipment.id}
-                equipmentName={selectedEquipment.name}
-              />
+              equipmentId={selectedEquipment.id}
+              equipmentName={selectedEquipment.name} />
+
 
               {/* Equipment-specific KPIs */}
               <Card className="bg-zinc-900 border-zinc-800">
@@ -251,9 +251,9 @@ export default function Equipment() {
                 </CardHeader>
                 <CardContent>
                   <EquipmentKPIs
-                    bookings={bookings.filter((b) => b.resource_id === selectedEquipment.id)}
-                    equipment={[selectedEquipment]}
-                  />
+                  bookings={bookings.filter((b) => b.resource_id === selectedEquipment.id)}
+                  equipment={[selectedEquipment]} />
+
                   
                   {/* Additional Details */}
                   <div className="mt-6 space-y-3">
@@ -278,8 +278,8 @@ export default function Equipment() {
               </Card>
             </div>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }

@@ -15,6 +15,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import ResourceCapacityPlanner from '@/components/resources/ResourceCapacityPlanner';
 import SkillMatrixView from '@/components/resources/SkillMatrixView';
+import ResourceLevelingPanel from '@/components/resources/ResourceLevelingPanel';
 import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import { toast } from '@/components/ui/notifications';
 

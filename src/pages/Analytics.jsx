@@ -15,6 +15,8 @@ import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift'
 import DashboardBuilder from '@/components/analytics/DashboardBuilder';
 import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
+import AutoReportGenerator from '@/components/reports/AutoReportGenerator';
+import AIForecastETC from '@/components/financials/AIForecastETC';
 import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
@@ -311,6 +313,10 @@ export default function Analytics() {
           </TabsList>
 
           <TabsContent value="unified" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <AutoReportGenerator projectId={activeProjectId} />
+              <AIForecastETC projectId={activeProjectId} />
+            </div>
             <UnifiedAnalyticsDashboard projectId={activeProjectId} />
           </TabsContent>
 

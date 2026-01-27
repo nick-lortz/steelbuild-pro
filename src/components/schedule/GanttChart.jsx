@@ -524,7 +524,7 @@ export default function GanttChart({
                     const project = projects.find(p => p.id === task.project_id);
                     
                     return (
-                      <React.Fragment key={task.id}>
+                      <div key={task.id}>
                       <div className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
                         {/* Task Name */}
                         <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5 bg-zinc-900 z-10">
@@ -768,7 +768,7 @@ export default function GanttChart({
                           </div>
                           </div>
 
-                          {!isParentCollapsed && childTasks.map((childTask) => {
+                          {!isParentCollapsed && childTasks.map(childTask => {
                           const childPos = getTaskPosition(childTask);
                           const childCritical = isCritical(childTask.id);
                           const childHasRFI = hasRFIImpact(childTask);
@@ -873,10 +873,10 @@ export default function GanttChart({
                           </div>
                           );
                           })}
-                          </React.Fragment>
+                          </div>
                           );
                           })}
-                          </React.Fragment>
+                          </div>
                           );
                           })}
                           </div>
@@ -901,9 +901,7 @@ export default function GanttChart({
                           {!collapsedCompleted && Object.entries(completedTasksByProject).map(([projectId, projectCompletedTasks]) => {
                           const project = projects.find(p => p.id === projectId) || { name: 'Unassigned', project_number: 'N/A' };
 
-                          return (
-                          <React.Fragment key={`completed-${projectId}`}>
-                          {projectCompletedTasks.map((task) => {
+                          return projectCompletedTasks.map(task => {
                           const pos = getTaskPosition(task);
 
                           return (
@@ -971,9 +969,7 @@ export default function GanttChart({
                            </div>
                           </div>
                           );
-                          })}
-                          </React.Fragment>
-                          );
+                          });
                           })}
                           </>
                           )}

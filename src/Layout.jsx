@@ -59,7 +59,9 @@ const navGroups = [
     items: [
       { name: 'Dashboard', page: 'Dashboard', icon: Building2 },
       { name: 'Projects', page: 'Projects', icon: Building2 },
-      { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3 }
+      { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: BarChart3 },
+      { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3 },
+      { name: 'Calendar', page: 'Calendar', icon: Calendar }
     ],
     roles: ['admin', 'user']
   },
@@ -68,6 +70,8 @@ const navGroups = [
     icon: CheckCircle2,
     items: [
       { name: 'Schedule', page: 'Schedule', icon: Calendar },
+      { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
+      { name: 'Weekly Schedule', page: 'WeeklySchedule', icon: Calendar },
       { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck },
       { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 },
       { name: 'Field Tools', page: 'FieldTools', icon: Camera }
@@ -132,6 +136,7 @@ const navGroups = [
       { name: 'Analytics', page: 'Analytics', icon: BarChart3 },
       { name: 'Reports', page: 'Reports', icon: FileText },
       { name: 'Performance', page: 'Performance', icon: Gauge },
+      { name: 'Job Status Report', page: 'JobStatusReport', icon: FileText },
       { name: 'AI Insights', page: 'Insights', icon: Sparkles }
     ],
     roles: ['admin', 'user']

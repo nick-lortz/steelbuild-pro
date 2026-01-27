@@ -197,14 +197,22 @@ export default function RFIs() {
       status: rfi.status || 'draft',
       priority: rfi.priority || 'medium',
       assigned_to: rfi.assigned_to || '',
+      response_owner: rfi.response_owner || '',
       submitted_date: rfi.submitted_date ? rfi.submitted_date.split('T')[0] : '',
       due_date: rfi.due_date ? rfi.due_date.split('T')[0] : '',
       response_date: rfi.response_date ? rfi.response_date.split('T')[0] : '',
+      closed_date: rfi.closed_date ? rfi.closed_date.split('T')[0] : '',
+      days_to_respond: rfi.days_to_respond || 5,
       linked_drawing_set_id: rfi.linked_drawing_set_id || '',
       linked_change_order_id: rfi.linked_change_order_id || '',
       linked_task_ids: rfi.linked_task_ids || [],
+      estimated_cost_impact: rfi.estimated_cost_impact || 0,
+      actual_cost_impact: rfi.actual_cost_impact || 0,
+      schedule_impact_days: rfi.schedule_impact_days || 0,
       cost_impact: rfi.cost_impact || false,
-      schedule_impact: rfi.schedule_impact || false
+      schedule_impact: rfi.schedule_impact || false,
+      escalation_flag: rfi.escalation_flag || false,
+      resolution_notes: rfi.resolution_notes || ''
     });
     setSelectedRFI(rfi);
   };

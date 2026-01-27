@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -28,13 +27,13 @@ import {
   SheetHeader,
   SheetTitle } from
 "@/components/ui/sheet";
-import { Plus, Search, RefreshCw } from 'lucide-react';
-import ProjectCard from '@/components/projects/ProjectCard';
+import { Plus, RefreshCw } from 'lucide-react';
+import ProjectsTable from '@/components/projects/ProjectsTable';
+import ProjectsKPIBar from '@/components/projects/ProjectsKPIBar';
+import ProjectsFilters from '@/components/projects/ProjectsFilters';
 import DeleteProjectDialog from '@/components/projects/DeleteProjectDialog';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
-import ScreenContainer from '@/components/layout/ScreenContainer';
 import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
-import { format } from 'date-fns';
 
 
 const initialFormState = {
@@ -71,10 +70,10 @@ export default function Projects() {
   const [formData, setFormData] = useState(initialFormState);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [page, setPage] = useState(1);
+  const [pmFilter, setPMFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('updated');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteProject, setDeleteProject] = useState(null);
-  const PAGE_SIZE = 20;
 
   const queryClient = useQueryClient();
   const { confirm } = useConfirm();
@@ -230,168 +229,144 @@ export default function Projects() {
     setIsRefreshing(false);
   }, [refetch]);
 
+  // Add progress to projects
+  const projectsWithMetrics = useMemo(() => {
+    return projects.map(p => ({
+      ...p,
+      progress: calculateProjectProgress(p.id, tasks)
+    }));
+  }, [projects, tasks]);
+
+  // Get unique PMs
+  const projectManagers = useMemo(() => {
+    const pms = new Set(projects.map(p => p.project_manager).filter(Boolean));
+    return Array.from(pms).sort();
+  }, [projects]);
+
   const filteredProjects = useMemo(() => {
-    return projects.filter((p) => {
+    let filtered = projectsWithMetrics.filter((p) => {
       const matchesSearch =
         p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.project_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.client?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesPM = pmFilter === 'all' || p.project_manager === pmFilter;
+      return matchesSearch && matchesStatus && matchesPM;
     });
-  }, [projects, searchTerm, statusFilter]);
 
-  const paginatedProjects = useMemo(() => {
-    return filteredProjects.slice(0, page * PAGE_SIZE);
-  }, [filteredProjects, page]);
+    // Sort
+    if (sortBy === 'name') {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sortBy === 'target') {
+      filtered.sort((a, b) => {
+        if (!a.target_completion) return 1;
+        if (!b.target_completion) return -1;
+        return a.target_completion.localeCompare(b.target_completion);
+      });
+    } else if (sortBy === 'value') {
+      filtered.sort((a, b) => (b.contract_value || 0) - (a.contract_value || 0));
+    } else if (sortBy === 'progress') {
+      filtered.sort((a, b) => (b.progress || 0) - (a.progress || 0));
+    } else if (sortBy === 'updated') {
+      filtered.sort((a, b) => (b.updated_date || '').localeCompare(a.updated_date || ''));
+    }
 
-  const hasMore = filteredProjects.length > paginatedProjects.length;
+    return filtered;
+  }, [projectsWithMetrics, searchTerm, statusFilter, pmFilter, sortBy]);
 
-  const statusCounts = useMemo(() => {
-    const counts = {
-      all: projects.length,
-      in_progress: 0,
-      bidding: 0,
-      completed: 0
-    };
-    projects.forEach(p => {
-      if (p.status === 'in_progress') counts.in_progress++;
-      if (p.status === 'bidding') counts.bidding++;
-      if (p.status === 'completed') counts.completed++;
-    });
-    return counts;
-  }, [projects]);
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || pmFilter !== 'all';
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setPMFilter('all');
+  };
+
+  const handleViewProject = (project) => {
+    window.location.href = `/ProjectDashboard?id=${project.id}`;
+  };
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Project Portfolio</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{projects.length} TOTAL</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="px-3 py-1.5 text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold"
-              >
-                {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
-              </button>
-              {can.createProject && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setFormData(initialFormState);
-                    setShowForm(true);
-                  }}
-                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-                >
-                  <Plus size={14} className="mr-1" />
-                  NEW
-                </Button>
-              )}
-            </div>
-          </div>
+    <div className="min-h-screen pb-8">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">Project Portfolio</h1>
+          <p className="text-xs text-muted-foreground font-mono mt-1">{projects.length} PROJECTS</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+            Refresh
+          </Button>
+          {can.createProject && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            >
+              <Plus size={14} className="mr-1" />
+              New Project
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-              <Input
-                placeholder="SEARCH PROJECTS..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex gap-1 border border-zinc-800 p-1">
-              {[
-                { value: 'all', label: 'ALL', count: statusCounts.all },
-                { value: 'in_progress', label: 'ACTIVE', count: statusCounts.in_progress },
-                { value: 'bidding', label: 'BIDDING', count: statusCounts.bidding },
-                { value: 'completed', label: 'DONE', count: statusCounts.completed }
-              ].map(({ value, label, count }) => (
-                <button
-                  key={value}
-                  onClick={() => { setStatusFilter(value); setPage(1); }}
-                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                    statusFilter === value
-                      ? 'bg-amber-500 text-black'
-                      : 'text-zinc-500 hover:text-white'
-                  }`}
-                >
-                  {label} <span className="font-mono">({count})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* KPI Bar */}
+      <div className="mb-6">
+        <ProjectsKPIBar projects={projectsWithMetrics} tasks={tasks} financials={financials} />
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* Demo Seeder */}
-        {projects.length === 0 && searchTerm === '' && statusFilter === 'all' && (
-          <div className="mb-6">
-            <DemoProjectSeeder />
-          </div>
-        )}
+      {/* Filters */}
+      <div className="mb-6">
+        <ProjectsFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          pmFilter={pmFilter}
+          onPMChange={setPMFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+          projectManagers={projectManagers}
+        />
+      </div>
 
-        {/* Project List */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
-            </div>
-          </div>
-        ) : paginatedProjects.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-xs text-zinc-600 uppercase tracking-widest">NO PROJECTS FOUND</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 gap-0 border border-zinc-800 mb-6">
-              {paginatedProjects.map((project, idx) => {
-                const progress = calculateProjectProgress(project.id, tasks);
-                return (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    progress={progress}
-                    onClick={() => window.location.href = `/ProjectDashboard?id=${project.id}`}
-                    onDelete={() => handleDelete(project)}
-                    onEdit={() => handleEdit(project)}
-                    noBorder={idx === paginatedProjects.length - 1}
-                  />
-                );
-              })}
-            </div>
+      {/* Demo Seeder */}
+      {projects.length === 0 && !isLoading && (
+        <div className="mb-6">
+          <DemoProjectSeeder />
+        </div>
+      )}
 
-            {/* Load More */}
-            {hasMore && (
-              <button
-                onClick={() => setPage(p => p + 1)}
-                className="w-full py-3 text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold border border-zinc-800 hover:bg-zinc-950 transition-colors"
-              >
-                LOAD MORE ({filteredProjects.length - paginatedProjects.length} REMAINING)
-              </button>
-            )}
-          </>
-        )}
+      {/* Projects Table */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm">Loading projects...</p>
+          </div>
+        </div>
+      ) : (
+        <ProjectsTable
+          projects={filteredProjects}
+          onView={handleViewProject}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          canEdit={can.editProject}
+        />
+      )}
       </div>
 
       {/* Create Dialog */}

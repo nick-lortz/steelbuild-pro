@@ -970,10 +970,10 @@ export default function GanttChart({
                           })}
                           </>
                           )}
-                          </div>
-                          </div>
+            </div>
+          </div>
 
-                          {/* Legend */}
+          {/* Legend */}
         <div className="border-t border-zinc-800 bg-zinc-900/50 p-5">
           <h4 className="text-sm font-semibold text-white mb-4">Legend</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">

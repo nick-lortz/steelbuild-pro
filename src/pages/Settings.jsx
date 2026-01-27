@@ -89,13 +89,17 @@ export default function Settings() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
-    onSuccess: () => {
+    mutationFn: async (data) => {
+      const result = await base44.auth.updateMe(data);
+      return result;
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success('Profile updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update profile');
+      console.error('Profile update error:', error);
+      toast.error(error?.message || 'Failed to update profile');
     }
   });
 

@@ -110,31 +110,12 @@ export default function Schedule() {
     staleTime: 5 * 60 * 1000
   });
 
-  // Convert work packages to task-like format for display
-  const workPackagesAsTasks = useMemo(() => {
-    if (allScheduleTasks.length === 0) {
-      return workPackages.map(wp => ({
-      id: wp.id,
-      name: `${wp.package_number}: ${wp.name}`,
-      project_id: wp.project_id,
-      work_package_id: wp.id,
-      phase: wp.phase,
-      status: wp.status === 'complete' ? 'completed' : wp.status === 'active' ? 'in_progress' : 'not_started',
-      start_date: wp.start_date,
-      end_date: wp.target_date,
-      is_work_package: true,
-      tonnage: wp.tonnage,
-      piece_count: wp.piece_count,
-      percent_complete: wp.percent_complete,
-      assigned_to: wp.assigned_to
-      }));
-    }
-    return [];
-  }, [workPackages, allScheduleTasks]);
+  // Always use actual tasks, don't convert work packages
+  const workPackagesAsTasks = [];
 
   // Filter and paginate tasks
   const { tasks, hasMore, totalCount } = useMemo(() => {
-    let filtered = allScheduleTasks.length > 0 ? [...allScheduleTasks] : [...workPackagesAsTasks];
+    let filtered = [...allScheduleTasks];
 
     // Filter by status
     if (statusFilter !== 'all') {
@@ -377,7 +358,7 @@ export default function Schedule() {
       overdue: 0
     };
     
-    (allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks).forEach(t => {
+    allScheduleTasks.forEach(t => {
       if (t.status === 'not_started') counts.not_started++;
       else if (t.status === 'in_progress') counts.in_progress++;
       else if (t.status === 'completed') counts.completed++;
@@ -388,7 +369,7 @@ export default function Schedule() {
     });
     
     return counts;
-  }, [allScheduleTasks, workPackagesAsTasks, totalCount]);
+  }, [allScheduleTasks, totalCount]);
 
   return (
     <div className="min-h-screen bg-black">
@@ -545,27 +526,42 @@ export default function Schedule() {
               <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
             </div>
           </div>
+        ) : allScheduleTasks.length === 0 ? (
+          <div className="text-center py-20">
+            <Calendar size={48} className="mx-auto mb-4 text-zinc-700" />
+            <p className="text-sm text-zinc-400 uppercase tracking-widest mb-6">NO TASKS CREATED YET</p>
+            <p className="text-xs text-zinc-600 mb-6 max-w-md mx-auto">
+              Create tasks to begin scheduling. Tasks drive the project timeline, resource allocation, and RFI/CO tracking.
+            </p>
+            <Button
+              onClick={handleCreateTask}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={18} className="mr-2" />
+              Create First Task
+            </Button>
+          </div>
         ) : viewMode === 'phase' ? (
           <PhaseGroupedView
-            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            tasks={allScheduleTasks}
             workPackages={workPackages}
             onTaskClick={handleTaskClick}
           />
         ) : viewMode === 'timeline' ? (
           <TimelineView
-            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            tasks={allScheduleTasks}
             onTaskClick={handleTaskClick}
           />
         ) : viewMode === 'calendar' ? (
           <CalendarView
-            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            tasks={allScheduleTasks}
             projects={projects}
             onTaskClick={handleTaskClick}
             onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           />
         ) : viewMode === 'gantt' ? (
           <GanttChart
-            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            tasks={allScheduleTasks}
             projects={projects}
             viewMode="week"
             onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
@@ -574,25 +570,16 @@ export default function Schedule() {
             rfis={rfis}
             changeOrders={changeOrders}
           />
-        ) : tasks.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-xs text-zinc-600 uppercase tracking-widest mb-2">NO WORK PACKAGES</p>
-            <p className="text-xs text-zinc-700">
-              Create work packages to start scheduling
-            </p>
-          </div>
         ) : (
           <TaskListView
-            tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+            tasks={allScheduleTasks}
             projects={projects}
             resources={resources}
             workPackages={workPackages}
             onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
             onTaskClick={handleTaskClick}
             onTaskDelete={(taskId) => {
-              if (allScheduleTasks.length > 0) {
-                deleteMutation.mutate(taskId);
-              }
+              deleteMutation.mutate(taskId);
             }}
           />
         )}

@@ -30,8 +30,9 @@ export default function JobStatusReport({ sovItems = [], expenses = [], changeOr
       .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
       .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-    // Estimated Cost at Completion (simple: scale cost by earned %)
-    const percentComplete = contractValue > 0 ? (earnedToDate / contractValue) * 100 : 0;
+    // Estimated Cost at Completion (against total contract not just original value)
+    const totalContract = contractValue + (changeOrders.filter(co => co.status === 'approved').reduce((sum, co) => sum + (co.cost_impact || 0), 0) || 0);
+    const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
     const estimatedCostAtCompletion = percentComplete > 0 
       ? (costToDate / percentComplete) * 100 
       : costToDate;
@@ -39,6 +40,10 @@ export default function JobStatusReport({ sovItems = [], expenses = [], changeOr
     // Profit metrics
     const projectedProfit = totalContract - estimatedCostAtCompletion;
     const projectedMargin = totalContract > 0 ? (projectedProfit / totalContract) * 100 : 0;
+
+    // Committed costs (all expenses, not just paid/approved)
+    const committedCosts = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const costRisk = committedCosts - costToDate;
 
     return {
       contractValue,
@@ -48,6 +53,8 @@ export default function JobStatusReport({ sovItems = [], expenses = [], changeOr
       billedToDate,
       overUnderBilled,
       costToDate,
+      committedCosts,
+      costRisk,
       estimatedCostAtCompletion,
       projectedProfit,
       projectedMargin,
@@ -94,6 +101,12 @@ export default function JobStatusReport({ sovItems = [], expenses = [], changeOr
       label: 'Cost to Date', 
       value: `$${kpis.costToDate.toLocaleString()}`, 
       icon: TrendingDown
+    },
+    {
+      label: 'Cost at Risk',
+      value: `$${kpis.costRisk.toLocaleString()}`,
+      icon: AlertTriangle,
+      color: kpis.costRisk > 0 ? 'text-amber-400' : 'text-green-400'
     },
     { 
       label: 'Est Cost at Completion', 

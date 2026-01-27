@@ -58,6 +58,12 @@ Deno.serve(async (req) => {
     ? (actualCostToDate / percentComplete) * 100 
     : actualCostToDate;
 
+  // Committed costs (pending + approved + paid expenses)
+  const committedCosts = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+  // Cost Risk (committed beyond actual)
+  const costRisk = committedCosts - actualCostToDate;
+
   // Profit metrics
   const projectedProfit = totalContract - estimatedCostAtCompletion;
   const projectedMargin = totalContract > 0 ? (projectedProfit / totalContract) * 100 : 0;
@@ -72,6 +78,8 @@ Deno.serve(async (req) => {
     remaining_to_bill: remainingToBill,
     over_under_billed: overUnderBilled,
     actual_cost_to_date: actualCostToDate,
+    committed_costs: committedCosts,
+    cost_risk: costRisk,
     estimated_cost_at_completion: estimatedCostAtCompletion,
     projected_profit: projectedProfit,
     projected_margin: projectedMargin,

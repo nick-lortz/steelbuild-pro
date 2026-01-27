@@ -561,6 +561,7 @@ export default function Schedule() {
             tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
             projects={projects}
             onTaskClick={handleTaskClick}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           />
         ) : viewMode === 'gantt' ? (
           <GanttChart

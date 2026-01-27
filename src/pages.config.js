@@ -19,6 +19,7 @@ import JobStatusReport from './pages/JobStatusReport';
 import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
+import LookAheadPlanning from './pages/LookAheadPlanning';
 import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
 import Performance from './pages/Performance';
@@ -37,7 +38,6 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import LookAheadPlanning from './pages/LookAheadPlanning';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +63,7 @@ export const PAGES = {
     "Labor": Labor,
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
+    "LookAheadPlanning": LookAheadPlanning,
     "Meetings": Meetings,
     "Messages": Messages,
     "Performance": Performance,
@@ -81,7 +82,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "LookAheadPlanning": LookAheadPlanning,
 }
 
 export const pagesConfig = {

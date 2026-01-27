@@ -97,15 +97,17 @@ export default function ResourceManagement() {
         const taskStart = new Date(task.start_date);
         const taskEnd = new Date(task.end_date);
 
-        // Check if task is active or upcoming
+        // Check if task is active or upcoming (within 30 days)
+        const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         return task.status !== 'completed' && task.status !== 'cancelled' &&
-        !isAfter(taskStart, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)); // Within 30 days
+        !isAfter(taskStart, thirtyDaysOut);
       });
 
       const activeTaskCount = resourceTasks.filter((t) => t.status === 'in_progress').length;
 
-      // Calculate utilization score (active tasks / reasonable capacity)
-      const utilizationScore = Math.min(activeTaskCount / 3 * 100, 100); // Assume 3 concurrent tasks is 100%
+      // Calculate utilization score (active tasks / max concurrent capacity)
+      const maxConcurrent = resource.max_concurrent_assignments || 3;
+      const utilizationScore = Math.min((activeTaskCount / maxConcurrent) * 100, 100);
 
       metrics.utilizationByResource.push({
         id: resource.id,
@@ -117,16 +119,17 @@ export default function ResourceManagement() {
         utilization: utilizationScore
       });
 
-      // Flag overallocated (>3 active tasks)
-      if (activeTaskCount > 3) {
+      // Flag overallocated (exceeds max concurrent capacity)
+      const maxConcurrent = resource.max_concurrent_assignments || 3;
+      if (activeTaskCount > maxConcurrent) {
         metrics.overallocated.push({
           ...resource,
           taskCount: activeTaskCount
         });
       }
 
-      // Flag underutilized (available but no tasks)
-      if (resource.status === 'available' && activeTaskCount === 0) {
+      // Flag underutilized (available with zero or minimal tasks)
+      if (resource.status === 'available' && activeTaskCount === 0 && resource.type === 'labor') {
         metrics.underutilized.push(resource);
       }
 
@@ -160,26 +163,29 @@ export default function ResourceManagement() {
   const allocationChartData = useMemo(() => {
     if (!resourceMetrics || !projects.length) return [];
 
-    return Object.values(resourceMetrics.allocationByProject).
-    map((allocation) => {
+    return Object.values(resourceMetrics.allocationByProject)
+    .map((allocation) => {
       const project = projects.find((p) => p.id === allocation.projectId);
       return {
         name: project?.project_number || 'Unknown',
+        fullName: project?.name || 'Unknown Project',
         resources: allocation.resourceCount
       };
-    }).
-    sort((a, b) => b.resources - a.resources).
-    slice(0, 10);
+    })
+    .filter(item => item.resources > 0)
+    .sort((a, b) => b.resources - a.resources)
+    .slice(0, 10);
   }, [resourceMetrics, projects]);
 
   // Utilization chart data
   const utilizationChartData = useMemo(() => {
     if (!resourceMetrics) return [];
 
-    return resourceMetrics.utilizationByResource.
-    sort((a, b) => b.utilization - a.utilization).
-    slice(0, 15).
-    map((r) => ({
+    return resourceMetrics.utilizationByResource
+    .filter(r => r.type === 'labor' || r.activeTasks > 0)
+    .sort((a, b) => b.utilization - a.utilization)
+    .slice(0, 15)
+    .map((r) => ({
       name: r.name.length > 20 ? r.name.substring(0, 20) + '...' : r.name,
       utilization: Math.round(r.utilization),
       activeTasks: r.activeTasks
@@ -299,8 +305,8 @@ export default function ResourceManagement() {
                 <p className="text-2xl font-bold text-green-400 mt-1">{resourceMetrics.assigned}</p>
                 <p className="text-xs text-zinc-500 mt-1">
                   {resourceMetrics.total > 0 ?
-                      `${Math.round(resourceMetrics.assigned / resourceMetrics.total * 100)}% utilized` :
-                      '0% utilized'}
+                      `${Math.round((resourceMetrics.assigned / resourceMetrics.total) * 100)}%` :
+                      '0%'} of total
                 </p>
               </div>
               <div className="p-2.5 bg-green-500/10 rounded-lg">
@@ -444,8 +450,13 @@ export default function ResourceManagement() {
               <BarChart data={allocationChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
                 <XAxis dataKey="name" stroke="#a1a1aa" angle={-45} textAnchor="end" height={80} />
-                <YAxis stroke="#a1a1aa" />
-                <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
+                <YAxis stroke="#a1a1aa" allowDecimals={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
+                  formatter={(value, name, props) => {
+                    return [value, `Resources: ${props.payload.fullName || props.payload.name}`];
+                  }}
+                />
                 <Bar dataKey="resources" fill="#f59e0b" />
               </BarChart>
             </ResponsiveContainer>

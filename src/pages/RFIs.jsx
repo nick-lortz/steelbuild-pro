@@ -60,6 +60,7 @@ const initialFormState = {
   response_date: '',
   linked_drawing_set_id: '',
   linked_change_order_id: '',
+  linked_task_ids: [],
   cost_impact: false,
   schedule_impact: false
 };
@@ -190,6 +191,7 @@ export default function RFIs() {
       response_date: rfi.response_date ? rfi.response_date.split('T')[0] : '',
       linked_drawing_set_id: rfi.linked_drawing_set_id || '',
       linked_change_order_id: rfi.linked_change_order_id || '',
+      linked_task_ids: rfi.linked_task_ids || [],
       cost_impact: rfi.cost_impact || false,
       schedule_impact: rfi.schedule_impact || false
     });

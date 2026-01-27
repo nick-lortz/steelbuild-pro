@@ -2,7 +2,6 @@ import Analytics from './pages/Analytics';
 import Calendar from './pages/Calendar';
 import ChangeOrders from './pages/ChangeOrders';
 import CostCodes from './pages/CostCodes';
-import CustomDashboard from './pages/CustomDashboard';
 import DailyLogs from './pages/DailyLogs';
 import Dashboard from './pages/Dashboard';
 import Deliveries from './pages/Deliveries';
@@ -47,7 +46,6 @@ export const PAGES = {
     "Calendar": Calendar,
     "ChangeOrders": ChangeOrders,
     "CostCodes": CostCodes,
-    "CustomDashboard": CustomDashboard,
     "DailyLogs": DailyLogs,
     "Dashboard": Dashboard,
     "Deliveries": Deliveries,

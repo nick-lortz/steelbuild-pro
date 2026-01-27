@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, Zap, BarChart3, UserPlus } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, Zap, BarChart3, UserPlus, CheckCircle2 } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, isAfter, parseISO } from 'date-fns';
 import PageHeader from '@/components/ui/PageHeader';
@@ -792,26 +792,4 @@ export default function ResourceManagement() {
       </Dialog>
     </div>
   );
-}
-          <ResourceLeveling
-            tasks={tasks}
-            resources={resources}
-            projects={projects}
-            allocations={allocations}
-            workPackages={workPackages} />
-
-        </TabsContent>
-
-        <TabsContent value="forecast">
-          <ResourceForecast
-            tasks={tasks}
-            resources={resources}
-            projects={projects}
-            allocations={allocations}
-            workPackages={workPackages} />
-
-        </TabsContent>
-      </Tabs>
-    </div>);
-
 }

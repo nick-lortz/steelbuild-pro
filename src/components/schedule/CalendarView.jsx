@@ -2,12 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO, addDays, differenceInDays } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 
-export default function CalendarView({ tasks, projects, onTaskClick }) {
+export default function CalendarView({ tasks, projects, onTaskClick, onTaskUpdate }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [draggedTask, setDraggedTask] = useState(null);
+  const [dragSource, setDragSource] = useState(null);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -54,6 +56,58 @@ export default function CalendarView({ tasks, projects, onTaskClick }) {
   const getProjectName = (projectId) => {
     const project = projects.find(p => p.id === projectId);
     return project ? project.project_number : 'N/A';
+  };
+
+  const groupTasksByPhase = (dayTasks) => {
+    const grouped = {};
+    dayTasks.forEach(task => {
+      const phase = task.phase || 'unassigned';
+      if (!grouped[phase]) grouped[phase] = [];
+      grouped[phase].push(task);
+    });
+    return grouped;
+  };
+
+  const handleDragStart = (e, task, sourceDate) => {
+    setDraggedTask(task);
+    setDragSource(sourceDate);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('ring-2', 'ring-amber-400');
+  };
+
+  const handleDragLeave = (e) => {
+    e.currentTarget.classList.remove('ring-2', 'ring-amber-400');
+  };
+
+  const handleDrop = (e, targetDate) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('ring-2', 'ring-amber-400');
+    
+    if (!draggedTask || !dragSource || !onTaskUpdate) return;
+    
+    const sourceDate = new Date(dragSource);
+    const targetDateObj = new Date(targetDate);
+    const daysDiff = differenceInDays(targetDateObj, sourceDate);
+    
+    if (daysDiff !== 0) {
+      const taskStart = parseISO(draggedTask.start_date);
+      const taskEnd = parseISO(draggedTask.end_date);
+      const newStart = addDays(taskStart, daysDiff);
+      const newEnd = addDays(taskEnd, daysDiff);
+      
+      onTaskUpdate(draggedTask.id, {
+        start_date: format(newStart, 'yyyy-MM-dd'),
+        end_date: format(newEnd, 'yyyy-MM-dd')
+      });
+    }
+    
+    setDraggedTask(null);
+    setDragSource(null);
   };
 
   return (
@@ -118,67 +172,83 @@ export default function CalendarView({ tasks, projects, onTaskClick }) {
             const dayTasks = getTasksForDate(day);
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isCurrentDay = isToday(day);
-            
+            const groupedTasks = groupTasksByPhase(dayTasks);
+            const dateStr = format(day, 'yyyy-MM-dd');
+
             return (
               <div
                 key={idx}
-                className={`min-h-32 border-b border-r border-zinc-800 p-2 ${
+                className={`min-h-32 border-b border-r border-zinc-800 p-2 transition-colors ${
                   isCurrentMonth ? 'bg-zinc-900' : 'bg-zinc-900/30'
                 } ${isCurrentDay ? 'ring-2 ring-amber-500 ring-inset' : ''}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, dateStr)}
               >
-                <div className={`text-sm mb-2 ${
+                <div className={`text-sm mb-2 font-semibold ${
                   isCurrentDay 
-                    ? 'text-amber-500 font-bold' 
+                    ? 'text-amber-500' 
                     : isCurrentMonth 
                       ? 'text-white' 
                       : 'text-zinc-600'
                 }`}>
                   {format(day, 'd')}
                 </div>
-                
-                {/* Tasks for this day */}
-                <div className="space-y-1">
-                  {dayTasks.slice(0, 3).map((task) => {
-                    const startDate = parseISO(task.start_date);
-                    const endDate = parseISO(task.end_date);
-                    const isStartDate = isSameDay(day, startDate);
-                    const isEndDate = isSameDay(day, endDate);
-                    const isMidSpan = !isStartDate && !isEndDate;
-                    
-                    return (
-                      <button
-                        key={task.id}
-                        onClick={() => onTaskClick(task)}
-                        className={`w-full text-left px-1.5 py-1 text-xs rounded transition-all hover:shadow-md ${
-                          task.status === 'completed'
-                            ? 'bg-green-600/80 text-white hover:bg-green-600'
-                            : task.status === 'in_progress'
-                              ? 'bg-blue-600/80 text-white hover:bg-blue-600'
-                              : task.status === 'blocked'
-                                ? 'bg-red-600/80 text-white hover:bg-red-600'
-                                : 'bg-zinc-700/80 text-white hover:bg-zinc-700'
-                        } ${
-                          isMidSpan ? 'rounded-none' : isStartDate ? 'rounded-r-none' : isEndDate ? 'rounded-l-none' : ''
-                        }`}
-                        title={`${task.name} - ${getProjectName(task.project_id)}`}
-                      >
-                        <div className="truncate font-medium">
-                          {task.is_milestone ? '◆ ' : ''}
-                          {task.name}
+
+                {/* Grouped tasks by phase */}
+                <div className="space-y-1.5 text-[11px]">
+                  {Object.entries(groupedTasks).map(([phase, phaseTasks]) => (
+                    <div key={phase} className="space-y-1">
+                      {phaseTasks.length > 0 && (
+                        <div className="text-[9px] text-zinc-500 font-semibold uppercase tracking-wider px-1">
+                          {phase}
                         </div>
-                        {isStartDate && (
-                          <div className="text-[10px] text-white/80 truncate">
-                            {getProjectName(task.project_id)}
+                      )}
+                      {phaseTasks.slice(0, 3).map((task) => {
+                        const startDate = parseISO(task.start_date);
+                        const endDate = parseISO(task.end_date);
+                        const isStartDate = isSameDay(day, startDate);
+                        const isEndDate = isSameDay(day, endDate);
+                        const isMidSpan = !isStartDate && !isEndDate;
+
+                        return (
+                          <div
+                            key={task.id}
+                            draggable={!task.is_milestone && isStartDate}
+                            onDragStart={(e) => handleDragStart(e, task, dateStr)}
+                            className={`w-full text-left px-1.5 py-1 rounded transition-all cursor-move flex items-center gap-1 ${
+                              task.status === 'completed'
+                                ? 'bg-green-600/80 text-white hover:bg-green-600'
+                                : task.status === 'in_progress'
+                                  ? 'bg-blue-600/80 text-white hover:bg-blue-600'
+                                  : task.status === 'blocked'
+                                    ? 'bg-red-600/80 text-white hover:bg-red-600'
+                                    : 'bg-zinc-700/80 text-white hover:bg-zinc-700'
+                            } ${
+                              isMidSpan ? 'rounded-none' : isStartDate ? 'rounded-r-none' : isEndDate ? 'rounded-l-none' : ''
+                            } ${draggedTask?.id === task.id ? 'opacity-50' : ''}`}
+                            onClick={() => onTaskClick(task)}
+                            title={`${task.name} - ${getProjectName(task.project_id)}${isStartDate ? ' (drag to reschedule)' : ''}`}
+                          >
+                            {isStartDate && !task.is_milestone && (
+                              <GripVertical size={10} className="flex-shrink-0 opacity-60" />
+                            )}
+                            <span className="truncate font-medium flex-1">
+                              {task.is_milestone ? '◆' : ''}
+                              {task.name.length > 20 ? task.name.substring(0, 18) + '…' : task.name}
+                            </span>
                           </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                  
-                  {dayTasks.length > 3 && (
-                    <div className="text-[10px] text-zinc-400 px-1.5">
-                      +{dayTasks.length - 3} more
+                        );
+                      })}
+                      {phaseTasks.length > 3 && (
+                        <div className="text-[9px] text-zinc-500 px-1.5">
+                          +{phaseTasks.length - 3}
+                        </div>
+                      )}
                     </div>
+                  ))}
+                  {dayTasks.length === 0 && isCurrentMonth && (
+                    <div className="text-[10px] text-zinc-600 italic px-1">—</div>
                   )}
                 </div>
               </div>

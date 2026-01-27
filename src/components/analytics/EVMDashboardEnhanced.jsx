@@ -136,15 +136,23 @@ export default function EVMDashboardEnhanced({
   // Historical trend (monthly breakdown)
   const trendData = useMemo(() => {
     const months = [];
-    const currentDate = new Date(dateRange.end);
-    for (let i = 3; i >= 0; i--) {
-      const month = subMonths(currentDate, i);
-      months.push({
-        month: format(month, 'MMM'),
-        PV: evmMetrics.pv * (0.25 * (4 - i)),
-        EV: evmMetrics.ev * (0.25 * (4 - i)),
-        AC: evmMetrics.ac * (0.25 * (4 - i))
-      });
+    try {
+      const currentDate = new Date(dateRange.end);
+      if (isNaN(currentDate.getTime())) {
+        return [];
+      }
+      
+      for (let i = 3; i >= 0; i--) {
+        const month = subMonths(currentDate, i);
+        months.push({
+          month: format(month, 'MMM'),
+          PV: evmMetrics.pv * (0.25 * (4 - i)),
+          EV: evmMetrics.ev * (0.25 * (4 - i)),
+          AC: evmMetrics.ac * (0.25 * (4 - i))
+        });
+      }
+    } catch {
+      return [];
     }
     return months;
   }, [evmMetrics, dateRange]);

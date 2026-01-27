@@ -10,10 +10,15 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     if (!Array.isArray(rfis)) return [];
     
     const now = new Date();
-    const months = eachMonthOfInterval({
-      start: subMonths(now, 11),
-      end: now
-    });
+    let months;
+    try {
+      months = eachMonthOfInterval({
+        start: subMonths(now, 11),
+        end: now
+      });
+    } catch {
+      return [];
+    }
 
     return months.map(month => {
       const monthStr = format(month, 'yyyy-MM');
@@ -21,7 +26,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       const monthRfis = rfis.filter(r => {
         if (!r.submitted_date) return false;
         try {
-          return format(new Date(r.submitted_date), 'yyyy-MM') === monthStr;
+          const date = new Date(r.submitted_date);
+          if (isNaN(date.getTime())) return false;
+          return format(date, 'yyyy-MM') === monthStr;
         } catch {
           return false;
         }
@@ -46,10 +53,15 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     if (!Array.isArray(changeOrders)) return [];
     
     const now = new Date();
-    const months = eachMonthOfInterval({
-      start: subMonths(now, 11),
-      end: now
-    });
+    let months;
+    try {
+      months = eachMonthOfInterval({
+        start: subMonths(now, 11),
+        end: now
+      });
+    } catch {
+      return [];
+    }
 
     return months.map(month => {
       const monthStr = format(month, 'yyyy-MM');
@@ -57,7 +69,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       const monthCOs = changeOrders.filter(co => {
         if (!co.submitted_date) return false;
         try {
-          return format(new Date(co.submitted_date), 'yyyy-MM') === monthStr;
+          const date = new Date(co.submitted_date);
+          if (isNaN(date.getTime())) return false;
+          return format(date, 'yyyy-MM') === monthStr;
         } catch {
           return false;
         }
@@ -83,10 +97,15 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     if (!Array.isArray(drawings)) return [];
     
     const now = new Date();
-    const months = eachMonthOfInterval({
-      start: subMonths(now, 5),
-      end: now
-    });
+    let months;
+    try {
+      months = eachMonthOfInterval({
+        start: subMonths(now, 5),
+        end: now
+      });
+    } catch {
+      return [];
+    }
 
     return months.map(month => {
       const monthEnd = new Date(month);
@@ -98,6 +117,7 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
         if (!d.due_date) return false;
         try {
           const dueDate = new Date(d.due_date);
+          if (isNaN(dueDate.getTime())) return false;
           return dueDate <= monthEnd && d.status !== 'FFF' && d.status !== 'As-Built';
         } catch {
           return false;
@@ -107,7 +127,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       const released = drawings.filter(d => {
         if (!d.released_for_fab_date) return false;
         try {
-          return format(new Date(d.released_for_fab_date), 'yyyy-MM') === format(month, 'yyyy-MM');
+          const date = new Date(d.released_for_fab_date);
+          if (isNaN(date.getTime())) return false;
+          return format(date, 'yyyy-MM') === format(month, 'yyyy-MM');
         } catch {
           return false;
         }
@@ -126,10 +148,15 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     if (!Array.isArray(tasks)) return [];
     
     const now = new Date();
-    const months = eachMonthOfInterval({
-      start: subMonths(now, 11),
-      end: now
-    });
+    let months;
+    try {
+      months = eachMonthOfInterval({
+        start: subMonths(now, 11),
+        end: now
+      });
+    } catch {
+      return [];
+    }
 
     return months.map(month => {
       const monthEnd = new Date(month);
@@ -141,6 +168,7 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
         if (!t.end_date) return false;
         try {
           const endDate = new Date(t.end_date);
+          if (isNaN(endDate.getTime())) return false;
           return endDate <= monthEnd && endDate >= startOfMonth(month);
         } catch {
           return false;
@@ -162,10 +190,15 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     if (!Array.isArray(scopeGaps)) return [];
     
     const now = new Date();
-    const months = eachMonthOfInterval({
-      start: subMonths(now, 5),
-      end: now
-    });
+    let months;
+    try {
+      months = eachMonthOfInterval({
+        start: subMonths(now, 5),
+        end: now
+      });
+    } catch {
+      return [];
+    }
 
     return months.map(month => {
       const monthStr = format(month, 'yyyy-MM');
@@ -173,7 +206,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       const openGaps = scopeGaps.filter(g => {
         if (!g.created_date) return g.status === 'open';
         try {
-          return format(new Date(g.created_date), 'yyyy-MM') <= monthStr && g.status === 'open';
+          const date = new Date(g.created_date);
+          if (isNaN(date.getTime())) return g.status === 'open';
+          return format(date, 'yyyy-MM') <= monthStr && g.status === 'open';
         } catch {
           return g.status === 'open';
         }
@@ -196,7 +231,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       if (r.status === 'closed' || r.status === 'answered') return false;
       if (!r.due_date) return false;
       try {
-        return new Date(r.due_date) < new Date();
+        const dueDate = new Date(r.due_date);
+        if (isNaN(dueDate.getTime())) return false;
+        return dueDate < new Date();
       } catch {
         return false;
       }
@@ -210,7 +247,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
     const overdueDrawings = (drawings || []).filter(d => {
       if (!d.due_date) return false;
       try {
-        return new Date(d.due_date) < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
+        const dueDate = new Date(d.due_date);
+        if (isNaN(dueDate.getTime())) return false;
+        return dueDate < new Date() && d.status !== 'FFF' && d.status !== 'As-Built';
       } catch {
         return false;
       }
@@ -220,7 +259,9 @@ export default function RiskTrendAnalysis({ projects, rfis, changeOrders, drawin
       if (t.status === 'completed') return false;
       if (!t.end_date) return false;
       try {
-        return new Date(t.end_date) < new Date();
+        const endDate = new Date(t.end_date);
+        if (isNaN(endDate.getTime())) return false;
+        return endDate < new Date();
       } catch {
         return false;
       }

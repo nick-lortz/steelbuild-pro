@@ -99,14 +99,14 @@ export default function LookAheadPlanning() {
     const dateFrom = parseISO(filters.dateFrom);
     const dateTo = parseISO(filters.dateTo);
 
-    return activities.filter(activity => {
+    return activities.filter((activity) => {
       // Date range filter
       const activityStart = parseISO(activity.start_date);
       const activityEnd = parseISO(activity.end_date);
       const inDateRange = isWithinInterval(activityStart, { start: dateFrom, end: dateTo }) ||
-                          isWithinInterval(activityEnd, { start: dateFrom, end: dateTo }) ||
-                          (activityStart <= dateFrom && activityEnd >= dateTo);
-      
+      isWithinInterval(activityEnd, { start: dateFrom, end: dateTo }) ||
+      activityStart <= dateFrom && activityEnd >= dateTo;
+
       if (!inDateRange) return false;
 
       // Phase filter
@@ -135,21 +135,21 @@ export default function LookAheadPlanning() {
   // Export to CSV
   const handleExport = () => {
     const headers = ['Activity', 'Phase', 'Start', 'End', 'Status', 'Progress', 'Responsible', 'Constraints'];
-    const rows = filteredActivities.map(a => {
-      const responsible = users.find(u => u.email === a.responsible_party_id);
+    const rows = filteredActivities.map((a) => {
+      const responsible = users.find((u) => u.email === a.responsible_party_id);
       return [
-        a.name,
-        a.phase,
-        format(parseISO(a.start_date), 'MM/dd/yyyy'),
-        format(parseISO(a.end_date), 'MM/dd/yyyy'),
-        a.status,
-        `${a.progress_percent || 0}%`,
-        responsible?.full_name || a.responsible_party_id || '',
-        a.constraint_notes || ''
-      ];
+      a.name,
+      a.phase,
+      format(parseISO(a.start_date), 'MM/dd/yyyy'),
+      format(parseISO(a.end_date), 'MM/dd/yyyy'),
+      a.status,
+      `${a.progress_percent || 0}%`,
+      responsible?.full_name || a.responsible_party_id || '',
+      a.constraint_notes || ''];
+
     });
 
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -160,7 +160,7 @@ export default function LookAheadPlanning() {
     toast.success('Exported look-ahead to CSV');
   };
 
-  const selectedProject = projects.find(p => p.id === activeProjectId);
+  const selectedProject = projects.find((p) => p.id === activeProjectId);
 
   if (!activeProjectId) {
     return (
@@ -172,16 +172,16 @@ export default function LookAheadPlanning() {
               <SelectValue placeholder="Select Project..." />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
+              {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>
                   {p.project_number} - {p.name}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -191,58 +191,58 @@ export default function LookAheadPlanning() {
         subtitle={selectedProject?.name}
         showBackButton={false}
         actions={
-          <div className="flex items-center gap-2">
+        <div className="text-slate-50 flex items-center gap-2">
             <Select value={activeProjectId} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
+                {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
             </Select>
             <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="border-zinc-700"
-            >
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="border-zinc-700">
+
               <Filter size={16} className="mr-2" />
               {showFilters ? 'Hide' : 'Show'} Filters
             </Button>
             <Button
-              variant="outline"
-              onClick={handleExport}
-              disabled={filteredActivities.length === 0}
-              className="border-zinc-700"
-            >
+            variant="outline"
+            onClick={handleExport}
+            disabled={filteredActivities.length === 0}
+            className="border-zinc-700">
+
               <Download size={16} className="mr-2" />
               Export CSV
             </Button>
             <Button
-              onClick={() => setShowActivityForm(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
+            onClick={() => setShowActivityForm(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black">
+
               <Plus size={16} className="mr-2" />
               Add Activity
             </Button>
           </div>
-        }
-      />
+        } />
+
 
       <div className="flex gap-6">
         {/* Filters Sidebar */}
-        {showFilters && (
-          <div className="w-80 flex-shrink-0">
+        {showFilters &&
+        <div className="w-80 flex-shrink-0">
             <LookAheadFilters
-              filters={filters}
-              setFilters={setFilters}
-              users={users}
-            />
+            filters={filters}
+            setFilters={setFilters}
+            users={users} />
+
           </div>
-        )}
+        }
 
         {/* Main Content */}
         <div className="flex-1 space-y-6">
@@ -251,8 +251,8 @@ export default function LookAheadPlanning() {
             activities={filteredActivities}
             dateFrom={filters.dateFrom}
             dateTo={filters.dateTo}
-            onActivityClick={setSelectedActivity}
-          />
+            onActivityClick={setSelectedActivity} />
+
 
           {/* Activities Table */}
           <LookAheadTable
@@ -262,8 +262,8 @@ export default function LookAheadPlanning() {
             drawingSets={drawingSets}
             rfis={rfis}
             onActivityClick={setSelectedActivity}
-            onUpdateActivity={(id, data) => updateMutation.mutate({ id, data })}
-          />
+            onUpdateActivity={(id, data) => updateMutation.mutate({ id, data })} />
+
         </div>
       </div>
 
@@ -280,8 +280,8 @@ export default function LookAheadPlanning() {
             drawingSets={drawingSets}
             rfis={rfis}
             onSubmit={(data) => createMutation.mutate({ ...data, project_id: activeProjectId })}
-            isLoading={createMutation.isPending}
-          />
+            isLoading={createMutation.isPending} />
+
         </DialogContent>
       </Dialog>
 
@@ -306,11 +306,11 @@ export default function LookAheadPlanning() {
                 }
               }}
               isLoading={updateMutation.isPending}
-              isEdit
-            />
+              isEdit />
+
           </div>
         </SheetContent>
       </Sheet>
-    </div>
-  );
+    </div>);
+
 }

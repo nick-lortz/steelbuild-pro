@@ -160,6 +160,7 @@ export default function ResourceManagement() {
 
         try {
           const taskStart = parseISO(task.start_date);
+          if (isNaN(taskStart.getTime())) return false;
           const thirtyDaysOut = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
           
           return task.status !== 'completed' && 
@@ -360,11 +361,19 @@ export default function ResourceManagement() {
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
                                 {task.phase}
                               </Badge>
-                              {task.start_date && (
-                                <span className="text-[10px] text-zinc-500">
-                                  Start: {format(parseISO(task.start_date), 'MMM d')}
-                                </span>
-                              )}
+                              {task.start_date && (() => {
+                                try {
+                                  const date = parseISO(task.start_date);
+                                  if (isNaN(date.getTime())) return null;
+                                  return (
+                                    <span className="text-[10px] text-zinc-500">
+                                      Start: {format(date, 'MMM d')}
+                                    </span>
+                                  );
+                                } catch {
+                                  return null;
+                                }
+                              })()}
                             </div>
                           </div>
                           <Button

@@ -1,5 +1,5 @@
 // Build cache clear
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,6 +140,19 @@ export default function Detailing() {
     allProjects :
     allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
   }, [currentUser, allProjects]);
+
+  // Real-time subscription for drawing set changes
+  useEffect(() => {
+    if (!activeProjectId) return;
+
+    const unsubscribe = base44.entities.DrawingSet.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['drawing-sets', activeProjectId] });
+      }
+    });
+
+    return unsubscribe;
+  }, [activeProjectId, queryClient]);
 
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],

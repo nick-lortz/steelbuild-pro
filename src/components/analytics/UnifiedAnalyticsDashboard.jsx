@@ -89,7 +89,14 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
             drawings_total: drawingSets.length,
             drawings_fff: drawingSets.filter(d => d.status === 'FFF').length,
             deliveries_total: deliveries.length,
-            deliveries_on_time: deliveries.filter(d => d.delivery_status === 'delivered' && (!d.actual_date || d.actual_date <= d.scheduled_date)).length,
+            deliveries_on_time: deliveries.filter(d => {
+              // Only count completed deliveries
+              if (d.delivery_status !== 'delivered') return false;
+              // If no actual date, cannot determine if on time
+              if (!d.actual_date) return false;
+              // On time if actual <= scheduled
+              return d.actual_date <= d.scheduled_date;
+            }).length,
             total_budget: totalBudget,
             actual_cost: actualCost,
             forecast_cost: forecastCost || actualCost,
@@ -184,13 +191,16 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
     packages_complete: (acc.packages_complete || 0) + pd.metrics.packages_complete,
   }), {});
 
-  const portfolioHealth = aggregatedMetrics ? (() => {
+  const portfolioHealth = aggregatedMetrics && aggregatedMetrics.total_budget > 0 ? (() => {
     const costVariance = ((aggregatedMetrics.total_actual / aggregatedMetrics.total_budget - 1) * 100);
-    const scheduleHealth = aggregatedMetrics.tasks_total > 0 ? (aggregatedMetrics.tasks_complete / aggregatedMetrics.tasks_total) : 0;
+    const scheduleHealth = aggregatedMetrics.tasks_total > 0 ? (aggregatedMetrics.tasks_complete / aggregatedMetrics.tasks_total) : 1;
     const overdueRate = aggregatedMetrics.tasks_total > 0 ? (aggregatedMetrics.tasks_overdue / aggregatedMetrics.tasks_total) : 0;
     
+    // Red: Over budget by 10%+ OR 15%+ tasks overdue OR <60% schedule complete
     if (costVariance > 10 || overdueRate > 0.15 || scheduleHealth < 0.6) return 'red';
+    // Amber: Over budget by 5-10% OR 8-15% tasks overdue OR 60-75% schedule complete
     if (costVariance > 5 || overdueRate > 0.08 || scheduleHealth < 0.75) return 'amber';
+    // Green: On track
     return 'green';
   })() : 'green';
 
@@ -369,7 +379,9 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
                   <div className={`text-lg font-bold ${
                     aggregatedMetrics.total_actual > aggregatedMetrics.total_budget ? 'text-red-500' : 'text-green-500'
                   }`}>
-                    {((aggregatedMetrics.total_actual / aggregatedMetrics.total_budget - 1) * 100).toFixed(1)}%
+                    {aggregatedMetrics.total_budget > 0 
+                      ? ((aggregatedMetrics.total_actual / aggregatedMetrics.total_budget - 1) * 100).toFixed(1) 
+                      : '0.0'}%
                   </div>
                 </div>
                 <div>

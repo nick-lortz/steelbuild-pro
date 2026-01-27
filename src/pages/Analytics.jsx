@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles } from 'lucide-react';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
@@ -14,6 +14,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
 import DashboardBuilder from '@/components/analytics/DashboardBuilder';
 import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
+import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
 import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
@@ -227,8 +228,12 @@ export default function Analytics() {
       )}
 
       {hasProject && (
-        <Tabs defaultValue="custom" className="space-y-6">
+        <Tabs defaultValue="unified" className="space-y-6">
           <TabsList className="bg-zinc-800 border border-zinc-700">
+            <TabsTrigger value="unified" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <Sparkles size={16} className="mr-2" />
+              Unified Analytics
+            </TabsTrigger>
             <TabsTrigger value="custom" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <LayoutDashboard size={16} className="mr-2" />
               Custom Dashboard
@@ -258,6 +263,10 @@ export default function Analytics() {
               EVM Analysis
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="unified" className="space-y-6">
+            <UnifiedAnalyticsDashboard projectId={activeProjectId} />
+          </TabsContent>
 
           <TabsContent value="custom" className="space-y-6">
             <DashboardBuilder

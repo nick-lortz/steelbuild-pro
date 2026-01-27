@@ -120,7 +120,6 @@ export default function ResourceManagement() {
       });
 
       // Flag overallocated (exceeds max concurrent capacity)
-      const maxConcurrent = resource.max_concurrent_assignments || 3;
       if (activeTaskCount > maxConcurrent) {
         metrics.overallocated.push({
           ...resource,

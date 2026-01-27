@@ -33,6 +33,35 @@ export default function Analytics() {
     queryFn: () => base44.entities.Project.list(),
   });
 
+  // Real-time subscriptions for live updates
+  useEffect(() => {
+    if (!activeProjectId) return;
+
+    const unsubscribeDrawings = base44.entities.DrawingSet.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['drawings', activeProjectId] });
+      }
+    });
+
+    const unsubscribeTasks = base44.entities.Task.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
+      }
+    });
+
+    const unsubscribeRFIs = base44.entities.RFI.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['rfis', activeProjectId] });
+      }
+    });
+
+    return () => {
+      unsubscribeDrawings();
+      unsubscribeTasks();
+      unsubscribeRFIs();
+    };
+  }, [activeProjectId, queryClient]);
+
   const saveDashboardMutation = useMutation({
     mutationFn: async (config) => {
       await base44.auth.updateMe({ dashboard_config: config });
@@ -52,6 +81,18 @@ export default function Analytics() {
       ? allProjects 
       : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
   }, [currentUser, allProjects]);
+
+  const { data: portfolioMetrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['portfolio-metrics', activeProjectId],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getPortfolioMetricsOptimized', {
+        project_ids: activeProjectId ? [activeProjectId] : userProjects.map(p => p.id).slice(0, 10)
+      });
+      return response.data;
+    },
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000 // Cache 2 minutes
+  });
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', activeProjectId],

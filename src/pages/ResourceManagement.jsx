@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,22 @@ export default function ResourceManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedTaskForAssign, setSelectedTaskForAssign] = useState(null);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    const unsubscribeTasks = base44.entities.Task.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    });
+
+    const unsubscribeResources = base44.entities.Resource.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+    });
+
+    return () => {
+      unsubscribeTasks();
+      unsubscribeResources();
+    };
+  }, [queryClient]);
 
   // Fetch data
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
@@ -88,8 +104,22 @@ export default function ResourceManagement() {
     onError: (error) => toast.error(error.message || 'Assignment failed')
   });
 
-  // Calculate resource utilization and allocation
+  // Backend-computed metrics (cached)
+  const { data: backendMetrics } = useQuery({
+    queryKey: ['resource-utilization-metrics'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getResourceUtilizationMetrics', {
+        include_unavailable: statusFilter === 'unavailable'
+      });
+      return response.data.metrics;
+    },
+    staleTime: 2 * 60 * 1000,
+    enabled: resources.length > 0
+  });
+
+  // Calculate resource utilization and allocation (fallback if backend fails)
   const resourceMetrics = useMemo(() => {
+    if (backendMetrics) return backendMetrics.summary;
     if (!resources.length) return null;
 
     const metrics = {

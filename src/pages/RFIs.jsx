@@ -440,13 +440,16 @@ export default function RFIs() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="submitted">Submitted</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="answered">Answered</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
+                   <SelectItem value="all">All Statuses</SelectItem>
+                   <SelectItem value="draft">Draft</SelectItem>
+                   <SelectItem value="submitted">Submitted</SelectItem>
+                   <SelectItem value="assigned">Assigned</SelectItem>
+                   <SelectItem value="in_review">In Review</SelectItem>
+                   <SelectItem value="answered">Answered</SelectItem>
+                   <SelectItem value="implemented">Implemented</SelectItem>
+                   <SelectItem value="closed">Closed</SelectItem>
+                   <SelectItem value="void">Void</SelectItem>
+                 </SelectContent>
               </Select>
               <Select value={pmFilter} onValueChange={setPmFilter}>
                 <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
@@ -471,6 +474,7 @@ export default function RFIs() {
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
+            <RFITrackingDashboard rfis={filteredRFIs} projects={projects} />
             <RFIKPIDashboard rfis={filteredRFIs} />
           </TabsContent>
 
@@ -689,9 +693,12 @@ function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs,
             <SelectContent>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="assigned">Assigned</SelectItem>
+              <SelectItem value="in_review">In Review</SelectItem>
               <SelectItem value="answered">Answered</SelectItem>
+              <SelectItem value="implemented">Implemented</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value="void">Void</SelectItem>
             </SelectContent>
           </Select>
         </div>

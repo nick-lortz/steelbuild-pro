@@ -1,146 +1,36 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useNavigate, Link } from 'react-router-dom';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { createPageUrl } from '@/utils';
-import { WidgetContainer } from '@/components/dashboard/WidgetGrid';
-import ProjectHealthWidget from '@/components/dashboard/ProjectHealthWidget';
-import DashboardNotificationCenter from '@/components/dashboard/DashboardNotificationCenter';
-import UpcomingDeadlinesWidget from '@/components/dashboard/UpcomingDeadlinesWidget';
-import QuickMetricsWidget from '@/components/dashboard/QuickMetricsWidget';
-import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Building2, 
-  DollarSign, 
-  Calendar,
-  TrendingUp,
-  AlertTriangle,
-  ArrowRight,
-  Plus,
-  FileText,
-  MessageSquareWarning,
-  FileCheck,
-  Target,
-  RefreshCw,
-  Activity,
-  CheckCircle2,
-  Settings,
-  LayoutGrid,
-  X
-} from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import ScreenContainer from '@/components/layout/ScreenContainer';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { format, differenceInDays } from 'date-fns';
-
-function formatFinancial(value) {
-  if (!value || value === 0) return '$0';
-  
-  const absValue = Math.abs(value);
-  
-  if (absValue >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  } else if (absValue >= 1000) {
-    return `$${(value / 1000).toFixed(0)}K`;
-  }
-  
-  return `$${value.toFixed(0)}`;
-}
-
-// Removed - no longer using KPICard component
-
-const ActivityItem = ({ type, title, subtitle, badge, date, onClick }) => {
-  return (
-    <div 
-      className="group px-6 py-3 hover:bg-zinc-950 cursor-pointer transition-colors"
-      onClick={onClick}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-xs text-white font-medium truncate">{title}</span>
-          </div>
-          <span className="text-[10px] text-zinc-600 truncate">{subtitle}</span>
-        </div>
-        <div className="flex items-center gap-3 ml-3">
-          {badge}
-          <span className="text-zinc-700 group-hover:text-zinc-500">→</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AVAILABLE_WIDGETS = [
-  { id: 'project-health', label: 'Project Health', component: ProjectHealthWidget },
-  { id: 'notifications', label: 'Notification Center', component: DashboardNotificationCenter },
-  { id: 'deadlines', label: 'Upcoming Deadlines', component: UpcomingDeadlinesWidget },
-  { id: 'drawings', label: 'Drawing Metrics', component: QuickMetricsWidget, props: { metric: 'drawings' } },
-  { id: 'rfis', label: 'RFI Metrics', component: QuickMetricsWidget, props: { metric: 'rfis' } },
-  { id: 'costs', label: 'Cost Metrics', component: QuickMetricsWidget, props: { metric: 'costs' } },
-  { id: 'tasks', label: 'Task Metrics', component: QuickMetricsWidget, props: { metric: 'tasks' } }
-];
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import PortfolioKPIs from '@/components/dashboard/PortfolioKPIs';
+import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
+import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
+import { differenceInDays, addDays } from 'date-fns';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { activeProjectId, setActiveProjectId } = useActiveProject();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activityPage, setActivityPage] = useState(1);
-  const [showWidgetConfig, setShowWidgetConfig] = useState(false);
-  const [viewMode, setViewMode] = useState('all'); // 'all' or 'project'
-  const ACTIVITY_PER_PAGE = 10;
-
-  // Widget state management
-  const [widgets, setWidgets] = useState(() => {
-    const saved = localStorage.getItem('dashboard-widgets');
-    return saved ? JSON.parse(saved) : ['project-health', 'notifications', 'deadlines'];
-  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('risk');
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: 15 * 60 * 1000,
-    retry: false,
+    staleTime: Infinity
   });
 
-  // Fetch portfolio metrics
-  const { data: metricsData, isLoading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useQuery({
-    queryKey: ['portfolioMetrics'],
-    queryFn: async () => {
-      try {
-        const response = await base44.functions.invoke('getPortfolioMetrics', {
-          timeframe: '12_months'
-        });
-        return response.data;
-      } catch (error) {
-        console.error('Portfolio metrics fetch failed:', error);
-        return null;
-      }
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: false
-  });
-
-  // Fetch ALL projects first
   const { data: allProjects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
-    queryKey: ['dashboardProjects'],
-    queryFn: () => base44.entities.Project.list('-updated_date'),
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 2 * 60 * 1000
   });
 
-  // Filter projects by user role and PM
-  const projects = useMemo(() => {
-    if (!currentUser) return allProjects;
+  const userProjects = useMemo(() => {
+    if (!currentUser) return [];
     if (currentUser.role === 'admin') return allProjects;
-    // Filter by PM, superintendent, or assigned users
     return allProjects.filter(p => 
       p.project_manager === currentUser.email || 
       p.superintendent === currentUser.email ||
@@ -148,907 +38,251 @@ export default function Dashboard() {
     );
   }, [currentUser, allProjects]);
 
-  // Fetch activity data - filtered by view mode
-  const projectIds = useMemo(() => projects.map(p => p.id), [projects]);
-
-  const { data: allRFIs = [], isLoading: rfisLoading, refetch: refetchRFIs } = useQuery({
-    queryKey: ['dashboardRFIs'],
-    queryFn: () => base44.entities.RFI.list('-created_date', 100),
-    staleTime: 2 * 60 * 1000,
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ['all-tasks'],
+    queryFn: () => base44.entities.Task.list('-updated_date'),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: allChangeOrders = [], isLoading: cosLoading, refetch: refetchCOs } = useQuery({
-    queryKey: ['dashboardCOs'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 100),
-    staleTime: 2 * 60 * 1000,
+  const { data: allFinancials = [] } = useQuery({
+    queryKey: ['all-financials'],
+    queryFn: () => base44.entities.Financial.list(),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: allTasks = [], isLoading: tasksLoading, refetch: refetchTasks } = useQuery({
-    queryKey: ['dashboardTasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 100),
-    staleTime: 2 * 60 * 1000,
+  const { data: allChangeOrders = [] } = useQuery({
+    queryKey: ['all-change-orders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 5 * 60 * 1000
   });
 
-  const { data: allDrawings = [], isLoading: drawingsLoading, refetch: refetchDrawings } = useQuery({
-    queryKey: ['dashboardDrawings'],
-    queryFn: () => base44.entities.DrawingSet.list('-created_date', 100),
-    staleTime: 5 * 60 * 1000,
+  const { data: allRFIs = [] } = useQuery({
+    queryKey: ['all-rfis'],
+    queryFn: () => base44.entities.RFI.list(),
+    staleTime: 5 * 60 * 1000
   });
 
-  // Filter data based on view mode and selected project
-  const rfis = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allRFIs.filter(r => r.project_id === activeProjectId);
-    }
-    return allRFIs.filter(r => projectIds.includes(r.project_id));
-  }, [allRFIs, viewMode, activeProjectId, projectIds]);
+  // Portfolio metrics calculation
+  const portfolioMetrics = useMemo(() => {
+    const totalProjects = userProjects.length;
+    const activeProjects = userProjects.filter(p => p.status === 'in_progress' || p.status === 'awarded').length;
 
-  const changeOrders = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allChangeOrders.filter(co => co.project_id === activeProjectId);
-    }
-    return allChangeOrders.filter(co => projectIds.includes(co.project_id));
-  }, [allChangeOrders, viewMode, activeProjectId, projectIds]);
+    const projectTasks = allTasks.filter(t => userProjects.some(p => p.id === t.project_id));
+    const today = new Date().toISOString().split('T')[0];
+    const overdueTasks = projectTasks.filter(t => 
+      t.status !== 'completed' && t.end_date && t.end_date < today
+    ).length;
 
-  const tasks = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allTasks.filter(t => t.project_id === activeProjectId);
-    }
-    return allTasks.filter(t => projectIds.includes(t.project_id));
-  }, [allTasks, viewMode, activeProjectId, projectIds]);
+    const upcomingMilestones = projectTasks.filter(t => 
+      t.is_milestone && 
+      t.end_date && 
+      t.end_date >= today &&
+      t.end_date <= addDays(new Date(), 30).toISOString().split('T')[0]
+    ).length;
 
-  const drawings = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allDrawings.filter(d => d.project_id === activeProjectId);
-    }
-    return allDrawings.filter(d => projectIds.includes(d.project_id));
-  }, [allDrawings, viewMode, activeProjectId, projectIds]);
-
-  // Fetch financial data for all user's projects
-  const { data: allSOVItems = [] } = useQuery({
-    queryKey: ['dashboardSOV'],
-    queryFn: () => base44.entities.SOVItem.list(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: allExpenses = [] } = useQuery({
-    queryKey: ['dashboardExpenses'],
-    queryFn: () => base44.entities.Expense.list(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: allEstimatedCosts = [] } = useQuery({
-    queryKey: ['dashboardETC'],
-    queryFn: () => base44.entities.EstimatedCostToComplete.list(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Filter financials based on view mode
-  const sovItems = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allSOVItems.filter(s => s.project_id === activeProjectId);
-    }
-    return allSOVItems.filter(s => projectIds.includes(s.project_id));
-  }, [allSOVItems, viewMode, activeProjectId, projectIds]);
-
-  const expenses = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allExpenses.filter(e => e.project_id === activeProjectId);
-    }
-    return allExpenses.filter(e => projectIds.includes(e.project_id));
-  }, [allExpenses, viewMode, activeProjectId, projectIds]);
-
-  const estimatedCosts = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return allEstimatedCosts.filter(etc => etc.project_id === activeProjectId);
-    }
-    return allEstimatedCosts.filter(etc => projectIds.includes(etc.project_id));
-  }, [allEstimatedCosts, viewMode, activeProjectId, projectIds]);
-
-  const projectChangeOrders = useMemo(() => {
-    return changeOrders; // Already filtered above
-  }, [changeOrders]);
-
-  // Calculate critical issues - MOVED BEFORE CONDITIONAL RETURN
-  const criticalIssues = useMemo(() => {
-    const issues = [];
-    
-    // Check overdue RFIs
-    const overdueRFIs = rfis.filter(r => {
-      if (!r.due_date || (r.status !== 'pending' && r.status !== 'submitted')) return false;
-      try {
-        return new Date(r.due_date) < new Date();
-      } catch {
-        return false;
-      }
-    });
-    if (overdueRFIs.length > 0) {
-      issues.push(`${overdueRFIs.length} overdue RFI${overdueRFIs.length > 1 ? 's' : ''}`);
-    }
-
-    // Check overdue drawings
-    const overdueDrawings = drawings.filter(d => {
-      if (!d.due_date || ['FFF', 'As-Built'].includes(d.status)) return false;
-      try {
-        return new Date(d.due_date) < new Date();
-      } catch {
-        return false;
-      }
-    });
-    if (overdueDrawings.length > 0) {
-      issues.push(`${overdueDrawings.length} overdue drawing${overdueDrawings.length > 1 ? 's' : ''}`);
-    }
-
-    // Check pending COs
-    const pendingCOs = changeOrders.filter(co => co.status === 'pending');
-    if (pendingCOs.length > 3) {
-      issues.push(`${pendingCOs.length} pending change orders`);
-    }
-
-    return issues;
-  }, [rfis, drawings, changeOrders]);
-
-  // Calculate schedule health - MOVED BEFORE CONDITIONAL RETURN
-  const scheduleHealth = useMemo(() => {
-    const overdueCount = tasks.filter(t => {
-      if (!t.due_date || t.status === 'completed') return false;
-      try {
-        return new Date(t.due_date) < new Date();
-      } catch {
-        return false;
-      }
-    }).length;
-    const totalActiveTasks = tasks.filter(t => t.status !== 'completed').length;
-    const onTimePercentage = totalActiveTasks > 0 
-      ? Math.round(((totalActiveTasks - overdueCount) / totalActiveTasks) * 100)
-      : 100;
-    
     return {
-      overdueCount,
-      onTimePercentage,
-      status: overdueCount === 0 ? 'on-track' : overdueCount < 5 ? 'warning' : 'critical'
+      totalProjects,
+      activeProjects,
+      atRiskProjects: 0, // Calculated below
+      overdueTasks,
+      upcomingMilestones,
+      totalTasks: projectTasks.length,
+      riskTrend: 0
     };
-  }, [tasks]);
+  }, [userProjects, allTasks]);
 
-  // Calculate active projects and milestones - MOVED BEFORE CONDITIONAL RETURN
-  const activeProjects = useMemo(() => {
-    if (viewMode === 'project' && activeProjectId) {
-      return projects.filter(p => p.id === activeProjectId && p.status === 'in_progress');
-    }
-    return projects.filter(p => p.status === 'in_progress');
-  }, [projects, viewMode, activeProjectId]);
-  
-  const upcomingMilestones = useMemo(() => 
-    activeProjects.filter(p => {
-      if (!p.target_completion) return false;
-      try {
-        const targetDate = new Date(p.target_completion);
-        if (isNaN(targetDate.getTime())) return false;
-        const days = differenceInDays(targetDate, new Date());
-        return days >= 0 && days <= 30;
-      } catch {
-        return false;
+  // Enhanced project data with health metrics
+  const projectsWithHealth = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+
+    return userProjects.map(project => {
+      const projectTasks = allTasks.filter(t => t.project_id === project.id);
+      const projectFinancials = allFinancials.filter(f => f.project_id === project.id);
+      const projectRFIs = allRFIs.filter(r => r.project_id === project.id);
+      const projectCOs = allChangeOrders.filter(c => c.project_id === project.id);
+
+      // Tasks
+      const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
+      const overdueTasks = projectTasks.filter(t => 
+        t.status !== 'completed' && t.end_date && t.end_date < today
+      ).length;
+
+      // Cost Health: % over/under budget
+      const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
+      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : 0;
+      const costHealth = budget > 0 ? ((actual - budget) / budget * 100) : 0;
+
+      // Schedule health: days slip
+      let daysSlip = 0;
+      if (project.target_completion) {
+        try {
+          const targetDate = new Date(project.target_completion + 'T00:00:00');
+          const latestTaskEnd = projectTasks
+            .filter(t => t.end_date)
+            .map(t => new Date(t.end_date + 'T00:00:00'))
+            .sort((a, b) => b - a)[0];
+
+          if (latestTaskEnd && latestTaskEnd > targetDate) {
+            daysSlip = differenceInDays(latestTaskEnd, targetDate);
+          }
+        } catch (error) {
+          // Skip
+        }
       }
-    }),
-    [activeProjects]
-  );
 
-  // Calculate financial summary - portfolio or single project
-  const dashboardFinancials = useMemo(() => {
-    if (viewMode === 'all') {
-      // Portfolio view - aggregate all user's projects
-      const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-      const signedExtras = changeOrders
-        .filter(co => co.status === 'approved')
-        .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-      const totalContract = contractValue + signedExtras;
-      const earnedToDate = sovItems.reduce((sum, s) => 
-        sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-      const actualCost = expenses
-        .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
-      
-      const totalETC = estimatedCosts.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
-      const estimatedCostAtCompletion = actualCost + totalETC;
+      const openRFIs = projectRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
+      const pendingCOs = projectCOs.filter(c => c.status === 'pending' || c.status === 'submitted').length;
+
+      // Progress: % of tasks complete
+      const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length * 100) : 0;
 
       return {
-        totalContract,
-        actualCost,
-        estimatedCostAtCompletion,
-        plannedMargin: 15,
-        isPortfolio: true
+        id: project.id,
+        name: project.name,
+        project_number: project.project_number,
+        status: project.status,
+        progress: Math.round(progress),
+        costHealth,
+        daysSlip,
+        totalTasks: projectTasks.length,
+        completedTasks,
+        overdueTasks,
+        budgetVsActual: Math.round(budgetVsActual),
+        openRFIs,
+        pendingCOs
       };
-    } else if (activeProjectId) {
-      // Single project view
-      const projectSOV = sovItems.filter(s => s.project_id === activeProjectId);
-      const projectExpenses = expenses.filter(e => e.project_id === activeProjectId);
-      const projectCOs = changeOrders.filter(co => co.project_id === activeProjectId);
-      const projectETC = estimatedCosts.filter(etc => etc.project_id === activeProjectId);
+    });
+  }, [userProjects, allTasks, allFinancials, allRFIs, allChangeOrders]);
 
-      const contractValue = projectSOV.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-      const signedExtras = projectCOs
-        .filter(co => co.status === 'approved')
-        .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-      const totalContract = contractValue + signedExtras;
-      const earnedToDate = projectSOV.reduce((sum, s) => 
-        sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-      const actualCost = projectExpenses
-        .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-        .reduce((sum, e) => sum + (e.amount || 0), 0);
-      
-      const totalETC = projectETC.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
-      const estimatedCostAtCompletion = actualCost + totalETC;
+  // Update portfolio metrics with actual at-risk count
+  const enhancedMetrics = useMemo(() => {
+    const atRiskCount = projectsWithHealth.filter(p => 
+      p.costHealth > 5 || p.daysSlip > 3 || p.overdueTasks > 0
+    ).length;
 
-      const activeProject = projects.find(p => p.id === activeProjectId);
+    return {
+      ...portfolioMetrics,
+      atRiskProjects: atRiskCount
+    };
+  }, [portfolioMetrics, projectsWithHealth]);
 
-      return {
-        totalContract,
-        actualCost,
-        estimatedCostAtCompletion,
-        plannedMargin: activeProject?.planned_margin || 15,
-        isPortfolio: false
-      };
+  // Filtered projects
+  const filteredProjects = useMemo(() => {
+    let filtered = [...projectsWithHealth];
+
+    // Search
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name?.toLowerCase().includes(search) || 
+        p.project_number?.toLowerCase().includes(search)
+      );
     }
-    return null;
-  }, [viewMode, activeProjectId, sovItems, expenses, changeOrders, estimatedCosts, projects]);
 
-  // Calculate cost risk status - MOVED BEFORE CONDITIONAL RETURN
-  const costRiskStatus = useMemo(() => {
-    if (!dashboardFinancials) return { status: 'unknown', message: 'No Data' };
-    
-    const projectedMargin = ((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100);
-    const variance = projectedMargin - dashboardFinancials.plannedMargin;
-    
-    if (variance >= 0) return { status: 'healthy', message: 'On Target', color: 'green' };
-    if (variance >= -3) return { status: 'warning', message: 'Below Target', color: 'amber' };
-    return { status: 'critical', message: 'At Risk', color: 'red' };
-  }, [dashboardFinancials]);
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(p => p.status === statusFilter);
+    }
 
-  const portfolioHealth = useMemo(() => 
-    metricsData?.portfolioHealth || {},
-    [metricsData]
-  );
+    // Risk filter
+    if (riskFilter === 'at_risk') {
+      filtered = filtered.filter(p => p.costHealth > 5 || p.daysSlip > 3 || p.overdueTasks > 0);
+    } else if (riskFilter === 'healthy') {
+      filtered = filtered.filter(p => p.costHealth <= 5 && p.daysSlip <= 3 && p.overdueTasks === 0);
+    }
 
-  // Combine activity feed
-  const activityFeed = useMemo(() => {
-    const items = [];
-
-    rfis.forEach(r => {
-      const project = projects.find(p => p.id === r.project_id);
-      let rfiDate;
-      try {
-        rfiDate = new Date(r.created_date);
-      } catch {
-        rfiDate = new Date();
-      }
-      items.push({
-        id: `rfi-${r.id}`,
-        type: 'rfi',
-        title: `RFI-${String(r.rfi_number).padStart(3, '0')}`,
-        subtitle: project?.name || r.subject,
-        badge: <StatusBadge status={r.status} className="text-xs" />,
-        date: rfiDate,
-        onClick: () => navigate(createPageUrl('RFIs'))
+    // Sort
+    if (sortBy === 'risk') {
+      filtered.sort((a, b) => {
+        const aRisk = (a.costHealth > 5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
+        const bRisk = (b.costHealth > 5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
+        if (bRisk !== aRisk) return bRisk - aRisk;
+        return (a.name || '').localeCompare(b.name || '');
       });
-    });
+    } else if (sortBy === 'name') {
+      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sortBy === 'progress') {
+      filtered.sort((a, b) => b.progress - a.progress);
+    } else if (sortBy === 'budget') {
+      filtered.sort((a, b) => b.budgetVsActual - a.budgetVsActual);
+    } else if (sortBy === 'schedule') {
+      filtered.sort((a, b) => b.daysSlip - a.daysSlip);
+    }
 
-    changeOrders.forEach(co => {
-      const project = projects.find(p => p.id === co.project_id);
-      let coDate;
-      try {
-        coDate = new Date(co.created_date);
-      } catch {
-        coDate = new Date();
-      }
-      items.push({
-        id: `co-${co.id}`,
-        type: 'co',
-        title: `CO-${String(co.co_number).padStart(3, '0')}`,
-        subtitle: project?.name || co.title,
-        badge: <StatusBadge status={co.status} className="text-xs" />,
-        date: coDate,
-        onClick: () => navigate(createPageUrl('ChangeOrders'))
-      });
-    });
+    return filtered;
+  }, [projectsWithHealth, searchTerm, statusFilter, riskFilter, sortBy]);
 
-    tasks.filter(t => t.status !== 'completed').forEach(t => {
-      const project = projects.find(p => p.id === t.project_id);
-      let taskDate;
-      try {
-        taskDate = new Date(t.updated_date || t.created_date);
-      } catch {
-        taskDate = new Date();
-      }
-      items.push({
-        id: `task-${t.id}`,
-        type: 'task',
-        title: t.name,
-        subtitle: project?.name || 'Task',
-        badge: <StatusBadge status={t.status} className="text-xs" />,
-        date: taskDate,
-        onClick: () => navigate(createPageUrl('Schedule'))
-      });
-    });
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || riskFilter !== 'all';
 
-    return items.sort((a, b) => b.date - a.date);
-  }, [rfis, changeOrders, tasks, projects, navigate]);
-
-  const paginatedActivity = useMemo(() => 
-    activityFeed.slice(0, activityPage * ACTIVITY_PER_PAGE),
-    [activityFeed, activityPage]
-  );
-  
-  const hasMoreActivity = useMemo(() => 
-    activityFeed.length > paginatedActivity.length,
-    [activityFeed.length, paginatedActivity.length]
-  );
-
-  // Widget management
-  const handleRemoveWidget = (widgetId) => {
-    const newWidgets = widgets.filter(w => w !== widgetId);
-    setWidgets(newWidgets);
-    localStorage.setItem('dashboard-widgets', JSON.stringify(newWidgets));
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setRiskFilter('all');
   };
 
-  const handleAddWidget = (widgetId) => {
-    if (!widgets.includes(widgetId)) {
-      const newWidgets = [...widgets, widgetId];
-      setWidgets(newWidgets);
-      localStorage.setItem('dashboard-widgets', JSON.stringify(newWidgets));
-    }
-  };
-
-  // Pull to refresh handler
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await Promise.all([
-      refetchMetrics(),
-      refetchProjects(),
-      refetchRFIs(),
-      refetchCOs(),
-      refetchTasks(),
-      refetchDrawings()
-    ]);
-    queryClient.invalidateQueries();
-    setIsRefreshing(false);
-  }, [refetchMetrics, refetchProjects, refetchRFIs, refetchCOs, refetchTasks, refetchDrawings, queryClient]);
-
-  const isLoading = projectsLoading || metricsLoading || rfisLoading || cosLoading || tasksLoading || drawingsLoading;
-
-  if (isLoading) {
+  if (projectsLoading || !currentUser) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
-          <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Status Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-6 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-green-500" />
-              <span className="text-zinc-500 font-mono uppercase tracking-wider">OPERATIONAL</span>
-            </div>
-            <span className="text-zinc-600 font-mono">{format(new Date(), 'yyyy-MM-dd HH:mm')}</span>
-            {currentUser?.role !== 'admin' && (
-              <span className="text-zinc-600 font-mono uppercase tracking-wider">
-                PM: {currentUser?.full_name || currentUser?.email}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {/* View Mode Selector */}
-            <Select value={viewMode} onValueChange={(val) => {
-              setViewMode(val);
-              if (val === 'all') {
-                setActiveProjectId(null);
-              } else if (!activeProjectId && projects.length > 0) {
-                setActiveProjectId(projects[0].id);
-              }
-            }}>
-              <SelectTrigger className="w-40 h-7 bg-zinc-900 border-zinc-700 text-zinc-400 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                <SelectItem value="all" className="text-white text-xs">All Projects</SelectItem>
-                <SelectItem value="project" className="text-white text-xs">By Project</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Project Selector - only show when in project mode */}
-            {viewMode === 'project' && (
-              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 h-7 bg-zinc-900 border-zinc-700 text-zinc-400 text-xs">
-                  <SelectValue placeholder="Select Project" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id} className="text-white text-xs">
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowWidgetConfig(true)}
-              className="text-zinc-500 hover:text-zinc-400 h-7 gap-1"
-            >
-              <LayoutGrid size={14} />
-              <span className="text-xs uppercase tracking-wider">WIDGETS</span>
-            </Button>
-            <button 
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="text-zinc-500 hover:text-zinc-400 font-mono text-xs uppercase tracking-wider"
-            >
-              {isRefreshing ? 'REFRESHING...' : 'REFRESH'}
-            </button>
-          </div>
+    <div className="min-h-screen pb-8">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">Portfolio Dashboard</h1>
+          <p className="text-xs text-muted-foreground font-mono mt-1">
+            {currentUser.role === 'admin' ? 'ALL PROJECTS' : 'YOUR PROJECTS'}
+          </p>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => refetchProjects()}
+          className="gap-2"
+        >
+          <RefreshCw size={14} />
+          Refresh
+        </Button>
       </div>
 
-      {/* Command Panel */}
-      <div className="border-b-2 border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-8">
-          <div className="grid grid-cols-4 gap-6">
-            {/* Action Required */}
-            <div 
-              className={`relative border-l-4 pl-5 pr-4 py-5 cursor-pointer transition-all ${
-                criticalIssues.length > 0 
-                  ? 'border-red-500 bg-red-500/5 hover:bg-red-500/10' 
-                  : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
-              }`}
-              onClick={() => {
-                if (criticalIssues.length > 0) {
-                  if (criticalIssues[0].includes('RFI')) navigate(createPageUrl('RFIs'));
-                  else if (criticalIssues[0].includes('drawing')) navigate(createPageUrl('Detailing'));
-                  else navigate(createPageUrl('ChangeOrders'));
-                }
-              }}
-            >
-              {criticalIssues.length > 0 && (
-                <div className="absolute top-3 right-3 text-[10px] font-bold text-red-500 uppercase tracking-widest animate-pulse">
-                  ACTION
-                </div>
-              )}
-              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {criticalIssues.length}
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
-                REQUIRE ACTION
-              </div>
-              {criticalIssues.length > 0 && (
-                <div className="text-xs text-zinc-400 leading-tight truncate">
-                  {criticalIssues[0]}
-                </div>
-              )}
-            </div>
+      {/* Portfolio KPIs */}
+      <PortfolioKPIs metrics={enhancedMetrics} />
 
-            {/* Schedule Health */}
-            <div 
-              className={`relative border-l-4 pl-5 pr-4 py-5 cursor-pointer transition-all ${
-                scheduleHealth.status === 'critical' 
-                  ? 'border-red-500 bg-red-500/5 hover:bg-red-500/10'
-                  : scheduleHealth.status === 'warning'
-                  ? 'border-amber-500 bg-amber-500/5 hover:bg-amber-500/10'
-                  : 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
-              }`}
-              onClick={() => navigate(createPageUrl('Schedule'))}
-            >
-              {scheduleHealth.overdueCount > 0 && (
-                <div className="absolute top-3 right-3 text-[10px] font-bold text-red-500 uppercase tracking-widest">
-                  {scheduleHealth.overdueCount} LATE
-                </div>
-              )}
-              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {scheduleHealth.onTimePercentage}%
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
-                SCHEDULE HEALTH
-              </div>
-              <div className="h-1 bg-zinc-900">
-                <div 
-                  className={`h-full transition-all ${
-                    scheduleHealth.status === 'critical' ? 'bg-red-500' :
-                    scheduleHealth.status === 'warning' ? 'bg-amber-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${scheduleHealth.onTimePercentage}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Cost Risk */}
-            <div 
-              className={`relative border-l-4 pl-5 pr-4 py-5 cursor-pointer transition-all ${
-                costRiskStatus.status === 'critical' 
-                  ? 'border-red-500 bg-red-500/5 hover:bg-red-500/10'
-                  : costRiskStatus.status === 'warning'
-                  ? 'border-amber-500 bg-amber-500/5 hover:bg-amber-500/10'
-                  : costRiskStatus.status === 'healthy'
-                  ? 'border-green-500 bg-green-500/5 hover:bg-green-500/10'
-                  : 'border-zinc-800 bg-zinc-950 hover:bg-zinc-900'
-              }`}
-              onClick={() => {
-                if (viewMode === 'project' && activeProjectId) {
-                  navigate(createPageUrl('Financials'));
-                } else {
-                  navigate(createPageUrl('Financials'));
-                }
-              }}
-            >
-              {dashboardFinancials && (
-                <div className={`absolute top-3 right-3 text-[10px] font-bold uppercase tracking-widest ${
-                  costRiskStatus.status === 'critical' ? 'text-red-500' :
-                  costRiskStatus.status === 'warning' ? 'text-amber-500' : 'text-green-500'
-                }`}>
-                  {((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100).toFixed(1)}%
-                </div>
-              )}
-              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {costRiskStatus.message === 'No Data' ? '—' : costRiskStatus.message.toUpperCase()}
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
-                COST RISK {dashboardFinancials?.isPortfolio ? '(PORTFOLIO)' : ''}
-              </div>
-              {dashboardFinancials && (
-                <div className="text-xs text-zinc-500 font-mono">
-                  EAC {formatFinancial(dashboardFinancials.estimatedCostAtCompletion)}
-                </div>
-              )}
-            </div>
-
-            {/* Active Projects */}
-            <div 
-              className="relative border-l-4 border-zinc-800 bg-zinc-950 hover:bg-zinc-900 pl-5 pr-4 py-5 cursor-pointer transition-all"
-              onClick={() => navigate(createPageUrl('Projects'))}
-            >
-              <div className="text-5xl font-bold text-white mb-2 tracking-tight leading-none">
-                {portfolioHealth.activeProjects || activeProjects.length}
-              </div>
-              <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-3">
-                ACTIVE PROJECTS
-              </div>
-              <div className="text-xs text-zinc-500 font-mono">
-                {projects.length} total
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Filters */}
+      <div className="my-6">
+        <ProjectFiltersBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          riskFilter={riskFilter}
+          onRiskChange={setRiskFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* Secondary Metrics Bar */}
-        <div className="grid grid-cols-4 gap-0 border border-zinc-800 mb-6">
-          <div className="p-4 border-r border-zinc-800">
-            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
-              BUDGET CONSUMED
-            </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-3xl font-bold text-white tracking-tight">
-                {portfolioHealth.budgetUtilization || 0}%
-              </span>
-            </div>
-            <div className="h-1 bg-zinc-900">
-              <div 
-                className={`h-full transition-all ${
-                  (portfolioHealth.budgetUtilization || 0) > 90 ? 'bg-red-500' :
-                  (portfolioHealth.budgetUtilization || 0) > 75 ? 'bg-amber-500' : 'bg-zinc-600'
-                }`}
-                style={{ width: `${Math.min(portfolioHealth.budgetUtilization || 0, 100)}%` }}
-              />
-            </div>
-          </div>
-          
-          <div className="p-4 border-r border-zinc-800">
-            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
-              COMPLETION
-            </div>
-            <div className="flex items-baseline gap-2 mb-3">
-              <span className="text-3xl font-bold text-white tracking-tight">
-                {portfolioHealth.completionRate || 0}%
-              </span>
-            </div>
-            <div className="h-1 bg-zinc-900">
-              <div 
-                className="h-full bg-zinc-600 transition-all"
-                style={{ width: `${Math.min(portfolioHealth.completionRate || 0, 100)}%` }}
-              />
-            </div>
-          </div>
+      {/* Project Health Table */}
+      <ProjectHealthTable 
+        projects={filteredProjects}
+        onProjectClick={(projectId) => setActiveProjectId(projectId)}
+      />
 
-          <div className="p-4 border-r border-zinc-800">
-            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
-              OPEN RFIs
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl font-bold text-white tracking-tight">
-                {rfis.filter(r => r.status === 'pending' || r.status === 'submitted').length}
-              </span>
-              {rfis.filter(r => {
-                if (!r.due_date) return false;
-                try {
-                  return new Date(r.due_date) < new Date();
-                } catch {
-                  return false;
-                }
-              }).length > 0 && (
-                <span className="text-xs font-bold text-red-500">
-                  {rfis.filter(r => {
-                    if (!r.due_date) return false;
-                    try {
-                      return new Date(r.due_date) < new Date();
-                    } catch {
-                      return false;
-                    }
-                  }).length} OVERDUE
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="p-4">
-            <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">
-              PENDING COs
-            </div>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl font-bold text-white tracking-tight">
-                {changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').length}
-              </span>
-              <span className="text-xs text-zinc-500 font-mono">
-                {formatFinancial(changeOrders.filter(co => co.status === 'pending' || co.status === 'submitted').reduce((sum, co) => sum + (co.cost_impact || 0), 0))}
-              </span>
-            </div>
-          </div>
+      {filteredProjects.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-sm text-muted-foreground">No projects match your filters</p>
         </div>
-
-        {/* Financial Strip - Portfolio or Project */}
-        {dashboardFinancials && (
-          <div className="mb-6 border-2 border-zinc-800">
-            <div className="px-6 py-3 border-b border-zinc-800 bg-black">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">
-                    {viewMode === 'all' ? 'PORTFOLIO SUMMARY' : 'PROJECT SUMMARY'}
-                  </span>
-                  {viewMode === 'project' && activeProjectId && (
-                    <>
-                      <span className="text-xs text-white font-mono">
-                        {projects.find(p => p.id === activeProjectId)?.project_number}
-                      </span>
-                      <span className="text-xs text-zinc-500 truncate max-w-md">
-                        {projects.find(p => p.id === activeProjectId)?.name}
-                      </span>
-                    </>
-                  )}
-                  {viewMode === 'all' && (
-                    <span className="text-xs text-zinc-500">
-                      {projects.length} {currentUser?.role === 'admin' ? 'active' : 'assigned'} projects
-                    </span>
-                  )}
-                </div>
-                <button
-                  className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest font-bold"
-                  onClick={() => navigate(createPageUrl('Financials'))}
-                >
-                  DETAILS →
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-5 divide-x divide-zinc-800 bg-zinc-950">
-              <div className="px-6 py-4">
-                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">CONTRACT</div>
-                <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                  {formatFinancial(dashboardFinancials.totalContract)}
-                </div>
-              </div>
-              <div className="px-6 py-4">
-                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">ACTUAL</div>
-                <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                  {formatFinancial(dashboardFinancials.actualCost)}
-                </div>
-              </div>
-              <div className="px-6 py-4">
-                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">EAC</div>
-                <div className="text-2xl font-bold text-white font-mono tracking-tight">
-                  {formatFinancial(dashboardFinancials.estimatedCostAtCompletion)}
-                </div>
-              </div>
-              <div className="px-6 py-4">
-                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">MARGIN</div>
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-2xl font-bold font-mono tracking-tight ${
-                    ((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100) > dashboardFinancials.plannedMargin
-                      ? 'text-green-500'
-                      : 'text-red-500'
-                  }`}>
-                    {((dashboardFinancials.totalContract - dashboardFinancials.estimatedCostAtCompletion) / dashboardFinancials.totalContract * 100).toFixed(1)}%
-                  </span>
-                  <span className="text-xs text-zinc-600 font-mono">
-                    / {dashboardFinancials.plannedMargin}%
-                  </span>
-                </div>
-              </div>
-              <div className="px-6 py-4">
-                <div className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">STATUS</div>
-                <div className={`inline-block text-xs font-bold font-mono uppercase tracking-wider ${
-                  costRiskStatus.status === 'healthy' ? 'text-green-500' :
-                  costRiskStatus.status === 'warning' ? 'text-amber-500' : 'text-red-500'
-                }`}>
-                  {costRiskStatus.message}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Customizable Widgets */}
-        {widgets.length > 0 && viewMode === 'project' && activeProjectId && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">DASHBOARD WIDGETS</h2>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowWidgetConfig(true)}
-                className="text-zinc-600 hover:text-white h-7 gap-1"
-              >
-                <Settings size={12} />
-                Configure
-              </Button>
-            </div>
-            <WidgetContainer>
-              {widgets.map((widgetId) => {
-                const widgetDef = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
-                if (!widgetDef) return null;
-                const WidgetComponent = widgetDef.component;
-                return (
-                  <div key={widgetId} className="relative">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRemoveWidget(widgetId)}
-                      className="absolute top-2 right-2 z-10 h-6 w-6 p-0 text-zinc-600 hover:text-red-500"
-                    >
-                      <X size={14} />
-                    </Button>
-                    <WidgetComponent projectId={activeProjectId} {...(widgetDef.props || {})} />
-                  </div>
-                );
-              })}
-            </WidgetContainer>
-          </div>
-        )}
-
-        {/* Data Tables */}
-        <div className="grid grid-cols-2 gap-6">
-          {/* Deadlines */}
-          {upcomingMilestones.length > 0 ? (
-            <div className="border border-zinc-800 bg-black">
-              <div className="px-6 py-3 border-b border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">APPROACHING DEADLINES</span>
-                  <span className="text-[10px] font-mono text-zinc-600">{upcomingMilestones.length}</span>
-                </div>
-              </div>
-              <div className="divide-y divide-zinc-800">
-                {upcomingMilestones.slice(0, 8).map(project => {
-                  let days = 0;
-                  try {
-                    days = project.target_completion ? differenceInDays(new Date(project.target_completion), new Date()) : 0;
-                  } catch {
-                    days = 0;
-                  }
-                  return (
-                    <div
-                      key={project.id}
-                      className="group px-6 py-3 hover:bg-zinc-950 cursor-pointer transition-colors"
-                      onClick={() => navigate(`/ProjectDashboard?id=${project.id}`)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xs text-white font-medium truncate">{project.name}</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-600 font-mono">{project.project_number}</span>
-                        </div>
-                        <div className="flex items-center gap-3 ml-3">
-                          <span className={`text-xs font-bold font-mono ${
-                            days < 7 ? 'text-red-500' : days < 14 ? 'text-amber-500' : 'text-zinc-500'
-                          }`}>
-                            {days}d
-                          </span>
-                          <span className="text-zinc-700 group-hover:text-zinc-500">→</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="border border-zinc-800 bg-black flex items-center justify-center py-16">
-              <span className="text-xs text-zinc-700 uppercase tracking-widest">NO UPCOMING DEADLINES</span>
-            </div>
-          )}
-
-          {/* Activity */}
-          <div className="border border-zinc-800 bg-black">
-            <div className="px-6 py-3 border-b border-zinc-800">
-              <span className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold">RECENT ACTIVITY</span>
-            </div>
-            {paginatedActivity.length === 0 ? (
-              <div className="text-center py-16">
-                <span className="text-xs text-zinc-700 uppercase tracking-widest">NO RECENT ACTIVITY</span>
-              </div>
-            ) : (
-              <>
-                <div className="divide-y divide-zinc-800">
-                  {paginatedActivity.slice(0, 8).map(item => (
-                    <ActivityItem key={item.id} {...item} />
-                  ))}
-                </div>
-                {hasMoreActivity && (
-                  <div className="p-3 border-t border-zinc-800">
-                    <button
-                      className="w-full text-[10px] text-zinc-600 hover:text-zinc-400 uppercase tracking-widest font-bold py-2"
-                      onClick={() => setActivityPage(p => p + 1)}
-                    >
-                      LOAD MORE
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Widget Configuration Dialog */}
-      <Dialog open={showWidgetConfig} onOpenChange={setShowWidgetConfig}>
-        <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <LayoutGrid size={18} />
-              Configure Dashboard Widgets
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
-            {AVAILABLE_WIDGETS.map((widget) => (
-              <div key={widget.id} className="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800 rounded">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={widgets.includes(widget.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        handleAddWidget(widget.id);
-                      } else {
-                        handleRemoveWidget(widget.id);
-                      }
-                    }}
-                    className="border-zinc-700"
-                  />
-                  <span className="text-sm text-white">{widget.label}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="text-xs text-zinc-600">
-            Select which widgets to display on your dashboard
-          </div>
-        </DialogContent>
-      </Dialog>
+      )}
     </div>
   );
 }

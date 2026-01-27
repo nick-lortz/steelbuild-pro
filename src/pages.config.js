@@ -38,6 +38,7 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import Submittals from './pages/Submittals';
 import __Layout from './Layout.jsx';
 
 
@@ -82,6 +83,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Submittals": Submittals,
 }
 
 export const pagesConfig = {

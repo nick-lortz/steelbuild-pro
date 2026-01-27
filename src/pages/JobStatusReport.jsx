@@ -111,6 +111,8 @@ export default function JobStatusReport() {
     };
   }, [sovItems, expenses, changeOrders]);
 
+  const selectedProjectData = projects.find(p => p.id === selectedProject);
+
   // Weekly narrative data
   const currentWeekData = useMemo(() => {
     const marginVariance = financialSummary.projectedMargin - (selectedProjectData?.planned_margin || 15);
@@ -159,7 +161,7 @@ export default function JobStatusReport() {
       estimatedCostAtCompletion: financialSummary.estimatedCostAtCompletion,
       riskDrivers: drivers.slice(0, 3)
     };
-  }, [financialSummary, sovItems, expenses, mappings, selectedProjectData]);
+  }, [financialSummary, sovItems, expenses, mappings, selectedProjectData?.planned_margin]);
 
   // SOV with Cost Alignment
   const sovWithCosts = useMemo(() => {
@@ -356,8 +358,6 @@ export default function JobStatusReport() {
       </div>
     );
   }
-
-  const selectedProjectData = projects.find(p => p.id === selectedProject);
 
   return (
     <div className="space-y-6">

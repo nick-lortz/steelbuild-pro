@@ -12,7 +12,7 @@ import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
-import DashboardBuilder from '@/components/analytics/DashboardBuilder';
+
 import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
 import AutoReportGenerator from '@/components/reports/AutoReportGenerator';
@@ -282,10 +282,6 @@ export default function Analytics() {
               <Sparkles size={16} className="mr-2" />
               Unified Analytics
             </TabsTrigger>
-            <TabsTrigger value="custom" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <LayoutDashboard size={16} className="mr-2" />
-              Custom Dashboard
-            </TabsTrigger>
             <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <AlertTriangle size={16} className="mr-2" />
               Risk Dashboard
@@ -318,17 +314,6 @@ export default function Analytics() {
               <AIForecastETC projectId={activeProjectId} />
             </div>
             <UnifiedAnalyticsDashboard projectId={activeProjectId} />
-          </TabsContent>
-
-          <TabsContent value="custom" className="space-y-6">
-            <DashboardBuilder
-              projectData={selectedProject ? [selectedProject] : userProjects}
-              tasks={tasks}
-              financials={financials}
-              resources={resources}
-              expenses={expenses}
-              onSaveConfig={(config) => saveDashboardMutation.mutate(config)}
-            />
           </TabsContent>
 
           <TabsContent value="risk-dashboard" className="space-y-6">

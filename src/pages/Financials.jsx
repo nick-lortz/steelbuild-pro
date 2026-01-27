@@ -13,17 +13,19 @@ import SOVManager from '@/components/sov/SOVManager';
 import InvoiceManager from '@/components/sov/InvoiceManager';
 import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
 import JobStatusReport from '@/components/sov/JobStatusReport';
-import { usePermissions } from '@/components/shared/usePermissions';
+import { usePermissions } from '@/components/shared/permissions';
 
 export default function Financials() {
   const [selectedProject, setSelectedProject] = useState('');
-  const { can } = usePermissions();
+  const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: Infinity
   });
+
+  const canEdit = currentUser?.role === 'admin';
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
@@ -81,6 +83,35 @@ export default function Financials() {
     queryKey: ['cost-codes'],
     queryFn: () => base44.entities.CostCode.list('code')
   });
+
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    const unsubFinancials = base44.entities.Financial.subscribe((event) => {
+      if (event.data?.project_id === selectedProject) {
+        queryClient.invalidateQueries({ queryKey: ['financials', selectedProject] });
+      }
+    });
+
+    const unsubExpenses = base44.entities.Expense.subscribe((event) => {
+      if (event.data?.project_id === selectedProject) {
+        queryClient.invalidateQueries({ queryKey: ['expenses', selectedProject] });
+      }
+    });
+
+    const unsubSOV = base44.entities.SOVItem.subscribe((event) => {
+      if (event.data?.project_id === selectedProject) {
+        queryClient.invalidateQueries({ queryKey: ['sov-items', selectedProject] });
+      }
+    });
+
+    return () => {
+      unsubFinancials();
+      unsubExpenses();
+      unsubSOV();
+    };
+  }, [selectedProject, queryClient]);
 
   const selectedProjectData = projects.find((p) => p.id === selectedProject);
 
@@ -163,8 +194,8 @@ export default function Financials() {
         <TabsContent value="sov">
           <div className="space-y-6">
             <JobStatusReport sovItems={sovItems} expenses={expenses} changeOrders={changeOrders} />
-            <SOVManager projectId={selectedProject} canEdit={can.editFinancials} />
-            <InvoiceManager projectId={selectedProject} canEdit={can.editFinancials} />
+            <SOVManager projectId={selectedProject} canEdit={canEdit} />
+            <InvoiceManager projectId={selectedProject} canEdit={canEdit} />
             <SOVCostAlignment sovItems={sovItems} expenses={expenses} />
           </div>
         </TabsContent>
@@ -174,7 +205,7 @@ export default function Financials() {
             projectId={selectedProject}
             budgetLines={budgetLines}
             costCodes={costCodes}
-            canEdit={can.editFinancials} />
+            canEdit={canEdit} />
 
         </TabsContent>
 
@@ -183,7 +214,7 @@ export default function Financials() {
             projectId={selectedProject}
             expenses={expenses}
             costCodes={costCodes}
-            canEdit={can.editFinancials} />
+            canEdit={canEdit} />
 
         </TabsContent>
       </Tabs>

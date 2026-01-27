@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
 import { useConfirm } from '@/components/providers/ConfirmProvider';
-import { usePermissions } from '@/components/shared/usePermissions';
+import { checkPermission } from '@/components/shared/permissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,7 +77,18 @@ export default function Projects() {
 
   const queryClient = useQueryClient();
   const { confirm } = useConfirm();
-  const { can } = usePermissions();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
+
+  const can = {
+    createProject: checkPermission(currentUser, 'projects:create'),
+    editProject: checkPermission(currentUser, 'projects:edit'),
+    deleteProject: checkPermission(currentUser, 'projects:delete')
+  };
 
   const { data: projects = [], isLoading, refetch } = useQuery({
     queryKey: ['projects'],

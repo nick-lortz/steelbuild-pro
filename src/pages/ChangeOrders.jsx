@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,15 @@ export default function ChangeOrders() {
   const [deleteCO, setDeleteCO] = useState(null);
 
   const queryClient = useQueryClient();
+
+  // Real-time subscription
+  useEffect(() => {
+    const unsubscribe = base44.entities.ChangeOrder.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+    });
+
+    return unsubscribe;
+  }, [queryClient]);
 
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],

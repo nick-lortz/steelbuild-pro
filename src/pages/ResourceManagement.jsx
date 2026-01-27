@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, isAfter, parseISO } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -737,6 +737,11 @@ export default function ResourceManagement() {
               tasks={tasks}
               projects={projects}
             />
+          </TabsContent>
+
+          {/* Leveling Tab */}
+          <TabsContent value="leveling" className="space-y-6">
+            <ResourceLevelingPanel projectId={projects[0]?.id} />
           </TabsContent>
         </Tabs>
 

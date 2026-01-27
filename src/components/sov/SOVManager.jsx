@@ -79,7 +79,26 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      // Validate if updating percent_complete
+      if (data.percent_complete !== undefined) {
+        const validation = await base44.functions.invoke('validateSOVBudget', {
+          sov_item_id: id,
+          percent_complete: data.percent_complete,
+          project_id: projectId
+        });
+
+        if (!validation.data.valid && validation.data.severity === 'critical') {
+          throw new Error(validation.data.error);
+        }
+
+        if (validation.data.warning) {
+          toast.warning(validation.data.warning);
+        }
+      }
+
+      return base44.entities.SOVItem.update(id, data);
+    },
     onSuccess: (result, variables) => {
       queryClient.setQueryData(['sov-items', projectId], (old) => {
         if (!old) return old;

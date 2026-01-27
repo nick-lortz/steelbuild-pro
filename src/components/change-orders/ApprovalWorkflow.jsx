@@ -5,13 +5,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Clock, User, MessageSquare } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export default function ApprovalWorkflow({ changeOrder, currentUser, onApprovalComplete }) {
+  const queryClient = useQueryClient();
   const [action, setAction] = useState(null);
   const [comments, setComments] = useState('');
   const [processing, setProcessing] = useState(false);
+
+  const applyCascadeMutation = useMutation({
+    mutationFn: async ({ change_order_id }) => {
+      return await base44.functions.invoke('applyCOApproval', { change_order_id });
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['change-orders', 'sov-items', 'financials', 'tasks'] });
+      const updates = response.data.updates;
+      toast.success(
+        `CO applied: ${updates.sov_items.length} SOV, ${updates.financials.length} budgets, ${updates.tasks.length} tasks updated`
+      );
+      if (onApprovalComplete) onApprovalComplete();
+    },
+    onError: (error) => toast.error(error.message)
+  });
 
   const approvalChain = changeOrder.approval_chain || [];
   const costImpact = Math.abs(changeOrder.cost_impact || 0);
@@ -130,6 +147,22 @@ export default function ApprovalWorkflow({ changeOrder, currentUser, onApprovalC
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Apply CO Button (after approval) */}
+        {isFullyApproved && changeOrder.status === 'approved' && (
+          <div className="pt-4 border-t border-zinc-800">
+            <Button
+              onClick={() => applyCascadeMutation.mutate({ change_order_id: changeOrder.id })}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold"
+              disabled={applyCascadeMutation.isPending}
+            >
+              {applyCascadeMutation.isPending ? 'Applying Updates...' : 'Apply CO Updates to SOV/Budget/Schedule'}
+            </Button>
+            <p className="text-xs text-zinc-500 mt-2">
+              Cascades cost/schedule impacts to SOV items, financials, and tasks
+            </p>
           </div>
         )}
 

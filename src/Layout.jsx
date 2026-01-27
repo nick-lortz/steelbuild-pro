@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
   Hash,
   Sparkles,
   File,
@@ -26,7 +27,12 @@ import {
   UserCircle,
   BarChart3,
   Camera,
-  CheckCircle2 } from
+  CheckCircle2,
+  LayoutDashboard,
+  Wrench,
+  Package,
+  MessageSquare,
+  Gauge } from
 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -46,38 +52,101 @@ import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 
-const navItems = [
-{ name: 'Dashboard', page: 'Dashboard', icon: Building2, roles: ['admin', 'user'] },
-{ name: 'Projects', page: 'Projects', icon: Building2, roles: ['admin', 'user'] },
-{ name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2, roles: ['admin', 'user'] },
-{ name: 'Detailing', page: 'Detailing', icon: FileText, roles: ['admin', 'user'] },
-{ name: 'Work Packages', page: 'WorkPackages', icon: FileCheck, roles: ['admin', 'user'] },
-{ name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-{ name: 'Documents', page: 'Documents', icon: File, roles: ['admin', 'user'] },
-{ name: 'Labor & Scope', page: 'LaborScope', icon: TrendingUp, roles: ['admin', 'user'] },
-{ name: 'Cost Codes', page: 'CostCodes', icon: Hash, roles: ['admin', 'user'] },
-{ name: 'Fabrication', page: 'Fabrication', icon: TrendingUp, roles: ['admin', 'user'] },
-{ name: 'Schedule', page: 'Schedule', icon: Calendar, roles: ['admin', 'user'] },
-{ name: 'Deliveries', page: 'Deliveries', icon: Truck, roles: ['admin', 'user'] },
-{ name: 'Daily Logs', page: 'DailyLogs', icon: Calendar, roles: ['admin', 'user'] },
-{ name: 'Field Tools', page: 'FieldTools', icon: Camera, roles: ['admin', 'user'] },
-{ name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck, roles: ['admin', 'user'] },
-{ name: 'Financials', page: 'Financials', icon: DollarSign, roles: ['admin', 'user'] },
-{ name: 'Analytics', page: 'Analytics', icon: BarChart3, roles: ['admin', 'user'] },
-{ name: 'Resources', page: 'Resources', icon: Users, roles: ['admin', 'user'] },
-{ name: 'Resource Management', page: 'ResourceManagement', icon: TrendingUp, roles: ['admin', 'user'] },
-{ name: 'Equipment', page: 'Equipment', icon: Truck, roles: ['admin', 'user'] },
-{ name: 'Labor', page: 'Labor', icon: Clock, roles: ['admin', 'user'] },
-{ name: 'Meetings', page: 'Meetings', icon: Users, roles: ['admin', 'user'] },
-{ name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar, roles: ['admin', 'user'] },
-{ name: 'Messages', page: 'Messages', icon: MessageSquareWarning, roles: ['admin', 'user'] },
-{ name: 'Reports', page: 'Reports', icon: FileText, roles: ['admin', 'user'] },
-{ name: 'Performance', page: 'Performance', icon: TrendingUp, roles: ['admin', 'user'] },
-{ name: 'AI Insights', page: 'Insights', icon: Sparkles, roles: ['admin', 'user'] },
-{ name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3, roles: ['admin', 'user'] },
-{ name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
-{ name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
-{ name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }];
+const navGroups = [
+  {
+    name: 'Overview',
+    icon: LayoutDashboard,
+    items: [
+      { name: 'Dashboard', page: 'Dashboard', icon: Building2 },
+      { name: 'Projects', page: 'Projects', icon: Building2 },
+      { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3 }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Project Execution',
+    icon: CheckCircle2,
+    items: [
+      { name: 'Schedule', page: 'Schedule', icon: Calendar },
+      { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck },
+      { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 },
+      { name: 'Field Tools', page: 'FieldTools', icon: Camera }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Design & Fabrication',
+    icon: Wrench,
+    items: [
+      { name: 'Detailing', page: 'Detailing', icon: FileText },
+      { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp },
+      { name: 'Documents', page: 'Documents', icon: File }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Logistics',
+    icon: Truck,
+    items: [
+      { name: 'Deliveries', page: 'Deliveries', icon: Truck },
+      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Cost Management',
+    icon: DollarSign,
+    items: [
+      { name: 'Financials', page: 'Financials', icon: DollarSign },
+      { name: 'Cost Codes', page: 'CostCodes', icon: Hash },
+      { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
+      { name: 'Labor & Scope', page: 'LaborScope', icon: TrendingUp }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Resources',
+    icon: Users,
+    items: [
+      { name: 'Resource Management', page: 'ResourceManagement', icon: Package },
+      { name: 'Equipment', page: 'Equipment', icon: Truck },
+      { name: 'Labor', page: 'Labor', icon: Clock }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Communications',
+    icon: MessageSquare,
+    items: [
+      { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning },
+      { name: 'Messages', page: 'Messages', icon: MessageSquareWarning },
+      { name: 'Meetings', page: 'Meetings', icon: Users },
+      { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Insights & Reporting',
+    icon: BarChart3,
+    items: [
+      { name: 'Analytics', page: 'Analytics', icon: BarChart3 },
+      { name: 'Reports', page: 'Reports', icon: FileText },
+      { name: 'Performance', page: 'Performance', icon: Gauge },
+      { name: 'AI Insights', page: 'Insights', icon: Sparkles }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Settings',
+    icon: Settings,
+    items: [
+      { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
+      { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
+      { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }
+    ],
+    roles: ['admin', 'user']
+  }
+];
 
 
 function LayoutContent({ children, currentPageName }) {
@@ -85,7 +154,21 @@ function LayoutContent({ children, currentPageName }) {
   useMountLogger('LayoutContent');
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState(() => {
+    const saved = localStorage.getItem('nav_expanded_groups');
+    return saved ? JSON.parse(saved) : ['Overview', 'Project Execution'];
+  });
   const { activeProjectId } = useActiveProject();
+
+  const toggleGroup = (groupName) => {
+    setExpandedGroups(prev => {
+      const newExpanded = prev.includes(groupName)
+        ? prev.filter(g => g !== groupName)
+        : [...prev, groupName];
+      localStorage.setItem('nav_expanded_groups', JSON.stringify(newExpanded));
+      return newExpanded;
+    });
+  };
 
   const { data: currentUser, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['currentUser'],
@@ -122,28 +205,17 @@ function LayoutContent({ children, currentPageName }) {
 
   const projectPhase = activeProject?.phase || 'fabrication';
 
-  const visibleNavItems = useMemo(() => {
-    if (!currentUser) return navItems;
-    return navItems.filter(
-      (item) => !item.roles || item.roles.includes(currentUser.role)
+  const visibleNavGroups = useMemo(() => {
+    if (!currentUser) return navGroups;
+    return navGroups.map(group => ({
+      ...group,
+      items: group.items.filter(item => 
+        !item.roles || item.roles.includes(currentUser.role)
+      )
+    })).filter(group => 
+      (!group.roles || group.roles.includes(currentUser.role)) && group.items.length > 0
     );
   }, [currentUser]);
-
-  const getNavItemPriority = (item) => {
-    if (projectPhase === 'detailing' && item.page === 'Detailing') return 1;
-    if (projectPhase === 'fabrication' && item.page === 'Fabrication') return 1;
-    if (projectPhase === 'delivery' && item.page === 'Deliveries') return 1;
-    if (projectPhase === 'erection' && item.page === 'Schedule') return 1;
-    return 2;
-  };
-
-  const sortedNavItems = useMemo(() => {
-    return [...visibleNavItems].sort((a, b) => {
-      const priorityA = getNavItemPriority(a);
-      const priorityB = getNavItemPriority(b);
-      return priorityA - priorityB;
-    });
-  }, [visibleNavItems, projectPhase]);
 
   // Show loading state while checking auth
   if (userLoading) {
@@ -267,29 +339,62 @@ function LayoutContent({ children, currentPageName }) {
           <span className="font-bold text-lg tracking-tight ml-3 text-white">SteelBuild Pro</span>
         </div>
 
-        <nav className="p-2 space-y-0.5 flex-1 overflow-y-auto">
-          {sortedNavItems.map((item) => {
-            const isActive = currentPageName === item.page;
-            const isPrimaryPhase = getNavItemPriority(item) === 1;
-            const Icon = item.icon;
+        <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
+          {visibleNavGroups.map((group) => {
+            const isExpanded = expandedGroups.includes(group.name);
+            const GroupIcon = group.icon;
+            const hasActivePage = group.items.some(item => item.page === currentPageName);
 
             return (
-              <Link
-                key={item.page}
-                to={createPageUrl(item.page)}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 text-xs font-bold uppercase tracking-widest transition-colors',
-                  isActive
-                    ? 'bg-amber-500 text-black'
-                    : isPrimaryPhase
-                    ? 'text-amber-500 hover:bg-zinc-900'
-                    : 'text-zinc-500 hover:text-white hover:bg-zinc-900'
+              <div key={group.name}>
+                {/* Group Header */}
+                <button
+                  onClick={() => toggleGroup(group.name)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
+                    hasActivePage ? 'text-amber-500' : 'text-zinc-400 hover:text-white'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <GroupIcon size={12} />
+                    <span>{group.name}</span>
+                  </div>
+                  <ChevronDown 
+                    size={12} 
+                    className={cn(
+                      'transition-transform',
+                      isExpanded ? 'rotate-0' : '-rotate-90'
+                    )}
+                  />
+                </button>
+
+                {/* Group Items */}
+                {isExpanded && (
+                  <div className="ml-2 mt-0.5 space-y-0.5">
+                    {group.items.map((item) => {
+                      const isActive = currentPageName === item.page;
+                      const Icon = item.icon;
+
+                      return (
+                        <Link
+                          key={item.page}
+                          to={createPageUrl(item.page)}
+                          onClick={() => setSidebarOpen(false)}
+                          className={cn(
+                            'flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors rounded',
+                            isActive
+                              ? 'bg-amber-500 text-black'
+                              : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                          )}
+                        >
+                          <Icon size={13} />
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 )}
-              >
-                <Icon size={14} />
-                {item.name}
-              </Link>
+              </div>
             );
           })}
         </nav>

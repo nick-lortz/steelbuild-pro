@@ -220,7 +220,7 @@ export default function ResourceManagement() {
   }, [resources, tasks]);
 
   const allocationChartData = useMemo(() => {
-    if (!resourceMetrics || !projects.length) return [];
+    if (!resourceMetrics || !resourceMetrics.allocationByProject || !projects.length) return [];
 
     return Object.values(resourceMetrics.allocationByProject)
       .map((allocation) => {

@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from '@/components/ui/PageHeader';
 import ProjectScheduleWidget from '@/components/schedule/ProjectScheduleWidget';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight, DollarSign } from 'lucide-react';
+import DependencyMap from '@/components/project-dashboard/DependencyMap';
+import ProjectNotifications from '@/components/project-dashboard/ProjectNotifications';
+import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight, DollarSign, Network, Bell } from 'lucide-react';
 import { format, parseISO, isPast, addDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -19,6 +22,7 @@ export default function ProjectDashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [detailView, setDetailView] = useState('schedule');
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
@@ -320,10 +324,10 @@ export default function ProjectDashboard() {
         </Select>
       </div>
 
-      {/* Selected Project Schedule Widget */}
+      {/* Selected Project Detail View */}
       {selectedProjectId && (
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">
               {projects.find(p => p.id === selectedProjectId)?.name}
             </h3>
@@ -336,7 +340,35 @@ export default function ProjectDashboard() {
               Close
             </Button>
           </div>
-          <ProjectScheduleWidget projectId={selectedProjectId} />
+
+          <Tabs value={detailView} onValueChange={setDetailView}>
+            <TabsList className="grid w-full grid-cols-3 bg-zinc-900 border border-zinc-800">
+              <TabsTrigger value="schedule" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
+                <Calendar size={14} className="mr-2" />
+                Schedule
+              </TabsTrigger>
+              <TabsTrigger value="dependencies" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
+                <Network size={14} className="mr-2" />
+                Critical Path
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
+                <Bell size={14} className="mr-2" />
+                Alerts
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="schedule" className="mt-4">
+              <ProjectScheduleWidget projectId={selectedProjectId} />
+            </TabsContent>
+
+            <TabsContent value="dependencies" className="mt-4">
+              <DependencyMap tasks={allTasks} projectId={selectedProjectId} />
+            </TabsContent>
+
+            <TabsContent value="alerts" className="mt-4">
+              <ProjectNotifications projectId={selectedProjectId} />
+            </TabsContent>
+          </Tabs>
         </div>
       )}
 
@@ -450,9 +482,12 @@ export default function ProjectDashboard() {
                     size="sm"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => setSelectedProjectId(selectedProjectId === project.id ? null : project.id)}
+                    onClick={() => {
+                      setSelectedProjectId(selectedProjectId === project.id ? null : project.id);
+                      if (selectedProjectId !== project.id) setDetailView('schedule');
+                    }}
                   >
-                    {selectedProjectId === project.id ? 'Hide' : 'View'} Health
+                    {selectedProjectId === project.id ? 'Hide' : 'View'} Details
                   </Button>
                   <Link to={createPageUrl('Schedule') + `?project=${project.id}`} className="flex-1">
                     <Button size="sm" className="w-full bg-amber-500 hover:bg-amber-600 text-black">

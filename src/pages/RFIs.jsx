@@ -134,8 +134,11 @@ export default function RFIs() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data, logAction }) => {
+      const rfi = rfis.find(r => r.id === id);
+      const currentLog = rfi?.activity_log && Array.isArray(rfi.activity_log) ? rfi.activity_log : [];
+      
       const activityLog = [
-        ...(editingRFI?.activity_log || []),
+        ...currentLog,
         {
           action: logAction || `RFI updated by ${user?.full_name || user?.email}`,
           user: user?.email || 'system',
@@ -143,7 +146,7 @@ export default function RFIs() {
           changes: data
         }
       ];
-      return base44.entities.RFI.update(id, { ...data, activity_log });
+      return base44.entities.RFI.update(id, { ...data, activity_log: activityLog });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });

@@ -2,20 +2,20 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Truck, TrendingUp, TrendingDown, Clock, Package, Trash2, Calendar, AlertTriangle, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import PageHeader from '@/components/ui/PageHeader';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { 
+  Plus, Search, Truck, Calendar, MapPin, Package, 
+  Filter, Download, Edit, Trash2, CheckCircle2, AlertTriangle 
+} from 'lucide-react';
+import { format, parseISO, differenceInDays, isWithinInterval, startOfWeek, endOfWeek, isToday } from 'date-fns';
+import { toast } from 'sonner';
 import DataTable from '@/components/ui/DataTable';
-import KPICard from '@/components/financials/KPICard';
-import DeliveryForm from '@/components/deliveries/DeliveryForm';
-import DeliveryKPIs from '@/components/deliveries/DeliveryKPIs';
-import FilterBar from '@/components/shared/FilterBar';
-import SortControl from '@/components/shared/SortControl';
-import ExportButton from '@/components/shared/ExportButton';
-import { format, parseISO, differenceInDays, isWithinInterval, addDays, startOfWeek, endOfWeek } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,23 +24,23 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle } from
-"@/components/ui/alert-dialog";
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import DeliveryWizard from '@/components/deliveries/DeliveryWizard';
+import DeliveryDetailPanel from '@/components/deliveries/DeliveryDetailPanel';
+import TodaysDeliveries from '@/components/deliveries/TodaysDeliveries';
+import ReceivingMode from '@/components/deliveries/ReceivingMode';
 
 export default function Deliveries() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilters, setActiveFilters] = useState({
-    projects: [],
-    statuses: [],
-    carriers: [],
-    dateRange: 'all'
-  });
-  const [sortBy, setSortBy] = useState('scheduled_date');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [showForm, setShowForm] = useState(false);
+  const [projectFilter, setProjectFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showWizard, setShowWizard] = useState(false);
   const [editingDelivery, setEditingDelivery] = useState(null);
+  const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [deleteDelivery, setDeleteDelivery] = useState(null);
-  const [savedFilters, setSavedFilters] = useState([]);
+  const [receivingDelivery, setReceivingDelivery] = useState(null);
+  const [activeView, setActiveView] = useState('list');
 
   const queryClient = useQueryClient();
 
@@ -52,63 +52,55 @@ export default function Deliveries() {
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list('-scheduled_date'),
-    staleTime: 5 * 60 * 1000
+    queryFn: () => base44.entities.Delivery.list('-confirmed_date'),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: allTasks = [] } = useQuery({
-    queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list(),
-    staleTime: 10 * 60 * 1000
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
   });
-
-  const tasks = useMemo(() => {
-    if (!activeFilters.projects?.length || activeFilters.projects.length === 0) {
-      return allTasks.filter((t) => t.phase === 'delivery');
-    }
-    return allTasks.filter((t) =>
-    t.phase === 'delivery' && activeFilters.projects.includes(t.project_id)
-    );
-  }, [allTasks, activeFilters.projects]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Delivery.create(data),
+    mutationFn: (data) => {
+      const activityLog = {
+        action: `Delivery created`,
+        user: user?.email || 'system',
+        timestamp: new Date().toISOString()
+      };
+      return base44.entities.Delivery.create({
+        ...data,
+        activity_log: [activityLog]
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
-      setShowForm(false);
+      setShowWizard(false);
       setEditingDelivery(null);
-    },
-    onError: (error) => {
-      console.error('Failed to create delivery:', error);
+      toast.success('Delivery created successfully');
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data, oldStatus }) => {
-      const updated = await base44.entities.Delivery.update(id, data);
-
-      // Trigger notification if status changed
-      if (oldStatus && data.delivery_status && oldStatus !== data.delivery_status) {
-        try {
-          await base44.functions.invoke('notifyDeliveryStatusChange', {
-            delivery_id: id,
-            old_status: oldStatus,
-            new_status: data.delivery_status
-          });
-        } catch (notifError) {
-          console.error('Notification error:', notifError);
+    mutationFn: ({ id, data, logAction }) => {
+      const activityLog = [
+        ...(editingDelivery?.activity_log || []),
+        {
+          action: logAction || `Delivery updated`,
+          user: user?.email || 'system',
+          timestamp: new Date().toISOString(),
+          changes: data
         }
-      }
-
-      return updated;
+      ];
+      return base44.entities.Delivery.update(id, { ...data, activity_log });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
-      setShowForm(false);
+      setShowWizard(false);
       setEditingDelivery(null);
-    },
-    onError: (error) => {
-      console.error('Failed to update delivery:', error);
+      setSelectedDelivery(null);
+      setReceivingDelivery(null);
+      toast.success('Delivery updated successfully');
     }
   });
 
@@ -117,578 +109,363 @@ export default function Deliveries() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setDeleteDelivery(null);
-    },
-    onError: (error) => {
-      console.error('Failed to delete delivery:', error);
+      toast.success('Delivery deleted');
     }
   });
 
-  // Get unique carriers for filter
-  const uniqueCarriers = useMemo(() =>
-  [...new Set(deliveries.map((d) => d.carrier).filter(Boolean))].sort(),
-  [deliveries]
-  );
-
-  // Build project lookup map
-  const projectMap = useMemo(() =>
-  new Map(projects.map((p) => [p.id, p])),
-  [projects]
-  );
-
-  const deliveriesFromTasks = useMemo(() => {
-    return tasks.
-    filter((t) => t.phase === 'delivery').
-    map((task) => {
-      const existingDelivery = deliveries.find((d) =>
-      d.linked_task_ids?.includes(task.id) ||
-      d.package_name === task.name && d.project_id === task.project_id
-      );
-
-      if (existingDelivery) return null;
-
-      return {
-        _isFromTask: true,
-        _taskId: task.id,
-        project_id: task.project_id,
-        package_name: task.name,
-        package_number: task.wbs_code || '',
-        scheduled_date: task.start_date,
-        delivery_status: task.status === 'completed' ? 'delivered' : 'scheduled',
-        weight_tons: 0,
-        piece_count: 0,
-        carrier: '',
-        linked_task_ids: [task.id],
-        notes: `Auto-generated from delivery task`
-      };
-    }).
-    filter(Boolean);
-  }, [tasks, deliveries]);
-
-  const allDeliveries = useMemo(() => {
-    return [...deliveries, ...deliveriesFromTasks];
-  }, [deliveries, deliveriesFromTasks]);
-
   const filteredDeliveries = useMemo(() => {
-    let filtered = allDeliveries;
+    return deliveries.filter(d => {
+      const matchesSearch = 
+        d.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.delivery_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.vendor_supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        d.carrier?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
+      const matchesStatus = statusFilter === 'all' || d.delivery_status === statusFilter;
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter((d) =>
-      d.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.package_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.carrier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.load_number?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+      return matchesSearch && matchesProject && matchesStatus;
+    });
+  }, [deliveries, searchTerm, projectFilter, statusFilter]);
 
-    // Multi-select project filter
-    if (activeFilters.projects?.length > 0) {
-      filtered = filtered.filter((d) => activeFilters.projects.includes(d.project_id));
-    }
-
-    // Multi-select status filter
-    if (activeFilters.statuses?.length > 0) {
-      filtered = filtered.filter((d) => activeFilters.statuses.includes(d.delivery_status));
-    }
-
-    // Multi-select carrier filter
-    if (activeFilters.carriers?.length > 0) {
-      filtered = filtered.filter((d) => activeFilters.carriers.includes(d.carrier));
-    }
-
-    // Date range filter
-    const today = new Date();
-    if (activeFilters.dateRange === 'this_week') {
-      filtered = filtered.filter((d) => {
-        if (!d.scheduled_date) return false;
-        return isWithinInterval(parseISO(d.scheduled_date), {
-          start: startOfWeek(today),
-          end: endOfWeek(today)
-        });
-      });
-    } else if (activeFilters.dateRange === 'next_7_days') {
-      filtered = filtered.filter((d) => {
-        if (!d.scheduled_date) return false;
-        const daysUntil = differenceInDays(parseISO(d.scheduled_date), today);
-        return daysUntil >= 0 && daysUntil <= 7;
-      });
-    } else if (activeFilters.dateRange === 'next_14_days') {
-      filtered = filtered.filter((d) => {
-        if (!d.scheduled_date) return false;
-        const daysUntil = differenceInDays(parseISO(d.scheduled_date), today);
-        return daysUntil >= 0 && daysUntil <= 14;
-      });
-    } else if (activeFilters.dateRange === 'past_30_days') {
-      filtered = filtered.filter((d) => {
-        if (!d.scheduled_date) return false;
-        const daysAgo = differenceInDays(today, parseISO(d.scheduled_date));
-        return daysAgo >= 0 && daysAgo <= 30;
-      });
-    }
-
-    // Apply sorting
-    const sortFunctions = {
-      scheduled_date: (a, b) => {
-        const dateA = a.scheduled_date ? new Date(a.scheduled_date) : new Date(0);
-        const dateB = b.scheduled_date ? new Date(b.scheduled_date) : new Date(0);
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      },
-      actual_date: (a, b) => {
-        const dateA = a.actual_date ? new Date(a.actual_date) : new Date(0);
-        const dateB = b.actual_date ? new Date(b.actual_date) : new Date(0);
-        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-      },
-      project: (a, b) => {
-        const projA = projectMap.get(a.project_id)?.name || '';
-        const projB = projectMap.get(b.project_id)?.name || '';
-        return sortOrder === 'asc' ? projA.localeCompare(projB) : projB.localeCompare(projA);
-      },
-      status: (a, b) => {
-        const statusA = a.delivery_status || '';
-        const statusB = b.delivery_status || '';
-        return sortOrder === 'asc' ? statusA.localeCompare(statusB) : statusB.localeCompare(statusA);
-      },
-      weight: (a, b) => {
-        const weightA = Number(a.weight_tons) || 0;
-        const weightB = Number(b.weight_tons) || 0;
-        return sortOrder === 'asc' ? weightA - weightB : weightB - weightA;
-      },
-      carrier: (a, b) => {
-        const carrierA = a.carrier || '';
-        const carrierB = b.carrier || '';
-        return sortOrder === 'asc' ? carrierA.localeCompare(carrierB) : carrierB.localeCompare(carrierA);
-      },
-      variance: (a, b) => {
-        const varianceA = a.days_variance || 0;
-        const varianceB = b.days_variance || 0;
-        return sortOrder === 'asc' ? varianceA - varianceB : varianceB - varianceA;
-      }
-    };
-
-    const sortFn = sortFunctions[sortBy] || sortFunctions.scheduled_date;
-    return [...filtered].sort(sortFn);
-  }, [deliveries, searchTerm, activeFilters, sortBy, sortOrder, projectMap]);
-
-  // Calculate KPIs
   const kpis = useMemo(() => {
-    const completed = filteredDeliveries.filter((d) => d.delivery_status === 'delivered');
-    const onTime = completed.filter((d) => {
-      if (!d.actual_date) return false;
-      const variance = differenceInDays(
-        parseISO(d.actual_date),
-        parseISO(d.scheduled_date)
-      );
-      return variance <= 0; // On time or early
-    });
-
-    const delayed = filteredDeliveries.filter((d) =>
-    d.delivery_status === 'delayed' ||
-    d.delivery_status === 'delivered' && d.actual_date &&
-    differenceInDays(parseISO(d.actual_date), parseISO(d.scheduled_date)) > 0
-    );
-
-    const upcoming = filteredDeliveries.filter((d) => {
-      if (d.delivery_status !== 'scheduled') return false;
-      const daysUntil = differenceInDays(
-        parseISO(d.scheduled_date),
-        new Date()
-      );
-      return daysUntil >= 0 && daysUntil <= 14;
-    });
-
-    const totalWeight = filteredDeliveries.reduce((sum, d) => sum + (d.weight_tons || 0), 0);
-    const totalPieces = filteredDeliveries.reduce((sum, d) => sum + (d.piece_count || 0), 0);
-
-    const avgVariance = completed.length > 0 ?
-    completed.reduce((sum, d) => {
-      if (!d.actual_date) return sum;
-      return sum + differenceInDays(
-        parseISO(d.actual_date),
-        parseISO(d.scheduled_date)
-      );
-    }, 0) / completed.length :
-    0;
+    const today = new Date();
+    const received = filteredDeliveries.filter(d => d.delivery_status === 'received' || d.delivery_status === 'closed');
+    const onTime = received.filter(d => d.on_time);
+    const todaysCount = filteredDeliveries.filter(d => {
+      const date = d.confirmed_date || d.scheduled_date || d.requested_date;
+      return date && isToday(parseISO(date));
+    }).length;
+    const exceptions = filteredDeliveries.filter(d => d.exceptions?.some(e => !e.resolved)).length;
 
     return {
       total: filteredDeliveries.length,
-      completed: completed.length,
-      onTime: onTime.length,
-      onTimePercent: completed.length > 0 ? onTime.length / completed.length * 100 : 0,
-      delayed: delayed.length,
-      upcoming: upcoming.length,
-      totalWeight,
-      totalPieces,
-      avgVariance: Math.round(avgVariance * 10) / 10
+      today: todaysCount,
+      onTimePercent: received.length > 0 ? (onTime.length / received.length) * 100 : 0,
+      exceptions
     };
   }, [filteredDeliveries]);
 
-  const handleEdit = (delivery) => {
-    if (delivery._isFromTask) {
-      // Convert task-based delivery to full delivery record on edit
-      const taskDelivery = {
-        project_id: delivery.project_id,
-        package_name: delivery.package_name,
-        package_number: delivery.package_number,
-        scheduled_date: delivery.scheduled_date,
-        delivery_status: delivery.delivery_status,
-        linked_task_ids: delivery.linked_task_ids,
-        notes: delivery.notes
-      };
-      setEditingDelivery(taskDelivery);
-    } else {
-      setEditingDelivery(delivery);
-    }
-    setShowForm(true);
+  const handleStatusChange = (id, newStatus) => {
+    const delivery = deliveries.find(d => d.id === id);
+    updateMutation.mutate({
+      id,
+      data: { delivery_status: newStatus },
+      logAction: `Status changed to ${newStatus}`
+    });
   };
 
   const columns = [
-  {
-    header: 'Package',
-    accessor: 'package_name',
-    render: (row) =>
-    <div>
-          <div className="flex items-center gap-2">
-            <p className="font-medium">{row.package_name}</p>
-            {row._isFromTask &&
-        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/40">
-                SCHEDULE
-              </span>
-        }
-          </div>
+    {
+      header: 'Delivery #',
+      accessor: 'delivery_number',
+      render: (row) => (
+        <span className="font-mono text-amber-400 font-bold text-sm">
+          {row.delivery_number || '-'}
+        </span>
+      )
+    },
+    {
+      header: 'Package',
+      accessor: 'package_name',
+      render: (row) => (
+        <div>
+          <p className="font-medium">{row.package_name}</p>
           <p className="text-xs text-zinc-500">{row.package_number}</p>
         </div>
-
-  },
-  {
-    header: 'Project',
-    accessor: 'project_id',
-    render: (row) => {
-      const project = projectMap.get(row.project_id);
-      return project ?
-      <div>
+      )
+    },
+    {
+      header: 'Project',
+      accessor: 'project_id',
+      render: (row) => {
+        const project = projects.find(p => p.id === row.project_id);
+        return project ? (
+          <div>
             <p className="text-sm">{project.name}</p>
             <p className="text-xs text-zinc-500">{project.project_number}</p>
-          </div> :
-      '-';
-    }
-  },
-  {
-    header: 'Scheduled Date',
-    accessor: 'scheduled_date',
-    render: (row) => {
-      if (!row.scheduled_date) return '-';
-      const date = parseISO(row.scheduled_date);
-      const daysUntil = differenceInDays(date, new Date());
-      const isUpcoming = daysUntil >= 0 && daysUntil <= 7;
-      return (
-        <div>
-          <p>{format(date, 'MMM d, yyyy')}</p>
-          {isUpcoming &&
-          <p className="text-xs text-amber-400 flex items-center gap-1 mt-0.5">
-              <Calendar size={10} />
-              in {daysUntil} days
-            </p>
-          }
-        </div>);
-
-    }
-  },
-  {
-    header: 'Actual Date',
-    accessor: 'actual_date',
-    render: (row) => {
-      if (!row.actual_date) return '-';
-      const variance = differenceInDays(
-        parseISO(row.actual_date),
-        parseISO(row.scheduled_date)
-      );
-      return (
-        <div>
-            <p>{format(parseISO(row.actual_date), 'MMM d, yyyy')}</p>
-            <p className={`text-xs ${variance > 0 ? 'text-red-400' : 'text-green-400'}`}>
-              {variance > 0 ? `+${variance}` : variance} days
-            </p>
-          </div>);
-
-    }
-  },
-  {
-    header: 'Status',
-    accessor: 'delivery_status',
-    render: (row) => {
-      const isDelayed = row.delivery_status === 'delayed' ||
-      row.delivery_status === 'scheduled' &&
-      row.scheduled_date &&
-      differenceInDays(new Date(), parseISO(row.scheduled_date)) > 0;
-
-      return (
-        <div className="flex items-center gap-1">
+          </div>
+        ) : '-';
+      }
+    },
+    {
+      header: 'Status',
+      accessor: 'delivery_status',
+      render: (row) => (
+        <div className="flex items-center gap-2">
           <StatusBadge status={row.delivery_status} />
-          {isDelayed && <AlertTriangle size={14} className="text-red-400" />}
-        </div>);
-
+          {row.exceptions?.some(e => !e.resolved) && (
+            <AlertTriangle size={14} className="text-red-500" />
+          )}
+        </div>
+      )
+    },
+    {
+      header: 'Scheduled',
+      accessor: 'confirmed_date',
+      render: (row) => {
+        const date = row.confirmed_date || row.requested_date;
+        if (!date) return '-';
+        const isUpcoming = differenceInDays(parseISO(date), new Date()) <= 7;
+        return (
+          <div>
+            <p>{format(parseISO(date), 'MMM d, yyyy')}</p>
+            {row.confirmed_time_window && (
+              <p className="text-xs text-zinc-500">{row.confirmed_time_window}</p>
+            )}
+            {isToday(parseISO(date)) && (
+              <Badge className="bg-amber-500 text-black text-xs mt-1">TODAY</Badge>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Vendor',
+      accessor: 'vendor_supplier',
+      render: (row) => row.vendor_supplier || '-'
+    },
+    {
+      header: 'Weight',
+      accessor: 'weight_tons',
+      render: (row) => {
+        const weight = row.line_items?.reduce((sum, item) => sum + (item.weight_tons || 0), 0) || row.weight_tons || 0;
+        return weight > 0 ? `${weight.toFixed(1)} tons` : '-';
+      }
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedDelivery(row);
+            }}
+            className="text-zinc-500 hover:text-white"
+          >
+            <Edit size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteDelivery(row);
+            }}
+            className="text-zinc-500 hover:text-red-500"
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      )
     }
-  },
-  {
-    header: 'Weight',
-    accessor: 'weight_tons',
-    render: (row) => {
-      const weight = row.weight_tons;
-      return weight ? `${weight} tons` : '-';
-    }
-  },
-  {
-    header: 'Pieces',
-    accessor: 'piece_count',
-    render: (row) => row.piece_count || '-'
-  },
-  {
-    header: 'Carrier',
-    accessor: 'carrier',
-    render: (row) => row.carrier || '-'
-  },
-  {
-    header: '',
-    accessor: 'actions',
-    render: (row) =>
-    !row._isFromTask ? (
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEdit(row);
-          }}
-          className="text-zinc-500 hover:text-amber-400">
-          <Edit size={16} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteDelivery(row);
-          }}
-          className="text-zinc-500 hover:text-red-500">
-          <Trash2 size={16} />
-        </Button>
-      </div>
-    ) : null
-  }];
-
+  ];
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header Bar */}
+      {/* Header */}
       <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Tracking</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{kpis.total} TOTAL • {kpis.upcoming} NEXT 14D</p>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Management</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">
+                {kpis.total} TOTAL • {kpis.today} TODAY • {kpis.onTimePercent.toFixed(0)}% ON-TIME
+              </p>
             </div>
             <div className="flex items-center gap-2">
-              <ExportButton
-                data={filteredDeliveries}
-                entityType="deliveries"
-                filename="deliveries"
-              />
               <Button
                 onClick={() => {
                   setEditingDelivery(null);
-                  setShowForm(true);
+                  setShowWizard(true);
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
                 <Plus size={14} className="mr-1" />
-                NEW
+                NEW DELIVERY
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ON-TIME RATE</div>
-              <div className={`text-2xl font-bold font-mono ${kpis.onTimePercent >= 90 ? 'text-green-500' : 'text-red-500'}`}>
-                {kpis.onTimePercent.toFixed(0)}%
-              </div>
-              <div className="text-xs text-zinc-600 font-mono">{kpis.onTime}/{kpis.completed}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">DELAYED</div>
-              <div className={`text-2xl font-bold font-mono ${kpis.delayed > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {kpis.delayed}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL WEIGHT</div>
-              <div className="text-2xl font-bold font-mono text-white">{kpis.totalWeight.toFixed(1)}</div>
-              <div className="text-xs text-zinc-600">TONS</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVG VARIANCE</div>
-              <div className={`text-2xl font-bold font-mono ${kpis.avgVariance > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {kpis.avgVariance > 0 ? '+' : ''}{kpis.avgVariance}
-              </div>
-              <div className="text-xs text-zinc-600">DAYS</div>
+      {/* KPI Bar */}
+      {kpis.exceptions > 0 && (
+        <div className="border-b border-red-800 bg-red-950/20">
+          <div className="max-w-[1800px] mx-auto px-6 py-3">
+            <div className="flex items-center gap-2 text-red-500">
+              <AlertTriangle size={16} />
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {kpis.exceptions} DELIVERIES WITH UNRESOLVED EXCEPTIONS
+              </span>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <FilterBar
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            placeholder="SEARCH PACKAGES..."
-          filterGroups={[
-          {
-            key: 'projects',
-            label: 'Projects',
-            multiSelect: true,
-            options: projects.map((p) => ({
-              value: p.id,
-              label: `${p.project_number} - ${p.name}`
-            }))
-          },
-          {
-            key: 'statuses',
-            label: 'Status',
-            multiSelect: true,
-            options: [
-            { value: 'scheduled', label: 'Scheduled' },
-            { value: 'in_transit', label: 'In Transit' },
-            { value: 'delivered', label: 'Delivered' },
-            { value: 'delayed', label: 'Delayed' },
-            { value: 'cancelled', label: 'Cancelled' }]
-
-          },
-          {
-            key: 'carriers',
-            label: 'Carriers',
-            multiSelect: true,
-            options: uniqueCarriers.map((c) => ({ value: c, label: c }))
-          },
-          {
-            key: 'dateRange',
-            label: 'Date Range',
-            multiSelect: false,
-            options: [
-            { value: 'this_week', label: 'This Week' },
-            { value: 'next_7_days', label: 'Next 7 Days' },
-            { value: 'next_14_days', label: 'Next 14 Days' },
-            { value: 'past_30_days', label: 'Past 30 Days' }]
-
-          }]
-          }
-          activeFilters={activeFilters}
-          onFilterChange={setActiveFilters}
-          savedConfigs={savedFilters}
-          onSaveConfig={(config) => setSavedFilters([...savedFilters, config])}
-          onLoadConfig={(config) => setActiveFilters(config.filters)} />
-
-
-          <div className="flex justify-between items-center mt-3">
-            <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-mono">
-              {filteredDeliveries.length} SHOWN • {allDeliveries.length} TOTAL
-            </p>
-            <SortControl
-              sortOptions={[
-                { value: 'scheduled_date', label: 'Scheduled' },
-                { value: 'actual_date', label: 'Actual' },
-                { value: 'project', label: 'Project' },
-                { value: 'status', label: 'Status' },
-                { value: 'weight', label: 'Weight' },
-                { value: 'carrier', label: 'Carrier' }
-              ]}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSortChange={(field, order) => {
-                setSortBy(field);
-                setSortOrder(order);
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <Tabs defaultValue="deliveries" className="space-y-6">
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
+        <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
           <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="deliveries">All Deliveries</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="kpis">Extended KPIs</TabsTrigger>
+            <TabsTrigger value="today">
+              <Calendar size={14} className="mr-2" />
+              Today ({kpis.today})
+            </TabsTrigger>
+            <TabsTrigger value="list">All Deliveries</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="kpis" className="space-y-6">
-            <DeliveryKPIs deliveries={filteredDeliveries} projects={projects} />
+          {/* Today's Deliveries */}
+          <TabsContent value="today">
+            <TodaysDeliveries
+              deliveries={filteredDeliveries}
+              onReceive={(delivery) => setReceivingDelivery(delivery)}
+              onMarkArrived={(delivery) => handleStatusChange(delivery.id, 'arrived_on_site')}
+              onViewDetails={(delivery) => setSelectedDelivery(delivery)}
+            />
           </TabsContent>
 
-          <TabsContent value="deliveries">
+          {/* List View */}
+          <TabsContent value="list" className="space-y-4">
+            {/* Filters */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+                <Input
+                  placeholder="SEARCH DELIVERIES..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs"
+                />
+              </div>
+              <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="All Projects" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="requested">Requested</SelectItem>
+                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="in_transit">In Transit</SelectItem>
+                  <SelectItem value="arrived_on_site">Arrived</SelectItem>
+                  <SelectItem value="partially_received">Partially Received</SelectItem>
+                  <SelectItem value="received">Received</SelectItem>
+                  <SelectItem value="exception">Exception</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <DataTable
               columns={columns}
               data={filteredDeliveries}
-              onRowClick={handleEdit}
-              emptyMessage="No deliveries found."
+              onRowClick={(delivery) => setSelectedDelivery(delivery)}
+              emptyMessage="No deliveries found. Create your first delivery to get started."
             />
           </TabsContent>
 
-          <TabsContent value="upcoming">
-            <DataTable
-              columns={columns}
-              data={filteredDeliveries.filter((d) => d.delivery_status === 'scheduled' || d.delivery_status === 'in_transit')}
-              onRowClick={handleEdit}
-              emptyMessage="No upcoming deliveries."
-            />
+          {/* Calendar View */}
+          <TabsContent value="calendar">
+            <div className="text-center py-12 text-zinc-500">
+              <Calendar size={48} className="mx-auto mb-4 opacity-50" />
+              <p>Calendar view coming soon</p>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      {/* Wizard Dialog */}
+      <Dialog open={showWizard} onOpenChange={setShowWizard}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
-            <DialogTitle>{editingDelivery ? 'Edit Delivery' : 'Add Delivery'}</DialogTitle>
+            <DialogTitle>{editingDelivery ? 'Edit Delivery' : 'Create New Delivery'}</DialogTitle>
           </DialogHeader>
-          <DeliveryForm
+          <DeliveryWizard
             delivery={editingDelivery}
             projects={projects}
-            tasks={tasks}
             onSubmit={(data) => {
-              // Auto-calculate variance if actual_date provided
-              if (data.actual_date && data.scheduled_date) {
-                const variance = differenceInDays(
-                  parseISO(data.actual_date),
-                  parseISO(data.scheduled_date)
-                );
-                data.days_variance = variance;
-                data.on_time = variance <= 0;
-              }
-
               if (editingDelivery) {
-                updateMutation.mutate({
-                  id: editingDelivery.id,
-                  data,
-                  oldStatus: editingDelivery.delivery_status
-                });
+                updateMutation.mutate({ id: editingDelivery.id, data, logAction: 'Delivery updated via wizard' });
               } else {
                 createMutation.mutate(data);
               }
             }}
             onCancel={() => {
-              setShowForm(false);
+              setShowWizard(false);
               setEditingDelivery(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending} />
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
 
+      {/* Detail Panel */}
+      <Sheet open={!!selectedDelivery} onOpenChange={(open) => !open && setSelectedDelivery(null)}>
+        <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-white">Delivery Details</SheetTitle>
+          </SheetHeader>
+          {selectedDelivery && (
+            <div className="mt-6">
+              <DeliveryDetailPanel
+                delivery={selectedDelivery}
+                project={projects.find(p => p.id === selectedDelivery.project_id)}
+                onEdit={(d) => {
+                  setEditingDelivery(d);
+                  setSelectedDelivery(null);
+                  setShowWizard(true);
+                }}
+                onDelete={(d) => {
+                  setSelectedDelivery(null);
+                  setDeleteDelivery(d);
+                }}
+                onStatusChange={handleStatusChange}
+                onAddException={() => toast.info('Exception reporting coming soon')}
+                onReceiveItems={() => {
+                  setReceivingDelivery(selectedDelivery);
+                  setSelectedDelivery(null);
+                }}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Receiving Mode */}
+      <Dialog open={!!receivingDelivery} onOpenChange={(open) => !open && setReceivingDelivery(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Receiving: {receivingDelivery?.package_name}</DialogTitle>
+          </DialogHeader>
+          {receivingDelivery && (
+            <ReceivingMode
+              delivery={receivingDelivery}
+              onComplete={(updatedDelivery) => {
+                updateMutation.mutate({
+                  id: receivingDelivery.id,
+                  data: updatedDelivery,
+                  logAction: 'Items received'
+                });
+              }}
+              onCancel={() => setReceivingDelivery(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
@@ -698,7 +475,7 @@ export default function Deliveries() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Delivery?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete delivery "{deleteDelivery?.package_name}"? This action cannot be undone.
+              Delete "{deleteDelivery?.package_name}"? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -707,13 +484,13 @@ export default function Deliveries() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteDelivery.id)}
-              className="bg-red-500 hover:bg-red-600">
-
+              className="bg-red-500 hover:bg-red-600"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>);
-
+    </div>
+  );
 }

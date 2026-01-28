@@ -1,43 +1,21 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle } from
-"@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle } from
-"@/components/ui/sheet";
-import { Plus, Search, History, BarChart3, Copy, MessageSquareWarning, AlertTriangle, DollarSign, Clock, FileSpreadsheet, Trash2, TrendingUp } from 'lucide-react';
-import { differenceInDays, parseISO } from 'date-fns';
-import CSVUpload from '@/components/shared/CSVUpload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PageHeader from '@/components/ui/PageHeader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { 
+  Plus, Search, MessageSquareWarning, Mail, Copy, FileSpreadsheet, 
+  Trash2, BarChart3, Clock, AlertTriangle 
+} from 'lucide-react';
+import { format, parseISO, differenceInDays } from 'date-fns';
+import { toast } from 'sonner';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import BulkRFICreator from '@/components/rfis/BulkRFICreator';
-import RFIKPIDashboard from '@/components/rfis/RFIKPIDashboard';
-import RFIAgingDashboard from '@/components/rfis/RFIAgingDashboard';
-import RFITrackingDashboard from '@/components/rfis/RFITrackingDashboard';
-import RFIResponseTracker from '@/components/rfis/RFIResponseTracker';
-import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,104 +24,111 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle } from
-"@/components/ui/alert-dialog";
-
-const initialFormState = {
-  project_id: '',
-  rfi_number: '',
-  subject: '',
-  question: '',
-  response: '',
-  status: 'draft',
-  priority: 'medium',
-  assigned_to: '',
-  response_owner: '',
-  submitted_date: '',
-  due_date: '',
-  response_date: '',
-  closed_date: '',
-  days_to_respond: 5,
-  linked_drawing_set_id: '',
-  linked_change_order_id: '',
-  linked_task_ids: [],
-  estimated_cost_impact: 0,
-  actual_cost_impact: 0,
-  schedule_impact_days: 0,
-  cost_impact: false,
-  schedule_impact: false,
-  escalation_flag: false,
-  resolution_notes: ''
-};
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import RFIWizard from '@/components/rfis/RFIWizard';
+import RFIDetailPanel from '@/components/rfis/RFIDetailPanel';
+import RFIInbox from '@/components/rfis/RFIInbox';
+import RFITemplateSelector, { RFI_TEMPLATES } from '@/components/rfis/RFITemplateSelector';
+import RFIKPIDashboard from '@/components/rfis/RFIKPIDashboard';
+import RFIAgingDashboard from '@/components/rfis/RFIAgingDashboard';
+import BulkRFICreator from '@/components/rfis/BulkRFICreator';
+import CSVUpload from '@/components/shared/CSVUpload';
 
 export default function RFIs() {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedRFI, setSelectedRFI] = useState(null);
-  const [formData, setFormData] = useState(initialFormState);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
-  const [pmFilter, setPmFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [editingRFI, setEditingRFI] = useState(null);
+  const [selectedRFI, setSelectedRFI] = useState(null);
+  const [deleteRFI, setDeleteRFI] = useState(null);
   const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
-  const [deleteRFI, setDeleteRFI] = useState(null);
+  const [activeView, setActiveView] = useState('inbox');
 
   const queryClient = useQueryClient();
 
-  const { data: rawProjects = [] } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
+    staleTime: 30 * 60 * 1000
   });
-
-  const projects = useMemo(() =>
-  [...rawProjects].sort((a, b) => (a.name || '').localeCompare(b.name || '')),
-  [rawProjects]
-  );
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('rfi_number'),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000 // 5 minutes
+    queryFn: () => base44.entities.RFI.list('-created_date'),
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list('set_name'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
+    queryFn: () => base44.entities.DrawingSet.list(),
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list('co_number'),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000 // 10 minutes
+    queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 10 * 60 * 1000
+  });
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.RFI.create(data),
+    mutationFn: (data) => {
+      // Auto-generate RFI number if not provided
+      if (!data.rfi_number) {
+        const projectRFIs = rfis.filter(r => r.project_id === data.project_id);
+        const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
+        data.rfi_number = maxNumber + 1;
+      }
+
+      const activityLog = {
+        action: `RFI created by ${user?.full_name || user?.email}`,
+        user: user?.email || 'system',
+        timestamp: new Date().toISOString()
+      };
+
+      return base44.entities.RFI.create({
+        ...data,
+        activity_log: [activityLog]
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
-      setShowForm(false);
-      setFormData(initialFormState);
-    },
-    onError: (error) => {
-      console.error('Failed to create RFI:', error);
+      setShowWizard(false);
+      setShowTemplateSelector(false);
+      setSelectedTemplate(null);
+      setEditingRFI(null);
+      toast.success('RFI created successfully');
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.RFI.update(id, data),
+    mutationFn: ({ id, data, logAction }) => {
+      const activityLog = [
+        ...(editingRFI?.activity_log || []),
+        {
+          action: logAction || `RFI updated by ${user?.full_name || user?.email}`,
+          user: user?.email || 'system',
+          timestamp: new Date().toISOString(),
+          changes: data
+        }
+      ];
+      return base44.entities.RFI.update(id, { ...data, activity_log });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
+      setShowWizard(false);
+      setEditingRFI(null);
       setSelectedRFI(null);
-      setFormData(initialFormState);
-    },
-    onError: (error) => {
-      console.error('Failed to update RFI:', error);
+      toast.success('RFI updated successfully');
     }
   });
 
@@ -152,217 +137,244 @@ export default function RFIs() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setDeleteRFI(null);
-    },
-    onError: (error) => {
-      console.error('Failed to delete RFI:', error);
+      toast.success('RFI deleted');
     }
   });
 
-  const getNextRFINumber = (projectId) => {
-    const projectRFIs = rfis.filter((r) => r.project_id === projectId);
-    const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
-    return maxNumber + 1;
+  const filteredRFIs = useMemo(() => {
+    return rfis.filter(r => {
+      const matchesSearch = 
+        r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(r.rfi_number).includes(searchTerm) ||
+        r.question?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesProject = projectFilter === 'all' || r.project_id === projectFilter;
+      const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+
+      return matchesSearch && matchesProject && matchesStatus;
+    }).sort((a, b) => {
+      // Sort by project, then RFI number
+      const projA = projects.find(p => p.id === a.project_id);
+      const projB = projects.find(p => p.id === b.project_id);
+      const projCompare = (projA?.name || '').localeCompare(projB?.name || '');
+      if (projCompare !== 0) return projCompare;
+      return (b.rfi_number || 0) - (a.rfi_number || 0);
+    });
+  }, [rfis, searchTerm, projectFilter, statusFilter, projects]);
+
+  const kpis = useMemo(() => {
+    const overdue = filteredRFIs.filter(r => 
+      r.due_date && 
+      !['answered', 'closed'].includes(r.status) &&
+      differenceInDays(new Date(), parseISO(r.due_date)) > 0
+    ).length;
+
+    const awaitingAction = filteredRFIs.filter(r => 
+      r.ball_in_court === 'internal' && !['answered', 'closed'].includes(r.status)
+    ).length;
+
+    const withImpact = filteredRFIs.filter(r => 
+      r.cost_impact === 'yes' || r.schedule_impact === 'yes'
+    ).length;
+
+    return {
+      total: filteredRFIs.length,
+      overdue,
+      awaitingAction,
+      withImpact
+    };
+  }, [filteredRFIs]);
+
+  const handleStatusChange = (id, newStatus) => {
+    const rfi = rfis.find(r => r.id === id);
+    const updates = { status: newStatus };
+    
+    if (newStatus === 'submitted' && !rfi.submitted_date) {
+      updates.submitted_date = new Date().toISOString().split('T')[0];
+    }
+    if (newStatus === 'answered' && !rfi.response_date) {
+      updates.response_date = new Date().toISOString().split('T')[0];
+      if (rfi.submitted_date) {
+        updates.response_days_actual = differenceInDays(new Date(), parseISO(rfi.submitted_date));
+      }
+    }
+    if (newStatus === 'closed') {
+      updates.closed_date = new Date().toISOString().split('T')[0];
+    }
+
+    updateMutation.mutate({
+      id,
+      data: updates,
+      logAction: `Status changed to ${newStatus}`
+    });
   };
 
-  const handleProjectChange = (projectId) => {
-    const nextNumber = getNextRFINumber(projectId);
-    setFormData((prev) => ({
-      ...prev,
-      project_id: projectId,
-      rfi_number: nextNumber.toString()
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const data = {
-      ...formData,
-      rfi_number: parseInt(formData.rfi_number) || 1
+  const handleUpdateCloseout = (rfiId, checklistKey, checked) => {
+    const rfi = rfis.find(r => r.id === rfiId);
+    const updatedChecklist = {
+      ...rfi.closeout_checklist,
+      [checklistKey]: checked,
+      [`${checklistKey}_date`]: checked ? new Date().toISOString() : null
     };
 
-    if (selectedRFI) {
-      updateMutation.mutate({ id: selectedRFI.id, data });
-    } else {
-      createMutation.mutate(data);
-    }
+    updateMutation.mutate({
+      id: rfiId,
+      data: { closeout_checklist: updatedChecklist },
+      logAction: `Closeout: ${checklistKey.replace('_', ' ')} ${checked ? 'completed' : 'unchecked'}`
+    });
   };
 
-  const handleEdit = (rfi) => {
-    setFormData({
-      project_id: rfi.project_id || '',
-      rfi_number: rfi.rfi_number?.toString() || '',
-      subject: rfi.subject || '',
-      question: rfi.question || '',
-      response: rfi.response || '',
-      status: rfi.status || 'draft',
-      priority: rfi.priority || 'medium',
-      assigned_to: rfi.assigned_to || '',
-      response_owner: rfi.response_owner || '',
-      submitted_date: rfi.submitted_date ? rfi.submitted_date.split('T')[0] : '',
-      due_date: rfi.due_date ? rfi.due_date.split('T')[0] : '',
-      response_date: rfi.response_date ? rfi.response_date.split('T')[0] : '',
-      closed_date: rfi.closed_date ? rfi.closed_date.split('T')[0] : '',
-      days_to_respond: rfi.days_to_respond || 5,
-      linked_drawing_set_id: rfi.linked_drawing_set_id || '',
-      linked_change_order_id: rfi.linked_change_order_id || '',
-      linked_task_ids: rfi.linked_task_ids || [],
-      estimated_cost_impact: rfi.estimated_cost_impact || 0,
-      actual_cost_impact: rfi.actual_cost_impact || 0,
-      schedule_impact_days: rfi.schedule_impact_days || 0,
-      cost_impact: rfi.cost_impact || false,
-      schedule_impact: rfi.schedule_impact || false,
-      escalation_flag: rfi.escalation_flag || false,
-      resolution_notes: rfi.resolution_notes || ''
-    });
-    setSelectedRFI(rfi);
+  const handleGenerateEmail = (rfi) => {
+    const project = projects.find(p => p.id === rfi.project_id);
+    const emailBody = `
+Subject: RFI-${String(rfi.rfi_number).padStart(3, '0')} - ${rfi.subject}
+
+Project: ${project?.name}
+Location: ${rfi.location_area || 'N/A'}
+Priority: ${rfi.priority?.toUpperCase()}
+Due Date: ${rfi.due_date ? format(parseISO(rfi.due_date), 'MMMM d, yyyy') : 'TBD'}
+
+QUESTION:
+${rfi.question}
+
+${rfi.spec_section ? `Spec Section: ${rfi.spec_section}` : ''}
+${rfi.linked_drawing_set_ids?.length > 0 ? `Drawing References: ${rfi.linked_drawing_set_ids.length} attached` : ''}
+
+Please respond by ${rfi.due_date ? format(parseISO(rfi.due_date), 'MMMM d, yyyy') : 'ASAP'}.
+
+---
+${user?.full_name || 'Project Team'}
+    `.trim();
+
+    navigator.clipboard.writeText(emailBody);
+    toast.success('Email draft copied to clipboard');
   };
-
-  const filteredRFIs = useMemo(() => {
-    return rfis.filter((r) => {
-      const project = projects.find((p) => p.id === r.project_id);
-      const matchesSearch =
-      r.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(r.rfi_number).includes(searchTerm);
-      const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-      const matchesProject = projectFilter === 'all' || r.project_id === projectFilter;
-      const matchesPm = pmFilter === 'all' || project?.project_manager === pmFilter;
-      return matchesSearch && matchesStatus && matchesProject && matchesPm;
-    }).sort((a, b) => {
-      const projectA = projects.find((p) => p.id === a.project_id);
-      const projectB = projects.find((p) => p.id === b.project_id);
-      const nameComparison = (projectA?.name || '').localeCompare(projectB?.name || '');
-      if (nameComparison !== 0) return nameComparison;
-      return (a.rfi_number || 0) - (b.rfi_number || 0);
-    });
-  }, [rfis, projects, searchTerm, statusFilter, projectFilter, pmFilter]);
-
-  const uniquePMs = [...new Set(projects.map((p) => p.project_manager).filter(Boolean))].sort();
 
   const columns = [
-  {
-    header: 'RFI #',
-    accessor: 'rfi_number',
-    render: (row) =>
-    <span className="font-mono text-amber-400 font-bold text-sm">
+    {
+      header: 'RFI #',
+      accessor: 'rfi_number',
+      render: (row) => (
+        <span className="font-mono text-amber-400 font-bold text-sm">
           RFI-{String(row.rfi_number).padStart(3, '0')}
         </span>
-
-  },
-  {
-    header: 'Subject',
-    accessor: 'subject',
-    render: (row) => {
-      const project = projects.find((p) => p.id === row.project_id);
-      return (
-        <div>
-            <p className="font-semibold text-sm line-clamp-1 text-white">{row.subject}</p>
-            <p className="text-xs text-zinc-400 mt-0.5">{project?.name}</p>
-          </div>);
-
-    }
-  },
-  {
-    header: 'Status',
-    accessor: 'status',
-    render: (row) => <StatusBadge status={row.status} />
-  },
-  {
-    header: 'Priority',
-    accessor: 'priority',
-    render: (row) => <StatusBadge status={row.priority} />
-  },
-  {
-    header: 'Impact',
-    accessor: 'impact',
-    render: (row) =>
-    <div className="flex gap-1.5">
-          {row.cost_impact &&
-      <span className="p-1.5 bg-green-500/30 rounded border border-green-500/40" title="Cost Impact">
-              <DollarSign size={15} className="text-green-300" />
-            </span>
-      }
-          {row.schedule_impact &&
-      <span className="p-1.5 bg-orange-500/30 rounded border border-orange-500/40" title="Schedule Impact">
-              <Clock size={15} className="text-orange-300" />
-            </span>
-      }
-        </div>
-
-  },
-  {
-    header: 'Due Date',
-    accessor: 'due_date',
-    render: (row) => {
-      if (!row.due_date) return <span className="text-zinc-500">—</span>;
-      try {
-        const dueDate = new Date(row.due_date);
-        if (isNaN(dueDate.getTime())) return <span className="text-zinc-500">—</span>;
-        const isOverdue = dueDate < new Date() && row.status !== 'answered' && row.status !== 'closed';
+      )
+    },
+    {
+      header: 'Subject',
+      accessor: 'subject',
+      render: (row) => {
+        const project = projects.find(p => p.id === row.project_id);
         return (
-          <div className={isOverdue ? 'flex items-center gap-1.5' : ''}>
-              {isOverdue && <AlertTriangle size={15} className="text-red-400 flex-shrink-0" />}
-              <span className={isOverdue ? 'text-red-300 font-semibold' : 'text-white'}>
-                {format(dueDate, 'MMM d, yyyy')}
-              </span>
-            </div>);
-
-      } catch {
-        return <span className="text-zinc-500">—</span>;
+          <div>
+            <p className="font-semibold text-sm line-clamp-1">{row.subject}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-zinc-500">{project?.name}</p>
+              {row.category && <Badge className="bg-zinc-700 text-xs">{row.category}</Badge>}
+            </div>
+          </div>
+        );
       }
-    }
-  },
-  {
-    header: 'Assigned To',
-    accessor: 'assigned_to',
-    render: (row) => <span className="text-zinc-300">{row.assigned_to || '—'}</span>
-  },
-  {
-    header: '',
-    accessor: 'actions',
-    render: (row) =>
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={(e) => {
-        e.stopPropagation();
-        setDeleteRFI(row);
-      }}
-      className="text-zinc-400 hover:text-red-400 hover:bg-red-500/10">
-
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      render: (row) => <StatusBadge status={row.status} />
+    },
+    {
+      header: 'Ball in Court',
+      accessor: 'ball_in_court',
+      render: (row) => {
+        const colors = {
+          internal: 'bg-blue-500',
+          external: 'bg-amber-500',
+          gc: 'bg-purple-500',
+          architect: 'bg-green-500',
+          engineer: 'bg-cyan-500',
+          vendor: 'bg-pink-500'
+        };
+        return (
+          <Badge className={colors[row.ball_in_court] || 'bg-zinc-700'}>
+            {row.ball_in_court?.toUpperCase()}
+          </Badge>
+        );
+      }
+    },
+    {
+      header: 'Priority',
+      accessor: 'priority',
+      render: (row) => <StatusBadge status={row.priority} />
+    },
+    {
+      header: 'Due',
+      accessor: 'due_date',
+      render: (row) => {
+        if (!row.due_date) return '-';
+        const daysUntil = differenceInDays(parseISO(row.due_date), new Date());
+        const isOverdue = daysUntil < 0 && !['answered', 'closed'].includes(row.status);
+        return (
+          <div>
+            <p className={isOverdue ? 'text-red-400 font-bold' : ''}>{format(parseISO(row.due_date), 'MMM d')}</p>
+            {isOverdue && (
+              <p className="text-xs text-red-500">{Math.abs(daysUntil)}d overdue</p>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'Impact',
+      accessor: 'impact',
+      render: (row) => (
+        <div className="flex gap-1">
+          {row.cost_impact === 'yes' && <Badge className="bg-green-600 text-xs">$</Badge>}
+          {row.schedule_impact === 'yes' && <Badge className="bg-orange-600 text-xs">📅</Badge>}
+        </div>
+      )
+    },
+    {
+      header: '',
+      accessor: 'actions',
+      render: (row) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteRFI(row);
+          }}
+          className="text-zinc-400 hover:text-red-400"
+        >
           <Trash2 size={16} />
         </Button>
+      )
+    }
+  ];
 
-  }];
-
-
-  const projectDrawings = drawings.filter((d) => d.project_id === formData.project_id);
-  const projectCOs = changeOrders.filter((co) => co.project_id === formData.project_id);
-
-  const rfiStats = useMemo(() => {
-    const pending = filteredRFIs.filter(r => r.status === 'pending' || r.status === 'submitted').length;
-    const overdue = filteredRFIs.filter(r => {
-      if (!r.due_date || r.status === 'answered' || r.status === 'closed') return false;
-      return new Date(r.due_date) < new Date();
-    }).length;
-    const withImpact = filteredRFIs.filter(r => r.cost_impact || r.schedule_impact).length;
-    return { pending, overdue, withImpact };
-  }, [filteredRFIs]);
+  const handleTemplateSelect = (template) => {
+    setSelectedTemplate(template);
+    setShowTemplateSelector(false);
+    setShowWizard(true);
+  };
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header Bar */}
+      {/* Header */}
       <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">RFI Management</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredRFIs.length} TOTAL • {rfiStats.pending} PENDING</p>
+              <p className="text-xs text-zinc-600 font-mono mt-1">
+                {kpis.total} TOTAL • {kpis.awaitingAction} AWAITING ACTION • {kpis.overdue} OVERDUE
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setShowCSVImport(true)}
                 variant="outline"
-                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider">
+                className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
+              >
                 <FileSpreadsheet size={14} className="mr-1" />
                 IMPORT
               </Button>
@@ -370,41 +382,46 @@ export default function RFIs() {
                 onClick={() => setShowBulkCreator(true)}
                 variant="outline"
                 className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
-                disabled={projectFilter === 'all'}>
+                disabled={projectFilter === 'all'}
+              >
                 <Copy size={14} className="mr-1" />
                 BULK
               </Button>
               <Button
-                onClick={() => {
-                  setFormData(initialFormState);
-                  setShowForm(true);
-                }}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                onClick={() => setShowTemplateSelector(true)}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
                 <Plus size={14} className="mr-1" />
-                NEW
+                NEW RFI
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* KPI Strip */}
-      {rfiStats.overdue > 0 && (
-        <div className="border-b border-zinc-800 bg-red-950/20">
-          <div className="max-w-[1600px] mx-auto px-6 py-3">
+      {/* Alert Bar */}
+      {kpis.overdue > 0 && (
+        <div className="border-b border-red-800 bg-red-950/20">
+          <div className="max-w-[1800px] mx-auto px-6 py-3">
             <div className="flex items-center gap-2 text-red-500">
               <AlertTriangle size={16} />
-              <span className="text-xs font-bold uppercase tracking-widest">{rfiStats.overdue} OVERDUE</span>
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {kpis.overdue} OVERDUE RFIs NEED IMMEDIATE ATTENTION
+              </span>
             </div>
           </div>
         </div>
       )}
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <Tabs defaultValue="list" className="space-y-6">
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
+        <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
           <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="list">RFI List</TabsTrigger>
+            <TabsTrigger value="inbox">
+              <MessageSquareWarning size={14} className="mr-2" />
+              Inbox
+            </TabsTrigger>
+            <TabsTrigger value="list">All RFIs</TabsTrigger>
             <TabsTrigger value="dashboard">
               <BarChart3 size={14} className="mr-2" />
               Dashboard
@@ -412,180 +429,193 @@ export default function RFIs() {
             <TabsTrigger value="aging">Aging Report</TabsTrigger>
           </TabsList>
 
+          {/* Inbox View */}
+          <TabsContent value="inbox">
+            <RFIInbox
+              rfis={filteredRFIs}
+              onSelectRFI={(rfi) => setSelectedRFI(rfi)}
+              onQuickAction={(rfi, action) => handleStatusChange(rfi.id, action)}
+            />
+          </TabsContent>
+
+          {/* List View */}
           <TabsContent value="list" className="space-y-4">
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-3">
               <div className="relative flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
                 <Input
-                  placeholder="SEARCH RFIS..."
+                  placeholder="SEARCH RFIs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+                  className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs"
                 />
               </div>
               <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
                   <SelectValue placeholder="All Projects" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
                   <SelectItem value="all">All Projects</SelectItem>
-                  {projects.map((p) =>
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  )}
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
+                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                   <SelectItem value="all">All Statuses</SelectItem>
-                   <SelectItem value="draft">Draft</SelectItem>
-                   <SelectItem value="submitted">Submitted</SelectItem>
-                   <SelectItem value="assigned">Assigned</SelectItem>
-                   <SelectItem value="in_review">In Review</SelectItem>
-                   <SelectItem value="answered">Answered</SelectItem>
-                   <SelectItem value="implemented">Implemented</SelectItem>
-                   <SelectItem value="closed">Closed</SelectItem>
-                   <SelectItem value="void">Void</SelectItem>
-                 </SelectContent>
-              </Select>
-              <Select value={pmFilter} onValueChange={setPmFilter}>
-                <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-                  <SelectValue placeholder="All PMs" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="all">All PMs</SelectItem>
-                  {uniquePMs.map((pm) =>
-                    <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-                  )}
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="under_review">Under Review</SelectItem>
+                  <SelectItem value="answered">Answered</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="reopened">Reopened</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Table */}
             <DataTable
               columns={columns}
               data={filteredRFIs}
-              onRowClick={handleEdit}
+              onRowClick={(rfi) => setSelectedRFI(rfi)}
               emptyMessage="No RFIs found. Create your first RFI to get started."
             />
           </TabsContent>
 
+          {/* Dashboard */}
           <TabsContent value="dashboard" className="space-y-6">
-            <RFITrackingDashboard rfis={filteredRFIs} projects={projects} />
             <RFIKPIDashboard rfis={filteredRFIs} />
           </TabsContent>
 
-          <TabsContent value="aging" className="space-y-6">
+          {/* Aging */}
+          <TabsContent value="aging">
             <RFIAgingDashboard rfis={filteredRFIs} projects={projects} />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Create Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+      {/* Template Selector */}
+      <Dialog open={showTemplateSelector} onOpenChange={setShowTemplateSelector}>
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
-            <DialogTitle>New RFI</DialogTitle>
+            <DialogTitle>Create RFI</DialogTitle>
           </DialogHeader>
-          <RFIForm
-            formData={formData}
-            setFormData={setFormData}
-            projects={projects}
-            projectDrawings={projectDrawings}
-            projectCOs={projectCOs}
-            onProjectChange={handleProjectChange}
-            onSubmit={handleSubmit}
-            isLoading={createMutation.isPending} />
-
+          <RFITemplateSelector
+            onSelectTemplate={handleTemplateSelect}
+            onCancel={() => setShowTemplateSelector(false)}
+          />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Sheet */}
-      <Sheet open={!!selectedRFI} onOpenChange={(open) => !open && setSelectedRFI(null)}>
-        <SheetContent className="w-full sm:max-w-xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-white">
-              Edit RFI-{String(selectedRFI?.rfi_number).padStart(3, '0')}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <RFIForm
-              formData={formData}
-              setFormData={setFormData}
-              projects={projects}
-              projectDrawings={projectDrawings}
-              projectCOs={projectCOs}
-              onProjectChange={handleProjectChange}
-              onSubmit={handleSubmit}
-              isLoading={updateMutation.isPending}
-              isEdit />
+      {/* Wizard */}
+      <Dialog open={showWizard} onOpenChange={setShowWizard}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>{editingRFI ? 'Edit RFI' : 'Create New RFI'}</DialogTitle>
+          </DialogHeader>
+          <RFIWizard
+            rfi={editingRFI}
+            projects={projects}
+            drawings={drawings}
+            changeOrders={changeOrders}
+            templateData={selectedTemplate}
+            onSubmit={(data) => {
+              if (editingRFI) {
+                updateMutation.mutate({ id: editingRFI.id, data });
+              } else {
+                createMutation.mutate(data);
+              }
+            }}
+            onCancel={() => {
+              setShowWizard(false);
+              setEditingRFI(null);
+              setSelectedTemplate(null);
+            }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
 
-          </div>
+      {/* Detail Panel */}
+      <Sheet open={!!selectedRFI} onOpenChange={(open) => !open && setSelectedRFI(null)}>
+        <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-white">RFI Details</SheetTitle>
+          </SheetHeader>
+          {selectedRFI && (
+            <div className="mt-6">
+              <RFIDetailPanel
+                rfi={selectedRFI}
+                project={projects.find(p => p.id === selectedRFI.project_id)}
+                onEdit={(r) => {
+                  setEditingRFI(r);
+                  setSelectedRFI(null);
+                  setShowWizard(true);
+                }}
+                onDelete={(r) => {
+                  setSelectedRFI(null);
+                  setDeleteRFI(r);
+                }}
+                onStatusChange={handleStatusChange}
+                onUpdateCloseout={(key, checked) => handleUpdateCloseout(selectedRFI.id, key, checked)}
+                onGenerateEmail={() => handleGenerateEmail(selectedRFI)}
+              />
+            </div>
+          )}
         </SheetContent>
       </Sheet>
 
-      {/* Bulk RFI Creator */}
+      {/* Bulk Creator */}
       <BulkRFICreator
         open={showBulkCreator}
         onOpenChange={setShowBulkCreator}
-        projectId={projectFilter !== 'all' ? projectFilter : ''} />
-
+        projectId={projectFilter !== 'all' ? projectFilter : ''}
+      />
 
       {/* CSV Import */}
       <CSVUpload
         entityName="RFI"
         templateFields={[
-        { label: 'Project Number', key: 'project_number', example: 'P-001' },
-        { label: 'Subject', key: 'subject', example: 'Column connection detail' },
-        { label: 'Question', key: 'question', example: 'Please clarify base plate size' },
-        { label: 'Priority', key: 'priority', example: 'high' },
-        { label: 'Due Date', key: 'due_date', example: '2025-01-15' },
-        { label: 'Assigned To', key: 'assigned_to', example: 'John Smith' },
-        { label: 'Status', key: 'status', example: 'draft' }]
-        }
+          { label: 'Project Number', key: 'project_number', example: 'P-001' },
+          { label: 'Subject', key: 'subject', example: 'Column connection detail' },
+          { label: 'Question', key: 'question', example: 'Please clarify...' },
+          { label: 'Category', key: 'category', example: 'structural' },
+          { label: 'Priority', key: 'priority', example: 'high' },
+          { label: 'Due Date', key: 'due_date', example: '2025-01-15' }
+        ]}
         transformRow={(() => {
           const projectCounters = {};
-
           return (row) => {
-            const project = projects.find((p) => p.project_number === row.project_number);
-
-            if (!project?.id) {
-              throw new Error(`Project not found: ${row.project_number}`);
-            }
-
-            // Initialize counter for this project if not exists
+            const project = projects.find(p => p.project_number === row.project_number);
+            if (!project?.id) throw new Error(`Project not found: ${row.project_number}`);
+            
             if (!projectCounters[project.id]) {
-              const projectRFIs = rfis.filter((r) => r.project_id === project.id);
-              const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
-              projectCounters[project.id] = maxNumber;
+              const projectRFIs = rfis.filter(r => r.project_id === project.id);
+              projectCounters[project.id] = Math.max(...projectRFIs.map(r => r.rfi_number || 0), 0);
             }
-
-            // Increment counter for this project
             projectCounters[project.id]++;
 
             return {
               project_id: project.id,
               rfi_number: projectCounters[project.id],
-              subject: row.subject || '',
+              subject: row.subject,
               question: row.question || '',
+              category: row.category || 'structural',
               priority: row.priority || 'medium',
-              status: row.status || 'draft',
-              assigned_to: row.assigned_to || '',
+              status: 'draft',
               due_date: row.due_date || '',
-              cost_impact: false,
-              schedule_impact: false
+              ball_in_court: 'internal'
             };
           };
         })()}
-        onImportComplete={() => {
-          queryClient.invalidateQueries({ queryKey: ['rfis'] });
-        }}
+        onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['rfis'] })}
         open={showCSVImport}
-        onOpenChange={setShowCSVImport} />
-
+        onOpenChange={setShowCSVImport}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteRFI} onOpenChange={() => setDeleteRFI(null)}>
@@ -593,7 +623,7 @@ export default function RFIs() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete RFI?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete RFI-{String(deleteRFI?.rfi_number).padStart(3, '0')} "{deleteRFI?.subject}"? This action cannot be undone.
+              Delete RFI-{String(deleteRFI?.rfi_number).padStart(3, '0')} "{deleteRFI?.subject}"? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -602,289 +632,13 @@ export default function RFIs() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteRFI.id)}
-              className="bg-red-500 hover:bg-red-600">
-
+              className="bg-red-500 hover:bg-red-600"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>);
-
-}
-
-function RFIForm({ formData, setFormData, projects, projectDrawings, projectCOs, onProjectChange, onSubmit, isLoading, isEdit }) {
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Project *</Label>
-          <Select
-            value={formData.project_id}
-            onValueChange={onProjectChange}
-            disabled={isEdit}>
-
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select project" />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((p) =>
-              <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>RFI Number *</Label>
-          <Input
-            type="number"
-            value={formData.rfi_number}
-            onChange={(e) => handleChange('rfi_number', e.target.value)}
-            className="bg-zinc-800 border-zinc-700 font-mono"
-            required />
-
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label>Subject *</Label>
-        <Input
-          value={formData.subject}
-          onChange={(e) => handleChange('subject', e.target.value)}
-          placeholder="Brief description of the question"
-          required
-          className="bg-zinc-800 border-zinc-700" />
-
-      </div>
-
-      <div className="space-y-2">
-        <Label>Question / Request</Label>
-        <Textarea
-          value={formData.question}
-          onChange={(e) => handleChange('question', e.target.value)}
-          rows={4}
-          placeholder="Detailed question or request for information"
-          className="bg-zinc-800 border-zinc-700" />
-
-      </div>
-
-      <div className="space-y-2">
-        <Label>Response</Label>
-        <Textarea
-          value={formData.response}
-          onChange={(e) => handleChange('response', e.target.value)}
-          rows={4}
-          placeholder="Response from architect/engineer"
-          className="bg-zinc-800 border-zinc-700" />
-
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="in_review">In Review</SelectItem>
-              <SelectItem value="answered">Answered</SelectItem>
-              <SelectItem value="implemented">Implemented</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-              <SelectItem value="void">Void</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Priority</Label>
-          <Select value={formData.priority} onValueChange={(v) => handleChange('priority', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-         <div className="space-y-2">
-           <Label>Assigned To</Label>
-           <Input
-             value={formData.assigned_to}
-             onChange={(e) => handleChange('assigned_to', e.target.value)}
-             placeholder="Gets the answer"
-             className="bg-zinc-800 border-zinc-700" />
-         </div>
-         <div className="space-y-2">
-           <Label>Response Owner</Label>
-           <Input
-             value={formData.response_owner}
-             onChange={(e) => handleChange('response_owner', e.target.value)}
-             placeholder="Provides the answer"
-             className="bg-zinc-800 border-zinc-700" />
-         </div>
-       </div>
-
-       <div className="grid grid-cols-4 gap-3">
-         <div className="space-y-2">
-           <Label>SLA Days</Label>
-           <Input
-             type="number"
-             value={formData.days_to_respond}
-             onChange={(e) => handleChange('days_to_respond', parseInt(e.target.value))}
-             className="bg-zinc-800 border-zinc-700"
-             min="1" />
-         </div>
-         <div className="space-y-2">
-           <Label>Cost Impact $</Label>
-           <Input
-             type="number"
-             value={formData.estimated_cost_impact}
-             onChange={(e) => handleChange('estimated_cost_impact', parseFloat(e.target.value))}
-             className="bg-zinc-800 border-zinc-700"
-             placeholder="0" />
-         </div>
-         <div className="space-y-2">
-           <Label>Schedule Days</Label>
-           <Input
-             type="number"
-             value={formData.schedule_impact_days}
-             onChange={(e) => handleChange('schedule_impact_days', parseFloat(e.target.value))}
-             className="bg-zinc-800 border-zinc-700"
-             placeholder="0" />
-         </div>
-         <div className="space-y-2">
-           <Label>Closed Date</Label>
-           <Input
-             type="date"
-             value={formData.closed_date}
-             onChange={(e) => handleChange('closed_date', e.target.value)}
-             className="bg-zinc-800 border-zinc-700" />
-         </div>
-       </div>
-
-       <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label>Submitted Date</Label>
-          <Input
-            type="date"
-            value={formData.submitted_date}
-            onChange={(e) => handleChange('submitted_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700" />
-
-        </div>
-        <div className="space-y-2">
-          <Label>Due Date</Label>
-          <Input
-            type="date"
-            value={formData.due_date}
-            onChange={(e) => handleChange('due_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700" />
-
-        </div>
-        <div className="space-y-2">
-          <Label>Response Date</Label>
-          <Input
-            type="date"
-            value={formData.response_date}
-            onChange={(e) => handleChange('response_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700" />
-
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Linked Drawing Set</Label>
-          <Select
-            value={formData.linked_drawing_set_id}
-            onValueChange={(v) => handleChange('linked_drawing_set_id', v)}>
-
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select drawing" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              {projectDrawings.map((d) =>
-              <SelectItem key={d.id} value={d.id}>{d.set_number} - {d.set_name}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Linked Change Order</Label>
-          <Select
-            value={formData.linked_change_order_id}
-            onValueChange={(v) => handleChange('linked_change_order_id', v)}>
-
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select CO" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              {projectCOs.map((co) =>
-              <SelectItem key={co.id} value={co.id}>CO-{String(co.co_number).padStart(3, '0')} - {co.title}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Resolution Notes</Label>
-        <Textarea
-          value={formData.resolution_notes}
-          onChange={(e) => handleChange('resolution_notes', e.target.value)}
-          rows={3}
-          placeholder="How was this RFI resolved/implemented?"
-          className="bg-zinc-800 border-zinc-700" />
-      </div>
-
-      <div className="flex gap-6 py-2">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="cost_impact"
-            checked={formData.cost_impact}
-            onCheckedChange={(checked) => handleChange('cost_impact', checked)} />
-          <Label htmlFor="cost_impact" className="cursor-pointer">Cost Impact</Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="schedule_impact"
-            checked={formData.schedule_impact}
-            onCheckedChange={(checked) => handleChange('schedule_impact', checked)} />
-          <Label htmlFor="schedule_impact" className="cursor-pointer">Schedule Impact</Label>
-        </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="escalation_flag"
-            checked={formData.escalation_flag}
-            onCheckedChange={(checked) => handleChange('escalation_flag', checked)} />
-          <Label htmlFor="escalation_flag" className="cursor-pointer">Escalated</Label>
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="bg-amber-500 hover:bg-amber-600 text-black">
-
-          {isLoading ? 'Saving...' : isEdit ? 'Update RFI' : 'Create RFI'}
-        </Button>
-      </div>
-    </form>);
-
+    </div>
+  );
 }

@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CheckCircle, X, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function RFIWizard({ rfi, projects, drawings, changeOrders, submittals, deliveries, onSubmit, onCancel, isLoading, templateData }) {
+export default function RFIWizard({ rfi, projects = [], drawings = [], changeOrders = [], submittals = [], deliveries = [], onSubmit, onCancel, isLoading, templateData }) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     project_id: rfi?.project_id || templateData?.project_id || '',

@@ -128,7 +128,7 @@ export default function RFIs() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data, logAction }) => {
+    mutationFn: async ({ id, data, logAction }) => {
       const activityLog = [
         ...(editingRFI?.activity_log || []),
         {
@@ -146,6 +146,10 @@ export default function RFIs() {
       setEditingRFI(null);
       setSelectedRFI(null);
       toast.success('RFI updated successfully');
+    },
+    onError: (error) => {
+      console.error('Update RFI error:', error);
+      toast.error('Failed to update RFI: ' + error.message);
     }
   });
 

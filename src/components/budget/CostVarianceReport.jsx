@@ -23,15 +23,29 @@ export default function CostVarianceReport({
         return sum + taskCost;
       }, 0);
 
+      const laborHoursCost = laborHours
+        .filter(lh => lh.work_package_id === wp.id)
+        .reduce((sum, lh) => {
+          const regularHours = lh.hours || 0;
+          const otHours = lh.overtime_hours || 0;
+          const rate = 50;
+          return sum + ((regularHours + (otHours * 1.5)) * rate);
+        }, 0);
+
       const equipCost = equipmentUsage
-        .filter(eu => wpTasks.some(t => t.id === eu.task_id))
-        .reduce((sum, eu) => sum + ((eu.hours || 0) * (eu.rate_override || 0)), 0);
+        .filter(eu => eu.work_package_id === wp.id)
+        .reduce((sum, eu) => {
+          const hours = eu.hours || 0;
+          const days = eu.days || 0;
+          const rate = eu.rate_override || 0;
+          return sum + (hours * rate) + (days * rate);
+        }, 0);
 
       const expenseCost = expenses
-        .filter(exp => wpTasks.some(t => t.cost_code_id === exp.cost_code_id))
+        .filter(exp => exp.work_package_id === wp.id)
         .reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
-      const totalActual = laborCost + equipCost + expenseCost;
+      const totalActual = laborCost + laborHoursCost + equipCost + expenseCost;
       const budget = wp.budget_at_award || 0;
       const earnedValue = budget * ((wp.percent_complete || 0) / 100);
       const cpi = totalActual > 0 ? (earnedValue / totalActual) : 0;

@@ -38,36 +38,42 @@ export default function BudgetControl() {
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
     queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['labor-hours', activeProjectId],
     queryFn: () => base44.entities.LaborHours.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: equipmentUsage = [] } = useQuery({
     queryKey: ['equipment-usage', activeProjectId],
     queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', activeProjectId],
     queryFn: () => base44.entities.Expense.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list()
+    queryFn: () => base44.entities.CostCode.list(),
+    staleTime: 10 * 60 * 1000
   });
 
   const updateWPMutation = useMutation({

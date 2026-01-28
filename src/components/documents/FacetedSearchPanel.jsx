@@ -22,7 +22,7 @@ export default function FacetedSearchPanel({
     const wpCounts = {};
     const projectCounts = {};
 
-    documents.forEach(doc => {
+    (documents || []).forEach(doc => {
       // Category
       categoryCounts[doc.category] = (categoryCounts[doc.category] || 0) + 1;
       
@@ -206,7 +206,7 @@ export default function FacetedSearchPanel({
             <div className="text-xs font-medium text-zinc-400 mb-2 uppercase tracking-wider">
               Popular Tags ({facets.tags.length})
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
               {facets.tags.map(([tag, count]) => {
                 const isActive = activeFilters.tag === tag;
                 return (

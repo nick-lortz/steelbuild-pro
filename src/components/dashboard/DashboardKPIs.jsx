@@ -2,14 +2,14 @@ import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Building2, DollarSign, FileText, MessageSquareWarning, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
-export default function DashboardKPIs({ projects, financials, drawings, rfis, tasks, expenses = [], laborHours = [], resources = [] }) {
-  const activeProjects = projects.filter(p => 
+export default function DashboardKPIs({ projects = [], financials = [], drawings = [], rfis = [], tasks = [], expenses = [], laborHours = [], resources = [] }) {
+  const activeProjects = (projects || []).filter(p => 
     p.status === 'in_progress' || p.status === 'awarded'
   ).length;
 
-  const totalBudget = financials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
-  const totalCommitted = financials.reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
-  const actualFromFinancials = financials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+  const totalBudget = (financials || []).reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
+  const totalCommitted = (financials || []).reduce((sum, f) => sum + (Number(f.committed_amount) || 0), 0);
+  const actualFromFinancials = (financials || []).reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
   
   // Add expenses to actual
   const actualFromExpenses = (expenses || [])
@@ -32,32 +32,33 @@ export default function DashboardKPIs({ projects, financials, drawings, rfis, ta
   const remaining = totalBudget - totalActual;
   const variancePercent = totalBudget > 0 ? ((remaining / totalBudget) * 100) : 0;
 
-  const pendingDrawings = drawings.filter(d => d.status !== 'FFF' && d.status !== 'As-Built').length;
+  const pendingDrawings = (drawings || []).filter(d => d.status !== 'FFF' && d.status !== 'As-Built').length;
   
-  const overdueDrawings = drawings.filter(d => {
+  const today = new Date();
+  const overdueDrawings = (drawings || []).filter(d => {
     if (d.status === 'FFF' || d.status === 'As-Built') return false;
     if (!d.due_date) return false;
     try {
-      return new Date(d.due_date) < new Date();
+      return new Date(d.due_date) < today;
     } catch {
       return false;
     }
   }).length;
 
-  const openRFIs = rfis.filter(r => r.status !== 'closed' && r.status !== 'answered').length;
+  const openRFIs = (rfis || []).filter(r => r.status !== 'closed' && r.status !== 'answered').length;
   
-  const overdueRFIs = rfis.filter(r => {
+  const overdueRFIs = (rfis || []).filter(r => {
     if (r.status === 'closed' || r.status === 'answered') return false;
     if (!r.due_date) return false;
     try {
-      return new Date(r.due_date) < new Date();
+      return new Date(r.due_date) < today;
     } catch {
       return false;
     }
   }).length;
 
-  const completedTasks = tasks.filter(t => t.status === 'completed').length;
-  const totalTasks = tasks.length;
+  const completedTasks = (tasks || []).filter(t => t.status === 'completed').length;
+  const totalTasks = (tasks || []).length;
   const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const kpis = [

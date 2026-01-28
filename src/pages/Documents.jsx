@@ -101,43 +101,43 @@ export default function Documents() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.list('-created_date'),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
     queryFn: () => base44.entities.WorkPackage.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list('-expense_date', 500),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items'],
     queryFn: () => base44.entities.SOVItem.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['daily-logs'],
     queryFn: () => base44.entities.DailyLog.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
@@ -337,13 +337,13 @@ export default function Documents() {
   const getVersions = (doc) => {
     if (!doc) return [];
     const rootId = doc.parent_document_id || doc.id;
-    return documents
+    return (documents || [])
       .filter(d => d.id === rootId || d.parent_document_id === rootId)
       .sort((a, b) => (b.version || 1) - (a.version || 1));
   };
 
   const filteredDocuments = useMemo(() => {
-    let filtered = documents.filter(d => {
+    let filtered = (documents || []).filter(d => {
       const matchesSearch = 
         d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         d.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -492,9 +492,9 @@ export default function Documents() {
   ];
 
   const docStats = useMemo(() => {
-    const current = documents.filter(d => d.status !== 'superseded');
-    const pendingReview = documents.filter(d => d.workflow_stage === 'pending_review').length;
-    const approved = documents.filter(d => d.status === 'approved').length;
+    const current = (documents || []).filter(d => d.status !== 'superseded');
+    const pendingReview = (documents || []).filter(d => d.workflow_stage === 'pending_review').length;
+    const approved = (documents || []).filter(d => d.status === 'approved').length;
     return { total: current.length, pendingReview, approved };
   }, [documents]);
 
@@ -693,9 +693,9 @@ export default function Documents() {
               <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
                 <SelectValue placeholder="Tag" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
                 <SelectItem value="all">All Tags</SelectItem>
-                {Array.from(new Set(documents.flatMap(d => d.tags || []))).sort().map(tag => (
+                {Array.from(new Set((documents || []).flatMap(d => d.tags || []))).sort().map(tag => (
                   <SelectItem key={tag} value={tag}>{tag}</SelectItem>
                 ))}
               </SelectContent>

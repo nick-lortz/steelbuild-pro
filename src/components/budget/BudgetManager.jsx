@@ -29,22 +29,27 @@ export default function BudgetManager({
 
     // Add labor hours costs
     const laborHoursCost = laborHours
-      .filter(lh => tasks.some(t => t.id === lh.task_id))
+      .filter(lh => workPackage.id === lh.work_package_id)
       .reduce((sum, lh) => {
-        // Assume $50/hr (should come from cost code)
-        return sum + ((lh.hours + lh.overtime_hours) * 50);
+        const regularHours = lh.hours || 0;
+        const otHours = lh.overtime_hours || 0;
+        const rate = 50; // Default rate - should come from cost code
+        return sum + ((regularHours + (otHours * 1.5)) * rate);
       }, 0);
 
     // Add equipment usage costs
     const equipmentCost = equipmentUsage
-      .filter(eu => tasks.some(t => t.id === eu.task_id))
+      .filter(eu => workPackage.id === eu.work_package_id)
       .reduce((sum, eu) => {
-        return sum + ((eu.hours || 0) * (eu.rate_override || 0)) + ((eu.days || 0) * (eu.rate_override || 0));
+        const hours = eu.hours || 0;
+        const days = eu.days || 0;
+        const rate = eu.rate_override || 0;
+        return sum + (hours * rate) + (days * rate);
       }, 0);
 
     // Add direct expenses
     const expenseCost = expenses
-      .filter(exp => tasks.some(t => t.cost_code_id === exp.cost_code_id))
+      .filter(exp => workPackage.id === exp.work_package_id)
       .reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
     const totalActual = laborCost + laborHoursCost + equipmentCost + expenseCost;

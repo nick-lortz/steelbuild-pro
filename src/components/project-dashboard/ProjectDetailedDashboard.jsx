@@ -29,43 +29,50 @@ export default function ProjectDetailedDashboard({ projectId }) {
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => base44.entities.Project.filter({ id: projectId }),
-    select: (data) => data?.[0]
+    select: (data) => data?.[0],
+    enabled: !!projectId,
+    staleTime: 5 * 60 * 1000
   });
 
-  const { data: tasks } = useQuery({
+  const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
     queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
-    initialData: []
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: risks } = useQuery({
+  const { data: risks = [] } = useQuery({
     queryKey: ['risks', projectId],
     queryFn: () => base44.entities.ProjectRisk.filter({ project_id: projectId }),
-    initialData: []
+    enabled: !!projectId,
+    staleTime: 5 * 60 * 1000
   });
 
-  const { data: resources } = useQuery({
+  const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    initialData: []
+    staleTime: 10 * 60 * 1000
   });
 
-  const { data: rfis } = useQuery({
+  const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', projectId],
     queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
-    initialData: []
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000
   });
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === 'completed').length;
-    const overdueTasks = tasks.filter(t => {
+    const totalTasks = tasks?.length || 0;
+    const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0;
+    const today = new Date().toISOString().split('T')[0];
+    const overdueTasks = tasks?.filter(t => {
       if (t.status === 'completed') return false;
-      return new Date(t.end_date) < new Date();
-    }).length;
+      if (!t.end_date) return false;
+      return t.end_date < today;
+    }).length || 0;
 
-    const topRisks = risks
+    const topRisks = (risks || [])
       .filter(r => r.status !== 'closed')
       .sort((a, b) => (b.probability || 0) * (b.impact || 1) - (a.probability || 0) * (a.impact || 1))
       .slice(0, 5);
@@ -75,7 +82,7 @@ export default function ProjectDetailedDashboard({ projectId }) {
       completedTasks,
       completionPercent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
       overdueTasks,
-      openRFIs: rfis.filter(r => !['answered', 'implemented', 'closed', 'void'].includes(r.status)).length,
+      openRFIs: (rfis || []).filter(r => !['answered', 'implemented', 'closed', 'void'].includes(r.status)).length,
       topRisks
     };
   }, [tasks, risks, rfis]);

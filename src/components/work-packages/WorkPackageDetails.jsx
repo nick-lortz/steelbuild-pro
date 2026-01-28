@@ -25,19 +25,22 @@ export default function WorkPackageDetails({
   const { data: laborHours = [] } = useQuery({
     queryKey: ['labor-hours', projectId],
     queryFn: () => base44.entities.LaborHours.filter({ project_id: projectId }),
-    enabled: !!projectId
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: equipmentUsage = [] } = useQuery({
     queryKey: ['equipment-usage', projectId],
     queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: projectId }),
-    enabled: !!projectId
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', projectId],
     queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
-    enabled: !!projectId
+    enabled: !!projectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const linkedSOVItems = sovItems.filter(sov => pkg.sov_item_ids?.includes(sov.id));

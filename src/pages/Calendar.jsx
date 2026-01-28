@@ -38,36 +38,43 @@ export default function Calendar() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => base44.entities.Task.list(),
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list('name'),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: allocations = [] } = useQuery({
     queryKey: ['resourceAllocations'],
     queryFn: () => base44.entities.ResourceAllocation.list(),
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ['meetings'],
     queryFn: () => base44.entities.Meeting.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
     queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const updateTaskMutation = useMutation({
@@ -99,7 +106,7 @@ export default function Calendar() {
     const events = [];
 
     // Tasks
-    tasks.forEach(task => {
+    (tasks || []).forEach(task => {
       if (task.start_date || task.end_date) {
         events.push({
           id: task.id,
@@ -116,7 +123,7 @@ export default function Calendar() {
     });
 
     // Projects (timeline)
-    projects.forEach(project => {
+    (projects || []).forEach(project => {
       if (project.start_date || project.target_completion) {
         events.push({
           id: project.id,
@@ -132,13 +139,13 @@ export default function Calendar() {
     });
 
     // Resource allocations
-    allocations.forEach(allocation => {
-      const resource = resources.find(r => r.id === allocation.resource_id);
+    (allocations || []).forEach(allocation => {
+      const resource = (resources || []).find(r => r.id === allocation.resource_id);
       if (resource && allocation.start_date && allocation.end_date) {
         events.push({
           id: allocation.id,
           type: 'allocation',
-          title: `${resource.name} - ${projects.find(p => p.id === allocation.project_id)?.name || 'Project'}`,
+          title: `${resource.name} - ${(projects || []).find(p => p.id === allocation.project_id)?.name || 'Project'}`,
           start_date: allocation.start_date,
           end_date: allocation.end_date,
           project_id: allocation.project_id,
@@ -150,7 +157,7 @@ export default function Calendar() {
     });
 
     // Document reviews
-    documents.forEach(doc => {
+    (documents || []).forEach(doc => {
       if (doc.review_due_date && doc.workflow_stage === 'pending_review') {
         events.push({
           id: doc.id,
@@ -165,7 +172,7 @@ export default function Calendar() {
     });
 
     // Meetings
-    meetings.forEach(meeting => {
+    (meetings || []).forEach(meeting => {
       if (meeting.meeting_date) {
         events.push({
           id: meeting.id,
@@ -180,7 +187,7 @@ export default function Calendar() {
     });
 
     // Work packages
-    workPackages.forEach(wp => {
+    (workPackages || []).forEach(wp => {
       if (wp.start_date || wp.target_date) {
         events.push({
           id: wp.id,
@@ -201,7 +208,7 @@ export default function Calendar() {
 
   // Apply filters
   const filteredEvents = useMemo(() => {
-    return calendarEvents.filter(event => {
+    return (calendarEvents || []).filter(event => {
       const matchesProject = projectFilter === 'all' || event.project_id === projectFilter;
       const matchesResource = resourceFilter === 'all' || event.resource_id === resourceFilter;
       const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
@@ -216,7 +223,7 @@ export default function Calendar() {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     
-    return filteredEvents.filter(event => {
+    return (filteredEvents || []).filter(event => {
       if (!event.start_date && !event.end_date) return false;
       
       const eventStart = event.start_date ? parseISO(event.start_date) : null;

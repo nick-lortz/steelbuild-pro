@@ -23,6 +23,7 @@ import TaskListView from '@/components/schedule/TaskListView';
 import PhaseGroupedView from '@/components/schedule/PhaseGroupedView';
 import TimelineView from '@/components/schedule/TimelineView';
 import ScheduleAIAssistant from '@/components/schedule/ScheduleAIAssistant';
+import DependencyGraph from '@/components/schedule/DependencyGraph';
 import ExportButton from '@/components/shared/ExportButton';
 
 export default function Schedule() {
@@ -35,7 +36,7 @@ export default function Schedule() {
   const [editingTask, setEditingTask] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
-  const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar'
+  const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar', 'network'
   const [showAI, setShowAI] = useState(false);
   const [showBulkAssign, setShowBulkAssign] = useState(false);
   const PAGE_SIZE = 30;
@@ -444,7 +445,8 @@ export default function Schedule() {
                 { value: 'timeline', label: 'TIMELINE' },
                 { value: 'list', label: 'LIST' },
                 { value: 'gantt', label: 'GANTT' },
-                { value: 'calendar', label: 'CAL' }
+                { value: 'calendar', label: 'CAL' },
+                { value: 'network', label: 'NETWORK' }
               ].map(({ value, label }) => (
                 <button
                   key={value}
@@ -569,6 +571,11 @@ export default function Schedule() {
             resources={resources}
             rfis={rfis}
             changeOrders={changeOrders}
+          />
+        ) : viewMode === 'network' ? (
+          <DependencyGraph
+            tasks={allScheduleTasks}
+            onTaskClick={handleTaskClick}
           />
         ) : (
           <TaskListView

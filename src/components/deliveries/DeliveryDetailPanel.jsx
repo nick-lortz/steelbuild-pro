@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Package, Calendar, Truck, MapPin, Phone, Mail, Clock, 
   AlertTriangle, CheckCircle2, FileText, MessageSquare, 
-  Activity, Edit, Trash2, Upload, Camera 
+  Activity, Edit, Trash2, Upload, Camera, Navigation 
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
+import LocationTracker from './LocationTracker';
 
 export default function DeliveryDetailPanel({ 
   delivery, 
@@ -104,6 +105,10 @@ export default function DeliveryDetailPanel({
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="items">Line Items ({delivery.line_items?.length || 0})</TabsTrigger>
+          <TabsTrigger value="tracking">
+            <Navigation size={14} className="mr-2" />
+            GPS Tracking
+          </TabsTrigger>
           <TabsTrigger value="exceptions">
             Exceptions ({delivery.exceptions?.filter(e => !e.resolved).length || 0})
           </TabsTrigger>
@@ -212,6 +217,45 @@ export default function DeliveryDetailPanel({
               <Package size={32} className="mx-auto mb-2 opacity-50" />
               <p className="text-sm">No line items</p>
             </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="tracking" className="space-y-4">
+          {delivery.delivery_status === 'in_transit' || delivery.delivery_status === 'confirmed' ? (
+            <LocationTracker 
+              delivery={delivery} 
+              onLocationUpdate={() => {
+                // Trigger refresh
+                if (onEdit) onEdit(delivery);
+              }}
+            />
+          ) : (
+            <div className="text-center py-8 text-zinc-500">
+              <Navigation size={32} className="mx-auto mb-2 opacity-50" />
+              <p className="text-sm">GPS tracking available when delivery is in transit</p>
+            </div>
+          )}
+
+          {delivery.location_history && delivery.location_history.length > 0 && (
+            <Card className="bg-zinc-800 border-zinc-700">
+              <CardHeader>
+                <CardTitle className="text-sm">Location History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {delivery.location_history.slice(-10).reverse().map((loc, idx) => (
+                    <div key={idx} className="flex justify-between text-xs">
+                      <span className="text-zinc-400 font-mono">
+                        {loc.lat.toFixed(6)}, {loc.lng.toFixed(6)}
+                      </span>
+                      <span className="text-zinc-500">
+                        {format(parseISO(loc.timestamp), 'h:mm a')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 

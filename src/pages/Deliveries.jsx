@@ -30,6 +30,8 @@ import DeliveryWizard from '@/components/deliveries/DeliveryWizard';
 import DeliveryDetailPanel from '@/components/deliveries/DeliveryDetailPanel';
 import TodaysDeliveries from '@/components/deliveries/TodaysDeliveries';
 import ReceivingMode from '@/components/deliveries/ReceivingMode';
+import DeliveryMapView from '@/components/deliveries/DeliveryMapView';
+import LocationTracker from '@/components/deliveries/LocationTracker';
 
 export default function Deliveries() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -316,7 +318,10 @@ export default function Deliveries() {
               Today ({kpis.today})
             </TabsTrigger>
             <TabsTrigger value="list">All Deliveries</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+            <TabsTrigger value="calendar">
+              <MapPin size={14} className="mr-2" />
+              Map View
+            </TabsTrigger>
           </TabsList>
 
           {/* Today's Deliveries */}
@@ -380,12 +385,13 @@ export default function Deliveries() {
             />
           </TabsContent>
 
-          {/* Calendar View */}
+          {/* Map View */}
           <TabsContent value="calendar">
-            <div className="text-center py-12 text-zinc-500">
-              <Calendar size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Calendar view coming soon</p>
-            </div>
+            <DeliveryMapView
+              deliveries={filteredDeliveries}
+              projects={projects}
+              onSelectDelivery={(delivery) => setSelectedDelivery(delivery)}
+            />
           </TabsContent>
         </Tabs>
       </div>

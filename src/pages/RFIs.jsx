@@ -102,11 +102,16 @@ export default function RFIs() {
         rfiData.rfi_number = maxNumber + 1;
       }
 
-      const activityLog = [{
+      // Ensure activity_log is properly formatted array
+      const activityLog = rfiData.activity_log && Array.isArray(rfiData.activity_log) 
+        ? rfiData.activity_log 
+        : [];
+      
+      activityLog.push({
         action: `RFI created by ${user?.full_name || user?.email}`,
         user: user?.email || 'system',
         timestamp: new Date().toISOString()
-      }];
+      });
 
       return base44.entities.RFI.create({
         ...rfiData,

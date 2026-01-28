@@ -89,30 +89,64 @@ export default function DeliveryWizard({ delivery, projects, onSubmit, onCancel,
       return;
     }
 
+    // Create clean submission data
+    const submitData = {
+      project_id: formData.project_id,
+      template_type: formData.template_type || 'custom',
+      package_name: formData.package_name,
+      package_number: formData.package_number || '',
+      description: formData.description || '',
+      vendor_supplier: formData.vendor_supplier || '',
+      ship_from_location: formData.ship_from_location || '',
+      ship_to_location: formData.ship_to_location || '',
+      requested_date: formData.requested_date || null,
+      requested_time_window: formData.requested_time_window || '',
+      confirmed_date: formData.confirmed_date || null,
+      confirmed_time_window: formData.confirmed_time_window || '',
+      delivery_type: formData.delivery_type || 'ship',
+      carrier: formData.carrier || '',
+      tracking_number: formData.tracking_number || '',
+      pro_number: formData.pro_number || '',
+      trailer_number: formData.trailer_number || '',
+      po_number: formData.po_number || '',
+      priority: formData.priority || 'medium',
+      delivery_status: formData.delivery_status || 'draft',
+      contact_name: formData.contact_name || '',
+      contact_phone: formData.contact_phone || '',
+      contact_email: formData.contact_email || '',
+      receiving_requirements: formData.receiving_requirements || [],
+      site_constraints: formData.site_constraints || {},
+      line_items: formData.line_items || [],
+      notes: formData.notes || ''
+    };
+
     // Generate delivery number if creating new
     if (!delivery?.id) {
-      formData.delivery_number = `DEL-${Date.now().toString().slice(-6)}`;
+      submitData.delivery_number = `DEL-${Date.now().toString().slice(-6)}`;
     }
 
     // Calculate totals from line items
-    if (formData.line_items.length > 0) {
-      formData.weight_tons = formData.line_items.reduce((sum, item) => sum + (item.weight_tons || 0), 0);
-      formData.piece_count = formData.line_items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    if (submitData.line_items.length > 0) {
+      submitData.weight_tons = submitData.line_items.reduce((sum, item) => sum + (parseFloat(item.weight_tons) || 0), 0);
+      submitData.piece_count = submitData.line_items.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+    } else {
+      submitData.weight_tons = 0;
+      submitData.piece_count = 0;
     }
 
     // Set scheduled_date from confirmed or requested
-    formData.scheduled_date = formData.confirmed_date || formData.requested_date;
+    submitData.scheduled_date = submitData.confirmed_date || submitData.requested_date || null;
 
     // Auto-calculate on_time if actual_arrival_date exists
-    if (formData.actual_arrival_date && formData.scheduled_date) {
+    if (formData.actual_arrival_date && submitData.scheduled_date) {
       const actual = new Date(formData.actual_arrival_date);
-      const scheduled = new Date(formData.scheduled_date);
+      const scheduled = new Date(submitData.scheduled_date);
       const diffDays = Math.round((actual - scheduled) / (1000 * 60 * 60 * 24));
-      formData.on_time = diffDays <= 0;
-      formData.days_variance = diffDays;
+      submitData.on_time = diffDays <= 0;
+      submitData.days_variance = diffDays;
     }
 
-    onSubmit(formData);
+    onSubmit(submitData);
   };
 
   const canProceed = () => {

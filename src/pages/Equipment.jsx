@@ -1,285 +1,468 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Truck, Calendar, BarChart3 } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Truck, Plus, Wrench, Calendar, MoreVertical, Trash2, Pencil } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import EquipmentCalendar from '@/components/equipment/EquipmentCalendar';
-import EquipmentKPIs from '@/components/equipment/EquipmentKPIs';
-import Pagination from '@/components/ui/Pagination';
-import { usePagination } from '@/components/shared/hooks/usePagination';
-import ExportButton from '@/components/shared/ExportButton';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
 
-export default function Equipment() {
+export default function EquipmentPage() {
+  const queryClient = useQueryClient();
+  const [showEquipmentForm, setShowEquipmentForm] = useState(false);
+  const [showUsageForm, setShowUsageForm] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
 
-  const { data: resources = [] } = useQuery({
-    queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list('name'),
-    staleTime: 10 * 60 * 1000
+  const { data: equipment = [] } = useQuery({
+    queryKey: ['equipment'],
+    queryFn: () => base44.entities.Equipment.list('description')
   });
 
-  const { data: bookings = [] } = useQuery({
-    queryKey: ['equipmentBookings'],
-    queryFn: () => base44.entities.EquipmentBooking.list('-start_date'),
-    staleTime: 5 * 60 * 1000
+  const { data: equipmentUsage = [] } = useQuery({
+    queryKey: ['equipment-usage'],
+    queryFn: () => base44.entities.EquipmentUsage.list('-usage_date')
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000
+    queryFn: () => base44.entities.Project.list()
   });
 
-  const equipment = useMemo(() =>
-  resources.filter((r) => r.type === 'equipment'),
-  [resources]
-  );
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list()
+  });
 
-  const {
-    currentPage,
-    totalPages,
-    paginatedItems: paginatedEquipment,
-    handlePageChange,
-    totalItems
-  } = usePagination(equipment, 20);
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list()
+  });
 
-  const handleSelectEquipment = useCallback((row) => {
-    setSelectedEquipment(row);
-  }, []);
+  const createEquipmentMutation = useMutation({
+    mutationFn: (data) => base44.entities.Equipment.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      toast.success('Equipment created');
+      setShowEquipmentForm(false);
+      setEditingEquipment(null);
+    }
+  });
 
-  const columns = [
-  {
-    header: 'Equipment',
-    accessor: 'name',
-    render: (row) =>
-    <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-500/20 rounded">
-            <Truck size={18} className="text-purple-400" />
-          </div>
-          <div>
-            <p className="font-medium text-white">{row.name}</p>
-            <p className="text-xs text-zinc-500">{row.classification}</p>
-          </div>
+  const updateEquipmentMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Equipment.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      toast.success('Updated');
+      setShowEquipmentForm(false);
+      setEditingEquipment(null);
+    }
+  });
+
+  const createUsageMutation = useMutation({
+    mutationFn: (data) => base44.entities.EquipmentUsage.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipment-usage'] });
+      toast.success('Usage logged');
+      setShowUsageForm(false);
+    }
+  });
+
+  const equipmentColumns = [
+    {
+      header: 'Asset Tag',
+      accessor: 'asset_tag',
+      render: (row) => <span className="font-mono text-amber-500">{row.asset_tag}</span>
+    },
+    {
+      header: 'Equipment',
+      accessor: 'description',
+      render: (row) => (
+        <div>
+          <div className="font-medium">{row.description}</div>
+          <div className="text-xs text-zinc-500">{row.make_model}</div>
         </div>
-
-  },
-  {
-    header: 'Status',
-    accessor: 'status',
-    render: (row) => <StatusBadge status={row.status} />
-  },
-  {
-    header: 'Rate',
-    accessor: 'rate',
-    render: (row) => row.rate ?
-    <span className="font-mono">${row.rate.toLocaleString()}/{row.rate_type}</span> :
-    '-'
-  },
-  {
-    header: 'Current Project',
-    accessor: 'current_project_id',
-    render: (row) => {
-      if (!row.current_project_id) return <span className="text-zinc-500">Available</span>;
-      const project = projects.find((p) => p.id === row.current_project_id);
-      return <span className="text-zinc-300">{project?.name || '-'}</span>;
+      )
+    },
+    {
+      header: 'Type',
+      render: (row) => <Badge className="text-xs">{row.equipment_type?.replace('_', ' ')}</Badge>
+    },
+    {
+      header: 'Ownership',
+      accessor: 'ownership'
+    },
+    {
+      header: 'Daily Rate',
+      render: (row) => <span className="font-mono">${row.daily_rate?.toLocaleString() || 0}</span>
+    },
+    {
+      header: 'Status',
+      render: (row) => row.active ? <StatusBadge status="active" /> : <StatusBadge status="inactive" />
+    },
+    {
+      header: '',
+      render: (row) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
+            <DropdownMenuItem onClick={() => { setEditingEquipment(row); setShowEquipmentForm(true); }} className="text-white hover:text-white">
+              <Pencil size={14} className="mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { setSelectedEquipment(row); setShowUsageForm(true); }} className="text-white hover:text-white">
+              <Plus size={14} className="mr-2" />
+              Log Usage
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
     }
-  },
-  {
-    header: 'Bookings',
-    render: (row) => {
-      const equipmentBookings = bookings.filter((b) => b.resource_id === row.id);
-      const activeBookings = equipmentBookings.filter((b) =>
-      b.status === 'confirmed' || b.status === 'in_use'
-      ).length;
-      return (
-        <span className="text-sm text-zinc-400">
-            {activeBookings} active
-          </span>);
+  ];
 
-    }
-  },
-  {
-    header: '',
-    render: (row) =>
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={(e) => {
-        e.stopPropagation();
-        handleSelectEquipment(row);
-      }} className="bg-background text-slate-50 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
-
-
-          <Calendar size={14} className="mr-2" />
-          Schedule
-        </Button>
-
-  }];
-
-
-  const equipStats = useMemo(() => {
-    const activeBookings = bookings.filter((b) => b.status === 'confirmed' || b.status === 'in_use').length;
-    const totalRevenue = bookings.
-    filter((b) => b.status === 'completed').
-    reduce((sum, b) => sum + (b.total_cost || 0), 0);
-    return { activeBookings, totalRevenue };
-  }, [bookings]);
+  const kpis = useMemo(() => {
+    const active = equipment.filter(e => e.active).length;
+    const inUse = equipment.filter(e => e.assigned_project_id).length;
+    const totalUsageThisMonth = equipmentUsage.filter(u => {
+      const usageDate = new Date(u.usage_date);
+      const now = new Date();
+      return usageDate.getMonth() === now.getMonth() && usageDate.getFullYear() === now.getFullYear();
+    }).length;
+    
+    return { active, inUse, totalUsageThisMonth };
+  }, [equipment, equipmentUsage]);
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Equipment Management</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{equipment.length} UNITS</p>
-            </div>
-            <div className="flex gap-2">
-              <ExportButton
-                data={equipment}
-                columns={[
-                { key: 'name', label: 'Equipment' },
-                { key: 'classification', label: 'Type' },
-                { key: 'status', label: 'Status' },
-                { key: 'rate', label: 'Rate' },
-                { key: 'rate_type', label: 'Rate Type' },
-                { key: 'current_project_id', label: 'Project', formatter: (row) => projects.find((p) => p.id === row.current_project_id)?.name || 'Available' }]
-                }
-                filename="equipment" />
-
-              <Link to={createPageUrl('Resources')}>
-                <Button className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
-                  MANAGE
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FLEET SIZE</div>
-              <div className="text-2xl font-bold font-mono text-white">{equipment.length}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVAILABLE</div>
-              <div className="text-2xl font-bold font-mono text-green-500">
-                {equipment.filter((e) => e.status === 'available').length}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ACTIVE BOOKINGS</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">{equipStats.activeBookings}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">REVENUE (TTD)</div>
-              <div className="text-2xl font-bold font-mono text-white">
-                ${(equipStats.totalRevenue / 1000).toFixed(0)}K
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* Fleet Overview */}
-        {equipment.length > 0 &&
-        <div className="mb-6">
-            <EquipmentKPIs bookings={bookings} equipment={equipment} />
-          </div>
+    <div className="p-6 space-y-6">
+      <PageHeader 
+        title="Equipment Management"
+        subtitle="Fleet Assets & Usage Tracking"
+        actions={
+          <Button onClick={() => setShowEquipmentForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+            <Plus size={16} className="mr-2" />
+            Add Equipment
+          </Button>
         }
+      />
 
-        {/* Equipment List */}
-        <div className="mb-6">
-          <DataTable
-            columns={columns}
-            data={paginatedEquipment}
-            emptyMessage="No equipment found. Add equipment resources to get started." />
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{kpis.active}</div>
+            <div className="text-xs text-zinc-500">Active Assets</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-amber-500">{kpis.inUse}</div>
+            <div className="text-xs text-zinc-500">Currently Assigned</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-500">{kpis.totalUsageThisMonth}</div>
+            <div className="text-xs text-zinc-500">Usage Logs (This Month)</div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {totalPages > 1 &&
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            pageSize={20}
-            totalItems={totalItems} />
+      <DataTable
+        columns={equipmentColumns}
+        data={equipment}
+        emptyMessage="No equipment found. Add assets to track usage and costs."
+      />
 
+      <EquipmentForm
+        open={showEquipmentForm}
+        equipment={editingEquipment}
+        onClose={() => { setShowEquipmentForm(false); setEditingEquipment(null); }}
+        onSubmit={(data) => {
+          if (editingEquipment) {
+            updateEquipmentMutation.mutate({ id: editingEquipment.id, data });
+          } else {
+            createEquipmentMutation.mutate(data);
           }
-        </div>
+        }}
+      />
 
-        {/* Selected Equipment Details */}
-        {selectedEquipment &&
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest">EQUIPMENT DETAILS</h3>
-              <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSelectedEquipment(null)}
-              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider">
+      <UsageForm
+        open={showUsageForm}
+        equipment={selectedEquipment}
+        projects={projects}
+        workPackages={workPackages}
+        costCodes={costCodes}
+        onClose={() => { setShowUsageForm(false); setSelectedEquipment(null); }}
+        onSubmit={(data) => createUsageMutation.mutate(data)}
+      />
+    </div>
+  );
+}
 
-                CLOSE
-              </Button>
+function EquipmentForm({ open, equipment, onClose, onSubmit }) {
+  const [formData, setFormData] = useState({
+    asset_tag: equipment?.asset_tag || '',
+    description: equipment?.description || '',
+    equipment_type: equipment?.equipment_type || 'other',
+    ownership: equipment?.ownership || 'owned',
+    daily_rate: equipment?.daily_rate || 0,
+    hourly_rate: equipment?.hourly_rate || 0,
+    active: equipment?.active ?? true,
+    make_model: equipment?.make_model || '',
+    notes: equipment?.notes || ''
+  });
+
+  React.useEffect(() => {
+    if (equipment) {
+      setFormData({
+        asset_tag: equipment.asset_tag || '',
+        description: equipment.description || '',
+        equipment_type: equipment.equipment_type || 'other',
+        ownership: equipment.ownership || 'owned',
+        daily_rate: equipment.daily_rate || 0,
+        hourly_rate: equipment.hourly_rate || 0,
+        active: equipment.active ?? true,
+        make_model: equipment.make_model || '',
+        notes: equipment.notes || ''
+      });
+    }
+  }, [equipment]);
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+        <DialogHeader>
+          <DialogTitle>{equipment ? 'Edit Equipment' : 'Add Equipment'}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Asset Tag *</Label>
+              <Input
+                value={formData.asset_tag}
+                onChange={(e) => setFormData({ ...formData, asset_tag: e.target.value })}
+                className="bg-zinc-800 border-zinc-700"
+                required
+              />
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Calendar */}
-              <EquipmentCalendar
-              equipmentId={selectedEquipment.id}
-              equipmentName={selectedEquipment.name} />
-
-
-              {/* Equipment-specific KPIs */}
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
-                    <BarChart3 size={16} />
-                    Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EquipmentKPIs
-                  bookings={bookings.filter((b) => b.resource_id === selectedEquipment.id)}
-                  equipment={[selectedEquipment]} />
-
-                  
-                  {/* Additional Details */}
-                  <div className="mt-6 space-y-3">
-                    <div className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
-                      <span className="text-xs text-zinc-600 uppercase tracking-widest">CLASSIFICATION</span>
-                      <span className="text-sm font-medium text-white">{selectedEquipment.classification || '-'}</span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
-                      <span className="text-xs text-zinc-600 uppercase tracking-widest">RATE</span>
-                      <span className="text-sm font-medium text-amber-400 font-mono">
-                        ${selectedEquipment.rate?.toLocaleString() || 0}/{selectedEquipment.rate_type}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
-                      <span className="text-xs text-zinc-600 uppercase tracking-widest">CONTACT</span>
-                      <span className="text-sm font-medium text-white">
-                        {selectedEquipment.contact_name || selectedEquipment.contact_phone || '-'}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <Select value={formData.equipment_type} onValueChange={(v) => setFormData({ ...formData, equipment_type: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="crane">Crane</SelectItem>
+                  <SelectItem value="forklift">Forklift</SelectItem>
+                  <SelectItem value="truck">Truck</SelectItem>
+                  <SelectItem value="welding_machine">Welding Machine</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        }
-      </div>
-    </div>);
 
+          <div className="space-y-2">
+            <Label>Description *</Label>
+            <Input
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="bg-zinc-800 border-zinc-700"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Ownership</Label>
+              <Select value={formData.ownership} onValueChange={(v) => setFormData({ ...formData, ownership: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owned">Owned</SelectItem>
+                  <SelectItem value="leased">Leased</SelectItem>
+                  <SelectItem value="rented">Rented</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Daily Rate</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.daily_rate}
+                onChange={(e) => setFormData({ ...formData, daily_rate: parseFloat(e.target.value) || 0 })}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Hourly Rate</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.hourly_rate}
+                onChange={(e) => setFormData({ ...formData, hourly_rate: parseFloat(e.target.value) || 0 })}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button 
+              onClick={() => onSubmit(formData)}
+              disabled={!formData.asset_tag || !formData.description}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              {equipment ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UsageForm({ open, equipment, projects, workPackages, costCodes, onClose, onSubmit }) {
+  const [formData, setFormData] = useState({
+    equipment_id: equipment?.id || '',
+    project_id: '',
+    work_package_id: '',
+    cost_code_id: '',
+    usage_date: format(new Date(), 'yyyy-MM-dd'),
+    hours: '',
+    days: '',
+    operator: '',
+    description: ''
+  });
+
+  React.useEffect(() => {
+    if (equipment) {
+      setFormData(prev => ({ ...prev, equipment_id: equipment.id }));
+    }
+  }, [equipment]);
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+        <DialogHeader>
+          <DialogTitle>Log Equipment Usage</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {equipment && (
+            <div className="p-3 bg-zinc-800 rounded">
+              <div className="font-medium">{equipment.description}</div>
+              <div className="text-xs text-zinc-500">{equipment.asset_tag}</div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Project *</Label>
+              <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Work Package *</Label>
+              <Select value={formData.work_package_id} onValueChange={(v) => setFormData({ ...formData, work_package_id: v })}>
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workPackages.filter(wp => wp.project_id === formData.project_id).map(wp => (
+                    <SelectItem key={wp.id} value={wp.id}>{wp.wpid} - {wp.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Cost Code</Label>
+            <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Select cost code" />
+              </SelectTrigger>
+              <SelectContent>
+                {costCodes.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Date *</Label>
+              <Input
+                type="date"
+                value={formData.usage_date}
+                onChange={(e) => setFormData({ ...formData, usage_date: e.target.value })}
+                className="bg-zinc-800 border-zinc-700"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Hours</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={formData.hours}
+                onChange={(e) => setFormData({ ...formData, hours: e.target.value })}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Days</Label>
+              <Input
+                type="number"
+                step="0.5"
+                value={formData.days}
+                onChange={(e) => setFormData({ ...formData, days: e.target.value })}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button 
+              onClick={() => {
+                const submitData = {
+                  ...formData,
+                  hours: formData.hours ? parseFloat(formData.hours) : null,
+                  days: formData.days ? parseFloat(formData.days) : null
+                };
+                onSubmit(submitData);
+              }}
+              disabled={!formData.project_id || !formData.work_package_id || !formData.usage_date}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              Log Usage
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

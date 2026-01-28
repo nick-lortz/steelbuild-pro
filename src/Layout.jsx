@@ -60,7 +60,6 @@ const navGroups = [
       { name: 'Dashboard', page: 'Dashboard', icon: Building2 },
       { name: 'Projects', page: 'Projects', icon: Building2 },
       { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: BarChart3 },
-      { name: 'Custom Dashboard', page: 'CustomDashboard', icon: BarChart3 },
       { name: 'Calendar', page: 'Calendar', icon: Calendar }
     ],
     roles: ['admin', 'user']

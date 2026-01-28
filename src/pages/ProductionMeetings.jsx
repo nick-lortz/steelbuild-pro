@@ -1,424 +1,333 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Calendar, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import PageHeader from '@/components/ui/PageHeader';
-import ProjectAssistant from '@/components/ai/ProjectAssistant';
-import ExportButton from '@/components/shared/ExportButton';
-import { format, startOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
+import { MessageSquare, Plus, Search, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { format, parseISO } from 'date-fns';
 
-export default function ProductionMeetings() {
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [editingNotes, setEditingNotes] = useState({});
-  const [showAI, setShowAI] = useState(false);
-  const [pmFilter, setPmFilter] = useState('all');
-
+export default function ProductionNotesPage() {
+  const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
-  const weekKey = format(currentWeek, 'yyyy-MM-dd');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showForm, setShowForm] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000
+  const { data: notes = [] } = useQuery({
+    queryKey: ['production-notes', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.ProductionNote.filter({ project_id: activeProjectId }) : [],
+    enabled: !!activeProjectId
   });
 
-  const activeProjects = useMemo(() => {
-    let filtered = projects.filter((p) => p.status === 'in_progress' || p.status === 'awarded');
-    if (pmFilter !== 'all') {
-      filtered = filtered.filter((p) => p.project_manager === pmFilter);
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.ProductionNote.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['production-notes'] });
+      toast.success('Production note created');
+      setShowForm(false);
     }
-    return filtered;
-  }, [projects, pmFilter]);
-
-  const uniquePMs = useMemo(() =>
-  [...new Set(projects.map((p) => p.project_manager).filter(Boolean))].sort(),
-  [projects]
-  );
-
-  const { data: productionNotes = [] } = useQuery({
-    queryKey: ['productionNotes'],
-    queryFn: () => base44.entities.ProductionNote.list('-week_starting'),
-    staleTime: 5 * 60 * 1000
   });
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('start_date')
-  });
-
-  const { data: fabrications = [] } = useQuery({
-    queryKey: ['fabrications'],
-    queryFn: () => base44.entities.Fabrication.list('-created_date')
-  });
-
-  const { data: deliveries = [] } = useQuery({
-    queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list('scheduled_date')
-  });
-
-  const { data: drawings = [] } = useQuery({
-    queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list('set_name')
-  });
-
-  const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-submitted_date')
-  });
-
-  const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list('-submitted_date')
-  });
-
-  const { data: financials = [] } = useQuery({
-    queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list()
-  });
-
-  const createOrUpdateMutation = useMutation({
-    mutationFn: async ({ projectId, data }) => {
-      const existing = productionNotes.find(
-        (n) => n.project_id === projectId && isSameWeek(new Date(n.week_starting), currentWeek)
-      );
-
-      if (existing) {
-        return base44.entities.ProductionNote.update(existing.id, data);
-      } else {
-        return base44.entities.ProductionNote.create({
-          ...data,
-          project_id: projectId,
-          week_starting: weekKey
-        });
-      }
+  const acknowledgeMutation = useMutation({
+    mutationFn: ({ id, note }) => {
+      const acknowledgements = note.acknowledgements || [];
+      return base44.entities.ProductionNote.update(id, {
+        acknowledgements: [
+          ...acknowledgements,
+          {
+            user: currentUser.email,
+            acknowledged_at: new Date().toISOString()
+          }
+        ]
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['productionNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['production-notes'] });
+      toast.success('Acknowledged');
     }
   });
 
-  const getNotesForProject = (projectId) => {
-    const currentNote = productionNotes.find(
-      (n) => n.project_id === projectId && isSameWeek(new Date(n.week_starting), currentWeek)
-    );
+  const filteredNotes = useMemo(() => {
+    return notes
+      .filter(note => {
+        const matchesSearch = !searchTerm || 
+          note.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          note.content?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = typeFilter === 'all' || note.note_type === typeFilter;
+        return matchesSearch && matchesType;
+      })
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+  }, [notes, searchTerm, typeFilter]);
 
-    if (currentNote) return currentNote;
+  const needsAcknowledgement = useMemo(() => {
+    return notes.filter(note => 
+      note.acknowledgement_required && 
+      !note.acknowledgements?.some(ack => ack.user === currentUser?.email)
+    ).length;
+  }, [notes, currentUser]);
 
-    // Get most recent note from previous weeks to carry forward
-    const previousNotes = productionNotes.
-    filter((n) => n.project_id === projectId && new Date(n.week_starting) < currentWeek).
-    sort((a, b) => new Date(b.week_starting) - new Date(a.week_starting));
-
-    return previousNotes[0] || null;
-  };
-
-  const handleSave = (projectId) => {
-    const edits = editingNotes[projectId];
-    if (!edits) return;
-
-    createOrUpdateMutation.mutate({
-      projectId,
-      data: {
-        notes: edits.notes || '',
-        status_summary: edits.status_summary || '',
-        concerns: edits.concerns || '',
-        action_items: edits.action_items || []
-      }
-    });
-  };
-
-  const handleEdit = (projectId, field, value) => {
-    setEditingNotes((prev) => ({
-      ...prev,
-      [projectId]: {
-        ...prev[projectId],
-        [field]: value
-      }
-    }));
-  };
-
-  const toggleActionItem = (projectId, index) => {
-    const currentNote = getNotesForProject(projectId);
-    const actions = currentNote?.action_items || [];
-    const updated = [...actions];
-    updated[index] = {
-      ...updated[index],
-      status: updated[index].status === 'completed' ? 'pending' : 'completed'
-    };
-
-    handleEdit(projectId, 'action_items', updated);
-    handleSave(projectId);
-  };
-
-  const goToPreviousWeek = () => setCurrentWeek(subWeeks(currentWeek, 1));
-  const goToNextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
-  const goToCurrentWeek = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }));
-
-  return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Production Notes</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">WEEK OF {format(currentWeek, 'MMM d').toUpperCase()}</p>
-            </div>
-            <div className="flex gap-2">
-              <ExportButton
-                data={activeProjects.map((project) => {
-                  const note = getNotesForProject(project.id);
-                  return {
-                    project_number: project.project_number,
-                    project_name: project.name,
-                    pm: project.project_manager,
-                    week: format(currentWeek, 'MMM d, yyyy'),
-                    status_summary: note?.status_summary || '',
-                    notes: note?.notes || '',
-                    concerns: note?.concerns || '',
-                    action_items: note?.action_items?.map((a) => `${a.status === 'completed' ? '✓' : '○'} ${a.item}`).join('; ') || ''
-                  };
-                })}
-                columns={[
-                  { key: 'project_number', label: 'Project #' },
-                  { key: 'project_name', label: 'Project' },
-                  { key: 'pm', label: 'PM' },
-                  { key: 'week', label: 'Week' },
-                  { key: 'status_summary', label: 'Status' },
-                  { key: 'notes', label: 'Notes' },
-                  { key: 'concerns', label: 'Concerns' },
-                  { key: 'action_items', label: 'Actions' }
-                ]}
-                filename={`production_notes_${format(currentWeek, 'yyyy-MM-dd')}`}
-              />
-              <Button
-                onClick={() => setShowAI(!showAI)}
-                variant={showAI ? "default" : "outline"}
-                className={showAI ? "bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider" : "border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"}
-              >
-                <Sparkles size={14} className="mr-1" />
-                {showAI ? 'HIDE' : 'AI'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* AI Assistant */}
-        {showAI && (
-          <Card className="bg-zinc-900 border-zinc-800 mb-6">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2 text-sm uppercase tracking-wide">
-                <Sparkles size={16} className="text-amber-500" />
-                Production AI
-              </CardTitle>
-              <p className="text-xs text-zinc-500">
-                Insights on fabrication, delivery, tasks, and metrics
-              </p>
-            </CardHeader>
-            <CardContent>
-              <ProjectAssistant
-                projects={projects}
-                drawings={drawings}
-                rfis={rfis}
-                changeOrders={changeOrders}
-                tasks={tasks}
-                financials={financials}
-                fabrications={fabrications}
-                deliveries={deliveries}
-                selectedProject={null}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Controls */}
-        <div className="mb-6 flex items-center justify-between">
-          <Select value={pmFilter} onValueChange={setPmFilter}>
-            <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="All PMs" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All PMs</SelectItem>
-              {uniquePMs.map((pm) =>
-                <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToPreviousWeek}
-              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
-            >
-              <ChevronLeft size={14} className="mr-1" />
-              PREV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToCurrentWeek}
-              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
-            >
-              TODAY
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToNextWeek}
-              className="border-zinc-700 text-white hover:bg-zinc-800 text-xs uppercase tracking-wider"
-            >
-              NEXT
-              <ChevronRight size={14} className="ml-1" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Project Notes */}
-        <div className="space-y-4">
-          {activeProjects.map((project) => {
-          const existingNote = getNotesForProject(project.id);
-          const edits = editingNotes[project.id] || {};
-          const notes = edits.notes !== undefined ? edits.notes : existingNote?.notes || '';
-          const statusSummary = edits.status_summary !== undefined ? edits.status_summary : existingNote?.status_summary || '';
-          const concerns = edits.concerns !== undefined ? edits.concerns : existingNote?.concerns || '';
-          const actionItems = edits.action_items !== undefined ? edits.action_items : existingNote?.action_items || [];
-
-          const isFromPreviousWeek = existingNote && !isSameWeek(new Date(existingNote.week_starting), currentWeek);
-          const pendingActions = actionItems.filter((a) => a.status !== 'completed').length;
-
-          return (
-            <Card key={project.id} className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      {project.project_number} - {project.name}
-                    </CardTitle>
-                    <p className="text-sm text-zinc-400 mt-1">
-                      {project.client} • {project.project_manager}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    {isFromPreviousWeek &&
-                    <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                        Carried Forward
-                      </Badge>
-                    }
-                    {pendingActions > 0 &&
-                    <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                        {pendingActions} Action{pendingActions !== 1 ? 's' : ''}
-                      </Badge>
-                    }
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Status Summary */}
-                <div className="space-y-2">
-                  <Label className="text-xs text-zinc-400">Status Summary</Label>
-                  <Textarea
-                    value={statusSummary}
-                    onChange={(e) => handleEdit(project.id, 'status_summary', e.target.value)}
-                    placeholder="Overall project status this week..."
-                    rows={3}
-                    className="bg-zinc-800 border-zinc-700 text-white resize-y min-h-[80px]" />
-
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2">
-                  <Label className="text-xs text-zinc-400">Production Notes</Label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => handleEdit(project.id, 'notes', e.target.value)}
-                    placeholder="Progress updates, milestones, discussions..."
-                    rows={8}
-                    className="bg-zinc-800 border-zinc-700 text-white resize-y min-h-[150px]" />
-
-                </div>
-
-                {/* Concerns */}
-                <div className="space-y-2">
-                  <Label className="text-xs text-zinc-400 flex items-center gap-1">
-                    <AlertCircle size={14} />
-                    Concerns / Issues
-                  </Label>
-                  <Textarea
-                    value={concerns}
-                    onChange={(e) => handleEdit(project.id, 'concerns', e.target.value)}
-                    placeholder="Any issues, blockers, or concerns..."
-                    rows={3}
-                    className="bg-zinc-800 border-zinc-700 text-white resize-y min-h-[80px]" />
-
-                </div>
-
-                {/* Action Items */}
-                {actionItems.length > 0 &&
-                <div className="space-y-2">
-                    <Label className="text-xs text-zinc-400">Action Items</Label>
-                    <div className="space-y-2">
-                      {actionItems.map((action, idx) =>
-                    <div
-                      key={idx}
-                      className="flex items-start gap-2 p-2 bg-zinc-800/50 rounded border border-zinc-700">
-
-                          <Checkbox
-                        checked={action.status === 'completed'}
-                        onCheckedChange={() => toggleActionItem(project.id, idx)}
-                        className="mt-0.5" />
-
-                          <div className="flex-1">
-                            <p className={`text-sm ${action.status === 'completed' ? 'line-through text-zinc-500' : 'text-white'}`}>
-                              {action.item}
-                            </p>
-                            {action.assignee &&
-                        <p className="text-xs text-zinc-500 mt-0.5">{action.assignee}</p>
-                        }
-                          </div>
-                          {action.status === 'completed' &&
-                      <CheckCircle2 size={16} className="text-green-500 flex-shrink-0 mt-0.5" />
-                      }
-                        </div>
-                    )}
-                    </div>
-                  </div>
-                }
-
-                {/* Save Button */}
-                <div className="flex justify-end pt-2 border-t border-zinc-800">
-                  <Button
-                    size="sm"
-                    onClick={() => handleSave(project.id)}
-                    disabled={createOrUpdateMutation.isPending}
-                    className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                    {createOrUpdateMutation.isPending ? 'Saving...' : 'Save Notes'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>);
-
-            })}
-          </div>
-
-          {activeProjects.length === 0 && (
-            <div className="flex items-center justify-center py-20">
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">NO ACTIVE PROJECTS</p>
-            </div>
-          )}
-        </div>
+  if (!activeProjectId) {
+    return (
+      <div className="p-6">
+        <PageHeader title="Production Notes" />
+        <Card className="mt-6">
+          <CardContent className="p-12 text-center">
+            <MessageSquare size={48} className="mx-auto mb-4 text-zinc-600" />
+            <p className="text-zinc-400">Select a project to view production notes</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
+
+  return (
+    <div className="p-6 space-y-6">
+      <PageHeader 
+        title="Production Notes"
+        subtitle="Shop & Field Communication Hub"
+        actions={
+          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+            <Plus size={16} className="mr-2" />
+            New Note
+          </Button>
+        }
+      />
+
+      {needsAcknowledgement > 0 && (
+        <Card className="bg-amber-500/10 border-amber-500/30">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-amber-500" size={20} />
+              <span className="text-sm font-medium">
+                {needsAcknowledgement} note{needsAcknowledgement > 1 ? 's' : ''} require your acknowledgement
+              </span>
+            </div>
+            <Button size="sm" variant="outline">View</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Input
+            placeholder="Search notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-zinc-900 border-zinc-800"
+          />
+        </div>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="general">General</SelectItem>
+            <SelectItem value="weld">Weld</SelectItem>
+            <SelectItem value="fit_up">Fit-up</SelectItem>
+            <SelectItem value="qc">QC</SelectItem>
+            <SelectItem value="safety">Safety</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3">
+        {filteredNotes.map(note => {
+          const needsMyAck = note.acknowledgement_required && 
+            !note.acknowledgements?.some(ack => ack.user === currentUser?.email);
+          
+          return (
+            <Card 
+              key={note.id} 
+              className={`bg-zinc-900 border-zinc-800 ${needsMyAck ? 'ring-2 ring-amber-500/50' : ''}`}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-medium">{note.title}</h3>
+                      <Badge className="text-xs">
+                        {note.note_type.replace('_', ' ')}
+                      </Badge>
+                      {note.priority === 'critical' && (
+                        <Badge className="bg-red-500 text-xs">CRITICAL</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-zinc-400 whitespace-pre-wrap">{note.content}</p>
+                    {note.area_gridline && (
+                      <div className="text-xs text-zinc-500 mt-2">Area: {note.area_gridline}</div>
+                    )}
+                  </div>
+                  {needsMyAck && (
+                    <Button
+                      size="sm"
+                      onClick={() => acknowledgeMutation.mutate({ id: note.id, note })}
+                      className="bg-amber-500 hover:bg-amber-600 text-black"
+                    >
+                      <CheckCircle2 size={14} className="mr-1" />
+                      Acknowledge
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-xs text-zinc-500">
+                  <div className="flex items-center gap-4">
+                    <span>{note.created_by}</span>
+                    <span>{note.created_date ? format(parseISO(note.created_date), 'MMM d, h:mm a') : ''}</span>
+                    {note.acknowledgements?.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 size={12} className="text-green-500" />
+                        {note.acknowledgements.length} acknowledged
+                      </span>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {note.visibility.replace('_', ' ')}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        {filteredNotes.length === 0 && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-12 text-center">
+              <MessageSquare size={48} className="mx-auto mb-4 text-zinc-600" />
+              <p className="text-zinc-400">No production notes found</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {showForm && (
+        <ProductionNoteForm
+          projectId={activeProjectId}
+          currentUser={currentUser}
+          onSubmit={(data) => createMutation.mutate(data)}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductionNoteForm({ projectId, currentUser, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState({
+    project_id: projectId,
+    note_number: Date.now(),
+    title: '',
+    content: '',
+    note_type: 'general',
+    visibility: 'both',
+    priority: 'normal',
+    acknowledgement_required: false,
+    effective_date: new Date().toISOString().split('T')[0],
+    created_by: currentUser?.email
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card className="bg-zinc-900 border-zinc-800 w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle>New Production Note</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-xs text-zinc-400 mb-2 block">Title *</label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="bg-zinc-800 border-zinc-700"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-zinc-400 mb-2 block">Content *</label>
+            <Textarea
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              className="bg-zinc-800 border-zinc-700 h-32"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="text-xs text-zinc-400 mb-2 block">Type</label>
+              <Select
+                value={formData.note_type}
+                onValueChange={(val) => setFormData({ ...formData, note_type: val })}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General</SelectItem>
+                  <SelectItem value="weld">Weld</SelectItem>
+                  <SelectItem value="fit_up">Fit-up</SelectItem>
+                  <SelectItem value="qc">QC</SelectItem>
+                  <SelectItem value="safety">Safety</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-2 block">Visibility</label>
+              <Select
+                value={formData.visibility}
+                onValueChange={(val) => setFormData({ ...formData, visibility: val })}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shop_only">Shop Only</SelectItem>
+                  <SelectItem value="field_only">Field Only</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                  <SelectItem value="pm_only">PM Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-400 mb-2 block">Priority</label>
+              <Select
+                value={formData.priority}
+                onValueChange={(val) => setFormData({ ...formData, priority: val })}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            <Button 
+              onClick={() => onSubmit(formData)}
+              disabled={!formData.title || !formData.content}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              Create Note
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

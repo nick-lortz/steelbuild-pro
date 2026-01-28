@@ -74,7 +74,11 @@ export default function RFIWizard({ rfi, projects = [], drawings = [], changeOrd
       return;
     }
 
-    onSubmit(formData);
+    if (typeof onSubmit === 'function') {
+      onSubmit(formData);
+    } else {
+      toast.error('Submit handler not configured');
+    }
   };
 
   const canProceed = () => {

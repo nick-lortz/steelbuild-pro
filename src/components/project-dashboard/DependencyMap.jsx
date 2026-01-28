@@ -231,7 +231,7 @@ export default function DependencyMap({ tasks, projectId }) {
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <h4 className="font-medium text-white text-sm">{task.name}</h4>
                             <Badge variant="outline" className={`capitalize ${getStatusColor(task.status)}`}>
-                              {task.status?.replace('_', ' ')}
+                              {task.status ? task.status.replace('_', ' ') : 'unknown'}
                             </Badge>
                           </div>
 
@@ -319,7 +319,7 @@ export default function DependencyMap({ tasks, projectId }) {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`text-xs ${getStatusColor(task.status)}`}>
-                          {task.status?.replace('_', ' ')}
+                          {task.status ? task.status.replace('_', ' ') : 'unknown'}
                         </span>
                         {task.totalFloat !== null && (
                           <span className="text-xs text-zinc-600">

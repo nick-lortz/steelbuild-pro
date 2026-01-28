@@ -175,7 +175,7 @@ export default function ProjectNotifications({ projectId }) {
           type: 'warning',
           category: 'fabrication',
           title: `Fabrication Hold: ${fab.piece_mark}`,
-          message: fab.hold_reason?.replace('_', ' ') || 'On hold',
+          message: fab.hold_reason ? fab.hold_reason.replace('_', ' ') : 'On hold',
           timestamp: fab.hold_date || fab.updated_date,
           link: createPageUrl('Fabrication'),
           icon: AlertTriangle,

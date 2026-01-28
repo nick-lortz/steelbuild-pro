@@ -174,7 +174,7 @@ export default function KanbanView({ tasks, projects, onTaskUpdate, onTaskClick 
                 {/* Phase Badge */}
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs capitalize text-white">
-                    {task.phase}
+                    {task.phase || 'unassigned'}
                   </Badge>
                   {(task.linked_rfi_ids?.length > 0 || task.linked_co_ids?.length > 0) && (
                     <AlertCircle size={12} className="text-amber-500" />

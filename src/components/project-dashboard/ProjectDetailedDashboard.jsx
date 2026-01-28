@@ -61,6 +61,20 @@ export default function ProjectDetailedDashboard({ projectId }) {
     staleTime: 2 * 60 * 1000
   });
 
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials', projectId],
+    queryFn: () => base44.entities.Financial.filter({ project_id: projectId }),
+    enabled: !!projectId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['change-orders', projectId],
+    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId }),
+    enabled: !!projectId,
+    staleTime: 5 * 60 * 1000
+  });
+
   // Calculate key metrics
   const metrics = useMemo(() => {
     const totalTasks = tasks?.length || 0;
@@ -243,15 +257,14 @@ export default function ProjectDetailedDashboard({ projectId }) {
 
         {visibleMetrics.health && (
           <TabsContent value="health">
-            <Card>
-              <CardHeader>
-                <CardTitle>Project Health</CardTitle>
-                <CardDescription>Financial and performance scorecard</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ProjectHealthScorecard projectId={projectId} />
-              </CardContent>
-            </Card>
+            <ProjectHealthScorecard 
+              financials={financials}
+              tasks={tasks}
+              projects={project ? [project] : []}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              selectedProject={projectId}
+            />
           </TabsContent>
         )}
       </Tabs>

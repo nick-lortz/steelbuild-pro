@@ -159,6 +159,10 @@ export default function RFIs() {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setDeleteRFI(null);
       toast.success('RFI deleted');
+    },
+    onError: (error) => {
+      console.error('Delete RFI error:', error);
+      toast.error('Failed to delete RFI: ' + error.message);
     }
   });
 

@@ -185,41 +185,50 @@ export default function InvoiceManager({ projectId, canEdit }) {
   ];
 
   const lineColumns = [
-    {
-      header: 'SOV Item',
-      accessor: 'sov_item_id',
-      render: (row) => <span className="text-sm">{getSovDescription(row.sov_item_id)}</span>
-    },
-    {
-      header: 'Scheduled',
-      accessor: 'scheduled_value',
-      render: (row) => <span>${(row.scheduled_value || 0).toFixed(2).toLocaleString()}</span>
-    },
-    {
-      header: 'Previous',
-      accessor: 'previous_billed',
-      render: (row) => <span>${(row.previous_billed || 0).toFixed(2).toLocaleString()}</span>
-    },
-    {
-      header: '% Complete',
-      accessor: 'current_percent',
-      render: (row) => <span className="font-semibold">{row.current_percent.toFixed(1)}%</span>
-    },
-    {
-      header: 'This Period',
-      accessor: 'current_billed',
-      render: (row) => <span className="text-amber-400 font-bold">${(row.current_billed || 0).toFixed(2).toLocaleString()}</span>
-    },
-    {
-      header: 'Total Billed',
-      accessor: 'billed_to_date',
-      render: (row) => <span>${(row.billed_to_date || 0).toFixed(2).toLocaleString()}</span>
-    },
-    {
-      header: 'Remaining',
-      accessor: 'remaining_value',
-      render: (row) => <span className="text-muted-foreground">${(row.remaining_value || 0).toFixed(2).toLocaleString()}</span>
-    }
+   {
+     header: 'SOV Item',
+     accessor: 'sov_item_id',
+     render: (row) => <span className="text-sm">{getSovDescription(row.sov_item_id)}</span>
+   },
+   {
+     header: 'Scheduled',
+     accessor: 'scheduled_value',
+     render: (row) => <span>${(row.scheduled_value || 0).toFixed(2).toLocaleString()}</span>
+   },
+   {
+     header: 'Previous',
+     accessor: 'previous_billed',
+     render: (row) => <span>${(row.previous_billed || 0).toFixed(2).toLocaleString()}</span>
+   },
+   {
+     header: '% Complete',
+     accessor: 'current_percent',
+     render: (row) => <span className="font-semibold">{row.current_percent.toFixed(1)}%</span>
+   },
+   {
+     header: 'This Period',
+     accessor: 'current_billed',
+     render: (row) => <span className="text-amber-400 font-bold">${(row.current_billed || 0).toFixed(2).toLocaleString()}</span>
+   },
+   {
+     header: 'Total Billed',
+     accessor: 'billed_to_date',
+     render: (row) => <span>${(row.billed_to_date || 0).toFixed(2).toLocaleString()}</span>
+   },
+   {
+     header: 'Remaining',
+     accessor: 'remaining_value',
+     render: (row) => <span className="text-muted-foreground">${(row.remaining_value || 0).toFixed(2).toLocaleString()}</span>
+   },
+   {
+     header: 'Docs',
+     accessor: 'attachments',
+     render: (row) => (
+       <span className="text-xs text-zinc-500">
+         {row.attachments?.length || 0} file(s)
+       </span>
+     )
+   }
   ];
 
   return (

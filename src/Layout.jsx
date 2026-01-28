@@ -147,6 +147,7 @@ const navGroups = [
     icon: Settings,
     items: [
       { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
+      { name: 'Notifications', page: 'NotificationSettings', icon: Settings, roles: ['admin', 'user'] },
       { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
       { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }
     ],

@@ -89,6 +89,10 @@ export default function ProjectDashboard() {
 
       const blockedTasks = projectTasks.filter(t => t.status === 'blocked' || t.status === 'on_hold').length;
 
+      // Work packages data
+      const projectWPs = workPackages.filter(wp => wp.project_id === project.id);
+      const totalWPs = projectWPs.length;
+
       // Calculate simple health status
       let healthStatus = 'on_track';
       if (overdueTasks > 0 || blockedTasks > 2) healthStatus = 'at_risk';

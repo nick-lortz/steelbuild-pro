@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import PageHeader from '@/components/ui/PageHeader';
-import { Search, Plus, Filter, Package, AlertTriangle, Wrench, BarChart3, Settings } from 'lucide-react';
+import { Search, Plus, Filter, Package, AlertTriangle, Wrench, BarChart3, Settings, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { checkPrerequisites, PrerequisitesBadge } from '@/components/fabrication/PrerequisitesEngine';
 
 export default function FabricationPage() {
   const { activeProjectId } = useActiveProject();
@@ -31,6 +32,18 @@ export default function FabricationPage() {
   const { data: packages = [] } = useQuery({
     queryKey: ['fabrication-packages', activeProjectId],
     queryFn: () => activeProjectId ? base44.entities.FabricationPackage.filter({ project_id: activeProjectId }) : [],
+    enabled: !!activeProjectId
+  });
+
+  const { data: drawings = [] } = useQuery({
+    queryKey: ['drawings', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }) : [],
+    enabled: !!activeProjectId
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }) : [],
     enabled: !!activeProjectId
   });
 
@@ -73,6 +86,55 @@ export default function FabricationPage() {
   }, [fabricationItems]);
 
   const handleQuickStatusUpdate = (itemId, newStatus) => {
+    const item = fabricationItems.find(i => i.id === itemId);
+    
+    // Block release if prerequisites not met
+    if (newStatus === 'released') {
+      const prereqCheck = checkPrerequisites(item, drawings, rfis);
+      
+      if (!prereqCheck.canRelease) {
+        toast.error(
+          `Cannot release: ${prereqCheck.criticalFailures.length} critical issue(s)`,
+          {
+            description: prereqCheck.criticalFailures.map(f => f.reason).join('; ')
+          }
+        );
+        
+        // Auto-flag as on_hold with prerequisite failures
+        updateMutation.mutate({
+          id: itemId,
+          data: {
+            on_hold: true,
+            hold_reason: 'missing_info',
+            hold_notes: `Prerequisites not met: ${prereqCheck.criticalFailures.map(f => f.reason).join('; ')}`,
+            hold_date: new Date().toISOString(),
+            prerequisites_met: false
+          }
+        });
+        return;
+      }
+      
+      // Prerequisites met - allow release and update checklist
+      updateMutation.mutate({
+        id: itemId,
+        data: {
+          status: newStatus,
+          prerequisites_met: true,
+          on_hold: false,
+          hold_reason: null,
+          hold_notes: null,
+          prerequisites_checklist: {
+            drawings_ifc: true,
+            latest_revision: true,
+            rfis_closed: true,
+            material_assigned: item.material_status !== 'not_ordered',
+            bom_verified: item.bom_verified !== false
+          }
+        }
+      });
+      return;
+    }
+    
     updateMutation.mutate({ id: itemId, data: { status: newStatus } });
   };
 
@@ -228,8 +290,13 @@ export default function FabricationPage() {
                       <td className="p-3 font-medium">{item.piece_mark}</td>
                       <td className="p-3 text-sm text-zinc-400">{item.area_gridline}</td>
                       <td className="p-3">
-                        <StatusBadge status={item.status} />
-                        {item.on_hold && <Badge className="ml-2 bg-red-500">HOLD</Badge>}
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={item.status} />
+                          {item.on_hold && <Badge className="ml-1 bg-red-500">HOLD</Badge>}
+                          {!item.prerequisites_met && item.status !== 'released' && (
+                            <PrerequisitesBadge item={item} drawings={drawings} rfis={rfis} />
+                          )}
+                        </div>
                       </td>
                       <td className="p-3 text-sm">
                         <StatusBadge status={item.material_status} />
@@ -290,22 +357,64 @@ export default function FabricationPage() {
           <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-6">
               <div className="space-y-4">
-                {filteredItems.filter(i => i.on_hold).map(item => (
-                  <div key={item.id} className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-medium">{item.piece_mark}</div>
-                        <div className="text-xs text-zinc-500">{item.area_gridline}</div>
+                {filteredItems.filter(i => i.on_hold || !i.prerequisites_met).map(item => {
+                  const prereqCheck = checkPrerequisites(item, drawings, rfis);
+                  
+                  return (
+                    <div key={item.id} className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{item.piece_mark}</span>
+                            <Badge className="bg-red-500 text-xs">
+                              {item.on_hold ? 'ON HOLD' : 'PREREQS NOT MET'}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-zinc-500 mt-1">
+                            {item.area_gridline} • {item.item_type}
+                          </div>
+                        </div>
+                        {item.hold_reason && (
+                          <Badge className="bg-zinc-700">{item.hold_reason.replace('_', ' ').toUpperCase()}</Badge>
+                        )}
                       </div>
-                      <Badge className="bg-red-500">{item.hold_reason}</Badge>
+                      
+                      {item.hold_notes && (
+                        <div className="mb-3 p-2 bg-zinc-900 rounded text-xs text-zinc-400">
+                          <div className="font-medium text-red-400 mb-1">Hold Notes:</div>
+                          {item.hold_notes}
+                        </div>
+                      )}
+                      
+                      {/* Prerequisites Breakdown */}
+                      {prereqCheck.failures.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium text-red-400 uppercase tracking-wide">Blocking Issues:</div>
+                          {prereqCheck.failures.map((failure, idx) => (
+                            <div key={idx} className="flex items-start gap-2 text-xs">
+                              {failure.severity === 'critical' ? (
+                                <XCircle size={12} className="text-red-500 mt-0.5 flex-shrink-0" />
+                              ) : (
+                                <AlertCircle size={12} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                              )}
+                              <div>
+                                <span className="text-zinc-300">{failure.reason}</span>
+                                {failure.details && (
+                                  <div className="text-zinc-500 mt-0.5">{failure.details}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {item.hold_notes && (
-                      <p className="text-sm text-zinc-400 mt-2">{item.hold_notes}</p>
-                    )}
+                  );
+                })}
+                {filteredItems.filter(i => i.on_hold || !i.prerequisites_met).length === 0 && (
+                  <div className="text-center py-8 text-zinc-500">
+                    <CheckCircle2 size={32} className="mx-auto mb-2 text-green-500 opacity-50" />
+                    <p>No holds or prerequisite blockers</p>
                   </div>
-                ))}
-                {filteredItems.filter(i => i.on_hold).length === 0 && (
-                  <p className="text-center py-8 text-zinc-500">No items on hold</p>
                 )}
               </div>
             </CardContent>
@@ -324,6 +433,8 @@ export default function FabricationPage() {
       {selectedItem && (
         <FabricationDetail
           item={selectedItem}
+          drawings={drawings}
+          rfis={rfis}
           onUpdate={(data) => updateMutation.mutate({ id: selectedItem.id, data })}
           onClose={() => setSelectedItem(null)}
         />
@@ -383,27 +494,78 @@ function FabricationForm({ projectId, onSubmit, onCancel }) {
   );
 }
 
-function FabricationDetail({ item, onUpdate, onClose }) {
+function FabricationDetail({ item, onUpdate, onClose, drawings, rfis }) {
+  const [releasing, setReleasing] = useState(false);
+  const prereqCheck = checkPrerequisites(item, drawings, rfis);
+  
+  const handleRelease = () => {
+    if (!prereqCheck.canRelease) {
+      toast.error('Cannot release: Prerequisites not met');
+      return;
+    }
+    
+    setReleasing(true);
+    onUpdate({
+      status: 'released',
+      prerequisites_met: true,
+      on_hold: false,
+      hold_reason: null,
+      hold_notes: null,
+      prerequisites_checklist: {
+        drawings_ifc: true,
+        latest_revision: true,
+        rfis_closed: true,
+        material_assigned: item.material_status !== 'not_ordered',
+        bom_verified: item.bom_verified !== false
+      }
+    });
+  };
+  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="bg-zinc-900 border-zinc-800 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
-          <CardTitle>{item.piece_mark}</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>{item.piece_mark}</CardTitle>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={item.status} />
+              {item.on_hold && <Badge className="bg-red-500">HOLD</Badge>}
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Prerequisites Engine */}
+          {item.status === 'not_started' && (
+            <PrerequisitesPanel item={item} drawings={drawings} rfis={rfis} />
+          )}
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-zinc-400">Status</label>
               <Select
                 value={item.status}
-                onValueChange={(val) => onUpdate({ status: val })}
+                onValueChange={(val) => {
+                  // Block release if prerequisites not met
+                  if (val === 'released' && !prereqCheck.canRelease) {
+                    toast.error('Cannot release: Prerequisites not met');
+                    return;
+                  }
+                  
+                  if (val === 'released') {
+                    handleRelease();
+                  } else {
+                    onUpdate({ status: val });
+                  }
+                }}
               >
                 <SelectTrigger className="bg-zinc-800 border-zinc-700 mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="not_started">Not Started</SelectItem>
-                  <SelectItem value="released">Released</SelectItem>
+                  <SelectItem value="released" disabled={!prereqCheck.canRelease}>
+                    {prereqCheck.canRelease ? 'Released' : 'Released (Blocked)'}
+                  </SelectItem>
                   <SelectItem value="in_fab">In Fab</SelectItem>
                   <SelectItem value="ready_to_ship">Ready to Ship</SelectItem>
                 </SelectContent>
@@ -427,8 +589,19 @@ function FabricationDetail({ item, onUpdate, onClose }) {
               </Select>
             </div>
           </div>
+          
           <div className="flex justify-end gap-2 pt-4">
             <Button onClick={onClose}>Close</Button>
+            {item.status === 'not_started' && prereqCheck.canRelease && (
+              <Button 
+                onClick={handleRelease}
+                disabled={releasing}
+                className="bg-green-500 hover:bg-green-600 text-white"
+              >
+                <Lock size={14} className="mr-2" />
+                Release to Fab
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

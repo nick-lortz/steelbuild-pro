@@ -375,7 +375,7 @@ export default function FabricationPage() {
                           </div>
                         </div>
                         {item.hold_reason && (
-                          <Badge className="bg-zinc-700">{item.hold_reason?.replace('_', ' ').toUpperCase() || 'HOLD'}</Badge>
+                          <Badge className="bg-zinc-700">{item.hold_reason ? item.hold_reason.replace('_', ' ').toUpperCase() : 'HOLD'}</Badge>
                         )}
                       </div>
                       

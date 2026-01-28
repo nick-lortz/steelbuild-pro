@@ -75,6 +75,18 @@ export default function RFIs() {
     staleTime: 10 * 60 * 1000
   });
 
+  const { data: submittal = [] } = useQuery({
+    queryKey: ['submittals'],
+    queryFn: () => base44.entities.Submittal.list(),
+    staleTime: 10 * 60 * 1000
+  });
+
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries'],
+    queryFn: () => base44.entities.Delivery.list(),
+    staleTime: 10 * 60 * 1000
+  });
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()

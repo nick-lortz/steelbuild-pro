@@ -28,8 +28,8 @@ export default function CostVarianceReport({
         .reduce((sum, lh) => {
           const regularHours = lh.hours || 0;
           const otHours = lh.overtime_hours || 0;
-          const rate = 50;
-          return sum + ((regularHours + (otHours * 1.5)) * rate);
+          const rate = 50; // TODO: Get from cost code
+          return sum + (regularHours * rate) + (otHours * rate * 1.5);
         }, 0);
 
       const equipCost = equipmentUsage
@@ -37,8 +37,10 @@ export default function CostVarianceReport({
         .reduce((sum, eu) => {
           const hours = eu.hours || 0;
           const days = eu.days || 0;
-          const rate = eu.rate_override || 0;
-          return sum + (hours * rate) + (days * rate);
+          const hourlyRate = eu.rate_override || 0;
+          const dailyRate = eu.rate_override || 0;
+          // Use daily if days exist, otherwise hourly (prevents double-counting)
+          return sum + (days > 0 ? days * dailyRate : hours * hourlyRate);
         }, 0);
 
       const expenseCost = expenses

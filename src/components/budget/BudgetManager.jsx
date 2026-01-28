@@ -21,8 +21,10 @@ export default function BudgetManager({
     // Calculate actuals from time logs
     const laborCost = tasks.reduce((sum, task) => {
       const taskLaborCost = (task.time_logs || []).reduce((logSum, log) => {
-        // Assume $50/hr labor rate (should ideally come from labor category)
-        return logSum + (log.hours * 50);
+        // Get rate from labor category/cost code if available
+        const costCode = costCodes.find(cc => cc.id === task.cost_code_id);
+        const rate = costCode?.labor_rate || 50;
+        return logSum + (log.hours * rate);
       }, 0);
       return sum + taskLaborCost;
     }, 0);
@@ -33,18 +35,22 @@ export default function BudgetManager({
       .reduce((sum, lh) => {
         const regularHours = lh.hours || 0;
         const otHours = lh.overtime_hours || 0;
-        const rate = 50; // Default rate - should come from cost code
-        return sum + ((regularHours + (otHours * 1.5)) * rate);
+        // Get rate from cost code if available, otherwise default to 50
+        const costCode = costCodes.find(cc => cc.id === lh.cost_code_id);
+        const rate = costCode?.labor_rate || 50;
+        return sum + (regularHours * rate) + (otHours * rate * 1.5);
       }, 0);
 
-    // Add equipment usage costs
+    // Add equipment usage costs (use daily rate if days exist, otherwise hourly)
     const equipmentCost = equipmentUsage
       .filter(eu => workPackage.id === eu.work_package_id)
       .reduce((sum, eu) => {
         const hours = eu.hours || 0;
         const days = eu.days || 0;
-        const rate = eu.rate_override || 0;
-        return sum + (hours * rate) + (days * rate);
+        const hourlyRate = eu.rate_override || 0;
+        const dailyRate = eu.rate_override || 0;
+        // Use daily if days exist, otherwise hourly (prevents double-counting)
+        return sum + (days > 0 ? days * dailyRate : hours * hourlyRate);
       }, 0);
 
     // Add direct expenses
@@ -53,15 +59,17 @@ export default function BudgetManager({
       .reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
     const totalActual = laborCost + laborHoursCost + equipmentCost + expenseCost;
-    const variance = budget - totalActual;
+    const variance = (budget || 0) - totalActual;
     const percentSpent = budget > 0 ? (totalActual / budget * 100) : 0;
     
     // CPI calculation
-    const earnedValue = budget * (workPackage.percent_complete / 100);
-    const cpi = totalActual > 0 ? (earnedValue / totalActual) : 0;
+    const earnedValue = (budget || 0) * ((workPackage.percent_complete || 0) / 100);
+    const cpi = totalActual > 0 ? (earnedValue / totalActual) : 1.0;
     
     // ETC - Estimate to Complete
-    const etc = cpi > 0 ? ((budget - earnedValue) / cpi) : (budget - totalActual);
+    const etc = (totalActual > 0 && cpi > 0) 
+      ? ((budget - earnedValue) / cpi) 
+      : Math.max(0, budget - totalActual);
     const eac = totalActual + etc; // Estimate at Completion
 
     return {

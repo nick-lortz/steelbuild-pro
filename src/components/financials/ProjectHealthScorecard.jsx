@@ -18,28 +18,41 @@ export default function ProjectHealthScorecard({ financials, tasks, projects, rf
       const projectRFIs = rfis?.filter(r => r.project_id === project.id) || [];
       const projectCOs = changeOrders?.filter(co => co.project_id === project.id) || [];
 
-      // Budget Health (30%)
+      // Budget Health (30%) - Using CPI for performance-based scoring
       const budget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+      const avgProgress = totalTasks > 0 
+        ? projectTasks.reduce((sum, t) => sum + (Number(t.progress_percent) || 0), 0) / totalTasks
+        : 0;
+      const earnedValue = budget * (avgProgress / 100);
+      const cpi = actual > 0 ? (earnedValue / actual) : 1.0;
+      const budgetScore = cpi >= 1.0 ? 100 : cpi >= 0.9 ? 70 : Math.max(0, cpi * 100);
       const budgetUtilization = budget > 0 ? (actual / budget) * 100 : 0;
-      const budgetScore = budgetUtilization <= 90 ? 100 : budgetUtilization <= 100 ? 70 : Math.max(0, 100 - (budgetUtilization - 100) * 2);
 
       // Schedule Health (25%)
       const totalTasks = projectTasks.length;
       const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
+      const now = new Date();
+      now.setHours(23, 59, 59, 999); // End of day comparison
       const overdueTasks = projectTasks.filter(t => {
         if (t.status === 'completed' || !t.end_date) return false;
-        return new Date(t.end_date) < new Date();
+        const endDate = new Date(t.end_date);
+        endDate.setHours(23, 59, 59, 999);
+        return endDate < now;
       }).length;
       const scheduleScore = totalTasks > 0 
         ? Math.max(0, 100 - (overdueTasks / totalTasks) * 100)
-        : 100;
+        : 0; // No tasks = no schedule data
 
       // RFI Health (15%)
       const openRFIs = projectRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
+      const now2 = new Date();
+      now2.setHours(23, 59, 59, 999);
       const overdueRFIs = projectRFIs.filter(r => {
         if (r.status === 'answered' || r.status === 'closed' || !r.due_date) return false;
-        return new Date(r.due_date) < new Date();
+        const dueDate = new Date(r.due_date);
+        dueDate.setHours(23, 59, 59, 999);
+        return dueDate < now2;
       }).length;
       const rfiScore = Math.max(0, 100 - (overdueRFIs * 20) - (openRFIs * 5));
 
@@ -49,11 +62,8 @@ export default function ProjectHealthScorecard({ financials, tasks, projects, rf
       const coImpactPercent = budget > 0 ? (coImpact / budget) * 100 : 0;
       const coScore = Math.max(0, 100 - (pendingCOs * 10) - (coImpactPercent > 10 ? 20 : 0));
 
-      // Progress Health (15%)
-      const avgProgress = totalTasks > 0 
-        ? projectTasks.reduce((sum, t) => sum + (Number(t.progress_percent) || 0), 0) / totalTasks
-        : 0;
-      const progressScore = avgProgress;
+      // Progress Health (15%) - Already calculated above in budget section
+      const progressScore = totalTasks > 0 ? avgProgress : 0;
 
       // Calculate overall health score
       const overallScore = (

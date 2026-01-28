@@ -29,14 +29,14 @@ export default function BudgetAlerts({
       // Calculate actuals from time logs
       const actualCost = wpTasks.reduce((sum, task) => {
         const taskCost = (task.time_logs || []).reduce((logSum, log) => 
-          logSum + (log.hours * 50), 0
+          logSum + (log.hours * 50), 0 // TODO: Get rate from cost code
         );
         return sum + taskCost;
       }, 0);
 
-      const earnedValue = budget * ((wp.percent_complete || 0) / 100);
-      const cpi = actualCost > 0 ? (earnedValue / actualCost) : 0;
-      const variance = budget - actualCost;
+      const earnedValue = (budget || 0) * ((wp.percent_complete || 0) / 100);
+      const cpi = actualCost > 0 ? (earnedValue / actualCost) : 1.0;
+      const variance = (budget || 0) - actualCost;
       const percentSpent = budget > 0 ? (actualCost / budget * 100) : 0;
 
       // Overrun

@@ -409,7 +409,7 @@ function LayoutContent({ children, currentPageName }) {
         <div className="border-t-2 border-zinc-800 p-2 flex-shrink-0">
             <div className="flex items-center justify-between mb-2 px-2">
               <ThemeToggle />
-              <NotificationPanel />
+              <NotificationCenter />
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger className="w-full flex items-center gap-2 px-2 py-2 hover:bg-zinc-900 transition-colors">

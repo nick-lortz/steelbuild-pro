@@ -534,6 +534,8 @@ ${user?.full_name || 'Project Team'}
             projects={projects}
             drawings={drawings}
             changeOrders={changeOrders}
+            submittals={submittal}
+            deliveries={deliveries}
             templateData={selectedTemplate}
             onSubmit={(data) => {
               if (editingRFI) {

@@ -25,9 +25,11 @@ Deno.serve(async (req) => {
     });
 
     if (mappings.length === 0) {
+      // Allow billing without cost code mapping - just calculate value
       return Response.json({
         valid: true,
-        warning: 'No cost code mapping - cannot validate against budget'
+        billed_value: billedValue,
+        note: 'No cost code mapping - billing allowed without budget validation'
       });
     }
 

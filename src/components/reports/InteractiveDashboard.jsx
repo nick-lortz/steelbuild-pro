@@ -92,7 +92,7 @@ export default function InteractiveDashboard({ projects, financials, expenses, r
     };
     
     return Object.entries(statusCounts).map(([status, count]) => ({
-      name: status.replace('_', ' ').toUpperCase(),
+      name: status?.replace('_', ' ').toUpperCase() || 'UNKNOWN',
       value: count,
       fill: colors[status] || '#6b7280'
     }));

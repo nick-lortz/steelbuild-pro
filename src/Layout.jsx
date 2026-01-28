@@ -101,6 +101,7 @@ const navGroups = [
     icon: DollarSign,
     items: [
       { name: 'Financials', page: 'Financials', icon: DollarSign },
+      { name: 'Budget Control', page: 'BudgetControl', icon: DollarSign },
       { name: 'Cost Codes', page: 'CostCodes', icon: Hash },
       { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
       { name: 'Labor & Scope', page: 'LaborScope', icon: TrendingUp }

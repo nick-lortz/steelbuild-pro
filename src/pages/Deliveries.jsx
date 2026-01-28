@@ -65,28 +65,90 @@ export default function Deliveries() {
 
   const createMutation = useMutation({
     mutationFn: (data) => {
+      // Validate required fields
+      if (!data.project_id || !data.package_name) {
+        throw new Error('Project and package name are required');
+      }
+      
       const activityLog = {
         action: `Delivery created`,
         user: user?.email || 'system',
         timestamp: new Date().toISOString()
       };
-      return base44.entities.Delivery.create({
-        ...data,
+      
+      // Clean and set defaults
+      const cleanData = {
+        project_id: data.project_id,
+        package_name: data.package_name,
+        delivery_number: data.delivery_number || `DEL-${Date.now().toString().slice(-6)}`,
+        template_type: data.template_type || 'custom',
+        package_number: data.package_number || '',
+        description: data.description || '',
+        vendor_supplier: data.vendor_supplier || '',
+        ship_from_location: data.ship_from_location || '',
+        ship_to_location: data.ship_to_location || '',
+        requested_date: data.requested_date || null,
+        requested_time_window: data.requested_time_window || '',
+        confirmed_date: data.confirmed_date || null,
+        confirmed_time_window: data.confirmed_time_window || '',
+        scheduled_date: data.scheduled_date || data.confirmed_date || data.requested_date || null,
+        delivery_status: data.delivery_status || 'draft',
+        delivery_type: data.delivery_type || 'ship',
+        priority: data.priority || 'medium',
+        carrier: data.carrier || '',
+        tracking_number: data.tracking_number || '',
+        pro_number: data.pro_number || '',
+        trailer_number: data.trailer_number || '',
+        po_number: data.po_number || '',
+        contact_name: data.contact_name || '',
+        contact_phone: data.contact_phone || '',
+        contact_email: data.contact_email || '',
+        weight_tons: parseFloat(data.weight_tons) || 0,
+        piece_count: parseInt(data.piece_count) || 0,
+        line_items: data.line_items || [],
+        receiving_requirements: data.receiving_requirements || [],
+        site_constraints: data.site_constraints || {},
+        on_time: data.on_time || null,
+        days_variance: data.days_variance || null,
+        exceptions: data.exceptions || [],
+        attachments: data.attachments || [],
+        comments: data.comments || [],
+        notes: data.notes || '',
         activity_log: [activityLog]
-      });
+      };
+      
+      return base44.entities.Delivery.create(cleanData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowWizard(false);
       setEditingDelivery(null);
       toast.success('Delivery created successfully');
+    },
+    onError: (error) => {
+      console.error('Create delivery error:', error);
+      toast.error('Failed to create: ' + (error.message || 'Unknown error'));
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data, logAction }) => {
+      const delivery = deliveries.find(d => d.id === id);
+      
+      // Auto-calculate on_time if dates are provided
+      if (data.actual_arrival_date || data.scheduled_date) {
+        const actual = data.actual_arrival_date ? new Date(data.actual_arrival_date) : delivery?.actual_arrival_date ? new Date(delivery.actual_arrival_date) : null;
+        const scheduled = data.scheduled_date ? new Date(data.scheduled_date) : delivery?.scheduled_date ? new Date(delivery.scheduled_date) : null;
+        
+        if (actual && scheduled) {
+          const diffDays = Math.round((actual - scheduled) / (1000 * 60 * 60 * 24));
+          data.on_time = diffDays <= 0;
+          data.days_variance = diffDays;
+        }
+      }
+      
       const activityLog = [
-        ...(editingDelivery?.activity_log || []),
+        ...(delivery?.activity_log || []),
         {
           action: logAction || `Delivery updated`,
           user: user?.email || 'system',
@@ -94,6 +156,7 @@ export default function Deliveries() {
           changes: data
         }
       ];
+      
       return base44.entities.Delivery.update(id, { ...data, activity_log });
     },
     onSuccess: () => {
@@ -103,6 +166,10 @@ export default function Deliveries() {
       setSelectedDelivery(null);
       setReceivingDelivery(null);
       toast.success('Delivery updated successfully');
+    },
+    onError: (error) => {
+      console.error('Update delivery error:', error);
+      toast.error('Failed to update: ' + (error.message || 'Unknown error'));
     }
   });
 
@@ -148,12 +215,16 @@ export default function Deliveries() {
     };
   }, [filteredDeliveries]);
 
-  const handleStatusChange = (id, newStatus) => {
+  const handleStatusChange = (id, updates) => {
     const delivery = deliveries.find(d => d.id === id);
+    
+    // If updates is a string (old signature), convert to object
+    const updateData = typeof updates === 'string' ? { delivery_status: updates } : updates;
+    
     updateMutation.mutate({
       id,
-      data: { delivery_status: newStatus },
-      logAction: `Status changed to ${newStatus}`
+      data: updateData,
+      logAction: `Status changed to ${updateData.delivery_status || 'updated'}`
     });
   };
 

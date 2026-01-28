@@ -53,17 +53,26 @@ Deno.serve(async (req) => {
           return Response.json({ error: 'Access denied to this project' }, { status: 403 });
         }
 
-        // INTEGRITY: Block manual actual_amount updates (Expenses are source of truth)
+        // INTEGRITY: Block manual actual_amount updates
+        // Actual costs flow from Expense entity (source of truth)
         if (data.updates.actual_amount !== undefined) {
           return Response.json({ 
-            error: 'Cannot manually set actual_amount. Expenses are the source of truth for costs.' 
+            error: 'Cannot manually set actual_amount. Actual costs come from Expenses only.' 
           }, { status: 403 });
         }
         
-        // INTEGRITY: Block manual forecast_amount (should be calculated: budget + ETC)
+        // INTEGRITY: Block manual forecast_amount updates
+        // Forecast is derived from EAC calculation, not entered manually
         if (data.updates.forecast_amount !== undefined) {
           return Response.json({ 
-            error: 'Cannot manually set forecast_amount. It is derived from budget and ETC.' 
+            error: 'Cannot manually set forecast_amount. It is calculated from EAC.' 
+          }, { status: 403 });
+        }
+        
+        // INTEGRITY: Block manual committed_amount (from expenses only)
+        if (data.updates.committed_amount !== undefined) {
+          return Response.json({
+            error: 'Cannot manually set committed_amount. It is calculated from Expense status.'
           }, { status: 403 });
         }
         

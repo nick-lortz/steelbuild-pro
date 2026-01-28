@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Filter, X } from 'lucide-react';
 
-export default function FacetedSearchPanel({ 
+export default function FacetedSearchPanel({
+
   documents = [],
   projects = [],
   workPackages = [],

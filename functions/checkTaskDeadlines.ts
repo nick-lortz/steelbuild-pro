@@ -6,94 +6,63 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
+    // Get all tasks with upcoming deadlines
+    const tasks = await base44.asServiceRole.entities.Task.list('-end_date');
     const now = new Date();
-    const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
-
-    // Get all incomplete todo items
-    const tasks = await base44.asServiceRole.entities.TodoItem.filter({
-      status: { $ne: 'done' }
-    });
-
-    const notifications = [];
+    const notifiedTasks = new Set();
 
     for (const task of tasks) {
-      if (!task.due_date || !task.assigned_to) continue;
+      if (!task.end_date || task.status === 'completed') continue;
 
-      const dueDate = new Date(task.due_date);
-      const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+      const endDate = new Date(task.end_date);
+      const daysUntil = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
 
-      // Check if task is overdue
-      if (daysUntilDue < 0) {
-        // Check if we already sent an overdue notification today
-        const existingNotifs = await base44.asServiceRole.entities.Notification.filter({
-          user_email: task.assigned_to,
-          related_entity: 'TodoItem',
-          related_id: task.id,
-          type: 'task_overdue',
-          created_date: { $gte: new Date(now.setHours(0, 0, 0, 0)).toISOString() }
-        });
+      // Get user preferences to determine notification threshold
+      const prefs = await base44.asServiceRole.entities.NotificationPreference.filter(
+        { user_id: task.assigned_resources?.[0] },
+        '-created_date',
+        1
+      );
 
-        if (existingNotifs.length === 0) {
-          notifications.push({
-            user_email: task.assigned_to,
-            type: 'task_overdue',
-            title: `Task Overdue: ${task.title}`,
-            message: `Task "${task.title}" is ${Math.abs(daysUntilDue)} days overdue`,
-            priority: 'high',
-            related_entity: 'TodoItem',
-            related_id: task.id,
+      const daysBefore = prefs?.[0]?.deadline_days_before || 3;
+
+      if (daysUntil > 0 && daysUntil <= daysBefore && !notifiedTasks.has(task.id)) {
+        const wp = await base44.asServiceRole.entities.WorkPackage.filter(
+          { id: task.work_package_id },
+          '-created_date',
+          1
+        );
+
+        const project = await base44.asServiceRole.entities.Project.filter(
+          { id: task.project_id },
+          '-created_date',
+          1
+        );
+
+        // Generate notification for each assigned resource
+        for (const resourceEmail of task.assigned_resources || []) {
+          await base44.functions.invoke('generateNotifications', {
+            event_type: 'deadline',
+            entity_type: 'Task',
+            entity_id: task.id,
             project_id: task.project_id,
-            is_read: false
+            recipient_email: resourceEmail,
+            title: `Task Deadline: ${task.name}`,
+            message: `"${task.name}" in ${wp?.[0]?.title} is due in ${daysUntil} day(s)`,
+            priority: daysUntil === 1 ? 'critical' : daysUntil <= 2 ? 'high' : 'normal',
+            action_url: `/Schedule?task=${task.id}`
           });
         }
-      }
-      // Check if task is due within 3 days
-      else if (daysUntilDue <= 3 && daysUntilDue >= 0) {
-        // Check if we already sent a due soon notification today
-        const existingNotifs = await base44.asServiceRole.entities.Notification.filter({
-          user_email: task.assigned_to,
-          related_entity: 'TodoItem',
-          related_id: task.id,
-          type: 'task_due_soon',
-          created_date: { $gte: new Date(now.setHours(0, 0, 0, 0)).toISOString() }
-        });
-
-        if (existingNotifs.length === 0) {
-          notifications.push({
-            user_email: task.assigned_to,
-            type: 'task_due_soon',
-            title: `Task Due Soon: ${task.title}`,
-            message: `Task "${task.title}" is due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`,
-            priority: daysUntilDue === 0 ? 'high' : 'medium',
-            related_entity: 'TodoItem',
-            related_id: task.id,
-            project_id: task.project_id,
-            is_read: false
-          });
-        }
+        notifiedTasks.add(task.id);
       }
     }
 
-    // Bulk create notifications
-    if (notifications.length > 0) {
-      await base44.asServiceRole.entities.Notification.bulkCreate(notifications);
-    }
-
-    return Response.json({
-      success: true,
-      tasks_checked: tasks.length,
-      notifications_created: notifications.length,
-      details: {
-        overdue: notifications.filter(n => n.type === 'task_overdue').length,
-        due_soon: notifications.filter(n => n.type === 'task_due_soon').length
-      }
-    });
-
+    return Response.json({ checked: tasks.length, notified: notifiedTasks.size });
   } catch (error) {
-    console.error('Task deadline check failed:', error);
+    console.error('Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

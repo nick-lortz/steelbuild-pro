@@ -2,9 +2,13 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Pencil, ArrowRight, FileText, Link as LinkIcon, CheckCircle2, Package as PackageIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import BudgetManager from '@/components/budget/BudgetManager';
 
 export default function WorkPackageDetails({
   package: pkg,
@@ -18,6 +22,24 @@ export default function WorkPackageDetails({
   onAdvancePhase,
   onUpdate
 }) {
+  const { data: laborHours = [] } = useQuery({
+    queryKey: ['labor-hours', projectId],
+    queryFn: () => base44.entities.LaborHours.filter({ project_id: projectId }),
+    enabled: !!projectId
+  });
+
+  const { data: equipmentUsage = [] } = useQuery({
+    queryKey: ['equipment-usage', projectId],
+    queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: projectId }),
+    enabled: !!projectId
+  });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses', projectId],
+    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+    enabled: !!projectId
+  });
+
   const linkedSOVItems = sovItems.filter(sov => pkg.sov_item_ids?.includes(sov.id));
   const linkedCostCodes = costCodes.filter(cc => pkg.cost_code_ids?.includes(cc.id));
   const linkedDrawingSets = drawings.filter(dwg => pkg.linked_drawing_set_ids?.includes(dwg.id));
@@ -256,35 +278,134 @@ export default function WorkPackageDetails({
         </Card>
       )}
 
-      {/* Description & Notes */}
-      {(pkg.description || pkg.notes) && (
-        <Card className="bg-zinc-800/50 border-zinc-700">
-          <CardHeader>
-            <CardTitle className="text-sm">Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {pkg.description && (
-              <div>
-                <div className="text-xs text-zinc-500 mb-1">Description</div>
-                <div className="text-sm text-zinc-200">{pkg.description}</div>
-              </div>
-            )}
-            {pkg.notes && (
-              <div>
-                <div className="text-xs text-zinc-500 mb-1">Notes</div>
-                <div className="text-sm text-zinc-200 whitespace-pre-wrap">{pkg.notes}</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Tabbed Content */}
+      <Tabs defaultValue="details" className="mt-4">
+        <TabsList className="bg-zinc-800 border border-zinc-700">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="budget">Budget</TabsTrigger>
+          <TabsTrigger value="links">Links</TabsTrigger>
+        </TabsList>
 
-      {pkg.assigned_to && (
-        <div className="text-sm">
-          <span className="text-zinc-500">Assigned to: </span>
-          <span className="text-zinc-200">{pkg.assigned_to}</span>
-        </div>
-      )}
+        <TabsContent value="details" className="space-y-4 mt-4">
+          {/* Description & Notes */}
+          {(pkg.description || pkg.notes) && (
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <CardTitle className="text-sm">Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {pkg.description && (
+                  <div>
+                    <div className="text-xs text-zinc-500 mb-1">Description</div>
+                    <div className="text-sm text-zinc-200">{pkg.description}</div>
+                  </div>
+                )}
+                {pkg.notes && (
+                  <div>
+                    <div className="text-xs text-zinc-500 mb-1">Notes</div>
+                    <div className="text-sm text-zinc-200 whitespace-pre-wrap">{pkg.notes}</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {pkg.assigned_to && (
+            <div className="text-sm">
+              <span className="text-zinc-500">Assigned to: </span>
+              <span className="text-zinc-200">{pkg.assigned_to}</span>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="budget" className="space-y-4 mt-4">
+          <BudgetManager
+            workPackage={pkg}
+            tasks={tasks}
+            laborHours={laborHours}
+            equipmentUsage={equipmentUsage}
+            expenses={expenses}
+            costCodes={costCodes}
+            onUpdateBudget={(data) => onUpdate(data)}
+          />
+        </TabsContent>
+
+        <TabsContent value="links" className="space-y-4 mt-4">
+          {/* SOV Items */}
+          {linkedSOVItems.length > 0 && (
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText size={16} />
+                  SOV Line Items ({linkedSOVItems.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {linkedSOVItems.map(sov => (
+                    <div key={sov.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                      <div>
+                        <div className="font-mono text-xs text-amber-500">{sov.sov_code}</div>
+                        <div className="text-sm text-zinc-200">{sov.description}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-white font-semibold">${(sov.scheduled_value || 0).toLocaleString()}</div>
+                        <div className="text-xs text-zinc-500">{sov.percent_complete || 0}% complete</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Cost Codes */}
+          {linkedCostCodes.length > 0 && (
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <LinkIcon size={16} />
+                  Cost Codes ({linkedCostCodes.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {linkedCostCodes.map(cc => (
+                    <Badge key={cc.id} variant="outline" className="bg-zinc-900/50 border-zinc-700">
+                      {cc.code} - {cc.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Drawing Sets */}
+          {linkedDrawingSets.length > 0 && (
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText size={16} />
+                  Drawing Sets ({linkedDrawingSets.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {linkedDrawingSets.map(dwg => (
+                    <div key={dwg.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                      <div>
+                        <div className="font-mono text-xs text-blue-500">{dwg.set_number}</div>
+                        <div className="text-sm text-zinc-200">{dwg.set_name}</div>
+                      </div>
+                      <StatusBadge status={dwg.status} />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -50,16 +50,17 @@ export default function Labor() {
   const [bulkMode, setBulkMode] = useState(false);
   const [formData, setFormData] = useState({
     project_id: '',
-    resource_id: '',
+    work_package_id: '',
+    cost_code_id: '',
+    crew_employee: '',
     work_date: format(new Date(), 'yyyy-MM-dd'),
     hours: '',
     overtime_hours: '',
-    cost_code_id: '',
     description: '',
     approved: false,
   });
   const [bulkEntries, setBulkEntries] = useState([
-    { resource_id: '', hours: '', overtime_hours: '', description: '' }
+    { crew_employee: '', hours: '', overtime_hours: '', description: '' }
   ]);
 
   const queryClient = useQueryClient();
@@ -168,12 +169,13 @@ export default function Labor() {
     
     if (bulkMode) {
       const validEntries = bulkEntries
-        .filter(entry => entry.resource_id && entry.hours)
+        .filter(entry => entry.crew_employee && entry.hours)
         .map(entry => ({
           project_id: formData.project_id,
-          work_date: formData.work_date,
+          work_package_id: formData.work_package_id,
           cost_code_id: formData.cost_code_id,
-          resource_id: entry.resource_id,
+          work_date: formData.work_date,
+          crew_employee: entry.crew_employee,
           hours: parseFloat(entry.hours) || 0,
           overtime_hours: parseFloat(entry.overtime_hours) || 0,
           description: entry.description || '',
@@ -216,11 +218,12 @@ export default function Labor() {
     setEditingEntry(entry);
     setFormData({
       project_id: entry.project_id || '',
-      resource_id: entry.resource_id || '',
+      work_package_id: entry.work_package_id || '',
+      cost_code_id: entry.cost_code_id || '',
+      crew_employee: entry.crew_employee || '',
       work_date: entry.work_date || format(new Date(), 'yyyy-MM-dd'),
       hours: entry.hours?.toString() || '',
       overtime_hours: entry.overtime_hours?.toString() || '',
-      cost_code_id: entry.cost_code_id || '',
       description: entry.description || '',
       approved: entry.approved || false,
     });
@@ -249,13 +252,14 @@ export default function Labor() {
     },
     {
       header: 'Worker',
-      accessor: 'resource_id',
+      accessor: 'crew_employee',
       render: (row) => {
-        const resource = resources.find(r => r.id === row.resource_id);
+        const workerEmail = row.crew_employee || '';
+        const workerName = workerEmail.split('@')[0];
         return (
           <div>
-            <p className="font-medium">{resource?.name || '-'}</p>
-            <p className="text-xs text-zinc-500">{resource?.classification}</p>
+            <p className="font-medium">{workerName || '-'}</p>
+            <p className="text-xs text-zinc-500">{workerEmail}</p>
           </div>
         );
       },
@@ -381,7 +385,7 @@ export default function Labor() {
               data={laborHours}
               columns={[
                 { key: 'work_date', label: 'Date' },
-                { key: 'resource_id', label: 'Worker', formatter: (row) => resources.find(r => r.id === row.resource_id)?.name || '-' },
+                { key: 'crew_employee', label: 'Worker' },
                 { key: 'project_id', label: 'Project', formatter: (row) => projects.find(p => p.id === row.project_id)?.name || '-' },
                 { key: 'hours', label: 'Hours' },
                 { key: 'overtime_hours', label: 'OT Hours' },
@@ -496,12 +500,13 @@ export default function Labor() {
               <div className="border-t border-zinc-800 pt-4">
                 <h4 className="text-sm font-medium text-zinc-400 mb-3">Worker Performance</h4>
                 <div className="space-y-2">
-                  {laborResources.map(worker => {
-                    const workerHours = laborHours.filter(l => l.resource_id === worker.id);
+                  {Array.from(new Set(laborHours.map(l => l.crew_employee).filter(Boolean))).map(workerEmail => {
+                    const workerHours = laborHours.filter(l => l.crew_employee === workerEmail);
                     const totalWorkerHours = workerHours.reduce((sum, l) => sum + (l.hours || 0), 0);
+                    const workerName = workerEmail.split('@')[0];
                     return (
-                      <div key={worker.id} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded">
-                        <span className="text-sm text-zinc-300">{worker.name}</span>
+                      <div key={workerEmail} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded">
+                        <span className="text-sm text-zinc-300">{workerName}</span>
                         <span className="text-sm font-mono text-white">{totalWorkerHours.toFixed(1)}h</span>
                       </div>
                     );
@@ -521,15 +526,16 @@ export default function Labor() {
           setBulkMode(false);
           setFormData({
             project_id: '',
-            resource_id: '',
+            work_package_id: '',
+            cost_code_id: '',
+            crew_employee: '',
             work_date: format(new Date(), 'yyyy-MM-dd'),
             hours: '',
             overtime_hours: '',
-            cost_code_id: '',
             description: '',
             approved: false,
           });
-          setBulkEntries([{ resource_id: '', hours: '', overtime_hours: '', description: '' }]);
+          setBulkEntries([{ crew_employee: '', hours: '', overtime_hours: '', description: '' }]);
         }
       }}>
         <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
@@ -577,7 +583,7 @@ export default function Labor() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Cost Code</Label>
+                    <Label>Cost Code *</Label>
                     <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
                       <SelectTrigger className="bg-zinc-800 border-zinc-700">
                         <SelectValue placeholder="Select cost code" />
@@ -601,7 +607,7 @@ export default function Labor() {
                   </div>
                   <div className="border border-zinc-800 rounded-lg overflow-hidden">
                     <div className="bg-zinc-800/50 grid grid-cols-12 gap-2 p-2 text-xs font-medium text-zinc-400">
-                      <div className="col-span-4">Worker</div>
+                      <div className="col-span-4">Worker Email</div>
                       <div className="col-span-2">Hours</div>
                       <div className="col-span-2">OT</div>
                       <div className="col-span-3">Notes</div>
@@ -611,19 +617,13 @@ export default function Labor() {
                       {bulkEntries.map((entry, idx) => (
                         <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center">
                           <div className="col-span-4">
-                            <Select 
-                              value={entry.resource_id} 
-                              onValueChange={(v) => updateBulkEntry(idx, 'resource_id', v)}
-                            >
-                              <SelectTrigger className="bg-zinc-800 border-zinc-700 h-8">
-                                <SelectValue placeholder="Select" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {laborResources.map(r => (
-                                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Input
+                              type="email"
+                              value={entry.crew_employee}
+                              onChange={(e) => updateBulkEntry(idx, 'crew_employee', e.target.value)}
+                              className="bg-zinc-800 border-zinc-700 h-8"
+                              placeholder="worker@example.com"
+                            />
                           </div>
                           <div className="col-span-2">
                             <Input
@@ -676,17 +676,15 @@ export default function Labor() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Worker *</Label>
-                    <Select value={formData.resource_id} onValueChange={(v) => setFormData({ ...formData, resource_id: v })}>
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                        <SelectValue placeholder="Select worker" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {laborResources.map(r => (
-                          <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Worker Email *</Label>
+                    <Input
+                      type="email"
+                      value={formData.crew_employee}
+                      onChange={(e) => setFormData({ ...formData, crew_employee: e.target.value })}
+                      placeholder="worker@example.com"
+                      required
+                      className="bg-zinc-800 border-zinc-700"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Date *</Label>
@@ -739,7 +737,17 @@ export default function Labor() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cost Code</Label>
+                  <Label>Work Package</Label>
+                  <Input
+                    value={formData.work_package_id}
+                    onChange={(e) => setFormData({ ...formData, work_package_id: e.target.value })}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="Optional"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cost Code *</Label>
                   <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
                     <SelectTrigger className="bg-zinc-800 border-zinc-700">
                       <SelectValue placeholder="Select cost code" />

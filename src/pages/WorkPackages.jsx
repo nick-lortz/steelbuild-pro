@@ -142,11 +142,11 @@ export default function WorkPackages() {
   const columns = [
   {
     header: 'Package',
-    accessor: 'package_number',
+    accessor: 'wpid',
     render: (pkg) =>
     <div>
-          <div className="font-mono text-amber-500">{pkg.package_number || pkg.id.slice(0, 8)}</div>
-          <div className="text-sm text-white font-medium">{pkg.name}</div>
+          <div className="font-mono text-amber-500">{pkg.wpid || pkg.id.slice(0, 8)}</div>
+          <div className="text-sm text-white font-medium">{pkg.title}</div>
         </div>
 
   },
@@ -198,10 +198,11 @@ export default function WorkPackages() {
     header: '',
     render: (pkg) => {
       const phaseMap = {
-        'detailing': { next: 'fabrication', label: 'To Fab' },
-        'fabrication': { next: 'delivery', label: 'To Delivery' },
+        'pre_fab': { next: 'shop', label: 'To Shop' },
+        'shop': { next: 'delivery', label: 'To Delivery' },
         'delivery': { next: 'erection', label: 'To Erection' },
-        'erection': { next: 'complete', label: 'Complete' }
+        'erection': { next: 'punch', label: 'To Punch' },
+        'punch': { next: 'completed', label: 'Complete' }
       };
       const currentPhase = phaseMap[pkg.phase];
 
@@ -248,14 +249,15 @@ export default function WorkPackages() {
   }, [workPackages, statusFilter, phaseFilter]);
 
   const summaryStats = useMemo(() => {
-    const active = workPackages.filter((wp) => wp.status === 'active').length;
-    const complete = workPackages.filter((wp) => wp.status === 'complete').length;
-    const totalTonnage = workPackages.reduce((sum, wp) => sum + (wp.tonnage || 0), 0);
+    const inProgress = workPackages.filter((wp) => wp.status === 'in_progress').length;
+    const completed = workPackages.filter((wp) => wp.status === 'completed' || wp.status === 'closed').length;
+    const totalBudget = workPackages.reduce((sum, wp) => sum + (wp.budget_at_award || 0), 0);
+    const totalForecast = workPackages.reduce((sum, wp) => sum + (wp.forecast_at_completion || 0), 0);
     const avgProgress = workPackages.length > 0 ?
     workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / workPackages.length :
     0;
 
-    return { active, complete, totalTonnage, avgProgress };
+    return { inProgress, completed, totalBudget, totalForecast, avgProgress };
   }, [workPackages]);
 
   if (!activeProjectId) {
@@ -328,20 +330,20 @@ export default function WorkPackages() {
         <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="grid grid-cols-4 gap-6">
             <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ACTIVE</div>
-              <div className="text-2xl font-bold font-mono text-white">{summaryStats.active}</div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">IN PROGRESS</div>
+              <div className="text-2xl font-bold font-mono text-white">{summaryStats.inProgress}</div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">COMPLETE</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{summaryStats.complete}</div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">COMPLETED</div>
+              <div className="text-2xl font-bold font-mono text-green-500">{summaryStats.completed}</div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TONNAGE</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">{summaryStats.totalTonnage.toFixed(1)}</div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">BUDGET</div>
+              <div className="text-2xl font-bold font-mono text-amber-500">${(summaryStats.totalBudget / 1000).toFixed(0)}K</div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVG PROGRESS</div>
-              <div className="text-2xl font-bold font-mono text-white">{summaryStats.avgProgress.toFixed(0)}%</div>
+              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FORECAST</div>
+              <div className="text-2xl font-bold font-mono text-white">${(summaryStats.totalForecast / 1000).toFixed(0)}K</div>
             </div>
           </div>
         </div>
@@ -357,11 +359,11 @@ export default function WorkPackages() {
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
                 <SelectItem value="all">All Phases</SelectItem>
-                <SelectItem value="detailing">Detailing</SelectItem>
-                <SelectItem value="fabrication">Fabrication</SelectItem>
+                <SelectItem value="pre_fab">Pre-Fab</SelectItem>
+                <SelectItem value="shop">Shop</SelectItem>
                 <SelectItem value="delivery">Delivery</SelectItem>
                 <SelectItem value="erection">Erection</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="punch">Punch</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -370,9 +372,11 @@ export default function WorkPackages() {
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="on_hold">On Hold</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -467,7 +471,7 @@ export default function WorkPackages() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Work Package?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Permanently delete "{deletePackage?.package_number} - {deletePackage?.name}" and {getPackageTaskCount(deletePackage?.id || '')} tasks. Cannot be undone.
+              Permanently delete "{deletePackage?.wpid} - {deletePackage?.title}" and {getPackageTaskCount(deletePackage?.id || '')} tasks. Cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

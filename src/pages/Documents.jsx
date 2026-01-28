@@ -28,7 +28,9 @@ import {
 } from "@/components/ui/sheet";
 import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import CSVUpload from '@/components/shared/CSVUpload';
+import FacetedSearchPanel from '@/components/documents/FacetedSearchPanel';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';

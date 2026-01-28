@@ -459,30 +459,20 @@ export default function ProjectDashboard() {
                       {metrics.completedTasks}/{metrics.totalTasks}
                     </p>
                   </div>
+                  <div className="p-2 bg-secondary rounded">
+                    <p className="text-xs text-muted-foreground">Work Packages</p>
+                    <p className="text-lg font-bold">{metrics.totalWPs}</p>
+                  </div>
                   <div className={`p-2 rounded ${metrics.overdueTasks > 0 ? 'bg-red-500/10' : 'bg-secondary'}`}>
                     <p className="text-xs text-muted-foreground">Overdue</p>
                     <p className={`text-lg font-bold ${metrics.overdueTasks > 0 ? 'text-red-400' : ''}`}>
                       {metrics.overdueTasks}
                     </p>
                   </div>
-                  <div className={`p-2 rounded ${
-                    metrics.costHealth === 'red' ? 'bg-red-500/10' : 
-                    metrics.costHealth === 'yellow' ? 'bg-amber-500/10' : 
-                    'bg-secondary'
-                  }`}>
-                    <p className="text-xs text-muted-foreground">Budget vs Actual</p>
-                    <p className={`text-lg font-bold ${
-                      metrics.costHealth === 'red' ? 'text-red-400' : 
-                      metrics.costHealth === 'yellow' ? 'text-amber-400' : 
-                      'text-green-400'
-                    }`}>
-                      {metrics.percentSpent?.toFixed(0) || 0}%
-                    </p>
-                  </div>
                   <div className={`p-2 rounded ${metrics.pendingReview > 0 ? 'bg-amber-500/10' : 'bg-secondary'}`}>
-                    <p className="text-xs text-muted-foreground">Docs Review</p>
+                    <p className="text-xs text-muted-foreground">Milestones (30d)</p>
                     <p className={`text-lg font-bold ${metrics.pendingReview > 0 ? 'text-amber-400' : ''}`}>
-                      {metrics.pendingReview}
+                      {metrics.upcomingMilestones}
                     </p>
                   </div>
                 </div>

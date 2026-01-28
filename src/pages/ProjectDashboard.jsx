@@ -36,6 +36,12 @@ export default function ProjectDashboard() {
     staleTime: 2 * 60 * 1000
   });
 
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list('wpid'),
+    staleTime: 2 * 60 * 1000
+  });
+
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.list('-created_date'),

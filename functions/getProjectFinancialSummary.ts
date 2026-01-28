@@ -52,16 +52,21 @@ Deno.serve(async (req) => {
     .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
     .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // Estimated Cost at Completion (scale cost by earned %)
+  // Percent Complete based on earned value
   const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;
-  const estimatedCostAtCompletion = percentComplete > 0 
-    ? (actualCostToDate / percentComplete) * 100 
-    : actualCostToDate;
 
-  // Committed costs (pending + approved + paid expenses)
+  // Estimated Cost at Completion: EAC = Actual / % Complete
+  // Only applies if we have actual spend and progress
+  const estimatedCostAtCompletion = percentComplete > 0 
+    ? actualCostToDate / (percentComplete / 100)
+    : totalContract; // Default to contract value if no progress yet
+
+  // Committed costs: sum all expenses (pending, approved, paid)
+  // This represents cash obligation whether paid or not
   const committedCosts = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  // Cost Risk (committed beyond actual)
+  // Cost Risk: difference between committed and actual paid
+  // Shows cash exposure for unpaid/pending expenses
   const costRisk = committedCosts - actualCostToDate;
 
   // Profit metrics

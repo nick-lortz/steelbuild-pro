@@ -368,7 +368,7 @@ export default function Reports() {
       header: 'Schedule',
       accessor: 'schedule',
       render: (row) => (
-        <span className="capitalize text-zinc-400">{row.schedule.replace('_', ' ')}</span>
+        <span className="capitalize text-zinc-400">{row.schedule?.replace('_', ' ') || 'On Demand'}</span>
       ),
     },
     {

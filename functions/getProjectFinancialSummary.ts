@@ -34,17 +34,17 @@ Deno.serve(async (req) => {
   // Total Contract = Original + Approved COs
   const totalContract = contractValue + signedExtras;
 
-  // Earned to Date (from SOV percent complete)
+  // Earned Value: sum of (scheduled value * percent complete)
   const earnedToDate = sovItems.reduce((sum, s) => 
     sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
 
-  // Billed to Date (from approved invoices stored in SOV)
+  // Billed to Date (cumulative billable invoices per SOV items)
   const billedToDate = sovItems.reduce((sum, s) => sum + (s.billed_to_date || 0), 0);
 
-  // Remaining to Bill
-  const remainingToBill = totalContract - billedToDate;
+  // Remaining to Bill = Total Contract - Billed
+  const remainingToBill = Math.max(0, totalContract - billedToDate);
 
-  // Over / Under Billed
+  // Over / Under Billed: positive = ahead of schedule, negative = behind
   const overUnderBilled = billedToDate - earnedToDate;
 
   // Actual Cost to Date (paid/approved expenses)

@@ -9,16 +9,16 @@ export default function BudgetByCategoryBreakdown({ financials, costCodes, expen
   const categoryData = costCodes.reduce((acc, code) => {
     const category = code.category || 'other';
     const categoryFinancials = financials.filter((f) => f.cost_code_id === code.id);
-    const budget = categoryFinancials.reduce((sum, f) => sum + (f.budget_amount || 0), 0);
-    const actualFromFinancials = categoryFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-
-    // Add expenses for this cost code
+    const budget = categoryFinancials.reduce((sum, f) => sum + (f.current_budget || f.budget_amount || 0), 0);
+    
+    // Actual costs come from Expense entity (source of truth)
+    // Only count paid/approved expenses as actual cost
     const categoryExpenses = expenses.filter((e) =>
-    e.cost_code_id === code.id && (
-    e.payment_status === 'paid' || e.payment_status === 'approved')
+      e.cost_code_id === code.id && (
+        e.payment_status === 'paid' || e.payment_status === 'approved'
+      )
     );
-    const actualFromExpenses = categoryExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const actual = actualFromFinancials + actualFromExpenses;
+    const actual = categoryExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
 
     if (!acc[category]) {
       acc[category] = { budget: 0, actual: 0 };

@@ -6,12 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   MessageSquareWarning, Calendar, AlertTriangle, CheckCircle2, 
   FileText, MessageSquare, Activity, Edit, Trash2, Mail,
-  Clock, DollarSign, Link as LinkIcon
+  Clock, DollarSign, Link as LinkIcon, Upload, Download, X
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useMutation } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { toast } from '@/components/ui/notifications';
+import DocumentUploader from '@/components/documents/DocumentUploader';
 
 export default function RFIDetailPanel({ 
   rfi, 
@@ -23,6 +27,31 @@ export default function RFIDetailPanel({
   onGenerateEmail
 }) {
   const [activeTab, setActiveTab] = useState('details');
+  const [showDocUploader, setShowDocUploader] = useState(false);
+  const [documents, setDocuments] = useState(rfi.attachments || []);
+
+  const updateRFIMutation = useMutation({
+    mutationFn: (data) => base44.entities.RFI.update(rfi.id, data),
+    onSuccess: () => {
+      toast.success('Documents added to RFI');
+      setShowDocUploader(false);
+    },
+    onError: (error) => {
+      toast.error('Failed to update RFI: ' + error.message);
+    }
+  });
+
+  const handleDocumentsAdded = async (newDocs) => {
+    const updated = [...documents, ...newDocs];
+    setDocuments(updated);
+    updateRFIMutation.mutate({ attachments: updated });
+  };
+
+  const removeDocument = (index) => {
+    const updated = documents.filter((_, i) => i !== index);
+    setDocuments(updated);
+    updateRFIMutation.mutate({ attachments: updated });
+  };
 
   const daysOpen = rfi.submitted_date ? differenceInDays(new Date(), parseISO(rfi.submitted_date)) : 0;
   const isOverdue = rfi.due_date && !['answered', 'closed'].includes(rfi.status) && 
@@ -110,6 +139,7 @@ export default function RFIDetailPanel({
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="impact">Impact</TabsTrigger>
+          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
           <TabsTrigger value="closeout">Closeout</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -192,6 +222,71 @@ export default function RFIDetailPanel({
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-zinc-300 whitespace-pre-wrap">{rfi.resolution_notes}</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-4">
+          {showDocUploader ? (
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDocUploader(false)}
+                className="mb-3 border-zinc-700"
+              >
+                <X size={14} className="mr-1" />
+                Cancel
+              </Button>
+              <DocumentUploader onDocumentsAdded={handleDocumentsAdded} />
+            </div>
+          ) : (
+            <Button
+              onClick={() => setShowDocUploader(true)}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+              size="sm"
+            >
+              <Upload size={14} className="mr-2" />
+              Add Documents
+            </Button>
+          )}
+
+          {documents.length > 0 && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-sm">Attachments ({documents.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {documents.map((doc, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-zinc-800 p-3 rounded">
+                    <div className="flex items-center gap-2 flex-1">
+                      <FileText size={14} className="text-amber-400 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-white truncate">{doc.file_name}</p>
+                        {doc.uploaded_by && (
+                          <p className="text-xs text-zinc-500">{doc.uploaded_by}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {doc.is_markup && (
+                        <Badge className="bg-purple-500/20 text-purple-300 text-xs">Markup</Badge>
+                      )}
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500 hover:text-white">
+                          <Download size={12} />
+                        </Button>
+                      </a>
+                      <button
+                        onClick={() => removeDocument(idx)}
+                        className="text-zinc-500 hover:text-red-400"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}

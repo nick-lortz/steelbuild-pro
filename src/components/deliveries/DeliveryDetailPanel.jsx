@@ -351,7 +351,23 @@ export default function DeliveryDetailPanel({
             )}
             {delivery.delivery_status === 'in_transit' && (
               <Button 
-                onClick={() => onStatusChange(delivery.id, 'arrived_on_site')}
+                onClick={() => {
+                  const updates = { 
+                    delivery_status: 'arrived_on_site',
+                    actual_arrival_date: new Date().toISOString()
+                  };
+                  
+                  // Auto-calculate on_time
+                  if (delivery.scheduled_date) {
+                    const actual = new Date();
+                    const scheduled = new Date(delivery.scheduled_date);
+                    const diffDays = Math.round((actual - scheduled) / (1000 * 60 * 60 * 24));
+                    updates.on_time = diffDays <= 0;
+                    updates.days_variance = diffDays;
+                  }
+                  
+                  onStatusChange(delivery.id, updates);
+                }}
                 className="w-full bg-purple-500 hover:bg-purple-600 text-white"
               >
                 <MapPin size={14} className="mr-2" />

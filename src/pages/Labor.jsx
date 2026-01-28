@@ -98,15 +98,16 @@ export default function Labor() {
       setBulkMode(false);
       setFormData({
         project_id: '',
-        resource_id: '',
+        work_package_id: '',
+        cost_code_id: '',
+        crew_employee: '',
         work_date: format(new Date(), 'yyyy-MM-dd'),
         hours: '',
         overtime_hours: '',
-        cost_code_id: '',
         description: '',
         approved: false,
       });
-      setBulkEntries([{ resource_id: '', hours: '', overtime_hours: '', description: '' }]);
+      setBulkEntries([{ crew_employee: '', hours: '', overtime_hours: '', description: '' }]);
     },
   });
 
@@ -118,15 +119,16 @@ export default function Labor() {
       setBulkMode(false);
       setFormData({
         project_id: '',
-        resource_id: '',
+        work_package_id: '',
+        cost_code_id: '',
+        crew_employee: '',
         work_date: format(new Date(), 'yyyy-MM-dd'),
         hours: '',
         overtime_hours: '',
-        cost_code_id: '',
         description: '',
         approved: false,
       });
-      setBulkEntries([{ resource_id: '', hours: '', overtime_hours: '', description: '' }]);
+      setBulkEntries([{ crew_employee: '', hours: '', overtime_hours: '', description: '' }]);
     },
   });
 
@@ -138,11 +140,12 @@ export default function Labor() {
       setEditingEntry(null);
       setFormData({
         project_id: '',
-        resource_id: '',
+        work_package_id: '',
+        cost_code_id: '',
+        crew_employee: '',
         work_date: format(new Date(), 'yyyy-MM-dd'),
         hours: '',
         overtime_hours: '',
-        cost_code_id: '',
         description: '',
         approved: false,
       });

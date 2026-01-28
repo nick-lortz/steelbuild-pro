@@ -79,21 +79,24 @@ Deno.serve(async (req) => {
       // Method 3: Remaining budget adjusted for trends
       const budgetBasedETC = Math.max(0, currentBudget - actualCost);
 
-      // Pending change order impact
+      // Pending change order impact (future cost exposure)
+      // Only include approved COs; pending COs are informational only
       const pendingCOImpact = changeOrders
-        .filter(c => c.status === 'pending' || c.status === 'submitted')
+        .filter(c => c.status === 'approved')
         .reduce((sum, c) => sum + (c.cost_impact || 0), 0);
 
-      // Weighted average of methods
+      // Weighted ETC methods for more accurate forecasting
       const weights = { burnRate: 0.4, performance: 0.4, budget: 0.2 };
       const weightedETC = 
         burnRateETC * weights.burnRate +
         performanceETC * weights.performance +
         budgetBasedETC * weights.budget;
 
-      // Add committed costs and pending CO impact
-      const adjustedETC = weightedETC + committed + (pendingCOImpact * 0.5); // 50% probability for pending COs
+      // Adjusted ETC = Weighted ETC + Committed + Approved CO Impact
+      // Note: Committed already includes pending expenses; COs add cost impact
+      const adjustedETC = weightedETC + committed + pendingCOImpact;
 
+      // EAC = Actual Cost To Date + ETC
       const eac = actualCost + adjustedETC;
 
       // Determine confidence based on data quality

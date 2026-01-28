@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Package, Trash2, FileText, Link as LinkIcon, ArrowRight } from 'lucide-react';
+import { Plus, Package, Trash2, FileText, Link as LinkIcon, ArrowRight, List, LayoutGrid } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
 import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
+import KanbanView from '@/components/schedule/KanbanView';
 
 export default function WorkPackages() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -23,6 +24,7 @@ export default function WorkPackages() {
   const [deletePackage, setDeletePackage] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [phaseFilter, setPhaseFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('table');
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -49,6 +51,14 @@ export default function WorkPackages() {
     queryKey: ['tasks', activeProjectId],
     queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks', activeProjectId]);
+      toast.success('Task updated');
+    }
   });
 
   const { data: sovItems = [] } = useQuery({
@@ -352,7 +362,8 @@ export default function WorkPackages() {
       {/* Controls Bar */}
       <div className="border-b border-zinc-800 bg-black">
         <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center justify-between">
+            <div className="flex gap-3">
             <Select value={phaseFilter} onValueChange={setPhaseFilter}>
               <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
                 <SelectValue />
@@ -379,6 +390,25 @@ export default function WorkPackages() {
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+            </div>
+            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+              <Button
+                size="sm"
+                variant={viewMode === 'table' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('table')}
+                className={viewMode === 'table' ? 'bg-amber-500 text-black hover:bg-amber-600' : 'text-zinc-400 hover:text-white'}
+              >
+                <List size={14} />
+              </Button>
+              <Button
+                size="sm"
+                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                onClick={() => setViewMode('kanban')}
+                className={viewMode === 'kanban' ? 'bg-amber-500 text-black hover:bg-amber-600' : 'text-zinc-400 hover:text-white'}
+              >
+                <LayoutGrid size={14} />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -392,6 +422,16 @@ export default function WorkPackages() {
               <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
             </div>
           </div>
+        ) : viewMode === 'kanban' ? (
+          <KanbanView
+            tasks={tasks}
+            projects={projects}
+            onTaskUpdate={(taskId, updates) => updateTaskMutation.mutate({ id: taskId, data: updates })}
+            onTaskClick={(task) => {
+              const pkg = workPackages.find(wp => wp.id === task.work_package_id);
+              if (pkg) setViewingPackage(pkg);
+            }}
+          />
         ) : (
           <DataTable
             columns={columns}

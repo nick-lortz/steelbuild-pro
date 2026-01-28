@@ -37,20 +37,13 @@ export default function AISearchPanel({ projectId, onDocumentClick }) {
   };
 
   return (
-    <Card className="bg-zinc-900 border-zinc-800">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Sparkles className="text-amber-500" size={20} />
-          AI-Powered Document Search
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form onSubmit={handleSearch} className="flex gap-2">
+    <div className="space-y-4">
+      <form onSubmit={handleSearch} className="flex gap-2">
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search documents naturally... (e.g., 'all RFIs about foundation', 'approved structural drawings')"
-            className="bg-zinc-800 border-zinc-700 text-white flex-1"
+            placeholder="e.g., 'foundation RFIs from detailing phase', 'approved connection drawings', 'contracts with payment terms'"
+            className="bg-zinc-800 border-zinc-700 text-white flex-1 text-sm"
           />
           <Button 
             type="submit" 
@@ -157,7 +150,7 @@ export default function AISearchPanel({ projectId, onDocumentClick }) {
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

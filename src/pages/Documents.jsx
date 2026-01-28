@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';
@@ -89,6 +89,9 @@ export default function Documents() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [statusFilter, setStatusFilter] = useState('all');
   const [phaseFilter, setPhaseFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+  const [wpFilter, setWpFilter] = useState('all');
+  const [taskFilter, setTaskFilter] = useState('all');
   const [selectedDocs, setSelectedDocs] = useState([]);
   const [bulkActing, setBulkActing] = useState(false);
   const [analyzingDoc, setAnalyzingDoc] = useState(null);
@@ -350,8 +353,13 @@ export default function Documents() {
       const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
       const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
       const matchesPhase = phaseFilter === 'all' || d.phase === phaseFilter;
+      const matchesTag = tagFilter === 'all' || d.tags?.includes(tagFilter);
+      const matchesWP = wpFilter === 'all' || 
+        (wpFilter === 'unlinked' ? !d.work_package_id : d.work_package_id === wpFilter);
+      const matchesTask = taskFilter === 'all' || 
+        (taskFilter === 'unlinked' ? !d.task_id : d.task_id === taskFilter);
       const matchesFolder = !selectedFolder || selectedFolder === 'root' || (d.folder_path || '/').startsWith(selectedFolder);
-      return matchesSearch && matchesCategory && matchesProject && matchesStatus && matchesPhase && matchesFolder && d.is_current !== false;
+      return matchesSearch && matchesCategory && matchesProject && matchesStatus && matchesPhase && matchesTag && matchesWP && matchesTask && matchesFolder && d.is_current !== false;
     });
 
     // Sort
@@ -368,7 +376,7 @@ export default function Documents() {
     });
 
     return filtered;
-  }, [documents, searchTerm, categoryFilter, projectFilter, statusFilter, phaseFilter, selectedFolder, sortBy, sortOrder]);
+  }, [documents, searchTerm, categoryFilter, projectFilter, statusFilter, phaseFilter, tagFilter, wpFilter, taskFilter, selectedFolder, sortBy, sortOrder]);
 
   const columns = [
     {
@@ -582,13 +590,21 @@ export default function Documents() {
 
       {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* AI Search */}
-        <div className="mb-6">
-          <AISearchPanel 
-            projectId={projectFilter !== 'all' ? projectFilter : null} 
-            onDocumentClick={handleEdit}
-          />
-        </div>
+        {/* AI Semantic Search */}
+        <Card className="mb-6 bg-gradient-to-br from-amber-950/20 to-orange-950/20 border-amber-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Sparkles className="text-amber-500" size={18} />
+              AI Semantic Search
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AISearchPanel 
+              projectId={projectFilter !== 'all' ? projectFilter : null} 
+              onDocumentClick={handleEdit}
+            />
+          </CardContent>
+        </Card>
 
         {/* View Mode Toggle */}
         <div className="flex gap-1 border border-zinc-800 p-1 mb-4 w-fit">
@@ -617,7 +633,7 @@ export default function Documents() {
             />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
             <Select value={projectFilter} onValueChange={setProjectFilter}>
               <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
                 <SelectValue placeholder="Project" />
@@ -639,6 +655,8 @@ export default function Documents() {
                 <SelectItem value="drawing">Drawing</SelectItem>
                 <SelectItem value="specification">Spec</SelectItem>
                 <SelectItem value="rfi">RFI</SelectItem>
+                <SelectItem value="submittal">Submittal</SelectItem>
+                <SelectItem value="contract">Contract</SelectItem>
                 <SelectItem value="photo">Photo</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
@@ -653,6 +671,7 @@ export default function Documents() {
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="issued">Issued</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="for_review">For Review</SelectItem>
               </SelectContent>
             </Select>
 
@@ -664,27 +683,96 @@ export default function Documents() {
                 <SelectItem value="all">All Phases</SelectItem>
                 <SelectItem value="detailing">Detailing</SelectItem>
                 <SelectItem value="fabrication">Fab</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
                 <SelectItem value="erection">Erection</SelectItem>
+                <SelectItem value="closeout">Closeout</SelectItem>
               </SelectContent>
             </Select>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
+            <Select value={tagFilter} onValueChange={setTagFilter}>
               <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Sort" />
+                <SelectValue placeholder="Tag" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="created_date">Date</SelectItem>
-                <SelectItem value="title">Title</SelectItem>
-                <SelectItem value="category">Category</SelectItem>
-                <SelectItem value="status">Status</SelectItem>
+                <SelectItem value="all">All Tags</SelectItem>
+                {Array.from(new Set(documents.flatMap(d => d.tags || []))).sort().map(tag => (
+                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={wpFilter} onValueChange={setWpFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Work Package" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
+                <SelectItem value="all">All WPs</SelectItem>
+                <SelectItem value="unlinked">Not Linked</SelectItem>
+                {workPackages
+                  .filter(wp => projectFilter === 'all' || wp.project_id === projectFilter)
+                  .map(wp => (
+                    <SelectItem key={wp.id} value={wp.id}>
+                      {wp.wpid || wp.title}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={taskFilter} onValueChange={setTaskFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                <SelectValue placeholder="Task" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
+                <SelectItem value="all">All Tasks</SelectItem>
+                <SelectItem value="unlinked">Not Linked</SelectItem>
+                {tasks
+                  .filter(t => projectFilter === 'all' || t.project_id === projectFilter)
+                  .slice(0, 50)
+                  .map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        {/* Content - Folder Tree + Documents */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
+        {/* Content - Faceted Filters + Folder Tree + Documents */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-1 space-y-4">
+            <FacetedSearchPanel
+              documents={documents}
+              projects={projects}
+              workPackages={workPackages}
+              tasks={tasks}
+              activeFilters={{
+                project: projectFilter,
+                category: categoryFilter,
+                status: statusFilter,
+                phase: phaseFilter,
+                tag: tagFilter,
+                wp: wpFilter
+              }}
+              onFilterChange={(type, value) => {
+                if (type === 'project') setProjectFilter(value);
+                if (type === 'category') setCategoryFilter(value);
+                if (type === 'status') setStatusFilter(value);
+                if (type === 'phase') setPhaseFilter(value);
+                if (type === 'tag') setTagFilter(value);
+                if (type === 'wp') setWpFilter(value);
+              }}
+              onClearAll={() => {
+                setProjectFilter('all');
+                setCategoryFilter('all');
+                setStatusFilter('all');
+                setPhaseFilter('all');
+                setTagFilter('all');
+                setWpFilter('all');
+                setTaskFilter('all');
+              }}
+            />
+            
             <DocumentFolderTree
               documents={documents.filter(d => projectFilter === 'all' || d.project_id === projectFilter)}
               projects={projects}
@@ -693,7 +781,7 @@ export default function Documents() {
             />
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <DataTable
               columns={columns}
               data={filteredDocuments}

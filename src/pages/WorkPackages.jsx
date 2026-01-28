@@ -152,7 +152,7 @@ export default function WorkPackages() {
   const columns = [
   {
     header: 'Package',
-    accessor: 'title',
+    accessor: 'wpid',
     render: (pkg) =>
     <div>
           <div className="text-sm text-white font-medium">{pkg.title}</div>

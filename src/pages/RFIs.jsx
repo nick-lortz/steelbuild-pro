@@ -93,32 +93,37 @@ export default function RFIs() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
       // Auto-generate RFI number if not provided
-      if (!data.rfi_number) {
-        const projectRFIs = rfis.filter(r => r.project_id === data.project_id);
+      let rfiData = { ...data };
+      if (!rfiData.rfi_number) {
+        const projectRFIs = rfis.filter(r => r.project_id === rfiData.project_id);
         const maxNumber = projectRFIs.reduce((max, r) => Math.max(max, r.rfi_number || 0), 0);
-        data.rfi_number = maxNumber + 1;
+        rfiData.rfi_number = maxNumber + 1;
       }
 
-      const activityLog = {
+      const activityLog = [{
         action: `RFI created by ${user?.full_name || user?.email}`,
         user: user?.email || 'system',
         timestamp: new Date().toISOString()
-      };
+      }];
 
       return base44.entities.RFI.create({
-        ...data,
-        activity_log: [activityLog]
+        ...rfiData,
+        activity_log: activityLog
       });
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setShowWizard(false);
       setShowTemplateSelector(false);
       setSelectedTemplate(null);
       setEditingRFI(null);
       toast.success('RFI created successfully');
+    },
+    onError: (error) => {
+      console.error('Create RFI error:', error);
+      toast.error('Failed to create RFI: ' + error.message);
     }
   });
 

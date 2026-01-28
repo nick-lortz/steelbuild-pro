@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import PageHeader from '@/components/ui/PageHeader';
-import { Search, Plus, Filter, Package, AlertTriangle, Wrench, BarChart3, Settings, Lock } from 'lucide-react';
+import { Search, Plus, Filter, Package, AlertTriangle, Wrench, BarChart3, Settings, Lock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { checkPrerequisites, PrerequisitesBadge } from '@/components/fabrication/PrerequisitesEngine';

@@ -9,11 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { X, Settings, Save, User, Copy } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AITaskHelper from './AITaskHelper';
 import DependencyConfigurator from './DependencyConfigurator';
 import TaskTemplateManager from './TaskTemplateManager';
 import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
+import SubtaskManager from './SubtaskManager';
+import TimeTracker from './TimeTracker';
+import RecurringTaskConfig from './RecurringTaskConfig';
 import { toast } from '@/components/ui/notifications';
 
 export default function TaskForm({
@@ -31,9 +34,49 @@ export default function TaskForm({
 }) {
   const [showDependencyConfig, setShowDependencyConfig] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
     queryFn: () => base44.entities.WorkPackage.list(),
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
+  const { data: subtasks = [] } = useQuery({
+    queryKey: ['subtasks', task?.id],
+    queryFn: () => task?.id ? base44.entities.Task.filter({ parent_task_id: task.id }) : [],
+    enabled: !!task?.id
+  });
+
+  const createSubtaskMutation = useMutation({
+    mutationFn: (data) => base44.entities.Task.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subtasks', task?.id] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      toast.success('Subtask added');
+    }
+  });
+
+  const updateSubtaskMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subtasks', task?.id] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      toast.success('Subtask updated');
+    }
+  });
+
+  const deleteSubtaskMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subtasks', task?.id] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      toast.success('Subtask deleted');
+    }
   });
 
   const [formData, setFormData] = useState({
@@ -784,6 +827,46 @@ export default function TaskForm({
           className="bg-zinc-800 border-zinc-700" />
 
       </div>
+
+      {/* Subtasks - only for existing tasks */}
+      {task?.id && !formData.parent_task_id && (
+        <div className="border-t border-zinc-800 pt-4">
+          <SubtaskManager
+            parentTask={task}
+            subtasks={subtasks}
+            onAddSubtask={(data) => createSubtaskMutation.mutate(data)}
+            onUpdateSubtask={(id, data) => updateSubtaskMutation.mutate({ id, data })}
+            onDeleteSubtask={(id) => deleteSubtaskMutation.mutate(id)}
+          />
+        </div>
+      )}
+
+      {/* Time Tracking - only for existing tasks */}
+      {task?.id && (
+        <div className="border-t border-zinc-800 pt-4">
+          <TimeTracker
+            task={task}
+            currentUser={currentUser}
+            onLogTime={(data) => {
+              onSubmit(data);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Recurring Config - only for new tasks without parent */}
+      {!task?.id && !formData.parent_task_id && (
+        <div className="border-t border-zinc-800 pt-4">
+          <RecurringTaskConfig
+            task={formData}
+            onChange={(config) => {
+              Object.entries(config).forEach(([key, value]) => {
+                handleChange(key, value);
+              });
+            }}
+          />
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">

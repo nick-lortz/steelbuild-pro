@@ -342,21 +342,21 @@ export default function RFIDetailPanel({
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-3">
-          {rfi.activity_log?.map((log, idx) => (
-            <div key={idx} className="flex gap-3 text-sm">
-              <Activity size={16} className="text-zinc-500 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-white">{log.action}</p>
-                <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
-                  <span>{log.user}</span>
-                  <span>•</span>
-                  <span>{log.timestamp && format(parseISO(log.timestamp), 'MMM d, h:mm a')}</span>
+          {rfi.activity_log && Array.isArray(rfi.activity_log) && rfi.activity_log.length > 0 ? (
+            rfi.activity_log.map((log, idx) => (
+              <div key={idx} className="flex gap-3 text-sm">
+                <Activity size={16} className="text-zinc-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-white">{log.action}</p>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
+                    <span>{log.user || 'system'}</span>
+                    <span>•</span>
+                    <span>{log.timestamp ? format(parseISO(log.timestamp), 'MMM d, h:mm a') : 'unknown'}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-
-          {(!rfi.activity_log || rfi.activity_log.length === 0) && (
+            ))
+          ) : (
             <div className="text-center py-12 text-zinc-500">
               <Activity size={32} className="mx-auto mb-2 opacity-50" />
               <p className="text-sm">No activity yet</p>

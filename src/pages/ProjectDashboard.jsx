@@ -159,6 +159,7 @@ export default function ProjectDashboard() {
         upcomingMilestones: upcomingMilestones.length,
         recentDocs: recentDocs.length,
         pendingReview: projectDocs.filter(d => d.workflow_stage === 'pending_review').length,
+        totalWPs,
         currentBudget,
         actualCost,
         costVariance,

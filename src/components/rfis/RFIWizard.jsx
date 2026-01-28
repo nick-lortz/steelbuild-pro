@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CheckCircle, X, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 

@@ -301,7 +301,7 @@ function LayoutContent({ children, currentPageName }) {
         {currentUser &&
         <div className="flex items-center gap-2">
             <ThemeToggle />
-            <NotificationPanel />
+            <NotificationCenter />
             <DropdownMenu>
               <DropdownMenuTrigger className="p-2">
                 <UserCircle size={24} className="text-zinc-400" />

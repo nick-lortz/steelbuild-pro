@@ -160,6 +160,12 @@ export default function LookAheadPlanning() {
     toast.success('Exported look-ahead to CSV');
   };
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
+
   const selectedProject = projects.find((p) => p.id === activeProjectId);
 
   if (!activeProjectId) {

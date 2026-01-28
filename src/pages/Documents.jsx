@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CSVUpload from '@/components/shared/CSVUpload';
 import PageHeader from '@/components/ui/PageHeader';

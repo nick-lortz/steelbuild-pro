@@ -230,6 +230,12 @@ export default function Labor() {
     setShowForm(true);
   };
 
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages'],
+    queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 10 * 60 * 1000
+  });
+
   const laborResources = useMemo(() => 
     resources.filter(r => r.type === 'labor' || r.type === 'subcontractor'),
     [resources]
@@ -578,6 +584,19 @@ export default function Labor() {
                       <SelectContent>
                         {projects.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Work Package</Label>
+                    <Select value={formData.work_package_id} onValueChange={(v) => setFormData({ ...formData, work_package_id: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                        <SelectValue placeholder="Select work package" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {workPackages.filter(wp => wp.project_id === formData.project_id).map(wp => (
+                          <SelectItem key={wp.id} value={wp.id}>{wp.wpid} - {wp.title}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

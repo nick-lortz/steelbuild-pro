@@ -103,6 +103,15 @@ export default function DeliveryWizard({ delivery, projects, onSubmit, onCancel,
     // Set scheduled_date from confirmed or requested
     formData.scheduled_date = formData.confirmed_date || formData.requested_date;
 
+    // Auto-calculate on_time if actual_arrival_date exists
+    if (formData.actual_arrival_date && formData.scheduled_date) {
+      const actual = new Date(formData.actual_arrival_date);
+      const scheduled = new Date(formData.scheduled_date);
+      const diffDays = Math.round((actual - scheduled) / (1000 * 60 * 60 * 24));
+      formData.on_time = diffDays <= 0;
+      formData.days_variance = diffDays;
+    }
+
     onSubmit(formData);
   };
 

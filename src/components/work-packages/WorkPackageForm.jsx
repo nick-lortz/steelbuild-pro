@@ -20,24 +20,18 @@ export default function WorkPackageForm({
 }) {
   const [formData, setFormData] = useState({
     project_id: projectId || '',
-    package_number: '',
-    name: '',
-    description: '',
-    phase: 'fabrication',
-    status: 'active',
-    sov_item_ids: [],
-    cost_code_ids: [],
-    tonnage: '',
-    piece_count: '',
+    wpid: '',
+    title: '',
+    scope_summary: '',
+    phase: 'pre_fab',
+    status: 'not_started',
+    budget_at_award: 0,
+    forecast_at_completion: 0,
+    percent_complete: 0,
     start_date: '',
-    target_date: '',
-    estimated_hours: '',
-    estimated_cost: '',
-    percent_complete: '',
-    assigned_to: '',
-    linked_document_ids: [],
+    end_date: '',
+    assigned_pm: '',
     linked_drawing_set_ids: [],
-    priority: 'medium',
     notes: ''
   });
 
@@ -45,24 +39,18 @@ export default function WorkPackageForm({
     if (pkg) {
       setFormData({
         project_id: pkg.project_id || projectId,
-        package_number: pkg.package_number || '',
-        name: pkg.name || '',
-        description: pkg.description || '',
-        phase: pkg.phase || 'fabrication',
-        status: pkg.status || 'active',
-        sov_item_ids: pkg.sov_item_ids || [],
-        cost_code_ids: pkg.cost_code_ids || [],
-        tonnage: pkg.tonnage || '',
-        piece_count: pkg.piece_count || '',
+        wpid: pkg.wpid || '',
+        title: pkg.title || '',
+        scope_summary: pkg.scope_summary || '',
+        phase: pkg.phase || 'pre_fab',
+        status: pkg.status || 'not_started',
+        budget_at_award: pkg.budget_at_award || 0,
+        forecast_at_completion: pkg.forecast_at_completion || 0,
+        percent_complete: pkg.percent_complete || 0,
         start_date: pkg.start_date ? pkg.start_date.split('T')[0] : '',
-        target_date: pkg.target_date ? pkg.target_date.split('T')[0] : '',
-        estimated_hours: pkg.estimated_hours || '',
-        estimated_cost: pkg.estimated_cost || '',
-        percent_complete: pkg.percent_complete || '',
-        assigned_to: pkg.assigned_to || '',
-        linked_document_ids: pkg.linked_document_ids || [],
+        end_date: pkg.end_date ? pkg.end_date.split('T')[0] : '',
+        assigned_pm: pkg.assigned_pm || '',
         linked_drawing_set_ids: pkg.linked_drawing_set_ids || [],
-        priority: pkg.priority || 'medium',
         notes: pkg.notes || ''
       });
     } else if (projectId) {
@@ -85,17 +73,15 @@ export default function WorkPackageForm({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.name) {
-      toast.error('Package name is required');
+    if (!formData.wpid || !formData.title) {
+      toast.error('WPID and Title are required');
       return;
     }
 
     const submitData = {
       ...formData,
-      tonnage: formData.tonnage ? parseFloat(formData.tonnage) : 0,
-      piece_count: formData.piece_count ? parseInt(formData.piece_count) : 0,
-      estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : 0,
-      estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : 0,
+      budget_at_award: formData.budget_at_award ? parseFloat(formData.budget_at_award) : 0,
+      forecast_at_completion: formData.forecast_at_completion ? parseFloat(formData.forecast_at_completion) : 0,
       percent_complete: formData.percent_complete ? parseFloat(formData.percent_complete) : 0
     };
 
@@ -108,38 +94,22 @@ export default function WorkPackageForm({
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-zinc-300 uppercase">Basic Information</h3>
         
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-zinc-200">Package Number</Label>
-            <Input
-              value={formData.package_number}
-              onChange={(e) => handleChange('package_number', e.target.value)}
-              placeholder="WP-001"
-              className="bg-zinc-800 border-zinc-700 text-white"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-zinc-200">Priority</Label>
-            <Select value={formData.priority} onValueChange={(v) => handleChange('priority', v)}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label className="text-zinc-200">WPID *</Label>
+          <Input
+            value={formData.wpid}
+            onChange={(e) => handleChange('wpid', e.target.value)}
+            placeholder="WP-001"
+            className="bg-zinc-800 border-zinc-700 text-white"
+            required
+          />
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-200">Package Name *</Label>
+          <Label className="text-zinc-200">Title *</Label>
           <Input
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
             placeholder="e.g., Level 2 North Wing"
             className="bg-zinc-800 border-zinc-700 text-white"
             required
@@ -147,11 +117,11 @@ export default function WorkPackageForm({
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-200">Description</Label>
+          <Label className="text-zinc-200">Scope Summary</Label>
           <Textarea
-            value={formData.description}
-            onChange={(e) => handleChange('description', e.target.value)}
-            placeholder="Scope details, special requirements..."
+            value={formData.scope_summary}
+            onChange={(e) => handleChange('scope_summary', e.target.value)}
+            placeholder="Detailed scope description..."
             className="bg-zinc-800 border-zinc-700 text-white"
             rows={3}
           />
@@ -165,11 +135,11 @@ export default function WorkPackageForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="detailing">Detailing</SelectItem>
-                <SelectItem value="fabrication">Fabrication</SelectItem>
+                <SelectItem value="pre_fab">Pre-Fab</SelectItem>
+                <SelectItem value="shop">Shop</SelectItem>
                 <SelectItem value="delivery">Delivery</SelectItem>
                 <SelectItem value="erection">Erection</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="punch">Punch</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -181,41 +151,57 @@ export default function WorkPackageForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="on_hold">On Hold</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      {/* Quantities */}
+      {/* Budget */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-zinc-300 uppercase">Quantities</h3>
+        <h3 className="text-sm font-semibold text-zinc-300 uppercase">Budget & Forecast</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-zinc-200">Tonnage</Label>
+            <Label className="text-zinc-200">Budget at Award</Label>
             <Input
               type="number"
               step="0.01"
-              value={formData.tonnage}
-              onChange={(e) => handleChange('tonnage', e.target.value)}
+              value={formData.budget_at_award}
+              onChange={(e) => handleChange('budget_at_award', e.target.value)}
               placeholder="0.00"
               className="bg-zinc-800 border-zinc-700 text-white"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-zinc-200">Piece Count</Label>
+            <Label className="text-zinc-200">Forecast at Completion</Label>
             <Input
               type="number"
-              value={formData.piece_count}
-              onChange={(e) => handleChange('piece_count', e.target.value)}
-              placeholder="0"
+              step="0.01"
+              value={formData.forecast_at_completion}
+              onChange={(e) => handleChange('forecast_at_completion', e.target.value)}
+              placeholder="0.00"
               className="bg-zinc-800 border-zinc-700 text-white"
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-zinc-200">% Complete</Label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            value={formData.percent_complete}
+            onChange={(e) => handleChange('percent_complete', e.target.value)}
+            placeholder="0"
+            className="bg-zinc-800 border-zinc-700 text-white"
+          />
         </div>
       </div>
 
@@ -234,99 +220,16 @@ export default function WorkPackageForm({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-zinc-200">Target Date</Label>
+            <Label className="text-zinc-200">End Date</Label>
             <Input
               type="date"
-              value={formData.target_date}
-              onChange={(e) => handleChange('target_date', e.target.value)}
+              value={formData.end_date}
+              onChange={(e) => handleChange('end_date', e.target.value)}
               className="bg-zinc-800 border-zinc-700 text-white"
             />
           </div>
         </div>
       </div>
-
-      {/* Estimates */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-zinc-300 uppercase">Estimates</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label className="text-zinc-200">Est. Hours</Label>
-            <Input
-              type="number"
-              step="0.1"
-              value={formData.estimated_hours}
-              onChange={(e) => handleChange('estimated_hours', e.target.value)}
-              placeholder="0"
-              className="bg-zinc-800 border-zinc-700 text-white"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-zinc-200">Est. Cost</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.estimated_cost}
-              onChange={(e) => handleChange('estimated_cost', e.target.value)}
-              placeholder="0.00"
-              className="bg-zinc-800 border-zinc-700 text-white"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-zinc-200">% Complete</Label>
-            <Input
-              type="number"
-              min="0"
-              max="100"
-              value={formData.percent_complete}
-              onChange={(e) => handleChange('percent_complete', e.target.value)}
-              placeholder="0"
-              className="bg-zinc-800 border-zinc-700 text-white"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* SOV Items */}
-      {sovItems.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-zinc-300 uppercase">SOV Line Items</h3>
-          <div className="max-h-48 overflow-y-auto bg-zinc-800/50 rounded border border-zinc-700 p-3 space-y-2">
-            {sovItems.map(sov => (
-              <div key={sov.id} className="flex items-center gap-2">
-                <Checkbox
-                  checked={formData.sov_item_ids.includes(sov.id)}
-                  onCheckedChange={() => toggleArrayItem('sov_item_ids', sov.id)}
-                />
-                <label className="text-sm text-zinc-200 cursor-pointer">
-                  {sov.sov_code} - {sov.description}
-                </label>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cost Codes */}
-      {costCodes.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-zinc-300 uppercase">Cost Codes</h3>
-          <div className="max-h-48 overflow-y-auto bg-zinc-800/50 rounded border border-zinc-700 p-3 space-y-2">
-            {costCodes.map(cc => (
-              <div key={cc.id} className="flex items-center gap-2">
-                <Checkbox
-                  checked={formData.cost_code_ids.includes(cc.id)}
-                  onCheckedChange={() => toggleArrayItem('cost_code_ids', cc.id)}
-                />
-                <label className="text-sm text-zinc-200 cursor-pointer">
-                  {cc.code} - {cc.name}
-                </label>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Drawing Sets */}
       {drawings.length > 0 && (
@@ -349,12 +252,12 @@ export default function WorkPackageForm({
       )}
 
       <div className="space-y-2">
-        <Label className="text-zinc-200">Assigned To (Email)</Label>
+        <Label className="text-zinc-200">Assigned PM (Email)</Label>
         <Input
           type="email"
-          value={formData.assigned_to}
-          onChange={(e) => handleChange('assigned_to', e.target.value)}
-          placeholder="user@company.com"
+          value={formData.assigned_pm}
+          onChange={(e) => handleChange('assigned_pm', e.target.value)}
+          placeholder="pm@company.com"
           className="bg-zinc-800 border-zinc-700 text-white"
         />
       </div>

@@ -460,8 +460,8 @@ export default function Schedule() {
               ))}
             </div>
 
-            {/* Status Filter (for list view only) */}
-            {(viewMode === 'list' || viewMode === 'phase' || viewMode === 'timeline') && (
+            {/* Status Filter (hide for network view) */}
+            {viewMode !== 'network' && viewMode !== 'gantt' && viewMode !== 'calendar' && (
               <div className="flex gap-1 border border-zinc-800 p-1">
                 {[
                   { value: 'all', label: 'ALL' },

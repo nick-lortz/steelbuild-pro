@@ -169,7 +169,7 @@ export default function ProjectDashboard() {
     });
 
     return metrics;
-  }, [projects, allTasks, documents, financials, expenses, sovItems]);
+  }, [projects, allTasks, workPackages, documents, financials, expenses, sovItems]);
 
   // Portfolio summary
   const portfolioSummary = useMemo(() => {

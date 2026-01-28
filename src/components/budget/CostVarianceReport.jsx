@@ -70,7 +70,7 @@ export default function CostVarianceReport({
   }, [workPackages, tasks, laborHours, equipmentUsage, expenses]);
 
   const chartData = analysis.map(item => ({
-    name: item.wpid || item.name.substring(0, 15),
+    name: item.wpid || (item.name ? item.name.substring(0, 15) : 'Unnamed'),
     Budget: item.budget,
     Actual: item.actual,
     Earned: item.earned

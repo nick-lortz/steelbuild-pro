@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles, LineChart } from 'lucide-react';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
@@ -17,6 +17,10 @@ import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
 import AutoReportGenerator from '@/components/reports/AutoReportGenerator';
 import AIForecastETC from '@/components/financials/AIForecastETC';
+import TrendForecast from '@/components/analytics/TrendForecast';
+import ProjectComparison from '@/components/analytics/ProjectComparison';
+import KPIDashboard from '@/components/analytics/KPIDashboard';
+import InteractiveDrillDown from '@/components/analytics/InteractiveDrillDown';
 import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
@@ -306,6 +310,18 @@ export default function Analytics() {
               <TrendingUp size={16} className="mr-2" />
               EVM Analysis
             </TabsTrigger>
+            <TabsTrigger value="comparison" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <BarChart3 size={16} className="mr-2" />
+              Multi-Project
+            </TabsTrigger>
+            <TabsTrigger value="kpi" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <TrendingUp size={16} className="mr-2" />
+              KPI Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="drilldown" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <LayoutDashboard size={16} className="mr-2" />
+              Drill-Down
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="unified" className="space-y-6">
@@ -385,6 +401,32 @@ export default function Analytics() {
               expenses={expenses}
               sovItems={sovItems}
               invoices={invoices}
+            />
+            <TrendForecast 
+              expenses={expenses}
+              financials={financials}
+              projectId={activeProjectId}
+            />
+          </TabsContent>
+
+          <TabsContent value="comparison" className="space-y-6">
+            <ProjectComparison 
+              projects={projects}
+              financials={financials}
+              tasks={tasks}
+            />
+          </TabsContent>
+
+          <TabsContent value="kpi" className="space-y-6">
+            <KPIDashboard metrics={{}} />
+          </TabsContent>
+
+          <TabsContent value="drilldown" className="space-y-6">
+            <InteractiveDrillDown
+              projects={projects}
+              financials={financials}
+              rfis={rfis}
+              changeOrders={changeOrders}
             />
           </TabsContent>
         </Tabs>

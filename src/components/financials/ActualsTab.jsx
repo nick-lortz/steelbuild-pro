@@ -228,7 +228,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowStandardDialog(false)}>Cancel</Button>
-              <Button onClick={handleAddStandards} disabled={bulkCreateMutation.isPending}>
+              <Button onClick={handleAddStandards} disabled={bulkCreateMutation.status === 'pending'}>
                 Add Selected
               </Button>
             </div>

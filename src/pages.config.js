@@ -78,6 +78,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
 import ProjectDashboard from './pages/ProjectDashboard';
+import ProjectPhotos from './pages/ProjectPhotos';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
@@ -90,7 +91,6 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ProjectPhotos from './pages/ProjectPhotos';
 import __Layout from './Layout.jsx';
 
 
@@ -126,6 +126,7 @@ export const PAGES = {
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
     "ProjectDashboard": ProjectDashboard,
+    "ProjectPhotos": ProjectPhotos,
     "Projects": Projects,
     "RFIs": RFIs,
     "Reports": Reports,
@@ -138,7 +139,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ProjectPhotos": ProjectPhotos,
 }
 
 export const pagesConfig = {

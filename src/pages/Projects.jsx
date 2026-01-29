@@ -311,7 +311,7 @@ export default function Projects() {
               <h1 className="text-4xl font-bold text-white tracking-tight">Projects</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-zinc-400 font-medium">{projects.length} Active Portfolio</p>
-                <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
               </div>
             </div>
           </div>

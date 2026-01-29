@@ -340,9 +340,27 @@ export default function DeliveryDetailPanel({
             <CardTitle className="text-sm">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            {delivery.delivery_status === 'draft' && delivery.scheduled_date && (
+              <Button 
+                onClick={() => onStatusChange(delivery.id, { delivery_status: 'requested' })}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                <Calendar size={14} className="mr-2" />
+                Submit Request
+              </Button>
+            )}
+            {delivery.delivery_status === 'requested' && (
+              <Button 
+                onClick={() => onStatusChange(delivery.id, { delivery_status: 'confirmed' })}
+                className="w-full bg-green-500 hover:bg-green-600 text-white"
+              >
+                <CheckCircle2 size={14} className="mr-2" />
+                Confirm Delivery
+              </Button>
+            )}
             {delivery.delivery_status === 'confirmed' && (
               <Button 
-                onClick={() => onStatusChange(delivery.id, 'in_transit')}
+                onClick={() => onStatusChange(delivery.id, { delivery_status: 'in_transit' })}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-black"
               >
                 <Truck size={14} className="mr-2" />
@@ -381,6 +399,15 @@ export default function DeliveryDetailPanel({
               >
                 <CheckCircle2 size={14} className="mr-2" />
                 Receive Items
+              </Button>
+            )}
+            {delivery.delivery_status === 'received' && (
+              <Button 
+                onClick={() => onStatusChange(delivery.id, { delivery_status: 'closed' })}
+                className="w-full bg-zinc-700 hover:bg-zinc-600 text-white"
+              >
+                <CheckCircle2 size={14} className="mr-2" />
+                Close Delivery
               </Button>
             )}
           </CardContent>

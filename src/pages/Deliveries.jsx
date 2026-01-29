@@ -223,6 +223,16 @@ export default function Deliveries() {
     // If updates is a string (old signature), convert to object
     const updateData = typeof updates === 'string' ? { delivery_status: updates } : updates;
     
+    // Auto-update scheduled_date if it's not set but we have confirmed or requested
+    if (!updateData.scheduled_date && !delivery.scheduled_date) {
+      updateData.scheduled_date = delivery.confirmed_date || delivery.requested_date;
+    }
+    
+    // Auto-advance status to requested if still draft
+    if (delivery.delivery_status === 'draft' && updateData.scheduled_date) {
+      updateData.delivery_status = updateData.delivery_status || 'requested';
+    }
+    
     updateMutation.mutate({
       id,
       data: updateData,

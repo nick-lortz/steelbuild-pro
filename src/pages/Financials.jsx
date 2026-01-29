@@ -36,10 +36,10 @@ export default function Financials() {
   const projects = React.useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter(p => 
-      p.project_manager === currentUser.email || 
-      p.superintendent === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
+    return allProjects.filter((p) =>
+    p.project_manager === currentUser.email ||
+    p.superintendent === currentUser.email ||
+    p.assigned_users && p.assigned_users.includes(currentUser.email)
     );
   }, [currentUser, allProjects]);
 
@@ -118,7 +118,7 @@ export default function Financials() {
   if (!selectedProject) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="border-b border-zinc-800 bg-black">
+        <div className="bg-black text-slate-50 border-b border-zinc-800">
           <div className="max-w-[1600px] mx-auto px-6 py-4">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Financials</h1>
@@ -134,7 +134,7 @@ export default function Financials() {
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
                 {projects.map((p) =>
-                  <SelectItem key={p.id} value={p.id}>
+                <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
                 )}
@@ -142,8 +142,8 @@ export default function Financials() {
             </Select>
           </div>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -162,7 +162,7 @@ export default function Financials() {
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
                 {projects.map((p) =>
-                  <SelectItem key={p.id} value={p.id}>
+                <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
                 )}
@@ -180,8 +180,8 @@ export default function Financials() {
             expenses={expenses}
             invoices={invoices}
             sovItems={sovItems}
-            useSOV={sovItems.length > 0}
-          />
+            useSOV={sovItems.length > 0} />
+
         </div>
 
         <Tabs defaultValue="sov" className="space-y-4">
@@ -202,19 +202,19 @@ export default function Financials() {
 
         <TabsContent value="budget">
           <BudgetTab
-            projectId={selectedProject}
-            budgetLines={budgetLines}
-            costCodes={costCodes}
-            canEdit={canEdit} />
+              projectId={selectedProject}
+              budgetLines={budgetLines}
+              costCodes={costCodes}
+              canEdit={canEdit} />
 
         </TabsContent>
 
         <TabsContent value="actuals">
           <ActualsTab
-            projectId={selectedProject}
-            expenses={expenses}
-            costCodes={costCodes}
-            canEdit={canEdit} />
+              projectId={selectedProject}
+              expenses={expenses}
+              costCodes={costCodes}
+              canEdit={canEdit} />
 
         </TabsContent>
       </Tabs>
@@ -224,6 +224,6 @@ export default function Financials() {
           <ETCManager projectId={selectedProject} expenses={expenses} estimatedCosts={estimatedCosts} />
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

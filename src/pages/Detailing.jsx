@@ -36,6 +36,7 @@ import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import BatchActionsPanel from '@/components/drawings/BatchActionsPanel';
 import RevisionHistory from '@/components/drawings/RevisionHistory';
+import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
 
 // CONTROL ZONES - Production Control System
 const CONTROL_ZONES = {
@@ -122,6 +123,7 @@ export default function Detailing() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedSets, setSelectedSets] = useState([]);
   const [revisionHistorySetId, setRevisionHistorySetId] = useState(null);
+  const [detailViewSetId, setDetailViewSetId] = useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -702,7 +704,9 @@ export default function Detailing() {
                     <div className="text-center">
                       <div className={cn(
                         "text-lg font-bold font-mono",
-                        ds.daysSinceMovement > 14 ? "text-red-500" : ds.daysSinceMovement > 7 ? "text-amber-500" : "text-zinc-400"
+                        ds.status === 'FFF' ? "text-green-500" : 
+                        ds.daysSinceMovement > 14 ? "text-red-500" : 
+                        ds.daysSinceMovement > 7 ? "text-amber-500" : "text-zinc-400"
                       )}>
                         {ds.daysSinceMovement}d
                       </div>
@@ -773,11 +777,15 @@ export default function Detailing() {
                 const ActionIcon = ACTION_STATUSES[ds.actionStatus]?.icon || Activity;
 
                 return (
-                  <Card key={ds.id} className={cn(
-                    "border hover:border-zinc-600 transition-colors",
-                    isSelected ? "border-amber-500" : "border-zinc-800",
-                    CONTROL_ZONES[ds.zone]?.borderColor
-                  )}>
+                  <Card 
+                    key={ds.id} 
+                    className={cn(
+                      "border hover:border-zinc-600 transition-colors cursor-pointer",
+                      isSelected ? "border-amber-500" : "border-zinc-800",
+                      CONTROL_ZONES[ds.zone]?.borderColor
+                    )}
+                    onClick={() => setDetailViewSetId(ds.id)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         {/* Left: Zone Indicator */}
@@ -831,7 +839,9 @@ export default function Detailing() {
                               <span className="text-zinc-600">Last Movement:</span> 
                               <span className={cn(
                                 "font-mono ml-1",
-                                ds.daysSinceMovement > 14 ? "text-red-500" : ds.daysSinceMovement > 7 ? "text-amber-500" : "text-white"
+                                ds.status === 'FFF' ? "text-green-500" :
+                                ds.daysSinceMovement > 14 ? "text-red-500" : 
+                                ds.daysSinceMovement > 7 ? "text-amber-500" : "text-white"
                               )}>
                                 {ds.daysSinceMovement}d ago
                               </span>
@@ -903,11 +913,15 @@ export default function Detailing() {
                             </Button>
                             <Button 
                               size="sm" 
-                              variant="outline" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDetailViewSetId(ds.id);
+                              }}
                               className="h-7 text-[10px] flex-1 border-zinc-700"
                             >
-                              <MessageSquare size={12} className="mr-1" />
-                              RFI
+                              <Edit3 size={12} className="mr-1" />
+                              Edit
                             </Button>
                           </div>
                         </div>
@@ -950,6 +964,15 @@ export default function Detailing() {
         drawingSetId={revisionHistorySetId}
         open={!!revisionHistorySetId}
         onOpenChange={(open) => !open && setRevisionHistorySetId(null)}
+      />
+
+      {/* Drawing Set Detail Dialog */}
+      <DrawingSetDetailDialog
+        drawingSetId={detailViewSetId}
+        open={!!detailViewSetId}
+        onOpenChange={(open) => !open && setDetailViewSetId(null)}
+        users={users}
+        rfis={rfis}
       />
 
       {/* Create Drawing Set Dialog */}

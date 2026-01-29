@@ -5,7 +5,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, X, Clock, Building2, Users, Activity, AlertTriangle, Zap, Calendar } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, X, Clock, Building2, Users, Activity, AlertTriangle, Zap } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import CalendarGrid from '@/components/calendar/CalendarGrid';
 import CalendarEventList from '@/components/calendar/CalendarEventList';
@@ -479,7 +479,7 @@ export default function Calendar() {
         <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-yellow-500/10 transition-all cursor-pointer hover:border-yellow-500/40">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-yellow-400" />
+              <CalendarIcon className="w-4 h-4 text-yellow-400" />
             </div>
             <p className="text-xs text-zinc-400 font-medium">Due This Week</p>
           </div>

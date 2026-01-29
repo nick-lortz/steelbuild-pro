@@ -97,6 +97,20 @@ export default function SOVManager({ projectId, canEdit }) {
     onError: (err) => toast.error(err?.message ?? 'Failed to add SOV line')
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (items) => {
+      return base44.entities.SOVItem.bulkCreate(
+        items.map(item => ({ ...item, project_id: projectId }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      toast.success('Standard SOV items added');
+      setShowBulkAddDialog(false);
+    },
+    onError: (err) => toast.error(err?.message ?? 'Failed to add SOV items')
+  });
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       // Validate if updating percent_complete

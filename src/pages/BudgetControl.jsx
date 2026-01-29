@@ -86,6 +86,12 @@ export default function BudgetControl() {
 
   const selectedWP = workPackages.find((wp) => wp.id === selectedWPId);
 
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', activeProjectId],
+    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
   if (!activeProjectId) {
     return (
       <div className="p-6 space-y-6">

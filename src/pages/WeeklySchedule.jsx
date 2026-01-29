@@ -55,8 +55,10 @@ export default function WeeklySchedule() {
 
   const createEventMutation = useMutation({
     mutationFn: async (eventData) => {
+      const action = selectedEvent ? 'updateEvent' : 'createEvent';
       const response = await base44.functions.invoke('calendarSync', {
-        action: 'createEvent',
+        action,
+        eventId: selectedEvent?.id,
         eventData: {
           summary: eventData.summary,
           description: eventData.description,
@@ -77,6 +79,7 @@ export default function WeeklySchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setShowEventDialog(false);
+      setSelectedEvent(null);
       resetEventForm();
     },
   });
@@ -304,15 +307,36 @@ export default function WeeklySchedule() {
                               <p className="text-sm text-zinc-500 mt-2">{event.description}</p>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openNoteDialog(event)}
-                            className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
-                          >
-                            <FileText size={16} className="mr-1" />
-                            {eventNote ? 'View Notes' : 'Add Notes'}
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedEvent(event);
+                                setEventForm({
+                                  summary: event.summary,
+                                  description: event.description || '',
+                                  start: event.start.dateTime ? new Date(event.start.dateTime).toISOString().slice(0, 16) : '',
+                                  end: event.end.dateTime ? new Date(event.end.dateTime).toISOString().slice(0, 16) : '',
+                                  attendees: event.attendees?.map(a => a.email).join(', ') || '',
+                                });
+                                setShowEventDialog(true);
+                              }}
+                              className="text-zinc-400 hover:text-white hover:bg-zinc-700"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openNoteDialog(event)}
+                              className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+                            >
+                              <FileText size={16} className="mr-1" />
+                              {eventNote ? 'Notes' : 'Add Notes'}
+                            </Button>
+                          </div>
                         </div>
 
                         {eventNote && (eventNote.pre_meeting_notes || eventNote.follow_up_notes) && (
@@ -362,10 +386,16 @@ export default function WeeklySchedule() {
       )}
 
       {/* Create Event Dialog */}
-      <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+      <Dialog open={showEventDialog} onOpenChange={(open) => {
+        setShowEventDialog(open);
+        if (!open) {
+          setSelectedEvent(null);
+          resetEventForm();
+        }
+      }}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
-            <DialogTitle>Create Calendar Event</DialogTitle>
+            <DialogTitle>{selectedEvent ? 'Edit Event' : 'Create Calendar Event'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateEvent} className="space-y-4">
             <div className="space-y-2">
@@ -438,7 +468,7 @@ export default function WeeklySchedule() {
                 disabled={createEventMutation.isPending}
                 className="bg-amber-500 hover:bg-amber-600 text-black"
               >
-                {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+                {createEventMutation.isPending ? (selectedEvent ? 'Updating...' : 'Creating...') : (selectedEvent ? 'Update Event' : 'Create Event')}
               </Button>
             </div>
           </form>

@@ -225,12 +225,19 @@ export default function WorkPackages() {
   {
     header: 'Package',
     accessor: 'wpid',
-    render: (pkg) =>
-    <div>
-          <div className="text-sm text-white font-medium">{pkg.title}</div>
-          <div className="font-mono text-xs text-zinc-500">{pkg.wpid || pkg.id.slice(0, 8)}</div>
+    render: (pkg) => {
+      const project = projects.find(p => p.id === pkg.project_id);
+      return (
+        <div>
+          <div className="text-sm text-white font-bold">{pkg.title}</div>
+          <div className="font-mono text-xs text-amber-400 mt-0.5">{pkg.wpid || pkg.id.slice(0, 8)}</div>
+          <div className="text-xs text-zinc-500 mt-0.5">{project?.project_number}</div>
+          {pkg.scope_summary && (
+            <div className="text-xs text-zinc-600 mt-1 line-clamp-1">{pkg.scope_summary}</div>
+          )}
         </div>
-
+      );
+    }
   },
   {
     header: 'Phase',
@@ -239,6 +246,15 @@ export default function WorkPackages() {
   {
     header: 'Status',
     render: (pkg) => <StatusBadge status={pkg.status} />
+  },
+  {
+    header: 'Budget / Forecast',
+    render: (pkg) => (
+      <div className="text-sm">
+        <div className="text-white font-mono">${((pkg.budget_at_award || 0) / 1000).toFixed(0)}K</div>
+        <div className="text-xs text-zinc-500">${((pkg.forecast_at_completion || 0) / 1000).toFixed(0)}K est</div>
+      </div>
+    )
   },
   {
     header: 'Progress',
@@ -252,12 +268,6 @@ export default function WorkPackages() {
           </div>
           <span className="text-sm text-zinc-400">{pkg.percent_complete || 0}%</span>
         </div>
-
-  },
-  {
-    header: 'Tonnage',
-    render: (pkg) =>
-    <div className="text-zinc-200">{pkg.tonnage ? `${pkg.tonnage} tons` : '-'}</div>
 
   },
   {

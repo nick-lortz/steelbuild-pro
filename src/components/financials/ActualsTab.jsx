@@ -206,6 +206,36 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
         </CardContent>
       </Card>
 
+      <Dialog open={showStandardDialog} onOpenChange={setShowStandardDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Standard Expense Categories</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {STANDARD_EXPENSE_CATEGORIES.map(({ category, label }) => (
+                <div key={category} className="flex items-center gap-2">
+                  <Checkbox
+                    id={category}
+                    checked={selectedCategories[category] || false}
+                    onCheckedChange={(checked) =>
+                      setSelectedCategories({ ...selectedCategories, [category]: checked })
+                    }
+                  />
+                  <label htmlFor={category} className="text-sm font-medium cursor-pointer">{label}</label>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowStandardDialog(false)}>Cancel</Button>
+              <Button onClick={handleAddStandards} disabled={bulkCreateMutation.isPending}>
+                Add Selected
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>

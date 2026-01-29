@@ -1,14 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { RefreshCw, TrendingUp, TrendingDown, DollarSign, Users } from 'lucide-react';
+import { 
+  RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
+  Building2, AlertTriangle, Clock, Flag, Activity, Sparkles 
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
 import { differenceInDays, addDays } from 'date-fns';
 import { Card } from "@/components/ui/card";
-import { Building2, AlertTriangle, Clock, Flag, Activity, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 

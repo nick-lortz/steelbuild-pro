@@ -515,6 +515,47 @@ export default function SOVManager({ projectId, canEdit }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showBulkAddDialog} onOpenChange={setShowBulkAddDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Standard SOV Items</DialogTitle>
+            <DialogDescription>
+              This will add 15 standard SOV line items to your project. You can adjust scheduled values after creation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted">
+                  <tr>
+                    <th className="text-left p-2">Code</th>
+                    <th className="text-left p-2">Description</th>
+                    <th className="text-left p-2">Category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {standardSOVItems.map((item, idx) => (
+                    <tr key={idx} className="border-t">
+                      <td className="p-2 font-mono">{item.sov_code}</td>
+                      <td className="p-2">{item.description}</td>
+                      <td className="p-2 capitalize">{item.sov_category}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowBulkAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => bulkCreateMutation.mutate(standardSOVItems)}>
+                Add All Items
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

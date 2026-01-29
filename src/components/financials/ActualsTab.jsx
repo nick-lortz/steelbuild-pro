@@ -114,9 +114,20 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
 
   const columns = [
     {
-      header: 'Cost Code',
+      header: 'Code',
       accessor: 'cost_code_id',
-      render: (row) => getCostCodeName(row.cost_code_id)
+      render: (row) => {
+        const code = costCodes.find(c => c.id === row.cost_code_id);
+        return code ? <span className="font-mono font-semibold text-amber-400">{code.code}</span> : '-';
+      }
+    },
+    {
+      header: 'Code Description',
+      accessor: 'cost_code_id',
+      render: (row) => {
+        const code = costCodes.find(c => c.id === row.cost_code_id);
+        return code ? <span className="text-xs text-zinc-300">{code.name}</span> : '—';
+      }
     },
     {
       header: 'Date',
@@ -126,7 +137,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
     {
       header: 'Description',
       accessor: 'description',
-      render: (row) => <span className="truncate max-w-xs">{row.description}</span>
+      render: (row) => <span className="truncate max-w-xs text-xs text-zinc-400">{row.description}</span>
     },
     {
       header: 'Vendor',

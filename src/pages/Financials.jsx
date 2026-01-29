@@ -13,6 +13,7 @@ import SOVManager from '@/components/sov/SOVManager';
 import InvoiceManager from '@/components/sov/InvoiceManager';
 import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
 import JobStatusReport from '@/components/sov/JobStatusReport';
+import CostCodeManager from '@/components/financials/CostCodeManager';
 
 
 export default function Financials() {
@@ -183,6 +184,13 @@ export default function Financials() {
             useSOV={sovItems.length > 0} />
 
         </div>
+
+        {/* Cost Code Manager - Always visible for setup */}
+        {canEdit && (
+          <div className="mb-6">
+            <CostCodeManager />
+          </div>
+        )}
 
         <Tabs defaultValue="sov" className="space-y-4">
           <TabsList className="bg-zinc-900 border border-zinc-800">

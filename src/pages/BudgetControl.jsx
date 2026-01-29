@@ -11,6 +11,8 @@ import PageHeader from '@/components/ui/PageHeader';
 import BudgetManager from '@/components/budget/BudgetManager';
 import BudgetAlerts from '@/components/budget/BudgetAlerts';
 import FinancialKPIs from '@/components/financials/FinancialKPIs';
+import BudgetOverviewChart from '@/components/budget/BudgetOverviewChart';
+import CostBreakdownChart from '@/components/budget/CostBreakdownChart';
 import { toast } from '@/components/ui/notifications';
 
 export default function BudgetControl() {
@@ -164,6 +166,10 @@ export default function BudgetControl() {
             sovItems={sovItems}
             useSOV={sovItems.length > 0}
           />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <BudgetOverviewChart financials={financials} expenses={expenses} />
+            <CostBreakdownChart expenses={expenses} />
+          </div>
         </TabsContent>
 
         <TabsContent value="by-package" className="space-y-4">

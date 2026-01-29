@@ -318,8 +318,8 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Month Navigation - Enhanced */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Controls & Navigation */}
+      <div className="flex items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -344,12 +344,14 @@ export default function Calendar() {
           </Button>
         </div>
 
-        <Tabs value={view} onValueChange={setView}>
-          <TabsList className="bg-zinc-900/50 border border-zinc-800">
-            <TabsTrigger value="month" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">Month</TabsTrigger>
-            <TabsTrigger value="list" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">List</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2">
+          <Tabs value={view} onValueChange={setView}>
+            <TabsList className="bg-zinc-900/50 border border-zinc-800">
+              <TabsTrigger value="month" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">Month</TabsTrigger>
+              <TabsTrigger value="list" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">List</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {/* Filters */}
@@ -428,73 +430,71 @@ export default function Calendar() {
         )}
       </div>
 
-      {/* Event Count Summary - Modern Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-blue-500/10 transition-all">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-              <Clock className="w-4 h-4 text-blue-400" />
+      {/* KPI Dashboard - Real-time Metrics */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {/* Critical Path Items */}
+        <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-red-500/10 transition-all cursor-pointer hover:border-red-500/40" 
+          onClick={() => {/* Filter to critical path */}}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+              </div>
+              <p className="text-xs text-zinc-400 font-medium">Critical Path</p>
             </div>
-            <p className="text-xs text-zinc-400 font-medium">Tasks</p>
-          </div>
-          <p className="text-2xl font-bold text-blue-400">
-            {viewEvents.filter(e => e.type === 'task').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-purple-500/10 transition-all">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-purple-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Projects</p>
-          </div>
-          <p className="text-2xl font-bold text-purple-400">
-            {viewEvents.filter(e => e.type === 'project').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/10 transition-all">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
-              <Users className="w-4 h-4 text-green-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Resources</p>
-          </div>
-          <p className="text-2xl font-bold text-green-400">
-            {viewEvents.filter(e => e.type === 'allocation').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-amber-500/10 transition-all">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-              <Activity className="w-4 h-4 text-amber-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Work Packages</p>
-          </div>
-          <p className="text-2xl font-bold text-amber-400">
-            {viewEvents.filter(e => e.type === 'work_package').length}
-          </p>
-        </div>
-        <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-red-500/10 transition-all">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Reviews Due</p>
+            <span className="text-[10px] text-red-400 bg-red-500/20 px-2 py-1 rounded">HIGH</span>
           </div>
           <p className="text-2xl font-bold text-red-400">
-            {viewEvents.filter(e => e.type === 'review').length}
+            {viewEvents.filter(e => e.is_critical).length}
           </p>
+          <p className="text-[10px] text-zinc-500 mt-1">No float remaining</p>
         </div>
-        <div className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-indigo-500/10 transition-all">
+
+        {/* Overdue Items */}
+        <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-orange-500/10 transition-all cursor-pointer hover:border-orange-500/40">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-              <CalendarIcon className="w-4 h-4 text-indigo-400" />
+            <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-orange-400" />
             </div>
-            <p className="text-xs text-zinc-400 font-medium">Meetings</p>
+            <p className="text-xs text-zinc-400 font-medium">Overdue</p>
           </div>
-          <p className="text-2xl font-bold text-indigo-400">
-            {viewEvents.filter(e => e.type === 'meeting').length}
+          <p className="text-2xl font-bold text-orange-400">
+            {viewEvents.filter(e => new Date(e.end_date) < new Date() && e.status !== 'completed').length}
           </p>
+          <p className="text-[10px] text-zinc-500 mt-1">Action required</p>
+        </div>
+
+        {/* Due This Week */}
+        <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-yellow-500/10 transition-all cursor-pointer hover:border-yellow-500/40">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+              <Calendar className="w-4 h-4 text-yellow-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Due This Week</p>
+          </div>
+          <p className="text-2xl font-bold text-yellow-400">
+            {viewEvents.filter(e => {
+              const d = new Date(e.end_date);
+              const now = new Date();
+              const week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+              return d >= now && d <= week;
+            }).length}
+          </p>
+          <p className="text-[10px] text-zinc-500 mt-1">Monitor closely</p>
+        </div>
+
+        {/* Resource Conflicts */}
+        <div className="bg-gradient-to-br from-pink-500/10 to-pink-600/5 border border-pink-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-pink-500/10 transition-all cursor-pointer hover:border-pink-500/40">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+              <Users className="w-4 h-4 text-pink-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Conflicts</p>
+          </div>
+          <p className="text-2xl font-bold text-pink-400">
+            {viewEvents.filter(e => e.has_resource_conflict).length}
+          </p>
+          <p className="text-[10px] text-zinc-500 mt-1">Resource overlap</p>
         </div>
       </div>
 

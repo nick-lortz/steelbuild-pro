@@ -75,6 +75,41 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
     }
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: (expenses) => Promise.all(expenses.map(e => backend.createExpense(e))),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
+      toast.success('Standard expense lines added');
+      setShowStandardDialog(false);
+      setSelectedCategories({});
+    }
+  });
+
+  const handleAddStandards = () => {
+    const selected = Object.entries(selectedCategories)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([category]) => category);
+
+    if (!selected.length) {
+      toast.error('Select at least one category');
+      return;
+    }
+
+    const newExpenses = selected.map(category => ({
+      project_id: projectId,
+      cost_code_id: costCodes.find(c => c.category === category)?.id || '',
+      expense_date: format(new Date(), 'yyyy-MM-dd'),
+      description: `${category.charAt(0).toUpperCase() + category.slice(1)} expense`,
+      vendor: '',
+      amount: 0,
+      invoice_number: '',
+      payment_status: 'pending'
+    }));
+
+    bulkCreateMutation.mutate(newExpenses);
+  };
+
   const getCostCodeName = (id) => costCodes.find(c => c.id === id)?.name || '-';
 
   const columns = [

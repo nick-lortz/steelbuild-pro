@@ -27,7 +27,8 @@ import {
   Ban,
   ExternalLink,
   TrendingUp,
-  Activity } from
+  Activity,
+  Trash2 } from
 'lucide-react';
 import { format, differenceInDays, differenceInCalendarDays, isPast, parseISO, isValid } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
@@ -244,6 +245,15 @@ export default function Detailing() {
       toast.success('Batch update complete');
     },
     onError: () => toast.error('Batch update failed')
+  });
+
+  const deleteDrawingSetMutation = useMutation({
+    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+      toast.success('Drawing set deleted');
+    },
+    onError: () => toast.error('Delete failed')
   });
 
   const handleSelectSet = (setId, checked) => {
@@ -922,6 +932,19 @@ export default function Detailing() {
                             >
                               <Edit3 size={12} className="mr-1" />
                               Edit
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Delete "${ds.set_name}"? This cannot be undone.`)) {
+                                  deleteDrawingSetMutation.mutate(ds.id);
+                                }
+                              }}
+                              className="h-7 text-[10px] border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400"
+                            >
+                              <Trash2 size={12} />
                             </Button>
                           </div>
                         </div>

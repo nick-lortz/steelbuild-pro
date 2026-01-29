@@ -245,7 +245,7 @@ export default function Dashboard() {
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-blue-500/30">
-              <Building2 className="w-8 h-8 text-white" />
+              <Building className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>

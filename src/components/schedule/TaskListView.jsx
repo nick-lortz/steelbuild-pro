@@ -42,24 +42,29 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
     setCollapsedPhases(newSet);
   };
 
-  const getVariance = (task) => {
-    if (!task.baseline_end || !task.end_date) return null;
+  const safeParse = (dateStr) => {
+    if (!dateStr) return null;
     try {
-      const baseline = parseISO(task.baseline_end);
-      const current = parseISO(task.end_date);
-      return differenceInDays(current, baseline);
+      const parsed = parseISO(dateStr);
+      return isNaN(parsed.getTime()) ? null : parsed;
     } catch {
       return null;
     }
   };
 
+  const getVariance = (task) => {
+    if (!task.baseline_end || !task.end_date) return null;
+    const baseline = safeParse(task.baseline_end);
+    const current = safeParse(task.end_date);
+    if (!baseline || !current) return null;
+    return differenceInDays(current, baseline);
+  };
+
   const isOverdue = (task) => {
     if (task.status === 'completed' || !task.end_date) return false;
-    try {
-      return isPast(parseISO(task.end_date));
-    } catch {
-      return false;
-    }
+    const endDate = safeParse(task.end_date);
+    if (!endDate) return false;
+    return isPast(endDate);
   };
 
   const isAtRisk = (task) => {

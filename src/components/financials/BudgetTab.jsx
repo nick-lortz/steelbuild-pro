@@ -305,6 +305,43 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showBulkAddDialog} onOpenChange={setShowBulkAddDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add Standard Budget Lines</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">
+            This will create 15 standard cost codes and budget lines. You can adjust budget amounts after creation.
+          </p>
+          <div className="border rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="text-left p-2">Code</th>
+                  <th className="text-left p-2">Name</th>
+                  <th className="text-left p-2">Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standardBudgetItems.map((item, idx) => (
+                  <tr key={idx} className="border-t">
+                    <td className="p-2 font-mono">{item.code}</td>
+                    <td className="p-2">{item.name}</td>
+                    <td className="p-2 capitalize">{item.category}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowBulkAddDialog(false)}>Cancel</Button>
+            <Button onClick={() => bulkCreateMutation.mutate(standardBudgetItems)}>
+              Add All Lines
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

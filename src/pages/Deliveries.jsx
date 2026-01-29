@@ -353,12 +353,12 @@ export default function Deliveries() {
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-black">
+      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Management</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">
+              <p className="text-xs text-zinc-400 font-mono mt-1">
                 {kpis.total} TOTAL • {kpis.today} TODAY • {kpis.onTimePercent.toFixed(0)}% ON-TIME
               </p>
             </div>

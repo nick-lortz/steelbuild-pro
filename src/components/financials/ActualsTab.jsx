@@ -184,10 +184,16 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-base font-semibold">Actual Costs</h3>
-        <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
-          <Plus size={16} className="mr-1" />
-          Add Expense
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowStandardDialog(true)} variant="outline" disabled={!canEdit} size="sm">
+            <Plus size={16} className="mr-1" />
+            Add Standard
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
+            <Plus size={16} className="mr-1" />
+            Add Expense
+          </Button>
+        </div>
       </div>
 
       <Card>

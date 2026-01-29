@@ -293,53 +293,61 @@ export default function Calendar() {
     .filter(f => f !== 'all').length;
 
   return (
-    <div>
-      <PageHeader
-        title="Calendar"
-        subtitle="Unified view of projects, tasks, resources, and deadlines"
-        showBackButton={false}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentDate(new Date())}
-              className="border-zinc-700"
-            >
-              Today
-            </Button>
+    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      {/* Modern Calendar Header */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-600/10 via-blue-600/10 to-indigo-600/10 border border-cyan-500/20 p-8">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-500 flex items-center justify-center shadow-2xl shadow-cyan-500/30">
+              <CalendarIcon className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white tracking-tight">Calendar</h1>
+              <p className="text-zinc-400 font-medium mt-1">Unified project timeline & schedule</p>
+            </div>
           </div>
-        }
-      />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentDate(new Date())}
+            className="bg-white/5 border-white/10 text-white hover:bg-white/10 backdrop-blur-xl"
+          >
+            Today
+          </Button>
+        </div>
+      </div>
 
-      {/* Month Navigation */}
+      {/* Month Navigation - Enhanced */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="icon"
             onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-            className="border-zinc-700"
+            className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-white"
           >
             <ChevronLeft size={18} />
           </Button>
-          <h2 className="text-xl font-bold text-white min-w-[200px] text-center">
-            {format(currentDate, 'MMMM yyyy')}
-          </h2>
+          <div className="px-6 py-2 rounded-xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 border border-cyan-500/20">
+            <h2 className="text-xl font-bold text-white min-w-[200px] text-center">
+              {format(currentDate, 'MMMM yyyy')}
+            </h2>
+          </div>
           <Button
             variant="outline"
             size="icon"
             onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            className="border-zinc-700"
+            className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-white"
           >
             <ChevronRight size={18} />
           </Button>
         </div>
 
         <Tabs value={view} onValueChange={setView}>
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="month">Month</TabsTrigger>
-            <TabsTrigger value="list">List</TabsTrigger>
+          <TabsList className="bg-zinc-900/50 border border-zinc-800">
+            <TabsTrigger value="month" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">Month</TabsTrigger>
+            <TabsTrigger value="list" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">List</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -420,41 +428,71 @@ export default function Calendar() {
         )}
       </div>
 
-      {/* Event Count Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-          <p className="text-xs text-zinc-400">Tasks</p>
-          <p className="text-lg font-bold text-blue-400">
+      {/* Event Count Summary - Modern Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+        <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-blue-500/10 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+              <Clock className="w-4 h-4 text-blue-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Tasks</p>
+          </div>
+          <p className="text-2xl font-bold text-blue-400">
             {viewEvents.filter(e => e.type === 'task').length}
           </p>
         </div>
-        <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-          <p className="text-xs text-zinc-400">Projects</p>
-          <p className="text-lg font-bold text-purple-400">
+        <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-purple-500/10 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-purple-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Projects</p>
+          </div>
+          <p className="text-2xl font-bold text-purple-400">
             {viewEvents.filter(e => e.type === 'project').length}
           </p>
         </div>
-        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-          <p className="text-xs text-zinc-400">Resources</p>
-          <p className="text-lg font-bold text-green-400">
+        <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/10 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+              <Users className="w-4 h-4 text-green-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Resources</p>
+          </div>
+          <p className="text-2xl font-bold text-green-400">
             {viewEvents.filter(e => e.type === 'allocation').length}
           </p>
         </div>
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-          <p className="text-xs text-zinc-400">Work Packages</p>
-          <p className="text-lg font-bold text-amber-400">
+        <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-amber-500/10 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+              <Activity className="w-4 h-4 text-amber-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Work Packages</p>
+          </div>
+          <p className="text-2xl font-bold text-amber-400">
             {viewEvents.filter(e => e.type === 'work_package').length}
           </p>
         </div>
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-          <p className="text-xs text-zinc-400">Reviews Due</p>
-          <p className="text-lg font-bold text-red-400">
+        <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-red-500/10 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Reviews Due</p>
+          </div>
+          <p className="text-2xl font-bold text-red-400">
             {viewEvents.filter(e => e.type === 'review').length}
           </p>
         </div>
-        <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-3">
-          <p className="text-xs text-zinc-400">Meetings</p>
-          <p className="text-lg font-bold text-indigo-400">
+        <div className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/5 border border-indigo-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-indigo-500/10 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+              <CalendarIcon className="w-4 h-4 text-indigo-400" />
+            </div>
+            <p className="text-xs text-zinc-400 font-medium">Meetings</p>
+          </div>
+          <p className="text-2xl font-bold text-indigo-400">
             {viewEvents.filter(e => e.type === 'meeting').length}
           </p>
         </div>

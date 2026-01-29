@@ -298,37 +298,48 @@ export default function Projects() {
   };
 
   return (
-    <div className="min-h-screen pb-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">Project Portfolio</h1>
-          <p className="text-xs text-muted-foreground font-mono mt-1">{projects.length} PROJECTS</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="gap-2"
-          >
-            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-            Refresh
-          </Button>
-          {can.createProject && (
-            <Button
+    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      {/* Modern Header */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-orange-600/10 border border-purple-500/20 p-8">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center shadow-2xl shadow-purple-500/30">
+              <Building2 className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white tracking-tight">Projects</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-zinc-400 font-medium">{projects.length} Active Portfolio</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse"></span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
               size="sm"
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10 backdrop-blur-xl"
             >
-              <Plus size={14} className="mr-1" />
-              New Project
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+              Refresh
             </Button>
-          )}
+            {can.createProject && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setFormData(initialFormState);
+                  setShowForm(true);
+                }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-lg shadow-purple-500/30"
+              >
+                <Plus size={14} className="mr-1" />
+                New Project
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -14,8 +14,27 @@ import * as backend from '../services/backend';
 export default function BudgetTab({ projectId, budgetLines = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showBulkAddDialog, setShowBulkAddDialog] = useState(false);
   const [formData, setFormData] = useState({ cost_code_id: '', category: 'labor', original_budget: 0 });
   const [editingValues, setEditingValues] = useState({});
+
+  const standardBudgetItems = [
+    { code: '01', name: 'Detailing', category: 'subcontract' },
+    { code: '02', name: 'Anchor Bolts / Templates', category: 'material' },
+    { code: '03', name: 'Joists', category: 'material' },
+    { code: '04', name: 'Deck', category: 'material' },
+    { code: '05', name: 'Raw Materials', category: 'material' },
+    { code: '06', name: 'Shop Labor & Fabrication', category: 'labor' },
+    { code: '07', name: 'Field Labor - Structural', category: 'labor' },
+    { code: '08', name: 'Field Labor - Misc.', category: 'labor' },
+    { code: '09', name: 'Equipment', category: 'equipment' },
+    { code: '10', name: 'Shipping', category: 'labor' },
+    { code: '11', name: 'Deck Install', category: 'subcontract' },
+    { code: '12', name: 'Special Coatings', category: 'material' },
+    { code: '13', name: 'Misc.', category: 'other' },
+    { code: '14', name: 'Change Orders', category: 'other' },
+    { code: '15', name: 'PM/Admin', category: 'other' }
+  ];
 
   const createMutation = useMutation({
     mutationFn: (data) => backend.createBudgetLine({

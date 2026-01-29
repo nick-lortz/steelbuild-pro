@@ -66,19 +66,25 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
     queryKey: ['portfolio-analytics', targetProjectIds],
     queryFn: async () => {
       const data = await Promise.all(targetProjectIds.map(async (pid) => {
-        const [project, workPackages, tasks, financials, deliveries, drawingSets] = await Promise.all([
+        const [project, workPackages, tasks, financials, deliveries, drawingSets, expenses] = await Promise.all([
           base44.entities.Project.filter({ id: pid }).then(p => p[0]),
           base44.entities.WorkPackage.filter({ project_id: pid }),
           base44.entities.Task.filter({ project_id: pid }),
           base44.entities.Financial.filter({ project_id: pid }),
           base44.entities.Delivery.filter({ project_id: pid }),
-          base44.entities.DrawingSet.filter({ project_id: pid })
+          base44.entities.DrawingSet.filter({ project_id: pid }),
+          base44.entities.Expense.filter({ project_id: pid })
         ]);
 
         const today = new Date().toISOString().split('T')[0];
-        const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
-        const actualCost = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-        const forecastCost = financials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0);
+        const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || f.budget_amount || 0), 0);
+        
+        // Actual costs come from Expenses (paid/approved only)
+        const actualCost = expenses
+          .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+          .reduce((sum, e) => sum + (e.amount || 0), 0);
+        
+        const forecastCost = financials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0) || actualCost;
 
         return {
           project,

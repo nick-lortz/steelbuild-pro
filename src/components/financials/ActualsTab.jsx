@@ -16,6 +16,7 @@ import * as backend from '../services/backend';
 export default function ActualsTab({ projectId, expenses = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
     cost_code_id: '',
     expense_date: format(new Date(), 'yyyy-MM-dd'),
@@ -29,10 +30,11 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   const createMutation = useMutation({
     mutationFn: (data) => backend.createExpense({ ...data, project_id: projectId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
       toast.success('Expense added');
       setShowAddDialog(false);
+      setEditingExpense(null);
       setFormData({
         cost_code_id: '',
         expense_date: format(new Date(), 'yyyy-MM-dd'),
@@ -48,16 +50,16 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => backend.updateExpense(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => backend.deleteExpense(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
       toast.success('Expense deleted');
     }
   });

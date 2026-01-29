@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building2, AlertTriangle, Clock, Flag, Activity, Sparkles 
+  Building, AlertTriangle, Clock, Flag, Activity
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';

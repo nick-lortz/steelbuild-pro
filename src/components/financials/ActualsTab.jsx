@@ -202,11 +202,24 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="labor">Labor</SelectItem>
-                  <SelectItem value="material">Material</SelectItem>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="subcontract">Subcontract</SelectItem>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="pm_admin">PM/ADMIN</SelectItem>
+                  <SelectItem value="shop_structural">Shop Budget - Structural</SelectItem>
+                  <SelectItem value="shop_misc">Shop Budget - Misc.</SelectItem>
+                  <SelectItem value="shop_shipping">Shop Budget - Shipping</SelectItem>
+                  <SelectItem value="field_budget">Field Budget</SelectItem>
+                  <SelectItem value="buyouts">BUY OUTS (DECK & JOIST)</SelectItem>
+                  <SelectItem value="detailing">DETAILING/ENGINEERING</SelectItem>
+                  <SelectItem value="crane">CRANE</SelectItem>
+                  <SelectItem value="equipment">EQUIPMENT</SelectItem>
+                  <SelectItem value="material_fasteners">MATERIAL /FASTENERS</SelectItem>
+                  <SelectItem value="shipping">SHIPPING</SelectItem>
+                  <SelectItem value="special_coatings">SPECIAL COATINGS</SelectItem>
+                  <SelectItem value="subcontractor_shop">SUBCONTRACTOR SHOP</SelectItem>
+                  <SelectItem value="subcontractor_field">SUBCONTRACTOR FIELD</SelectItem>
+                  <SelectItem value="specialty_sub_field">SPECIALTY SUBCONTRACTOR FIELD</SelectItem>
+                  <SelectItem value="deck_install">DECK INSTALL</SelectItem>
+                  <SelectItem value="misc_steel">MISC STEEL (Stairs, handrail, ladders..)</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>

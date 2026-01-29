@@ -333,7 +333,7 @@ export default function Projects() {
                   setFormData(initialFormState);
                   setShowForm(true);
                 }}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-lg shadow-purple-500/30"
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/30"
               >
                 <Plus size={14} className="mr-1" />
                 New Project

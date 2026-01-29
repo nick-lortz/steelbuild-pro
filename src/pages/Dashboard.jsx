@@ -273,7 +273,7 @@ export default function Dashboard() {
           <div className="p-5">
             <div className="flex items-start justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center ring-1 ring-blue-500/30">
-                <Building2 className="w-5 h-5 text-blue-400" />
+                <Building className="w-5 h-5 text-blue-400" />
               </div>
               <p className="text-3xl font-bold text-white">{enhancedMetrics.totalProjects}</p>
             </div>

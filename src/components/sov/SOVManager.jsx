@@ -15,6 +15,7 @@ import { toast } from '@/components/ui/notifications';
 export default function SOVManager({ projectId, canEdit }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showBulkAddDialog, setShowBulkAddDialog] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ 
     sov_code: '', 
@@ -22,6 +23,24 @@ export default function SOVManager({ projectId, canEdit }) {
     sov_category: 'labor',
     scheduled_value: 0 
   });
+
+  const standardSOVItems = [
+    { sov_code: '01', description: 'Detailing', sov_category: 'subcontract', scheduled_value: 0 },
+    { sov_code: '02', description: 'Anchor Bolts / Templates', sov_category: 'material', scheduled_value: 0 },
+    { sov_code: '03', description: 'Joists', sov_category: 'material', scheduled_value: 0 },
+    { sov_code: '04', description: 'Deck', sov_category: 'material', scheduled_value: 0 },
+    { sov_code: '05', description: 'Raw Materials', sov_category: 'material', scheduled_value: 0 },
+    { sov_code: '06', description: 'Shop Labor & Fabrication', sov_category: 'labor', scheduled_value: 0 },
+    { sov_code: '07', description: 'Field Labor - Structural', sov_category: 'labor', scheduled_value: 0 },
+    { sov_code: '08', description: 'Field Labor - Misc.', sov_category: 'labor', scheduled_value: 0 },
+    { sov_code: '09', description: 'Equipment', sov_category: 'equipment', scheduled_value: 0 },
+    { sov_code: '10', description: 'Shipping', sov_category: 'labor', scheduled_value: 0 },
+    { sov_code: '11', description: 'Deck Install', sov_category: 'subcontract', scheduled_value: 0 },
+    { sov_code: '12', description: 'Special Coatings', sov_category: 'material', scheduled_value: 0 },
+    { sov_code: '13', description: 'Misc.', sov_category: 'other', scheduled_value: 0 },
+    { sov_code: '14', description: 'Change Orders', sov_category: 'other', scheduled_value: 0 },
+    { sov_code: '15', description: 'PM/Admin', sov_category: 'other', scheduled_value: 0 }
+  ];
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', projectId],

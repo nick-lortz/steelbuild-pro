@@ -59,6 +59,11 @@ export default function ResourceAllocation() {
     queryFn: () => base44.entities.WorkPackage.list(),
   });
 
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ['all-tasks'],
+    queryFn: () => base44.entities.Task.list(),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ResourceAllocation.create(data),
     onSuccess: () => {
@@ -93,19 +98,42 @@ export default function ResourceAllocation() {
     }
   };
 
-  // Group allocations by resource
+  // Group allocations by resource with task-based allocation
   const allocationsByResource = resources.map(resource => {
     const resourceAllocations = allocations.filter(a => a.resource_id === resource.id);
+    
+    // Calculate from task assignments
+    const assignedTasks = allTasks.filter(t => {
+      const assignedResources = Array.isArray(t.assigned_resources) ? t.assigned_resources : [];
+      const assignedEquipment = Array.isArray(t.assigned_equipment) ? t.assigned_equipment : [];
+      return assignedResources.includes(resource.id) || assignedEquipment.includes(resource.id);
+    });
+
+    const activeTasks = assignedTasks.filter(t => 
+      t.status === 'in_progress' || t.status === 'not_started'
+    );
+
+    // Calculate effective allocation percentage
+    const taskBasedAllocation = resource.weekly_capacity > 0 
+      ? Math.min(100, Math.round((activeTasks.length / resource.weekly_capacity) * 100))
+      : (activeTasks.length > 0 ? Math.min(100, activeTasks.length * 20) : 0);
+
     const currentAllocation = resourceAllocations.find(a => 
       isWithinInterval(new Date(), {
         start: new Date(a.start_date),
         end: new Date(a.end_date)
       })
-    );
+    ) || (taskBasedAllocation > 0 ? { 
+      allocation_percentage: taskBasedAllocation,
+      _computed: true 
+    } : null);
+    
     return {
       resource,
       allocations: resourceAllocations,
-      currentAllocation
+      currentAllocation,
+      assignedTasks: assignedTasks.length,
+      activeTasks: activeTasks.length
     };
   });
 
@@ -134,10 +162,15 @@ export default function ResourceAllocation() {
                 <span>{resource.name}</span>
                 {currentAllocation && (
                   <span className="text-xs font-normal text-amber-400">
-                    {currentAllocation.allocation_percentage}% allocated
+                    {currentAllocation.allocation_percentage}% allocated{currentAllocation._computed ? ' (auto)' : ''}
                   </span>
                 )}
               </CardTitle>
+              {activeTasks > 0 && (
+                <p className="text-xs text-zinc-500 mt-1">
+                  {activeTasks} active tasks ({assignedTasks} total)
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               {allocations.length === 0 ? (

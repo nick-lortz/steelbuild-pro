@@ -4,10 +4,12 @@ import { base44 } from '@/api/base44Client';
 import { RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import PortfolioKPIs from '@/components/dashboard/PortfolioKPIs';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
 import { differenceInDays, addDays } from 'date-fns';
+import { Card } from "@/components/ui/card";
+import { Building2, AlertTriangle, Clock, Flag, Activity } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -254,7 +256,101 @@ export default function Dashboard() {
       </div>
 
       {/* Portfolio KPIs */}
-      <PortfolioKPIs metrics={enhancedMetrics} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <div className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                  Total Projects
+                </p>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-foreground">{enhancedMetrics.totalProjects}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{enhancedMetrics.activeProjects} active</p>
+              </div>
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center bg-blue-500/10")}>
+                <Building2 className={cn("w-5 h-5 text-blue-400")} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                  Active
+                </p>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-foreground">{enhancedMetrics.activeProjects}</span>
+                </div>
+              </div>
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center bg-green-500/10")}>
+                <Activity className={cn("w-5 h-5 text-green-400")} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                  At Risk
+                </p>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-foreground">{enhancedMetrics.atRiskProjects}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{enhancedMetrics.atRiskProjects > 0 ? 'need attention' : 'all healthy'}</p>
+              </div>
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", enhancedMetrics.atRiskProjects > 0 ? "bg-amber-500/10" : "bg-green-500/10")}>
+                <AlertTriangle className={cn("w-5 h-5", enhancedMetrics.atRiskProjects > 0 ? "text-amber-400" : "text-green-400")} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                  Overdue Tasks
+                </p>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-foreground">{enhancedMetrics.overdueTasks}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{enhancedMetrics.totalTasks} total tasks</p>
+              </div>
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", enhancedMetrics.overdueTasks > 0 ? "bg-red-500/10" : "bg-zinc-500/10")}>
+                <Clock className={cn("w-5 h-5", enhancedMetrics.overdueTasks > 0 ? "text-red-400" : "text-zinc-500")} />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">
+                  Milestones (30d)
+                </p>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-foreground">{enhancedMetrics.upcomingMilestones}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">upcoming</p>
+              </div>
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center bg-purple-500/10")}>
+                <Flag className={cn("w-5 h-5 text-purple-400")} />
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Filters */}
       <div className="my-6">

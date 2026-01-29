@@ -133,6 +133,7 @@ export default function FabricationPage() {
     return fabricationPackages.map(pkg => {
       const pieces = fabricationItems.filter(f => f.package_id === pkg.id);
       const linkedWP = workPackages.find(wp => wp.id === pkg.work_package_id);
+      const linkedProject = projects.find(p => p.id === pkg.project_id);
       const linkedDelivery = deliveries.find(d => d.id === pkg.linked_delivery_id);
       const linkedDrawings = drawings.filter(d => pkg.drawing_set_ids?.includes(d.id));
       
@@ -160,6 +161,7 @@ export default function FabricationPage() {
         ...pkg,
         pieces,
         linkedWP,
+        linkedProject,
         linkedDelivery,
         linkedDrawings,
         openRFIs,
@@ -171,7 +173,7 @@ export default function FabricationPage() {
         completionPercent: pieces.length > 0 ? (piecesComplete / pieces.length * 100) : 0
       };
     });
-  }, [fabricationPackages, fabricationItems, workPackages, deliveries, drawings, rfis]);
+  }, [fabricationPackages, fabricationItems, workPackages, deliveries, drawings, rfis, projects]);
 
   // KPIs
   const kpis = useMemo(() => {
@@ -430,7 +432,26 @@ export default function FabricationPage() {
                               </Badge>
                             )}
                           </div>
-                          <div className="text-xs text-zinc-500 font-mono">{pkg.package_number}</div>
+                          <div className="text-xs text-zinc-500 font-mono flex items-center gap-2">
+                            <span>{pkg.package_number}</span>
+                            {pkg.linkedProject && (
+                              <>
+                                <span>•</span>
+                                <span>{pkg.linkedProject.project_number}</span>
+                              </>
+                            )}
+                            {pkg.linkedWP && (
+                              <>
+                                <span>•</span>
+                                <span>WP: {pkg.linkedWP.wpid}</span>
+                              </>
+                            )}
+                          </div>
+                          {pkg.area && (
+                            <div className="text-xs text-zinc-600 mt-1">
+                              📍 {pkg.area} {pkg.sequence && `• SEQ: ${pkg.sequence}`}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-zinc-400">Ship Target</div>

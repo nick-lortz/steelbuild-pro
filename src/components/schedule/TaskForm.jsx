@@ -402,7 +402,6 @@ export default function TaskForm({
           <Select 
             value={formData.phase} 
             onValueChange={(v) => handleChange('phase', v)}
-            disabled={!!formData.work_package_id || !!task}
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
               <SelectValue />
@@ -415,11 +414,6 @@ export default function TaskForm({
               <SelectItem value="closeout">Closeout</SelectItem>
             </SelectContent>
           </Select>
-          {formData.work_package_id && (
-            <p className="text-xs text-zinc-500 mt-1">
-              🔒 Phase inherited from work package
-            </p>
-          )}
         </div>
       </div>
 

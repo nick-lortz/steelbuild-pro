@@ -157,7 +157,13 @@ export default function BudgetControl() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <FinancialKPIs projectId={activeProjectId} />
+          <FinancialKPIs 
+            budgetLines={financials}
+            expenses={expenses}
+            invoices={invoices}
+            sovItems={sovItems}
+            useSOV={sovItems.length > 0}
+          />
         </TabsContent>
 
         <TabsContent value="by-package" className="space-y-4">

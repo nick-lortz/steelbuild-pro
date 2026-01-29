@@ -125,6 +125,27 @@ export default function Schedule() {
     staleTime: 5 * 60 * 1000
   });
 
+  // Fetch deliveries
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.Delivery.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: fabricationPackages = [] } = useQuery({
+    queryKey: ['fabrication-packages', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.FabricationPackage.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
+  });
+
   // Always use actual tasks, don't convert work packages
   const workPackagesAsTasks = [];
 
@@ -241,26 +262,6 @@ export default function Schedule() {
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list(),
     staleTime: 5 * 60 * 1000
-  });
-
-  const { data: deliveries = [] } = useQuery({
-    queryKey: ['deliveries', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.Delivery.filter({ project_id: activeProjectId });
-    },
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
-  });
-
-  const { data: fabricationPackages = [] } = useQuery({
-    queryKey: ['fabrication-packages', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.FabricationPackage.filter({ project_id: activeProjectId });
-    },
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
   });
 
   const { data: allTasks = [] } = useQuery({

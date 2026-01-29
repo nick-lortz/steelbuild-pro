@@ -5,7 +5,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, X, Clock, Building2, Users, Activity, AlertTriangle, Zap } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, X, Clock, Users, Activity, AlertTriangle, Zap } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import CalendarGrid from '@/components/calendar/CalendarGrid';
 import CalendarEventList from '@/components/calendar/CalendarEventList';

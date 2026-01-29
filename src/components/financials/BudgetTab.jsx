@@ -69,6 +69,47 @@ export default function BudgetTab({ projectId, budgetLines = [], costCodes = [],
     }
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: async (items) => {
+      // First, create cost codes for any that don't exist
+      const results = await Promise.all(
+        items.map(async (item) => {
+          // Check if cost code exists
+          let costCode = costCodes.find(cc => cc.code === item.code);
+          
+          // If not, create it
+          if (!costCode) {
+            const createResult = await backend.createCostCode({
+              code: item.code,
+              name: item.name,
+              category: item.category,
+              is_active: true
+            });
+            costCode = { id: createResult.data.id, code: item.code };
+          }
+          
+          // Create budget line
+          return backend.createBudgetLine({
+            project_id: projectId,
+            cost_code_id: costCode.id,
+            category: item.category,
+            original_budget: 0,
+            current_budget: 0,
+            approved_changes: 0
+          });
+        })
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      queryClient.invalidateQueries({ queryKey: ['cost-codes'] });
+      toast.success('Standard budget lines added');
+      setShowBulkAddDialog(false);
+    },
+    onError: (err) => toast.error(err?.message ?? 'Failed to add budget lines')
+  });
+
   const getCostCodeName = (id) => costCodes.find(c => c.id === id)?.name || 'Unknown';
 
   const handleSave = (rowId, field, value) => {

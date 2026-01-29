@@ -27,7 +27,6 @@ import {
   SheetHeader,
   SheetTitle } from
 "@/components/ui/sheet";
-import { Plus, RefreshCw } from 'lucide-react';
 import ProjectsTable from '@/components/projects/ProjectsTable';
 import ProjectsKPIBar from '@/components/projects/ProjectsKPIBar';
 import ProjectsFilters from '@/components/projects/ProjectsFilters';

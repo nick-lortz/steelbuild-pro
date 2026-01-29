@@ -112,7 +112,7 @@ export default function Calendar() {
         events.push({
           id: task.id,
           type: 'task',
-          title: task.title,
+          title: task.name,
           start_date: task.start_date,
           end_date: task.end_date,
           project_id: task.project_id,

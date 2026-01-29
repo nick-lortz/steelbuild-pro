@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export default function WorkPackageForm({
   package: pkg,
@@ -14,6 +15,7 @@ export default function WorkPackageForm({
   costCodes = [],
   documents = [],
   drawings = [],
+  deliveries = [],
   onSubmit,
   onCancel,
   isLoading
@@ -30,8 +32,10 @@ export default function WorkPackageForm({
     percent_complete: 0,
     start_date: '',
     end_date: '',
+    target_date: '',
     assigned_pm: '',
     linked_drawing_set_ids: [],
+    linked_delivery_ids: [],
     notes: ''
   });
 
@@ -49,8 +53,10 @@ export default function WorkPackageForm({
         percent_complete: pkg.percent_complete || 0,
         start_date: pkg.start_date ? pkg.start_date.split('T')[0] : '',
         end_date: pkg.end_date ? pkg.end_date.split('T')[0] : '',
+        target_date: pkg.target_date ? pkg.target_date.split('T')[0] : '',
         assigned_pm: pkg.assigned_pm || '',
         linked_drawing_set_ids: pkg.linked_drawing_set_ids || [],
+        linked_delivery_ids: pkg.linked_delivery_ids || [],
         notes: pkg.notes || ''
       });
     } else if (projectId) {
@@ -208,13 +214,23 @@ export default function WorkPackageForm({
       {/* Schedule */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-zinc-300 uppercase">Schedule</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label className="text-zinc-200">Start Date</Label>
             <Input
               type="date"
               value={formData.start_date}
               onChange={(e) => handleChange('start_date', e.target.value)}
+              className="bg-zinc-800 border-zinc-700 text-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-zinc-200">Target Delivery Date</Label>
+            <Input
+              type="date"
+              value={formData.target_date}
+              onChange={(e) => handleChange('target_date', e.target.value)}
               className="bg-zinc-800 border-zinc-700 text-white"
             />
           </div>
@@ -244,6 +260,26 @@ export default function WorkPackageForm({
                 />
                 <label className="text-sm text-zinc-200 cursor-pointer">
                   {dwg.set_number} - {dwg.set_name} ({dwg.status})
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Deliveries */}
+      {deliveries.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-zinc-300 uppercase">Linked Deliveries</h3>
+          <div className="max-h-48 overflow-y-auto bg-zinc-800/50 rounded border border-zinc-700 p-3 space-y-2">
+            {deliveries.map(delivery => (
+              <div key={delivery.id} className="flex items-center gap-2">
+                <Checkbox
+                  checked={formData.linked_delivery_ids.includes(delivery.id)}
+                  onCheckedChange={() => toggleArrayItem('linked_delivery_ids', delivery.id)}
+                />
+                <label className="text-sm text-zinc-200 cursor-pointer">
+                  {delivery.package_name} - {delivery.scheduled_date ? format(new Date(delivery.scheduled_date), 'MMM d, yyyy') : 'No date'}
                 </label>
               </div>
             ))}

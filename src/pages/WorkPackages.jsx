@@ -85,6 +85,12 @@ export default function WorkPackages() {
     enabled: !!activeProjectId
   });
 
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
@@ -117,11 +123,26 @@ export default function WorkPackages() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+    mutationFn: async (data) => {
+      const createdWP = await base44.entities.WorkPackage.create(data);
+      
+      // Sync target date with linked deliveries
+      if (data.linked_delivery_ids?.length > 0 && data.target_date) {
+        const updatePromises = data.linked_delivery_ids.map(deliveryId =>
+          base44.entities.Delivery.update(deliveryId, {
+            scheduled_date: data.target_date
+          })
+        );
+        await Promise.all(updatePromises);
+      }
+      
+      return createdWP;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       queryClient.invalidateQueries(['fabrication', activeProjectId]);
       queryClient.invalidateQueries(['schedule-tasks', activeProjectId]);
+      queryClient.invalidateQueries(['deliveries', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
     },
@@ -131,11 +152,26 @@ export default function WorkPackages() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const updatedWP = await base44.entities.WorkPackage.update(id, data);
+      
+      // Sync target date with linked deliveries
+      if (data.linked_delivery_ids?.length > 0 && data.target_date) {
+        const updatePromises = data.linked_delivery_ids.map(deliveryId =>
+          base44.entities.Delivery.update(deliveryId, {
+            scheduled_date: data.target_date
+          })
+        );
+        await Promise.all(updatePromises);
+      }
+      
+      return updatedWP;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       queryClient.invalidateQueries(['fabrication', activeProjectId]);
       queryClient.invalidateQueries(['schedule-tasks', activeProjectId]);
+      queryClient.invalidateQueries(['deliveries', activeProjectId]);
       setShowForm(false);
       setEditingPackage(null);
       setViewingPackage(null);
@@ -496,6 +532,7 @@ export default function WorkPackages() {
             costCodes={costCodes}
             documents={documents}
             drawings={drawings}
+            deliveries={deliveries}
             onSubmit={(data) => {
               if (editingPackage) {
                 updateMutation.mutate({ id: editingPackage.id, data });
@@ -529,6 +566,7 @@ export default function WorkPackages() {
             costCodes={costCodes}
             documents={documents}
             drawings={drawings}
+            deliveries={deliveries}
             onEdit={() => {
               setEditingPackage(viewingPackage);
               setViewingPackage(null);

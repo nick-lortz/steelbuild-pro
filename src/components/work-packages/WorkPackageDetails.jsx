@@ -18,6 +18,7 @@ export default function WorkPackageDetails({
   costCodes = [],
   documents = [],
   drawings = [],
+  deliveries = [],
   onEdit,
   onAdvancePhase,
   onUpdate
@@ -47,6 +48,7 @@ export default function WorkPackageDetails({
   const linkedCostCodes = costCodes.filter(cc => pkg.cost_code_ids?.includes(cc.id));
   const linkedDrawingSets = drawings.filter(dwg => pkg.linked_drawing_set_ids?.includes(dwg.id));
   const linkedDocs = documents.filter(doc => pkg.linked_document_ids?.includes(doc.id));
+  const linkedDeliveries = deliveries.filter(d => pkg.linked_delivery_ids?.includes(d.id));
 
   const phaseMap = {
     'detailing': { next: 'fabrication', label: 'Advance to Fabrication' },
@@ -401,6 +403,38 @@ export default function WorkPackageDetails({
                         <div className="text-sm text-zinc-200">{dwg.set_name}</div>
                       </div>
                       <StatusBadge status={dwg.status} />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Deliveries */}
+          {linkedDeliveries.length > 0 && (
+            <Card className="bg-zinc-800/50 border-zinc-700">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <PackageIcon size={16} />
+                  Linked Deliveries ({linkedDeliveries.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {linkedDeliveries.map(delivery => (
+                    <div key={delivery.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                      <div>
+                        <div className="text-sm text-zinc-200">{delivery.package_name}</div>
+                        <div className="text-xs text-zinc-500">{delivery.delivery_number}</div>
+                      </div>
+                      <div className="text-right">
+                        <StatusBadge status={delivery.delivery_status} />
+                        {delivery.scheduled_date && (
+                          <div className="text-xs text-zinc-400 mt-1">
+                            {format(new Date(delivery.scheduled_date), 'MMM d, yyyy')}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

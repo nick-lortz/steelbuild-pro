@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import DataTable from '@/components/ui/DataTable';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -13,12 +12,53 @@ import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
 import * as backend from '../services/backend';
 
+const CATEGORY_ORDER = [
+  'pm_admin',
+  'shop_structural',
+  'shop_misc',
+  'shop_shipping',
+  'field_budget',
+  'buyouts',
+  'detailing',
+  'crane',
+  'equipment',
+  'material_fasteners',
+  'shipping',
+  'special_coatings',
+  'subcontractor_shop',
+  'subcontractor_field',
+  'specialty_sub_field',
+  'deck_install',
+  'misc_steel'
+];
+
+const CATEGORY_LABELS = {
+  pm_admin: 'PM/ADMIN',
+  shop_structural: 'Shop Budget - Structural',
+  shop_misc: 'Shop Budget - Misc.',
+  shop_shipping: 'Shop Budget - Shipping',
+  field_budget: 'Field Budget',
+  buyouts: 'BUY OUTS (DECK & JOIST)',
+  detailing: 'DETAILING/ENGINEERING',
+  crane: 'CRANE',
+  equipment: 'EQUIPMENT',
+  material_fasteners: 'MATERIAL /FASTENERS',
+  shipping: 'SHIPPING',
+  special_coatings: 'SPECIAL COATINGS',
+  subcontractor_shop: 'SUBCONTRACTOR SHOP',
+  subcontractor_field: 'SUBCONTRACTOR FIELD',
+  specialty_sub_field: 'SPECIALTY SUBCONTRACTOR FIELD',
+  deck_install: 'DECK INSTALL',
+  misc_steel: 'MISC STEEL (Stairs, handrail, ladders..)'
+};
+
 export default function ActualsTab({ projectId, expenses = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState(new Set(CATEGORY_ORDER));
   const [formData, setFormData] = useState({
     cost_code_id: '',
-    category: 'other',
+    category: 'pm_admin',
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     description: '',
     vendor: '',
@@ -36,7 +76,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
       setShowAddDialog(false);
       setFormData({
         cost_code_id: '',
-        category: 'other',
+        category: 'pm_admin',
         expense_date: format(new Date(), 'yyyy-MM-dd'),
         description: '',
         vendor: '',
@@ -66,78 +106,34 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
 
   const getCostCodeName = (id) => costCodes.find(c => c.id === id)?.name || '-';
 
-  const columns = [
-    {
-      header: 'Date',
-      accessor: 'expense_date',
-      render: (row) => format(new Date(row.expense_date), 'MMM d, yyyy')
-    },
-    {
-      header: 'Cost Code',
-      accessor: 'cost_code_id',
-      render: (row) => getCostCodeName(row.cost_code_id)
-    },
-    {
-      header: 'Category',
-      accessor: 'category',
-      render: (row) => <span className="capitalize">{row.category}</span>
-    },
-    {
-      header: 'Description',
-      accessor: 'description',
-      render: (row) => <span className="truncate max-w-xs">{row.description}</span>
-    },
-    {
-      header: 'Vendor',
-      accessor: 'vendor'
-    },
-    {
-      header: 'Amount',
-      accessor: 'amount',
-      render: (row) => <span className="font-semibold">${row.amount.toLocaleString()}</span>
-    },
-    {
-      header: 'Status',
-      accessor: 'payment_status',
-      render: (row) => (
-        <Select
-          value={row.payment_status}
-          onValueChange={(v) => updateMutation.mutate({ id: row.id, data: { payment_status: v } })}
-          disabled={!canEdit}
-        >
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="disputed">Disputed</SelectItem>
-          </SelectContent>
-        </Select>
-      )
-    },
-    {
-      header: '',
-      accessor: 'actions',
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            if (window.confirm(`⚠️ Delete expense: ${row.description}?\n\nAmount: $${row.amount.toLocaleString()}\nVendor: ${row.vendor || 'N/A'}\n\nThis will update actual costs and cannot be undone.`)) {
-              deleteMutation.mutate(row.id);
-            }
-          }}
-          disabled={!canEdit}
-          className="text-red-400 hover:text-red-300 disabled:opacity-50"
-          title={!canEdit ? '🔒 Editing disabled' : 'Delete expense'}
-        >
-          <Trash2 size={16} />
-        </Button>
-      )
+  const toggleCategory = (category) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category);
+    } else {
+      newExpanded.add(category);
     }
-  ];
+    setExpandedCategories(newExpanded);
+  };
+
+  // Group expenses by category in order
+  const groupedExpenses = useMemo(() => {
+    const groups = {};
+    CATEGORY_ORDER.forEach(cat => {
+      groups[cat] = expenses.filter(e => e.category === cat);
+    });
+    return groups;
+  }, [expenses]);
+
+  const categoryTotals = useMemo(() => {
+    const totals = {};
+    Object.entries(groupedExpenses).forEach(([cat, items]) => {
+      totals[cat] = items.reduce((sum, e) => sum + (e.amount || 0), 0);
+    });
+    return totals;
+  }, [groupedExpenses]);
+
+  const grandTotal = Object.values(categoryTotals).reduce((sum, t) => sum + t, 0);
 
   return (
     <div className="space-y-4">
@@ -151,11 +147,112 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
 
       <Card>
         <CardContent className="p-4">
-          <DataTable
-            columns={columns}
-            data={expenses}
-            emptyMessage="No expenses recorded. Add expenses to track actual costs."
-          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Category</th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Date</th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Description</th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Vendor</th>
+                  <th className="text-right py-3 px-4 font-semibold text-muted-foreground">Amount</th>
+                  <th className="text-center py-3 px-4 font-semibold text-muted-foreground">Status</th>
+                  <th className="text-center py-3 px-4 font-semibold text-muted-foreground">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CATEGORY_ORDER.map(category => {
+                  const categoryExpenses = groupedExpenses[category] || [];
+                  const isExpanded = expandedCategories.has(category);
+                  const total = categoryTotals[category] || 0;
+                  const hasExpenses = categoryExpenses.length > 0;
+
+                  return (
+                    <React.Fragment key={category}>
+                      <tr className="bg-zinc-900/50 border-b border-border hover:bg-zinc-900 cursor-pointer" onClick={() => toggleCategory(category)}>
+                        <td colSpan="7" className="py-2 px-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {hasExpenses && (
+                                isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                              )}
+                              <span className="font-semibold text-white">{CATEGORY_LABELS[category]}</span>
+                              <span className="text-xs text-muted-foreground">({categoryExpenses.length})</span>
+                            </div>
+                            <span className="font-bold text-amber-400">${total.toLocaleString()}</span>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {isExpanded && categoryExpenses.length > 0 && categoryExpenses.map((expense, idx) => (
+                        <tr key={expense.id} className="border-b border-border/50 hover:bg-zinc-900/30">
+                          <td className="py-2 px-4 text-xs text-muted-foreground">
+                            {idx === 0 ? CATEGORY_LABELS[category] : ''}
+                          </td>
+                          <td className="py-2 px-4 text-xs">{format(new Date(expense.expense_date), 'MMM d, yyyy')}</td>
+                          <td className="py-2 px-4 text-xs max-w-xs truncate">{expense.description}</td>
+                          <td className="py-2 px-4 text-xs">{expense.vendor || '-'}</td>
+                          <td className="py-2 px-4 text-right font-semibold">${expense.amount.toLocaleString()}</td>
+                          <td className="py-2 px-4 text-center">
+                            <Select
+                              value={expense.payment_status}
+                              onValueChange={(v) => updateMutation.mutate({ id: expense.id, data: { payment_status: v } })}
+                              disabled={!canEdit}
+                            >
+                              <SelectTrigger className="w-24 h-7 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="disputed">Disputed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="py-2 px-4 text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (window.confirm(`⚠️ Delete expense: ${expense.description}?\n\nAmount: $${expense.amount.toLocaleString()}`)) {
+                                  deleteMutation.mutate(expense.id);
+                                }
+                              }}
+                              disabled={!canEdit}
+                              className="text-red-400 hover:text-red-300 disabled:opacity-50 h-7 w-7"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+
+                      {categoryExpenses.length === 0 && (
+                        <tr className="border-b border-border/50 hover:bg-zinc-900/30">
+                          <td colSpan="7" className="py-2 px-4 text-xs text-muted-foreground italic">
+                            No expenses in this category
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+
+                <tr className="bg-zinc-900 border-t-2 border-border font-bold">
+                  <td colSpan="4" className="py-3 px-4 text-right">TOTAL:</td>
+                  <td className="py-3 px-4 text-right text-amber-400">${grandTotal.toLocaleString()}</td>
+                  <td colSpan="2"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {expenses.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No expenses recorded. Add expenses to track actual costs.
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -203,24 +300,9 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  <SelectItem value="pm_admin">PM/ADMIN</SelectItem>
-                  <SelectItem value="shop_structural">Shop Budget - Structural</SelectItem>
-                  <SelectItem value="shop_misc">Shop Budget - Misc.</SelectItem>
-                  <SelectItem value="shop_shipping">Shop Budget - Shipping</SelectItem>
-                  <SelectItem value="field_budget">Field Budget</SelectItem>
-                  <SelectItem value="buyouts">BUY OUTS (DECK & JOIST)</SelectItem>
-                  <SelectItem value="detailing">DETAILING/ENGINEERING</SelectItem>
-                  <SelectItem value="crane">CRANE</SelectItem>
-                  <SelectItem value="equipment">EQUIPMENT</SelectItem>
-                  <SelectItem value="material_fasteners">MATERIAL /FASTENERS</SelectItem>
-                  <SelectItem value="shipping">SHIPPING</SelectItem>
-                  <SelectItem value="special_coatings">SPECIAL COATINGS</SelectItem>
-                  <SelectItem value="subcontractor_shop">SUBCONTRACTOR SHOP</SelectItem>
-                  <SelectItem value="subcontractor_field">SUBCONTRACTOR FIELD</SelectItem>
-                  <SelectItem value="specialty_sub_field">SPECIALTY SUBCONTRACTOR FIELD</SelectItem>
-                  <SelectItem value="deck_install">DECK INSTALL</SelectItem>
-                  <SelectItem value="misc_steel">MISC STEEL (Stairs, handrail, ladders..)</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {CATEGORY_ORDER.map(cat => (
+                    <SelectItem key={cat} value={cat}>{CATEGORY_LABELS[cat]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

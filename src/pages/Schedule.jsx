@@ -128,9 +128,60 @@ export default function Schedule() {
   // Always use actual tasks, don't convert work packages
   const workPackagesAsTasks = [];
 
+  // Convert deliveries to task-like items for schedule display
+  const deliveryTasks = useMemo(() => {
+    return deliveries.map(d => ({
+      id: `delivery-${d.id}`,
+      source_entity: 'Delivery',
+      source_id: d.id,
+      project_id: d.project_id,
+      name: `🚚 ${d.package_name}`,
+      phase: 'delivery',
+      start_date: d.scheduled_date || d.confirmed_date || d.requested_date,
+      end_date: d.scheduled_date || d.confirmed_date || d.requested_date,
+      status: d.delivery_status === 'received' || d.delivery_status === 'closed' ? 'completed' :
+              d.delivery_status === 'in_transit' || d.delivery_status === 'arrived_on_site' ? 'in_progress' :
+              d.delivery_status === 'exception' ? 'blocked' : 'not_started',
+      progress_percent: d.delivery_status === 'received' ? 100 :
+                        d.delivery_status === 'arrived_on_site' ? 75 :
+                        d.delivery_status === 'in_transit' ? 50 : 0,
+      is_critical: d.priority === 'high' || d.priority === 'critical',
+      notes: `${d.vendor_supplier || ''} → ${d.ship_to_location || ''}\n${d.weight_tons?.toFixed(1)}T • ${d.piece_count || 0} pieces\n${d.notes || ''}`.trim(),
+      _deliveryData: d,
+      _isDelivery: true
+    })).filter(d => d.start_date);
+  }, [deliveries]);
+
+  // Convert fabrication packages to task-like items for schedule display
+  const fabricationTasks = useMemo(() => {
+    return fabricationPackages.map(fp => ({
+      id: `fabrication-${fp.id}`,
+      source_entity: 'FabricationPackage',
+      source_id: fp.id,
+      project_id: fp.project_id,
+      name: `🔧 ${fp.package_name}`,
+      phase: 'fabrication',
+      start_date: fp.release_date,
+      end_date: fp.planned_ship_date,
+      status: fp.status === 'shipped' || fp.status === 'complete' ? 'completed' :
+              fp.status === 'in_progress' || fp.status === 'qc' ? 'in_progress' :
+              fp.status === 'pending_prereqs' ? 'blocked' : 'not_started',
+      progress_percent: fp.completion_percent || 0,
+      is_critical: fp.priority === 'high' || fp.priority === 'critical',
+      notes: `${fp.total_pieces || 0} pieces • ${(fp.total_weight_tons || 0).toFixed(1)}T\n${fp.scope_summary || ''}`.trim(),
+      _fabricationData: fp,
+      _isFabrication: true
+    })).filter(fp => fp.start_date || fp.end_date);
+  }, [fabricationPackages]);
+
+  // Combine all schedule items
+  const combinedScheduleItems = useMemo(() => {
+    return [...allScheduleTasks, ...deliveryTasks, ...fabricationTasks];
+  }, [allScheduleTasks, deliveryTasks, fabricationTasks]);
+
   // Filter and paginate tasks
   const { tasks, hasMore, totalCount } = useMemo(() => {
-    let filtered = [...allScheduleTasks];
+    let filtered = [...combinedScheduleItems];
 
     // Filter by status
     if (statusFilter !== 'all') {
@@ -190,6 +241,26 @@ export default function Schedule() {
     queryKey: ['drawings'],
     queryFn: () => base44.entities.DrawingSet.list(),
     staleTime: 5 * 60 * 1000
+  });
+
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.Delivery.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: fabricationPackages = [] } = useQuery({
+    queryKey: ['fabrication-packages', activeProjectId],
+    queryFn: () => {
+      if (!activeProjectId) return [];
+      return base44.entities.FabricationPackage.filter({ project_id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: allTasks = [] } = useQuery({
@@ -269,6 +340,12 @@ export default function Schedule() {
   }, [refetch]);
 
   const handleTaskClick = async (task) => {
+    // If it's a delivery or fabrication item, don't open task form
+    if (task._isDelivery || task._isFabrication) {
+      toast.error('Cannot edit schedule items from Delivery/Fabrication modules. Edit them directly in their respective pages.');
+      return;
+    }
+
     // If it's a work package display item, create a new task for it
     if (task.is_work_package) {
       setEditingTask({
@@ -391,7 +468,7 @@ export default function Schedule() {
       overdue: 0
     };
     
-    allScheduleTasks.forEach(t => {
+    combinedScheduleItems.forEach(t => {
       if (t.status === 'not_started') counts.not_started++;
       else if (t.status === 'in_progress') counts.in_progress++;
       else if (t.status === 'completed') counts.completed++;
@@ -402,7 +479,7 @@ export default function Schedule() {
     });
     
     return counts;
-  }, [allScheduleTasks, totalCount]);
+  }, [combinedScheduleItems, totalCount]);
 
   return (
     <div className="min-h-screen bg-black">
@@ -442,7 +519,7 @@ export default function Schedule() {
                 AI Assistant
               </Button>
               <ExportButton
-                data={viewMode === 'list' ? tasks : allScheduleTasks}
+                data={viewMode === 'list' ? tasks : combinedScheduleItems}
                 entityType="tasks"
                 filename="schedule"
                 disabled={!activeProjectId}
@@ -538,7 +615,7 @@ export default function Schedule() {
         {showAI && activeProjectId && (
           <div className="mb-6">
             <ScheduleAIAssistant
-              tasks={allScheduleTasks.length > 0 ? allScheduleTasks : workPackagesAsTasks}
+              tasks={combinedScheduleItems}
               workPackages={workPackages}
               project={selectedProject}
               resources={resources}
@@ -577,28 +654,38 @@ export default function Schedule() {
           </div>
         ) : viewMode === 'phase' ? (
           <PhaseGroupedView
-            tasks={allScheduleTasks}
+            tasks={combinedScheduleItems}
             workPackages={workPackages}
             onTaskClick={handleTaskClick}
           />
         ) : viewMode === 'timeline' ? (
           <TimelineView
-            tasks={allScheduleTasks}
+            tasks={combinedScheduleItems}
             onTaskClick={handleTaskClick}
           />
         ) : viewMode === 'calendar' ? (
           <CalendarView
-            tasks={allScheduleTasks}
+            tasks={combinedScheduleItems}
             projects={projects}
             onTaskClick={handleTaskClick}
-            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskUpdate={(id, data) => {
+              // Only update actual tasks, not delivery/fab items
+              if (!id.toString().startsWith('delivery-') && !id.toString().startsWith('fabrication-')) {
+                updateMutation.mutate({ id, data });
+              }
+            }}
           />
         ) : viewMode === 'gantt' ? (
           <GanttChart
-            tasks={allScheduleTasks}
+            tasks={combinedScheduleItems}
             projects={projects}
             viewMode="week"
-            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskUpdate={(id, data) => {
+              // Only update actual tasks, not delivery/fab items
+              if (!id.toString().startsWith('delivery-') && !id.toString().startsWith('fabrication-')) {
+                updateMutation.mutate({ id, data });
+              }
+            }}
             onTaskEdit={handleTaskClick}
             resources={resources}
             rfis={rfis}
@@ -606,19 +693,27 @@ export default function Schedule() {
           />
         ) : viewMode === 'network' ? (
           <DependencyGraph
-            tasks={allScheduleTasks}
+            tasks={combinedScheduleItems}
             onTaskClick={handleTaskClick}
           />
         ) : (
           <TaskListView
-            tasks={allScheduleTasks}
+            tasks={combinedScheduleItems}
             projects={projects}
             resources={resources}
             workPackages={workPackages}
-            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskUpdate={(id, data) => {
+              // Only update actual tasks, not delivery/fab items
+              if (!id.toString().startsWith('delivery-') && !id.toString().startsWith('fabrication-')) {
+                updateMutation.mutate({ id, data });
+              }
+            }}
             onTaskClick={handleTaskClick}
             onTaskDelete={(taskId) => {
-              deleteMutation.mutate(taskId);
+              // Only delete actual tasks
+              if (!taskId.toString().startsWith('delivery-') && !taskId.toString().startsWith('fabrication-')) {
+                deleteMutation.mutate(taskId);
+              }
             }}
           />
         )}
@@ -640,7 +735,7 @@ export default function Schedule() {
       <BulkResourceAssign
         open={showBulkAssign}
         onOpenChange={setShowBulkAssign}
-        selectedItems={allScheduleTasks.filter(t => selectedTasks.includes(t.id))}
+        selectedItems={combinedScheduleItems.filter(t => selectedTasks.includes(t.id) && !t._isDelivery && !t._isFabrication)}
         resources={resources}
         onAssign={handleBulkResourceAssign}
         itemType="tasks"

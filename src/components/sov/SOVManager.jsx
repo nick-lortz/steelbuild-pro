@@ -201,7 +201,31 @@ export default function SOVManager({ projectId, canEdit }) {
     {
       header: 'Category',
       accessor: 'sov_category',
-      render: (row) => <span className="capitalize text-sm">{row.sov_category}</span>
+      render: (row) => {
+        const categoryLabels = {
+          pm_admin: 'PM/ADMIN',
+          shop_structural: 'Shop Budget - Structural',
+          shop_misc: 'Shop Budget - Misc.',
+          shop_shipping: 'Shop Budget - Shipping',
+          field_budget: 'Field Budget',
+          buyouts: 'BUY OUTS (DECK & JOIST)',
+          detailing: 'DETAILING/ENGINEERING',
+          crane: 'CRANE',
+          equipment: 'EQUIPMENT',
+          material_fasteners: 'MATERIAL /FASTENERS',
+          shipping: 'SHIPPING',
+          special_coatings: 'SPECIAL COATINGS',
+          subcontractor_shop: 'SUBCONTRACTOR SHOP',
+          subcontractor_field: 'SUBCONTRACTOR FIELD',
+          specialty_sub_field: 'SPECIALTY SUBCONTRACTOR FIELD',
+          deck_install: 'DECK INSTALL',
+          misc_steel: 'MISC STEEL (Stairs, handrail, ladders..)',
+          labor: 'Labor',
+          material: 'Material',
+          other: 'Other'
+        };
+        return <span className="text-sm">{categoryLabels[row.sov_category] || row.sov_category}</span>;
+      }
     },
     { 
       header: 'Scheduled Value', 
@@ -441,11 +465,24 @@ export default function SOVManager({ projectId, canEdit }) {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="labor">Labor</SelectItem>
-                  <SelectItem value="material">Material</SelectItem>
-                  <SelectItem value="equipment">Equipment</SelectItem>
-                  <SelectItem value="subcontract">Subcontract</SelectItem>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="pm_admin">PM/ADMIN</SelectItem>
+                  <SelectItem value="shop_structural">Shop Budget - Structural</SelectItem>
+                  <SelectItem value="shop_misc">Shop Budget - Misc.</SelectItem>
+                  <SelectItem value="shop_shipping">Shop Budget - Shipping</SelectItem>
+                  <SelectItem value="field_budget">Field Budget</SelectItem>
+                  <SelectItem value="buyouts">BUY OUTS (DECK & JOIST)</SelectItem>
+                  <SelectItem value="detailing">DETAILING/ENGINEERING</SelectItem>
+                  <SelectItem value="crane">CRANE</SelectItem>
+                  <SelectItem value="equipment">EQUIPMENT</SelectItem>
+                  <SelectItem value="material_fasteners">MATERIAL /FASTENERS</SelectItem>
+                  <SelectItem value="shipping">SHIPPING</SelectItem>
+                  <SelectItem value="special_coatings">SPECIAL COATINGS</SelectItem>
+                  <SelectItem value="subcontractor_shop">SUBCONTRACTOR SHOP</SelectItem>
+                  <SelectItem value="subcontractor_field">SUBCONTRACTOR FIELD</SelectItem>
+                  <SelectItem value="specialty_sub_field">SPECIALTY SUBCONTRACTOR FIELD</SelectItem>
+                  <SelectItem value="deck_install">DECK INSTALL</SelectItem>
+                  <SelectItem value="misc_steel">MISC STEEL (Stairs, handrail, ladders..)</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>

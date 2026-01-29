@@ -749,12 +749,15 @@ export default function Documents() {
                       <SelectItem value="all">All WPs</SelectItem>
                       <SelectItem value="unlinked">Unlinked</SelectItem>
                       {workPackages
-                        .filter(wp => projectFilter === 'all' || wp.project_id === projectFilter)
-                        .map(wp => (
-                          <SelectItem key={wp.id} value={wp.id}>
-                            {wp.wpid}
-                          </SelectItem>
-                        ))}
+                       .filter(wp => projectFilter === 'all' || wp.project_id === projectFilter)
+                       .map(wp => {
+                         const proj = projects.find(p => p.id === wp.project_id);
+                         return (
+                           <SelectItem key={wp.id} value={wp.id}>
+                             {wp.wpid} - {wp.title} ({proj?.project_number})
+                           </SelectItem>
+                         );
+                       })}
                     </SelectContent>
                   </Select>
 
@@ -1400,11 +1403,14 @@ function DocumentForm({ formData, setFormData, projects, workPackages, dailyLogs
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None</SelectItem>
-                {projectWorkPackages.map(wp => (
-                  <SelectItem key={wp.id} value={wp.id}>
-                    {wp.package_number || wp.id.slice(0, 8)} - {wp.name}
-                  </SelectItem>
-                ))}
+                {projectWorkPackages.map(wp => {
+                  const proj = projects.find(p => p.id === wp.project_id);
+                  return (
+                    <SelectItem key={wp.id} value={wp.id}>
+                      {wp.wpid} - {wp.title} ({proj?.project_number})
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -1435,9 +1441,9 @@ function DocumentForm({ formData, setFormData, projects, workPackages, dailyLogs
               <SelectContent className="max-h-60">
                 <SelectItem value={null}>None</SelectItem>
                 {projectTasks.slice(0, 50).map(t => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.title || t.id.slice(0, 8)}
-                  </SelectItem>
+                 <SelectItem key={t.id} value={t.id}>
+                   {t.name || t.id.slice(0, 8)}
+                 </SelectItem>
                 ))}
               </SelectContent>
             </Select>

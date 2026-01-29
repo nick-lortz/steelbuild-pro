@@ -37,14 +37,17 @@ Deno.serve(async (req) => {
     const actualSpent = catExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
     const budgetTotal = catFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
 
-    // ECC formula: EAC = (Actual Spent / % Complete)
+    // ECC formula: EAC = (Actual Spent / % Complete) * 100
     // Only valid if actual work exists (percent > 0%)
     let estimatedCostAtCompletion = 0;
-    if (sovPercentComplete > 0) {
-      estimatedCostAtCompletion = actualSpent / (sovPercentComplete / 100);
+    if (sovPercentComplete > 5) { // At least 5% complete for meaningful projection
+      estimatedCostAtCompletion = (actualSpent / sovPercentComplete) * 100;
+    } else if (actualSpent > 0) {
+      // Some spend but <5% - use conservative multiplier
+      estimatedCostAtCompletion = actualSpent * 20; // Assumes 5% completion
     } else {
       // No spend yet - use budget as baseline
-      estimatedCostAtCompletion = budgetTotal;
+      estimatedCostAtCompletion = budgetTotal || sovTotal;
     }
 
     // Update each financial record in this category with ECC

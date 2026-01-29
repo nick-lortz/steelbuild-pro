@@ -39,7 +39,9 @@ export default function LookAheadPlanning() {
 
   const { data: activities = [] } = useQuery({
     queryKey: ['schedule-activities', activeProjectId],
-    queryFn: () => base44.entities.ScheduleActivity.filter({ project_id: activeProjectId }, 'start_date'),
+    queryFn: () => activeProjectId && activeProjectId !== 'all'
+      ? base44.entities.ScheduleActivity.filter({ project_id: activeProjectId }, 'start_date')
+      : base44.entities.ScheduleActivity.list('start_date'),
     enabled: !!activeProjectId
   });
 
@@ -227,11 +229,12 @@ export default function LookAheadPlanning() {
         showBackButton={false}
         actions={
         <div className="text-slate-50 flex items-center gap-2">
-            <Select value={activeProjectId} onValueChange={setActiveProjectId}>
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Projects</SelectItem>
                 {projects.map((p) =>
               <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}

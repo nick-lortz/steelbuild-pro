@@ -63,6 +63,7 @@ export default function Performance() {
 
       const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+      // Positive variance = under budget, negative = over budget
       const variance = budget > 0 ? ((budget - actual) / budget) * 100 : 0;
 
       // Critical Issue 1: Budget Overrun (>10% over)
@@ -199,12 +200,12 @@ export default function Performance() {
       const projectFinancials = financials.filter(f => f.project_id === project.id);
       const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      // Positive variance = under budget (good)
+      // Variance calculation: positive = under budget, negative = over budget
       const variance = budget > 0 ? ((budget - actual) / budget * 100) : 0;
       
       return {
-        name: project.project_number,
-        variance: variance.toFixed(1),
+        name: project.project_number || project.name?.substring(0, 10),
+        variance: parseFloat(variance.toFixed(1)),
         status: variance >= 0 ? 'on_budget' : 'over_budget'
       };
     });

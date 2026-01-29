@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from '@/components/ui/PageHeader';
 import AutomatedReportScheduler from '@/components/reports/AutomatedReportScheduler';
 import InteractiveDashboard from '@/components/reports/InteractiveDashboard';
+import ReportTypeKPIs from '@/components/reports/ReportTypeKPIs';
 import DataTable from '@/components/ui/DataTable';
 import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2, LayoutDashboard } from 'lucide-react';
 import { format } from 'date-fns';
@@ -219,25 +220,30 @@ export default function Reports() {
   };
 
   const generateFinancialReport = (selectedProjects) => {
-    const headers = ['Project', 'Project Number', 'Budget', 'Committed', 'Actual', 'Variance', 'Forecast'];
+    const headers = ['Project', 'Project Number', 'Budget', 'Committed', 'Actual', 'Variance', 'Variance %', 'Forecast'];
     const rows = selectedProjects.map(project => {
       const projectFinancials = financials.filter(f => f.project_id === project.id);
+      const projectExpenses = expenses.filter(e => e.project_id === project.id);
       
       const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
-      const committed = projectFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
-      // Actual from Financial table (should already include expenses)
-      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      const forecast = projectFinancials.reduce((sum, f) => sum + (f.forecast_amount || actual), 0);
+      const committed = projectExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      // Actual = expenses paid/approved
+      const actual = projectExpenses
+        .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+      const forecast = projectFinancials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0) || (budget > 0 ? budget : actual);
       const variance = budget - actual;
+      const variancePercent = budget > 0 ? ((variance / budget) * 100).toFixed(1) : '0.0';
 
       return [
         project.name,
         project.project_number,
-        budget,
-        committed,
-        actual,
-        variance,
-        forecast
+        budget.toFixed(2),
+        committed.toFixed(2),
+        actual.toFixed(2),
+        variance.toFixed(2),
+        variancePercent + '%',
+        forecast.toFixed(2)
       ];
     });
 
@@ -498,7 +504,12 @@ export default function Reports() {
             <TabsTrigger value="automated">Automated</TabsTrigger>
           </TabsList>
 
-        <TabsContent value="dashboard">
+        <TabsContent value="dashboard" className="space-y-6">
+          <ReportTypeKPIs 
+            reports={reports}
+            onGenerateReport={generateReport}
+            generatingReport={generatingReport}
+          />
           <InteractiveDashboard
             projects={projects}
             financials={financials}

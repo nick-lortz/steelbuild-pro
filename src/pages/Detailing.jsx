@@ -873,11 +873,29 @@ export default function Detailing() {
                             </SelectContent>
                           </Select>
 
+                          <Select
+                            value={ds.status}
+                            onValueChange={(val) => updateStatusMutation.mutate({ id: ds.id, status: val })}>
+                            <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-700 text-white">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-zinc-900 border-zinc-800">
+                              <SelectItem value="IFA">IFA</SelectItem>
+                              <SelectItem value="BFA">BFA</SelectItem>
+                              <SelectItem value="BFS">BFS</SelectItem>
+                              <SelectItem value="FFF">FFF</SelectItem>
+                              <SelectItem value="As-Built">As-Built</SelectItem>
+                            </SelectContent>
+                          </Select>
+
                           <div className="flex gap-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setRevisionHistorySetId(ds.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRevisionHistorySetId(ds.id);
+                              }}
                               className="h-7 text-[10px] flex-1 border-zinc-700"
                             >
                               <History size={12} className="mr-1" />
@@ -892,19 +910,6 @@ export default function Detailing() {
                               RFI
                             </Button>
                           </div>
-
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              const nextStatus = ds.status === 'IFA' ? 'BFA' : ds.status === 'BFA' ? 'BFS' : ds.status === 'BFS' ? 'FFF' : null;
-                              if (nextStatus) updateStatusMutation.mutate({ id: ds.id, status: nextStatus });
-                            }}
-                            disabled={ds.status === 'FFF'}
-                            className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-8 text-xs uppercase tracking-wider"
-                          >
-                            {ds.status === 'FFF' ? 'Released' : 'Advance Stage'}
-                            <ChevronRight size={14} className="ml-1" />
-                          </Button>
                         </div>
                       </div>
                     </CardContent>

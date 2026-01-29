@@ -25,10 +25,13 @@ export default function JobStatusReport({ sovItems = [], expenses = [], changeOr
     // Over / Under Billed
     const overUnderBilled = billedToDate - earnedToDate;
 
-    // Cost to Date (paid/approved expenses)
-    const costToDate = expenses
-      .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
-      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    // Cost to Date - sum from actual_amount in Financial records (which should include expenses)
+    // If Financial records don't have actual populated, fallback to expenses
+    const costFromFinancials = sovItems.reduce((sum, s) => sum + (s.actual_cost || 0), 0);
+    const costToDate = costFromFinancials > 0 
+      ? costFromFinancials 
+      : expenses.filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
 
     // Estimated Cost at Completion (against total contract not just original value)
     const percentComplete = totalContract > 0 ? (earnedToDate / totalContract) * 100 : 0;

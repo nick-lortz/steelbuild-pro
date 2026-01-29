@@ -147,17 +147,19 @@ export default function Deliveries() {
         }
       }
       
-      const activityLog = [
+      const activityLogEntry = {
+        action: logAction || `Delivery updated`,
+        user: user?.email || 'system',
+        timestamp: new Date().toISOString(),
+        changes: data
+      };
+      
+      const updatedActivityLog = [
         ...(delivery?.activity_log || []),
-        {
-          action: logAction || `Delivery updated`,
-          user: user?.email || 'system',
-          timestamp: new Date().toISOString(),
-          changes: data
-        }
+        activityLogEntry
       ];
       
-      return base44.entities.Delivery.update(id, { ...data, activity_log });
+      return base44.entities.Delivery.update(id, { ...data, activity_log: updatedActivityLog });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });

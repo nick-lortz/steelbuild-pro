@@ -72,16 +72,24 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
     {
       header: 'Start',
       accessor: 'start_date',
-      render: (row) => (
-        <span className="text-sm">{format(parseISO(row.start_date), 'MMM d, yyyy')}</span>
-      )
+      render: (row) => {
+        try {
+          return row.start_date ? <span className="text-sm">{format(parseISO(row.start_date), 'MMM d, yyyy')}</span> : '-';
+        } catch {
+          return '-';
+        }
+      }
     },
     {
       header: 'End',
       accessor: 'end_date',
-      render: (row) => (
-        <span className="text-sm">{format(parseISO(row.end_date), 'MMM d, yyyy')}</span>
-      )
+      render: (row) => {
+        try {
+          return row.end_date ? <span className="text-sm">{format(parseISO(row.end_date), 'MMM d, yyyy')}</span> : '-';
+        } catch {
+          return '-';
+        }
+      }
     },
     {
       header: 'Resources',

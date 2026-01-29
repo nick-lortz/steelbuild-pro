@@ -6,26 +6,45 @@ import { format, eachWeekOfInterval, parseISO, differenceInDays, startOfWeek, en
 
 export default function LookAheadTimeline({ activities, dateFrom, dateTo, onActivityClick }) {
   const weeks = useMemo(() => {
-    const start = startOfWeek(parseISO(dateFrom));
-    const end = endOfWeek(parseISO(dateTo));
-    return eachWeekOfInterval({ start, end });
+    if (!dateFrom || !dateTo) return [];
+    try {
+      const start = startOfWeek(parseISO(dateFrom));
+      const end = endOfWeek(parseISO(dateTo));
+      return eachWeekOfInterval({ start, end });
+    } catch {
+      return [];
+    }
   }, [dateFrom, dateTo]);
 
-  const totalDays = differenceInDays(parseISO(dateTo), parseISO(dateFrom)) || 1;
+  const totalDays = useMemo(() => {
+    if (!dateFrom || !dateTo) return 1;
+    try {
+      return differenceInDays(parseISO(dateTo), parseISO(dateFrom)) || 1;
+    } catch {
+      return 1;
+    }
+  }, [dateFrom, dateTo]);
 
   const getActivityPosition = (activity) => {
-    const activityStart = parseISO(activity.start_date);
-    const activityEnd = parseISO(activity.end_date);
-    const rangeStart = parseISO(dateFrom);
-    const rangeEnd = parseISO(dateTo);
+    if (!activity.start_date || !activity.end_date || !dateFrom || !dateTo) {
+      return { left: '0%', width: '2%' };
+    }
+    try {
+      const activityStart = parseISO(activity.start_date);
+      const activityEnd = parseISO(activity.end_date);
+      const rangeStart = parseISO(dateFrom);
+      const rangeEnd = parseISO(dateTo);
 
-    const startOffset = Math.max(0, differenceInDays(activityStart, rangeStart));
-    const endOffset = Math.min(totalDays, differenceInDays(activityEnd, rangeStart));
-    
-    const left = (startOffset / totalDays) * 100;
-    const width = ((endOffset - startOffset) / totalDays) * 100;
+      const startOffset = Math.max(0, differenceInDays(activityStart, rangeStart));
+      const endOffset = Math.min(totalDays, differenceInDays(activityEnd, rangeStart));
+      
+      const left = (startOffset / totalDays) * 100;
+      const width = ((endOffset - startOffset) / totalDays) * 100;
 
-    return { left: `${left}%`, width: `${Math.max(width, 2)}%` };
+      return { left: `${left}%`, width: `${Math.max(width, 2)}%` };
+    } catch {
+      return { left: '0%', width: '2%' };
+    }
   };
 
   const getStatusColor = (status, isCritical) => {
@@ -128,10 +147,13 @@ export default function LookAheadTimeline({ activities, dateFrom, dateTo, onActi
                             <div className="bg-black border border-zinc-700 rounded p-2 text-xs whitespace-nowrap shadow-lg">
                               <p className="font-semibold">{activity.name}</p>
                               <p className="text-zinc-400">
-                                {format(parseISO(activity.start_date), 'MMM d')} - {format(parseISO(activity.end_date), 'MMM d')}
+                                {activity.start_date && activity.end_date ? 
+                                  `${format(parseISO(activity.start_date), 'MMM d')} - ${format(parseISO(activity.end_date), 'MMM d')}` : 
+                                  'No dates set'
+                                }
                               </p>
                               <p className="text-zinc-400">
-                                Status: <span className="capitalize">{activity.status.replace('_', ' ')}</span> ({activity.progress_percent || 0}%)
+                                Status: <span className="capitalize">{(activity.status || 'unknown').replace('_', ' ')}</span> ({activity.progress_percent || 0}%)
                               </p>
                             </div>
                           </div>

@@ -14,9 +14,19 @@ import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import * as backend from '../services/backend';
 
+const STANDARD_EXPENSE_CATEGORIES = [
+  { category: 'labor', label: 'Labor' },
+  { category: 'material', label: 'Material' },
+  { category: 'equipment', label: 'Equipment' },
+  { category: 'subcontract', label: 'Subcontract' },
+  { category: 'overhead', label: 'Overhead' }
+];
+
 export default function ActualsTab({ projectId, expenses = [], costCodes = [], canEdit }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showStandardDialog, setShowStandardDialog] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState({});
   const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
     cost_code_id: '',

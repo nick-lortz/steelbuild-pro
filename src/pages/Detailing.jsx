@@ -112,6 +112,7 @@ const STATUS_TO_ZONE = {
   'IFA': 'external_review',
   'BFA': 'returned',
   'BFS': 'active_detailing',
+  'Revise & Resubmit': 'returned',
   'FFF': 'released',
   'As-Built': 'released'
 };
@@ -930,6 +931,7 @@ export default function Detailing() {
                               <SelectItem value="IFA">IFA</SelectItem>
                               <SelectItem value="BFA">BFA</SelectItem>
                               <SelectItem value="BFS">BFS</SelectItem>
+                              <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
                               <SelectItem value="FFF">FFF</SelectItem>
                               <SelectItem value="As-Built">As-Built</SelectItem>
                             </SelectContent>

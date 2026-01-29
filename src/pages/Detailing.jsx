@@ -28,7 +28,8 @@ import {
   ExternalLink,
   TrendingUp,
   Activity,
-  Trash2 } from
+  Trash2,
+  ArrowRight } from
 'lucide-react';
 import { format, differenceInDays, differenceInCalendarDays, isPast, parseISO, isValid } from 'date-fns';
 import { toast } from '@/components/ui/notifications';

@@ -160,8 +160,8 @@ export default function ProductionNotesPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-medium">{note.title}</h3>
-                      <Badge className="text-xs">
-                        {note.note_type.replace('_', ' ')}
+                      <Badge className="text-xs capitalize">
+                        {note.note_type?.replace('_', ' ') || 'general'}
                       </Badge>
                       {note.priority === 'critical' && (
                         <Badge className="bg-red-500 text-xs">CRITICAL</Badge>
@@ -194,8 +194,8 @@ export default function ProductionNotesPage() {
                       </span>
                     )}
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {note.visibility.replace('_', ' ')}
+                  <Badge variant="outline" className="text-xs capitalize">
+                    {note.visibility?.replace('_', ' ') || 'both'}
                   </Badge>
                 </div>
               </CardContent>

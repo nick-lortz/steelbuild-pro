@@ -412,13 +412,13 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                                   {renderCell(task, 'status', <StatusBadge status={task.status} />)}
                                 </td>
                                 <td className="p-3 text-zinc-300 text-xs">
-                                  {renderCell(task, 'start_date', task.start_date ? format(parseISO(task.start_date), 'MM/dd/yy') : '-')}
+                                  {renderCell(task, 'start_date', task.start_date && safeParse(task.start_date) ? format(safeParse(task.start_date), 'MM/dd/yy') : '-')}
                                 </td>
                                 <td className={`p-3 text-xs ${overdue ? 'text-red-400 font-semibold' : 'text-zinc-300'}`}>
-                                  {renderCell(task, 'end_date', task.end_date ? format(parseISO(task.end_date), 'MM/dd/yy') : '-')}
+                                  {renderCell(task, 'end_date', task.end_date && safeParse(task.end_date) ? format(safeParse(task.end_date), 'MM/dd/yy') : '-')}
                                 </td>
                                 <td className="p-3 text-zinc-500 text-xs">
-                                  {task.baseline_end ? format(parseISO(task.baseline_end), 'MM/dd/yy') : '-'}
+                                  {task.baseline_end && safeParse(task.baseline_end) ? format(safeParse(task.baseline_end), 'MM/dd/yy') : '-'}
                                 </td>
                                 <td className={`p-3 text-xs font-semibold ${
                                   !variance ? 'text-zinc-500' :

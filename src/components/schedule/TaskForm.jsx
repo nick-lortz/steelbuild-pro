@@ -183,11 +183,6 @@ export default function TaskForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.work_package_id) {
-      toast.error('Work package is required');
-      return;
-    }
-
     // Dependency validation removed - no constraints
 
     if (!formData.baseline_start && formData.start_date) {
@@ -344,16 +339,19 @@ export default function TaskForm({
         </div>
 
         <div className="space-y-2">
-          <Label>Work Package *</Label>
+          <Label>Work Package (Optional)</Label>
           <Select 
             value={formData.work_package_id || ''} 
             onValueChange={(v) => handleChange('work_package_id', v)}
             disabled={!!task}
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Select work package" />
+              <SelectValue placeholder="None - Standalone Task" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value={null} className="text-zinc-400">
+                None - Standalone Task
+              </SelectItem>
               {workPackages
                 .filter(wp => wp.project_id === formData.project_id)
                 .map((wp) => (
@@ -401,14 +399,27 @@ export default function TaskForm({
 
         <div className="space-y-2">
           <Label>Phase *</Label>
-          <Input
-            value={formData.phase}
-            disabled
-            className="bg-zinc-900 border-zinc-700 text-zinc-500 cursor-not-allowed"
-          />
-          <p className="text-xs text-zinc-500 mt-1">
-            🔒 Phase inherited from work package
-          </p>
+          <Select 
+            value={formData.phase} 
+            onValueChange={(v) => handleChange('phase', v)}
+            disabled={!!formData.work_package_id || !!task}
+          >
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="detailing">Detailing</SelectItem>
+              <SelectItem value="fabrication">Fabrication</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="erection">Erection</SelectItem>
+              <SelectItem value="closeout">Closeout</SelectItem>
+            </SelectContent>
+          </Select>
+          {formData.work_package_id && (
+            <p className="text-xs text-zinc-500 mt-1">
+              🔒 Phase inherited from work package
+            </p>
+          )}
         </div>
       </div>
 

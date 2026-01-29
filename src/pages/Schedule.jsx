@@ -186,11 +186,15 @@ export default function Schedule() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await base44.functions.invoke('createTaskForWorkPackage', {
-        work_package_id: data.work_package_id,
-        task_data: data
-      });
-      return response.data;
+      if (data.work_package_id) {
+        const response = await base44.functions.invoke('createTaskForWorkPackage', {
+          work_package_id: data.work_package_id,
+          task_data: data
+        });
+        return response.data;
+      } else {
+        return await base44.entities.Task.create(data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
@@ -261,12 +265,27 @@ export default function Schedule() {
       return;
     }
 
+    // If task has no work package, it's always editable
+    if (!task.work_package_id) {
+      setEditingTask({
+        ...task,
+        _isReadOnly: false
+      });
+      setShowTaskForm(true);
+      return;
+    }
+
     // Get work package to determine editability
     const workPackageData = await base44.entities.WorkPackage.filter({ id: task.work_package_id });
     const workPackage = workPackageData[0];
 
     if (!workPackage) {
-      toast.error('Work package not found');
+      // Work package doesn't exist - allow editing as standalone
+      setEditingTask({
+        ...task,
+        _isReadOnly: false
+      });
+      setShowTaskForm(true);
       return;
     }
 
@@ -285,10 +304,6 @@ export default function Schedule() {
   const handleCreateTask = () => {
     if (!activeProjectId) {
       toast.error('Please select a project first');
-      return;
-    }
-    if (selectedProject?.phase === 'detailing') {
-      toast.error('Cannot create tasks during detailing phase. Complete detailing first.');
       return;
     }
     setEditingTask({

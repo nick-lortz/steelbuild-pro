@@ -256,6 +256,22 @@ export default function Detailing() {
     onError: () => toast.error('Delete failed')
   });
 
+  const advancePhaseMutation = useMutation({
+    mutationFn: (projectId) => {
+      const phaseSequence = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
+      return base44.entities.Project.filter({ id: projectId }).then(([project]) => {
+        const currentPhaseIndex = phaseSequence.indexOf(project.phase);
+        const nextPhase = phaseSequence[Math.min(currentPhaseIndex + 1, phaseSequence.length - 1)];
+        return base44.entities.Project.update(projectId, { phase: nextPhase });
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Phase advanced');
+    },
+    onError: () => toast.error('Phase advance failed')
+  });
+
   const handleSelectSet = (setId, checked) => {
     if (checked) {
       setSelectedSets(prev => [...prev, setId]);
@@ -523,13 +539,23 @@ export default function Detailing() {
                 </SelectContent>
               </Select>
               {activeProjectId && (
-                <Button 
-                  onClick={() => setShowCreateDialog(true)}
-                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider h-9 px-4"
-                >
-                  <Plus size={16} className="mr-2" />
-                  NEW SET
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => advancePhaseMutation.mutate(activeProjectId)}
+                    disabled={advancePhaseMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider h-9 px-4"
+                  >
+                    <ArrowRight size={16} className="mr-2" />
+                    Advance Phase
+                  </Button>
+                  <Button 
+                    onClick={() => setShowCreateDialog(true)}
+                    className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider h-9 px-4"
+                  >
+                    <Plus size={16} className="mr-2" />
+                    NEW SET
+                  </Button>
+                </div>
               )}
             </div>
           </div>

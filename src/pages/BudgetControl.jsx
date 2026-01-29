@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, TrendingUp, AlertTriangle, FileText } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import BudgetManager from '@/components/budget/BudgetManager';
-import CostVarianceReport from '@/components/budget/CostVarianceReport';
 import BudgetAlerts from '@/components/budget/BudgetAlerts';
-import { toast } from 'sonner';
+import FinancialKPIs from '@/components/financials/FinancialKPIs';
+import { toast } from '@/components/ui/notifications';
 
 export default function BudgetControl() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -143,13 +143,7 @@ export default function BudgetControl() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <CostVarianceReport
-            workPackages={workPackages}
-            tasks={tasks}
-            laborHours={laborHours}
-            equipmentUsage={equipmentUsage}
-            expenses={expenses} />
-
+          <FinancialKPIs projectId={activeProjectId} />
         </TabsContent>
 
         <TabsContent value="by-package" className="space-y-4">

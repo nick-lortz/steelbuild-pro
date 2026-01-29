@@ -75,7 +75,7 @@ export default function Schedule() {
     [projects, activeProjectId]
   );
 
-  // Real-time subscriptions
+  // Real-time subscriptions - Tasks
   useEffect(() => {
     if (!activeProjectId) return;
 
@@ -83,6 +83,20 @@ export default function Schedule() {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
         queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
+        queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
+      }
+    });
+
+    return unsubscribe;
+  }, [activeProjectId, queryClient]);
+
+  // Real-time subscriptions - Activities (for Look-Ahead updates)
+  useEffect(() => {
+    if (!activeProjectId) return;
+
+    const unsubscribe = base44.entities.ScheduleActivity.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
       }
     });
 
@@ -199,6 +213,7 @@ export default function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task created');
@@ -219,6 +234,7 @@ export default function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task updated');
@@ -238,6 +254,7 @@ export default function Schedule() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
       toast.success(data.message || 'Task deleted');
     },
     onError: (error) => {

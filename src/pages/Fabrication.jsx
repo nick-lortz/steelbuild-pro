@@ -132,7 +132,7 @@ export default function FabricationPage() {
   const enhancedPackages = useMemo(() => {
     return fabricationPackages.map(pkg => {
       const pieces = fabricationItems.filter(f => f.package_id === pkg.id);
-      const linkedWP = workPackages.find(wp => wp.linked_delivery_ids?.includes(pkg.linked_delivery_id));
+      const linkedWP = workPackages.find(wp => wp.id === pkg.work_package_id);
       const linkedDelivery = deliveries.find(d => d.id === pkg.linked_delivery_id);
       const linkedDrawings = drawings.filter(d => pkg.drawing_set_ids?.includes(d.id));
       
@@ -293,7 +293,7 @@ export default function FabricationPage() {
                 </SelectContent>
               </Select>
               <Button
-                onClick={() => setShowCreatePackage(true)}
+                onClick={() => setShowCreatePackage({})}
                 className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
                 <Plus size={14} className="mr-1" />
                 NEW PACKAGE
@@ -485,7 +485,7 @@ export default function FabricationPage() {
                         )}
                         {pkg.linkedWP && (
                           <Badge variant="outline" className="border-blue-500 text-blue-400">
-                            WP: {pkg.linkedWP.wpid}
+                            WP: {pkg.linkedWP.wpid} • Budget: ${(pkg.linkedWP.budget_at_award / 1000).toFixed(0)}K
                           </Badge>
                         )}
                         {pkg.linkedDelivery && (
@@ -591,36 +591,51 @@ export default function FabricationPage() {
           {/* Work Packages Integration */}
           <TabsContent value="workPackages" className="space-y-4 mt-6">
             {workPackages.map(wp => {
-              const linkedFabPkgs = fabricationPackages.filter(fp => 
-                wp.linked_delivery_ids?.some(delId => fp.linked_delivery_id === delId)
-              );
+              const linkedFabPkgs = fabricationPackages.filter(fp => fp.work_package_id === wp.id);
               const linkedDrawings = drawings.filter(d => wp.linked_drawing_set_ids?.includes(d.id));
               const drawingsReleased = linkedDrawings.filter(d => d.status === 'FFF').length;
+              const canCreateFabPkg = linkedDrawings.length > 0 && drawingsReleased === linkedDrawings.length;
               
               return (
                 <Card key={wp.id} className="bg-zinc-900 border-zinc-800">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-lg font-bold text-white">{wp.title}</h3>
                           <StatusBadge status={wp.phase} />
                           <StatusBadge status={wp.status} />
+                          {canCreateFabPkg && linkedFabPkgs.length === 0 && (
+                            <Badge className="bg-green-500 text-black text-[10px]">
+                              <CheckCircle2 size={10} className="mr-1" />
+                              READY FOR FABRICATION
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-xs text-zinc-500 font-mono">{wp.wpid}</div>
+                        {wp.scope_summary && (
+                          <p className="text-xs text-zinc-400 mt-2">{wp.scope_summary}</p>
+                        )}
                       </div>
-                      <div className="text-right">
+                      <div className="text-right ml-4">
                         <div className="text-xs text-zinc-500">Target Delivery</div>
                         <div className="text-sm font-semibold text-white">
                           {wp.target_date ? format(new Date(wp.target_date), 'MMM d, yyyy') : 'Not set'}
                         </div>
+                        {wp.budget_at_award > 0 && (
+                          <div className="text-xs text-zinc-400 mt-1">
+                            Budget: ${(wp.budget_at_award / 1000).toFixed(0)}K
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-4 gap-4 mb-4">
                       <div>
                         <div className="text-[10px] text-zinc-600 uppercase">Drawings</div>
-                        <div className="text-sm font-mono text-white">{drawingsReleased}/{linkedDrawings.length} FFF</div>
+                        <div className={`text-sm font-mono ${drawingsReleased === linkedDrawings.length && linkedDrawings.length > 0 ? 'text-green-500' : 'text-white'}`}>
+                          {drawingsReleased}/{linkedDrawings.length} FFF
+                        </div>
                       </div>
                       <div>
                         <div className="text-[10px] text-zinc-600 uppercase">Fab Packages</div>
@@ -630,20 +645,53 @@ export default function FabricationPage() {
                         <div className="text-[10px] text-zinc-600 uppercase">Progress</div>
                         <div className="text-sm font-mono text-amber-500">{wp.percent_complete || 0}%</div>
                       </div>
+                      <div>
+                        <div className="text-[10px] text-zinc-600 uppercase">PM</div>
+                        <div className="text-sm text-white truncate">{wp.assigned_pm?.split('@')[0] || '—'}</div>
+                      </div>
                     </div>
 
-                    {linkedFabPkgs.length > 0 && (
+                    {linkedFabPkgs.length > 0 ? (
                       <div className="space-y-2">
                         <div className="text-xs text-zinc-500 uppercase">Fabrication Packages:</div>
                         {linkedFabPkgs.map(fp => (
-                          <div key={fp.id} className="flex items-center justify-between p-2 bg-zinc-800 rounded">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-white">{fp.package_name}</span>
+                          <div key={fp.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded cursor-pointer hover:bg-zinc-700" onClick={() => setSelectedPackage(fp)}>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm text-white font-medium">{fp.package_name}</span>
                               <StatusBadge status={fp.status} />
                             </div>
-                            <div className="text-xs text-zinc-400">{fp.completion_percent || 0}%</div>
+                            <div className="flex items-center gap-4">
+                              <div className="text-xs text-zinc-400">{fp.total_pieces || 0} pcs • {fp.total_weight_tons?.toFixed(1) || 0}T</div>
+                              <div className="text-sm font-mono text-amber-500">{fp.completion_percent || 0}%</div>
+                            </div>
                           </div>
                         ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-zinc-800/50 border border-dashed border-zinc-700 rounded">
+                        <div className="text-sm text-zinc-400">No fabrication packages created</div>
+                        {canCreateFabPkg && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              // Pre-populate form with work package data
+                              setShowCreatePackage({
+                                work_package_id: wp.id,
+                                package_name: wp.title,
+                                area: wp.scope_summary,
+                                planned_ship_date: wp.target_date,
+                                drawing_set_ids: wp.linked_drawing_set_ids,
+                                budget_at_award: wp.budget_at_award,
+                                forecast_at_completion: wp.forecast_at_completion,
+                                assigned_pm: wp.assigned_pm,
+                                assigned_superintendent: wp.assigned_superintendent
+                              });
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-black font-bold text-xs">
+                            <Plus size={12} className="mr-1" />
+                            CREATE FROM WP
+                          </Button>
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -865,7 +913,7 @@ export default function FabricationPage() {
       </Sheet>
 
       {/* Create Package Dialog */}
-      <Dialog open={showCreatePackage} onOpenChange={setShowCreatePackage}>
+      <Dialog open={!!showCreatePackage} onOpenChange={(open) => !open && setShowCreatePackage(false)}>
         <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800">
           <DialogHeader>
             <DialogTitle className="text-white">New Fabrication Package</DialogTitle>
@@ -874,9 +922,11 @@ export default function FabricationPage() {
             projectId={activeProjectId}
             workPackages={workPackages}
             drawings={drawings}
+            prefillData={typeof showCreatePackage === 'object' ? showCreatePackage : {}}
             onSubmit={async (data) => {
               await base44.entities.FabricationPackage.create(data);
               queryClient.invalidateQueries({ queryKey: ['fabrication-packages'] });
+              queryClient.invalidateQueries({ queryKey: ['work-packages'] });
               setShowCreatePackage(false);
               toast.success('Package created');
             }}
@@ -891,6 +941,39 @@ export default function FabricationPage() {
 function PackageDetailView({ package: pkg, onUpdate, onClose }) {
   return (
     <div className="space-y-6 mt-6">
+      {/* Work Package Info */}
+      {pkg.linkedWP && (
+        <Card className="bg-blue-950/20 border-blue-500/30">
+          <CardHeader>
+            <CardTitle className="text-sm uppercase text-blue-400">Linked Work Package</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-zinc-400">WPID:</span>
+                <span className="text-white font-mono">{pkg.linkedWP.wpid}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Title:</span>
+                <span className="text-white">{pkg.linkedWP.title}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Budget:</span>
+                <span className="text-white font-mono">${(pkg.linkedWP.budget_at_award / 1000).toFixed(0)}K</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Target Date:</span>
+                <span className="text-white">{pkg.linkedWP.target_date ? format(new Date(pkg.linkedWP.target_date), 'MMM d, yyyy') : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">PM:</span>
+                <span className="text-white">{pkg.linkedWP.assigned_pm?.split('@')[0] || '—'}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <Card className="bg-zinc-800/50 border-zinc-700">
           <CardHeader>
@@ -950,6 +1033,17 @@ function PackageDetailView({ package: pkg, onUpdate, onClose }) {
           </div>
         </CardContent>
       </Card>
+
+      {pkg.scope_summary && (
+        <Card className="bg-zinc-800/50 border-zinc-700">
+          <CardHeader>
+            <CardTitle className="text-sm">Scope</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-zinc-300">{pkg.scope_summary}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button onClick={onClose} variant="outline" className="border-zinc-700">Close</Button>
@@ -1050,23 +1144,67 @@ function PieceDetailView({ piece, drawings, rfis, onUpdate, onClose }) {
   );
 }
 
-function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCancel }) {
+function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCancel, prefillData }) {
   const [formData, setFormData] = useState({
     project_id: projectId,
+    work_package_id: '',
     package_number: '',
     package_name: '',
     area: '',
     sequence: '',
+    scope_summary: '',
     status: 'draft',
     planned_ship_date: '',
-    drawing_set_ids: []
+    budget_at_award: 0,
+    forecast_at_completion: 0,
+    assigned_pm: '',
+    assigned_superintendent: '',
+    drawing_set_ids: [],
+    ...prefillData
   });
+
+  // Auto-populate when work package selected
+  const handleWorkPackageChange = (wpId) => {
+    const wp = workPackages.find(w => w.id === wpId);
+    if (wp) {
+      setFormData(prev => ({
+        ...prev,
+        work_package_id: wpId,
+        package_name: prev.package_name || wp.title,
+        scope_summary: wp.scope_summary,
+        area: wp.scope_summary,
+        planned_ship_date: prev.planned_ship_date || wp.target_date,
+        budget_at_award: wp.budget_at_award,
+        forecast_at_completion: wp.forecast_at_completion,
+        assigned_pm: wp.assigned_pm,
+        assigned_superintendent: wp.assigned_superintendent,
+        drawing_set_ids: wp.linked_drawing_set_ids || []
+      }));
+    }
+  };
 
   return (
     <form onSubmit={(e) => {
       e.preventDefault();
       onSubmit(formData);
     }} className="space-y-6 mt-6">
+      <div className="space-y-2">
+        <label className="text-xs text-zinc-400">Link to Work Package (Optional)</label>
+        <Select value={formData.work_package_id || ''} onValueChange={handleWorkPackageChange}>
+          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+            <SelectValue placeholder="Select work package to auto-populate data..." />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value={null}>None - Create Standalone</SelectItem>
+            {workPackages.map(wp => (
+              <SelectItem key={wp.id} value={wp.id}>
+                {wp.wpid} - {wp.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-xs text-zinc-400">Package Number *</label>
@@ -1092,7 +1230,7 @@ function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCanc
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-xs text-zinc-400">Area</label>
+          <label className="text-xs text-zinc-400">Area/Gridline</label>
           <Input
             value={formData.area}
             onChange={(e) => setFormData({ ...formData, area: e.target.value })}
@@ -1100,6 +1238,18 @@ function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCanc
             className="bg-zinc-800 border-zinc-700 text-white"
           />
         </div>
+        <div className="space-y-2">
+          <label className="text-xs text-zinc-400">Erection Sequence</label>
+          <Input
+            value={formData.sequence}
+            onChange={(e) => setFormData({ ...formData, sequence: e.target.value })}
+            placeholder="SEQ-01"
+            className="bg-zinc-800 border-zinc-700 text-white"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-xs text-zinc-400">Planned Ship Date</label>
           <Input
@@ -1109,7 +1259,35 @@ function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCanc
             className="bg-zinc-800 border-zinc-700 text-white"
           />
         </div>
+        <div className="space-y-2">
+          <label className="text-xs text-zinc-400">Shop Foreman</label>
+          <Input
+            value={formData.shop_foreman || ''}
+            onChange={(e) => setFormData({ ...formData, shop_foreman: e.target.value })}
+            placeholder="Foreman name"
+            className="bg-zinc-800 border-zinc-700 text-white"
+          />
+        </div>
       </div>
+
+      {formData.work_package_id && (
+        <Card className="bg-blue-950/20 border-blue-500/30">
+          <CardContent className="p-3">
+            <div className="text-xs text-blue-400 font-bold uppercase mb-2">Auto-Populated from Work Package:</div>
+            <div className="grid grid-cols-2 gap-2 text-xs text-zinc-300">
+              {formData.budget_at_award > 0 && (
+                <div>Budget: ${(formData.budget_at_award / 1000).toFixed(0)}K</div>
+              )}
+              {formData.assigned_pm && (
+                <div>PM: {formData.assigned_pm.split('@')[0]}</div>
+              )}
+              {formData.drawing_set_ids?.length > 0 && (
+                <div>{formData.drawing_set_ids.length} Drawing Sets</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800">
         <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>

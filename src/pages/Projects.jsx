@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue } from
 "@/components/ui/select";
+import { Building, RefreshCw, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -304,7 +305,7 @@ export default function Projects() {
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center shadow-2xl shadow-purple-500/30">
-              <Building2 className="w-8 h-8 text-white" />
+              <Building className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-4xl font-bold text-white tracking-tight">Projects</h1>

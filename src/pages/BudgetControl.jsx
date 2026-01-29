@@ -30,10 +30,10 @@ export default function BudgetControl() {
   });
 
   const projects = currentUser?.role === 'admin' ?
-    allProjects :
-    allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+  allProjects :
+  allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
 
-  const selectedProject = projects.find(p => p.id === activeProjectId);
+  const selectedProject = projects.find((p) => p.id === activeProjectId);
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
@@ -84,7 +84,7 @@ export default function BudgetControl() {
     }
   });
 
-  const selectedWP = workPackages.find(wp => wp.id === selectedWPId);
+  const selectedWP = workPackages.find((wp) => wp.id === selectedWPId);
 
   if (!activeProjectId) {
     return (
@@ -99,35 +99,35 @@ export default function BudgetControl() {
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-                ))}
+                {projects.map((p) =>
+                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader 
+    <div className="text-slate-50 p-6 space-y-6">
+      <PageHeader
         title="Budget & Cost Control"
         subtitle={selectedProject?.name}
         actions={
-          <Select value={activeProjectId} onValueChange={setActiveProjectId}>
+        <Select value={activeProjectId} onValueChange={setActiveProjectId}>
             <SelectTrigger className="w-[300px] bg-zinc-900 border-zinc-800">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-              ))}
+              {projects.map((p) =>
+            <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+            )}
             </SelectContent>
           </Select>
-        }
-      />
+        } />
+
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="bg-zinc-900 border border-zinc-800">
@@ -142,8 +142,8 @@ export default function BudgetControl() {
             tasks={tasks}
             laborHours={laborHours}
             equipmentUsage={equipmentUsage}
-            expenses={expenses}
-          />
+            expenses={expenses} />
+
         </TabsContent>
 
         <TabsContent value="by-package" className="space-y-4">
@@ -157,27 +157,27 @@ export default function BudgetControl() {
                   <SelectValue placeholder="Select work package" />
                 </SelectTrigger>
                 <SelectContent>
-                  {workPackages.map(wp => (
-                    <SelectItem key={wp.id} value={wp.id}>
+                  {workPackages.map((wp) =>
+                  <SelectItem key={wp.id} value={wp.id}>
                       {wp.wpid} - {wp.title}
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </CardContent>
           </Card>
 
-          {selectedWP && (
-            <BudgetManager
-              workPackage={selectedWP}
-              tasks={tasks.filter(t => t.work_package_id === selectedWP.id)}
-              laborHours={laborHours}
-              equipmentUsage={equipmentUsage}
-              expenses={expenses}
-              costCodes={costCodes}
-              onUpdateBudget={(data) => updateWPMutation.mutate({ id: selectedWP.id, data })}
-            />
-          )}
+          {selectedWP &&
+          <BudgetManager
+            workPackage={selectedWP}
+            tasks={tasks.filter((t) => t.work_package_id === selectedWP.id)}
+            laborHours={laborHours}
+            equipmentUsage={equipmentUsage}
+            expenses={expenses}
+            costCodes={costCodes}
+            onUpdateBudget={(data) => updateWPMutation.mutate({ id: selectedWP.id, data })} />
+
+          }
         </TabsContent>
 
         <TabsContent value="alerts" className="space-y-4">
@@ -187,8 +187,8 @@ export default function BudgetControl() {
                 <CardTitle className="text-sm">Alert Settings</CardTitle>
                 <Select
                   value={alertThreshold.toString()}
-                  onValueChange={(val) => setAlertThreshold(parseInt(val))}
-                >
+                  onValueChange={(val) => setAlertThreshold(parseInt(val))}>
+
                   <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
                     <SelectValue />
                   </SelectTrigger>
@@ -207,10 +207,10 @@ export default function BudgetControl() {
             workPackages={workPackages}
             tasks={tasks}
             expenses={expenses}
-            threshold={alertThreshold}
-          />
+            threshold={alertThreshold} />
+
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>);
+
 }

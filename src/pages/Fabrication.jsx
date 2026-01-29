@@ -29,6 +29,39 @@ export default function FabricationPage() {
     enabled: !!activeProjectId
   });
 
+  // Real-time subscriptions
+  React.useEffect(() => {
+    if (!activeProjectId) return;
+
+    const unsubFab = base44.entities.Fabrication.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
+      }
+    });
+
+    const unsubDrawing = base44.entities.DrawingSet.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['drawings', activeProjectId] });
+      }
+    });
+
+    const unsubWP = base44.entities.WorkPackage.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      }
+    });
+
+    return () => {
+      unsubFab();
+      unsubDrawing();
+      unsubWP();
+    };
+  }, [activeProjectId, queryClient]);
+
   const { data: packages = [] } = useQuery({
     queryKey: ['fabrication-packages', activeProjectId],
     queryFn: () => activeProjectId ? base44.entities.FabricationPackage.filter({ project_id: activeProjectId }) : [],
@@ -60,6 +93,8 @@ export default function FabricationPage() {
     mutationFn: ({ id, data }) => base44.entities.Fabrication.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrication'] });
+      queryClient.invalidateQueries({ queryKey: ['work-packages'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       toast.success('Updated');
       setSelectedItem(null);
     }

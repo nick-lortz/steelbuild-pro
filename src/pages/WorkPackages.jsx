@@ -47,6 +47,38 @@ export default function WorkPackages() {
     enabled: !!activeProjectId
   });
 
+  // Real-time subscriptions
+  React.useEffect(() => {
+    if (!activeProjectId) return;
+
+    const unsubWP = base44.entities.WorkPackage.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
+      }
+    });
+
+    const unsubTask = base44.entities.Task.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      }
+    });
+
+    const unsubFab = base44.entities.Fabrication.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      }
+    });
+
+    return () => {
+      unsubWP();
+      unsubTask();
+      unsubFab();
+    };
+  }, [activeProjectId, queryClient]);
+
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
@@ -88,6 +120,8 @@ export default function WorkPackages() {
     mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries(['fabrication', activeProjectId]);
+      queryClient.invalidateQueries(['schedule-tasks', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
     },
@@ -100,6 +134,8 @@ export default function WorkPackages() {
     mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries(['fabrication', activeProjectId]);
+      queryClient.invalidateQueries(['schedule-tasks', activeProjectId]);
       setShowForm(false);
       setEditingPackage(null);
       setViewingPackage(null);

@@ -148,6 +148,8 @@ export default function Detailing() {
     const unsubscribe = base44.entities.DrawingSet.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['drawing-sets', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
       }
     });
 
@@ -188,6 +190,8 @@ export default function Detailing() {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+      queryClient.invalidateQueries({ queryKey: ['fabrication'] });
+      queryClient.invalidateQueries({ queryKey: ['work-packages'] });
       toast.success('Status updated');
     },
     onError: () => toast.error('Update failed')

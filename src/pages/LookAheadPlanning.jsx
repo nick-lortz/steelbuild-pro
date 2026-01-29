@@ -93,6 +93,22 @@ export default function LookAheadPlanning() {
     enabled: !!activeProjectId
   });
 
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => activeProjectId && activeProjectId !== 'all'
+      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+      : base44.entities.Delivery.list('scheduled_date'),
+    enabled: !!activeProjectId
+  });
+
+  const { data: fabricationPackages = [] } = useQuery({
+    queryKey: ['fabrication-packages', activeProjectId],
+    queryFn: () => activeProjectId && activeProjectId !== 'all'
+      ? base44.entities.FabricationPackage.filter({ project_id: activeProjectId })
+      : base44.entities.FabricationPackage.list('planned_ship_date'),
+    enabled: !!activeProjectId
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ScheduleActivity.create(data),
     onSuccess: () => {
@@ -123,20 +139,79 @@ export default function LookAheadPlanning() {
     }
   });
 
+  // Convert deliveries to schedule activities
+  const deliveryActivities = useMemo(() => {
+    return deliveries.map(d => ({
+      id: `delivery-${d.id}`,
+      source_entity: 'Delivery',
+      source_id: d.id,
+      project_id: d.project_id,
+      name: `Delivery: ${d.package_name}`,
+      phase: 'delivery',
+      activity_type: 'delivery',
+      start_date: d.scheduled_date || d.confirmed_date || d.requested_date,
+      end_date: d.scheduled_date || d.confirmed_date || d.requested_date,
+      status: d.delivery_status === 'received' || d.delivery_status === 'closed' ? 'completed' :
+              d.delivery_status === 'in_transit' || d.delivery_status === 'arrived_on_site' ? 'in_progress' :
+              d.delivery_status === 'exception' ? 'delayed' : 'planned',
+      progress_percent: d.delivery_status === 'received' ? 100 :
+                        d.delivery_status === 'arrived_on_site' ? 75 :
+                        d.delivery_status === 'in_transit' ? 50 : 0,
+      is_critical: d.priority === 'high' || d.priority === 'critical',
+      responsible_party_id: d.contact_email,
+      constraint_notes: d.notes,
+      _deliveryData: d
+    })).filter(d => d.start_date);
+  }, [deliveries]);
+
+  // Convert fabrication packages to schedule activities
+  const fabricationActivities = useMemo(() => {
+    return fabricationPackages.map(fp => ({
+      id: `fabrication-${fp.id}`,
+      source_entity: 'FabricationPackage',
+      source_id: fp.id,
+      project_id: fp.project_id,
+      name: `Fabrication: ${fp.package_name}`,
+      phase: 'fabrication',
+      activity_type: 'fabrication',
+      start_date: fp.release_date,
+      end_date: fp.planned_ship_date,
+      status: fp.status === 'shipped' || fp.status === 'complete' ? 'completed' :
+              fp.status === 'in_progress' || fp.status === 'qc' ? 'in_progress' :
+              fp.status === 'pending_prereqs' ? 'delayed' : 'planned',
+      progress_percent: fp.completion_percent || 0,
+      is_critical: fp.priority === 'high' || fp.priority === 'critical',
+      responsible_party_id: fp.assigned_pm || fp.shop_foreman,
+      constraint_notes: fp.notes,
+      _fabricationData: fp
+    })).filter(fp => fp.start_date || fp.end_date);
+  }, [fabricationPackages]);
+
+  // Combine all activities
+  const allActivities = useMemo(() => {
+    return [...activities, ...deliveryActivities, ...fabricationActivities];
+  }, [activities, deliveryActivities, fabricationActivities]);
+
   // Filter activities
   const filteredActivities = useMemo(() => {
-    if (!activities.length) return [];
+    if (!allActivities.length) return [];
 
     const dateFrom = parseISO(filters.dateFrom);
     const dateTo = parseISO(filters.dateTo);
 
-    return activities.filter((activity) => {
+    return allActivities.filter((activity) => {
       // Date range filter
-      const activityStart = parseISO(activity.start_date);
-      const activityEnd = parseISO(activity.end_date);
-      const inDateRange = isWithinInterval(activityStart, { start: dateFrom, end: dateTo }) ||
-      isWithinInterval(activityEnd, { start: dateFrom, end: dateTo }) ||
-      activityStart <= dateFrom && activityEnd >= dateTo;
+      const activityStart = activity.start_date ? parseISO(activity.start_date) : null;
+      const activityEnd = activity.end_date ? parseISO(activity.end_date) : null;
+      
+      if (!activityStart && !activityEnd) return false;
+      
+      const start = activityStart || activityEnd;
+      const end = activityEnd || activityStart;
+      
+      const inDateRange = isWithinInterval(start, { start: dateFrom, end: dateTo }) ||
+      isWithinInterval(end, { start: dateFrom, end: dateTo }) ||
+      start <= dateFrom && end >= dateTo;
 
       if (!inDateRange) return false;
 
@@ -161,7 +236,7 @@ export default function LookAheadPlanning() {
 
       return true;
     });
-  }, [activities, filters]);
+  }, [allActivities, filters]);
 
   // Export to CSV
   const handleExport = () => {

@@ -798,10 +798,10 @@ export default function Detailing() {
                         {/* Drawing Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-bold text-white truncate">{ds.set_name}</h4>
-                            {ds.isOverdue && (
-                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0">OVERDUE</Badge>
-                            )}
+                           <h4 className="font-bold text-white truncate">{ds.set_name}</h4>
+                           {ds.isOverdue && ds.status !== 'FFF' && (
+                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">OVERDUE</Badge>
+                           )}
                             {ds.linkedRFIs.length > 0 && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-red-500 text-red-400">
                                 {ds.linkedRFIs.length} RFI

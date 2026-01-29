@@ -69,7 +69,7 @@ export default function LinkagePanel({ changeOrder, onUpdate }) {
     .map(id => drawings.find(d => d.id === id))
     .filter(Boolean);
 
-  const renderSection = (title, icon: React.ElementType, items, type, available) => (
+  const renderSection = (title, icon, items, type, available) => (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-zinc-400 flex items-center gap-2">

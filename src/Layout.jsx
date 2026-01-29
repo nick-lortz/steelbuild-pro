@@ -84,7 +84,8 @@ const navGroups = [
     items: [
       { name: 'Detailing', page: 'Detailing', icon: FileText },
       { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp },
-      { name: 'Documents', page: 'Documents', icon: File }
+      { name: 'Documents', page: 'Documents', icon: File },
+      { name: 'Photos', page: 'ProjectPhotos', icon: Camera }
     ],
     roles: ['admin', 'user']
   },

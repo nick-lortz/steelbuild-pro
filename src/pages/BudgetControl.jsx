@@ -92,6 +92,20 @@ export default function BudgetControl() {
     enabled: !!activeProjectId
   });
 
+  const { data: financials = [] } = useQuery({
+    queryKey: ['financials', activeProjectId],
+    queryFn: () => base44.entities.Financial.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['invoices', activeProjectId],
+    queryFn: () => base44.entities.ClientInvoice.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
+  });
+
   if (!activeProjectId) {
     return (
       <div className="p-6 space-y-6">

@@ -360,10 +360,15 @@ export default function SOVManager({ projectId, canEdit }) {
           <h3 className="text-base font-semibold">Schedule of Values</h3>
           <p className="text-xs text-muted-foreground">Project-level billing lines. Update % complete to calculate billing.</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
-          <Plus size={16} className="mr-1" />
-          Add SOV Line
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowBulkAddDialog(true)} disabled={!canEdit || sovItems.length > 0} variant="outline" size="sm">
+            Add Standard SOV
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
+            <Plus size={16} className="mr-1" />
+            Add SOV Line
+          </Button>
+        </div>
       </div>
 
       {hasOverbilling && (

@@ -85,12 +85,6 @@ export default function WorkPackages() {
     enabled: !!activeProjectId
   });
 
-  const { data: deliveries = [] } = useQuery({
-    queryKey: ['deliveries', activeProjectId],
-    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
-  });
-
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
@@ -119,6 +113,12 @@ export default function WorkPackages() {
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
     queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 

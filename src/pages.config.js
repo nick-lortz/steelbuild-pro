@@ -91,6 +91,7 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import FieldToolsMobile from './pages/FieldToolsMobile';
 import __Layout from './Layout.jsx';
 
 
@@ -139,6 +140,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "FieldToolsMobile": FieldToolsMobile,
 }
 
 export const pagesConfig = {

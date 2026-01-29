@@ -30,6 +30,7 @@ import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ChangeOrderForm from '@/components/change-orders/ChangeOrderForm';
+import ChangeOrderDetail from '@/components/change-orders/ChangeOrderDetail';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -65,6 +66,7 @@ export default function ChangeOrders() {
   const [pmFilter, setPmFilter] = useState('all');
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [deleteCO, setDeleteCO] = useState(null);
+  const [viewingCO, setViewingCO] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -109,7 +111,37 @@ export default function ChangeOrders() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ChangeOrder.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const current = changeOrders.find(co => co.id === id);
+      
+      // Create version history entry
+      const versionHistory = current.version_history || [];
+      const newVersion = (current.version || 1) + 1;
+      
+      versionHistory.push({
+        version: current.version || 1,
+        changed_by: (await base44.auth.me()).email,
+        changed_at: new Date().toISOString(),
+        changes_summary: data.changes_summary || 'Updated change order',
+        snapshot: { ...current }
+      });
+
+      const updateData = {
+        ...data,
+        version: newVersion,
+        version_history: versionHistory
+      };
+
+      // Send notification
+      await base44.functions.invoke('notifyStatusChange', {
+        entity_type: 'ChangeOrder',
+        entity_id: id,
+        event_type: 'status_change',
+        message: `CO-${current.co_number} updated to version ${newVersion}`
+      });
+
+      return base44.entities.ChangeOrder.update(id, updateData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
       setSelectedCO(null);
@@ -414,7 +446,7 @@ export default function ChangeOrders() {
       <DataTable
         columns={columns}
         data={filteredCOs}
-        onRowClick={handleEdit}
+        onRowClick={(co) => setViewingCO(co)}
         emptyMessage="No change orders found. Create your first change order to get started."
       />
 
@@ -435,26 +467,21 @@ export default function ChangeOrders() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Sheet */}
-      <Sheet open={!!selectedCO} onOpenChange={(open) => !open && setSelectedCO(null)}>
-        <SheetContent className="w-full sm:max-w-xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-white">
-              Edit CO-{String(selectedCO?.co_number).padStart(3, '0')}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <ChangeOrderForm
-              formData={formData}
-              setFormData={setFormData}
+      {/* Detail Sheet */}
+      <Sheet open={!!viewingCO} onOpenChange={(open) => !open && setViewingCO(null)}>
+        <SheetContent className="w-full sm:max-w-4xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+          {viewingCO && (
+            <ChangeOrderDetail
+              changeOrder={viewingCO}
               projects={projects}
-              onProjectChange={handleProjectChange}
-              onSubmit={handleSubmit}
-              isLoading={updateMutation.isPending}
-              isEdit
-              changeOrder={selectedCO}
+              onUpdate={() => {
+                queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+                const updated = changeOrders.find(co => co.id === viewingCO.id);
+                if (updated) setViewingCO(updated);
+              }}
+              onClose={() => setViewingCO(null)}
             />
-          </div>
+          )}
         </SheetContent>
       </Sheet>
 

@@ -227,13 +227,19 @@ export default function WorkPackages() {
     accessor: 'wpid',
     render: (pkg) => {
       const project = projects.find(p => p.id === pkg.project_id);
+      const deliveryCount = pkg.linked_delivery_ids?.length || 0;
+      const drawingCount = pkg.linked_drawing_set_ids?.length || 0;
       return (
         <div>
-          <div className="text-sm text-white font-bold">{pkg.title}</div>
-          <div className="font-mono text-xs text-amber-400 mt-0.5">{pkg.wpid || pkg.id.slice(0, 8)}</div>
-          <div className="text-xs text-zinc-500 mt-0.5">{project?.project_number}</div>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-white font-bold">{pkg.title}</div>
+            <div className="font-mono text-xs text-amber-400">{pkg.wpid || pkg.id.slice(0, 8)}</div>
+          </div>
+          <div className="text-xs text-zinc-500 mt-0.5">
+            {project?.project_number} • {pkg.assigned_pm || 'No PM'} • {drawingCount} dwgs • {deliveryCount} del
+          </div>
           {pkg.scope_summary && (
-            <div className="text-xs text-zinc-600 mt-1 line-clamp-1">{pkg.scope_summary}</div>
+            <div className="text-xs text-zinc-600 mt-1 line-clamp-2 max-w-md">{pkg.scope_summary}</div>
           )}
         </div>
       );
@@ -249,12 +255,20 @@ export default function WorkPackages() {
   },
   {
     header: 'Budget / Forecast',
-    render: (pkg) => (
-      <div className="text-sm">
-        <div className="text-white font-mono">${((pkg.budget_at_award || 0) / 1000).toFixed(0)}K</div>
-        <div className="text-xs text-zinc-500">${((pkg.forecast_at_completion || 0) / 1000).toFixed(0)}K est</div>
-      </div>
-    )
+    render: (pkg) => {
+      const budget = pkg.budget_at_award || 0;
+      const forecast = pkg.forecast_at_completion || 0;
+      const variance = forecast - budget;
+      const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
+      return (
+        <div className="text-sm">
+          <div className="text-white font-mono">${((budget) / 1000).toFixed(0)}K</div>
+          <div className={`text-xs ${variance > 0 ? 'text-red-400' : variance < 0 ? 'text-green-400' : 'text-zinc-500'}`}>
+            ${((forecast) / 1000).toFixed(0)}K {variance !== 0 && `(${variance > 0 ? '+' : ''}${variancePercent.toFixed(0)}%)`}
+          </div>
+        </div>
+      );
+    }
   },
   {
     header: 'Progress',

@@ -360,7 +360,7 @@ export default function Documents() {
         (wpFilter === 'unlinked' ? !d.work_package_id : d.work_package_id === wpFilter);
       const matchesTask = taskFilter === 'all' || 
         (taskFilter === 'unlinked' ? !d.task_id : d.task_id === taskFilter);
-      const matchesFolder = !selectedFolder || selectedFolder === 'root' || (d.folder_path || '/').startsWith(selectedFolder);
+      const matchesFolder = !selectedFolder || selectedFolder === 'root' || selectedFolder === '/' || (d.folder_path || '/').startsWith(selectedFolder);
       return matchesSearch && matchesCategory && matchesProject && matchesStatus && matchesPhase && matchesTag && matchesWP && matchesTask && matchesFolder && d.is_current !== false;
     });
 

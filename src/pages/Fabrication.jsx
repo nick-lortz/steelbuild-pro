@@ -432,21 +432,31 @@ export default function FabricationPage() {
                               </Badge>
                             )}
                           </div>
-                          <div className="text-xs text-zinc-500 font-mono flex items-center gap-2">
-                            <span>{pkg.package_number}</span>
+                          <div className="text-xs font-mono flex items-center gap-2 mt-1">
+                            <span className="text-amber-400">{pkg.package_number}</span>
                             {pkg.linkedProject && (
                               <>
-                                <span>•</span>
-                                <span>{pkg.linkedProject.project_number}</span>
+                                <span className="text-zinc-700">•</span>
+                                <span className="text-zinc-500">{pkg.linkedProject.project_number}</span>
                               </>
                             )}
                             {pkg.linkedWP && (
                               <>
-                                <span>•</span>
-                                <span>WP: {pkg.linkedWP.wpid}</span>
+                                <span className="text-zinc-700">•</span>
+                                <span className="text-blue-400">{pkg.linkedWP.wpid}</span>
+                                <span className="text-zinc-700">•</span>
+                                <span className="text-zinc-500">{pkg.linkedWP.title}</span>
                               </>
                             )}
                           </div>
+                          {pkg.scope_summary && (
+                            <div className="text-xs text-zinc-600 mt-1 line-clamp-1">{pkg.scope_summary}</div>
+                          )}
+                          {pkg.linkedWP?.budget_at_award > 0 && (
+                            <div className="text-xs text-zinc-600 mt-1">
+                              Budget: ${(pkg.linkedWP.budget_at_award / 1000).toFixed(0)}K • Target: {pkg.linkedWP.target_date ? format(new Date(pkg.linkedWP.target_date), 'MMM d') : 'TBD'}
+                            </div>
+                          )}
                           {pkg.area && (
                             <div className="text-xs text-zinc-600 mt-1">
                               📍 {pkg.area} {pkg.sequence && `• SEQ: ${pkg.sequence}`}

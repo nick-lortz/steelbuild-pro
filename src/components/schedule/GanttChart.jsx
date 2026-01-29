@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, addDays, differenceInDays, isPast, isBefore } from 'date-fns';
 import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X, CheckCircle, Trash2 } from 'lucide-react';
 import DependencyEditor from './DependencyEditor';
+import { calculateCriticalPath } from './CriticalPathCalculator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +42,13 @@ export default function GanttChart({
   const [statusFilter, setStatusFilter] = useState('all');
   const [projectFilter, setProjectFilter] = useState('all');
   const [deleteTask, setDeleteTask] = useState(null);
+  const [showCriticalOnly, setShowCriticalOnly] = useState(false);
   const chartRef = useRef(null);
+
+  // Calculate critical path on task changes
+  const criticalTaskIds = useMemo(() => {
+    return calculateCriticalPath(tasks);
+  }, [tasks]);
 
   const toggleProject = (projectId) => {
     const newCollapsed = new Set(collapsedProjects);
@@ -82,10 +89,11 @@ export default function GanttChart({
       
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
       const matchesProject = projectFilter === 'all' || task.project_id === projectFilter;
+      const matchesCritical = !showCriticalOnly || criticalTaskIds.includes(task.id);
       
-      return matchesSearch && matchesStatus && matchesProject;
+      return matchesSearch && matchesStatus && matchesProject && matchesCritical;
     });
-  }, [tasks, searchTerm, statusFilter, projectFilter]);
+  }, [tasks, searchTerm, statusFilter, projectFilter, showCriticalOnly, criticalTaskIds]);
 
   // Set date range: 1 week before today and 6 months into the future
   const today = new Date();
@@ -180,7 +188,7 @@ export default function GanttChart({
     }
   };
 
-  const isCritical = (taskId) => criticalPath.includes(taskId);
+  const isCritical = (taskId) => criticalTaskIds.includes(taskId);
 
   const hasRFIImpact = (task) => {
     return task.linked_rfi_ids && task.linked_rfi_ids.length > 0;
@@ -370,6 +378,17 @@ export default function GanttChart({
               </button>
             )}
           </div>
+
+          <Button
+            size="sm"
+            variant={showCriticalOnly ? "default" : "outline"}
+            onClick={() => setShowCriticalOnly(!showCriticalOnly)}
+            className={`text-xs gap-1 ${showCriticalOnly ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700'}`}
+            title="Show only critical path tasks"
+          >
+            <AlertTriangle size={14} />
+            Critical Path
+          </Button>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700 h-8 text-sm">

@@ -28,6 +28,7 @@ import { toast } from '@/components/ui/notifications';
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState('month');
+  const [showCriticalPathOnly, setShowCriticalPathOnly] = useState(false);
   const [projectFilter, setProjectFilter] = useState('all');
   const [resourceFilter, setResourceFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');

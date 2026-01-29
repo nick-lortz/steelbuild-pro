@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { action, eventData } = await req.json();
+  const { action, eventData, eventId } = await req.json();
 
   if (action === 'fetchWeekEvents') {
     try {
@@ -44,6 +44,37 @@ Deno.serve(async (req) => {
         'https://www.googleapis.com/calendar/v3/calendars/primary/events',
         {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(eventData)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Calendar API error: ${response.status}`);
+      }
+
+      const event = await response.json();
+      return Response.json({ event });
+    } catch (error) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  if (action === 'updateEvent') {
+    try {
+      if (!eventId) {
+        return Response.json({ error: 'Event ID required' }, { status: 400 });
+      }
+
+      const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar');
+
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
+        {
+          method: 'PUT',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'

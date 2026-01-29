@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import CSVUpload from '@/components/shared/CSVUpload';
@@ -84,7 +84,7 @@ export default function Documents() {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [deleteDoc, setDeleteDoc] = useState(null);
-  const [viewMode, setViewMode] = useState('tree');
+  const [viewMode, setViewMode] = useState('grid');
   const [processingOCR, setProcessingOCR] = useState(null);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [sortBy, setSortBy] = useState('created_date');
@@ -569,229 +569,543 @@ export default function Documents() {
       </div>
 
       {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">PENDING REVIEW</div>
-              <div className={`text-2xl font-bold font-mono ${docStats.pendingReview > 0 ? 'text-amber-500' : 'text-green-500'}`}>
-                {docStats.pendingReview}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">APPROVED</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{docStats.approved}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">CURRENT</div>
-              <div className="text-2xl font-bold font-mono text-white">{docStats.total}</div>
-            </div>
+      <div className="border-b border-zinc-800 bg-zinc-950">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-5 gap-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <File size={10} />
+                  Total Documents
+                </div>
+                <div className="text-2xl font-bold font-mono text-white">{docStats.total}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <CheckCircle size={10} />
+                  Approved
+                </div>
+                <div className="text-2xl font-bold font-mono text-green-500">{docStats.approved}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <Eye size={10} />
+                  Pending Review
+                </div>
+                <div className={`text-2xl font-bold font-mono ${docStats.pendingReview > 0 ? 'text-amber-500' : 'text-green-500'}`}>
+                  {docStats.pendingReview}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <FileText size={10} />
+                  By Category
+                </div>
+                <div className="text-sm font-mono text-zinc-400">
+                  {Array.from(new Set((documents || []).map(d => d.category))).length} types
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <History size={10} />
+                  Versions
+                </div>
+                <div className="text-2xl font-bold font-mono text-blue-500">
+                  {(documents || []).filter(d => (d.version || 1) > 1).length}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* AI Semantic Search */}
-        <Card className="mb-6 bg-gradient-to-br from-amber-950/20 to-orange-950/20 border-amber-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Sparkles className="text-amber-500" size={18} />
-              AI Semantic Search
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AISearchPanel 
-              projectId={projectFilter !== 'all' ? projectFilter : null} 
-              onDocumentClick={handleEdit}
-            />
-          </CardContent>
-        </Card>
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
+        <Tabs value={viewMode} onValueChange={setViewMode} className="space-y-6">
+          <div className="flex items-center justify-between mb-4">
+            <TabsList className="bg-zinc-900 border border-zinc-800">
+              <TabsTrigger value="grid" className="text-xs">
+                <FileText size={14} className="mr-2" />
+                Grid View
+              </TabsTrigger>
+              <TabsTrigger value="list" className="text-xs">
+                <List size={14} className="mr-2" />
+                List View
+              </TabsTrigger>
+              <TabsTrigger value="tree" className="text-xs">
+                <FileText size={14} className="mr-2" />
+                Folder Tree
+              </TabsTrigger>
+            </TabsList>
 
-        {/* View Mode Toggle */}
-        <div className="flex gap-1 border border-zinc-800 p-1 mb-4 w-fit">
-          {['tree', 'list'].map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                viewMode === mode ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
-              }`}
-            >
-              {mode === 'tree' ? 'TREE' : 'LIST'}
-            </button>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="space-y-3 mb-6">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-            <Input
-              placeholder="SEARCH DOCUMENTS..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9 w-full"
-            />
+            <div className="flex items-center gap-3">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white text-xs h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="created_date">Recent</SelectItem>
+                  <SelectItem value="title">Name</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="border-zinc-700 text-xs h-9 px-3"
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Project" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Projects</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Filters */}
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <Input
+                    placeholder="Search by title, description, tags, or filename..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-zinc-800 border-zinc-700 text-white h-10"
+                  />
+                </div>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="drawing">Drawing</SelectItem>
-                <SelectItem value="specification">Spec</SelectItem>
-                <SelectItem value="rfi">RFI</SelectItem>
-                <SelectItem value="submittal">Submittal</SelectItem>
-                <SelectItem value="contract">Contract</SelectItem>
-                <SelectItem value="photo">Photo</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <Select value={projectFilter} onValueChange={setProjectFilter}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs">
+                      <SelectValue placeholder="All Projects" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                      <SelectItem value="all">All Projects</SelectItem>
+                      {projects.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.project_number}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="issued">Issued</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="for_review">For Review</SelectItem>
-              </SelectContent>
-            </Select>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="drawing">Drawings</SelectItem>
+                      <SelectItem value="specification">Specs</SelectItem>
+                      <SelectItem value="rfi">RFIs</SelectItem>
+                      <SelectItem value="submittal">Submittals</SelectItem>
+                      <SelectItem value="contract">Contracts</SelectItem>
+                      <SelectItem value="photo">Photos</SelectItem>
+                      <SelectItem value="report">Reports</SelectItem>
+                      <SelectItem value="correspondence">Correspondence</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Phase" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Phases</SelectItem>
-                <SelectItem value="detailing">Detailing</SelectItem>
-                <SelectItem value="fabrication">Fab</SelectItem>
-                <SelectItem value="delivery">Delivery</SelectItem>
-                <SelectItem value="erection">Erection</SelectItem>
-                <SelectItem value="closeout">Closeout</SelectItem>
-              </SelectContent>
-            </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="issued">Issued</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="for_review">For Review</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-            <Select value={tagFilter} onValueChange={setTagFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Tag" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
-                <SelectItem value="all">All Tags</SelectItem>
-                {Array.from(new Set((documents || []).flatMap(d => d.tags || []))).sort().map(tag => (
-                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs">
+                      <SelectValue placeholder="All Phases" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                      <SelectItem value="all">All Phases</SelectItem>
+                      <SelectItem value="detailing">Detailing</SelectItem>
+                      <SelectItem value="fabrication">Fabrication</SelectItem>
+                      <SelectItem value="delivery">Delivery</SelectItem>
+                      <SelectItem value="erection">Erection</SelectItem>
+                      <SelectItem value="closeout">Closeout</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-            <Select value={wpFilter} onValueChange={setWpFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Work Package" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
-                <SelectItem value="all">All WPs</SelectItem>
-                <SelectItem value="unlinked">Not Linked</SelectItem>
-                {workPackages
-                  .filter(wp => projectFilter === 'all' || wp.project_id === projectFilter)
-                  .map(wp => (
-                    <SelectItem key={wp.id} value={wp.id}>
-                      {wp.wpid || wp.title}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+                  <Select value={wpFilter} onValueChange={setWpFilter}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white text-xs">
+                      <SelectValue placeholder="Work Package" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
+                      <SelectItem value="all">All WPs</SelectItem>
+                      <SelectItem value="unlinked">Unlinked</SelectItem>
+                      {workPackages
+                        .filter(wp => projectFilter === 'all' || wp.project_id === projectFilter)
+                        .map(wp => (
+                          <SelectItem key={wp.id} value={wp.id}>
+                            {wp.wpid}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
 
-            <Select value={taskFilter} onValueChange={setTaskFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white text-xs h-9">
-                <SelectValue placeholder="Task" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800 max-h-60">
-                <SelectItem value="all">All Tasks</SelectItem>
-                <SelectItem value="unlinked">Not Linked</SelectItem>
-                {tasks
-                  .filter(t => projectFilter === 'all' || t.project_id === projectFilter)
-                  .slice(0, 50)
-                  .map(t => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setProjectFilter('all');
+                      setCategoryFilter('all');
+                      setStatusFilter('all');
+                      setPhaseFilter('all');
+                      setTagFilter('all');
+                      setWpFilter('all');
+                      setTaskFilter('all');
+                      setSearchTerm('');
+                    }}
+                    className="border-zinc-700 text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+        <TabsContent value="grid" className="space-y-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredDocuments.map(doc => {
+              const project = projects.find(p => p.id === doc.project_id);
+              const wp = workPackages.find(w => w.id === doc.work_package_id);
+              const isSelected = selectedDocs.includes(doc.id);
+
+              return (
+                <Card 
+                  key={doc.id} 
+                  className={`bg-zinc-900 border-zinc-800 hover:border-amber-500/50 transition-all cursor-pointer group ${isSelected ? 'border-amber-500' : ''}`}
+                  onClick={() => handleEdit(doc)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleDocSelection(doc.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mt-1"
+                        />
+                        <div className="p-3 bg-zinc-800 rounded-lg">
+                          <File size={24} className="text-amber-500" />
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-white text-sm line-clamp-2 group-hover:text-amber-400 transition-colors">
+                            {doc.title}
+                          </h3>
+                          <StatusBadge status={doc.status} />
+                        </div>
+
+                        <div className="space-y-1.5 mb-3">
+                          <div className="flex items-center gap-2 text-xs">
+                            <Badge variant="outline" className="bg-zinc-800 border-zinc-700 capitalize text-[10px]">
+                              {doc.category}
+                            </Badge>
+                            {doc.phase && (
+                              <Badge variant="outline" className="bg-zinc-800 border-zinc-700 capitalize text-[10px]">
+                                {doc.phase}
+                              </Badge>
+                            )}
+                            {doc.version > 1 && (
+                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">
+                                v{doc.version}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-zinc-500 font-mono truncate">
+                            {project?.project_number} {wp ? `• ${wp.wpid}` : ''}
+                          </p>
+
+                          {doc.description && (
+                            <p className="text-xs text-zinc-600 line-clamp-2">{doc.description}</p>
+                          )}
+                        </div>
+
+                        {doc.tags && doc.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {doc.tags.slice(0, 3).map((tag, idx) => (
+                              <span key={idx} className="text-[10px] px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded">
+                                {tag}
+                              </span>
+                            ))}
+                            {doc.tags.length > 3 && (
+                              <span className="text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-500 rounded">
+                                +{doc.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+                          <span className="text-[10px] text-zinc-600">
+                            {format(new Date(doc.created_date), 'MMM d, yyyy')}
+                          </span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {doc.file_url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(doc.file_url, '_blank');
+                                }}
+                                className="h-7 w-7 p-0 text-zinc-500 hover:text-white"
+                              >
+                                <Eye size={14} />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAnalyzeDocument(doc);
+                              }}
+                              disabled={analyzingDoc === doc.id}
+                              className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300"
+                            >
+                              {analyzingDoc === doc.id ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Sparkles size={14} />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        </div>
 
-        {/* Content - Faceted Filters + Folder Tree + Documents */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-1 space-y-4">
-            <FacetedSearchPanel
-              documents={documents}
-              projects={projects}
-              workPackages={workPackages}
-              tasks={tasks}
-              activeFilters={{
-                project: projectFilter,
-                category: categoryFilter,
-                status: statusFilter,
-                phase: phaseFilter,
-                tag: tagFilter,
-                wp: wpFilter
-              }}
-              onFilterChange={(type, value) => {
-                if (type === 'project') setProjectFilter(value);
-                if (type === 'category') setCategoryFilter(value);
-                if (type === 'status') setStatusFilter(value);
-                if (type === 'phase') setPhaseFilter(value);
-                if (type === 'tag') setTagFilter(value);
-                if (type === 'wp') setWpFilter(value);
-              }}
-              onClearAll={() => {
-                setProjectFilter('all');
-                setCategoryFilter('all');
-                setStatusFilter('all');
-                setPhaseFilter('all');
-                setTagFilter('all');
-                setWpFilter('all');
-                setTaskFilter('all');
-              }}
-            />
-            
-            <DocumentFolderTree
-              documents={documents.filter(d => projectFilter === 'all' || d.project_id === projectFilter)}
-              projects={projects}
-              onDocClick={handleEdit}
-              onFolderSelect={setSelectedFolder}
-            />
-          </div>
+          {filteredDocuments.length === 0 && (
+            <Card className="bg-zinc-900 border-zinc-800 col-span-full">
+              <CardContent className="p-12 text-center">
+                <File size={48} className="mx-auto mb-4 text-zinc-700" />
+                <p className="text-zinc-400 mb-4">No documents found</p>
+                <Button
+                  onClick={() => {
+                    setFormData(initialFormState);
+                    setShowForm(true);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Upload First Document
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-          <div className="lg:col-span-4">
-            <DataTable
-              columns={columns}
-              data={filteredDocuments}
-              onRowClick={handleEdit}
-              emptyMessage="No documents found. Upload your first document or adjust filters."
-            />
+        <TabsContent value="list" className="space-y-4 mt-6">
+          <Card className="bg-zinc-900 border-zinc-800">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                      <Checkbox
+                        checked={selectedDocs.length === filteredDocuments.length && filteredDocuments.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Document</th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Category</th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Phase</th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Status</th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Version</th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Links</th>
+                    <th className="text-left p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Date</th>
+                    <th className="text-right p-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDocuments.map(doc => {
+                    const project = projects.find(p => p.id === doc.project_id);
+                    const wp = workPackages.find(w => w.id === doc.work_package_id);
+                    const isSelected = selectedDocs.includes(doc.id);
+
+                    return (
+                      <tr 
+                        key={doc.id} 
+                        className="border-b border-zinc-800 hover:bg-zinc-800/50 cursor-pointer group"
+                        onClick={() => handleEdit(doc)}
+                      >
+                        <td className="p-3">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleDocSelection(doc.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-zinc-800 rounded">
+                              <File size={16} className="text-amber-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-white text-sm">{doc.title}</p>
+                              <p className="text-xs text-zinc-500 font-mono">{project?.project_number}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant="outline" className="bg-zinc-800 border-zinc-700 capitalize text-xs">
+                            {doc.category}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          {doc.phase ? (
+                            <Badge variant="outline" className="bg-zinc-800 border-zinc-700 capitalize text-xs">
+                              {doc.phase}
+                            </Badge>
+                          ) : (
+                            <span className="text-zinc-600 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <StatusBadge status={doc.status} />
+                        </td>
+                        <td className="p-3">
+                          <span className="font-mono text-sm text-blue-400">v{doc.version || 1}</span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex gap-1">
+                            {wp && (
+                              <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px]">
+                                WP
+                              </Badge>
+                            )}
+                            {doc.task_id && (
+                              <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/30 text-[10px]">
+                                Task
+                              </Badge>
+                            )}
+                            {doc.expense_id && (
+                              <Badge className="bg-green-500/10 text-green-400 border-green-500/30 text-[10px]">
+                                $
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 text-sm text-zinc-500">
+                          {format(new Date(doc.created_date), 'MMM d, yyyy')}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            {doc.file_url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(doc.file_url, '_blank');
+                                }}
+                                className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
+                              >
+                                <Eye size={14} />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteDoc(doc);
+                              }}
+                              className="h-7 w-7 p-0 text-zinc-500 hover:text-red-500"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tree" className="space-y-4 mt-6">
+          <div className="grid grid-cols-4 gap-6">
+            <div className="col-span-1">
+              <DocumentFolderTree
+                documents={filteredDocuments}
+                projects={projects}
+                onDocClick={handleEdit}
+                onFolderSelect={setSelectedFolder}
+              />
+            </div>
+            <div className="col-span-3">
+              {filteredDocuments.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredDocuments.map(doc => {
+                    const project = projects.find(p => p.id === doc.project_id);
+                    const isSelected = selectedDocs.includes(doc.id);
+
+                    return (
+                      <Card 
+                        key={doc.id} 
+                        className={`bg-zinc-900 border-zinc-800 hover:border-zinc-700 cursor-pointer ${isSelected ? 'border-amber-500' : ''}`}
+                        onClick={() => handleEdit(doc)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleDocSelection(doc.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="flex-1">
+                              <h4 className="font-medium text-white text-sm mb-1">{doc.title}</h4>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="text-[10px] capitalize">{doc.category}</Badge>
+                                <StatusBadge status={doc.status} />
+                              </div>
+                              <p className="text-xs text-zinc-500">{project?.project_number}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardContent className="p-12 text-center">
+                    <p className="text-zinc-500">Select a folder to view documents</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
-        </div>
+        </TabsContent>
+        </Tabs>
       </div>
 
       {/* Create Dialog */}

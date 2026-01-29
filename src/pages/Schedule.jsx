@@ -25,6 +25,7 @@ import TimelineView from '@/components/schedule/TimelineView';
 import ScheduleAIAssistant from '@/components/schedule/ScheduleAIAssistant';
 import DependencyGraph from '@/components/schedule/DependencyGraph';
 import ExportButton from '@/components/shared/ExportButton';
+import BulkTaskEditor from '@/components/schedule/BulkTaskEditor';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -39,6 +40,7 @@ export default function Schedule() {
   const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar', 'network'
   const [showAI, setShowAI] = useState(false);
   const [showBulkAssign, setShowBulkAssign] = useState(false);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
@@ -725,6 +727,7 @@ export default function Schedule() {
         selectedCount={selectedTasks.length}
         onClear={() => setSelectedTasks([])}
         actions={[
+          { label: 'Bulk Edit', onClick: () => setShowBulkEdit(true) },
           { label: 'Assign Resources', onClick: () => setShowBulkAssign(true) },
           { label: 'Complete', onClick: () => bulkUpdateStatus('completed') },
           { label: 'In Progress', onClick: () => bulkUpdateStatus('in_progress') },
@@ -741,6 +744,29 @@ export default function Schedule() {
         onAssign={handleBulkResourceAssign}
         itemType="tasks"
       />
+
+      {/* Bulk Edit Modal */}
+      {showBulkEdit && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <BulkTaskEditor
+              tasks={allScheduleTasks.filter(t => selectedTasks.includes(t.id))}
+              resources={resources}
+              onSave={(updates) => {
+                selectedTasks.forEach(taskId => {
+                  const task = allScheduleTasks.find(t => t.id === taskId);
+                  if (task && !task._isDelivery && !task._isFabrication) {
+                    updateMutation.mutate({ id: taskId, data: updates });
+                  }
+                });
+                setShowBulkEdit(false);
+                setSelectedTasks([]);
+              }}
+              onCancel={() => setShowBulkEdit(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Floating Action Button */}
       <Button

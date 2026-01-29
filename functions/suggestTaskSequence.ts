@@ -9,83 +9,129 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { project_id, work_package_id } = await req.json();
+    const { project_id, existing_tasks = [], tonnage, phases_to_sequence } = await req.json();
 
-    const [project, tasks, workPackage, drawings] = await Promise.all([
-      base44.entities.Project.list().then(p => p.find(pr => pr.id === project_id)),
-      base44.entities.Task.filter({ project_id }),
-      work_package_id ? base44.entities.WorkPackage.list().then(wp => wp.find(w => w.id === work_package_id)) : null,
-      base44.entities.DrawingSet.filter({ project_id })
-    ]);
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
 
-    const relevantTasks = work_package_id ? tasks.filter(t => t.work_package_id === work_package_id) : tasks;
+    // Fetch project details
+    const projects = await base44.asServiceRole.entities.Project.filter({ id: project_id });
+    const project = projects[0];
 
-    const prompt = `As a structural steel project manager, suggest optimal task sequencing for this work scope.
+    if (!project) {
+      return Response.json({ error: 'Project not found' }, { status: 404 });
+    }
 
-PROJECT: ${project?.name}
-${workPackage ? `WORK PACKAGE: ${workPackage.package_number} - ${workPackage.name}` : 'FULL PROJECT SCOPE'}
-${workPackage?.tonnage ? `TONNAGE: ${workPackage.tonnage} tons` : ''}
-${workPackage?.piece_count ? `PIECE COUNT: ${workPackage.piece_count}` : ''}
+    // Steel erection workflow logic
+    const phaseSequence = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
+    const suggestedTasks = [];
+    const dependencies = [];
 
-EXISTING TASKS:
-${relevantTasks.map(t => `- ${t.name} | Phase: ${t.phase} | Status: ${t.status} | Duration: ${t.duration_days || 0}d`).join('\n')}
+    // Standard steel erection task templates per phase
+    const taskTemplates = {
+      detailing: [
+        { name: 'Design & Approval', duration_days: 10, requires_approval: true },
+        { name: 'Shop Drawing Preparation', duration_days: 8 },
+        { name: 'Coordination Review', duration_days: 5 }
+      ],
+      fabrication: [
+        { name: 'Material Procurement', duration_days: 14, depends_on_phase: 'detailing' },
+        { name: 'Layout & Cutting', duration_days: 7 },
+        { name: 'Welding & Assembly', duration_days: 14, tonnage_factor: true },
+        { name: 'QC Inspection', duration_days: 3 },
+        { name: 'Painting & Prep', duration_days: 5 },
+        { name: 'Packing & Shipping Prep', duration_days: 2 }
+      ],
+      delivery: [
+        { name: 'Arrange Transportation', duration_days: 3, depends_on_phase: 'fabrication' },
+        { name: 'In-Transit', duration_days: 5, tonnage_factor: true },
+        { name: 'Receiving & Inspection', duration_days: 2 }
+      ],
+      erection: [
+        { name: 'Erection Planning & Safety', duration_days: 3, depends_on_phase: 'delivery' },
+        { name: 'Foundation Prep', duration_days: 5 },
+        { name: 'Column Erection', duration_days: 10, tonnage_factor: true },
+        { name: 'Beam Installation', duration_days: 10, tonnage_factor: true },
+        { name: 'Connections & Bolting', duration_days: 8 },
+        { name: 'Final Alignment & Check', duration_days: 3 }
+      ],
+      closeout: [
+        { name: 'Field Touch-ups & Inspection', duration_days: 5, depends_on_phase: 'erection' },
+        { name: 'Documentation & As-Builts', duration_days: 3 },
+        { name: 'Final Walkthrough', duration_days: 1 }
+      ]
+    };
 
-DRAWINGS STATUS:
-${drawings.map(d => `- ${d.set_name}: ${d.status}`).join('\n')}
+    // Calculate tonnage factor (larger tonnage = longer durations)
+    const tonnageFactor = tonnage ? Math.ceil(tonnage / 50) : 1;
 
-Follow standard structural steel sequencing (detailing → fabrication → delivery → erection).
+    // Generate task sequence
+    let lastPhaseEnd = null;
+    let taskCounter = 0;
 
-Consider:
-1. Phase dependencies (no erection until delivery, no fabrication until detailing complete)
-2. Critical path optimization
-3. Resource leveling
-4. Drawing approval requirements
-5. Site access and sequencing logic
+    for (const phase of phaseSequence) {
+      if (phases_to_sequence && !phases_to_sequence.includes(phase)) continue;
 
-Return JSON:
-{
-  "recommended_sequence": [{"task_id": "string", "task_name": "string", "sequence_order": number, "phase": "string", "rationale": "string"}],
-  "critical_dependencies": [{"from_task": "string", "to_task": "string", "reason": "string"}],
-  "optimization_notes": ["string"],
-  "duration_estimate_days": number
-}`;
+      const templates = taskTemplates[phase] || [];
+      const phaseTasks = [];
 
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          recommended_sequence: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                task_id: { type: "string" },
-                task_name: { type: "string" },
-                sequence_order: { type: "number" },
-                phase: { type: "string" },
-                rationale: { type: "string" }
-              }
-            }
-          },
-          critical_dependencies: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                from_task: { type: "string" },
-                to_task: { type: "string" },
-                reason: { type: "string" }
-              }
-            }
-          },
-          optimization_notes: { type: "array", items: { type: "string" } },
-          duration_estimate_days: { type: "number" }
+      for (const template of templates) {
+        taskCounter++;
+        const duration = template.tonnage_factor 
+          ? template.duration_days * tonnageFactor 
+          : template.duration_days;
+
+        const task = {
+          name: template.name,
+          phase,
+          status: 'not_started',
+          duration_days: duration,
+          estimated_hours: duration * 8,
+          is_milestone: template.name.includes('Inspection') || template.name.includes('Approval'),
+          description: `Auto-sequenced task for ${project.name} - ${template.name} (${duration} days)`
+        };
+
+        // Set dependency on previous phase if needed
+        if (template.depends_on_phase) {
+          const depPhaseIndex = phaseSequence.indexOf(template.depends_on_phase);
+          task.depends_on_phase = template.depends_on_phase;
+        }
+
+        suggestedTasks.push(task);
+        phaseTasks.push(task);
+      }
+
+      lastPhaseEnd = phase;
+    }
+
+    // Link dependencies between phases
+    for (let i = 0; i < suggestedTasks.length; i++) {
+      const task = suggestedTasks[i];
+      if (task.depends_on_phase) {
+        // Find last task of dependency phase
+        const depPhaseTasks = suggestedTasks.filter(t => t.phase === task.depends_on_phase);
+        if (depPhaseTasks.length > 0) {
+          const lastDepTask = depPhaseTasks[depPhaseTasks.length - 1];
+          dependencies.push({
+            task_index: i,
+            predecessor_index: suggestedTasks.indexOf(lastDepTask),
+            type: 'FS',
+            lag_days: 1
+          });
         }
       }
-    });
+    }
 
-    return Response.json(response);
+    return Response.json({
+      suggested_tasks: suggestedTasks,
+      task_count: suggestedTasks.length,
+      estimated_duration_days: suggestedTasks.reduce((sum, t) => sum + t.duration_days, 0),
+      dependencies,
+      tonnage_factor: tonnageFactor,
+      project_name: project.name,
+      message: `Generated ${suggestedTasks.length} tasks for ${project.name} (${tonnage}T, ${tonnageFactor}x factor)`
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

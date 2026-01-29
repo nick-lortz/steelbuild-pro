@@ -90,6 +90,7 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import ProjectPhotos from './pages/ProjectPhotos';
 import __Layout from './Layout.jsx';
 
 
@@ -137,6 +138,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "ProjectPhotos": ProjectPhotos,
 }
 
 export const pagesConfig = {

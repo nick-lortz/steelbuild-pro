@@ -319,7 +319,7 @@ export default function Calendar() {
       </div>
 
       {/* Controls & Navigation */}
-      <div className="flex items-center justify-between mb-6 gap-4">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -345,6 +345,16 @@ export default function Calendar() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant={showCriticalPathOnly ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowCriticalPathOnly(!showCriticalPathOnly)}
+            className={showCriticalPathOnly ? "bg-gradient-to-r from-red-600 to-orange-600" : "border-zinc-800 text-white"}
+          >
+            <Zap size={14} className="mr-1" />
+            Critical Path
+          </Button>
+          
           <Tabs value={view} onValueChange={setView}>
             <TabsList className="bg-zinc-900/50 border border-zinc-800">
               <TabsTrigger value="month" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">Month</TabsTrigger>

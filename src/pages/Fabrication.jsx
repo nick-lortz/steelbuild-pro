@@ -247,10 +247,10 @@ export default function FabricationPage() {
   if (!activeProjectId) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="border-b border-zinc-800 bg-black">
+        <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
           <div className="max-w-[1600px] mx-auto px-6 py-4">
             <h1 className="text-xl font-bold text-white uppercase tracking-wide">Fabrication</h1>
-            <p className="text-xs text-zinc-600 font-mono mt-1">SELECT PROJECT</p>
+            <p className="text-xs text-zinc-400 font-mono mt-1">SELECT PROJECT</p>
           </div>
         </div>
         <div className="max-w-[1600px] mx-auto px-6 py-12">
@@ -274,12 +274,12 @@ export default function FabricationPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-black">
+      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white uppercase tracking-wide">Fabrication</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{selectedProject?.project_number} • {selectedProject?.name}</p>
+              <p className="text-xs text-zinc-400 font-mono mt-1">{selectedProject?.project_number} • {selectedProject?.name}</p>
             </div>
             <div className="flex items-center gap-2">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>

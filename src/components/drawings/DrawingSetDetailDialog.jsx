@@ -24,7 +24,8 @@ import {
   Save,
   X,
   Upload,
-  TrendingUp
+  TrendingUp,
+  Download
 } from 'lucide-react';
 import DrawingUploadEnhanced from './DrawingUploadEnhanced';
 import DrawingHeatMap from './DrawingHeatMap';

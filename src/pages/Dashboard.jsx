@@ -158,7 +158,7 @@ export default function Dashboard() {
   // Update portfolio metrics with actual at-risk count
   const enhancedMetrics = useMemo(() => {
     const atRiskCount = projectsWithHealth.filter(p => 
-      p.costHealth > 5 || p.daysSlip > 3 || p.overdueTasks > 0
+      p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0
     ).length;
 
     return {
@@ -187,16 +187,16 @@ export default function Dashboard() {
 
     // Risk filter
     if (riskFilter === 'at_risk') {
-      filtered = filtered.filter(p => p.costHealth > 5 || p.daysSlip > 3 || p.overdueTasks > 0);
+      filtered = filtered.filter(p => p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0);
     } else if (riskFilter === 'healthy') {
-      filtered = filtered.filter(p => p.costHealth <= 5 && p.daysSlip <= 3 && p.overdueTasks === 0);
+      filtered = filtered.filter(p => p.costHealth >= -5 && p.daysSlip <= 3 && p.overdueTasks === 0);
     }
 
     // Sort
     if (sortBy === 'risk') {
       filtered.sort((a, b) => {
-        const aRisk = (a.costHealth > 5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
-        const bRisk = (b.costHealth > 5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
+        const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
+        const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
         if (bRisk !== aRisk) return bRisk - aRisk;
         return (a.name || '').localeCompare(b.name || '');
       });

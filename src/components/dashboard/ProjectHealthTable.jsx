@@ -74,8 +74,8 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
     // Sort by risk level, then overdue tasks, then name
     return [...projects].sort((a, b) => {
       // Risk first
-      const aRisk = (a.costHealth > 5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
-      const bRisk = (b.costHealth > 5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
+      const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
+      const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
       if (bRisk !== aRisk) return bRisk - aRisk;
 
       // Then overdue
@@ -120,7 +120,7 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
           </thead>
           <tbody>
             {sortedProjects.map((project) => {
-              const isAtRisk = project.costHealth > 5 || project.daysSlip > 3 || project.overdueTasks > 0;
+              const isAtRisk = project.costHealth < -5 || project.daysSlip > 3 || project.overdueTasks > 0;
               const statusConfig = getStatusConfig(project.status);
 
               return (

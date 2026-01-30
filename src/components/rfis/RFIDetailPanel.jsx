@@ -228,6 +228,23 @@ export default function RFIDetailPanel({
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = '/api/exportRFItoPDF';
+                link.download = `RFI-${String(rfi.rfi_number).padStart(3, '0')}.pdf`;
+                link.click();
+              }}
+              variant="outline"
+              className="flex-1 border-zinc-700"
+              size="sm"
+            >
+              <Download size={14} className="mr-2" />
+              Export PDF
+            </Button>
+          </div>
+
           {showDocUploader ? (
             <div>
               <Button

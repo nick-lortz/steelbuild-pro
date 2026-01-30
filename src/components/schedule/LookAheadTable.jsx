@@ -78,10 +78,13 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
           value={row.start_date || ''}
           onChange={(e) => {
             e.stopPropagation();
-            onUpdateActivity(row.id, { start_date: e.target.value });
+            if (!row.source_entity) {
+              onUpdateActivity(row.id, { start_date: e.target.value });
+            }
           }}
           onClick={(e) => e.stopPropagation()}
-          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700"
+          disabled={!!row.source_entity}
+          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700 disabled:opacity-50"
         />
       )
     },
@@ -94,10 +97,13 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
           value={row.end_date || ''}
           onChange={(e) => {
             e.stopPropagation();
-            onUpdateActivity(row.id, { end_date: e.target.value });
+            if (!row.source_entity) {
+              onUpdateActivity(row.id, { end_date: e.target.value });
+            }
           }}
           onClick={(e) => e.stopPropagation()}
-          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700"
+          disabled={!!row.source_entity}
+          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700 disabled:opacity-50"
         />
       )
     },

@@ -376,7 +376,12 @@ export default function LookAheadPlanning() {
             drawingSets={drawingSets}
             rfis={rfis}
             onActivityClick={setSelectedActivity}
-            onUpdateActivity={(id, data) => updateMutation.mutate({ id, data })} />
+            onUpdateActivity={(id, data) => {
+              // Don't update auto-generated activities from deliveries/fabrication
+              if (!id.startsWith('delivery-') && !id.startsWith('fabrication-')) {
+                updateMutation.mutate({ id, data });
+              }
+            }} />
 
         </div>
       </div>

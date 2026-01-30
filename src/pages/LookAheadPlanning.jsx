@@ -418,13 +418,13 @@ export default function LookAheadPlanning() {
                   updateMutation.mutate({ id: selectedActivity.id, data });
                 }
               }}
-              onDelete={selectedActivity.source_entity ? null : () => {
+              onDelete={!selectedActivity?.source_entity ? () => {
                 if (confirm('Delete this activity?')) {
                   deleteMutation.mutate(selectedActivity.id);
                 }
-              }}
+              } : undefined}
               isLoading={updateMutation.isPending}
-              isEdit={!selectedActivity.source_entity} />
+              isEdit />
 
           </div>
         </SheetContent>

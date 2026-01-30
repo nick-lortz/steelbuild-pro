@@ -88,13 +88,10 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
           value={row.start_date || ''}
           onChange={(e) => {
             e.stopPropagation();
-            if (!row.source_entity) {
-              onUpdateActivity(row.id, { start_date: e.target.value });
-            }
+            onUpdateActivity(row.id, { start_date: e.target.value }, row);
           }}
           onClick={(e) => e.stopPropagation()}
-          disabled={!!row.source_entity}
-          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700 disabled:opacity-50"
+          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700"
         />
       )
     },
@@ -107,13 +104,10 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
           value={row.end_date || ''}
           onChange={(e) => {
             e.stopPropagation();
-            if (!row.source_entity) {
-              onUpdateActivity(row.id, { end_date: e.target.value });
-            }
+            onUpdateActivity(row.id, { end_date: e.target.value }, row);
           }}
           onClick={(e) => e.stopPropagation()}
-          disabled={!!row.source_entity}
-          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700 disabled:opacity-50"
+          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700"
         />
       )
     },
@@ -129,10 +123,8 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
             className="flex flex-wrap gap-1 cursor-pointer hover:bg-zinc-800/50 p-1 rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              if (!row.source_entity) {
-                setSelectedResources(row.resource_ids || []);
-                setEditingResourcesFor(row);
-              }
+              setSelectedResources(row.resource_ids || []);
+              setEditingResourcesFor(row);
             }}
           >
             {assignedResources.length > 0 ? (
@@ -166,10 +158,8 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
             className="flex flex-wrap gap-1 cursor-pointer hover:bg-zinc-800/50 p-1 rounded transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              if (!row.source_entity) {
-                setConstraintNote(row.constraint_notes || '');
-                setEditingConstraintsFor(row);
-              }
+              setConstraintNote(row.constraint_notes || '');
+              setEditingConstraintsFor(row);
             }}
           >
             {constraints.length === 0 ? (
@@ -212,13 +202,12 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
             onChange={(e) => {
               e.stopPropagation();
               const val = parseInt(e.target.value) || 0;
-              if (val >= 0 && val <= 100 && !row.source_entity) {
-                onUpdateActivity(row.id, { progress_percent: val });
+              if (val >= 0 && val <= 100) {
+                onUpdateActivity(row.id, { progress_percent: val }, row);
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            disabled={!!row.source_entity}
-            className="w-14 h-7 text-xs bg-zinc-800 border-zinc-700 text-center disabled:opacity-50"
+            className="w-14 h-7 text-xs bg-zinc-800 border-zinc-700 text-center"
           />
         </div>
       )
@@ -230,14 +219,11 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
         <Select
           value={row.status || 'planned'}
           onValueChange={(value) => {
-            if (!row.source_entity) {
-              onUpdateActivity(row.id, { status: value });
-            }
+            onUpdateActivity(row.id, { status: value }, row);
           }}
-          disabled={!!row.source_entity}
         >
           <SelectTrigger 
-            className="w-32 h-8 text-xs bg-zinc-800 border-zinc-700 disabled:opacity-50"
+            className="w-32 h-8 text-xs bg-zinc-800 border-zinc-700"
             onClick={(e) => e.stopPropagation()}
           >
             <SelectValue />
@@ -332,7 +318,7 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
               </Button>
               <Button
                 onClick={() => {
-                  onUpdateActivity(editingResourcesFor.id, { resource_ids: selectedResources });
+                  onUpdateActivity(editingResourcesFor.id, { resource_ids: selectedResources }, editingResourcesFor);
                   setEditingResourcesFor(null);
                 }}
               >
@@ -368,7 +354,7 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
               </Button>
               <Button
                 onClick={() => {
-                  onUpdateActivity(editingConstraintsFor.id, { constraint_notes: constraintNote });
+                  onUpdateActivity(editingConstraintsFor.id, { constraint_notes: constraintNote }, editingConstraintsFor);
                   setEditingConstraintsFor(null);
                 }}
               >

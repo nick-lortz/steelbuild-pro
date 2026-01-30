@@ -376,9 +376,34 @@ export default function LookAheadPlanning() {
             drawingSets={drawingSets}
             rfis={rfis}
             onActivityClick={setSelectedActivity}
-            onUpdateActivity={(id, data) => {
-              // Don't update auto-generated activities from deliveries/fabrication
-              if (!id.startsWith('delivery-') && !id.startsWith('fabrication-')) {
+            onUpdateActivity={(id, data, activity) => {
+              if (id.startsWith('delivery-')) {
+                // Update underlying Delivery entity
+                const deliveryId = id.replace('delivery-', '');
+                const deliveryUpdates = {};
+                if (data.start_date) deliveryUpdates.scheduled_date = data.start_date;
+                if (data.end_date) deliveryUpdates.scheduled_date = data.end_date;
+                if (data.constraint_notes !== undefined) deliveryUpdates.notes = data.constraint_notes;
+                if (Object.keys(deliveryUpdates).length > 0) {
+                  base44.entities.Delivery.update(deliveryId, deliveryUpdates).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['deliveries', activeProjectId] });
+                  });
+                }
+              } else if (id.startsWith('fabrication-')) {
+                // Update underlying FabricationPackage entity
+                const fabId = id.replace('fabrication-', '');
+                const fabUpdates = {};
+                if (data.start_date) fabUpdates.release_date = data.start_date;
+                if (data.end_date) fabUpdates.planned_ship_date = data.end_date;
+                if (data.progress_percent !== undefined) fabUpdates.completion_percent = data.progress_percent;
+                if (data.constraint_notes !== undefined) fabUpdates.notes = data.constraint_notes;
+                if (Object.keys(fabUpdates).length > 0) {
+                  base44.entities.FabricationPackage.update(fabId, fabUpdates).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['fabrication-packages', activeProjectId] });
+                  });
+                }
+              } else {
+                // Update ScheduleActivity
                 updateMutation.mutate({ id, data });
               }
             }} />

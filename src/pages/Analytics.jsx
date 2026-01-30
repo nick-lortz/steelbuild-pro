@@ -38,16 +38,14 @@ export default function Analytics() {
     queryFn: () => base44.entities.Project.list(),
   });
 
+  const [activeProjectId, setActiveProjectId] = useState(null);
+
   const userProjects = useMemo(() => {
     if (!currentUser) return [];
     return currentUser.role === 'admin' 
       ? allProjects 
       : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
   }, [currentUser, allProjects]);
-
-  const [activeProjectId, setActiveProjectId] = useState(() => 
-    userProjects.length > 0 ? userProjects[0].id : null
-  );
 
   // Real-time subscriptions for live updates
   useEffect(() => {

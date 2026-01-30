@@ -74,15 +74,16 @@ export default function ActivityForm({
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="e.g., Erect Level 1 Columns"
           required
-          className="bg-zinc-800 border-zinc-700"
+          disabled={!!activity?.source_entity}
+          className="bg-zinc-800 border-zinc-700 disabled:opacity-50"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Phase *</Label>
-          <Select value={formData.phase} onValueChange={(v) => handleChange('phase', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+          <Select value={formData.phase} onValueChange={(v) => handleChange('phase', v)} disabled={!!activity?.source_entity}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 disabled:opacity-50">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -97,8 +98,8 @@ export default function ActivityForm({
 
         <div className="space-y-2">
           <Label>Activity Type *</Label>
-          <Select value={formData.activity_type} onValueChange={(v) => handleChange('activity_type', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+          <Select value={formData.activity_type} onValueChange={(v) => handleChange('activity_type', v)} disabled={!!activity?.source_entity}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 disabled:opacity-50">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -122,7 +123,8 @@ export default function ActivityForm({
             value={formData.start_date}
             onChange={(e) => handleChange('start_date', e.target.value)}
             required
-            className="bg-zinc-800 border-zinc-700"
+            disabled={!!activity?.source_entity}
+            className="bg-zinc-800 border-zinc-700 disabled:opacity-50"
           />
         </div>
         <div className="space-y-2">
@@ -132,7 +134,8 @@ export default function ActivityForm({
             value={formData.end_date}
             onChange={(e) => handleChange('end_date', e.target.value)}
             required
-            className="bg-zinc-800 border-zinc-700"
+            disabled={!!activity?.source_entity}
+            className="bg-zinc-800 border-zinc-700 disabled:opacity-50"
           />
         </div>
         <div className="space-y-2">
@@ -146,8 +149,8 @@ export default function ActivityForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+          <Select value={formData.status} onValueChange={(v) => handleChange('status', v)} disabled={!!activity?.source_entity}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 disabled:opacity-50">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -161,8 +164,8 @@ export default function ActivityForm({
 
         <div className="space-y-2">
           <Label>Responsible Party</Label>
-          <Select value={formData.responsible_party_id} onValueChange={(v) => handleChange('responsible_party_id', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+          <Select value={formData.responsible_party_id} onValueChange={(v) => handleChange('responsible_party_id', v)} disabled={!!activity?.source_entity}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 disabled:opacity-50">
               <SelectValue placeholder="Select user" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">

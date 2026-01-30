@@ -416,9 +416,14 @@ export default function FabricationPage() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-2">
                             <h3 className="text-lg font-bold text-white">{pkg.package_name}</h3>
                             <StatusBadge status={pkg.status} />
+                            {pkg.completionPercent === 100 && (
+                              <Badge className="bg-green-500 text-black text-[10px] font-bold">
+                                ✓ COMPLETE
+                              </Badge>
+                            )}
                             {pkg.canRelease && (
                               <Badge className="bg-green-500 text-black text-[10px]">
                                 <Unlock size={10} className="mr-1" />
@@ -432,23 +437,22 @@ export default function FabricationPage() {
                               </Badge>
                             )}
                           </div>
-                          <div className="text-xs font-mono flex items-center gap-2 mt-1">
-                            <span className="text-amber-400">{pkg.package_number}</span>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold text-amber-400 font-mono">{pkg.package_number}</span>
                             {pkg.linkedProject && (
                               <>
                                 <span className="text-zinc-700">•</span>
-                                <span className="text-zinc-500">{pkg.linkedProject.project_number}</span>
-                              </>
-                            )}
-                            {pkg.linkedWP && (
-                              <>
+                                <span className="text-sm font-bold text-white">{pkg.linkedProject.project_number}</span>
                                 <span className="text-zinc-700">•</span>
-                                <span className="text-blue-400">{pkg.linkedWP.wpid}</span>
-                                <span className="text-zinc-700">•</span>
-                                <span className="text-zinc-500">{pkg.linkedWP.title}</span>
+                                <span className="text-sm text-zinc-300">{pkg.linkedProject.name}</span>
                               </>
                             )}
                           </div>
+                          {pkg.linkedWP && (
+                            <div className="text-xs text-zinc-500 mt-1">
+                              Work Package: <span className="text-blue-400 font-mono">{pkg.linkedWP.wpid}</span> - {pkg.linkedWP.title}
+                            </div>
+                          )}
                           {pkg.scope_summary && (
                             <div className="text-xs text-zinc-600 mt-1 line-clamp-1">{pkg.scope_summary}</div>
                           )}
@@ -472,7 +476,7 @@ export default function FabricationPage() {
                       </div>
 
                       {/* Metrics Grid */}
-                      <div className="grid grid-cols-4 gap-4 mb-3">
+                      <div className="grid grid-cols-5 gap-4 mb-3">
                         <div>
                           <div className="text-[10px] text-zinc-600 uppercase">Pieces</div>
                           <div className="text-lg font-mono text-white">{pkg.pieces_complete || 0}/{pkg.total_pieces || 0}</div>
@@ -483,7 +487,13 @@ export default function FabricationPage() {
                         </div>
                         <div>
                           <div className="text-[10px] text-zinc-600 uppercase">Progress</div>
-                          <div className="text-lg font-mono text-amber-500">{(pkg.completion_percent || 0).toFixed(0)}%</div>
+                          <div className={`text-lg font-mono ${pkg.completionPercent === 100 ? 'text-green-500' : 'text-amber-500'}`}>
+                            {(pkg.completionPercent || 0).toFixed(0)}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-zinc-600 uppercase">Status</div>
+                          <div className="text-sm text-white font-bold capitalize">{pkg.status.replace('_', ' ')}</div>
                         </div>
                         <div>
                           <div className="text-[10px] text-zinc-600 uppercase">BOM</div>

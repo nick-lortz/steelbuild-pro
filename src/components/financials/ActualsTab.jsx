@@ -67,7 +67,9 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => backend.deleteExpense(id),
+    mutationFn: async (id) => {
+      await base44.entities.Expense.delete(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
       queryClient.invalidateQueries({ queryKey: ['financials', projectId] });

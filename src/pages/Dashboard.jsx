@@ -116,7 +116,7 @@ export default function Dashboard() {
       const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
       const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : 0;
-      const costHealth = budget > 0 ? ((actual - budget) / budget * 100) : 0;
+      const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : 0;
 
       // Schedule health: days slip
       let daysSlip = 0;

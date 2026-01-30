@@ -421,6 +421,9 @@ export default function LookAheadPlanning() {
               onSubmit={(data) => {
                 if (!selectedActivity.source_entity) {
                   updateMutation.mutate({ id: selectedActivity.id, data });
+                } else {
+                  toast.info('Auto-generated activity dates updated manually');
+                  updateMutation.mutate({ id: selectedActivity.id, data });
                 }
               }}
               onDelete={!selectedActivity?.source_entity ? () => {

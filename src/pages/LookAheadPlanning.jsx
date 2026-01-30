@@ -112,7 +112,7 @@ export default function LookAheadPlanning() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ScheduleActivity.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       setShowActivityForm(false);
       toast.success('Activity created');
@@ -122,9 +122,10 @@ export default function LookAheadPlanning() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ScheduleActivity.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       setSelectedActivity(null);
+      setShowActivityForm(false);
       toast.success('Activity updated');
     }
   });
@@ -132,7 +133,7 @@ export default function LookAheadPlanning() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.ScheduleActivity.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       setSelectedActivity(null);
       toast.success('Activity deleted');

@@ -56,9 +56,7 @@ export default function ActivityForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!activity?.source_entity) {
-      onSubmit(formData);
-    }
+    onSubmit(formData);
   };
 
   const duration = formData.start_date && formData.end_date
@@ -123,8 +121,7 @@ export default function ActivityForm({
             value={formData.start_date}
             onChange={(e) => handleChange('start_date', e.target.value)}
             required
-            disabled={!!activity?.source_entity}
-            className="bg-zinc-800 border-zinc-700 disabled:opacity-50"
+            className="bg-zinc-800 border-zinc-700"
           />
         </div>
         <div className="space-y-2">
@@ -134,8 +131,7 @@ export default function ActivityForm({
             value={formData.end_date}
             onChange={(e) => handleChange('end_date', e.target.value)}
             required
-            disabled={!!activity?.source_entity}
-            className="bg-zinc-800 border-zinc-700 disabled:opacity-50"
+            className="bg-zinc-800 border-zinc-700"
           />
         </div>
         <div className="space-y-2">
@@ -281,7 +277,7 @@ export default function ActivityForm({
       {activity?.source_entity && (
         <div className="p-3 bg-blue-950/20 border border-blue-500/30 rounded-lg">
           <p className="text-xs text-blue-400">
-            This activity is auto-generated from {activity.source_entity}. Edit the source record to update.
+            Auto-populated from {activity.source_entity}. Dates and progress can be manually adjusted.
           </p>
         </div>
       )}
@@ -299,15 +295,13 @@ export default function ActivityForm({
           </Button>
         )}
         <div className="flex gap-2 ml-auto">
-          {!activity?.source_entity && (
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              {isLoading ? 'Saving...' : isEdit ? 'Update Activity' : 'Create Activity'}
-            </Button>
-          )}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
+          >
+            {isLoading ? 'Saving...' : isEdit ? 'Update Activity' : 'Create Activity'}
+          </Button>
         </div>
       </div>
     </form>

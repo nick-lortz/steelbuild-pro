@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Calendar, Filter, Search, Image as ImageIcon, Trash2, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, Filter, Search, Image as ImageIcon, Trash2, Download, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import {
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import DocumentUploadZone from '@/components/documents/DocumentUploadZone';
 import FolderBreadcrumb from '@/components/documents/FolderBreadcrumb';
+import PhotoGallery from '@/components/photos/PhotoGallery';
+import DrawingMarkup from '@/components/drawings/DrawingMarkup';
 
 export default function ProjectPhotos() {
   const { activeProjectId } = useActiveProject();
@@ -30,6 +33,8 @@ export default function ProjectPhotos() {
   const [deletePhoto, setDeletePhoto] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState('/');
+  const [showAnnotateDialog, setShowAnnotateDialog] = useState(false);
+  const [annotatingPhoto, setAnnotatingPhoto] = useState(null);
 
   const { data: photos = [] } = useQuery({
     queryKey: ['projectPhotos', activeProjectId],
@@ -49,6 +54,20 @@ export default function ProjectPhotos() {
       queryClient.invalidateQueries({ queryKey: ['projectPhotos'] });
       toast.success('Photo deleted');
     }
+  });
+
+  const saveAnnotationsMutation = useMutation({
+    mutationFn: ({ id, annotations }) => 
+      base44.entities.Document.update(id, { 
+        notes: JSON.stringify(annotations)
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectPhotos'] });
+      setShowAnnotateDialog(false);
+      setAnnotatingPhoto(null);
+      toast.success('Annotations saved');
+    },
+    onError: () => toast.error('Save failed')
   });
 
   const handlePhotoUpload = async (files) => {
@@ -187,6 +206,13 @@ export default function ProjectPhotos() {
                         alt={photo.title}
                         className="w-full h-full object-cover"
                       />
+                      {photo.notes && (
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-purple-500 p-1 rounded">
+                            <Edit size={12} className="text-white" />
+                          </div>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                         {photo.phase && (
                           <span className="text-[10px] font-bold text-amber-400 uppercase">
@@ -194,6 +220,16 @@ export default function ProjectPhotos() {
                           </span>
                         )}
                         <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setAnnotatingPhoto(photo);
+                              setShowAnnotateDialog(true);
+                            }}
+                            className="p-2 bg-purple-800 hover:bg-purple-700 rounded transition-colors"
+                            title="Annotate"
+                          >
+                            <Edit size={14} className="text-white" />
+                          </button>
                           <a
                             href={photo.file_url}
                             target="_blank"
@@ -223,6 +259,25 @@ export default function ProjectPhotos() {
           </div>
         )}
       </div>
+
+      {/* Annotate Photo Dialog */}
+      <Dialog open={showAnnotateDialog} onOpenChange={setShowAnnotateDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>Annotate Photo</DialogTitle>
+          </DialogHeader>
+          {annotatingPhoto && (
+            <DrawingMarkup
+              imageUrl={annotatingPhoto.file_url}
+              existingAnnotations={annotatingPhoto.notes ? JSON.parse(annotatingPhoto.notes).annotations || [] : []}
+              onSave={(data) => saveAnnotationsMutation.mutate({
+                id: annotatingPhoto.id,
+                annotations: data
+              })}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletePhoto} onOpenChange={() => setDeletePhoto(null)}>

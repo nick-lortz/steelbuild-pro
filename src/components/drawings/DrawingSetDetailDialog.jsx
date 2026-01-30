@@ -396,46 +396,62 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                 <CardContent className="space-y-2">
                   {sheets.map(sheet => {
                     let metadata = null;
+                    let referencedDrawings = [];
                     try {
                       metadata = sheet.ai_metadata ? JSON.parse(sheet.ai_metadata) : null;
+                      referencedDrawings = metadata?.referenced_drawings || [];
                     } catch (e) {
                       // Ignore
                     }
 
                     return (
-                      <div key={sheet.id} className="flex items-center justify-between p-3 bg-zinc-900 rounded border border-zinc-800">
-                        <div className="flex items-center gap-3 flex-1">
-                          <FileText size={16} className="text-amber-400" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-sm font-bold text-white">{sheet.sheet_number}</span>
-                              {metadata?.revision && (
-                                <Badge className="bg-blue-500/20 text-blue-400 text-xs">
-                                  {metadata.revision}
-                                </Badge>
-                              )}
-                              {metadata?.referenced_drawings?.length > 0 && (
-                                <Badge className="bg-purple-500/20 text-purple-400 text-xs">
-                                  {metadata.referenced_drawings.length} refs
-                                </Badge>
+                      <div key={sheet.id} className="p-3 bg-zinc-900 rounded border border-zinc-800">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3 flex-1">
+                            <FileText size={16} className="text-amber-400" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-mono text-sm font-bold text-white">{sheet.sheet_number}</span>
+                                {metadata?.revision && (
+                                  <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                                    {metadata.revision}
+                                  </Badge>
+                                )}
+                                {referencedDrawings.length > 0 && (
+                                  <Badge className="bg-purple-500/20 text-purple-400 text-xs">
+                                    {referencedDrawings.length} refs
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-zinc-400 truncate">{sheet.sheet_name}</div>
+                              {metadata?.issue_date && (
+                                <div className="text-xs text-zinc-500 mt-1">
+                                  Issued: {format(parseISO(metadata.issue_date), 'MMM d, yyyy')}
+                                </div>
                               )}
                             </div>
-                            <div className="text-xs text-zinc-400 truncate">{sheet.sheet_name}</div>
-                            {metadata?.issue_date && (
-                              <div className="text-xs text-zinc-500 mt-1">
-                                Issued: {format(parseISO(metadata.issue_date), 'MMM d, yyyy')}
-                              </div>
-                            )}
                           </div>
+                          <a
+                            href={sheet.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-zinc-400 hover:text-white"
+                          >
+                            <Download size={16} />
+                          </a>
                         </div>
-                        <a
-                          href={sheet.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-zinc-400 hover:text-white"
-                        >
-                          <FileText size={16} />
-                        </a>
+                        {referencedDrawings.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-zinc-800">
+                            <div className="text-xs text-zinc-500 mb-1">Referenced Drawings:</div>
+                            <div className="flex gap-1 flex-wrap">
+                              {referencedDrawings.map((ref, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs border-purple-500/30 text-purple-400">
+                                  {ref}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

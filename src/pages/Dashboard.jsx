@@ -29,8 +29,7 @@ export default function Dashboard() {
 
   const { data: allProjects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 2 * 60 * 1000
+    queryFn: () => base44.entities.Project.list('name')
   });
 
   const userProjects = useMemo(() => {
@@ -43,28 +42,24 @@ export default function Dashboard() {
     );
   }, [currentUser, allProjects]);
 
-  const { data: allTasks = [] } = useQuery({
+  const { data: allTasks = [], refetch: refetchTasks } = useQuery({
     queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date'),
-    staleTime: 2 * 60 * 1000
+    queryFn: () => base44.entities.Task.list('-updated_date')
   });
 
-  const { data: allFinancials = [] } = useQuery({
+  const { data: allFinancials = [], refetch: refetchFinancials } = useQuery({
     queryKey: ['all-financials'],
-    queryFn: () => base44.entities.Financial.list(),
-    staleTime: 2 * 60 * 1000
+    queryFn: () => base44.entities.Financial.list()
   });
 
-  const { data: allChangeOrders = [] } = useQuery({
+  const { data: allChangeOrders = [], refetch: refetchCOs } = useQuery({
     queryKey: ['all-change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
-    staleTime: 5 * 60 * 1000
+    queryFn: () => base44.entities.ChangeOrder.list()
   });
 
-  const { data: allRFIs = [] } = useQuery({
+  const { data: allRFIs = [], refetch: refetchRFIs } = useQuery({
     queryKey: ['all-rfis'],
-    queryFn: () => base44.entities.RFI.list(),
-    staleTime: 5 * 60 * 1000
+    queryFn: () => base44.entities.RFI.list()
   });
 
   // Portfolio metrics calculation
@@ -258,7 +253,13 @@ export default function Dashboard() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => refetchProjects()}
+            onClick={() => {
+              refetchProjects();
+              refetchTasks();
+              refetchFinancials();
+              refetchCOs();
+              refetchRFIs();
+            }}
             className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
           >
             <RefreshCw size={14} />

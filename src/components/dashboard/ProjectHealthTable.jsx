@@ -25,7 +25,7 @@ const HealthIndicator = ({ value, type = 'cost' }) => {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
 
-  const status = value > 10 ? 'critical' : value > 5 ? 'warning' : value > -5 ? 'good' : 'excellent';
+  const status = value < -10 ? 'critical' : value < -5 ? 'warning' : value < 5 ? 'good' : 'excellent';
   
   const configs = {
     critical: { icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },

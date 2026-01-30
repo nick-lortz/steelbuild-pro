@@ -239,7 +239,7 @@ export default function Schedule() {
       hasMore: endIdx < filtered.length,
       totalCount: filtered.length
     };
-  }, [allScheduleTasks, workPackagesAsTasks, statusFilter, searchTerm, page]);
+  }, [combinedScheduleItems, statusFilter, searchTerm, page]);
 
   // Fetch all resources for task form
   const { data: resources = [] } = useQuery({

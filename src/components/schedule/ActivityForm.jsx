@@ -56,7 +56,9 @@ export default function ActivityForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (!activity?.source_entity) {
+      onSubmit(formData);
+    }
   };
 
   const duration = formData.start_date && formData.end_date
@@ -273,8 +275,16 @@ export default function ActivityForm({
         />
       </div>
 
+      {activity?.source_entity && (
+        <div className="p-3 bg-blue-950/20 border border-blue-500/30 rounded-lg">
+          <p className="text-xs text-blue-400">
+            This activity is auto-generated from {activity.source_entity}. Edit the source record to update.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-between gap-3 pt-4 border-t border-zinc-800">
-        {isEdit && onDelete && (
+        {isEdit && onDelete && !activity?.source_entity && (
           <Button
             type="button"
             variant="destructive"
@@ -286,13 +296,15 @@ export default function ActivityForm({
           </Button>
         )}
         <div className="flex gap-2 ml-auto">
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            {isLoading ? 'Saving...' : isEdit ? 'Update Activity' : 'Create Activity'}
-          </Button>
+          {!activity?.source_entity && (
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              {isLoading ? 'Saving...' : isEdit ? 'Update Activity' : 'Create Activity'}
+            </Button>
+          )}
         </div>
       </div>
     </form>

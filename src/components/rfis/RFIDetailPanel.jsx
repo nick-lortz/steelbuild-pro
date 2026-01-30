@@ -230,17 +230,26 @@ export default function RFIDetailPanel({
         <TabsContent value="documents" className="space-y-4">
           <div className="flex gap-2">
             <Button
-              onClick={() => {
-                const link = document.createElement('a');
-                link.href = '/api/exportRFItoPDF';
-                link.download = `RFI-${String(rfi.rfi_number).padStart(3, '0')}.pdf`;
-                link.click();
+              onClick={async () => {
+                try {
+                  const response = await base44.functions.invoke('exportRFItoPDF', { rfi_id: rfi.id });
+                  const blob = new Blob([response.data], { type: 'application/pdf' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `RFI-${String(rfi.rfi_number).padStart(3, '0')}.pdf`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  toast.success('PDF exported');
+                } catch (error) {
+                  toast.error('Export failed');
+                }
               }}
               variant="outline"
               className="flex-1 border-zinc-700"
               size="sm"
             >
-              <Download size={14} className="mr-2" />
+              <FileText size={14} className="mr-2" />
               Export PDF
             </Button>
           </div>

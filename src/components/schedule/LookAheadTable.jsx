@@ -72,24 +72,34 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
     {
       header: 'Start',
       accessor: 'start_date',
-      render: (row) => {
-        try {
-          return row.start_date ? <span className="text-sm">{format(parseISO(row.start_date), 'MMM d, yyyy')}</span> : '-';
-        } catch {
-          return '-';
-        }
-      }
+      render: (row) => (
+        <Input
+          type="date"
+          value={row.start_date || ''}
+          onChange={(e) => {
+            e.stopPropagation();
+            onUpdateActivity(row.id, { start_date: e.target.value });
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700"
+        />
+      )
     },
     {
       header: 'End',
       accessor: 'end_date',
-      render: (row) => {
-        try {
-          return row.end_date ? <span className="text-sm">{format(parseISO(row.end_date), 'MMM d, yyyy')}</span> : '-';
-        } catch {
-          return '-';
-        }
-      }
+      render: (row) => (
+        <Input
+          type="date"
+          value={row.end_date || ''}
+          onChange={(e) => {
+            e.stopPropagation();
+            onUpdateActivity(row.id, { end_date: e.target.value });
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-36 h-8 text-xs bg-zinc-800 border-zinc-700"
+        />
+      )
     },
     {
       header: 'Resources',

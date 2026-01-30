@@ -30,7 +30,9 @@ export default function Financials() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name')
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   // Filter projects by user role
@@ -47,42 +49,56 @@ export default function Financials() {
   const { data: budgetLines = [] } = useQuery({
     queryKey: ['financials', selectedProject],
     queryFn: () => base44.entities.Financial.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject
+    enabled: !!selectedProject,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', selectedProject],
     queryFn: () => base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date'),
-    enabled: !!selectedProject
+    enabled: !!selectedProject,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', selectedProject],
     queryFn: () => base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end'),
-    enabled: !!selectedProject
+    enabled: !!selectedProject,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', selectedProject],
     queryFn: () => base44.entities.SOVItem.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject
+    enabled: !!selectedProject,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', selectedProject],
     queryFn: () => base44.entities.ChangeOrder.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject
+    enabled: !!selectedProject,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: estimatedCosts = [] } = useQuery({
     queryKey: ['etc', selectedProject],
     queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject
+    enabled: !!selectedProject,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code')
+    queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000
   });
 
   // Real-time subscriptions

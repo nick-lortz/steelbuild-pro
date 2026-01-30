@@ -36,6 +36,8 @@ export default function Analytics() {
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const [activeProjectId, setActiveProjectId] = useState(null);
@@ -152,15 +154,19 @@ export default function Analytics() {
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
 
   const { data: resourceAllocations = [] } = useQuery({
     queryKey: ['resourceAllocations', activeProjectId],
     queryFn: () => activeProjectId
       ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
-      : base44.entities.ResourceAllocation.list(),
-    enabled: !!activeProjectId
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({

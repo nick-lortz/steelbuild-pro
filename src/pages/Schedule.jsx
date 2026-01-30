@@ -77,32 +77,26 @@ export default function Schedule() {
     [projects, activeProjectId]
   );
 
-  // Real-time subscriptions - Tasks
+  // Real-time subscriptions - Only for active project
   useEffect(() => {
     if (!activeProjectId) return;
 
-    const unsubscribe = base44.entities.Task.subscribe((event) => {
+    const unsubTasks = base44.entities.Task.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
-        queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
-        queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
       }
     });
 
-    return unsubscribe;
-  }, [activeProjectId, queryClient]);
-
-  // Real-time subscriptions - Activities (for Look-Ahead updates)
-  useEffect(() => {
-    if (!activeProjectId) return;
-
-    const unsubscribe = base44.entities.ScheduleActivity.subscribe((event) => {
+    const unsubActivities = base44.entities.ScheduleActivity.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
       }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubTasks();
+      unsubActivities();
+    };
   }, [activeProjectId, queryClient]);
 
   // Fetch tasks for active project only
@@ -245,31 +239,48 @@ export default function Schedule() {
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
-    staleTime: 5 * 60 * 1000
+    queryKey: ['rfis', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.RFI.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
-    staleTime: 5 * 60 * 1000
+    queryKey: ['changeOrders', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: drawingSets = [] } = useQuery({
-    queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list(),
-    staleTime: 5 * 60 * 1000
+    queryKey: ['drawings', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: allTasks = [] } = useQuery({
-    queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list('start_date'),
-    staleTime: 2 * 60 * 1000
+    queryKey: ['all-tasks', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({

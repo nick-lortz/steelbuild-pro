@@ -27,43 +27,50 @@ export default function ProjectDashboard() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 2 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['all-tasks'],
     queryFn: () => base44.entities.Task.list('end_date'),
-    staleTime: 2 * 60 * 1000
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
     queryFn: () => base44.entities.WorkPackage.list('wpid'),
-    staleTime: 2 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
     queryFn: () => base44.entities.Document.list('-created_date'),
-    staleTime: 5 * 60 * 1000
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
     queryFn: () => base44.entities.Financial.list(),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
     queryFn: () => base44.entities.Expense.list(),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items'],
     queryFn: () => base44.entities.SOVItem.list(),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   // Calculate project metrics

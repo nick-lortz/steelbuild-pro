@@ -160,13 +160,15 @@ export default function LookAheadTable({ activities, resources, users, drawingSe
             max="100"
             value={row.progress_percent || 0}
             onChange={(e) => {
+              e.stopPropagation();
               const val = parseInt(e.target.value) || 0;
-              if (val >= 0 && val <= 100) {
+              if (val >= 0 && val <= 100 && !row.source_entity) {
                 onUpdateActivity(row.id, { progress_percent: val });
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="w-14 h-7 text-xs bg-zinc-800 border-zinc-700 text-center"
+            disabled={!!row.source_entity}
+            className="w-14 h-7 text-xs bg-zinc-800 border-zinc-700 text-center disabled:opacity-50"
           />
         </div>
       )

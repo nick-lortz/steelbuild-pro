@@ -413,14 +413,18 @@ export default function LookAheadPlanning() {
               resources={resources}
               drawingSets={drawingSets}
               rfis={rfis}
-              onSubmit={(data) => updateMutation.mutate({ id: selectedActivity.id, data })}
-              onDelete={() => {
+              onSubmit={(data) => {
+                if (!selectedActivity.source_entity) {
+                  updateMutation.mutate({ id: selectedActivity.id, data });
+                }
+              }}
+              onDelete={selectedActivity.source_entity ? null : () => {
                 if (confirm('Delete this activity?')) {
                   deleteMutation.mutate(selectedActivity.id);
                 }
               }}
               isLoading={updateMutation.isPending}
-              isEdit />
+              isEdit={!selectedActivity.source_entity} />
 
           </div>
         </SheetContent>

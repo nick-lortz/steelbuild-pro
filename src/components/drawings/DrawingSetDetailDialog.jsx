@@ -22,8 +22,13 @@ import {
   History,
   Edit3,
   Save,
-  X
+  X,
+  Upload,
+  TrendingUp
 } from 'lucide-react';
+import DrawingUploadEnhanced from './DrawingUploadEnhanced';
+import DrawingHeatMap from './DrawingHeatMap';
+import DrawingRevisionWarnings from './DrawingRevisionWarnings';
 
 export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChange, users, rfis }) {
   const queryClient = useQueryClient();
@@ -45,6 +50,12 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawing-revisions', drawingSetId],
     queryFn: () => base44.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }),
+    enabled: !!drawingSetId && open
+  });
+
+  const { data: sheets = [] } = useQuery({
+    queryKey: ['drawing-sheets', drawingSetId],
+    queryFn: () => base44.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
     enabled: !!drawingSetId && open
   });
 
@@ -110,9 +121,17 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
           </div>
         </DialogHeader>
 
+        <DrawingRevisionWarnings drawingSet={drawingSet} sheets={sheets} />
+
         <Tabs defaultValue="details" className="mt-4">
           <TabsList className="bg-zinc-800 border-zinc-700">
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="sheets">
+              Sheets ({sheets.length})
+            </TabsTrigger>
+            <TabsTrigger value="heatmap">
+              Heat Map
+            </TabsTrigger>
             <TabsTrigger value="revisions">
               Revisions ({revisions.length})
             </TabsTrigger>
@@ -358,6 +377,75 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="sheets" className="space-y-4 mt-4">
+            <DrawingUploadEnhanced 
+              drawingSetId={drawingSetId}
+              onUploadComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['drawing-sheets'] });
+                queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
+              }}
+            />
+
+            {sheets.length > 0 && (
+              <Card className="bg-zinc-800/50 border-zinc-700">
+                <CardHeader>
+                  <CardTitle className="text-sm">Uploaded Sheets ({sheets.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {sheets.map(sheet => {
+                    let metadata = null;
+                    try {
+                      metadata = sheet.ai_metadata ? JSON.parse(sheet.ai_metadata) : null;
+                    } catch (e) {
+                      // Ignore
+                    }
+
+                    return (
+                      <div key={sheet.id} className="flex items-center justify-between p-3 bg-zinc-900 rounded border border-zinc-800">
+                        <div className="flex items-center gap-3 flex-1">
+                          <FileText size={16} className="text-amber-400" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono text-sm font-bold text-white">{sheet.sheet_number}</span>
+                              {metadata?.revision && (
+                                <Badge className="bg-blue-500/20 text-blue-400 text-xs">
+                                  {metadata.revision}
+                                </Badge>
+                              )}
+                              {metadata?.referenced_drawings?.length > 0 && (
+                                <Badge className="bg-purple-500/20 text-purple-400 text-xs">
+                                  {metadata.referenced_drawings.length} refs
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-zinc-400 truncate">{sheet.sheet_name}</div>
+                            {metadata?.issue_date && (
+                              <div className="text-xs text-zinc-500 mt-1">
+                                Issued: {format(parseISO(metadata.issue_date), 'MMM d, yyyy')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <a
+                          href={sheet.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-zinc-400 hover:text-white"
+                        >
+                          <FileText size={16} />
+                        </a>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="heatmap" className="mt-4">
+            <DrawingHeatMap sheets={sheets} />
           </TabsContent>
 
           <TabsContent value="revisions" className="space-y-2 mt-4">

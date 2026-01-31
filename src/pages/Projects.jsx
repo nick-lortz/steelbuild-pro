@@ -16,6 +16,7 @@ import {
   SelectValue } from
 "@/components/ui/select";
 import { Building, RefreshCw, Plus } from 'lucide-react';
+import { createPageUrl } from '@/utils';
 import {
   Dialog,
   DialogContent,
@@ -297,6 +298,10 @@ export default function Projects() {
     window.location.href = `/ProjectDashboard?id=${project.id}`;
   };
 
+  const handleSettings = (project) => {
+    window.location.href = createPageUrl('ProjectSettings') + `?project=${project.id}`;
+  };
+
   return (
     <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
       {/* Modern Header */}
@@ -386,6 +391,7 @@ export default function Projects() {
           onView={handleViewProject}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onSettings={handleSettings}
           canEdit={can.editProject}
         />
       )}

@@ -416,6 +416,48 @@ export default function Deliveries() {
              </TabsTrigger>
            </TabsList>
 
+          {/* Look-Ahead Schedule */}
+          <TabsContent value="lookAhead" className="space-y-4">
+            <div className="flex gap-3 mb-4">
+              <Select value={filterZone} onValueChange={setFilterZone}>
+                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="All Zones" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Zones</SelectItem>
+                  {[...new Set(filteredDeliveries.map(d => d.gridlines_zone).filter(Boolean))].map(zone => (
+                    <SelectItem key={zone} value={zone}>{zone}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterCrane} onValueChange={setFilterCrane}>
+                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="All Cranes" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Cranes</SelectItem>
+                  {[...new Set(filteredDeliveries.map(d => d.required_crane).filter(Boolean))].map(crane => (
+                    <SelectItem key={crane} value={crane}>{crane}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DeliveryConflictPanel
+              deliveries={filteredDeliveries}
+              onSelectDelivery={(d) => setSelectedDelivery(d)}
+            />
+
+            <DeliveryLookAhead
+              deliveries={filteredDeliveries.filter(d =>
+                (filterZone === 'all' || d.gridlines_zone === filterZone) &&
+                (filterCrane === 'all' || d.required_crane === filterCrane)
+              )}
+              projects={projects}
+              onSelectDelivery={(d) => setSelectedDelivery(d)}
+            />
+          </TabsContent>
+
           {/* Today's Deliveries */}
           <TabsContent value="today">
             <TodaysDeliveries

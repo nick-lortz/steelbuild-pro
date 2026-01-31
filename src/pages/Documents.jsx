@@ -38,6 +38,7 @@ import DocumentTreeView from '@/components/documents/DocumentTreeView';
 import DocumentFolderTree from '@/components/documents/DocumentFolderTree';
 import AISearchPanel from '@/components/documents/AISearchPanel';
 import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel';
+import DocumentLinkSuggestions from '@/components/documents/DocumentLinkSuggestions';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import {
@@ -97,6 +98,7 @@ export default function Documents() {
   const [selectedDocs, setSelectedDocs] = useState([]);
   const [bulkActing, setBulkActing] = useState(false);
   const [analyzingDoc, setAnalyzingDoc] = useState(null);
+  const [linkSuggestions, setLinkSuggestions] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -309,23 +311,47 @@ export default function Documents() {
   const handleAnalyzeDocument = async (doc) => {
     setAnalyzingDoc(doc.id);
     try {
-      const { data } = await base44.functions.invoke('analyzeDocumentContent', {
+      const { data } = await base44.functions.invoke('autoProcessDocument', {
         document_id: doc.id,
         file_url: doc.file_url,
-        title: doc.title,
-        current_category: doc.category
+        category: doc.category,
+        title: doc.title
       });
 
-      if (data.auto_applied) {
-        toast.success('AI suggestions applied automatically');
-        queryClient.invalidateQueries({ queryKey: ['documents'] });
-      } else {
-        toast.info(`Suggested: ${data.analysis.suggested_category}, Tags: ${data.analysis.suggested_tags.join(', ')}`);
+      if (data.linked_entities) {
+        setLinkSuggestions({
+          documentId: doc.id,
+          ...data.linked_entities
+        });
+        toast.success(data.auto_linked ? 'Auto-linked with high confidence' : 'Link suggestions ready');
       }
+      
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
     } catch (error) {
       toast.error('AI analysis failed');
     } finally {
       setAnalyzingDoc(null);
+    }
+  };
+
+  const handleLinkEntity = async (entityType, entityId) => {
+    if (!linkSuggestions?.documentId) return;
+    
+    const fieldMap = {
+      task: 'task_id',
+      work_package: 'work_package_id',
+      rfi: 'linked_rfi_id'
+    };
+
+    try {
+      await updateMutation.mutateAsync({
+        id: linkSuggestions.documentId,
+        data: { [fieldMap[entityType]]: entityId }
+      });
+      toast.success(`Linked to ${entityType}`);
+      setLinkSuggestions(null);
+    } catch (error) {
+      toast.error('Failed to link');
     }
   };
 
@@ -1181,6 +1207,16 @@ export default function Documents() {
           </SheetHeader>
           
           <div className="mt-6 space-y-6">
+            {/* AI Link Suggestions */}
+            {linkSuggestions?.documentId === selectedDoc?.id && (
+              <DocumentLinkSuggestions
+                document={selectedDoc}
+                suggestions={linkSuggestions}
+                onLink={handleLinkEntity}
+                onDismiss={() => setLinkSuggestions(null)}
+              />
+            )}
+
             {/* Approval Workflow */}
             {selectedDoc && (
               <ApprovalWorkflowPanel 

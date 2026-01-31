@@ -108,31 +108,135 @@ Return comprehensive data for search indexing and metadata population.`,
 
     await base44.entities.Document.update(document_id, updateData);
 
-    // Auto-link to tasks if drawing references found
-    if (extraction.referenced_drawings?.length > 0) {
-      const tasks = await base44.entities.Task.filter({
-        project_id: currentDoc.project_id,
-        status: { $in: ['not_started', 'in_progress'] }
-      });
+    // AI-powered entity linking
+    const linkedEntities = await findLinkedEntities(base44, currentDoc.project_id, extraction);
 
-      // Simple matching - find tasks that reference similar drawing numbers
-      const linkedTasks = tasks.filter(task =>
-        extraction.referenced_drawings.some(dwg =>
-          task.name?.includes(dwg) || task.description?.includes(dwg)
-        )
-      ).slice(0, 3);
+    // Store suggestions in document for user review
+    const suggestions = {
+      tasks: linkedEntities.tasks,
+      work_packages: linkedEntities.workPackages,
+      rfis: linkedEntities.rfis,
+      confidence: linkedEntities.confidence
+    };
 
-      if (linkedTasks.length > 0) {
-        updateData.task_id = linkedTasks[0].id;
-        await base44.entities.Document.update(document_id, updateData);
+    // Auto-link high-confidence matches
+    if (linkedEntities.confidence >= 0.8) {
+      if (linkedEntities.tasks.length > 0) {
+        updateData.task_id = linkedEntities.tasks[0].id;
+      }
+      if (linkedEntities.workPackages.length > 0) {
+        updateData.work_package_id = linkedEntities.workPackages[0].id;
       }
     }
+
+    // Store all suggestions in notes for UI display
+    const suggestionsNote = `\n\nAI_SUGGESTIONS: ${JSON.stringify(suggestions)}`;
+    updateData.notes = (updateData.notes || '') + suggestionsNote;
+
+    await base44.entities.Document.update(document_id, updateData);
 
     return Response.json({
       success: true,
       extraction,
+      linked_entities: linkedEntities,
+      auto_linked: linkedEntities.confidence >= 0.8,
       updates_applied: Object.keys(updateData)
     });
+  } catch (error) {
+    console.error('Auto-process error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
+
+async function findLinkedEntities(base44, projectId, extraction) {
+  const results = {
+    tasks: [],
+    workPackages: [],
+    rfis: [],
+    confidence: 0
+  };
+
+  if (!projectId) return results;
+
+  // Fetch relevant entities
+  const [tasks, workPackages, rfis] = await Promise.all([
+    base44.entities.Task.filter({ project_id: projectId, status: { $in: ['not_started', 'in_progress'] } }),
+    base44.entities.WorkPackage.filter({ project_id: projectId }),
+    base44.entities.RFI.filter({ project_id: projectId, status: { $in: ['draft', 'submitted', 'under_review'] } })
+  ]);
+
+  const keywords = [
+    extraction.drawing_number,
+    ...(extraction.referenced_drawings || []),
+    ...(extraction.structural_elements || []),
+    ...(extraction.suggested_tags || [])
+  ].filter(Boolean);
+
+  // Match tasks
+  const matchedTasks = tasks.filter(task => {
+    const taskText = `${task.name} ${task.description || ''}`.toLowerCase();
+    return keywords.some(kw => taskText.includes(kw.toLowerCase()));
+  }).map(task => ({
+    id: task.id,
+    name: task.name,
+    match_score: calculateMatchScore(task, keywords)
+  })).sort((a, b) => b.match_score - a.match_score).slice(0, 3);
+
+  // Match work packages
+  const matchedWPs = workPackages.filter(wp => {
+    const wpText = `${wp.title} ${wp.description || ''}`.toLowerCase();
+    return keywords.some(kw => wpText.includes(kw.toLowerCase()));
+  }).map(wp => ({
+    id: wp.id,
+    title: wp.title,
+    match_score: calculateMatchScore(wp, keywords)
+  })).sort((a, b) => b.match_score - a.match_score).slice(0, 3);
+
+  // Match RFIs
+  const matchedRFIs = rfis.filter(rfi => {
+    const rfiText = `${rfi.subject} ${rfi.question || ''}`.toLowerCase();
+    return keywords.some(kw => rfiText.includes(kw.toLowerCase()));
+  }).map(rfi => ({
+    id: rfi.id,
+    subject: rfi.subject,
+    rfi_number: rfi.rfi_number,
+    match_score: calculateMatchScore(rfi, keywords)
+  })).sort((a, b) => b.match_score - a.match_score).slice(0, 3);
+
+  results.tasks = matchedTasks;
+  results.workPackages = matchedWPs;
+  results.rfis = matchedRFIs;
+
+  // Calculate overall confidence
+  const totalMatches = matchedTasks.length + matchedWPs.length + matchedRFIs.length;
+  const avgScore = totalMatches > 0
+    ? ([...matchedTasks, ...matchedWPs, ...matchedRFIs].reduce((sum, m) => sum + m.match_score, 0) / totalMatches)
+    : 0;
+  
+  results.confidence = Math.min(avgScore / 100, 1);
+
+  return results;
+}
+
+function calculateMatchScore(entity, keywords) {
+  const text = JSON.stringify(entity).toLowerCase();
+  let score = 0;
+  
+  keywords.forEach(kw => {
+    const kwLower = kw.toLowerCase();
+    if (text.includes(kwLower)) {
+      score += 30;
+      // Bonus for exact field matches
+      if (entity.name?.toLowerCase().includes(kwLower) || 
+          entity.title?.toLowerCase().includes(kwLower) ||
+          entity.subject?.toLowerCase().includes(kwLower)) {
+        score += 20;
+      }
+    }
+  });
+  
+  return Math.min(score, 100);
+}
 
   } catch (error) {
     console.error('Auto-process error:', error);

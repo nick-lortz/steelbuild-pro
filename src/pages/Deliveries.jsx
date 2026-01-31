@@ -2,11 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Truck,
   MapPin,
@@ -14,22 +13,29 @@ import {
   AlertTriangle,
   CheckCircle2,
   Package,
-  Calendar,
   Weight,
-  Plus
+  Plus,
+  Calendar,
+  Map,
+  ListTree,
+  FileText,
+  TrendingUp
 } from 'lucide-react';
-import { format, differenceInMinutes, isPast, parseISO } from 'date-fns';
+import { format, parseISO, isToday, isTomorrow, addDays, startOfDay, endOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { toast } from '@/components/ui/notifications';
 import TruckDetailDialog from '@/components/deliveries/TruckDetailDialog';
 import NewLoadDialog from '@/components/deliveries/NewLoadDialog';
+import GateCalendar from '@/components/deliveries/GateCalendar';
+import PieceAssignmentPanel from '@/components/deliveries/PieceAssignmentPanel';
+import DeliveryMap from '@/components/deliveries/DeliveryMap';
+import SequenceLoadView from '@/components/deliveries/SequenceLoadView';
 
 export default function Deliveries() {
   const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTruck, setSelectedTruck] = useState(null);
   const [showNewLoadDialog, setShowNewLoadDialog] = useState(false);
+  const [activeView, setActiveView] = useState('gate');
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
@@ -82,24 +88,13 @@ export default function Deliveries() {
       const loadEquipment = equipment.filter(e => e.load_truck_id === load.id);
       const loadReports = conditionReports.filter(r => r.load_truck_id === load.id);
       
-      const openIssues = loadReports.filter(r => r.resolution_status === 'open' && r.issue_type !== 'acceptable').length;
+      const openIssues = loadReports.filter(r => 
+        r.resolution_status === 'open' && r.issue_type !== 'acceptable'
+      ).length;
       
-      let etaStatus = 'on_time';
-      let minutesUntilArrival = null;
-      
-      if (load.status === 'in_transit' && load.estimated_eta) {
-        const eta = parseISO(load.estimated_eta);
-        const windowEnd = parseISO(load.planned_arrival_end);
-        minutesUntilArrival = differenceInMinutes(eta, new Date());
-        
-        if (isPast(windowEnd)) {
-          etaStatus = 'late';
-        } else if (minutesUntilArrival < 0) {
-          etaStatus = 'delayed';
-        } else if (minutesUntilArrival < 30) {
-          etaStatus = 'arriving_soon';
-        }
-      }
+      const criticalIssues = loadReports.filter(r =>
+        r.resolution_status === 'open' && r.severity === 'critical'
+      ).length;
       
       return {
         ...load,
@@ -107,58 +102,75 @@ export default function Deliveries() {
         equipment: loadEquipment,
         reports: loadReports,
         openIssues,
+        criticalIssues,
         pieceCount: loadPieces.length,
-        etaStatus,
-        minutesUntilArrival
+        totalWeight: loadPieces.reduce((sum, p) => sum + (p.weight || 0), 0),
+        sequences: [...new Set(loadPieces.map(p => p.sequence_zone).filter(Boolean))]
       };
     });
   }, [loads, pieces, equipment, conditionReports]);
 
-  // Filter loads
-  const filteredLoads = useMemo(() => {
-    if (statusFilter === 'all') return enhancedLoads;
-    return enhancedLoads.filter(l => l.status === statusFilter);
-  }, [enhancedLoads, statusFilter]);
-
   // Metrics
   const metrics = useMemo(() => {
     const totalTonnage = project?.total_tonnage || 0;
-    const deliveredTonnage = pieces.filter(p => ['on_site', 'erected'].includes(p.current_status))
-      .reduce((sum, p) => sum + (p.weight || 0), 0);
+    const deliveredPieces = pieces.filter(p => ['on_site', 'erected'].includes(p.current_status));
+    const deliveredTonnage = deliveredPieces.reduce((sum, p) => sum + (p.weight || 0), 0);
     
     const inTransit = enhancedLoads.filter(l => l.status === 'in_transit').length;
-    const arrivedToday = enhancedLoads.filter(l => 
-      l.status === 'arrived' && 
-      l.actual_arrival_time &&
-      format(parseISO(l.actual_arrival_time), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-    ).length;
-    
-    const delayedLoads = enhancedLoads.filter(l => 
-      l.status === 'in_transit' && l.etaStatus === 'delayed'
-    ).length;
+    const scheduled = enhancedLoads.filter(l => l.status === 'scheduled').length;
+    const onSite = enhancedLoads.filter(l => ['arrived', 'unloading'].includes(l.status)).length;
     
     const openIssues = conditionReports.filter(r => 
       r.resolution_status === 'open' && r.issue_type !== 'acceptable'
     ).length;
+    
+    const criticalIssues = conditionReports.filter(r =>
+      r.resolution_status === 'open' && r.severity === 'critical'
+    ).length;
+
+    // Readiness breakdown
+    const inShop = pieces.filter(p => ['in_shop', 'ready_for_shipping'].includes(p.current_status)).length;
+    const onTruck = pieces.filter(p => p.current_status === 'on_truck').length;
+    const atSite = pieces.filter(p => p.current_status === 'on_site').length;
+    const erected = pieces.filter(p => p.current_status === 'erected').length;
 
     return {
       totalTonnage,
       deliveredTonnage,
       percentComplete: totalTonnage > 0 ? (deliveredTonnage / totalTonnage * 100) : 0,
       inTransit,
-      arrivedToday,
-      delayedLoads,
-      openIssues
+      scheduled,
+      onSite,
+      openIssues,
+      criticalIssues,
+      totalPieces: pieces.length,
+      deliveredPieces: deliveredPieces.length,
+      readiness: { inShop, onTruck, atSite, erected }
     };
   }, [project, pieces, enhancedLoads, conditionReports]);
 
   // Today's schedule
-  const todaysSchedule = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
+  const todaysLoads = useMemo(() => {
     return enhancedLoads.filter(l => {
       if (!l.planned_arrival_start) return false;
-      const arrivalDate = format(parseISO(l.planned_arrival_start), 'yyyy-MM-dd');
-      return arrivalDate === today && ['scheduled', 'in_transit', 'arrived'].includes(l.status);
+      const arrivalDate = parseISO(l.planned_arrival_start);
+      return isToday(arrivalDate) && ['scheduled', 'in_transit', 'arrived', 'unloading'].includes(l.status);
+    }).sort((a, b) => 
+      new Date(a.planned_arrival_start) - new Date(b.planned_arrival_start)
+    );
+  }, [enhancedLoads]);
+
+  // Upcoming loads (next 7 days)
+  const upcomingLoads = useMemo(() => {
+    const now = new Date();
+    const weekOut = addDays(now, 7);
+    
+    return enhancedLoads.filter(l => {
+      if (!l.planned_arrival_start) return false;
+      const arrivalDate = parseISO(l.planned_arrival_start);
+      return arrivalDate > endOfDay(now) && 
+             arrivalDate <= weekOut && 
+             ['planned', 'scheduled'].includes(l.status);
     }).sort((a, b) => 
       new Date(a.planned_arrival_start) - new Date(b.planned_arrival_start)
     );
@@ -166,23 +178,23 @@ export default function Deliveries() {
 
   const getStatusColor = (status) => {
     const colors = {
-      planned: 'bg-zinc-500',
-      scheduled: 'bg-blue-500',
-      in_transit: 'bg-amber-500',
-      arrived: 'bg-green-500',
-      unloading: 'bg-purple-500',
-      complete: 'bg-zinc-700',
-      cancelled: 'bg-red-500'
+      planned: 'bg-zinc-600 text-zinc-200',
+      scheduled: 'bg-blue-600 text-white',
+      in_transit: 'bg-amber-500 text-black',
+      arrived: 'bg-green-600 text-white',
+      unloading: 'bg-purple-600 text-white',
+      complete: 'bg-zinc-700 text-zinc-300',
+      cancelled: 'bg-red-600 text-white'
     };
-    return colors[status] || 'bg-zinc-500';
+    return colors[status] || 'bg-zinc-600 text-zinc-200';
   };
 
   if (!activeProjectId) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[80vh]">
         <div className="text-center">
-          <Truck size={48} className="mx-auto mb-4 text-zinc-600" />
-          <h3 className="text-lg font-semibold text-white mb-2">No Project Selected</h3>
+          <Truck size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white mb-2">No Project Selected</h3>
           <p className="text-zinc-500">Select a project to manage deliveries</p>
         </div>
       </div>
@@ -194,291 +206,162 @@ export default function Deliveries() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Deliveries</h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <h1 className="text-2xl font-bold text-white uppercase tracking-wide">Deliveries</h1>
+          <p className="text-xs text-zinc-600 font-mono mt-1">
             {project?.project_number} • {project?.name}
           </p>
         </div>
         <Button
           onClick={() => setShowNewLoadDialog(true)}
-          className="bg-amber-500 hover:bg-amber-600 text-black"
+          className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
         >
           <Plus size={16} className="mr-2" />
           New Load
         </Button>
       </div>
 
-      {/* Metrics Dashboard */}
+      {/* KPI Dashboard */}
       <div className="grid grid-cols-6 gap-4">
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Weight size={12} />
-              Tonnage
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <TrendingUp size={10} />
+              Tonnage Progress
             </div>
-            <div className="text-2xl font-bold text-white mb-1">
-              {metrics.deliveredTonnage.toFixed(1)} / {metrics.totalTonnage.toFixed(1)}
+            <div className="text-2xl font-bold text-white mb-2">
+              {metrics.deliveredTonnage.toFixed(0)}
+              <span className="text-sm text-zinc-500 font-normal ml-1">/ {metrics.totalTonnage.toFixed(0)}t</span>
             </div>
-            <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+            <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
               <div 
                 className="bg-green-500 h-full transition-all"
                 style={{ width: `${metrics.percentComplete}%` }}
               />
             </div>
-            <div className="text-xs text-zinc-600 mt-1">{metrics.percentComplete.toFixed(0)}% Complete</div>
+            <div className="text-[10px] text-zinc-600 mt-1">{metrics.percentComplete.toFixed(0)}% delivered</div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Truck size={12} />
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <Truck size={10} />
               In Transit
             </div>
             <div className="text-3xl font-bold text-amber-500">{metrics.inTransit}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">Active trucks</div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <CheckCircle2 size={12} />
-              Arrived Today
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <Calendar size={10} />
+              Scheduled
             </div>
-            <div className="text-3xl font-bold text-green-500">{metrics.arrivedToday}</div>
+            <div className="text-3xl font-bold text-blue-500">{metrics.scheduled}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">Coming soon</div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Clock size={12} />
-              Delayed
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <MapPin size={10} />
+              On Site
             </div>
-            <div className="text-3xl font-bold text-red-500">{metrics.delayedLoads}</div>
+            <div className="text-3xl font-bold text-green-500">{metrics.onSite}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">At gate/unloading</div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <AlertTriangle size={12} />
-              Open Issues
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <AlertTriangle size={10} />
+              Issues
             </div>
-            <div className="text-3xl font-bold text-orange-500">{metrics.openIssues}</div>
+            <div className="text-3xl font-bold text-red-500">{metrics.criticalIssues}</div>
+            <div className="text-[10px] text-zinc-600 mt-1">{metrics.openIssues} total open</div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
-            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Calendar size={12} />
-              Today's Schedule
+            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <Package size={10} />
+              Pieces
             </div>
-            <div className="text-3xl font-bold text-blue-500">{todaysSchedule.length}</div>
+            <div className="text-2xl font-bold text-white">
+              {metrics.deliveredPieces}
+              <span className="text-sm text-zinc-500 font-normal ml-1">/ {metrics.totalPieces}</span>
+            </div>
+            <div className="text-[10px] text-zinc-600 mt-1">{((metrics.deliveredPieces/metrics.totalPieces)*100).toFixed(0)}% received</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-3 gap-6">
-        {/* Gate View - Today's Arrivals */}
-        <div className="col-span-1">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm uppercase tracking-wider flex items-center gap-2">
-                <Calendar size={16} />
-                Today's Gate Schedule
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
-              {todaysSchedule.length === 0 ? (
-                <div className="text-center py-8 text-zinc-500 text-sm">
-                  No deliveries scheduled today
-                </div>
-              ) : (
-                todaysSchedule.map(load => (
-                  <div
-                    key={load.id}
-                    onClick={() => setSelectedTruck(load)}
-                    className="p-3 bg-zinc-800/50 border border-zinc-700 rounded hover:border-amber-500 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className={cn("text-xs", getStatusColor(load.status))}>
-                            {load.status.replace('_', ' ')}
-                          </Badge>
-                          {load.is_osow && (
-                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">
-                              OSOW
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="font-semibold text-white text-sm">{load.load_number}</p>
-                        <p className="text-xs text-zinc-500">{load.truck_id || 'TBD'}</p>
-                      </div>
-                      {load.minutesUntilArrival !== null && load.status === 'in_transit' && (
-                        <div className={cn(
-                          "text-xs font-mono font-bold",
-                          load.etaStatus === 'delayed' ? 'text-red-500' :
-                          load.etaStatus === 'arriving_soon' ? 'text-green-500' : 'text-zinc-400'
-                        )}>
-                          {load.minutesUntilArrival > 0 ? `${load.minutesUntilArrival}m` : 'LATE'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-zinc-500">
-                      <div className="flex items-center gap-1">
-                        <Clock size={12} />
-                        {format(parseISO(load.planned_arrival_start), 'HH:mm')}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Package size={12} />
-                        {load.pieceCount} pcs
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Weight size={12} />
-                        {load.total_weight?.toFixed(1)}t
-                      </div>
-                    </div>
-                    {load.openIssues > 0 && (
-                      <div className="mt-2 flex items-center gap-1 text-xs text-red-400">
-                        <AlertTriangle size={12} />
-                        {load.openIssues} issue{load.openIssues > 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      {/* View Tabs */}
+      <Tabs value={activeView} onValueChange={setActiveView} className="space-y-4">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="gate" className="flex items-center gap-2">
+            <Clock size={14} />
+            Gate Schedule
+          </TabsTrigger>
+          <TabsTrigger value="map" className="flex items-center gap-2">
+            <Map size={14} />
+            Live Map
+          </TabsTrigger>
+          <TabsTrigger value="sequence" className="flex items-center gap-2">
+            <ListTree size={14} />
+            By Sequence
+          </TabsTrigger>
+          <TabsTrigger value="assign" className="flex items-center gap-2">
+            <Package size={14} />
+            Assign Pieces
+          </TabsTrigger>
+        </TabsList>
 
-        {/* All Loads */}
-        <div className="col-span-2">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm uppercase tracking-wider">All Loads</CardTitle>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40 h-8 bg-zinc-800 border-zinc-700 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="planned">Planned</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="in_transit">In Transit</SelectItem>
-                    <SelectItem value="arrived">Arrived</SelectItem>
-                    <SelectItem value="unloading">Unloading</SelectItem>
-                    <SelectItem value="complete">Complete</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
-              {filteredLoads.length === 0 ? (
-                <div className="text-center py-12 text-zinc-500">
-                  <Truck size={48} className="mx-auto mb-4 text-zinc-600" />
-                  <p className="text-sm">No loads found</p>
-                  <Button
-                    onClick={() => setShowNewLoadDialog(true)}
-                    className="mt-4 bg-amber-500 hover:bg-amber-600 text-black"
-                    size="sm"
-                  >
-                    Create First Load
-                  </Button>
-                </div>
-              ) : (
-                filteredLoads.map(load => (
-                  <div
-                    key={load.id}
-                    onClick={() => setSelectedTruck(load)}
-                    className="p-4 bg-zinc-800/50 border border-zinc-700 rounded hover:border-amber-500 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className={cn("text-xs", getStatusColor(load.status))}>
-                            {load.status.replace('_', ' ')}
-                          </Badge>
-                          {load.is_osow && (
-                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">
-                              OSOW
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <p className="font-bold text-white">{load.load_number}</p>
-                          <p className="text-sm text-zinc-400">{load.carrier_name || 'TBD'}</p>
-                        </div>
-                        <p className="text-xs text-zinc-500 mt-1">{load.truck_id || 'Truck TBD'}</p>
-                      </div>
-                      {load.planned_arrival_start && (
-                        <div className="text-right">
-                          <p className="text-xs text-zinc-500">
-                            {format(parseISO(load.planned_arrival_start), 'MMM d')}
-                          </p>
-                          <p className="text-sm font-mono text-white">
-                            {format(parseISO(load.planned_arrival_start), 'HH:mm')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+        {/* Gate Schedule View */}
+        <TabsContent value="gate" className="space-y-4">
+          <GateCalendar
+            loads={enhancedLoads}
+            onSelectLoad={setSelectedTruck}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['loads'] })}
+          />
+        </TabsContent>
 
-                    <div className="grid grid-cols-4 gap-4 text-xs text-zinc-500 mt-3">
-                      <div>
-                        <div className="flex items-center gap-1 mb-1">
-                          <Package size={12} />
-                          <span>Pieces</span>
-                        </div>
-                        <div className="text-white font-semibold">{load.pieceCount}</div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1 mb-1">
-                          <Weight size={12} />
-                          <span>Weight</span>
-                        </div>
-                        <div className="text-white font-semibold">{load.total_weight?.toFixed(1) || '0'}t</div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1 mb-1">
-                          <MapPin size={12} />
-                          <span>Zones</span>
-                        </div>
-                        <div className="text-white font-semibold">{load.sequence_zones?.length || 0}</div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1 mb-1">
-                          <AlertTriangle size={12} />
-                          <span>Issues</span>
-                        </div>
-                        <div className={cn(
-                          "font-semibold",
-                          load.openIssues > 0 ? "text-red-500" : "text-green-500"
-                        )}>
-                          {load.openIssues}
-                        </div>
-                      </div>
-                    </div>
+        {/* Map View */}
+        <TabsContent value="map">
+          <DeliveryMap
+            loads={enhancedLoads.filter(l => ['in_transit', 'arrived'].includes(l.status))}
+            project={project}
+            onSelectLoad={setSelectedTruck}
+          />
+        </TabsContent>
 
-                    {load.equipment.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-zinc-700 flex items-center gap-2 flex-wrap">
-                        {load.equipment.map((eq, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs border-blue-500/30 text-blue-400">
-                            {eq.equipment_type.replace(/_/g, ' ')}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        {/* Sequence View */}
+        <TabsContent value="sequence">
+          <SequenceLoadView
+            loads={enhancedLoads}
+            pieces={pieces}
+            onSelectLoad={setSelectedTruck}
+          />
+        </TabsContent>
+
+        {/* Piece Assignment View */}
+        <TabsContent value="assign">
+          <PieceAssignmentPanel
+            projectId={activeProjectId}
+            loads={enhancedLoads.filter(l => ['planned', 'scheduled'].includes(l.status))}
+            pieces={pieces.filter(p => ['ready_for_shipping', 'in_shop'].includes(p.current_status))}
+            onUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['steel-pieces'] });
+              queryClient.invalidateQueries({ queryKey: ['loads'] });
+            }}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Truck Detail Dialog */}
       {selectedTruck && (

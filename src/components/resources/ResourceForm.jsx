@@ -25,6 +25,7 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
     availability_start: '',
     availability_end: '',
     current_project_id: '',
+    assigned_project_ids: [],
     certifications: [],
     max_concurrent_assignments: 3,
     contact_name: '',
@@ -281,8 +282,8 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
       </div>
 
       <div className="space-y-2">
-        <Label>Current Project</Label>
-        <Select value={formData.current_project_id} onValueChange={(v) => handleChange('current_project_id', v)}>
+        <Label>Primary Project</Label>
+        <Select value={formData.current_project_id || ''} onValueChange={(v) => handleChange('current_project_id', v)}>
           <SelectTrigger className="bg-zinc-800 border-zinc-700">
             <SelectValue placeholder="None" />
           </SelectTrigger>
@@ -291,6 +292,44 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
             {projects.map(p => (
               <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Additional Projects (Multi-Assign)</Label>
+        <div className="flex flex-wrap gap-2 p-2 bg-zinc-800 border border-zinc-700 rounded min-h-[42px]">
+          {(formData.assigned_project_ids || []).map(projId => {
+            const proj = projects.find(p => p.id === projId);
+            return proj ? (
+              <Badge
+                key={projId}
+                variant="secondary"
+                className="bg-amber-500/20 text-amber-400 border-amber-500/40 cursor-pointer hover:bg-amber-500/30"
+                onClick={() => handleChange('assigned_project_ids', (formData.assigned_project_ids || []).filter(id => id !== projId))}
+              >
+                {proj.project_number} ×
+              </Badge>
+            ) : null;
+          })}
+        </div>
+        <Select 
+          value="" 
+          onValueChange={(v) => {
+            if (v && !(formData.assigned_project_ids || []).includes(v)) {
+              handleChange('assigned_project_ids', [...(formData.assigned_project_ids || []), v]);
+            }
+          }}
+        >
+          <SelectTrigger className="bg-zinc-800 border-zinc-700">
+            <SelectValue placeholder="Add project..." />
+          </SelectTrigger>
+          <SelectContent>
+            {projects
+              .filter(p => !(formData.assigned_project_ids || []).includes(p.id))
+              .map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>

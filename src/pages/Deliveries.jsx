@@ -32,6 +32,10 @@ import TodaysDeliveries from '@/components/deliveries/TodaysDeliveries';
 import ReceivingMode from '@/components/deliveries/ReceivingMode';
 import DeliveryMapView from '@/components/deliveries/DeliveryMapView';
 import LocationTracker from '@/components/deliveries/LocationTracker';
+import DeliveryLookAhead from '@/components/deliveries/DeliveryLookAhead';
+import DeliveryCard from '@/components/deliveries/DeliveryCard';
+import DeliveryConflictPanel from '@/components/deliveries/DeliveryConflictPanel';
+import DeliveryMetricsPanel from '@/components/deliveries/DeliveryMetricsPanel';
 
 export default function Deliveries() {
   const [searchTerm, setSearchTerm] = useState('');

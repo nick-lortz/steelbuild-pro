@@ -1080,8 +1080,20 @@ export default function GanttChart({
               <span className="text-zinc-200">Progress Bar</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-5 h-2 bg-zinc-500/50 border border-zinc-400/50 rounded" />
+              <div className="w-5 h-2 bg-zinc-500/40 border border-zinc-400/40 rounded" />
               <span className="text-zinc-200">Baseline</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={14} className="text-red-500" />
+              <span className="text-zinc-200">Variance (vs baseline)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] bg-blue-500/20 border border-blue-400/50 text-blue-300 px-1 rounded">👥</span>
+              <span className="text-zinc-200">Labor Count</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] bg-yellow-500/20 border border-yellow-400/50 text-yellow-300 px-1 rounded">⚡</span>
+              <span className="text-zinc-200">Equipment Count</span>
             </div>
           </div>
         </div>

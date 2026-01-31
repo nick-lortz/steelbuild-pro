@@ -356,24 +356,51 @@ export default function GanttChart({
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
       <CardHeader className="border-b border-zinc-800 space-y-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm text-white">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={scrollToToday} className="border-zinc-700 text-xs">
-              <Home size={14} className="mr-1" />
-              Today
-            </Button>
-            <Button size="sm" variant="outline" onClick={expandAll} className="border-zinc-700 text-xs">
-              Expand All
-            </Button>
-            <Button size="sm" variant="outline" onClick={collapseAll} className="border-zinc-700 text-xs">
-              Collapse All
-            </Button>
-            <div className="text-xs text-zinc-400 flex items-center gap-1">
-              <GitBranch size={12} />
-              Ctrl+Click to edit dependencies
-            </div>
-          </div>
-        </div>
+           <CardTitle className="text-sm text-white">Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View</CardTitle>
+           <div className="flex items-center gap-2 flex-wrap">
+             <Button size="sm" variant="outline" onClick={scrollToToday} className="border-zinc-700 text-xs">
+               <Home size={14} className="mr-1" />
+               Today
+             </Button>
+             <Button size="sm" variant="outline" onClick={expandAll} className="border-zinc-700 text-xs">
+               Expand All
+             </Button>
+             <Button size="sm" variant="outline" onClick={collapseAll} className="border-zinc-700 text-xs">
+               Collapse All
+             </Button>
+             <Button
+               size="sm"
+               variant={groupByWBS ? "default" : "outline"}
+               onClick={() => setGroupByWBS(!groupByWBS)}
+               className={`text-xs ${groupByWBS ? 'bg-purple-600 hover:bg-purple-700 border-purple-600' : 'border-zinc-700'}`}
+               title="Group by WBS codes instead of phases"
+             >
+               WBS
+             </Button>
+             <Button
+               size="sm"
+               variant={showBaseline ? "default" : "outline"}
+               onClick={() => setShowBaseline(!showBaseline)}
+               className={`text-xs ${showBaseline ? 'bg-teal-600 hover:bg-teal-700 border-teal-600' : 'border-zinc-700'}`}
+               title="Toggle baseline visualization"
+             >
+               Baseline
+             </Button>
+             <Button
+               size="sm"
+               variant={showResourceIndicators ? "default" : "outline"}
+               onClick={() => setShowResourceIndicators(!showResourceIndicators)}
+               className={`text-xs ${showResourceIndicators ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-600' : 'border-zinc-700'}`}
+               title="Toggle resource indicators"
+             >
+               Resources
+             </Button>
+             <div className="text-xs text-zinc-400 flex items-center gap-1">
+               <GitBranch size={12} />
+               Ctrl+Click to edit dependencies
+             </div>
+           </div>
+         </div>
 
         {/* Filters */}
         <div className="flex items-center gap-3">

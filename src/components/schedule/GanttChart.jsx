@@ -543,13 +543,13 @@ export default function GanttChart({
                     <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                   </div>
 
-                  {/* Phase Groups */}
-                  {!isProjectCollapsed && phases.map(phase => {
-                    const phaseTasks = phaseGroups[phase] || [];
-                    if (phaseTasks.length === 0) return null;
+                  {/* Phase/WBS Groups */}
+                  {!isProjectCollapsed && Object.entries(phaseGroups).map(([groupKey, groupTasks]) => {
+                    if (groupTasks.length === 0) return null;
 
-                    const phaseKey = `${projectId}-${phase}`;
-                    const isPhaseCollapsed = collapsedPhases.has(phaseKey);
+                    const groupId = `${projectId}-${groupKey}`;
+                    const isGroupCollapsed = collapsedPhases.has(groupId);
+                    const groupLabel = groupByWBS ? `WBS: ${groupKey}` : `${phaseLabels[groupKey] || groupKey}`;
 
                     // Separate parent and child tasks
                     const parentTasks = phaseTasks.filter(t => !t.parent_task_id);

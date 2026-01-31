@@ -661,29 +661,8 @@ export default function GanttChart({
                             </div>
                           )}
 
-                          {/* Baseline (if exists) - thin bar below actual */}
-                          {task.baseline_start && task.baseline_end && (() => {
-                            try {
-                              const baselineStart = new Date(task.baseline_start);
-                              const baselineEnd = new Date(task.baseline_end);
-                              if (isNaN(baselineStart.getTime()) || isNaN(baselineEnd.getTime())) return null;
-                              
-                              return (
-                                <div
-                                  className="absolute h-2 bg-zinc-500/50 border border-zinc-400/50 rounded"
-                                  style={{
-                                    left: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).left,
-                                    width: getTaskPosition({ start_date: task.baseline_start, end_date: task.baseline_end }).width,
-                                    top: '50%',
-                                    transform: 'translateY(14px)',
-                                  }}
-                                  title={`Baseline: ${format(baselineStart, 'MMM d')} - ${format(baselineEnd, 'MMM d')}`}
-                                />
-                              );
-                            } catch {
-                              return null;
-                            }
-                          })()}
+                          {/* Baseline with variance indicators */}
+                          {showBaseline && <GanttBaselineVariance task={task} getTaskPosition={getTaskPosition} />}
 
                           {/* Critical path indicator - thick border */}
                           {critical && !task.is_milestone && (

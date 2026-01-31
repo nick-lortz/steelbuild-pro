@@ -76,38 +76,41 @@ function LaborContent() {
     };
   }, [filteredEntries]);
 
-  if (!activeProjectId) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Labor Management</h1>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="pt-6">
-            <label className="text-sm font-bold text-zinc-300 block mb-3">Select a Project</label>
-            <Select value="" onValueChange={setActiveProjectId}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700 w-80">
-                <SelectValue placeholder="Choose a project..." />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {projects.map(proj => (
-                  <SelectItem key={proj.id} value={proj.id}>
-                    {proj.name} ({proj.project_number})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Labor Management</h1>
-        <p className="text-zinc-400 mt-1">{project?.name}</p>
+      {/* Header with Project Selector */}
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold">Labor Management</h1>
+          <p className="text-zinc-400 mt-1">{project?.name || 'No project selected'}</p>
+        </div>
+        <div className="w-80">
+          <label className="text-sm font-bold text-zinc-300 block mb-2">Switch Project</label>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue placeholder="Choose a project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {projects.map(proj => (
+                <SelectItem key={proj.id} value={proj.id}>
+                  {proj.name} ({proj.project_number})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
+      {!activeProjectId && (
+        <Card className="bg-yellow-900/20 border border-yellow-800">
+          <CardContent className="pt-6">
+            <p className="text-sm text-yellow-600">Select a project to begin</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeProjectId && (
+      <>
 
       {/* KPI Bar */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -230,6 +233,8 @@ function LaborContent() {
           />
         </TabsContent>
       </Tabs>
+      </>
+      )}
     </div>
   );
 }

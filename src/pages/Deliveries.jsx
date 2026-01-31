@@ -519,13 +519,9 @@ export default function Deliveries() {
             />
           </TabsContent>
 
-          {/* Map View */}
-          <TabsContent value="calendar">
-            <DeliveryMapView
-              deliveries={filteredDeliveries}
-              projects={projects}
-              onSelectDelivery={(delivery) => setSelectedDelivery(delivery)}
-            />
+          {/* Metrics */}
+          <TabsContent value="metrics" className="space-y-6">
+            <DeliveryMetricsPanel deliveries={filteredDeliveries} />
           </TabsContent>
         </Tabs>
       </div>

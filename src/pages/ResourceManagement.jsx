@@ -18,6 +18,7 @@ import SkillMatrixView from '@/components/resources/SkillMatrixView';
 import ResourceLevelingPanel from '@/components/resources/ResourceLevelingPanel';
 import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import ConflictDetectionEngine from '@/components/resources/ConflictDetectionEngine';
+import CrossProjectResourceDashboard from '@/components/resources/CrossProjectResourceDashboard';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {
@@ -313,8 +314,12 @@ export default function ResourceManagement() {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <Tabs defaultValue="assign" className="space-y-6">
+        <Tabs defaultValue="portfolio" className="space-y-6">
           <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="portfolio">
+              <Activity size={14} className="mr-2" />
+              Portfolio View
+            </TabsTrigger>
             <TabsTrigger value="assign">
               <UserPlus size={14} className="mr-2" />
               Quick Assign
@@ -336,6 +341,16 @@ export default function ResourceManagement() {
               Skills
             </TabsTrigger>
           </TabsList>
+
+          {/* Portfolio View Tab */}
+          <TabsContent value="portfolio" className="space-y-6">
+            <CrossProjectResourceDashboard
+              resources={resources}
+              projects={projects}
+              tasks={tasks}
+              allocations={allocations}
+            />
+          </TabsContent>
 
           {/* Quick Assign Tab */}
           <TabsContent value="assign" className="space-y-4">

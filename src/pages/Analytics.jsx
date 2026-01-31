@@ -4,7 +4,10 @@ import { base44 } from '@/api/base44Client';
 import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles, LineChart } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles, LineChart, Activity } from 'lucide-react';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
@@ -12,7 +15,9 @@ import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
-
+import ProjectHealthTrends from '@/components/analytics/ProjectHealthTrends';
+import ResourceAllocationHeatmap from '@/components/analytics/ResourceAllocationHeatmap';
+import ComprehensiveKPIs from '@/components/analytics/ComprehensiveKPIs';
 import EVMDashboardEnhanced from '@/components/analytics/EVMDashboardEnhanced';
 import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
 import AutoReportGenerator from '@/components/reports/AutoReportGenerator';
@@ -41,13 +46,33 @@ export default function Analytics() {
   });
 
   const [activeProjectId, setActiveProjectId] = useState(null);
+  const [pmFilter, setPMFilter] = useState('all');
+  const [dateRange, setDateRange] = useState({
+    start: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
 
   const userProjects = useMemo(() => {
     if (!currentUser) return [];
-    return currentUser.role === 'admin' 
+    let filtered = currentUser.role === 'admin' 
       ? allProjects 
       : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
-  }, [currentUser, allProjects]);
+    
+    // Apply PM filter
+    if (pmFilter !== 'all') {
+      filtered = filtered.filter(p => p.project_manager === pmFilter);
+    }
+
+    return filtered;
+  }, [currentUser, allProjects, pmFilter]);
+
+  const projectManagers = useMemo(() => {
+    const pms = new Set();
+    allProjects.forEach(p => {
+      if (p.project_manager) pms.add(p.project_manager);
+    });
+    return Array.from(pms).sort();
+  }, [allProjects]);
 
   // Real-time subscriptions for live updates
   useEffect(() => {
@@ -277,22 +302,66 @@ export default function Analytics() {
         subtitle={hasProject ? "Portfolio insights, resource utilization, and risk trends" : "Select a project to view analytics"}
         showBackButton={false}
         actions={
-          userProjects.length > 0 ? (
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
-                <SelectValue placeholder="Select Project" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {userProjects.map(project => (
-                  <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
-                    {project.project_number} - {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null
+          <div className="flex items-center gap-3">
+            {userProjects.length > 0 && (
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue placeholder="Select Project" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700">
+                  {userProjects.map(project => (
+                    <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                      {project.project_number} - {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         }
       />
+
+      {/* Global Filters */}
+      {hasProject && (
+        <Card className="bg-zinc-900 border-zinc-800 mb-6">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400">Project Manager</Label>
+                <Select value={pmFilter} onValueChange={setPMFilter}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-9">
+                    <SelectValue placeholder="All PMs" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="all">All Project Managers</SelectItem>
+                    {projectManagers.map(pm => (
+                      <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400">Start Date</Label>
+                <Input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="bg-zinc-800 border-zinc-700 text-white h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-zinc-400">End Date</Label>
+                <Input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="bg-zinc-800 border-zinc-700 text-white h-9"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {!hasProject && (
         <EmptyState 
@@ -303,49 +372,71 @@ export default function Analytics() {
       )}
 
       {hasProject && (
-        <Tabs defaultValue="unified" className="space-y-6">
+        <Tabs defaultValue="health" className="space-y-6">
           <TabsList className="bg-zinc-800 border border-zinc-700">
+            <TabsTrigger value="health" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <Activity size={16} className="mr-2" />
+              Health Trends
+            </TabsTrigger>
+            <TabsTrigger value="kpis" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <TrendingUp size={16} className="mr-2" />
+              KPI Summary
+            </TabsTrigger>
+            <TabsTrigger value="resource-heat" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <Users size={16} className="mr-2" />
+              Resource Heatmap
+            </TabsTrigger>
             <TabsTrigger value="unified" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <Sparkles size={16} className="mr-2" />
-              Unified Analytics
+              Unified
             </TabsTrigger>
             <TabsTrigger value="risk-dashboard" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <AlertTriangle size={16} className="mr-2" />
-              Risk Dashboard
+              Risks
             </TabsTrigger>
             <TabsTrigger value="fab-field" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <BarChart3 size={16} className="mr-2" />
               Fab vs Field
             </TabsTrigger>
-            <TabsTrigger value="portfolio" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <BarChart3 size={16} className="mr-2" />
-              Portfolio Overview
-            </TabsTrigger>
-            <TabsTrigger value="resources" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <Users size={16} className="mr-2" />
-              Resource Allocation
-            </TabsTrigger>
-            <TabsTrigger value="risks" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <TrendingUp size={16} className="mr-2" />
-              Risk Trends
-            </TabsTrigger>
             <TabsTrigger value="evm" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <TrendingUp size={16} className="mr-2" />
-              EVM Analysis
+              <LineChart size={16} className="mr-2" />
+              EVM
             </TabsTrigger>
             <TabsTrigger value="comparison" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
               <BarChart3 size={16} className="mr-2" />
-              Multi-Project
-            </TabsTrigger>
-            <TabsTrigger value="kpi" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <TrendingUp size={16} className="mr-2" />
-              KPI Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="drilldown" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
-              <LayoutDashboard size={16} className="mr-2" />
-              Drill-Down
+              Compare
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="health" className="space-y-6">
+            <ProjectHealthTrends
+              projects={userProjects}
+              expenses={expenses}
+              tasks={tasks}
+              dateRange={dateRange}
+            />
+          </TabsContent>
+
+          <TabsContent value="kpis" className="space-y-6">
+            <ComprehensiveKPIs
+              projects={userProjects}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              expenses={expenses}
+              tasks={tasks}
+              laborHours={laborHours}
+              dateRange={dateRange}
+            />
+          </TabsContent>
+
+          <TabsContent value="resource-heat" className="space-y-6">
+            <ResourceAllocationHeatmap
+              resources={resources}
+              projects={userProjects}
+              tasks={tasks}
+              allocations={resourceAllocations}
+            />
+          </TabsContent>
 
           <TabsContent value="unified" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -444,22 +535,9 @@ export default function Analytics() {
 
           <TabsContent value="comparison" className="space-y-6">
             <ProjectComparison 
-              projects={projects}
+              projects={userProjects}
               financials={financials}
               tasks={tasks}
-            />
-          </TabsContent>
-
-          <TabsContent value="kpi" className="space-y-6">
-            <KPIDashboard metrics={{}} />
-          </TabsContent>
-
-          <TabsContent value="drilldown" className="space-y-6">
-            <InteractiveDrillDown
-              projects={projects}
-              financials={financials}
-              rfis={rfis}
-              changeOrders={changeOrders}
             />
           </TabsContent>
         </Tabs>

@@ -13,25 +13,37 @@ import {
 } from "@/components/ui/select";
 
 export default function ResourceForm({ resource, projects, onSubmit, onCancel, isLoading }) {
-  const [formData, setFormData] = useState(resource || {
-    type: 'labor',
-    name: '',
-    role: '',
-    classification: '',
-    skills: [],
-    rate: '',
-    rate_type: 'hourly',
-    status: 'available',
-    availability_start: '',
-    availability_end: '',
-    current_project_id: '',
-    assigned_project_ids: [],
-    certifications: [],
-    max_concurrent_assignments: 3,
-    contact_name: '',
-    contact_phone: '',
-    contact_email: '',
-    notes: '',
+  const [formData, setFormData] = useState(() => {
+    if (resource) {
+      return {
+        ...resource,
+        skills: Array.isArray(resource.skills) ? resource.skills : [],
+        certifications: Array.isArray(resource.certifications) ? resource.certifications : [],
+        assigned_project_ids: Array.isArray(resource.assigned_project_ids) ? resource.assigned_project_ids : [],
+        rate: resource.rate || '',
+        max_concurrent_assignments: resource.max_concurrent_assignments || 3,
+      };
+    }
+    return {
+      type: 'labor',
+      name: '',
+      role: '',
+      classification: '',
+      skills: [],
+      rate: '',
+      rate_type: 'hourly',
+      status: 'available',
+      availability_start: '',
+      availability_end: '',
+      current_project_id: '',
+      assigned_project_ids: [],
+      certifications: [],
+      max_concurrent_assignments: 3,
+      contact_name: '',
+      contact_phone: '',
+      contact_email: '',
+      notes: '',
+    };
   });
 
   const [skillInput, setSkillInput] = useState('');

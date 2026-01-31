@@ -731,6 +731,8 @@ export default function GanttChart({
                                </div>
                              </div>
                            )}
+                           {/* Resource indicators overlay */}
+                           {showResourceIndicators && <GanttResourceIndicators task={task} resources={resources} />}
                           </div>
 
                           {/* Dependencies - Enhanced Visual Lines with Labels */}

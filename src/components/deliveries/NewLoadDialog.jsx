@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/components/ui/notifications';
 
-export default function NewLoadDialog({ projectId, open, onOpenChange, onCreated }) {
+export default function NewLoadDialog({ projectId, projects, open, onOpenChange, onCreated }) {
   const [formData, setFormData] = useState({
+    project_id: projectId || '',
     load_number: '',
     truck_id: '',
     carrier_name: '',
@@ -22,11 +24,19 @@ export default function NewLoadDialog({ projectId, open, onOpenChange, onCreated
     planned_arrival_end: ''
   });
 
+  React.useEffect(() => {
+    if (projectId) {
+      setFormData(prev => ({ ...prev, project_id: projectId }));
+    }
+  }, [projectId]);
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
+      if (!data.project_id) {
+        throw new Error('Project is required');
+      }
       return await base44.entities.LoadTruck.create({
         ...data,
-        project_id: projectId,
         status: 'planned',
         total_weight: parseFloat(data.total_weight) || 0
       });
@@ -35,6 +45,7 @@ export default function NewLoadDialog({ projectId, open, onOpenChange, onCreated
       toast.success('Load created');
       onCreated();
       setFormData({
+        project_id: projectId || '',
         load_number: '',
         truck_id: '',
         carrier_name: '',
@@ -54,6 +65,10 @@ export default function NewLoadDialog({ projectId, open, onOpenChange, onCreated
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.project_id) {
+      toast.error('Project is required');
+      return;
+    }
     if (!formData.load_number) {
       toast.error('Load number is required');
       return;
@@ -68,6 +83,27 @@ export default function NewLoadDialog({ projectId, open, onOpenChange, onCreated
           <DialogTitle>New Load/Truck</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!projectId && (
+            <div>
+              <Label>Project *</Label>
+              <Select 
+                value={formData.project_id} 
+                onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                required
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Select project..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {projects?.map(proj => (
+                    <SelectItem key={proj.id} value={proj.id}>
+                      {proj.project_number} - {proj.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Load Number *</Label>

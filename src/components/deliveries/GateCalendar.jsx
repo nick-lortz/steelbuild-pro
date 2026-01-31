@@ -5,7 +5,7 @@ import { Clock, Truck, Package, Weight, AlertTriangle, MapPin } from 'lucide-rea
 import { format, parseISO, isToday, isTomorrow, addDays, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 
-export default function GateCalendar({ loads, onSelectLoad, onRefresh }) {
+export default function GateCalendar({ loads, projects, onSelectLoad, onRefresh }) {
   // Group loads by day
   const loadsByDay = useMemo(() => {
     const today = startOfDay(new Date());
@@ -91,7 +91,12 @@ export default function GateCalendar({ loads, onSelectLoad, onRefresh }) {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            {load.project && (
+                              <Badge variant="outline" className="text-[10px] border-zinc-600 font-mono">
+                                {load.project.project_number}
+                              </Badge>
+                            )}
                             <Badge className={cn("text-xs font-bold", getStatusColor(load.status))}>
                               {load.status.replace('_', ' ').toUpperCase()}
                             </Badge>

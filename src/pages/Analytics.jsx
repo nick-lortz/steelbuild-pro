@@ -245,6 +245,22 @@ export default function Analytics() {
     enabled: !!activeProjectId
   });
 
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+      : base44.entities.Delivery.list(),
+    enabled: !!activeProjectId
+  });
+
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['workPackages', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+      : base44.entities.WorkPackage.list(),
+    enabled: !!activeProjectId
+  });
+
   useEffect(() => {
     if (!activeProjectId && userProjects.length > 0) {
       setActiveProjectId(userProjects[0].id);

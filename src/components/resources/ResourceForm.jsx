@@ -46,7 +46,7 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
     };
   });
 
-  // Update form when resource prop changes
+  // Reset form when dialog opens/closes
   useEffect(() => {
     if (resource) {
       setFormData({
@@ -58,7 +58,7 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
         max_concurrent_assignments: resource.max_concurrent_assignments || 3,
       });
     }
-  }, [resource?.id]);
+  }, [resource]);
 
   const [skillInput, setSkillInput] = useState('');
   const [certInput, setCertInput] = useState('');

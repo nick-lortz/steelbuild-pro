@@ -88,7 +88,13 @@ export default function ResourceManagement() {
   });
 
   const updateResourceMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Resource.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      // Only send changed fields, don't send undefined
+      const cleanData = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== undefined)
+      );
+      return await base44.entities.Resource.update(id, cleanData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setCreateDialogOpen(false);

@@ -16,6 +16,9 @@ export default function ProjectHealthTrends({ projects, expenses, tasks, dateRan
         return projectStart && projectStart >= parseISO(dateRange.start) && projectStart <= parseISO(dateRange.end);
       })
       .map(project => {
+        // Get project tasks first (used in multiple calculations)
+        const projectTasks = tasks.filter(t => t.project_id === project.id);
+        
         // Schedule variance
         let scheduleVariance = 0;
         let scheduleStatus = 'on-track';
@@ -26,7 +29,6 @@ export default function ProjectHealthTrends({ projects, expenses, tasks, dateRan
           const totalDays = differenceInDays(target, start);
           const daysElapsed = differenceInDays(today, start);
           
-          const projectTasks = tasks.filter(t => t.project_id === project.id);
           const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
           const totalTasks = projectTasks.length;
           const actualProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;

@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, addDays, differenceInDays, isPast, isBefore } from 'date-fns';
 import { AlertTriangle, Link as LinkIcon, Home, ChevronDown, ChevronRight, GitBranch, Filter, Search, X, CheckCircle, Trash2 } from 'lucide-react';
 import DependencyEditor from './DependencyEditor';
+import GanttBaselineVariance from './GanttBaselineVariance';
+import GanttResourceIndicators from './GanttResourceIndicators';
 import { calculateCriticalPath } from './CriticalPathCalculator';
 import {
   AlertDialog,

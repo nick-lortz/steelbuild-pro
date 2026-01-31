@@ -194,7 +194,9 @@ function LayoutContent({ children, currentPageName }) {
     },
     staleTime: Infinity,
     gcTime: Infinity,
-    retry: false
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const { data: activeProject } = useQuery({
@@ -204,7 +206,8 @@ function LayoutContent({ children, currentPageName }) {
       return await base44.entities.Project.filter({ id: activeProjectId });
     },
     enabled: !!activeProjectId,
-    select: (data) => data?.[0] || null
+    select: (data) => data?.[0] || null,
+    staleTime: 5 * 60 * 1000
   });
 
   const handleLogout = () => {

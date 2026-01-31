@@ -179,7 +179,7 @@ export default function Documents() {
       if (isNewVersion && selectedDoc) {
         // Create new version
         const newVersion = (selectedDoc.version || 1) + 1;
-        await createMutation.mutateAsync({
+        const newDoc = await createMutation.mutateAsync({
           ...formData,
           file_url,
           file_name: file.name,
@@ -194,6 +194,17 @@ export default function Documents() {
           id: selectedDoc.id,
           data: { status: 'superseded', is_current: false }
         });
+
+        // Auto-process new version with AI
+        if (newDoc?.id) {
+          toast.info('Processing with AI...');
+          base44.functions.invoke('autoProcessDocument', {
+            document_id: newDoc.id,
+            file_url,
+            category: formData.category,
+            title: formData.title
+          }).catch(() => {});
+        }
       } else {
         setFormData(prev => ({
           ...prev,
@@ -204,17 +215,34 @@ export default function Documents() {
       }
     } catch (error) {
       console.error('Upload failed:', error);
+      toast.error('Upload failed');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedDoc) {
       updateMutation.mutate({ id: selectedDoc.id, data: formData });
     } else {
-      createMutation.mutate(formData);
+      const newDoc = await createMutation.mutateAsync(formData);
+      
+      // Auto-process with AI if file uploaded
+      if (newDoc?.id && formData.file_url) {
+        toast.info('Processing with AI...');
+        base44.functions.invoke('autoProcessDocument', {
+          document_id: newDoc.id,
+          file_url: formData.file_url,
+          category: formData.category,
+          title: formData.title
+        }).then(() => {
+          toast.success('AI extraction complete');
+          queryClient.invalidateQueries({ queryKey: ['documents'] });
+        }).catch(() => {
+          toast.warning('AI extraction failed - you can retry manually');
+        });
+      }
     }
   };
 
@@ -1164,27 +1192,53 @@ export default function Documents() {
               />
             )}
 
-            {/* OCR Processing */}
+            {/* AI Processing */}
             {selectedDoc?.file_url && (
-              <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h4 className="text-sm font-medium text-zinc-400 mb-3">AI Document Processing</h4>
-                <Button
-                  size="sm"
-                  onClick={() => handleProcessOCR(selectedDoc.id)}
-                  disabled={processingOCR === selectedDoc.id}
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  {processingOCR === selectedDoc.id ? (
-                    <>
-                      <Loader2 size={16} className="mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Extract Text & Metadata (OCR)'
-                  )}
-                </Button>
-                <p className="text-xs text-zinc-500 mt-2">
-                  Uses AI to extract searchable text and metadata
+              <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <h4 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">
+                  <Sparkles size={14} />
+                  AI Document Processing
+                </h4>
+                <div className="space-y-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleProcessOCR(selectedDoc.id)}
+                    disabled={processingOCR === selectedDoc.id}
+                    className="bg-blue-500 hover:bg-blue-600 w-full"
+                  >
+                    {processingOCR === selectedDoc.id ? (
+                      <>
+                        <Loader2 size={16} className="mr-2 animate-spin" />
+                        Processing OCR...
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={16} className="mr-2" />
+                        Extract Text (OCR)
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleAnalyzeDocument(selectedDoc)}
+                    disabled={analyzingDoc === selectedDoc.id}
+                    className="bg-purple-500 hover:bg-purple-600 w-full"
+                  >
+                    {analyzingDoc === selectedDoc.id ? (
+                      <>
+                        <Loader2 size={16} className="mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={16} className="mr-2" />
+                        Auto-Extract Metadata
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-300 mt-3">
+                  AI extracts: drawing numbers, revisions, structural elements, text content, and suggests tags
                 </p>
               </div>
             )}
@@ -1235,25 +1289,55 @@ export default function Documents() {
                 <div className="space-y-2">
                   {getVersions(selectedDoc).map((version) => (
                     <div key={version.id} className="p-3 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
                           <span className="font-mono text-amber-500">v{version.version || 1}</span>
                           <StatusBadge status={version.status} />
+                          {version.is_current && (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
+                              CURRENT
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1">
-                          {format(new Date(version.created_date), 'MMM d, yyyy h:mm a')}
+                        <p className="text-xs text-zinc-500">
+                          {format(new Date(version.created_date), 'MMM d, yyyy h:mm a')} • {version.created_by || 'Unknown'}
                         </p>
+                        {version.revision_notes && (
+                          <p className="text-xs text-zinc-400 mt-1 italic">"{version.revision_notes}"</p>
+                        )}
+                        {version.revision && (
+                          <p className="text-xs text-blue-400 mt-1">Rev: {version.revision}</p>
+                        )}
                       </div>
-                      {version.file_url && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => window.open(version.file_url, '_blank')}
-                          className="text-zinc-400 hover:text-white"
-                        >
-                          <Eye size={16} />
-                        </Button>
-                      )}
+                      <div className="flex gap-1">
+                        {version.file_url && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => window.open(version.file_url, '_blank')}
+                              className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                              title="View"
+                            >
+                              <Eye size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                const a = document.createElement('a');
+                                a.href = version.file_url;
+                                a.download = version.file_name || 'document';
+                                a.click();
+                              }}
+                              className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                              title="Download"
+                            >
+                              <Download size={14} />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

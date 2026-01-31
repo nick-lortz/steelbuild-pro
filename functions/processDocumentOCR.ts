@@ -25,27 +25,52 @@ Deno.serve(async (req) => {
     
     console.log(`[processDocumentOCR] Processing document: ${document.title}`);
     
-    // Use AI to extract text and metadata from document
+    // Use AI to extract text and metadata from document - comprehensive OCR
     const extractedData = await base44.integrations.Core.InvokeLLM({
-      prompt: `Analyze this construction document and extract:
-1. Document type (drawing, spec, RFI, submittal, etc.)
-2. Key information (project number, revision, date, scope)
-3. Important details (dimensions, materials, notes, requirements)
-4. Any action items or review requirements
-5. Searchable keywords
+      prompt: `Perform comprehensive OCR and metadata extraction on this construction document.
 
-Be thorough and extract ALL text content for search indexing.`,
+EXTRACT ALL TEXT:
+- Every word, number, dimension, note, and callout
+- Tables, lists, and specifications
+- Headers, footers, and margin notes
+- All readable text from scanned or image-based content
+
+EXTRACT METADATA:
+- Document type (drawing, spec, RFI, submittal, contract, report, invoice)
+- Project number/name
+- Drawing/sheet number
+- Revision number and date
+- Issue date or document date
+- Company names, contacts
+- Important reference numbers (PO, invoice #, contract #)
+
+EXTRACT KEY DETAILS:
+- Dimensions, quantities, measurements
+- Material specifications
+- Important notes or requirements
+- Action items or review requirements
+- Cost information (if applicable)
+- Safety notes or warnings
+
+KEYWORDS:
+- Generate 10-15 searchable keywords covering all topics
+
+Return comprehensive data for full-text search capability.`,
       file_urls: [document.file_url],
       response_json_schema: {
         type: 'object',
         properties: {
           document_type: { type: 'string' },
-          project_number: { type: 'string' },
-          revision: { type: 'string' },
-          date: { type: 'string' },
+          project_number: { type: ['string', 'null'] },
+          drawing_number: { type: ['string', 'null'] },
+          revision: { type: ['string', 'null'] },
+          date: { type: ['string', 'null'] },
+          full_text: { type: 'string' },
           extracted_text: { type: 'string' },
           key_information: { type: 'array', items: { type: 'string' } },
           action_items: { type: 'array', items: { type: 'string' } },
+          dimensions: { type: 'array', items: { type: 'string' } },
+          materials: { type: 'array', items: { type: 'string' } },
           keywords: { type: 'array', items: { type: 'string' } },
           metadata: { type: 'object' }
         }

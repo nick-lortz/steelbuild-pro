@@ -19,6 +19,7 @@ import ResourceLevelingPanel from '@/components/resources/ResourceLevelingPanel'
 import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import ConflictDetectionEngine from '@/components/resources/ConflictDetectionEngine';
 import CrossProjectResourceDashboard from '@/components/resources/CrossProjectResourceDashboard';
+import ResourceForm from '@/components/resources/ResourceForm';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {
@@ -28,6 +29,8 @@ export default function ResourceManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedTaskForAssign, setSelectedTaskForAssign] = useState(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -69,6 +72,37 @@ export default function ResourceManagement() {
     queryFn: () => base44.entities.ResourceAllocation.list(),
     staleTime: 5 * 60 * 1000
   });
+
+  // Create/Update resource mutations
+  const createResourceMutation = useMutation({
+    mutationFn: (data) => base44.entities.Resource.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setCreateDialogOpen(false);
+      setEditingResource(null);
+      toast.success('Resource created');
+    },
+    onError: (error) => toast.error(error.message || 'Failed to create resource')
+  });
+
+  const updateResourceMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Resource.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      setCreateDialogOpen(false);
+      setEditingResource(null);
+      toast.success('Resource updated');
+    },
+    onError: (error) => toast.error(error.message || 'Failed to update resource')
+  });
+
+  const handleResourceSubmit = (data) => {
+    if (editingResource) {
+      updateResourceMutation.mutate({ id: editingResource.id, data });
+    } else {
+      createResourceMutation.mutate(data);
+    }
+  };
 
   // Quick assign mutation with validation
   const assignResourcesMutation = useMutation({
@@ -309,6 +343,16 @@ export default function ResourceManagement() {
                 {resources.length} RESOURCES • {resourceMetrics?.assigned || 0} ASSIGNED
               </p>
             </div>
+            <Button
+              onClick={() => {
+                setEditingResource(null);
+                setCreateDialogOpen(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+            >
+              <UserPlus size={14} className="mr-1" />
+              Add Resource
+            </Button>
           </div>
         </div>
       </div>
@@ -786,6 +830,25 @@ export default function ResourceManagement() {
             <ResourceLevelingPanel projectId={projects[0]?.id} />
           </TabsContent>
         </Tabs>
+
+        {/* Create/Edit Resource Dialog */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingResource ? 'Edit Resource' : 'Add New Resource'}</DialogTitle>
+            </DialogHeader>
+            <ResourceForm
+              resource={editingResource}
+              projects={projects}
+              onSubmit={handleResourceSubmit}
+              onCancel={() => {
+                setCreateDialogOpen(false);
+                setEditingResource(null);
+              }}
+              isLoading={createResourceMutation.isPending || updateResourceMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Quick Assign Dialog */}
         <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>

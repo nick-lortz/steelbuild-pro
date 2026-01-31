@@ -85,6 +85,10 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
               <SelectItem value="labor">Labor</SelectItem>
               <SelectItem value="equipment">Equipment</SelectItem>
               <SelectItem value="subcontractor">Subcontractor</SelectItem>
+              <SelectItem value="material">Material</SelectItem>
+              <SelectItem value="vendor">Vendor</SelectItem>
+              <SelectItem value="tool">Tool</SelectItem>
+              <SelectItem value="consumable">Consumable</SelectItem>
             </SelectContent>
           </Select>
         </div>

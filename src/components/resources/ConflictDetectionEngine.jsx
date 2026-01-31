@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Calendar, MapPin, Users } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
+import ConflictResolutionWizard from './ConflictResolutionWizard';
 
 export default function ConflictDetectionEngine({ resources, tasks, projects, onResolveConflict }) {
+  const [selectedConflict, setSelectedConflict] = useState(null);
+
   const conflicts = useMemo(() => {
     const detected = [];
 
@@ -75,6 +78,7 @@ export default function ConflictDetectionEngine({ resources, tasks, projects, on
   }
 
   return (
+    <>
     <Card className="bg-red-950/20 border-red-500/30">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2 text-red-400">
@@ -127,23 +131,40 @@ export default function ConflictDetectionEngine({ resources, tasks, projects, on
                 </div>
               </div>
 
-              {onResolveConflict && (
-                <div className="mt-3 pt-3 border-t border-zinc-800">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onResolveConflict(conflict)}
-                    className="w-full border-zinc-700 text-xs"
-                  >
-                    Resolve Conflict
-                  </Button>
-                </div>
-              )}
+              <div className="mt-3 pt-3 border-t border-zinc-800">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedConflict(conflict)}
+                  className="w-full border-zinc-700 text-xs"
+                >
+                  Resolve Conflict
+                </Button>
+              </div>
             </div>
           ))}
         </div>
       </CardContent>
     </Card>
+
+    {selectedConflict && (
+      <ConflictResolutionWizard
+        conflict={{
+          resource: selectedConflict.resource,
+          tasks: [selectedConflict.task1, selectedConflict.task2],
+          overlap_days: selectedConflict.overlapDays,
+          severity: selectedConflict.severity,
+          conflict_type: selectedConflict.conflictType
+        }}
+        allResources={resources}
+        onClose={() => setSelectedConflict(null)}
+        onResolved={() => {
+          setSelectedConflict(null);
+          onResolveConflict?.(selectedConflict);
+        }}
+      />
+    )}
+    </>
   );
 }
 

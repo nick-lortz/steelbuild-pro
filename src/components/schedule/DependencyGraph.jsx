@@ -2,20 +2,58 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, Maximize2, AlertTriangle } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ZoomIn, ZoomOut, Maximize2, AlertTriangle, Target, PlayCircle, RotateCcw } from 'lucide-react';
+import { format, differenceInDays, addDays } from 'date-fns';
 
 export default function DependencyGraph({ tasks, onTaskClick }) {
   const [zoom, setZoom] = useState(1);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [simulatedTasks, setSimulatedTasks] = useState(tasks);
+  const [showSimulation, setShowSimulation] = useState(false);
+  const [simulationTask, setSimulationTask] = useState(null);
+  const [delayDays, setDelayDays] = useState(0);
+  const [simulationActive, setSimulationActive] = useState(false);
 
-  const { nodes, edges, criticalPath, pathStats } = useMemo(() => {
-    return calculateCriticalPath(tasks);
-  }, [tasks]);
+  const { nodes, edges, criticalPath, pathStats, bottlenecks } = useMemo(() => {
+    return calculateCriticalPath(simulationActive ? simulatedTasks : tasks);
+  }, [tasks, simulatedTasks, simulationActive]);
 
   const handleTaskClick = (task) => {
     setSelectedTaskId(task.id);
     if (onTaskClick) onTaskClick(task);
+  };
+
+  const handleSimulateDelay = () => {
+    if (!simulationTask || delayDays === 0) return;
+
+    const updatedTasks = tasks.map(t => {
+      if (t.id === simulationTask.id) {
+        const newEndDate = addDays(new Date(t.end_date), delayDays);
+        return {
+          ...t,
+          end_date: format(newEndDate, 'yyyy-MM-dd'),
+          duration_days: (t.duration_days || 0) + delayDays,
+          _simulated: true,
+          _originalEndDate: t.end_date
+        };
+      }
+      return t;
+    });
+
+    setSimulatedTasks(updatedTasks);
+    setSimulationActive(true);
+    setShowSimulation(false);
+  };
+
+  const resetSimulation = () => {
+    setSimulatedTasks(tasks);
+    setSimulationActive(false);
+    setSimulationTask(null);
+    setDelayDays(0);
   };
 
   // Layout tasks in columns by their early start
@@ -51,17 +89,56 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
 
   return (
     <div className="space-y-4">
+      {/* Simulation Alert */}
+      {simulationActive && (
+        <Card className="bg-amber-500/10 border-amber-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle size={20} className="text-amber-500" />
+                <div>
+                  <div className="font-bold text-amber-400">SIMULATION ACTIVE</div>
+                  <div className="text-xs text-zinc-400">
+                    Showing projected impact of {delayDays}d delay on: {simulationTask?.name}
+                  </div>
+                </div>
+              </div>
+              <Button 
+                onClick={resetSimulation} 
+                variant="outline" 
+                size="sm"
+                className="border-amber-500 text-amber-400 hover:bg-amber-500/20"
+              >
+                <RotateCcw size={14} className="mr-2" />
+                Reset
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Header */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardContent className="p-4">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <div>
               <div className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Critical Path Duration</div>
-              <div className="text-2xl font-bold text-red-400">{pathStats.criticalPathDuration} days</div>
+              <div className={`text-2xl font-bold ${simulationActive ? 'text-amber-400' : 'text-red-400'}`}>
+                {pathStats.criticalPathDuration} days
+                {simulationActive && pathStats.originalDuration && (
+                  <span className="text-sm ml-2 text-zinc-500">
+                    (+{pathStats.criticalPathDuration - pathStats.originalDuration})
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <div className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Critical Tasks</div>
               <div className="text-2xl font-bold text-amber-400">{criticalPath.length}</div>
+            </div>
+            <div>
+              <div className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Bottlenecks</div>
+              <div className="text-2xl font-bold text-red-400">{bottlenecks.length}</div>
             </div>
             <div>
               <div className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Total Tasks</div>
@@ -69,7 +146,7 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
             </div>
             <div>
               <div className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Project Finish</div>
-              <div className="text-lg font-bold text-white">
+              <div className={`text-lg font-bold ${simulationActive ? 'text-amber-400' : 'text-white'}`}>
                 {pathStats.projectEnd ? format(new Date(pathStats.projectEnd), 'MMM d, yyyy') : 'N/A'}
               </div>
             </div>
@@ -106,11 +183,23 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
             <Maximize2 size={14} className="mr-2" />
             Reset
           </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowSimulation(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black ml-4"
+          >
+            <PlayCircle size={14} className="mr-2" />
+            Simulate Delay
+          </Button>
         </div>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-red-500/20 border-2 border-red-500 rounded" />
             <span className="text-zinc-400">Critical Path</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-purple-500/20 border-2 border-purple-500 rounded" />
+            <span className="text-zinc-400">Bottleneck</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-zinc-800 border-2 border-zinc-600 rounded" />
@@ -185,11 +274,41 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
                 {/* Draw nodes */}
                 {layout.map(node => {
                   const isCritical = criticalPath.includes(node.id);
+                  const isBottleneck = bottlenecks.some(b => b.taskId === node.id);
                   const isSelected = selectedTaskId === node.id;
                   const isMilestone = node.is_milestone;
+                  const isSimulated = node.task._simulated;
 
                   return (
                     <g key={node.id}>
+                      {/* Bottleneck pulse animation */}
+                      {isBottleneck && (
+                        <rect
+                          x={node.x - 4}
+                          y={node.y - 4}
+                          width="208"
+                          height="78"
+                          rx={isMilestone ? 39 : 10}
+                          fill="none"
+                          stroke="#a855f7"
+                          strokeWidth="2"
+                          opacity="0.6"
+                        >
+                          <animate
+                            attributeName="stroke-width"
+                            values="2;4;2"
+                            dur="2s"
+                            repeatCount="indefinite"
+                          />
+                          <animate
+                            attributeName="opacity"
+                            values="0.6;1;0.6"
+                            dur="2s"
+                            repeatCount="indefinite"
+                          />
+                        </rect>
+                      )}
+
                       {/* Node background */}
                       <rect
                         x={node.x}
@@ -197,9 +316,18 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
                         width="200"
                         height="70"
                         rx={isMilestone ? 35 : 6}
-                        fill={isCritical ? '#7f1d1d' : '#18181b'}
-                        stroke={isCritical ? '#ef4444' : isSelected ? '#f59e0b' : '#3f3f46'}
-                        strokeWidth={isCritical || isSelected ? 3 : 2}
+                        fill={
+                          isSimulated ? '#78350f' :
+                          isBottleneck ? '#581c87' :
+                          isCritical ? '#7f1d1d' : '#18181b'
+                        }
+                        stroke={
+                          isSimulated ? '#f59e0b' :
+                          isBottleneck ? '#a855f7' :
+                          isCritical ? '#ef4444' : 
+                          isSelected ? '#f59e0b' : '#3f3f46'
+                        }
+                        strokeWidth={isCritical || isSelected || isBottleneck || isSimulated ? 3 : 2}
                         className="cursor-pointer"
                         onClick={() => handleTaskClick(node.task)}
                       />
@@ -271,6 +399,30 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
                           ⚡
                         </text>
                       )}
+
+                      {/* Bottleneck indicator */}
+                      {isBottleneck && (
+                        <text
+                          x={node.x + 180}
+                          y={node.y + 40}
+                          fontSize="16"
+                          fill="#a855f7"
+                        >
+                          ⚠️
+                        </text>
+                      )}
+
+                      {/* Simulation indicator */}
+                      {isSimulated && (
+                        <text
+                          x={node.x + 180}
+                          y={node.y + 60}
+                          fontSize="16"
+                          fill="#f59e0b"
+                        >
+                          🔮
+                        </text>
+                      )}
                     </g>
                   );
                 })}
@@ -301,14 +453,31 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
                     onClick={() => handleTaskClick(node.task)}
                   >
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-white">{node.task.name}</div>
+                      <div className="text-sm font-medium text-white flex items-center gap-2">
+                        {node.task.name}
+                        {node.task._simulated && <span className="text-amber-400">🔮</span>}
+                      </div>
                       <div className="text-xs text-zinc-400">
                         {format(new Date(node.task.start_date), 'MMM d')} - {format(new Date(node.task.end_date), 'MMM d')} • {node.duration} days
                       </div>
                     </div>
-                    <Badge className={`${getStatusColor(node.task.status)} text-white`}>
-                      {node.task.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSimulationTask(node.task);
+                          setShowSimulation(true);
+                        }}
+                        className="text-amber-400 hover:text-amber-300"
+                      >
+                        <Target size={14} />
+                      </Button>
+                      <Badge className={`${getStatusColor(node.task.status)} text-white`}>
+                        {node.task.status}
+                      </Badge>
+                    </div>
                   </div>
                 );
               })}
@@ -316,17 +485,164 @@ export default function DependencyGraph({ tasks, onTaskClick }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Bottleneck Alerts */}
+      {bottlenecks.length > 0 && (
+        <Card className="bg-purple-950/20 border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2 text-purple-400">
+              <Target size={14} />
+              Bottlenecks Detected ({bottlenecks.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {bottlenecks.map(bottleneck => {
+                const node = nodes.find(n => n.id === bottleneck.taskId);
+                if (!node) return null;
+                return (
+                  <div
+                    key={bottleneck.taskId}
+                    className="p-3 bg-zinc-900/50 rounded border-l-4 border-purple-500"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-white">{node.task.name}</div>
+                        <div className="text-xs text-zinc-400 mt-1">{bottleneck.reason}</div>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="outline" className="text-[10px]">
+                            {bottleneck.successorCount} dependent tasks
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] text-red-400">
+                            Risk: {bottleneck.riskLevel}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSimulationTask(node.task);
+                          setShowSimulation(true);
+                        }}
+                        className="text-purple-400 hover:text-purple-300"
+                      >
+                        <Target size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delay Simulation Dialog */}
+      <Dialog open={showSimulation} onOpenChange={setShowSimulation}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle>Simulate Task Delay Impact</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Select Task</Label>
+              <Select
+                value={simulationTask?.id || ''}
+                onValueChange={(id) => {
+                  const task = tasks.find(t => t.id === id);
+                  setSimulationTask(task);
+                }}
+              >
+                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectValue placeholder="Choose a task..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  {tasks.filter(t => !t._isDelivery && !t._isFabrication).map(task => (
+                    <SelectItem key={task.id} value={task.id}>
+                      {task.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {simulationTask && (
+              <>
+                <div className="p-3 bg-zinc-800 rounded border border-zinc-700">
+                  <div className="text-xs text-zinc-400 mb-1">Current Schedule</div>
+                  <div className="text-sm">
+                    {format(new Date(simulationTask.start_date), 'MMM d')} - {format(new Date(simulationTask.end_date), 'MMM d')}
+                  </div>
+                  <div className="text-xs text-zinc-500 mt-1">
+                    Duration: {differenceInDays(new Date(simulationTask.end_date), new Date(simulationTask.start_date))} days
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Delay (Days)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="90"
+                    value={delayDays}
+                    onChange={(e) => setDelayDays(parseInt(e.target.value) || 0)}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="Enter delay in days..."
+                  />
+                </div>
+
+                {delayDays > 0 && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded">
+                    <div className="text-xs text-amber-400 mb-1">Projected Impact</div>
+                    <div className="text-sm text-white">
+                      New End Date: {format(addDays(new Date(simulationTask.end_date), delayDays), 'MMM d, yyyy')}
+                    </div>
+                    <div className="text-xs text-zinc-400 mt-1">
+                      This will automatically recalculate all dependent tasks and update the critical path.
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowSimulation(false);
+                      setSimulationTask(null);
+                      setDelayDays(0);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSimulateDelay}
+                    disabled={delayDays === 0}
+                    className="bg-amber-500 hover:bg-amber-600 text-black"
+                  >
+                    <PlayCircle size={14} className="mr-2" />
+                    Run Simulation
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 function calculateCriticalPath(tasks) {
   if (!tasks || tasks.length === 0) {
-    return { nodes: [], edges: [], criticalPath: [], pathStats: {} };
+    return { nodes: [], edges: [], criticalPath: [], pathStats: {}, bottlenecks: [] };
   }
 
+  // Filter out delivery/fab items for dependency analysis
+  const validTasks = tasks.filter(t => !t._isDelivery && !t._isFabrication);
+
   // Build nodes with early/late start/finish
-  const nodes = tasks.map(task => {
+  const nodes = validTasks.map(task => {
     const duration = task.duration_days || differenceInDays(
       new Date(task.end_date),
       new Date(task.start_date)
@@ -341,7 +657,8 @@ function calculateCriticalPath(tasks) {
       earlyFinish: 0,
       lateStart: 0,
       lateFinish: 0,
-      float: 0
+      float: 0,
+      is_milestone: task.is_milestone
     };
   });
 
@@ -472,12 +789,45 @@ function calculateCriticalPath(tasks) {
     node.earlyFinish > (max?.earlyFinish || 0) ? node : max
   , null);
 
+  // Detect bottlenecks - tasks with high successor count + on critical path
+  const bottlenecks = [];
+  nodes.forEach(node => {
+    const successorCount = nodes.filter(n => 
+      n.predecessors.some(p => p.predecessor_id === node.id)
+    ).length;
+    
+    const isCritical = criticalPath.includes(node.id);
+    
+    // Bottleneck criteria: 3+ successors OR (critical + 2+ successors) OR (critical + low float successors)
+    if (successorCount >= 3 || (isCritical && successorCount >= 2)) {
+      bottlenecks.push({
+        taskId: node.id,
+        successorCount,
+        reason: isCritical 
+          ? `Critical path task with ${successorCount} dependent tasks - any delay cascades to project completion`
+          : `High-dependency task - delays impact ${successorCount} downstream tasks`,
+        riskLevel: successorCount >= 5 ? 'HIGH' : successorCount >= 3 ? 'MEDIUM' : 'LOW'
+      });
+    }
+  });
+
+  // Store original duration for simulation comparison
+  const originalDuration = tasks.find(t => !t._simulated) 
+    ? pathStats.criticalPathDuration 
+    : tasks[0]?._originalDuration;
+
   const pathStats = {
     criticalPathDuration: projectEndNode?.earlyFinish || 0,
-    projectEnd: projectEndNode?.task.end_date
+    projectEnd: projectEndNode?.task.end_date,
+    originalDuration: tasks.some(t => t._simulated) ? (tasks[0]._originalDuration || originalDuration) : undefined
   };
 
-  return { nodes, edges, criticalPath, pathStats };
+  // Store original duration for future comparison
+  if (!tasks.some(t => t._simulated)) {
+    tasks.forEach(t => t._originalDuration = pathStats.criticalPathDuration);
+  }
+
+  return { nodes, edges, criticalPath, pathStats, bottlenecks };
 }
 
 function getStatusColor(status) {

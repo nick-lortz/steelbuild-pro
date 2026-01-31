@@ -551,13 +551,7 @@ export default function GanttChart({
                     const isGroupCollapsed = collapsedPhases.has(groupId);
                     const groupLabel = groupByWBS ? `WBS: ${groupKey}` : `${phaseLabels[groupKey] || groupKey}`;
 
-                    // Separate parent and child tasks
-                    const parentTasks = phaseTasks.filter(t => !t.parent_task_id);
-                    const childTasksMap = {};
-                    phaseTasks.filter(t => t.parent_task_id).forEach(t => {
-                      if (!childTasksMap[t.parent_task_id]) childTasksMap[t.parent_task_id] = [];
-                      childTasksMap[t.parent_task_id].push(t);
-                    });
+
 
                     // Separate parent and child tasks from the group
                     const parentTasks = groupTasks.filter(t => !t.parent_task_id);

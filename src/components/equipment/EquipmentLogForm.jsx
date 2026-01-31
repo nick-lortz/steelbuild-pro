@@ -88,7 +88,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
   });
 
   // Check conflicts
-  useMemo(() => {
+  React.useEffect(() => {
     const flaggedConflicts = [];
 
     if (formData.equipment_type?.includes('crane') && formData.pick_weight && formData.crane_capacity) {
@@ -135,7 +135,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
     }
 
     setConflicts(flaggedConflicts);
-  }, [formData, existingLogs]);
+  }, [formData.equipment_type, formData.pick_weight, formData.crane_capacity, formData.wind_actual, formData.wind_limit, formData.actual_start, formData.actual_end, existingLogs]);
 
   const createLog = useMutation({
     mutationFn: async () => {

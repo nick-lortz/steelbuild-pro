@@ -1,585 +1,509 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { 
-  Plus, Search, Truck, Calendar, MapPin, Package, 
-  Filter, Download, Edit, Trash2, CheckCircle2, AlertTriangle 
-} from 'lucide-react';
-import { format, parseISO, differenceInDays, isWithinInterval, startOfWeek, endOfWeek, isToday } from 'date-fns';
-import { toast } from 'sonner';
-import DataTable from '@/components/ui/DataTable';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from "@/components/ui/alert-dialog";
-import DeliveryWizard from '@/components/deliveries/DeliveryWizard';
-import DeliveryDetailPanel from '@/components/deliveries/DeliveryDetailPanel';
-import TodaysDeliveries from '@/components/deliveries/TodaysDeliveries';
-import ReceivingMode from '@/components/deliveries/ReceivingMode';
-import DeliveryMapView from '@/components/deliveries/DeliveryMapView';
-import LocationTracker from '@/components/deliveries/LocationTracker';
+  Truck,
+  MapPin,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  Package,
+  Calendar,
+  Weight,
+  Plus
+} from 'lucide-react';
+import { format, differenceInMinutes, isPast, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/notifications';
+import TruckDetailDialog from '@/components/deliveries/TruckDetailDialog';
+import NewLoadDialog from '@/components/deliveries/NewLoadDialog';
 
 export default function Deliveries() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [projectFilter, setProjectFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showWizard, setShowWizard] = useState(false);
-  const [editingDelivery, setEditingDelivery] = useState(null);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [deleteDelivery, setDeleteDelivery] = useState(null);
-  const [receivingDelivery, setReceivingDelivery] = useState(null);
-  const [activeView, setActiveView] = useState('list');
-
+  const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedTruck, setSelectedTruck] = useState(null);
+  const [showNewLoadDialog, setShowNewLoadDialog] = useState(false);
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 30 * 60 * 1000
+  const { data: project } = useQuery({
+    queryKey: ['project', activeProjectId],
+    queryFn: () => activeProjectId ? base44.entities.Project.filter({ id: activeProjectId }).then(p => p[0]) : null,
+    enabled: !!activeProjectId
   });
 
-  const { data: deliveries = [] } = useQuery({
-    queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list('-confirmed_date'),
-    staleTime: 2 * 60 * 1000
+  const { data: loads = [] } = useQuery({
+    queryKey: ['loads', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.LoadTruck.filter({ project_id: activeProjectId }, '-planned_arrival_start')
+      : [],
+    enabled: !!activeProjectId
   });
 
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+  const { data: pieces = [] } = useQuery({
+    queryKey: ['steel-pieces', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.SteelPiece.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data) => {
-      // Validate required fields
-      if (!data.project_id || !data.package_name) {
-        throw new Error('Project and package name are required');
-      }
-      
-      const activityLog = {
-        action: `Delivery created`,
-        user: user?.email || 'system',
-        timestamp: new Date().toISOString()
-      };
-      
-      // Clean and set defaults
-      const cleanData = {
-        project_id: data.project_id,
-        package_name: data.package_name,
-        delivery_number: data.delivery_number || `DEL-${Date.now().toString().slice(-6)}`,
-        template_type: data.template_type || 'custom',
-        package_number: data.package_number || '',
-        description: data.description || '',
-        vendor_supplier: data.vendor_supplier || '',
-        ship_from_location: data.ship_from_location || '',
-        ship_to_location: data.ship_to_location || '',
-        requested_date: data.requested_date || null,
-        requested_time_window: data.requested_time_window || '',
-        confirmed_date: data.confirmed_date || null,
-        confirmed_time_window: data.confirmed_time_window || '',
-        scheduled_date: data.scheduled_date || data.confirmed_date || data.requested_date || null,
-        delivery_status: data.delivery_status || 'draft',
-        delivery_type: data.delivery_type || 'ship',
-        priority: data.priority || 'medium',
-        carrier: data.carrier || '',
-        tracking_number: data.tracking_number || '',
-        pro_number: data.pro_number || '',
-        trailer_number: data.trailer_number || '',
-        po_number: data.po_number || '',
-        contact_name: data.contact_name || '',
-        contact_phone: data.contact_phone || '',
-        contact_email: data.contact_email || '',
-        weight_tons: parseFloat(data.weight_tons) || 0,
-        piece_count: parseInt(data.piece_count) || 0,
-        line_items: data.line_items || [],
-        receiving_requirements: data.receiving_requirements || [],
-        site_constraints: data.site_constraints || {},
-        on_time: data.on_time || null,
-        days_variance: data.days_variance || null,
-        exceptions: data.exceptions || [],
-        attachments: data.attachments || [],
-        comments: data.comments || [],
-        notes: data.notes || '',
-        activity_log: [activityLog]
-      };
-      
-      return base44.entities.Delivery.create(cleanData);
+  const { data: equipment = [] } = useQuery({
+    queryKey: ['load-equipment', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId || loads.length === 0) return [];
+      const loadIds = loads.map(l => l.id);
+      const all = await base44.entities.LoadEquipmentRequirement.list();
+      return all.filter(e => loadIds.includes(e.load_truck_id));
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
-      setShowWizard(false);
-      setEditingDelivery(null);
-      toast.success('Delivery created successfully');
-    },
-    onError: (error) => {
-      console.error('Create delivery error:', error);
-      toast.error('Failed to create: ' + (error.message || 'Unknown error'));
-    }
+    enabled: !!activeProjectId && loads.length > 0
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data, logAction }) => {
-      const delivery = deliveries.find(d => d.id === id);
+  const { data: conditionReports = [] } = useQuery({
+    queryKey: ['condition-reports', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId || loads.length === 0) return [];
+      const loadIds = loads.map(l => l.id);
+      const all = await base44.entities.LoadConditionReport.list();
+      return all.filter(r => loadIds.includes(r.load_truck_id));
+    },
+    enabled: !!activeProjectId && loads.length > 0
+  });
+
+  // Enhanced loads with calculated fields
+  const enhancedLoads = useMemo(() => {
+    return loads.map(load => {
+      const loadPieces = pieces.filter(p => p.load_truck_id === load.id);
+      const loadEquipment = equipment.filter(e => e.load_truck_id === load.id);
+      const loadReports = conditionReports.filter(r => r.load_truck_id === load.id);
       
-      // Auto-calculate on_time if dates are provided
-      if (data.actual_arrival_date || data.scheduled_date) {
-        const actual = data.actual_arrival_date ? new Date(data.actual_arrival_date) : delivery?.actual_arrival_date ? new Date(delivery.actual_arrival_date) : null;
-        const scheduled = data.scheduled_date ? new Date(data.scheduled_date) : delivery?.scheduled_date ? new Date(delivery.scheduled_date) : null;
+      const openIssues = loadReports.filter(r => r.resolution_status === 'open' && r.issue_type !== 'acceptable').length;
+      
+      let etaStatus = 'on_time';
+      let minutesUntilArrival = null;
+      
+      if (load.status === 'in_transit' && load.estimated_eta) {
+        const eta = parseISO(load.estimated_eta);
+        const windowEnd = parseISO(load.planned_arrival_end);
+        minutesUntilArrival = differenceInMinutes(eta, new Date());
         
-        if (actual && scheduled) {
-          const diffDays = Math.round((actual - scheduled) / (1000 * 60 * 60 * 24));
-          data.on_time = diffDays <= 0;
-          data.days_variance = diffDays;
+        if (isPast(windowEnd)) {
+          etaStatus = 'late';
+        } else if (minutesUntilArrival < 0) {
+          etaStatus = 'delayed';
+        } else if (minutesUntilArrival < 30) {
+          etaStatus = 'arriving_soon';
         }
       }
       
-      const activityLogEntry = {
-        action: logAction || `Delivery updated`,
-        user: user?.email || 'system',
-        timestamp: new Date().toISOString(),
-        changes: data
+      return {
+        ...load,
+        pieces: loadPieces,
+        equipment: loadEquipment,
+        reports: loadReports,
+        openIssues,
+        pieceCount: loadPieces.length,
+        etaStatus,
+        minutesUntilArrival
       };
-      
-      const updatedActivityLog = [
-        ...(delivery?.activity_log || []),
-        activityLogEntry
-      ];
-      
-      return base44.entities.Delivery.update(id, { ...data, activity_log: updatedActivityLog });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
-      setShowWizard(false);
-      setEditingDelivery(null);
-      setSelectedDelivery(null);
-      setReceivingDelivery(null);
-      toast.success('Delivery updated successfully');
-    },
-    onError: (error) => {
-      console.error('Update delivery error:', error);
-      toast.error('Failed to update: ' + (error.message || 'Unknown error'));
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Delivery.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
-      setDeleteDelivery(null);
-      toast.success('Delivery deleted');
-    }
-  });
-
-  const filteredDeliveries = useMemo(() => {
-    return deliveries.filter(d => {
-      const matchesSearch = 
-        d.package_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.delivery_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.vendor_supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        d.carrier?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesProject = projectFilter === 'all' || d.project_id === projectFilter;
-      const matchesStatus = statusFilter === 'all' || d.delivery_status === statusFilter;
-
-      return matchesSearch && matchesProject && matchesStatus;
     });
-  }, [deliveries, searchTerm, projectFilter, statusFilter]);
+  }, [loads, pieces, equipment, conditionReports]);
 
-  const kpis = useMemo(() => {
-    const today = new Date();
-    const received = filteredDeliveries.filter(d => d.delivery_status === 'received' || d.delivery_status === 'closed');
-    const onTime = received.filter(d => d.on_time);
-    const todaysCount = filteredDeliveries.filter(d => {
-      const date = d.confirmed_date || d.scheduled_date || d.requested_date;
-      return date && isToday(parseISO(date));
-    }).length;
-    const exceptions = filteredDeliveries.filter(d => d.exceptions?.some(e => !e.resolved)).length;
+  // Filter loads
+  const filteredLoads = useMemo(() => {
+    if (statusFilter === 'all') return enhancedLoads;
+    return enhancedLoads.filter(l => l.status === statusFilter);
+  }, [enhancedLoads, statusFilter]);
+
+  // Metrics
+  const metrics = useMemo(() => {
+    const totalTonnage = project?.total_tonnage || 0;
+    const deliveredTonnage = pieces.filter(p => ['on_site', 'erected'].includes(p.current_status))
+      .reduce((sum, p) => sum + (p.weight || 0), 0);
+    
+    const inTransit = enhancedLoads.filter(l => l.status === 'in_transit').length;
+    const arrivedToday = enhancedLoads.filter(l => 
+      l.status === 'arrived' && 
+      l.actual_arrival_time &&
+      format(parseISO(l.actual_arrival_time), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+    ).length;
+    
+    const delayedLoads = enhancedLoads.filter(l => 
+      l.status === 'in_transit' && l.etaStatus === 'delayed'
+    ).length;
+    
+    const openIssues = conditionReports.filter(r => 
+      r.resolution_status === 'open' && r.issue_type !== 'acceptable'
+    ).length;
 
     return {
-      total: filteredDeliveries.length,
-      today: todaysCount,
-      onTimePercent: received.length > 0 ? (onTime.length / received.length) * 100 : 0,
-      exceptions
+      totalTonnage,
+      deliveredTonnage,
+      percentComplete: totalTonnage > 0 ? (deliveredTonnage / totalTonnage * 100) : 0,
+      inTransit,
+      arrivedToday,
+      delayedLoads,
+      openIssues
     };
-  }, [filteredDeliveries]);
+  }, [project, pieces, enhancedLoads, conditionReports]);
 
-  const handleStatusChange = (id, updates) => {
-    const delivery = deliveries.find(d => d.id === id);
-    
-    // If updates is a string (old signature), convert to object
-    const updateData = typeof updates === 'string' ? { delivery_status: updates } : updates;
-    
-    // Auto-update scheduled_date if it's not set but we have confirmed or requested
-    if (!updateData.scheduled_date && !delivery.scheduled_date) {
-      updateData.scheduled_date = delivery.confirmed_date || delivery.requested_date;
-    }
-    
-    // Auto-advance status to requested if still draft
-    if (delivery.delivery_status === 'draft' && updateData.scheduled_date) {
-      updateData.delivery_status = updateData.delivery_status || 'requested';
-    }
-    
-    updateMutation.mutate({
-      id,
-      data: updateData,
-      logAction: `Status changed to ${updateData.delivery_status || 'updated'}`
-    });
+  // Today's schedule
+  const todaysSchedule = useMemo(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    return enhancedLoads.filter(l => {
+      if (!l.planned_arrival_start) return false;
+      const arrivalDate = format(parseISO(l.planned_arrival_start), 'yyyy-MM-dd');
+      return arrivalDate === today && ['scheduled', 'in_transit', 'arrived'].includes(l.status);
+    }).sort((a, b) => 
+      new Date(a.planned_arrival_start) - new Date(b.planned_arrival_start)
+    );
+  }, [enhancedLoads]);
+
+  const getStatusColor = (status) => {
+    const colors = {
+      planned: 'bg-zinc-500',
+      scheduled: 'bg-blue-500',
+      in_transit: 'bg-amber-500',
+      arrived: 'bg-green-500',
+      unloading: 'bg-purple-500',
+      complete: 'bg-zinc-700',
+      cancelled: 'bg-red-500'
+    };
+    return colors[status] || 'bg-zinc-500';
   };
 
-  const columns = [
-    {
-      header: 'Delivery #',
-      accessor: 'delivery_number',
-      render: (row) => (
-        <span className="font-mono text-amber-400 font-bold text-sm">
-          {row.delivery_number || '-'}
-        </span>
-      )
-    },
-    {
-      header: 'Package',
-      accessor: 'package_name',
-      render: (row) => (
-        <div>
-          <p className="font-medium">{row.package_name}</p>
-          <p className="text-xs text-zinc-500">{row.package_number}</p>
+  if (!activeProjectId) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Truck size={48} className="mx-auto mb-4 text-zinc-600" />
+          <h3 className="text-lg font-semibold text-white mb-2">No Project Selected</h3>
+          <p className="text-zinc-500">Select a project to manage deliveries</p>
         </div>
-      )
-    },
-    {
-      header: 'Project',
-      accessor: 'project_id',
-      render: (row) => {
-        const project = projects.find(p => p.id === row.project_id);
-        return project ? (
-          <div>
-            <p className="text-sm">{project.name}</p>
-            <p className="text-xs text-zinc-500">{project.project_number}</p>
-          </div>
-        ) : '-';
-      }
-    },
-    {
-      header: 'Status',
-      accessor: 'delivery_status',
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <StatusBadge status={row.delivery_status} />
-          {row.exceptions?.some(e => !e.resolved) && (
-            <AlertTriangle size={14} className="text-red-500" />
-          )}
-        </div>
-      )
-    },
-    {
-      header: 'Scheduled',
-      accessor: 'confirmed_date',
-      render: (row) => {
-        const date = row.confirmed_date || row.requested_date;
-        if (!date) return '-';
-        const isUpcoming = differenceInDays(parseISO(date), new Date()) <= 7;
-        return (
-          <div>
-            <p>{format(parseISO(date), 'MMM d, yyyy')}</p>
-            {row.confirmed_time_window && (
-              <p className="text-xs text-zinc-500">{row.confirmed_time_window}</p>
-            )}
-            {isToday(parseISO(date)) && (
-              <Badge className="bg-amber-500 text-black text-xs mt-1">TODAY</Badge>
-            )}
-          </div>
-        );
-      }
-    },
-    {
-      header: 'Vendor',
-      accessor: 'vendor_supplier',
-      render: (row) => row.vendor_supplier || '-'
-    },
-    {
-      header: 'Weight',
-      accessor: 'weight_tons',
-      render: (row) => {
-        const weight = row.line_items?.reduce((sum, item) => sum + (item.weight_tons || 0), 0) || row.weight_tons || 0;
-        return weight > 0 ? `${weight.toFixed(1)} tons` : '-';
-      }
-    },
-    {
-      header: '',
-      accessor: 'actions',
-      render: (row) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedDelivery(row);
-            }}
-            className="text-zinc-500 hover:text-white"
-          >
-            <Edit size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeleteDelivery(row);
-            }}
-            className="text-zinc-500 hover:text-red-500"
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      )
-    }
-  ];
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Management</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">
-                {kpis.total} TOTAL • {kpis.today} TODAY • {kpis.onTimePercent.toFixed(0)}% ON-TIME
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => {
-                  setEditingDelivery(null);
-                  setShowWizard(true);
-                }}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-              >
-                <Plus size={14} className="mr-1" />
-                NEW DELIVERY
-              </Button>
-            </div>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Deliveries</h1>
+          <p className="text-sm text-zinc-500 mt-1">
+            {project?.project_number} • {project?.name}
+          </p>
         </div>
+        <Button
+          onClick={() => setShowNewLoadDialog(true)}
+          className="bg-amber-500 hover:bg-amber-600 text-black"
+        >
+          <Plus size={16} className="mr-2" />
+          New Load
+        </Button>
       </div>
 
-      {/* KPI Bar */}
-      {kpis.exceptions > 0 && (
-        <div className="border-b border-red-800 bg-red-950/20">
-          <div className="max-w-[1800px] mx-auto px-6 py-3">
-            <div className="flex items-center gap-2 text-red-500">
-              <AlertTriangle size={16} />
-              <span className="text-xs font-bold uppercase tracking-widest">
-                {kpis.exceptions} DELIVERIES WITH UNRESOLVED EXCEPTIONS
-              </span>
+      {/* Metrics Dashboard */}
+      <div className="grid grid-cols-6 gap-4">
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Weight size={12} />
+              Tonnage
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="today">
-              <Calendar size={14} className="mr-2" />
-              Today ({kpis.today})
-            </TabsTrigger>
-            <TabsTrigger value="list">All Deliveries</TabsTrigger>
-            <TabsTrigger value="calendar">
-              <MapPin size={14} className="mr-2" />
-              Map View
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Today's Deliveries */}
-          <TabsContent value="today">
-            <TodaysDeliveries
-              deliveries={filteredDeliveries}
-              onReceive={(delivery) => setReceivingDelivery(delivery)}
-              onMarkArrived={(delivery) => handleStatusChange(delivery.id, 'arrived_on_site')}
-              onViewDetails={(delivery) => setSelectedDelivery(delivery)}
-            />
-          </TabsContent>
-
-          {/* List View */}
-          <TabsContent value="list" className="space-y-4">
-            {/* Filters */}
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-                <Input
-                  placeholder="SEARCH DELIVERIES..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs"
-                />
-              </div>
-              <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
-                  <SelectValue placeholder="All Projects" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="all">All Projects</SelectItem>
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="requested">Requested</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="in_transit">In Transit</SelectItem>
-                  <SelectItem value="arrived_on_site">Arrived</SelectItem>
-                  <SelectItem value="partially_received">Partially Received</SelectItem>
-                  <SelectItem value="received">Received</SelectItem>
-                  <SelectItem value="exception">Exception</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="text-2xl font-bold text-white mb-1">
+              {metrics.deliveredTonnage.toFixed(1)} / {metrics.totalTonnage.toFixed(1)}
             </div>
-
-            <DataTable
-              columns={columns}
-              data={filteredDeliveries}
-              onRowClick={(delivery) => setSelectedDelivery(delivery)}
-              emptyMessage="No deliveries found. Create your first delivery to get started."
-            />
-          </TabsContent>
-
-          {/* Map View */}
-          <TabsContent value="calendar">
-            <DeliveryMapView
-              deliveries={filteredDeliveries}
-              projects={projects}
-              onSelectDelivery={(delivery) => setSelectedDelivery(delivery)}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {/* Wizard Dialog */}
-      <Dialog open={showWizard} onOpenChange={setShowWizard}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>{editingDelivery ? 'Edit Delivery' : 'Create New Delivery'}</DialogTitle>
-          </DialogHeader>
-          <DeliveryWizard
-            delivery={editingDelivery}
-            projects={projects}
-            onSubmit={(data) => {
-              if (editingDelivery) {
-                updateMutation.mutate({ id: editingDelivery.id, data, logAction: 'Delivery updated via wizard' });
-              } else {
-                createMutation.mutate(data);
-              }
-            }}
-            onCancel={() => {
-              setShowWizard(false);
-              setEditingDelivery(null);
-            }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Detail Panel */}
-      <Sheet open={!!selectedDelivery} onOpenChange={(open) => !open && setSelectedDelivery(null)}>
-        <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-white">Delivery Details</SheetTitle>
-          </SheetHeader>
-          {selectedDelivery && (
-            <div className="mt-6">
-              <DeliveryDetailPanel
-                delivery={selectedDelivery}
-                project={projects.find(p => p.id === selectedDelivery.project_id)}
-                onEdit={(d) => {
-                  setEditingDelivery(d);
-                  setSelectedDelivery(null);
-                  setShowWizard(true);
-                }}
-                onDelete={(d) => {
-                  setSelectedDelivery(null);
-                  setDeleteDelivery(d);
-                }}
-                onStatusChange={handleStatusChange}
-                onAddException={() => toast.info('Exception reporting coming soon')}
-                onReceiveItems={() => {
-                  setReceivingDelivery(selectedDelivery);
-                  setSelectedDelivery(null);
-                }}
+            <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-green-500 h-full transition-all"
+                style={{ width: `${metrics.percentComplete}%` }}
               />
             </div>
-          )}
-        </SheetContent>
-      </Sheet>
+            <div className="text-xs text-zinc-600 mt-1">{metrics.percentComplete.toFixed(0)}% Complete</div>
+          </CardContent>
+        </Card>
 
-      {/* Receiving Mode */}
-      <Dialog open={!!receivingDelivery} onOpenChange={(open) => !open && setReceivingDelivery(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Receiving: {receivingDelivery?.package_name}</DialogTitle>
-          </DialogHeader>
-          {receivingDelivery && (
-            <ReceivingMode
-              delivery={receivingDelivery}
-              onComplete={(updatedDelivery) => {
-                updateMutation.mutate({
-                  id: receivingDelivery.id,
-                  data: updatedDelivery,
-                  logAction: 'Items received'
-                });
-              }}
-              onCancel={() => setReceivingDelivery(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Truck size={12} />
+              In Transit
+            </div>
+            <div className="text-3xl font-bold text-amber-500">{metrics.inTransit}</div>
+          </CardContent>
+        </Card>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteDelivery} onOpenChange={() => setDeleteDelivery(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Delivery?</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              Delete "{deleteDelivery?.package_name}"? This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteMutation.mutate(deleteDelivery.id)}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <CheckCircle2 size={12} />
+              Arrived Today
+            </div>
+            <div className="text-3xl font-bold text-green-500">{metrics.arrivedToday}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Clock size={12} />
+              Delayed
+            </div>
+            <div className="text-3xl font-bold text-red-500">{metrics.delayedLoads}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <AlertTriangle size={12} />
+              Open Issues
+            </div>
+            <div className="text-3xl font-bold text-orange-500">{metrics.openIssues}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardContent className="p-4">
+            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Calendar size={12} />
+              Today's Schedule
+            </div>
+            <div className="text-3xl font-bold text-blue-500">{todaysSchedule.length}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Gate View - Today's Arrivals */}
+        <div className="col-span-1">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm uppercase tracking-wider flex items-center gap-2">
+                <Calendar size={16} />
+                Today's Gate Schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
+              {todaysSchedule.length === 0 ? (
+                <div className="text-center py-8 text-zinc-500 text-sm">
+                  No deliveries scheduled today
+                </div>
+              ) : (
+                todaysSchedule.map(load => (
+                  <div
+                    key={load.id}
+                    onClick={() => setSelectedTruck(load)}
+                    className="p-3 bg-zinc-800/50 border border-zinc-700 rounded hover:border-amber-500 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className={cn("text-xs", getStatusColor(load.status))}>
+                            {load.status.replace('_', ' ')}
+                          </Badge>
+                          {load.is_osow && (
+                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">
+                              OSOW
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="font-semibold text-white text-sm">{load.load_number}</p>
+                        <p className="text-xs text-zinc-500">{load.truck_id || 'TBD'}</p>
+                      </div>
+                      {load.minutesUntilArrival !== null && load.status === 'in_transit' && (
+                        <div className={cn(
+                          "text-xs font-mono font-bold",
+                          load.etaStatus === 'delayed' ? 'text-red-500' :
+                          load.etaStatus === 'arriving_soon' ? 'text-green-500' : 'text-zinc-400'
+                        )}>
+                          {load.minutesUntilArrival > 0 ? `${load.minutesUntilArrival}m` : 'LATE'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-zinc-500">
+                      <div className="flex items-center gap-1">
+                        <Clock size={12} />
+                        {format(parseISO(load.planned_arrival_start), 'HH:mm')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Package size={12} />
+                        {load.pieceCount} pcs
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Weight size={12} />
+                        {load.total_weight?.toFixed(1)}t
+                      </div>
+                    </div>
+                    {load.openIssues > 0 && (
+                      <div className="mt-2 flex items-center gap-1 text-xs text-red-400">
+                        <AlertTriangle size={12} />
+                        {load.openIssues} issue{load.openIssues > 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* All Loads */}
+        <div className="col-span-2">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm uppercase tracking-wider">All Loads</CardTitle>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-40 h-8 bg-zinc-800 border-zinc-700 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="planned">Planned</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="in_transit">In Transit</SelectItem>
+                    <SelectItem value="arrived">Arrived</SelectItem>
+                    <SelectItem value="unloading">Unloading</SelectItem>
+                    <SelectItem value="complete">Complete</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2 max-h-[600px] overflow-y-auto">
+              {filteredLoads.length === 0 ? (
+                <div className="text-center py-12 text-zinc-500">
+                  <Truck size={48} className="mx-auto mb-4 text-zinc-600" />
+                  <p className="text-sm">No loads found</p>
+                  <Button
+                    onClick={() => setShowNewLoadDialog(true)}
+                    className="mt-4 bg-amber-500 hover:bg-amber-600 text-black"
+                    size="sm"
+                  >
+                    Create First Load
+                  </Button>
+                </div>
+              ) : (
+                filteredLoads.map(load => (
+                  <div
+                    key={load.id}
+                    onClick={() => setSelectedTruck(load)}
+                    className="p-4 bg-zinc-800/50 border border-zinc-700 rounded hover:border-amber-500 cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className={cn("text-xs", getStatusColor(load.status))}>
+                            {load.status.replace('_', ' ')}
+                          </Badge>
+                          {load.is_osow && (
+                            <Badge variant="outline" className="text-xs border-orange-500 text-orange-500">
+                              OSOW
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-white">{load.load_number}</p>
+                          <p className="text-sm text-zinc-400">{load.carrier_name || 'TBD'}</p>
+                        </div>
+                        <p className="text-xs text-zinc-500 mt-1">{load.truck_id || 'Truck TBD'}</p>
+                      </div>
+                      {load.planned_arrival_start && (
+                        <div className="text-right">
+                          <p className="text-xs text-zinc-500">
+                            {format(parseISO(load.planned_arrival_start), 'MMM d')}
+                          </p>
+                          <p className="text-sm font-mono text-white">
+                            {format(parseISO(load.planned_arrival_start), 'HH:mm')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4 text-xs text-zinc-500 mt-3">
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          <Package size={12} />
+                          <span>Pieces</span>
+                        </div>
+                        <div className="text-white font-semibold">{load.pieceCount}</div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          <Weight size={12} />
+                          <span>Weight</span>
+                        </div>
+                        <div className="text-white font-semibold">{load.total_weight?.toFixed(1) || '0'}t</div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          <MapPin size={12} />
+                          <span>Zones</span>
+                        </div>
+                        <div className="text-white font-semibold">{load.sequence_zones?.length || 0}</div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          <AlertTriangle size={12} />
+                          <span>Issues</span>
+                        </div>
+                        <div className={cn(
+                          "font-semibold",
+                          load.openIssues > 0 ? "text-red-500" : "text-green-500"
+                        )}>
+                          {load.openIssues}
+                        </div>
+                      </div>
+                    </div>
+
+                    {load.equipment.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-zinc-700 flex items-center gap-2 flex-wrap">
+                        {load.equipment.map((eq, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs border-blue-500/30 text-blue-400">
+                            {eq.equipment_type.replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Truck Detail Dialog */}
+      {selectedTruck && (
+        <TruckDetailDialog
+          load={selectedTruck}
+          open={!!selectedTruck}
+          onOpenChange={(open) => !open && setSelectedTruck(null)}
+          onUpdate={() => {
+            queryClient.invalidateQueries({ queryKey: ['loads'] });
+            queryClient.invalidateQueries({ queryKey: ['steel-pieces'] });
+            queryClient.invalidateQueries({ queryKey: ['condition-reports'] });
+          }}
+        />
+      )}
+
+      {/* New Load Dialog */}
+      <NewLoadDialog
+        projectId={activeProjectId}
+        open={showNewLoadDialog}
+        onOpenChange={setShowNewLoadDialog}
+        onCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ['loads'] });
+          setShowNewLoadDialog(false);
+        }}
+      />
     </div>
   );
 }

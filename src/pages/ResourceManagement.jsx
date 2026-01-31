@@ -89,19 +89,20 @@ export default function ResourceManagement() {
 
   const updateResourceMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      // Only send changed fields, don't send undefined
-      const cleanData = Object.fromEntries(
-        Object.entries(data).filter(([_, v]) => v !== undefined)
-      );
-      return await base44.entities.Resource.update(id, cleanData);
+      console.log('Updating resource:', id, 'with data:', data);
+      return await base44.entities.Resource.update(id, data);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('Update successful:', result);
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setCreateDialogOpen(false);
       setEditingResource(null);
       toast.success('Resource updated');
     },
-    onError: (error) => toast.error(error.message || 'Failed to update resource')
+    onError: (error) => {
+      console.error('Update failed:', error);
+      toast.error(error.message || 'Failed to update resource');
+    }
   });
 
   const handleResourceSubmit = (data) => {

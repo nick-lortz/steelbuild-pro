@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CustomReportBuilder from '@/components/reports/CustomReportBuilder';
 import {
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import AutomatedReportScheduler from '@/components/reports/AutomatedReportSchedu
 import InteractiveDashboard from '@/components/reports/InteractiveDashboard';
 import ReportTypeKPIs from '@/components/reports/ReportTypeKPIs';
 import DataTable from '@/components/ui/DataTable';
-import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2, LayoutDashboard } from 'lucide-react';
+import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2, LayoutDashboard, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 
@@ -497,6 +498,10 @@ export default function Reports() {
               <LayoutDashboard size={14} className="mr-2" />
               Dashboard
             </TabsTrigger>
+            <TabsTrigger value="custom">
+              <Sparkles size={14} className="mr-2" />
+              Custom Reports
+            </TabsTrigger>
             <TabsTrigger value="financial">Financial</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="safety">Safety</TabsTrigger>
@@ -518,6 +523,10 @@ export default function Reports() {
             tasks={tasks}
             drawingSets={drawingSets}
           />
+        </TabsContent>
+
+        <TabsContent value="custom">
+          <CustomReportBuilder />
         </TabsContent>
 
         <TabsContent value="financial">

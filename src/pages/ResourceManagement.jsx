@@ -20,6 +20,8 @@ import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import ConflictDetectionEngine from '@/components/resources/ConflictDetectionEngine';
 import CrossProjectResourceDashboard from '@/components/resources/CrossProjectResourceDashboard';
 import ResourceForm from '@/components/resources/ResourceForm';
+import ResourceForecasting from '@/components/resources/ResourceForecasting';
+import SkillGapAnalysis from '@/components/resources/SkillGapAnalysis';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {
@@ -383,6 +385,14 @@ export default function ResourceManagement() {
             <TabsTrigger value="skills">
               <Users size={14} className="mr-2" />
               Skills
+            </TabsTrigger>
+            <TabsTrigger value="forecasting">
+              <TrendingUp size={14} className="mr-2" />
+              Forecasting
+            </TabsTrigger>
+            <TabsTrigger value="gaps">
+              <AlertTriangle size={14} className="mr-2" />
+              Skill Gaps
             </TabsTrigger>
           </TabsList>
 
@@ -843,6 +853,25 @@ export default function ResourceManagement() {
           {/* Leveling Tab */}
           <TabsContent value="leveling" className="space-y-6">
             <ResourceLevelingPanel projectId={projects[0]?.id} />
+          </TabsContent>
+
+          {/* Forecasting Tab */}
+          <TabsContent value="forecasting" className="space-y-6">
+            <ResourceForecasting
+              projects={projects}
+              resources={resources}
+              allocations={allocations}
+              tasks={tasks}
+            />
+          </TabsContent>
+
+          {/* Skill Gaps Tab */}
+          <TabsContent value="gaps" className="space-y-6">
+            <SkillGapAnalysis
+              projects={projects}
+              resources={resources}
+              tasks={tasks}
+            />
           </TabsContent>
         </Tabs>
 

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataTable from '@/components/ui/DataTable';
+import SOVResourceAssignment from '@/components/resources/SOVResourceAssignment';
 import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
@@ -354,7 +355,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-base font-semibold">Schedule of Values</h3>
@@ -556,6 +557,11 @@ export default function SOVManager({ projectId, canEdit }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* SOV Resource Assignment */}
+      {sovItems.length > 0 && (
+        <SOVResourceAssignment sovItems={sovItems} projectId={projectId} />
+      )}
     </div>
   );
 }

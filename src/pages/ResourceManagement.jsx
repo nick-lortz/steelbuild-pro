@@ -17,6 +17,7 @@ import ResourceCapacityPlanner from '@/components/resources/ResourceCapacityPlan
 import SkillMatrixView from '@/components/resources/SkillMatrixView';
 import ResourceLevelingPanel from '@/components/resources/ResourceLevelingPanel';
 import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
+import ConflictDetectionEngine from '@/components/resources/ConflictDetectionEngine';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {
@@ -321,6 +322,10 @@ export default function ResourceManagement() {
             <TabsTrigger value="overview">
               <BarChart3 size={14} className="mr-2" />
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="conflicts">
+              <AlertTriangle size={14} className="mr-2" />
+              Conflicts
             </TabsTrigger>
             <TabsTrigger value="capacity">
               <TrendingUp size={14} className="mr-2" />
@@ -718,6 +723,19 @@ export default function ResourceManagement() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Conflicts Tab */}
+          <TabsContent value="conflicts" className="space-y-6">
+            <ConflictDetectionEngine
+              resources={resources}
+              tasks={tasks}
+              projects={projects}
+              onResolveConflict={(conflict) => {
+                // Future: open resolution wizard
+                toast.info('Conflict resolution wizard coming soon');
+              }}
+            />
           </TabsContent>
 
           {/* Capacity Tab */}

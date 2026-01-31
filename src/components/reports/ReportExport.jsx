@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -23,44 +22,52 @@ export default function ReportExport({ data, reportName, chartType, projects, da
       doc.setFontSize(10);
       doc.text(`Generated: ${format(new Date(), 'MMM dd, yyyy HH:mm')}`, 20, 30);
       if (projects.length > 0) {
-        doc.text(`Projects: ${projects.join(', ')}`, 20, 36);
+        doc.text(`Projects: ${projects.slice(0, 3).join(', ')}`, 20, 36);
       }
       if (dateRange.start && dateRange.end) {
         doc.text(`Date Range: ${dateRange.start} to ${dateRange.end}`, 20, 42);
       }
 
-      // Prepare table data
-      const tableData = data.map(item => {
-        if (item.isGrouped) {
-          const groupedStr = Object.entries(item.value)
-            .map(([k, v]) => `${k}: ${v}`)
-            .join(', ');
-          return [item.module, item.label, groupedStr];
-        }
-        return [
-          item.module,
-          item.label,
-          typeof item.value === 'number' 
-            ? item.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
-            : item.value
-        ];
-      });
+      // Draw simple table
+      let yPos = dateRange.start ? 55 : 48;
+      
+      // Table header
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'bold');
+      doc.text('Module', 20, yPos);
+      doc.text('Metric', 70, yPos);
+      doc.text('Value', 140, yPos);
+      
+      // Line under header
+      doc.line(20, yPos + 2, 190, yPos + 2);
+      yPos += 8;
 
-      // Add table
-      doc.autoTable({
-        startY: dateRange.start ? 50 : 44,
-        head: [['Module', 'Metric', 'Value']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [245, 158, 11],
-          textColor: [0, 0, 0],
-          fontStyle: 'bold'
-        },
-        styles: {
-          fontSize: 9,
-          cellPadding: 4
+      // Table rows
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9);
+      
+      data.forEach(item => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
         }
+        
+        let valueStr;
+        if (item.isGrouped) {
+          valueStr = Object.entries(item.value)
+            .map(([k, v]) => `${k}: ${v}`)
+            .slice(0, 2)
+            .join(', ');
+        } else {
+          valueStr = typeof item.value === 'number' 
+            ? item.value.toLocaleString(undefined, { maximumFractionDigits: 2 })
+            : String(item.value);
+        }
+        
+        doc.text(item.module.substring(0, 20), 20, yPos);
+        doc.text(item.label.substring(0, 30), 70, yPos);
+        doc.text(valueStr.substring(0, 25), 140, yPos);
+        yPos += 7;
       });
 
       // Footer

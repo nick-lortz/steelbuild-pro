@@ -400,17 +400,21 @@ export default function Deliveries() {
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="today">
-              <Calendar size={14} className="mr-2" />
-              Today ({kpis.today})
-            </TabsTrigger>
-            <TabsTrigger value="list">All Deliveries</TabsTrigger>
-            <TabsTrigger value="calendar">
-              <MapPin size={14} className="mr-2" />
-              Map View
-            </TabsTrigger>
-          </TabsList>
+           <TabsList className="bg-zinc-900 border border-zinc-800">
+             <TabsTrigger value="lookAhead">
+               <Calendar size={14} className="mr-2" />
+               Look-Ahead
+             </TabsTrigger>
+             <TabsTrigger value="today">
+               <Calendar size={14} className="mr-2" />
+               Today ({kpis.today})
+             </TabsTrigger>
+             <TabsTrigger value="list">All Deliveries</TabsTrigger>
+             <TabsTrigger value="metrics">
+               <Download size={14} className="mr-2" />
+               Metrics
+             </TabsTrigger>
+           </TabsList>
 
           {/* Today's Deliveries */}
           <TabsContent value="today">

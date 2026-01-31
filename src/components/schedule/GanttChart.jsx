@@ -129,23 +129,34 @@ export default function GanttChart({
     return { activeTasks: active, completedTasks: completed };
   }, [filteredTasks]);
 
-  // Group active tasks by project and phase
+  // Group active tasks by project and phase OR by WBS
   const tasksByProjectAndPhase = useMemo(() => {
     const grouped = {};
     activeTasks.forEach(task => {
       const projectId = task.project_id || 'unassigned';
-      const phase = task.phase || 'unassigned';
       
       if (!grouped[projectId]) {
         grouped[projectId] = {};
       }
-      if (!grouped[projectId][phase]) {
-        grouped[projectId][phase] = [];
+      
+      if (groupByWBS) {
+        // Group by WBS code
+        const wbs = task.wbs_code || 'unassigned';
+        if (!grouped[projectId][wbs]) {
+          grouped[projectId][wbs] = [];
+        }
+        grouped[projectId][wbs].push(task);
+      } else {
+        // Group by phase (default)
+        const phase = task.phase || 'unassigned';
+        if (!grouped[projectId][phase]) {
+          grouped[projectId][phase] = [];
+        }
+        grouped[projectId][phase].push(task);
       }
-      grouped[projectId][phase].push(task);
     });
     return grouped;
-  }, [activeTasks]);
+  }, [activeTasks, groupByWBS]);
 
   // Group completed tasks by project
   const completedTasksByProject = useMemo(() => {

@@ -45,6 +45,9 @@ export default function GanttChart({
   const [projectFilter, setProjectFilter] = useState('all');
   const [deleteTask, setDeleteTask] = useState(null);
   const [showCriticalOnly, setShowCriticalOnly] = useState(false);
+  const [groupByWBS, setGroupByWBS] = useState(false);
+  const [showBaseline, setShowBaseline] = useState(true);
+  const [showResourceIndicators, setShowResourceIndicators] = useState(true);
   const chartRef = useRef(null);
 
   // Calculate critical path on task changes

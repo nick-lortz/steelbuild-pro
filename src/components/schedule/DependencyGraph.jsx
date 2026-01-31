@@ -811,15 +811,11 @@ function calculateCriticalPath(tasks) {
     }
   });
 
-  // Store original duration for simulation comparison
-  const originalDuration = tasks.find(t => !t._simulated) 
-    ? pathStats.criticalPathDuration 
-    : tasks[0]?._originalDuration;
-
+  // Calculate pathStats
   const pathStats = {
     criticalPathDuration: projectEndNode?.earlyFinish || 0,
     projectEnd: projectEndNode?.task.end_date,
-    originalDuration: tasks.some(t => t._simulated) ? (tasks[0]._originalDuration || originalDuration) : undefined
+    originalDuration: tasks.some(t => t._simulated) ? tasks[0]?._originalDuration : undefined
   };
 
   // Store original duration for future comparison

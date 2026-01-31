@@ -125,6 +125,7 @@ const navGroups = [
     icon: MessageSquare,
     items: [
       { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning },
+      { name: 'Submittals', page: 'Submittals', icon: FileCheck },
       { name: 'Messages', page: 'Messages', icon: MessageSquareWarning },
       { name: 'Meetings', page: 'Meetings', icon: Users },
       { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar }

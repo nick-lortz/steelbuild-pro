@@ -91,11 +91,24 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Clean data and preserve all fields
     const data = {
       ...formData,
-      rate: formData.rate ? parseFloat(formData.rate) : undefined,
+      rate: formData.rate ? parseFloat(formData.rate) : 0,
       max_concurrent_assignments: parseInt(formData.max_concurrent_assignments) || 3,
+      skills: formData.skills || [],
+      certifications: formData.certifications || [],
+      assigned_project_ids: formData.assigned_project_ids || []
     };
+    
+    // Convert empty strings to null for optional fields
+    Object.keys(data).forEach(key => {
+      if (data[key] === '') {
+        data[key] = null;
+      }
+    });
+    
+    console.log('Submitting resource data:', data);
     onSubmit(data);
   };
 

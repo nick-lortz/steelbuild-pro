@@ -46,7 +46,9 @@ export default function Deliveries() {
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [deleteDelivery, setDeleteDelivery] = useState(null);
   const [receivingDelivery, setReceivingDelivery] = useState(null);
-  const [activeView, setActiveView] = useState('list');
+  const [activeView, setActiveView] = useState('lookAhead');
+  const [filterZone, setFilterZone] = useState('all');
+  const [filterCrane, setFilterCrane] = useState('all');
 
   const queryClient = useQueryClient();
 

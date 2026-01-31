@@ -82,7 +82,6 @@ const navGroups = [
     name: 'Design & Fabrication',
     icon: Wrench,
     items: [
-      { name: 'Drawings', page: 'Drawings', icon: FileText },
       { name: 'Detailing', page: 'Detailing', icon: FileText },
       { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp },
       { name: 'Documents', page: 'Documents', icon: File },

@@ -59,6 +59,7 @@ import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
+import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import Fabrication from './pages/Fabrication';
@@ -95,7 +96,6 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import Drawings from './pages/Drawings';
 import __Layout from './Layout.jsx';
 
 
@@ -112,6 +112,7 @@ export const PAGES = {
     "Detailing": Detailing,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
+    "Drawings": Drawings,
     "Equipment": Equipment,
     "ExecutiveRollUp": ExecutiveRollUp,
     "Fabrication": Fabrication,
@@ -148,7 +149,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "Drawings": Drawings,
 }
 
 export const pagesConfig = {

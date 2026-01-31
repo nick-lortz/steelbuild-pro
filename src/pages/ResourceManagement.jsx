@@ -734,47 +734,62 @@ export default function ResourceManagement() {
                           <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Status</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Active Tasks</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Utilization</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredResources.map((resource) => (
                           <tr key={resource.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                             <td className="py-3 px-4">
-                              <p className="font-medium text-white">{resource.name}</p>
+                             <p className="font-medium text-white">{resource.name}</p>
                             </td>
                             <td className="py-3 px-4">
-                              <Badge variant="outline" className="capitalize">
-                                {resource.type}
-                              </Badge>
+                             <Badge variant="outline" className="capitalize">
+                               {resource.type}
+                             </Badge>
                             </td>
                             <td className="py-3 px-4">
-                              <StatusBadge status={resource.status} />
+                             <StatusBadge status={resource.status} />
                             </td>
                             <td className="py-3 px-4">
-                              <span className={resource.activeTasks > 3 ? 'text-red-400 font-medium' : 'text-white'}>
-                                {resource.activeTasks}
-                              </span>
+                             <span className={resource.activeTasks > 3 ? 'text-red-400 font-medium' : 'text-white'}>
+                               {resource.activeTasks}
+                             </span>
                             </td>
                             <td className="py-3 px-4">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 max-w-[120px]">
-                                  <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
-                                    <div
-                                      className={`h-full transition-all ${
-                                        resource.utilization > 80 ? 'bg-red-500' :
-                                        resource.utilization > 50 ? 'bg-amber-500' :
-                                        'bg-green-500'
-                                      }`}
-                                      style={{ width: `${Math.min(resource.utilization, 100)}%` }}
-                                    />
-                                  </div>
-                                </div>
-                                <span className="text-sm text-zinc-300 min-w-[45px]">
-                                  {Math.round(resource.utilization)}%
-                                </span>
-                              </div>
+                             <div className="flex items-center gap-3">
+                               <div className="flex-1 max-w-[120px]">
+                                 <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                   <div
+                                     className={`h-full transition-all ${
+                                       resource.utilization > 80 ? 'bg-red-500' :
+                                       resource.utilization > 50 ? 'bg-amber-500' :
+                                       'bg-green-500'
+                                     }`}
+                                     style={{ width: `${Math.min(resource.utilization, 100)}%` }}
+                                   />
+                                 </div>
+                               </div>
+                               <span className="text-sm text-zinc-300 min-w-[45px]">
+                                 {Math.round(resource.utilization)}%
+                               </span>
+                             </div>
                             </td>
-                          </tr>
+                            <td className="py-3 px-4">
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => {
+                                 const fullResource = resources.find(r => r.id === resource.id);
+                                 setEditingResource(fullResource);
+                                 setCreateDialogOpen(true);
+                               }}
+                               className="text-xs"
+                             >
+                               Edit
+                             </Button>
+                            </td>
+                            </tr>
                         ))}
                       </tbody>
                     </table>

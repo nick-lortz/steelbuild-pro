@@ -35,7 +35,17 @@ const COLORS = {
   purple: '#a855f7'
 };
 
-export default function UnifiedAnalyticsDashboard({ projectId }) {
+export default function UnifiedAnalyticsDashboard({ 
+  projectId, 
+  projects: passedProjects, 
+  tasks: passedTasks, 
+  financials: passedFinancials, 
+  expenses: passedExpenses,
+  changeOrders: passedChangeOrders,
+  deliveries: passedDeliveries,
+  workPackages: passedWorkPackages,
+  sovItems: passedSOVItems
+}) {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [viewMode, setViewMode] = useState('overview');
   const [predictingRisks, setPredictingRisks] = useState(false);
@@ -53,18 +63,52 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
     ];
   });
 
-  const { data: projects = [] } = useQuery({
+  const { data: fetchedProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000,
+    enabled: !passedProjects
   });
 
+  const projects = passedProjects || fetchedProjects;
   const activeProjects = projects.filter(p => p.status === 'in_progress' || p.status === 'awarded');
   const targetProjectIds = projectId ? [projectId] : (selectedProjects.length > 0 ? selectedProjects : activeProjects.map(p => p.id));
 
   const { data: portfolioData, isLoading } = useQuery({
     queryKey: ['portfolio-analytics', targetProjectIds],
     queryFn: async () => {
+      if (passedProjects && passedTasks && passedFinancials && passedExpenses && passedDeliveries && passedWorkPackages) {
+        // Use passed data
+        const project = passedProjects[0];
+        if (!project) return [];
+
+        const today = new Date().toISOString().split('T')[0];
+        const totalBudget = passedFinancials.reduce((sum, f) => sum + (f.current_budget || f.budget_amount || 0), 0);
+        const actualCost = passedExpenses
+          .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
+          .reduce((sum, e) => sum + (e.amount || 0), 0);
+        const forecastCost = passedFinancials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0) || actualCost;
+
+        return [{
+          project,
+          metrics: {
+            tasks_total: passedTasks.length,
+            tasks_complete: passedTasks.filter(t => t.status === 'completed').length,
+            tasks_overdue: passedTasks.filter(t => t.end_date < today && t.status !== 'completed').length,
+            drawings_total: 0,
+            drawings_fff: 0,
+            deliveries_total: passedDeliveries.length,
+            deliveries_on_time: passedDeliveries.filter(d => d.delivery_status === 'delivered' && d.actual_date && d.actual_date <= d.scheduled_date).length,
+            total_budget: totalBudget,
+            actual_cost: actualCost,
+            forecast_cost: forecastCost || actualCost,
+            packages_total: passedWorkPackages.length,
+            packages_complete: passedWorkPackages.filter(wp => wp.status === 'complete').length
+          }
+        }];
+      }
+
+      // Fetch data
       const data = await Promise.all(targetProjectIds.map(async (pid) => {
         const [project, workPackages, tasks, financials, deliveries, drawingSets, expenses] = await Promise.all([
           base44.entities.Project.filter({ id: pid }).then(p => p[0]),
@@ -78,12 +122,9 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
 
         const today = new Date().toISOString().split('T')[0];
         const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || f.budget_amount || 0), 0);
-        
-        // Actual costs come from Expenses (paid/approved only)
         const actualCost = expenses
           .filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
           .reduce((sum, e) => sum + (e.amount || 0), 0);
-        
         const forecastCost = financials.reduce((sum, f) => sum + (f.forecast_amount || 0), 0) || actualCost;
 
         return {
@@ -96,11 +137,8 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
             drawings_fff: drawingSets.filter(d => d.status === 'FFF').length,
             deliveries_total: deliveries.length,
             deliveries_on_time: deliveries.filter(d => {
-              // Only count completed deliveries
               if (d.delivery_status !== 'delivered') return false;
-              // If no actual date, cannot determine if on time
               if (!d.actual_date) return false;
-              // On time if actual <= scheduled
               return d.actual_date <= d.scheduled_date;
             }).length,
             total_budget: totalBudget,
@@ -118,7 +156,7 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: changeOrders = [] } = useQuery({
+  const { data: fetchedChangeOrders = [] } = useQuery({
     queryKey: ['change-orders', targetProjectIds],
     queryFn: async () => {
       const cos = await base44.entities.ChangeOrder.filter({
@@ -126,8 +164,10 @@ export default function UnifiedAnalyticsDashboard({ projectId }) {
       });
       return cos;
     },
-    enabled: targetProjectIds.length > 0,
+    enabled: targetProjectIds.length > 0 && !passedChangeOrders,
   });
+
+  const changeOrders = passedChangeOrders || fetchedChangeOrders;
 
   const handlePredictRisks = async () => {
     if (!targetProjectIds[0]) return;

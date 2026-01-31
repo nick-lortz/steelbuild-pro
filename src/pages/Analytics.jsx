@@ -99,7 +99,7 @@ export default function Analytics() {
       });
       return response.data;
     },
-    enabled: !!activeProjectId,
+    enabled: !!activeProjectId && userProjects.length > 0,
     staleTime: 2 * 60 * 1000 // Cache 2 minutes
   });
 
@@ -336,7 +336,17 @@ export default function Analytics() {
               <AutoReportGenerator projectId={activeProjectId} />
               <AIForecastETC projectId={activeProjectId} />
             </div>
-            <UnifiedAnalyticsDashboard projectId={activeProjectId} />
+            <UnifiedAnalyticsDashboard 
+              projectId={activeProjectId}
+              projects={projects}
+              tasks={tasks}
+              financials={financials}
+              expenses={expenses}
+              changeOrders={changeOrders}
+              deliveries={deliveries}
+              workPackages={workPackages}
+              sovItems={sovItems}
+            />
           </TabsContent>
 
           <TabsContent value="risk-dashboard" className="space-y-6">

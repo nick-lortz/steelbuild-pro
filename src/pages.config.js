@@ -79,8 +79,10 @@ import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
+import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
+import ProjectSettings from './pages/ProjectSettings';
 import Projects from './pages/Projects';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
@@ -93,8 +95,6 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ProjectSettings from './pages/ProjectSettings';
-import ProjectBudget from './pages/ProjectBudget';
 import __Layout from './Layout.jsx';
 
 
@@ -131,8 +131,10 @@ export const PAGES = {
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
+    "ProjectBudget": ProjectBudget,
     "ProjectDashboard": ProjectDashboard,
     "ProjectPhotos": ProjectPhotos,
+    "ProjectSettings": ProjectSettings,
     "Projects": Projects,
     "RFIs": RFIs,
     "Reports": Reports,
@@ -145,8 +147,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ProjectSettings": ProjectSettings,
-    "ProjectBudget": ProjectBudget,
 }
 
 export const pagesConfig = {

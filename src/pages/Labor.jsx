@@ -16,10 +16,15 @@ import LaborCostAnalysis from '@/components/labor/LaborCostAnalysis';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 function LaborContent() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [activeTab, setActiveTab] = useState('entry');
   const [filterCrew, setFilterCrew] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('7d');
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+  });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
@@ -73,9 +78,25 @@ function LaborContent() {
 
   if (!activeProjectId) {
     return (
-      <div className="text-center py-12">
-        <AlertCircle size={48} className="mx-auto text-zinc-600 mb-4" />
-        <p className="text-zinc-400">Select a project to view labor management</p>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Labor Management</h1>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="pt-6">
+            <label className="text-sm font-bold text-zinc-300 block mb-3">Select a Project</label>
+            <Select value="" onValueChange={setActiveProjectId}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 w-80">
+                <SelectValue placeholder="Choose a project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map(proj => (
+                  <SelectItem key={proj.id} value={proj.id}>
+                    {proj.name} ({proj.project_number})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Calendar, MapPin } from 'lucide-react';
+import { AlertTriangle, Calendar, MapPin, Users } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 
 export default function ConflictDetectionEngine({ resources, tasks, projects, onResolveConflict }) {

@@ -91,22 +91,28 @@ export default function ResourceForm({ resource, projects, onSubmit, onCancel, i
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Clean data and preserve all fields
+    
+    // Build clean data object with only editable fields
     const data = {
-      ...formData,
-      rate: formData.rate ? parseFloat(formData.rate) : 0,
-      max_concurrent_assignments: parseInt(formData.max_concurrent_assignments) || 3,
+      type: formData.type,
+      name: formData.name,
+      role: formData.role || null,
+      classification: formData.classification || null,
       skills: formData.skills || [],
       certifications: formData.certifications || [],
-      assigned_project_ids: formData.assigned_project_ids || []
+      rate: formData.rate ? parseFloat(formData.rate) : 0,
+      rate_type: formData.rate_type,
+      status: formData.status,
+      availability_start: formData.availability_start || null,
+      availability_end: formData.availability_end || null,
+      current_project_id: formData.current_project_id || null,
+      assigned_project_ids: formData.assigned_project_ids || [],
+      max_concurrent_assignments: parseInt(formData.max_concurrent_assignments) || 3,
+      contact_name: formData.contact_name || null,
+      contact_phone: formData.contact_phone || null,
+      contact_email: formData.contact_email || null,
+      notes: formData.notes || null
     };
-    
-    // Convert empty strings to null for optional fields
-    Object.keys(data).forEach(key => {
-      if (data[key] === '') {
-        data[key] = null;
-      }
-    });
     
     console.log('Submitting resource data:', data);
     onSubmit(data);

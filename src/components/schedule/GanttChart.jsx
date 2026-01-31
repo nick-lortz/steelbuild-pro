@@ -559,22 +559,30 @@ export default function GanttChart({
                       childTasksMap[t.parent_task_id].push(t);
                     });
 
+                    // Separate parent and child tasks from the group
+                    const parentTasks = groupTasks.filter(t => !t.parent_task_id);
+                    const childTasksMap = {};
+                    groupTasks.filter(t => t.parent_task_id).forEach(t => {
+                      if (!childTasksMap[t.parent_task_id]) childTasksMap[t.parent_task_id] = [];
+                      childTasksMap[t.parent_task_id].push(t);
+                    });
+
                     return (
-                      <React.Fragment key={phaseKey}>
-                        {/* Phase Header */}
+                      <React.Fragment key={groupId}>
+                        {/* Phase/WBS Header */}
                         <div className="flex bg-zinc-800/50 hover:bg-zinc-800/70">
                           <button
-                            onClick={() => togglePhase(phaseKey)}
+                            onClick={() => togglePhase(groupId)}
                             className="w-80 flex-shrink-0 border-r border-zinc-800 p-2.5 pl-8 font-semibold text-sm text-zinc-300 flex items-center gap-2 text-left hover:text-white transition-colors"
                           >
-                            {isPhaseCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                            {phaseLabels[phase]} ({phaseTasks.length})
+                            {isGroupCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                            {groupLabel} ({groupTasks.length})
                           </button>
                           <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                         </div>
 
-                        {/* Phase Tasks */}
-                        {!isPhaseCollapsed && parentTasks.map((task) => {
+                        {/* Group Tasks */}
+                        {!isGroupCollapsed && parentTasks.map((task) => {
                     const childTasks = childTasksMap[task.id] || [];
                     const hasChildren = childTasks.length > 0;
                     const isParentCollapsed = collapsedParents.has(task.id);

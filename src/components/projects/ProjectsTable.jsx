@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Eye, Pencil, Trash2, AlertCircle, TrendingUp, Clock } from 'lucide-react';
+import { Eye, Pencil, Trash2, AlertCircle, TrendingUp, Clock, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
 
@@ -62,7 +62,7 @@ const DaysIndicator = ({ targetDate }) => {
   }
 };
 
-export default function ProjectsTable({ projects, onView, onEdit, onDelete, canEdit }) {
+export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSettings, canEdit }) {
   return (
     <Card className="bg-card border-border">
       <div className="overflow-x-auto">
@@ -216,6 +216,18 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, canE
                             title="Edit Project"
                           >
                             <Pencil size={14} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSettings(project);
+                            }}
+                            title="Project Settings"
+                          >
+                            <Settings size={14} />
                           </Button>
                           <Button
                             variant="ghost"

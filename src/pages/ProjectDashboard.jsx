@@ -12,7 +12,10 @@ import ProjectScheduleWidget from '@/components/schedule/ProjectScheduleWidget';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DependencyMap from '@/components/project-dashboard/DependencyMap';
 import ProjectNotifications from '@/components/project-dashboard/ProjectNotifications';
-import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight, DollarSign, Network, Bell } from 'lucide-react';
+import InteractiveBudgetChart from '@/components/project-dashboard/InteractiveBudgetChart';
+import TaskCompletionTrend from '@/components/project-dashboard/TaskCompletionTrend';
+import ResourceAllocationChart from '@/components/project-dashboard/ResourceAllocationChart';
+import { Building2, AlertTriangle, Calendar, FileText, TrendingUp, TrendingDown, Search, ChevronRight, DollarSign, Network, Bell, BarChart3 } from 'lucide-react';
 import { format, parseISO, isPast, addDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -340,6 +343,27 @@ export default function ProjectDashboard() {
             <SelectItem value="overdue">Overdue Tasks</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Interactive Analytics Charts */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <BarChart3 size={20} className="text-amber-500" />
+          Portfolio Analytics
+        </h3>
+        <div className="space-y-6">
+          <InteractiveBudgetChart 
+            projects={projects}
+            financials={financials}
+            expenses={expenses}
+            sovItems={sovItems}
+          />
+          <TaskCompletionTrend 
+            tasks={allTasks}
+            projects={projects}
+          />
+          <ResourceAllocationChart />
+        </div>
       </div>
 
       {/* Selected Project Detail View */}

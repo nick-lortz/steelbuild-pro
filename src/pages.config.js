@@ -55,7 +55,6 @@ import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
 import Dashboard from './pages/Dashboard';
-import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
@@ -96,6 +95,7 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import Deliveries from './pages/Deliveries';
 import __Layout from './Layout.jsx';
 
 
@@ -108,7 +108,6 @@ export const PAGES = {
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
     "Dashboard": Dashboard,
-    "Deliveries": Deliveries,
     "Detailing": Detailing,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
@@ -149,6 +148,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Deliveries": Deliveries,
 }
 
 export const pagesConfig = {

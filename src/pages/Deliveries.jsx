@@ -200,7 +200,6 @@ export default function Deliveries() {
   }, [deliveries, searchTerm, projectFilter, statusFilter]);
 
   const kpis = useMemo(() => {
-    const today = new Date();
     const received = filteredDeliveries.filter(d => d.delivery_status === 'received' || d.delivery_status === 'closed');
     const onTime = received.filter(d => d.on_time);
     const todaysCount = filteredDeliveries.filter(d => {

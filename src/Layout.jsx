@@ -128,7 +128,8 @@ const navGroups = [
       { name: 'Submittals', page: 'Submittals', icon: FileCheck },
       { name: 'Messages', page: 'Messages', icon: MessageSquareWarning },
       { name: 'Meetings', page: 'Meetings', icon: Users },
-      { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar }
+      { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar },
+      { name: 'My Action Items', page: 'MyActionItems', icon: CheckCircle2 }
     ],
     roles: ['admin', 'user']
   },

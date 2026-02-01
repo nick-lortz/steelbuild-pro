@@ -192,24 +192,42 @@ function ProductionNotesContent() {
               );
               const overdue = openActions.filter(a => a.due_date && isPast(parseISO(a.due_date)));
 
+              const phaseColors = {
+                detailing: 'bg-blue-600',
+                fabrication: 'bg-purple-600',
+                delivery: 'bg-amber-600',
+                erection: 'bg-orange-600',
+                closeout: 'bg-green-600'
+              };
+
+              const statusColor = overdue.length > 0 ? 'border-red-600' : 
+                                 openActions.length > 5 ? 'border-amber-600' : 'border-green-600';
+
               return (
                 <button
                   key={p.id}
                   onClick={() => scrollToProject(p.id)}
-                  className="w-full text-left p-2 rounded hover:bg-zinc-800 transition-colors text-sm"
+                  className={`w-full text-left p-2 rounded hover:bg-zinc-800 transition-colors text-sm border-l-2 ${statusColor}`}
                 >
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-xs text-zinc-500">{p.project_number}</div>
-                  {(openActions.length > 0 || overdue.length > 0) && (
-                    <div className="flex gap-1 mt-1">
-                      {overdue.length > 0 && (
-                        <Badge className="bg-red-700 text-xs">{overdue.length} Overdue</Badge>
-                      )}
-                      {openActions.length > 0 && (
-                        <Badge variant="outline" className="text-xs">{openActions.length} Open</Badge>
-                      )}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{p.name}</div>
+                      <div className="text-xs text-zinc-500">{p.project_number}</div>
                     </div>
-                  )}
+                    {p.phase && (
+                      <Badge className={`${phaseColors[p.phase] || 'bg-zinc-600'} text-xs shrink-0`}>
+                        {p.phase}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {overdue.length > 0 && (
+                      <Badge className="bg-red-700 text-xs">{overdue.length} Overdue</Badge>
+                    )}
+                    {openActions.length > 0 && (
+                      <Badge variant="outline" className="text-xs">{openActions.length} Open</Badge>
+                    )}
+                  </div>
                 </button>
               );
             })}

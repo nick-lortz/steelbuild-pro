@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, Plus, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NoteComposer from './NoteComposer';
@@ -165,7 +168,7 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
                   <div className="text-sm text-zinc-500 italic p-4 text-center">No decisions logged</div>
                 )}
                 {categorizedNotes.decisions.map(decision => (
-                  <DecisionCard key={decision.id} decision={decision} />
+                  <DecisionCard key={decision.id} decision={decision} onUpdate={onUpdateNote} />
                 ))}
               </TabsContent>
             </Tabs>
@@ -193,6 +196,15 @@ function NoteCard({ note }) {
 }
 
 function ActionItemCard({ action, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    title: action.title,
+    body: action.body,
+    owner_email: action.owner_email,
+    due_date: action.due_date,
+    status: action.status
+  });
+
   const isOverdue = action.due_date && isPast(parseISO(action.due_date)) && action.status !== 'done';
   const isDone = action.status === 'done';
 
@@ -200,9 +212,62 @@ function ActionItemCard({ action, onUpdate }) {
     onUpdate(action.id, { status: isDone ? 'open' : 'done' });
   };
 
+  const handleSave = () => {
+    onUpdate(action.id, editData);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="p-3 rounded border border-amber-600 bg-zinc-800 space-y-2">
+        <Input
+          placeholder="Title"
+          value={editData.title || ''}
+          onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+          className="bg-zinc-900 border-zinc-700 text-sm"
+        />
+        <Textarea
+          placeholder="Details"
+          value={editData.body}
+          onChange={(e) => setEditData({ ...editData, body: e.target.value })}
+          className="bg-zinc-900 border-zinc-700 text-sm h-16"
+        />
+        <div className="grid grid-cols-3 gap-2">
+          <Input
+            placeholder="Owner email"
+            value={editData.owner_email || ''}
+            onChange={(e) => setEditData({ ...editData, owner_email: e.target.value })}
+            className="bg-zinc-900 border-zinc-700 text-xs"
+          />
+          <Input
+            type="date"
+            value={editData.due_date || ''}
+            onChange={(e) => setEditData({ ...editData, due_date: e.target.value })}
+            className="bg-zinc-900 border-zinc-700 text-xs"
+          />
+          <Select value={editData.status} onValueChange={(val) => setEditData({ ...editData, status: val })}>
+            <SelectTrigger className="bg-zinc-900 border-zinc-700 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectItem value="done">Done</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>Save</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
-      "p-3 rounded border text-sm",
+      "p-3 rounded border text-sm group",
       isOverdue && "border-red-700 bg-red-900/20",
       isDone && "bg-zinc-800/50 border-zinc-700",
       !isOverdue && !isDone && "bg-zinc-800 border-zinc-700"
@@ -237,18 +302,72 @@ function ActionItemCard({ action, onUpdate }) {
             )}
           </div>
         </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setIsEditing(true)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          Edit
+        </Button>
       </div>
     </div>
   );
 }
 
-function DecisionCard({ decision }) {
+function DecisionCard({ decision, onUpdate }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    title: decision.title,
+    body: decision.body
+  });
+
+  const handleSave = () => {
+    onUpdate(decision.id, editData);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="p-3 bg-blue-900/20 border border-blue-700 rounded space-y-2">
+        <Input
+          placeholder="Decision title"
+          value={editData.title || ''}
+          onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+          className="bg-zinc-900 border-zinc-700 text-sm"
+        />
+        <Textarea
+          placeholder="Details"
+          value={editData.body}
+          onChange={(e) => setEditData({ ...editData, body: e.target.value })}
+          className="bg-zinc-900 border-zinc-700 text-sm h-16"
+        />
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>Save</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-3 bg-blue-900/20 border border-blue-700 rounded text-sm">
-      <div className="font-medium text-blue-200">{decision.title}</div>
-      <div className="text-blue-100 mt-1">{decision.body}</div>
-      <div className="text-xs text-blue-400 mt-2">
-        {decision.created_by} • {decision.created_date ? format(parseISO(decision.created_date), 'MMM d, h:mm a') : ''}
+    <div className="p-3 bg-blue-900/20 border border-blue-700 rounded text-sm group">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="font-medium text-blue-200">{decision.title}</div>
+          <div className="text-blue-100 mt-1">{decision.body}</div>
+          <div className="text-xs text-blue-400 mt-2">
+            {decision.created_by} • {decision.created_date ? format(parseISO(decision.created_date), 'MMM d, h:mm a') : ''}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => setIsEditing(true)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          Edit
+        </Button>
       </div>
     </div>
   );

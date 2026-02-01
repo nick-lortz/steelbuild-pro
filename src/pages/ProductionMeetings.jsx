@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import PageHeader from '@/components/ui/PageHeader';
 import { WeeklyContextProvider, useWeeklyContext } from '@/components/production/WeeklyContext';
 import ProjectSection from '@/components/production/ProjectSection';
-import WeeklySummaryPanel from '@/components/production/WeeklySummaryPanel';
-import { Search, ChevronLeft, ChevronRight, Clock, AlertTriangle, ArrowUp, Filter, X } from 'lucide-react';
+import AdvancedSearchPanel from '@/components/production/AdvancedSearchPanel';
+import AISummaryPanel from '@/components/production/AISummaryPanel';
+import { Search, ChevronLeft, ChevronRight, Clock, AlertTriangle, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { isPast, parseISO } from 'date-fns';
 
@@ -20,22 +20,35 @@ function ProductionNotesContent() {
   const { weekInfo, goToLastWeek, goToThisWeek, goToNextWeek } = useWeeklyContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [pmFilter, setPmFilter] = useState('all');
-  const [noteTypeFilter, setNoteTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [ownerFilter, setOwnerFilter] = useState('all');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [meetingMode, setMeetingMode] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({});
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
   });
 
-  const { data: notes = [] } = useQuery({
+  const { data: allNotes = [] } = useQuery({
     queryKey: ['production-notes', weekInfo.week_id],
     queryFn: () => base44.entities.ProductionNote.filter({ week_id: weekInfo.week_id })
   });
+
+  const notes = useMemo(() => {
+    return allNotes.filter(note => {
+      if (advancedFilters.note_type && advancedFilters.note_type !== 'all' && note.note_type !== advancedFilters.note_type) return false;
+      if (advancedFilters.status && advancedFilters.status !== 'all' && note.status !== advancedFilters.status) return false;
+      if (advancedFilters.category && advancedFilters.category !== 'all' && note.category !== advancedFilters.category) return false;
+      if (advancedFilters.priority && advancedFilters.priority !== 'all' && note.priority !== advancedFilters.priority) return false;
+      if (advancedFilters.owner_email && !note.owner_email?.toLowerCase().includes(advancedFilters.owner_email.toLowerCase())) return false;
+      if (advancedFilters.keywords) {
+        const kw = advancedFilters.keywords.toLowerCase();
+        const matchesTitle = note.title?.toLowerCase().includes(kw);
+        const matchesBody = note.body?.toLowerCase().includes(kw);
+        if (!matchesTitle && !matchesBody) return false;
+      }
+      return true;
+    });
+  }, [allNotes, advancedFilters]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ProductionNote.create(data),
@@ -67,43 +80,6 @@ function ProductionNotesContent() {
     const pms = [...new Set(projects.map(p => p.project_manager).filter(Boolean))];
     return pms.sort();
   }, [projects]);
-
-  const uniqueOwners = useMemo(() => {
-    const owners = [...new Set(notes.map(n => n.owner_email).filter(Boolean))];
-    return owners.sort();
-  }, [notes]);
-
-  const uniqueCategories = useMemo(() => {
-    const cats = [...new Set(notes.map(n => n.category).filter(Boolean))];
-    return cats.sort();
-  }, [notes]);
-
-  const filteredNotes = useMemo(() => {
-    return notes.filter(note => {
-      if (noteTypeFilter !== 'all' && note.note_type !== noteTypeFilter) return false;
-      if (statusFilter !== 'all' && note.status !== statusFilter) return false;
-      if (categoryFilter !== 'all' && note.category !== categoryFilter) return false;
-      if (ownerFilter !== 'all' && note.owner_email !== ownerFilter) return false;
-      return true;
-    });
-  }, [notes, noteTypeFilter, statusFilter, categoryFilter, ownerFilter]);
-
-  const projectsWithFilteredNotes = useMemo(() => {
-    return filteredProjects.filter(p => {
-      const projectNotes = filteredNotes.filter(n => n.project_id === p.id);
-      return projectNotes.length > 0;
-    });
-  }, [filteredProjects, filteredNotes]);
-
-  const hasActiveFilters = noteTypeFilter !== 'all' || statusFilter !== 'all' || 
-                          categoryFilter !== 'all' || ownerFilter !== 'all';
-
-  const clearAllFilters = () => {
-    setNoteTypeFilter('all');
-    setStatusFilter('all');
-    setCategoryFilter('all');
-    setOwnerFilter('all');
-  };
 
   const allActions = useMemo(() => {
     return notes.filter(n => n.note_type === 'action' && (n.status === 'open' || n.status === 'in_progress'));
@@ -150,7 +126,17 @@ function ProductionNotesContent() {
               <div className="ml-4 text-sm font-medium">{weekInfo.display}</div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <AdvancedSearchPanel 
+                onFilterChange={setAdvancedFilters}
+                activeFilters={advancedFilters}
+              />
+              
+              <AISummaryPanel 
+                weekInfo={weekInfo}
+                filteredProjectIds={filteredProjects.map(p => p.id)}
+              />
+
               {allActions.length > 0 && (
                 <Badge variant="outline" className="text-xs">
                   <Clock size={12} className="mr-1" />
@@ -195,88 +181,12 @@ function ProductionNotesContent() {
               </SelectContent>
             </Select>
 
-            {/* Advanced Filters */}
-            <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full text-xs">
-                  <Filter size={12} className="mr-2" />
-                  Advanced Filters
-                  {hasActiveFilters && <Badge className="ml-2 h-4 px-1 text-xs">ON</Badge>}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 mt-2">
-                <Select value={noteTypeFilter} onValueChange={setNoteTypeFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="note">Notes</SelectItem>
-                    <SelectItem value="action">Actions</SelectItem>
-                    <SelectItem value="decision">Decisions</SelectItem>
-                    <SelectItem value="risk">Risks</SelectItem>
-                    <SelectItem value="blocker">Blockers</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
-                    <SelectItem value="blocked">Blocked</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {uniqueCategories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
-                    <SelectValue placeholder="Owner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Owners</SelectItem>
-                    {uniqueOwners.map(owner => (
-                      <SelectItem key={owner} value={owner}>{owner}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {hasActiveFilters && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={clearAllFilters}
-                    className="w-full text-xs"
-                  >
-                    <X size={12} className="mr-2" />
-                    Clear Filters
-                  </Button>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
-
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-              {projectsWithFilteredNotes.length} Projects
-              {hasActiveFilters && ' (filtered)'}
+              {filteredProjects.length} Projects
             </div>
 
-            {projectsWithFilteredNotes.map(p => {
-              const projectNotes = filteredNotes.filter(n => n.project_id === p.id);
+            {filteredProjects.map(p => {
+              const projectNotes = notes.filter(n => n.project_id === p.id);
               const openActions = projectNotes.filter(n => 
                 n.note_type === 'action' && (n.status === 'open' || n.status === 'in_progress')
               );
@@ -308,22 +218,16 @@ function ProductionNotesContent() {
 
         {/* Main Content Area */}
         <div className="flex-1 p-4 lg:p-6 space-y-4">
-          {/* AI Summary Panel */}
-          <WeeklySummaryPanel 
-            weekId={weekInfo.week_id} 
-            projectIds={filteredProjects.map(p => p.id)}
-          />
-
-          {projectsWithFilteredNotes.length === 0 && (
+          {filteredProjects.length === 0 && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardContent className="p-12 text-center text-zinc-500">
-                {hasActiveFilters ? 'No projects match the current filters' : 'No projects found'}
+                No projects found
               </CardContent>
             </Card>
           )}
 
-          {projectsWithFilteredNotes.map(project => {
-            const projectNotes = filteredNotes.filter(n => n.project_id === project.id);
+          {filteredProjects.map(project => {
+            const projectNotes = notes.filter(n => n.project_id === project.id);
             return (
               <ProjectSection
                 key={project.id}

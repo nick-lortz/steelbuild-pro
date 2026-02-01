@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import PageHeader from '@/components/ui/PageHeader';
 import RFIPortfolioDashboard from '@/components/rfis/RFIPortfolioDashboard';
 import RFIFiltersAdvanced from '@/components/rfis/RFIFiltersAdvanced';
@@ -261,12 +262,16 @@ export default function RFIsPage() {
       </div>
 
       {/* RFI Detail Panel */}
-      {selectedRFI && (
-        <RFIDetailPanel
-          rfi={selectedRFI}
-          onClose={() => setSelectedRFI(null)}
-        />
-      )}
+      <Dialog open={!!selectedRFI} onOpenChange={(open) => !open && setSelectedRFI(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedRFI && (
+            <RFIDetailPanel
+              rfi={selectedRFI}
+              onClose={() => setSelectedRFI(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* RFI Creation Wizard */}
       {showWizard && (

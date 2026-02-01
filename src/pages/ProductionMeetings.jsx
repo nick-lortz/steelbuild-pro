@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PageHeader from '@/components/ui/PageHeader';
 import { WeeklyContextProvider, useWeeklyContext } from '@/components/production/WeeklyContext';
 import ProjectSection from '@/components/production/ProjectSection';
@@ -16,6 +17,7 @@ function ProductionNotesContent() {
   const queryClient = useQueryClient();
   const { weekInfo, goToLastWeek, goToThisWeek, goToNextWeek } = useWeeklyContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const [pmFilter, setPmFilter] = useState('all');
   const [meetingMode, setMeetingMode] = useState(false);
 
   const { data: projects = [] } = useQuery({
@@ -45,13 +47,19 @@ function ProductionNotesContent() {
   });
 
   const filteredProjects = useMemo(() => {
-    if (!searchTerm) return projects;
-    const term = searchTerm.toLowerCase();
-    return projects.filter(p => 
-      p.name?.toLowerCase().includes(term) || 
-      p.project_number?.toLowerCase().includes(term)
-    );
-  }, [projects, searchTerm]);
+    return projects.filter(p => {
+      const matchesSearch = !searchTerm || 
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        p.project_number?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPM = pmFilter === 'all' || p.project_manager === pmFilter;
+      return matchesSearch && matchesPM;
+    });
+  }, [projects, searchTerm, pmFilter]);
+
+  const uniquePMs = useMemo(() => {
+    const pms = [...new Set(projects.map(p => p.project_manager).filter(Boolean))];
+    return pms.sort();
+  }, [projects]);
 
   const allActions = useMemo(() => {
     return notes.filter(n => n.note_type === 'action' && (n.status === 'open' || n.status === 'in_progress'));
@@ -130,6 +138,18 @@ function ProductionNotesContent() {
                 className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
               />
             </div>
+
+            <Select value={pmFilter} onValueChange={setPmFilter}>
+              <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
+                <SelectValue placeholder="Filter by PM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All PMs</SelectItem>
+                {uniquePMs.map(pm => (
+                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
               {filteredProjects.length} Projects

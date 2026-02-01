@@ -3,6 +3,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Trash2, Settings2 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import QuickStatusUpdate from './QuickStatusUpdate';
+import ProjectPhaseUpdater from './ProjectPhaseUpdater';
 
 export default function ProjectCard({ project, progress, onClick, onDelete, onEdit, noBorder }) {
   const daysUntilCompletion = project.target_completion 
@@ -31,6 +32,11 @@ export default function ProjectCard({ project, progress, onClick, onDelete, onEd
           {project.client && (
             <span className="text-[10px] text-zinc-600 truncate block">{project.client}</span>
           )}
+        </div>
+
+        {/* Phase */}
+        <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <ProjectPhaseUpdater project={project} compact />
         </div>
 
         {/* Status */}

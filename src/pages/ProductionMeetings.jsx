@@ -1,333 +1,212 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import PageHeader from '@/components/ui/PageHeader';
-import { MessageSquare, Plus, Search, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { WeeklyContextProvider, useWeeklyContext } from '@/components/production/WeeklyContext';
+import ProjectSection from '@/components/production/ProjectSection';
+import { Search, ChevronLeft, ChevronRight, Clock, AlertTriangle, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, parseISO } from 'date-fns';
+import { isPast, parseISO } from 'date-fns';
 
-export default function ProductionNotesPage() {
-  const { activeProjectId } = useActiveProject();
+function ProductionNotesContent() {
   const queryClient = useQueryClient();
+  const { weekInfo, goToLastWeek, goToThisWeek, goToNextWeek } = useWeeklyContext();
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [showForm, setShowForm] = useState(false);
-  const [selectedNote, setSelectedNote] = useState(null);
+  const [meetingMode, setMeetingMode] = useState(false);
 
-  const { data: notes = [] } = useQuery({
-    queryKey: ['production-notes', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.ProductionNote.filter({ project_id: activeProjectId }) : [],
-    enabled: !!activeProjectId
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
   });
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+  const { data: notes = [] } = useQuery({
+    queryKey: ['production-notes', weekInfo.week_id],
+    queryFn: () => base44.entities.ProductionNote.filter({ week_id: weekInfo.week_id })
   });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.ProductionNote.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production-notes'] });
-      toast.success('Production note created');
-      setShowForm(false);
+      toast.success('Added');
     }
   });
 
-  const acknowledgeMutation = useMutation({
-    mutationFn: ({ id, note }) => {
-      const acknowledgements = note.acknowledgements || [];
-      return base44.entities.ProductionNote.update(id, {
-        acknowledgements: [
-          ...acknowledgements,
-          {
-            user: currentUser.email,
-            acknowledged_at: new Date().toISOString()
-          }
-        ]
-      });
-    },
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ProductionNote.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production-notes'] });
-      toast.success('Acknowledged');
+      toast.success('Updated');
     }
   });
 
-  const filteredNotes = useMemo(() => {
-    return notes
-      .filter(note => {
-        const matchesSearch = !searchTerm || 
-          note.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          note.content?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesType = typeFilter === 'all' || note.note_type === typeFilter;
-        return matchesSearch && matchesType;
-      })
-      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-  }, [notes, searchTerm, typeFilter]);
-
-  const needsAcknowledgement = useMemo(() => {
-    return notes.filter(note => 
-      note.acknowledgement_required && 
-      !note.acknowledgements?.some(ack => ack.user === currentUser?.email)
-    ).length;
-  }, [notes, currentUser]);
-
-  if (!activeProjectId) {
-    return (
-      <div className="p-6">
-        <PageHeader title="Production Notes" />
-        <Card className="mt-6">
-          <CardContent className="p-12 text-center">
-            <MessageSquare size={48} className="mx-auto mb-4 text-zinc-600" />
-            <p className="text-zinc-400">Select a project to view production notes</p>
-          </CardContent>
-        </Card>
-      </div>
+  const filteredProjects = useMemo(() => {
+    if (!searchTerm) return projects;
+    const term = searchTerm.toLowerCase();
+    return projects.filter(p => 
+      p.name?.toLowerCase().includes(term) || 
+      p.project_number?.toLowerCase().includes(term)
     );
-  }
+  }, [projects, searchTerm]);
+
+  const allActions = useMemo(() => {
+    return notes.filter(n => n.note_type === 'action' && (n.status === 'open' || n.status === 'in_progress'));
+  }, [notes]);
+
+  const overdueActions = useMemo(() => {
+    return allActions.filter(a => a.due_date && isPast(parseISO(a.due_date)));
+  }, [allActions]);
+
+  const scrollToProject = (projectId) => {
+    document.getElementById(`project-${projectId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader 
-        title="Production Notes"
-        subtitle="Shop & Field Communication Hub"
-        actions={
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
-            <Plus size={16} className="mr-2" />
-            New Note
-          </Button>
-        }
-      />
-
-      {needsAcknowledgement > 0 && (
-        <Card className="bg-amber-500/10 border-amber-500/30">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="text-amber-500" size={20} />
-              <span className="text-sm font-medium">
-                {needsAcknowledgement} note{needsAcknowledgement > 1 ? 's' : ''} require your acknowledgement
-              </span>
-            </div>
-            <Button size="sm" variant="outline">View</Button>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder="Search notes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800"
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
+        <div className="p-4 lg:p-6">
+          <PageHeader 
+            title="Production Notes"
+            subtitle="Weekly Hub"
+            actions={
+              <Button 
+                onClick={() => setMeetingMode(!meetingMode)}
+                className={meetingMode ? 'bg-red-700' : 'bg-amber-500 text-black'}
+              >
+                {meetingMode ? 'End Meeting' : 'Meeting Mode'}
+              </Button>
+            }
           />
+
+          {/* Weekly Nav */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={goToLastWeek}>
+                <ChevronLeft size={14} />
+              </Button>
+              <Button size="sm" variant="outline" onClick={goToThisWeek}>
+                This Week
+              </Button>
+              <Button size="sm" variant="outline" onClick={goToNextWeek}>
+                <ChevronRight size={14} />
+              </Button>
+              <div className="ml-4 text-sm font-medium">{weekInfo.display}</div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              {allActions.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  <Clock size={12} className="mr-1" />
+                  {allActions.length} Open
+                </Badge>
+              )}
+              {overdueActions.length > 0 && (
+                <Badge className="bg-red-700 text-xs">
+                  <AlertTriangle size={12} className="mr-1" />
+                  {overdueActions.length} Overdue
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="general">General</SelectItem>
-            <SelectItem value="weld">Weld</SelectItem>
-            <SelectItem value="fit_up">Fit-up</SelectItem>
-            <SelectItem value="qc">QC</SelectItem>
-            <SelectItem value="safety">Safety</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      <div className="space-y-3">
-        {filteredNotes.map(note => {
-          const needsMyAck = note.acknowledgement_required && 
-            !note.acknowledgements?.some(ack => ack.user === currentUser?.email);
-          
-          return (
-            <Card 
-              key={note.id} 
-              className={`bg-zinc-900 border-zinc-800 ${needsMyAck ? 'ring-2 ring-amber-500/50' : ''}`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-medium">{note.title}</h3>
-                      <Badge className="text-xs capitalize">
-                        {note.note_type?.replace('_', ' ') || 'general'}
-                      </Badge>
-                      {note.priority === 'critical' && (
-                        <Badge className="bg-red-500 text-xs">CRITICAL</Badge>
+      {/* Main Content */}
+      <div className="flex">
+        {/* Left Rail - Project Index */}
+        <div className="hidden lg:block w-64 border-r border-border p-4 sticky top-[180px] h-[calc(100vh-180px)] overflow-y-auto">
+          <div className="space-y-3">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
+              />
+            </div>
+
+            <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+              {filteredProjects.length} Projects
+            </div>
+
+            {filteredProjects.map(p => {
+              const projectNotes = notes.filter(n => n.project_id === p.id);
+              const openActions = projectNotes.filter(n => 
+                n.note_type === 'action' && (n.status === 'open' || n.status === 'in_progress')
+              );
+              const overdue = openActions.filter(a => a.due_date && isPast(parseISO(a.due_date)));
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => scrollToProject(p.id)}
+                  className="w-full text-left p-2 rounded hover:bg-zinc-800 transition-colors text-sm"
+                >
+                  <div className="font-medium">{p.name}</div>
+                  <div className="text-xs text-zinc-500">{p.project_number}</div>
+                  {(openActions.length > 0 || overdue.length > 0) && (
+                    <div className="flex gap-1 mt-1">
+                      {overdue.length > 0 && (
+                        <Badge className="bg-red-700 text-xs">{overdue.length} Overdue</Badge>
+                      )}
+                      {openActions.length > 0 && (
+                        <Badge variant="outline" className="text-xs">{openActions.length} Open</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-zinc-400 whitespace-pre-wrap">{note.content}</p>
-                    {note.area_gridline && (
-                      <div className="text-xs text-zinc-500 mt-2">Area: {note.area_gridline}</div>
-                    )}
-                  </div>
-                  {needsMyAck && (
-                    <Button
-                      size="sm"
-                      onClick={() => acknowledgeMutation.mutate({ id: note.id, note })}
-                      className="bg-amber-500 hover:bg-amber-600 text-black"
-                    >
-                      <CheckCircle2 size={14} className="mr-1" />
-                      Acknowledge
-                    </Button>
                   )}
-                </div>
-                <div className="flex items-center justify-between text-xs text-zinc-500">
-                  <div className="flex items-center gap-4">
-                    <span>{note.created_by}</span>
-                    <span>{note.created_date ? format(parseISO(note.created_date), 'MMM d, h:mm a') : ''}</span>
-                    {note.acknowledgements?.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 size={12} className="text-green-500" />
-                        {note.acknowledgements.length} acknowledged
-                      </span>
-                    )}
-                  </div>
-                  <Badge variant="outline" className="text-xs capitalize">
-                    {note.visibility?.replace('_', ' ') || 'both'}
-                  </Badge>
-                </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 p-4 lg:p-6 space-y-4">
+          {filteredProjects.length === 0 && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-12 text-center text-zinc-500">
+                No projects found
               </CardContent>
             </Card>
-          );
-        })}
+          )}
 
-        {filteredNotes.length === 0 && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-12 text-center">
-              <MessageSquare size={48} className="mx-auto mb-4 text-zinc-600" />
-              <p className="text-zinc-400">No production notes found</p>
-            </CardContent>
-          </Card>
-        )}
+          {filteredProjects.map(project => {
+            const projectNotes = notes.filter(n => n.project_id === project.id);
+            return (
+              <ProjectSection
+                key={project.id}
+                project={project}
+                notes={projectNotes}
+                onCreateNote={(data) => createMutation.mutate(data)}
+                onUpdateNote={(id, data) => updateMutation.mutate({ id, data })}
+              />
+            );
+          })}
+
+          {/* Back to Top */}
+          <Button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-6 right-6 rounded-full w-12 h-12 p-0"
+            size="icon"
+          >
+            <ArrowUp size={20} />
+          </Button>
+        </div>
       </div>
-
-      {showForm && (
-        <ProductionNoteForm
-          projectId={activeProjectId}
-          currentUser={currentUser}
-          onSubmit={(data) => createMutation.mutate(data)}
-          onCancel={() => setShowForm(false)}
-        />
-      )}
     </div>
   );
 }
 
-function ProductionNoteForm({ projectId, currentUser, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    project_id: projectId,
-    note_number: Date.now(),
-    title: '',
-    content: '',
-    note_type: 'general',
-    visibility: 'both',
-    priority: 'normal',
-    acknowledgement_required: false,
-    effective_date: new Date().toISOString().split('T')[0],
-    created_by: currentUser?.email
-  });
-
+export default function ProductionNotesPage() {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="bg-zinc-900 border-zinc-800 w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle>New Production Note</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-xs text-zinc-400 mb-2 block">Title *</label>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-zinc-400 mb-2 block">Content *</label>
-            <Textarea
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="bg-zinc-800 border-zinc-700 h-32"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="text-xs text-zinc-400 mb-2 block">Type</label>
-              <Select
-                value={formData.note_type}
-                onValueChange={(val) => setFormData({ ...formData, note_type: val })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">General</SelectItem>
-                  <SelectItem value="weld">Weld</SelectItem>
-                  <SelectItem value="fit_up">Fit-up</SelectItem>
-                  <SelectItem value="qc">QC</SelectItem>
-                  <SelectItem value="safety">Safety</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400 mb-2 block">Visibility</label>
-              <Select
-                value={formData.visibility}
-                onValueChange={(val) => setFormData({ ...formData, visibility: val })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shop_only">Shop Only</SelectItem>
-                  <SelectItem value="field_only">Field Only</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
-                  <SelectItem value="pm_only">PM Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400 mb-2 block">Priority</label>
-              <Select
-                value={formData.priority}
-                onValueChange={(val) => setFormData({ ...formData, priority: val })}
-              >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-            <Button 
-              onClick={() => onSubmit(formData)}
-              disabled={!formData.title || !formData.content}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              Create Note
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <WeeklyContextProvider>
+      <ProductionNotesContent />
+    </WeeklyContextProvider>
   );
 }

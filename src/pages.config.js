@@ -73,6 +73,7 @@ import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
 import LookAheadPlanning from './pages/LookAheadPlanning';
+import LookAheadResourcePlanning from './pages/LookAheadResourcePlanning';
 import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
 import NotificationSettings from './pages/NotificationSettings';
@@ -96,7 +97,6 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import LookAheadResourcePlanning from './pages/LookAheadResourcePlanning';
 import __Layout from './Layout.jsx';
 
 
@@ -127,6 +127,7 @@ export const PAGES = {
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
     "LookAheadPlanning": LookAheadPlanning,
+    "LookAheadResourcePlanning": LookAheadResourcePlanning,
     "Meetings": Meetings,
     "Messages": Messages,
     "NotificationSettings": NotificationSettings,
@@ -150,7 +151,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "LookAheadResourcePlanning": LookAheadResourcePlanning,
 }
 
 export const pagesConfig = {

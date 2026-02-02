@@ -26,18 +26,21 @@ export default function FieldToolsPage() {
   const [uploading, setUploading] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const { data: dailyPhotos = [] } = useQuery({
-    queryKey: ['daily-photos', activeProjectId, currentFolder],
+  const { data: allPhotos = [] } = useQuery({
+    queryKey: ['daily-photos', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return [];
       return await base44.entities.Document.filter({
         project_id: activeProjectId,
-        category: 'photo',
-        folder_path: currentFolder
+        category: 'photo'
       }, '-created_date');
     },
     enabled: !!activeProjectId
   });
+
+  const dailyPhotos = useMemo(() => {
+    return allPhotos.filter(p => p.folder_path === currentFolder);
+  }, [allPhotos, currentFolder]);
 
   const { data: installs = [] } = useQuery({
     queryKey: ['field-installs', activeProjectId],
@@ -154,22 +157,22 @@ export default function FieldToolsPage() {
 
   const folders = useMemo(() => {
     const uniquePaths = new Set();
-    dailyPhotos.forEach(photo => {
-      if (photo.folder_path && photo.folder_path !== currentFolder) {
-        const relativePath = photo.folder_path.replace(currentFolder, '').split('/').filter(Boolean)[0];
+    allPhotos.forEach(photo => {
+      if (photo.folder_path && photo.folder_path.startsWith(currentFolder) && photo.folder_path !== currentFolder) {
+        const relativePath = photo.folder_path.substring(currentFolder.length).split('/').filter(Boolean)[0];
         if (relativePath) {
           uniquePaths.add(relativePath);
         }
       }
     });
     return Array.from(uniquePaths);
-  }, [dailyPhotos, currentFolder]);
+  }, [allPhotos, currentFolder]);
 
   const todayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const todayInstalls = installs.filter(i => i.install_date === today);
     const openPunch = punchItems.filter(p => p.status !== 'closed').length;
-    const todayPhotos = dailyPhotos.filter(p => p.created_date?.split('T')[0] === today);
+    const todayPhotos = allPhotos.filter(p => p.created_date?.split('T')[0] === today);
     
     return {
       installed: todayInstalls.filter(i => i.status === 'complete').length,
@@ -177,7 +180,7 @@ export default function FieldToolsPage() {
       openPunch,
       photosToday: todayPhotos.length
     };
-  }, [installs, punchItems, dailyPhotos]);
+  }, [installs, punchItems, allPhotos]);
 
   if (!activeProjectId) {
     return (

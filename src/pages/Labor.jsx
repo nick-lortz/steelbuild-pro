@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { AlertCircle, Users, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
 
 import LaborEntryForm from '@/components/labor/LaborEntryForm';
 import CrewDashboard from '@/components/labor/CrewDashboard';
 import DelayAnalysis from '@/components/labor/DelayAnalysis';
 import LaborCostAnalysis from '@/components/labor/LaborCostAnalysis';
+import MyUnapprovedHours from '@/components/labor/MyUnapprovedHours';
+import CrewsAssignments from '@/components/labor/CrewsAssignments';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 function LaborContent() {
@@ -188,6 +190,10 @@ function LaborContent() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsTrigger value="unapproved">
+            <Clock size={14} className="mr-2" />
+            My Unapproved Hours
+          </TabsTrigger>
           <TabsTrigger value="entry">
             <Users size={14} className="mr-2" />
             Daily Entry
@@ -196,12 +202,21 @@ function LaborContent() {
             <TrendingUp size={14} className="mr-2" />
             Crew Performance
           </TabsTrigger>
+          <TabsTrigger value="crewsAssignments">
+            <Users size={14} className="mr-2" />
+            Crews & Assignments
+          </TabsTrigger>
           <TabsTrigger value="delays">
             <AlertTriangle size={14} className="mr-2" />
             Delays ({kpis.delay_days})
           </TabsTrigger>
           <TabsTrigger value="costs">Cost Analysis</TabsTrigger>
         </TabsList>
+
+        {/* My Unapproved Hours */}
+        <TabsContent value="unapproved">
+          <MyUnapprovedHours />
+        </TabsContent>
 
         {/* Daily Labor Entry */}
         <TabsContent value="entry">
@@ -217,6 +232,11 @@ function LaborContent() {
             laborEntries={filteredEntries}
             crews={crews}
           />
+        </TabsContent>
+
+        {/* Crews & Assignments */}
+        <TabsContent value="crewsAssignments">
+          <CrewsAssignments projectId={activeProjectId} />
         </TabsContent>
 
         {/* Delay Analysis */}

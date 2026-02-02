@@ -47,7 +47,11 @@ export default function RFIPortfolioDashboard({ rfis, projects }) {
     const atRisk = rfis.filter(r => {
       if (['answered', 'closed'].includes(r.status)) return false;
       if (!r.due_date) return false;
-      return new Date(r.due_date) < now;
+      try {
+        return parseISO(r.due_date) < now;
+      } catch {
+        return false;
+      }
     }).length;
     
     // By ball in court

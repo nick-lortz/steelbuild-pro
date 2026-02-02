@@ -55,16 +55,22 @@ export default function MyActionItems() {
       if (statusFilter !== 'all' && action.status !== statusFilter) return false;
       if (projectFilter !== 'all' && action.project_id !== projectFilter) return false;
       
-      if (dueDateFilter !== 'all' && action.due_date) {
-        const dueDate = parseISO(action.due_date);
-        const now = new Date();
+      if (dueDateFilter !== 'all') {
+        if (!action.due_date && dueDateFilter !== 'all') return false;
         
-        if (dueDateFilter === 'overdue' && !isPast(dueDate)) return false;
-        if (dueDateFilter === 'today' && format(dueDate, 'yyyy-MM-dd') !== format(now, 'yyyy-MM-dd')) return false;
-        if (dueDateFilter === 'this_week' && !isWithinInterval(dueDate, { start: now, end: addDays(now, 7) })) return false;
-        if (dueDateFilter === 'this_month' && !isWithinInterval(dueDate, { start: now, end: addDays(now, 30) })) return false;
-      } else if (dueDateFilter !== 'all' && !action.due_date) {
-        return false;
+        try {
+          const dueDate = parseISO(action.due_date);
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          dueDate.setHours(0, 0, 0, 0);
+          
+          if (dueDateFilter === 'overdue' && dueDate >= now) return false;
+          if (dueDateFilter === 'today' && format(dueDate, 'yyyy-MM-dd') !== format(now, 'yyyy-MM-dd')) return false;
+          if (dueDateFilter === 'this_week' && !isWithinInterval(dueDate, { start: now, end: addDays(now, 7) })) return false;
+          if (dueDateFilter === 'this_month' && !isWithinInterval(dueDate, { start: now, end: addDays(now, 30) })) return false;
+        } catch {
+          return false;
+        }
       }
       
       return true;
@@ -72,7 +78,20 @@ export default function MyActionItems() {
   }, [allActions, statusFilter, dueDateFilter, projectFilter]);
 
   const stats = useMemo(() => {
-    const overdue = allActions.filter(a => a.due_date && isPast(parseISO(a.due_date)) && a.status !== 'done').length;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Start of today in local time
+    
+    const overdue = allActions.filter(a => {
+      if (!a.due_date || a.status === 'done') return false;
+      try {
+        const dueDate = parseISO(a.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate < now;
+      } catch {
+        return false;
+      }
+    }).length;
+    
     const open = allActions.filter(a => a.status === 'open' || a.status === 'in_progress').length;
     const done = allActions.filter(a => a.status === 'done').length;
     
@@ -180,7 +199,18 @@ export default function MyActionItems() {
 
         {filteredActions.map(action => {
           const project = projectMap[action.project_id];
-          const isOverdue = action.due_date && isPast(parseISO(action.due_date)) && action.status !== 'done';
+          let isOverdue = false;
+          if (action.due_date && action.status !== 'done') {
+            try {
+              const dueDate = parseISO(action.due_date);
+              const now = new Date();
+              dueDate.setHours(0, 0, 0, 0);
+              now.setHours(0, 0, 0, 0);
+              isOverdue = dueDate < now;
+            } catch {
+              isOverdue = false;
+            }
+          }
           const isDone = action.status === 'done';
 
           return (

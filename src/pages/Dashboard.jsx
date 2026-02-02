@@ -44,22 +44,26 @@ export default function Dashboard() {
 
   const { data: allTasks = [], refetch: refetchTasks } = useQuery({
     queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date')
+    queryFn: () => base44.entities.Task.list('-updated_date', 1000),
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: allFinancials = [], refetch: refetchFinancials } = useQuery({
     queryKey: ['all-financials'],
-    queryFn: () => base44.entities.Financial.list()
+    queryFn: () => base44.entities.Financial.list('project_id', 1000),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: allChangeOrders = [], refetch: refetchCOs } = useQuery({
     queryKey: ['all-change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list()
+    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 500),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: allRFIs = [], refetch: refetchRFIs } = useQuery({
     queryKey: ['all-rfis'],
-    queryFn: () => base44.entities.RFI.list()
+    queryFn: () => base44.entities.RFI.list('-created_date', 500),
+    staleTime: 2 * 60 * 1000
   });
 
   // Portfolio metrics calculation
@@ -118,16 +122,25 @@ export default function Dashboard() {
       if (project.target_completion) {
         try {
           const targetDate = new Date(project.target_completion + 'T00:00:00');
-          const latestTaskEnd = projectTasks
-            .filter(t => t.end_date)
-            .map(t => new Date(t.end_date + 'T00:00:00'))
-            .sort((a, b) => b - a)[0];
+          const validTasks = projectTasks.filter(t => t.end_date);
+          if (validTasks.length > 0) {
+            const latestTaskEnd = validTasks
+              .map(t => {
+                try {
+                  return new Date(t.end_date + 'T00:00:00');
+                } catch {
+                  return null;
+                }
+              })
+              .filter(d => d !== null)
+              .sort((a, b) => b - a)[0];
 
-          if (latestTaskEnd && latestTaskEnd > targetDate) {
-            daysSlip = differenceInDays(latestTaskEnd, targetDate);
+            if (latestTaskEnd && latestTaskEnd > targetDate) {
+              daysSlip = differenceInDays(latestTaskEnd, targetDate);
+            }
           }
         } catch (error) {
-          // Skip
+          console.warn('Date calculation error for project:', project.id, error);
         }
       }
 

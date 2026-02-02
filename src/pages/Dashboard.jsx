@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
+import UnapprovedHoursPanel from '@/components/labor/UnapprovedHoursPanel';
 import { differenceInDays, addDays } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';

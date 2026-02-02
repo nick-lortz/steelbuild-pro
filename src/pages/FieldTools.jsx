@@ -16,6 +16,7 @@ import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DocumentUploadZone from '@/components/documents/DocumentUploadZone';
 import FolderBreadcrumb from '@/components/documents/FolderBreadcrumb';
+import FieldReportGenerator from '@/components/field/FieldReportGenerator';
 
 export default function FieldToolsPage() {
   const { activeProjectId } = useActiveProject();
@@ -51,6 +52,16 @@ export default function FieldToolsPage() {
   const { data: punchItems = [] } = useQuery({
     queryKey: ['punch-items', activeProjectId],
     queryFn: () => activeProjectId ? base44.entities.PunchItem.filter({ project_id: activeProjectId }) : [],
+    enabled: !!activeProjectId
+  });
+
+  const { data: activeProject } = useQuery({
+    queryKey: ['active-project', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId) return null;
+      const projects = await base44.entities.Project.filter({ id: activeProjectId });
+      return projects[0] || null;
+    },
     enabled: !!activeProjectId
   });
 
@@ -229,6 +240,14 @@ export default function FieldToolsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <FieldReportGenerator 
+        photos={allPhotos}
+        punchItems={punchItems}
+        installs={installs}
+        project={activeProject}
+        currentFolder={currentFolder}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-zinc-900 border border-zinc-800">

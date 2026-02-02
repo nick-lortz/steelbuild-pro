@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -15,6 +16,7 @@ import { Plus, LayoutDashboard, List, BarChart3 } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 export default function RFIsPage() {
+  const queryClient = useQueryClient();
   const [view, setView] = useState('portfolio');
   const [selectedRFI, setSelectedRFI] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
@@ -40,6 +42,35 @@ export default function RFIsPage() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list()
   });
+
+  const updateRFIMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.RFI.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfis'] });
+      toast.success('RFI updated');
+    }
+  });
+
+  const handleUpdateCloseout = (rfiId, checklistKey, checked) => {
+    const rfi = rfis.find(r => r.id === rfiId);
+    const updatedChecklist = {
+      ...rfi.closeout_checklist,
+      [checklistKey]: checked,
+      [`${checklistKey}_date`]: checked ? new Date().toISOString() : null
+    };
+
+    updateRFIMutation.mutate({
+      id: rfiId,
+      data: { closeout_checklist: updatedChecklist }
+    });
+  };
+
+  const handleStatusChange = (rfiId, newStatus) => {
+    updateRFIMutation.mutate({
+      id: rfiId,
+      data: { status: newStatus }
+    });
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -268,6 +299,8 @@ export default function RFIsPage() {
             <RFIDetailPanel
               rfi={selectedRFI}
               onClose={() => setSelectedRFI(null)}
+              onUpdateCloseout={(key, checked) => handleUpdateCloseout(selectedRFI.id, key, checked)}
+              onStatusChange={handleStatusChange}
             />
           )}
         </DialogContent>

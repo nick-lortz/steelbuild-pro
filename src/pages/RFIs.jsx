@@ -51,6 +51,15 @@ export default function RFIsPage() {
     }
   });
 
+  const deleteRFIMutation = useMutation({
+    mutationFn: (id) => base44.entities.RFI.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfis'] });
+      setSelectedRFI(null);
+      toast.success('RFI deleted');
+    }
+  });
+
   const handleUpdateCloseout = (rfiId, checklistKey, checked) => {
     const rfi = rfis.find(r => r.id === rfiId);
     const updatedChecklist = {
@@ -70,6 +79,44 @@ export default function RFIsPage() {
       id: rfiId,
       data: { status: newStatus }
     });
+  };
+
+  const handleEdit = (rfi) => {
+    setSelectedRFI(null);
+    setShowWizard(true);
+    // Note: RFIWizard needs to accept initialData prop for editing
+  };
+
+  const handleDelete = (rfi) => {
+    if (window.confirm(`Delete RFI-${String(rfi.rfi_number).padStart(3, '0')}?`)) {
+      deleteRFIMutation.mutate(rfi.id);
+    }
+  };
+
+  const handleGenerateEmail = (rfi) => {
+    const subject = `RFI-${String(rfi.rfi_number).padStart(3, '0')}: ${rfi.subject}`;
+    const body = `
+RFI Number: ${rfi.rfi_number}
+Subject: ${rfi.subject}
+Project: ${projects.find(p => p.id === rfi.project_id)?.name || 'Unknown'}
+Status: ${rfi.status}
+Priority: ${rfi.priority}
+Ball in Court: ${rfi.ball_in_court}
+
+Question:
+${rfi.question || 'N/A'}
+
+${rfi.response ? `Response:\n${rfi.response}` : ''}
+
+This RFI requires your attention.`;
+    
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  };
+
+  const handleWizardClose = () => {
+    setShowWizard(false);
+    queryClient.invalidateQueries({ queryKey: ['rfis'] });
   };
 
   const handleFilterChange = (key, value) => {
@@ -298,9 +345,13 @@ export default function RFIsPage() {
           {selectedRFI && (
             <RFIDetailPanel
               rfi={selectedRFI}
+              project={projects.find(p => p.id === selectedRFI.project_id)}
               onClose={() => setSelectedRFI(null)}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
               onUpdateCloseout={(key, checked) => handleUpdateCloseout(selectedRFI.id, key, checked)}
               onStatusChange={handleStatusChange}
+              onGenerateEmail={() => handleGenerateEmail(selectedRFI)}
             />
           )}
         </DialogContent>
@@ -309,7 +360,7 @@ export default function RFIsPage() {
       {/* RFI Creation Wizard */}
       {showWizard && (
         <RFIWizard
-          onClose={() => setShowWizard(false)}
+          onClose={handleWizardClose}
         />
       )}
     </div>

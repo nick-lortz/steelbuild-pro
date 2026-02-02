@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { toast } from '@/components/ui/notifications';
+import { toast } from 'sonner';
 import DocumentUploader from '@/components/documents/DocumentUploader';
 
 export default function RFIDetailPanel({ 
@@ -33,11 +33,11 @@ export default function RFIDetailPanel({
   const updateRFIMutation = useMutation({
     mutationFn: (data) => base44.entities.RFI.update(rfi.id, data),
     onSuccess: () => {
-      toast.success('Documents added to RFI');
+      toast.success('RFI updated');
       setShowDocUploader(false);
     },
     onError: (error) => {
-      toast.error('Failed to update RFI: ' + error.message);
+      toast.error('Failed to update RFI');
     }
   });
 
@@ -53,9 +53,9 @@ export default function RFIDetailPanel({
     updateRFIMutation.mutate({ attachments: updated });
   };
 
-  const daysOpen = rfi.submitted_date ? differenceInDays(new Date(), parseISO(rfi.submitted_date)) : 0;
+  const daysOpen = rfi.submitted_date ? differenceInDays(new Date(), new Date(rfi.submitted_date)) : 0;
   const isOverdue = rfi.due_date && !['answered', 'closed'].includes(rfi.status) && 
-                     differenceInDays(new Date(), parseISO(rfi.due_date)) > 0;
+                     new Date(rfi.due_date) < new Date();
 
   const ballInCourtColors = {
     internal: 'bg-blue-500',
@@ -84,7 +84,7 @@ export default function RFIDetailPanel({
             )}
           </div>
           <h2 className="text-xl font-bold mb-1">{rfi.subject}</h2>
-          <p className="text-sm text-zinc-400">{project?.name}</p>
+          {project && <p className="text-sm text-zinc-400">{project.name}</p>}
           <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
             {rfi.category && <Badge className="bg-zinc-700">{rfi.category}</Badge>}
             {rfi.location_area && <span>📍 {rfi.location_area}</span>}
@@ -92,13 +92,17 @@ export default function RFIDetailPanel({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => onEdit(rfi)} className="border-zinc-700">
-            <Edit size={14} className="mr-2" />
-            Edit
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => onDelete(rfi)} className="border-zinc-700 text-red-400 hover:text-red-300">
-            <Trash2 size={14} />
-          </Button>
+          {onEdit && (
+            <Button size="sm" variant="outline" onClick={() => onEdit(rfi)} className="border-zinc-700">
+              <Edit size={14} className="mr-2" />
+              Edit
+            </Button>
+          )}
+          {onDelete && (
+            <Button size="sm" variant="outline" onClick={() => onDelete(rfi)} className="border-zinc-700 text-red-400 hover:text-red-300">
+              <Trash2 size={14} />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -128,7 +132,7 @@ export default function RFIDetailPanel({
           <CardContent className="p-3">
             <div className="text-xs text-zinc-500 uppercase mb-1">Due Date</div>
             <div className={`text-sm font-bold ${isOverdue ? 'text-red-400' : 'text-white'}`}>
-              {rfi.due_date ? format(parseISO(rfi.due_date), 'MMM d') : '-'}
+              {rfi.due_date ? format(new Date(rfi.due_date), 'MMM d') : '-'}
             </div>
           </CardContent>
         </Card>
@@ -179,7 +183,7 @@ export default function RFIDetailPanel({
                 )}
                 {rfi.response_date && (
                   <div className="mt-2 text-xs text-zinc-400">
-                    Responded: {format(parseISO(rfi.response_date), 'MMM d, yyyy')}
+                    Responded: {format(new Date(rfi.response_date), 'MMM d, yyyy')}
                   </div>
                 )}
               </CardContent>
@@ -367,14 +371,14 @@ export default function RFIDetailPanel({
             </Card>
           </div>
 
-          {rfi.answer_type && (
+          {rfi.answer_metadata?.answer_type && (
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
                 <CardTitle className="text-sm">Answer Type</CardTitle>
               </CardHeader>
               <CardContent>
                 <Badge className="bg-zinc-700">
-                  {rfi.answer_type.replace('_', ' ').toUpperCase()}
+                  {rfi.answer_metadata.answer_type.replace(/_/g, ' ').toUpperCase()}
                 </Badge>
               </CardContent>
             </Card>
@@ -442,7 +446,7 @@ export default function RFIDetailPanel({
                   </div>
                   {rfi.closeout_checklist?.[item.dateKey] && (
                     <span className="text-xs text-zinc-500">
-                      {format(parseISO(rfi.closeout_checklist[item.dateKey]), 'MMM d, h:mm a')}
+                      {format(new Date(rfi.closeout_checklist[item.dateKey]), 'MMM d, h:mm a')}
                     </span>
                   )}
                 </div>
@@ -472,7 +476,7 @@ export default function RFIDetailPanel({
                   <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
                     <span>{log.user || 'system'}</span>
                     <span>•</span>
-                    <span>{log.timestamp ? format(parseISO(log.timestamp), 'MMM d, h:mm a') : 'unknown'}</span>
+                    <span>{log.timestamp ? format(new Date(log.timestamp), 'MMM d, h:mm a') : 'unknown'}</span>
                   </div>
                 </div>
               </div>
@@ -493,14 +497,16 @@ export default function RFIDetailPanel({
             <CardTitle className="text-sm">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Button 
-              onClick={onGenerateEmail}
-              variant="outline"
-              className="w-full border-zinc-700"
-            >
-              <Mail size={14} className="mr-2" />
-              Generate Email Draft
-            </Button>
+            {onGenerateEmail && (
+              <Button 
+                onClick={onGenerateEmail}
+                variant="outline"
+                className="w-full border-zinc-700"
+              >
+                <Mail size={14} className="mr-2" />
+                Generate Email Draft
+              </Button>
+            )}
 
             {rfi.status === 'draft' && (
               <Button 
@@ -541,27 +547,27 @@ export default function RFIDetailPanel({
           {rfi.submitted_date && (
             <div className="flex justify-between">
               <span className="text-zinc-500">Submitted:</span>
-              <span className="text-white">{format(parseISO(rfi.submitted_date), 'MMM d, yyyy')}</span>
+              <span className="text-white">{format(new Date(rfi.submitted_date), 'MMM d, yyyy')}</span>
             </div>
           )}
           {rfi.due_date && (
             <div className="flex justify-between">
               <span className="text-zinc-500">Due:</span>
               <span className={isOverdue ? 'text-red-400 font-bold' : 'text-white'}>
-                {format(parseISO(rfi.due_date), 'MMM d, yyyy')}
+                {format(new Date(rfi.due_date), 'MMM d, yyyy')}
               </span>
             </div>
           )}
           {rfi.response_date && (
             <div className="flex justify-between">
               <span className="text-zinc-500">Responded:</span>
-              <span className="text-white">{format(parseISO(rfi.response_date), 'MMM d, yyyy')}</span>
+              <span className="text-white">{format(new Date(rfi.response_date), 'MMM d, yyyy')}</span>
             </div>
           )}
           {rfi.closed_date && (
             <div className="flex justify-between">
               <span className="text-zinc-500">Closed:</span>
-              <span className="text-white">{format(parseISO(rfi.closed_date), 'MMM d, yyyy')}</span>
+              <span className="text-white">{format(new Date(rfi.closed_date), 'MMM d, yyyy')}</span>
             </div>
           )}
           {rfi.response_days_actual !== undefined && (

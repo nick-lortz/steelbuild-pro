@@ -10,7 +10,6 @@ import {
   FileText,
   MessageSquareWarning,
   FileCheck,
-  FileQuestion,
   Users,
   Menu,
   X,
@@ -126,7 +125,6 @@ const navGroups = [
     icon: MessageSquare,
     items: [
       { name: 'RFIs', page: 'RFIs', icon: MessageSquareWarning },
-      { name: 'RFI Hub', page: 'RFIHub', icon: FileQuestion },
       { name: 'Submittals', page: 'Submittals', icon: FileCheck },
       { name: 'Messages', page: 'Messages', icon: MessageSquareWarning },
       { name: 'Meetings', page: 'Meetings', icon: Users },

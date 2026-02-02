@@ -54,6 +54,7 @@ import ChangeOrders from './pages/ChangeOrders';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
+import Dashboard from './pages/Dashboard';
 import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
@@ -62,6 +63,7 @@ import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import Fabrication from './pages/Fabrication';
+import FieldTools from './pages/FieldTools';
 import FieldToolsMobile from './pages/FieldToolsMobile';
 import Financials from './pages/Financials';
 import Insights from './pages/Insights';
@@ -74,6 +76,7 @@ import LookAheadPlanning from './pages/LookAheadPlanning';
 import LookAheadResourcePlanning from './pages/LookAheadResourcePlanning';
 import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
+import MyActionItems from './pages/MyActionItems';
 import NotificationSettings from './pages/NotificationSettings';
 import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -84,6 +87,7 @@ import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
 import Projects from './pages/Projects';
+import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
@@ -94,11 +98,6 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import FieldTools from './pages/FieldTools';
-import Dashboard from './pages/Dashboard';
-import MyActionItems from './pages/MyActionItems';
-import RFIs from './pages/RFIs';
-import RFIHub from './pages/RFIHub';
 import __Layout from './Layout.jsx';
 
 
@@ -110,6 +109,7 @@ export const PAGES = {
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
+    "Dashboard": Dashboard,
     "Deliveries": Deliveries,
     "Detailing": Detailing,
     "DocumentLinkage": DocumentLinkage,
@@ -118,6 +118,7 @@ export const PAGES = {
     "Equipment": Equipment,
     "ExecutiveRollUp": ExecutiveRollUp,
     "Fabrication": Fabrication,
+    "FieldTools": FieldTools,
     "FieldToolsMobile": FieldToolsMobile,
     "Financials": Financials,
     "Insights": Insights,
@@ -130,6 +131,7 @@ export const PAGES = {
     "LookAheadResourcePlanning": LookAheadResourcePlanning,
     "Meetings": Meetings,
     "Messages": Messages,
+    "MyActionItems": MyActionItems,
     "NotificationSettings": NotificationSettings,
     "Performance": Performance,
     "PrivacyPolicy": PrivacyPolicy,
@@ -140,6 +142,7 @@ export const PAGES = {
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
     "Projects": Projects,
+    "RFIs": RFIs,
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
     "Resources": Resources,
@@ -150,11 +153,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "FieldTools": FieldTools,
-    "Dashboard": Dashboard,
-    "MyActionItems": MyActionItems,
-    "RFIs": RFIs,
-    "RFIHub": RFIHub,
 }
 
 export const pagesConfig = {

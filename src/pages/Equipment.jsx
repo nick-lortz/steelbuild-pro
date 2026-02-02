@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Wrench, BarChart3, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, Wrench, BarChart3, CheckCircle2, Plus } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 import EquipmentLogForm from '@/components/equipment/EquipmentLogForm';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import InspectionForm from '@/components/equipment/InspectionForm';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import ResourceForm from '@/components/resources/ResourceForm';
 
 function EquipmentContent() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -20,6 +22,7 @@ function EquipmentContent() {
   const [filterEquipment, setFilterEquipment] = useState('all');
   const [filterDateRange, setFilterDateRange] = useState('7d');
   const [selectedEquipmentForInspection, setSelectedEquipmentForInspection] = useState('');
+  const [showAddEquipment, setShowAddEquipment] = useState(false);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -93,20 +96,29 @@ function EquipmentContent() {
           <h1 className="text-3xl font-bold">Equipment Management</h1>
           <p className="text-zinc-400 mt-1">{project?.name || 'No project selected'}</p>
         </div>
-        <div className="w-80">
-          <label className="text-sm font-bold text-zinc-300 block mb-2">Switch Project</label>
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder="Choose a project..." />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              {projects.map(proj => (
-                <SelectItem key={proj.id} value={proj.id}>
-                  {proj.name} ({proj.project_number})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-3">
+          <div className="w-80">
+            <label className="text-sm font-bold text-zinc-300 block mb-2">Switch Project</label>
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectValue placeholder="Choose a project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map(proj => (
+                  <SelectItem key={proj.id} value={proj.id}>
+                    {proj.name} ({proj.project_number})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={() => setShowAddEquipment(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
+          >
+            <Plus size={16} className="mr-2" />
+            Add Equipment
+          </Button>
         </div>
       </div>
 
@@ -289,6 +301,25 @@ function EquipmentContent() {
       </Tabs>
       </>
       )}
+
+      {/* Add Equipment Sheet */}
+      <Sheet open={showAddEquipment} onOpenChange={setShowAddEquipment}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-950 border-zinc-800">
+          <SheetHeader>
+            <SheetTitle className="text-white">Add Equipment</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <ResourceForm
+              resource={{ type: 'equipment', current_project_id: activeProjectId }}
+              onSubmit={async (data) => {
+                await base44.entities.Resource.create(data);
+                setShowAddEquipment(false);
+              }}
+              onCancel={() => setShowAddEquipment(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

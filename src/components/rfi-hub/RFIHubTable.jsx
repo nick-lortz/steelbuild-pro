@@ -20,7 +20,7 @@ export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
     switch (status) {
       case 'draft': return 'bg-zinc-700 text-zinc-300';
       case 'internal_review': return 'bg-blue-700 text-blue-300';
-      case 'submitted': return 'bg-purple-700 text-purple-300';
+      case 'submitted': return 'bg-blue-900 text-blue-200';
       case 'under_review': return 'bg-amber-700 text-amber-300';
       case 'answered': return 'bg-green-700 text-green-300';
       case 'closed': return 'bg-zinc-700 text-zinc-400';

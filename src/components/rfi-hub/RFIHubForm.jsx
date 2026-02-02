@@ -59,9 +59,8 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
     try {
       if (rfi) {
-        // Update existing RFI (do NOT change rfi_number)
-        const { rfi_number, ...updateData } = formData;
-        await base44.entities.RFI.update(rfi.id, updateData);
+        // Update existing RFI
+        await base44.entities.RFI.update(rfi.id, formData);
         toast.success('RFI updated');
       } else {
         // Create new RFI

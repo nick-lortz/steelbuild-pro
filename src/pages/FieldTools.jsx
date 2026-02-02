@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageHeader from '@/components/ui/PageHeader';
-import { Camera, CheckSquare, FileText, AlertCircle, Wrench, Plus, Search, Upload, Image as ImageIcon } from 'lucide-react';
+import { Camera, CheckSquare, FileText, AlertCircle, Wrench, Plus, Search, Upload, Image as ImageIcon, Folder, FolderPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -24,14 +24,16 @@ export default function FieldToolsPage() {
   const [showForm, setShowForm] = useState(null);
   const [currentFolder, setCurrentFolder] = useState('/');
   const [uploading, setUploading] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   const { data: dailyPhotos = [] } = useQuery({
-    queryKey: ['daily-photos', activeProjectId],
+    queryKey: ['daily-photos', activeProjectId, currentFolder],
     queryFn: async () => {
       if (!activeProjectId) return [];
       return await base44.entities.Document.filter({
         project_id: activeProjectId,
-        category: 'photo'
+        category: 'photo',
+        folder_path: currentFolder
       }, '-created_date');
     },
     enabled: !!activeProjectId
@@ -103,6 +105,31 @@ export default function FieldToolsPage() {
       setUploading(false);
     }
   };
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) {
+      toast.error('Folder name required');
+      return;
+    }
+    const newPath = currentFolder === '/' ? `/${newFolderName}` : `${currentFolder}/${newFolderName}`;
+    setCurrentFolder(newPath);
+    setNewFolderName('');
+    setShowForm(null);
+    toast.success(`Folder "${newFolderName}" created`);
+  };
+
+  const folders = useMemo(() => {
+    const uniquePaths = new Set();
+    dailyPhotos.forEach(photo => {
+      if (photo.folder_path && photo.folder_path !== currentFolder) {
+        const relativePath = photo.folder_path.replace(currentFolder, '').split('/').filter(Boolean)[0];
+        if (relativePath) {
+          uniquePaths.add(relativePath);
+        }
+      }
+    });
+    return Array.from(uniquePaths);
+  }, [dailyPhotos, currentFolder]);
 
   const todayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -184,13 +211,40 @@ export default function FieldToolsPage() {
 
         {/* Daily Photos Tab */}
         <TabsContent value="daily" className="space-y-4">
-          <div>
-            <h3 className="font-semibold text-white mb-3">Capture Site Conditions</h3>
-            <DocumentUploadZone onUpload={handlePhotoUpload} isLoading={uploading} multiple />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <h3 className="font-semibold text-white mb-3">Capture Site Conditions</h3>
+              <DocumentUploadZone onUpload={handlePhotoUpload} isLoading={uploading} multiple />
+            </div>
+            <Button
+              onClick={() => setShowForm('folder')}
+              variant="outline"
+              size="sm"
+              className="border-zinc-700 flex-shrink-0"
+            >
+              <FolderPlus size={14} className="mr-2" />
+              New Folder
+            </Button>
           </div>
 
           <div className="space-y-3">
             <FolderBreadcrumb currentPath={currentFolder} onNavigate={setCurrentFolder} />
+
+            {/* Folders */}
+            {folders.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                {folders.map(folder => (
+                  <button
+                    key={folder}
+                    onClick={() => setCurrentFolder(currentFolder === '/' ? `/${folder}` : `${currentFolder}/${folder}`)}
+                    className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded p-3 hover:bg-zinc-800 transition-colors"
+                  >
+                    <Folder size={20} className="text-amber-500 flex-shrink-0" />
+                    <span className="text-xs text-white truncate">{folder}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             
             {dailyPhotos.length === 0 ? (
               <Card className="bg-zinc-900 border-zinc-800">
@@ -336,6 +390,36 @@ export default function FieldToolsPage() {
           onSubmit={(data) => createPunchMutation.mutate(data)}
           onCancel={() => setShowForm(null)}
         />
+      )}
+
+      {showForm === 'folder' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="bg-zinc-900 border-zinc-800 w-full max-w-sm">
+            <CardContent className="p-6 space-y-4">
+              <h2 className="text-lg font-bold text-white">Create Folder</h2>
+              <div>
+                <label className="text-xs text-zinc-400 mb-2 block">Folder Name *</label>
+                <Input
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  placeholder="e.g., South Elevation"
+                  className="bg-zinc-800 border-zinc-700"
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="ghost" onClick={() => { setShowForm(null); setNewFolderName(''); }}>Cancel</Button>
+                <Button 
+                  onClick={handleCreateFolder}
+                  disabled={!newFolderName.trim()}
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                >
+                  Create
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

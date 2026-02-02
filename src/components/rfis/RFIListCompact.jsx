@@ -163,7 +163,7 @@ export default function RFIListCompact({ rfis, projects, onSelect, onEdit, onDel
 
               {/* Action Buttons */}
               {(onEdit || onDelete) && (
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1">
                   {onEdit && (
                     <Button
                       size="sm"

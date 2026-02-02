@@ -51,9 +51,11 @@ export default function ProjectFiltersBar({
           <SelectValue placeholder="All Projects" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Projects</SelectItem>
-          <SelectItem value="at_risk">At Risk Only</SelectItem>
-          <SelectItem value="healthy">Healthy Only</SelectItem>
+          <SelectItem value="all">All Risks</SelectItem>
+          <SelectItem value="critical">Critical</SelectItem>
+          <SelectItem value="high">High Risk</SelectItem>
+          <SelectItem value="at_risk">High + Critical</SelectItem>
+          <SelectItem value="healthy">Low Risk</SelectItem>
         </SelectContent>
       </Select>
 

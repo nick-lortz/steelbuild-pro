@@ -3,10 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Eye, AlertCircle, CheckCircle2, Clock, DollarSign, TrendingUp } from 'lucide-react';
+import { Eye, AlertCircle, CheckCircle2, Clock, DollarSign, TrendingUp, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createPageUrl } from '@/utils';
 import { Link } from 'react-router-dom';
+import { RISK_LEVELS } from '@/components/shared/riskScoring';
 
 const getStatusConfig = (status) => {
   const configs = {
@@ -71,17 +72,9 @@ const ScheduleHealth = ({ daysSlip }) => {
 
 export default function ProjectHealthTable({ projects, onProjectClick }) {
   const sortedProjects = useMemo(() => {
-    // Sort by risk level, then overdue tasks, then name
+    // Sort by risk score descending
     return [...projects].sort((a, b) => {
-      // Risk first
-      const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
-      const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
-      if (bRisk !== aRisk) return bRisk - aRisk;
-
-      // Then overdue
-      if (b.overdueTasks !== a.overdueTasks) return b.overdueTasks - a.overdueTasks;
-
-      // Then alphabetical
+      if (b.riskScore !== a.riskScore) return b.riskScore - a.riskScore;
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [projects]);
@@ -94,6 +87,9 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
             <tr className="border-b border-border">
               <th className="text-left px-4 py-3">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Project</span>
+              </th>
+              <th className="text-left px-4 py-3">
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Risk</span>
               </th>
               <th className="text-left px-4 py-3">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Status</span>
@@ -120,7 +116,7 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
           </thead>
           <tbody>
             {sortedProjects.map((project) => {
-              const isAtRisk = project.costHealth < -5 || project.daysSlip > 3 || project.overdueTasks > 0;
+              const isAtRisk = project.riskLevel?.value >= RISK_LEVELS.HIGH.value;
               const statusConfig = getStatusConfig(project.status);
 
               return (
@@ -140,6 +136,19 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
                         <p className="text-xs text-muted-foreground font-mono">{project.project_number}</p>
                       </div>
                     </div>
+                  </td>
+
+                  {/* Risk Score */}
+                  <td className="px-4 py-3">
+                    {project.riskLevel && (
+                      <div className="flex flex-col gap-1">
+                        <Badge className={`text-[10px] font-bold ${project.riskLevel.bg} ${project.riskLevel.color} border ${project.riskLevel.border}`}>
+                          <Shield size={10} className="mr-1" />
+                          {project.riskLevel.label}
+                        </Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono">{project.riskScore}/100</span>
+                      </div>
+                    )}
                   </td>
 
                   {/* Status */}

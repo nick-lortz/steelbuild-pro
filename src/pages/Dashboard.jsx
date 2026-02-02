@@ -391,10 +391,15 @@ export default function Dashboard() {
       </div>
 
       {/* Project Health Table */}
-      <ProjectHealthTable 
-        projects={filteredProjects}
-        onProjectClick={(projectId) => setActiveProjectId(projectId)}
-      />
+      <div className="mb-4">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">
+          Project Health Overview
+        </h2>
+        <ProjectHealthTable 
+          projects={filteredProjects}
+          onProjectClick={(projectId) => setActiveProjectId(projectId)}
+        />
+      </div>
 
       {filteredProjects.length === 0 && (
         <div className="text-center py-12">

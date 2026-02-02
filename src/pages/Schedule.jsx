@@ -3,45 +3,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, RefreshCw, Filter, Calendar } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import TaskCard from '@/components/schedule/TaskCard';
+import { Plus, Search, Calendar, Download, Sliders } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import TaskForm from '@/components/schedule/TaskForm';
-import ScreenContainer from '@/components/layout/ScreenContainer';
-import WeatherWidget from '@/components/integrations/WeatherWidget';
-import BulkActions from '@/components/shared/BulkActions';
-import BulkResourceAssign from '@/components/resources/BulkResourceAssign';
-import ViewConfiguration from '@/components/shared/ViewConfiguration';
-import { useKeyboardShortcuts } from '@/components/shared/hooks/useKeyboardShortcuts';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { toast } from '@/components/ui/notifications';
-import CalendarView from '@/components/schedule/CalendarView';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
-import PhaseGroupedView from '@/components/schedule/PhaseGroupedView';
-import TimelineView from '@/components/schedule/TimelineView';
-import ScheduleAIAssistant from '@/components/schedule/ScheduleAIAssistant';
-import DependencyGraph from '@/components/schedule/DependencyGraph';
-import ExportButton from '@/components/shared/ExportButton';
-import BulkTaskEditor from '@/components/schedule/BulkTaskEditor';
+import CalendarView from '@/components/schedule/CalendarView';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { toast } from '@/components/ui/notifications';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [page, setPage] = useState(1);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [phaseFilter, setPhaseFilter] = useState('all');
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [viewMode, setViewMode] = useState('gantt');
+  const [zoomLevel, setZoomLevel] = useState('week');
+  const [selectedProjects, setSelectedProjects] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedTasks, setSelectedTasks] = useState([]);
-  const [viewMode, setViewMode] = useState('phase'); // 'phase', 'timeline', 'list', 'gantt', 'calendar', 'network'
-  const [showAI, setShowAI] = useState(false);
-  const [showBulkAssign, setShowBulkAssign] = useState(false);
-  const [showBulkEdit, setShowBulkEdit] = useState(false);
-  const PAGE_SIZE = 30;
 
   const queryClient = useQueryClient();
 
@@ -52,7 +35,7 @@ export default function Schedule() {
     staleTime: Infinity
   });
 
-  // Fetch projects for filter
+  // Fetch projects for multi-project scheduling
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
@@ -72,135 +55,104 @@ export default function Schedule() {
     return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [currentUser, allProjects]);
 
-  const selectedProject = useMemo(() => 
-    activeProjectId ? projects.find(p => p.id === activeProjectId) : null,
-    [projects, activeProjectId]
+  // Determine which projects to show
+  const activeProjects = useMemo(() => {
+    if (selectedProjects.length > 0) {
+      return projects.filter(p => selectedProjects.includes(p.id));
+    }
+    if (activeProjectId) {
+      return projects.filter(p => p.id === activeProjectId);
+    }
+    return projects;
+  }, [projects, activeProjectId, selectedProjects]);
+
+  const activeProjectIds = useMemo(() => 
+    activeProjects.map(p => p.id), 
+    [activeProjects]
   );
 
-  // Real-time subscriptions - Only for active project
-  useEffect(() => {
-    if (!activeProjectId) return;
-
-    const unsubTasks = base44.entities.Task.subscribe((event) => {
-      if (event.data?.project_id === activeProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
-      }
-    });
-
-    const unsubActivities = base44.entities.ScheduleActivity.subscribe((event) => {
-      if (event.data?.project_id === activeProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['schedule-activities', activeProjectId] });
-      }
-    });
-
-    return () => {
-      unsubTasks();
-      unsubActivities();
-    };
-  }, [activeProjectId, queryClient]);
-
-  // Fetch tasks for active project only
+  // Fetch tasks for selected projects
   const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
-    queryKey: ['schedule-tasks', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date');
+    queryKey: ['schedule-tasks', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.Task.filter({ project_id: projectId }, 'end_date')
+        )
+      );
+      return results.flat();
     },
-    enabled: !!activeProjectId,
+    enabled: activeProjectIds.length > 0,
     staleTime: 2 * 60 * 1000
   });
 
-  // Fetch work packages
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['workPackages', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.WorkPackage.filter({ project_id: activeProjectId });
-    },
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
+  // Fetch resources
+  const { data: resources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: () => base44.entities.Resource.list(),
+    staleTime: 10 * 60 * 1000,
   });
 
-  // Fetch deliveries
-  const { data: deliveries = [] } = useQuery({
-    queryKey: ['deliveries', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.Delivery.filter({ project_id: activeProjectId });
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.RFI.filter({ project_id: projectId })
+        )
+      );
+      return results.flat();
     },
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
+    enabled: activeProjectIds.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: fabricationPackages = [] } = useQuery({
-    queryKey: ['fabrication-packages', activeProjectId],
-    queryFn: () => {
-      if (!activeProjectId) return [];
-      return base44.entities.FabricationPackage.filter({ project_id: activeProjectId });
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['changeOrders', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.ChangeOrder.filter({ project_id: projectId })
+        )
+      );
+      return results.flat();
     },
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
+    enabled: activeProjectIds.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Always use actual tasks, don't convert work packages
-  const workPackagesAsTasks = [];
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawings', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.DrawingSet.filter({ project_id: projectId })
+        )
+      );
+      return results.flat();
+    },
+    enabled: activeProjectIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // Convert deliveries to task-like items for schedule display
-  const deliveryTasks = useMemo(() => {
-    return deliveries.map(d => ({
-      id: `delivery-${d.id}`,
-      source_entity: 'Delivery',
-      source_id: d.id,
-      project_id: d.project_id,
-      name: `🚚 ${d.package_name}`,
-      phase: 'delivery',
-      start_date: d.scheduled_date || d.confirmed_date || d.requested_date,
-      end_date: d.scheduled_date || d.confirmed_date || d.requested_date,
-      status: d.delivery_status === 'received' || d.delivery_status === 'closed' ? 'completed' :
-              d.delivery_status === 'in_transit' || d.delivery_status === 'arrived_on_site' ? 'in_progress' :
-              d.delivery_status === 'exception' ? 'blocked' : 'not_started',
-      progress_percent: d.delivery_status === 'received' ? 100 :
-                        d.delivery_status === 'arrived_on_site' ? 75 :
-                        d.delivery_status === 'in_transit' ? 50 : 0,
-      is_critical: d.priority === 'high' || d.priority === 'critical',
-      notes: `${d.vendor_supplier || ''} → ${d.ship_to_location || ''}\n${d.weight_tons?.toFixed(1)}T • ${d.piece_count || 0} pieces\n${d.notes || ''}`.trim(),
-      _deliveryData: d,
-      _isDelivery: true
-    })).filter(d => d.start_date);
-  }, [deliveries]);
+  // Filter tasks
+  const filteredTasks = useMemo(() => {
+    let filtered = [...allScheduleTasks];
 
-  // Convert fabrication packages to task-like items for schedule display
-  const fabricationTasks = useMemo(() => {
-    return fabricationPackages.map(fp => ({
-      id: `fabrication-${fp.id}`,
-      source_entity: 'FabricationPackage',
-      source_id: fp.id,
-      project_id: fp.project_id,
-      name: `🔧 ${fp.package_name}`,
-      phase: 'fabrication',
-      start_date: fp.release_date,
-      end_date: fp.planned_ship_date,
-      status: fp.status === 'shipped' || fp.status === 'complete' ? 'completed' :
-              fp.status === 'in_progress' || fp.status === 'qc' ? 'in_progress' :
-              fp.status === 'pending_prereqs' ? 'blocked' : 'not_started',
-      progress_percent: fp.completion_percent || 0,
-      is_critical: fp.priority === 'high' || fp.priority === 'critical',
-      notes: `${fp.total_pieces || 0} pieces • ${(fp.total_weight_tons || 0).toFixed(1)}T\n${fp.scope_summary || ''}`.trim(),
-      _fabricationData: fp,
-      _isFabrication: true
-    })).filter(fp => fp.start_date || fp.end_date);
-  }, [fabricationPackages]);
+    // Search
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.name?.toLowerCase().includes(search) ||
+        t.wbs_code?.toLowerCase().includes(search)
+      );
+    }
 
-  // Combine all schedule items
-  const combinedScheduleItems = useMemo(() => {
-    return [...allScheduleTasks, ...deliveryTasks, ...fabricationTasks];
-  }, [allScheduleTasks, deliveryTasks, fabricationTasks]);
-
-  // Filter and paginate tasks
-  const { tasks, hasMore, totalCount } = useMemo(() => {
-    let filtered = [...combinedScheduleItems];
-
-    // Filter by status
+    // Status filter
     if (statusFilter !== 'all') {
       if (statusFilter === 'overdue') {
         const today = new Date().toISOString().split('T')[0];
@@ -214,91 +166,25 @@ export default function Schedule() {
       }
     }
 
-    // Filter by search term
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(t => 
-        t.name?.toLowerCase().includes(search) ||
-        t.wbs_code?.toLowerCase().includes(search)
-      );
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(t => t.is_critical === (priorityFilter === 'critical'));
     }
 
-    // Paginate
-    const startIdx = (page - 1) * PAGE_SIZE;
-    const endIdx = page * PAGE_SIZE;
-    const paginated = filtered.slice(startIdx, endIdx);
-    
-    return {
-      tasks: paginated,
-      hasMore: endIdx < filtered.length,
-      totalCount: filtered.length
-    };
-  }, [combinedScheduleItems, statusFilter, searchTerm, page]);
+    // Phase filter
+    if (phaseFilter !== 'all') {
+      filtered = filtered.filter(t => t.phase === phaseFilter);
+    }
 
-  // Fetch all resources for task form
-  const { data: resources = [] } = useQuery({
-    queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000
-  });
-
-  const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId 
-      ? base44.entities.RFI.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.ChangeOrder.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: drawingSets = [] } = useQuery({
-    queryKey: ['drawings', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: allTasks = [] } = useQuery({
-    queryKey: ['all-tasks', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
-      : [],
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000
-  });
+    return filtered;
+  }, [allScheduleTasks, searchTerm, statusFilter, priorityFilter, phaseFilter]);
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      if (data.work_package_id) {
-        const response = await base44.functions.invoke('createTaskForWorkPackage', {
-          work_package_id: data.work_package_id,
-          task_data: data
-        });
-        return response.data;
-      } else {
-        return await base44.entities.Task.create(data);
-      }
+      return await base44.entities.Task.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task created');
@@ -310,16 +196,10 @@ export default function Schedule() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const response = await base44.functions.invoke('updateTask', {
-        task_id: id,
-        task_data: data
-      });
-      return response.data;
+      return await base44.entities.Task.update(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task updated');
@@ -331,91 +211,24 @@ export default function Schedule() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const response = await base44.functions.invoke('deleteTask', {
-        task_id: id
-      });
-      return response.data;
+      return await base44.entities.Task.delete(id);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['all-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['schedule-activities'] });
-      toast.success(data.message || 'Task deleted');
+      toast.success('Task deleted');
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || 'Failed to delete task');
     }
   });
 
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await refetch();
-    setIsRefreshing(false);
-  }, [refetch]);
-
-  const handleTaskClick = async (task) => {
-    // If it's a delivery or fabrication item, don't open task form
-    if (task._isDelivery || task._isFabrication) {
-      toast.error('Cannot edit schedule items from Delivery/Fabrication modules. Edit them directly in their respective pages.');
-      return;
-    }
-
-    // If it's a work package display item, create a new task for it
-    if (task.is_work_package) {
-      setEditingTask({
-        project_id: task.project_id,
-        work_package_id: task.id,
-        phase: task.phase,
-        status: 'not_started',
-        is_milestone: false
-      });
-      setShowTaskForm(true);
-      return;
-    }
-
-    // If task has no work package, it's always editable
-    if (!task.work_package_id) {
-      setEditingTask({
-        ...task,
-        _isReadOnly: false
-      });
-      setShowTaskForm(true);
-      return;
-    }
-
-    // Get work package to determine editability
-    const workPackageData = await base44.entities.WorkPackage.filter({ id: task.work_package_id });
-    const workPackage = workPackageData[0];
-
-    if (!workPackage) {
-      // Work package doesn't exist - allow editing as standalone
-      setEditingTask({
-        ...task,
-        _isReadOnly: false
-      });
-      setShowTaskForm(true);
-      return;
-    }
-
-    // Determine if task is editable
-    const isEditable = workPackage.status === 'active' && workPackage.phase === task.phase;
-    
-    setEditingTask({
-      ...task,
-      _isReadOnly: !isEditable,
-      _workPackageStatus: workPackage.status,
-      _workPackagePhase: workPackage.phase
-    });
-    setShowTaskForm(true);
-  };
-
   const handleCreateTask = () => {
-    if (!activeProjectId) {
-      toast.error('Please select a project first');
+    if (activeProjectIds.length === 0) {
+      toast.error('Please select at least one project');
       return;
     }
     setEditingTask({
-      project_id: activeProjectId,
+      project_id: activeProjectIds[0],
       phase: 'fabrication',
       status: 'not_started',
       is_milestone: false
@@ -423,66 +236,53 @@ export default function Schedule() {
     setShowTaskForm(true);
   };
 
-  const bulkUpdateStatus = (newStatus) => {
-    selectedTasks.forEach(taskId => {
-      updateMutation.mutate({ id: taskId, data: { status: newStatus } });
-    });
-    setSelectedTasks([]);
-    toast.success(`${selectedTasks.length} tasks updated`);
+  const handleTaskClick = (task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
   };
 
-  const handleBulkResourceAssign = (resourceIds) => {
-    selectedTasks.forEach(taskId => {
-      const task = allScheduleTasks.find(t => t.id === taskId);
-      if (task) {
-        const currentResources = task.assigned_resources || [];
-        const currentEquipment = task.assigned_equipment || [];
-        const laborIds = resourceIds.filter(rid => {
-          const r = resources.find(res => res.id === rid);
-          return r && (r.type === 'labor' || r.type === 'subcontractor');
-        });
-        const equipIds = resourceIds.filter(rid => {
-          const r = resources.find(res => res.id === rid);
-          return r && r.type === 'equipment';
-        });
-        
-        updateMutation.mutate({ 
-          id: taskId, 
-          data: { 
-            assigned_resources: [...new Set([...currentResources, ...laborIds])],
-            assigned_equipment: [...new Set([...currentEquipment, ...equipIds])]
-          } 
-        });
-      }
-    });
-    toast.success(`Resources assigned to ${selectedTasks.length} tasks`);
-  };
+  const handleExportICS = () => {
+    // Generate ICS file for calendar export
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Schedule Management//EN',
+      ...filteredTasks.map(task => {
+        return [
+          'BEGIN:VEVENT',
+          `UID:${task.id}@scheduleapp`,
+          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+          `DTSTART:${task.start_date?.replace(/[-]/g, '')}`,
+          `DTEND:${task.end_date?.replace(/[-]/g, '')}`,
+          `SUMMARY:${task.name}`,
+          `DESCRIPTION:${task.notes || ''}`,
+          'END:VEVENT'
+        ].join('\n');
+      }),
+      'END:VCALENDAR'
+    ].join('\n');
 
-  const loadView = (filters) => {
-    if (filters.projectFilter && filters.projectFilter !== 'all') {
-      setActiveProjectId(filters.projectFilter);
-    }
-    setStatusFilter(filters.statusFilter || 'all');
-    setSearchTerm(filters.searchTerm || '');
+    const blob = new Blob([icsContent], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'schedule.ics';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Calendar exported');
   };
-
-  useKeyboardShortcuts([
-    { key: 'n', ctrl: true, action: handleCreateTask },
-    { key: 'r', ctrl: true, action: handleRefresh },
-    { key: 'f', ctrl: true, action: () => setShowFilters(!showFilters) }
-  ]);
 
   const statusCounts = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const counts = {
-      all: totalCount,
+      all: filteredTasks.length,
       not_started: 0,
       in_progress: 0,
       completed: 0,
       overdue: 0
     };
     
-    combinedScheduleItems.forEach(t => {
+    filteredTasks.forEach(t => {
       if (t.status === 'not_started') counts.not_started++;
       else if (t.status === 'in_progress') counts.in_progress++;
       else if (t.status === 'completed') counts.completed++;
@@ -493,28 +293,92 @@ export default function Schedule() {
     });
     
     return counts;
-  }, [combinedScheduleItems, totalCount]);
+  }, [filteredTasks]);
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+      {/* Modern Header */}
+      <div className="border-b border-zinc-800 bg-zinc-950">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Schedule Management</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">
-                {activeProjectId ? `${statusCounts.all} TASKS` : 'SELECT PROJECT'}
+              <h1 className="text-3xl font-bold text-white mb-2">Schedule Management</h1>
+              <p className="text-sm text-zinc-400">
+                Enterprise project scheduling with multi-project support, dependencies, and resource management
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
-                  <SelectValue placeholder="SELECT PROJECT">
-                    {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'SELECT PROJECT'}
+            <Button
+              onClick={handleCreateTask}
+              disabled={activeProjectIds.length === 0}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6"
+            >
+              <Plus size={18} className="mr-2" />
+              Add Task
+            </Button>
+          </div>
+
+          {/* KPI Bar */}
+          <div className="grid grid-cols-5 gap-4">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Total Tasks</div>
+              <div className="text-2xl font-bold text-white">{statusCounts.all}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Not Started</div>
+              <div className="text-2xl font-bold text-zinc-300">{statusCounts.not_started}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">In Progress</div>
+              <div className="text-2xl font-bold text-blue-400">{statusCounts.in_progress}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Completed</div>
+              <div className="text-2xl font-bold text-green-400">{statusCounts.completed}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Overdue</div>
+              <div className="text-2xl font-bold text-red-400">{statusCounts.overdue}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="flex items-center gap-4">
+            {/* Project Selector - Multi-select */}
+            <div className="w-80">
+              <Select 
+                value={selectedProjects.length > 0 ? 'multi' : (activeProjectId || '')} 
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setSelectedProjects(projects.map(p => p.id));
+                    setActiveProjectId(null);
+                  } else if (value === 'multi') {
+                    // Keep multi-select active
+                  } else {
+                    setSelectedProjects([]);
+                    setActiveProjectId(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="Select Project(s)">
+                    {selectedProjects.length > 1 
+                      ? `${selectedProjects.length} Projects Selected` 
+                      : selectedProjects.length === 1
+                        ? projects.find(p => p.id === selectedProjects[0])?.name
+                        : activeProjectId
+                          ? projects.find(p => p.id === activeProjectId)?.name
+                          : 'Select Project(s)'}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
+                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-96">
+                  <SelectItem value="all" className="text-white font-semibold">
+                    ✓ All Projects ({projects.length})
+                  </SelectItem>
+                  <div className="border-t border-zinc-800 my-1" />
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id} className="text-white">
                       {p.project_number} - {p.name}
@@ -522,60 +386,44 @@ export default function Schedule() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAI(!showAI)}
-                disabled={!activeProjectId}
-                className="gap-2"
-              >
-                <span className="text-amber-500">✨</span>
-                AI Assistant
-              </Button>
-              <ExportButton
-                data={viewMode === 'list' ? tasks : combinedScheduleItems}
-                entityType="tasks"
-                filename="schedule"
-                disabled={!activeProjectId}
-              />
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <div className="flex items-center justify-between gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <Input
-                placeholder="SEARCH TASKS..."
+                placeholder="Search tasks by name or WBS..."
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
               />
             </div>
 
+            {/* Filters Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`border-zinc-800 ${showFilters ? 'bg-zinc-800 text-amber-400' : 'text-white'}`}
+            >
+              <Sliders size={16} className="mr-2" />
+              Filters
+            </Button>
+
             {/* View Mode */}
-            <div className="flex gap-1 border border-zinc-800 p-1">
+            <div className="flex gap-1 border border-zinc-800 rounded-lg overflow-hidden">
               {[
-                { value: 'phase', label: 'PHASE' },
-                { value: 'timeline', label: 'TIMELINE' },
-                { value: 'list', label: 'LIST' },
-                { value: 'gantt', label: 'GANTT' },
-                { value: 'calendar', label: 'CAL' },
-                { value: 'network', label: 'NETWORK' }
+                { value: 'gantt', label: 'Gantt' },
+                { value: 'list', label: 'List' },
+                { value: 'calendar', label: 'Calendar' }
               ].map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setViewMode(value)}
-                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                    viewMode === value ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    viewMode === value 
+                      ? 'bg-amber-500 text-black' 
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
                   }`}
                 >
                   {label}
@@ -583,21 +431,21 @@ export default function Schedule() {
               ))}
             </div>
 
-            {/* Status Filter (hide for network view) */}
-            {viewMode !== 'network' && viewMode !== 'gantt' && viewMode !== 'calendar' && (
-              <div className="flex gap-1 border border-zinc-800 p-1">
+            {/* Zoom Level (for Gantt) */}
+            {viewMode === 'gantt' && (
+              <div className="flex gap-1 border border-zinc-800 rounded-lg overflow-hidden">
                 {[
-                  { value: 'all', label: 'ALL' },
-                  { value: 'not_started', label: 'TODO' },
-                  { value: 'in_progress', label: 'ACTIVE' },
-                  { value: 'completed', label: 'DONE' },
-                  { value: 'overdue', label: 'LATE' }
+                  { value: 'day', label: 'Day' },
+                  { value: 'week', label: 'Week' },
+                  { value: 'month', label: 'Month' }
                 ].map(({ value, label }) => (
                   <button
                     key={value}
-                    onClick={() => { setStatusFilter(value); setPage(1); }}
-                    className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                      statusFilter === value ? 'bg-amber-500 text-black' : 'text-zinc-500 hover:text-white'
+                    onClick={() => setZoomLevel(value)}
+                    className={`px-3 py-2 text-xs font-medium transition-colors ${
+                      zoomLevel === value 
+                        ? 'bg-zinc-800 text-amber-400' 
+                        : 'text-zinc-500 hover:text-white'
                     }`}
                   >
                     {label}
@@ -605,225 +453,194 @@ export default function Schedule() {
                 ))}
               </div>
             )}
+
+            {/* Export Calendar */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportICS}
+              className="border-zinc-800 text-white"
+              disabled={filteredTasks.length === 0}
+            >
+              <Download size={16} className="mr-2" />
+              Export .ics
+            </Button>
           </div>
+
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-zinc-800">
+              <div>
+                <label className="text-xs text-zinc-500 uppercase mb-2 block">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="not_started">Not Started</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500 uppercase mb-2 block">Priority</label>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="critical">Critical Path Only</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500 uppercase mb-2 block">Phase</label>
+                <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="all">All Phases</SelectItem>
+                    <SelectItem value="detailing">Detailing</SelectItem>
+                    <SelectItem value="fabrication">Fabrication</SelectItem>
+                    <SelectItem value="delivery">Delivery</SelectItem>
+                    <SelectItem value="erection">Erection</SelectItem>
+                    <SelectItem value="closeout">Closeout</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStatusFilter('all');
+                    setPriorityFilter('all');
+                    setPhaseFilter('all');
+                    setSearchTerm('');
+                  }}
+                  className="text-zinc-400 hover:text-white w-full"
+                >
+                  Clear All Filters
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && activeProjectId && (
-        <div className="border-b border-zinc-800 bg-zinc-950">
-          <div className="max-w-[1600px] mx-auto px-6 py-4 space-y-4">
-            <ViewConfiguration 
-              viewKey="schedule"
-              currentFilters={{ projectFilter: activeProjectId || 'all', statusFilter, searchTerm }}
-              onLoadView={loadView}
-            />
-            <WeatherWidget projectId={activeProjectId} />
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        {/* AI Assistant Panel */}
-        {showAI && activeProjectId && (
-          <div className="mb-6">
-            <ScheduleAIAssistant
-              tasks={combinedScheduleItems}
-              workPackages={workPackages}
-              project={selectedProject}
-              resources={resources}
-            />
-          </div>
-        )}
-
-        {!activeProjectId ? (
-          <div className="flex items-center justify-center py-20">
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        {activeProjectIds.length === 0 ? (
+          <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <Calendar size={40} className="mx-auto mb-3 text-zinc-700" />
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">NO PROJECT SELECTED</p>
+              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
+              <p className="text-sm text-zinc-500 max-w-md">
+                Select one or more projects to view and manage their schedules
+              </p>
             </div>
           </div>
         ) : isLoading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
+              <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-4 rounded-full" />
+              <p className="text-sm text-zinc-500">Loading schedule...</p>
             </div>
           </div>
-        ) : allScheduleTasks.length === 0 ? (
-          <div className="text-center py-20">
-            <Calendar size={48} className="mx-auto mb-4 text-zinc-700" />
-            <p className="text-sm text-zinc-400 uppercase tracking-widest mb-6">NO TASKS CREATED YET</p>
-            <p className="text-xs text-zinc-600 mb-6 max-w-md mx-auto">
-              Create tasks to begin scheduling. Tasks drive the project timeline, resource allocation, and RFI/CO tracking.
+        ) : filteredTasks.length === 0 ? (
+          <div className="text-center py-32">
+            <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Tasks Found</h3>
+            <p className="text-sm text-zinc-500 mb-6 max-w-md mx-auto">
+              {allScheduleTasks.length === 0 
+                ? 'Create your first task to begin scheduling'
+                : 'No tasks match your current filters'}
             </p>
-            <Button
-              onClick={handleCreateTask}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={18} className="mr-2" />
-              Create First Task
-            </Button>
+            {allScheduleTasks.length === 0 && (
+              <Button
+                onClick={handleCreateTask}
+                className="bg-amber-500 hover:bg-amber-600 text-black"
+              >
+                <Plus size={18} className="mr-2" />
+                Create First Task
+              </Button>
+            )}
           </div>
-        ) : viewMode === 'phase' ? (
-          <PhaseGroupedView
-            tasks={combinedScheduleItems}
-            workPackages={workPackages}
-            onTaskClick={handleTaskClick}
-          />
-        ) : viewMode === 'timeline' ? (
-          <TimelineView
-            tasks={combinedScheduleItems}
-            onTaskClick={handleTaskClick}
-          />
-        ) : viewMode === 'calendar' ? (
-          <CalendarView
-            tasks={combinedScheduleItems}
-            projects={projects}
-            onTaskClick={handleTaskClick}
-            onTaskUpdate={(id, data) => {
-              // Only update actual tasks, not delivery/fab items
-              if (!id.toString().startsWith('delivery-') && !id.toString().startsWith('fabrication-')) {
-                updateMutation.mutate({ id, data });
-              }
-            }}
-          />
         ) : viewMode === 'gantt' ? (
           <GanttChart
-            tasks={combinedScheduleItems}
-            projects={projects}
-            viewMode="week"
-            onTaskUpdate={(id, data) => {
-              // Only update actual tasks, not delivery/fab items
-              if (!id.toString().startsWith('delivery-') && !id.toString().startsWith('fabrication-')) {
-                updateMutation.mutate({ id, data });
-              }
-            }}
+            tasks={filteredTasks}
+            projects={activeProjects}
+            viewMode={zoomLevel}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
             onTaskEdit={handleTaskClick}
+            onTaskDelete={(id) => deleteMutation.mutate(id)}
             resources={resources}
             rfis={rfis}
             changeOrders={changeOrders}
           />
-        ) : viewMode === 'network' ? (
-          <DependencyGraph
-            tasks={combinedScheduleItems}
+        ) : viewMode === 'calendar' ? (
+          <CalendarView
+            tasks={filteredTasks}
+            projects={activeProjects}
             onTaskClick={handleTaskClick}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           />
         ) : (
           <TaskListView
-            tasks={combinedScheduleItems}
-            projects={projects}
+            tasks={filteredTasks}
+            projects={activeProjects}
             resources={resources}
-            workPackages={workPackages}
-            onTaskUpdate={(id, data) => {
-              // Only update actual tasks, not delivery/fab items
-              if (!id.toString().startsWith('delivery-') && !id.toString().startsWith('fabrication-')) {
-                updateMutation.mutate({ id, data });
-              }
-            }}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
             onTaskClick={handleTaskClick}
-            onTaskDelete={(taskId) => {
-              // Only delete actual tasks
-              if (!taskId.toString().startsWith('delivery-') && !taskId.toString().startsWith('fabrication-')) {
-                deleteMutation.mutate(taskId);
-              }
-            }}
+            onTaskDelete={(id) => deleteMutation.mutate(id)}
           />
         )}
       </div>
-
-      {/* Bulk Actions */}
-      <BulkActions
-        selectedCount={selectedTasks.length}
-        onClear={() => setSelectedTasks([])}
-        actions={[
-          { label: 'Bulk Edit', onClick: () => setShowBulkEdit(true) },
-          { label: 'Assign Resources', onClick: () => setShowBulkAssign(true) },
-          { label: 'Complete', onClick: () => bulkUpdateStatus('completed') },
-          { label: 'In Progress', onClick: () => bulkUpdateStatus('in_progress') },
-          { label: 'Cancel', variant: 'ghost', onClick: () => setSelectedTasks([]) }
-        ]}
-      />
-
-      {/* Bulk Resource Assignment */}
-      <BulkResourceAssign
-        open={showBulkAssign}
-        onOpenChange={setShowBulkAssign}
-        selectedItems={combinedScheduleItems.filter(t => selectedTasks.includes(t.id) && !t._isDelivery && !t._isFabrication)}
-        resources={resources}
-        onAssign={handleBulkResourceAssign}
-        itemType="tasks"
-      />
-
-      {/* Bulk Edit Modal */}
-      {showBulkEdit && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <BulkTaskEditor
-              tasks={allScheduleTasks.filter(t => selectedTasks.includes(t.id))}
-              resources={resources}
-              onSave={(updates) => {
-                selectedTasks.forEach(taskId => {
-                  const task = allScheduleTasks.find(t => t.id === taskId);
-                  if (task && !task._isDelivery && !task._isFabrication) {
-                    updateMutation.mutate({ id: taskId, data: updates });
-                  }
-                });
-                setShowBulkEdit(false);
-                setSelectedTasks([]);
-              }}
-              onCancel={() => setShowBulkEdit(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Floating Action Button */}
-      <Button
-        className="fixed right-4 bottom-20 lg:bottom-4 w-14 h-14 rounded-full shadow-lg bg-amber-500 hover:bg-amber-600 text-black z-40 disabled:opacity-50 disabled:cursor-not-allowed"
-        onClick={handleCreateTask}
-        disabled={!activeProjectId}
-        title={!activeProjectId ? 'Select a project first' : 'Create new task'}
-      >
-        <Plus size={24} />
-      </Button>
 
       {/* Task Form Sheet */}
       <Sheet open={showTaskForm} onOpenChange={(open) => {
         setShowTaskForm(open);
         if (!open) setEditingTask(null);
       }}>
-        <SheetContent className="w-full overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-950 border-zinc-800">
           <SheetHeader>
-            <SheetTitle>{editingTask?.id ? 'Edit Task' : 'New Task'}</SheetTitle>
+            <SheetTitle className="text-white">
+              {editingTask?.id ? 'Edit Task' : 'New Task'}
+            </SheetTitle>
           </SheetHeader>
-          <div className="mt-4">
-            {workPackages && (
-              <TaskForm
-                task={editingTask}
-                projects={projects}
-                tasks={allTasks}
-                resources={resources}
-                rfis={rfis}
-                changeOrders={changeOrders}
-                drawingSets={drawingSets}
-                workPackages={workPackages}
-                onSubmit={(data) => {
-                  if (editingTask?.id) {
-                    updateMutation.mutate({ id: editingTask.id, data });
-                  } else {
-                    createMutation.mutate(data);
-                  }
-                }}
-                onCancel={() => {
-                  setShowTaskForm(false);
-                  setEditingTask(null);
-                }}
-                isLoading={createMutation.isPending || updateMutation.isPending}
-                restrictPhase={selectedProject?.phase === 'detailing' ? 'detailing' : null}
-              />
-            )}
+          <div className="mt-6">
+            <TaskForm
+              task={editingTask}
+              projects={projects}
+              tasks={allScheduleTasks}
+              resources={resources}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              drawingSets={drawingSets}
+              onSubmit={(data) => {
+                if (editingTask?.id) {
+                  updateMutation.mutate({ id: editingTask.id, data });
+                } else {
+                  createMutation.mutate(data);
+                }
+              }}
+              onCancel={() => {
+                setShowTaskForm(false);
+                setEditingTask(null);
+              }}
+              isLoading={createMutation.isPending || updateMutation.isPending}
+            />
           </div>
         </SheetContent>
       </Sheet>

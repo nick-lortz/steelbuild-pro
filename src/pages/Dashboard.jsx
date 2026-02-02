@@ -430,6 +430,11 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* Unapproved Hours */}
+      <div className="mb-6">
+        <UnapprovedHoursPanel />
+      </div>
+
       {/* Filters */}
       <div className="my-6">
         <ProjectFiltersBar

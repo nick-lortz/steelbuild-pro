@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building, AlertTriangle, Clock, Flag, Activity
+  Building, AlertTriangle, Clock, Flag, Activity, Plus, MessageSquareWarning
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
@@ -14,6 +14,13 @@ import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { calculateProjectRiskScore, RISK_LEVELS } from '@/components/shared/riskScoring';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Trash2, Pencil } from 'lucide-react';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -21,6 +28,8 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
+  const [showRFIModal, setShowRFIModal] = useState(false);
+  const [editingRFI, setEditingRFI] = useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -254,6 +263,39 @@ export default function Dashboard() {
     setRiskFilter('all');
   };
 
+  const queryClient = useQueryClient();
+
+  const createRFIMutation = useMutation({
+    mutationFn: (data) => base44.entities.RFI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-rfis'] });
+      toast.success('RFI created');
+      setShowRFIModal(false);
+      setEditingRFI(null);
+    },
+    onError: () => toast.error('Failed to create RFI')
+  });
+
+  const updateRFIMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.RFI.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-rfis'] });
+      toast.success('RFI updated');
+      setShowRFIModal(false);
+      setEditingRFI(null);
+    },
+    onError: () => toast.error('Failed to update RFI')
+  });
+
+  const deleteRFIMutation = useMutation({
+    mutationFn: (id) => base44.entities.RFI.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-rfis'] });
+      toast.success('RFI deleted');
+    },
+    onError: () => toast.error('Failed to delete RFI')
+  });
+
   if (projectsLoading || !currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -283,21 +325,34 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              refetchProjects();
-              refetchTasks();
-              refetchFinancials();
-              refetchCOs();
-              refetchRFIs();
-            }}
-            className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              size="sm"
+              onClick={() => {
+                setEditingRFI(null);
+                setShowRFIModal(true);
+              }}
+              className="gap-2 bg-amber-500 hover:bg-amber-600 text-black"
+            >
+              <Plus size={14} />
+              Add RFI
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                refetchProjects();
+                refetchTasks();
+                refetchFinancials();
+                refetchCOs();
+                refetchRFIs();
+              }}
+              className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
+            >
+              <RefreshCw size={14} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -406,6 +461,194 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">No projects match your filters</p>
         </div>
       )}
+
+      {/* RFI List Section */}
+      {allRFIs.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">
+            Recent RFIs
+          </h2>
+          <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
+            <div className="p-4">
+              <div className="space-y-2">
+                {allRFIs.slice(0, 10).map(rfi => (
+                  <div key={rfi.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors group">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3">
+                        <MessageSquareWarning size={16} className="text-amber-500 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-white truncate">{rfi.subject}</p>
+                          <p className="text-xs text-zinc-500">RFI #{rfi.rfi_number}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingRFI(rfi);
+                          setShowRFIModal(true);
+                        }}
+                        className="h-7 w-7 p-0"
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm('Delete this RFI?')) {
+                            deleteRFIMutation.mutate(rfi.id);
+                          }
+                        }}
+                        className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* RFI Modal */}
+      <Dialog open={showRFIModal} onOpenChange={setShowRFIModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingRFI ? 'Edit RFI' : 'Create RFI'}</DialogTitle>
+          </DialogHeader>
+          <RFIForm
+            rfi={editingRFI}
+            projects={userProjects}
+            onSubmit={(data) => {
+              if (editingRFI) {
+                updateRFIMutation.mutate({ id: editingRFI.id, data });
+              } else {
+                createRFIMutation.mutate(data);
+              }
+            }}
+            onCancel={() => {
+              setShowRFIModal(false);
+              setEditingRFI(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function RFIForm({ rfi, projects, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState(rfi || {
+    project_id: projects[0]?.id || '',
+    rfi_number: Date.now(),
+    subject: '',
+    question: '',
+    status: 'draft',
+    priority: 'medium',
+    ball_in_court: 'internal'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.project_id || !formData.subject) {
+      toast.error('Project and subject required');
+      return;
+    }
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Project *</label>
+        <Select 
+          value={formData.project_id} 
+          onValueChange={(val) => setFormData({ ...formData, project_id: val })}
+        >
+          <SelectTrigger className="bg-zinc-800 border-zinc-700">
+            <SelectValue placeholder="Select project" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-800 border-zinc-700">
+            {projects.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Subject *</label>
+        <Input
+          value={formData.subject}
+          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+          placeholder="RFI subject"
+          className="bg-zinc-800 border-zinc-700"
+        />
+      </div>
+
+      <div>
+        <label className="text-xs text-zinc-400 mb-2 block">Question</label>
+        <Textarea
+          value={formData.question}
+          onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+          placeholder="Detailed question"
+          className="bg-zinc-800 border-zinc-700"
+          rows={4}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs text-zinc-400 mb-2 block">Priority</label>
+          <Select 
+            value={formData.priority} 
+            onValueChange={(val) => setFormData({ ...formData, priority: val })}
+          >
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-xs text-zinc-400 mb-2 block">Status</label>
+          <Select 
+            value={formData.status} 
+            onValueChange={(val) => setFormData({ ...formData, status: val })}
+          >
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="under_review">Under Review</SelectItem>
+              <SelectItem value="answered">Answered</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-black">
+          {rfi ? 'Update' : 'Create'}
+        </Button>
+      </div>
+    </form>
   );
 }

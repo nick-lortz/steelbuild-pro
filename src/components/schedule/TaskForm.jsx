@@ -267,27 +267,11 @@ export default function TaskForm({
 
   const isSummaryTask = formData.parent_task_id === null || formData.parent_task_id === '';
   const childTasks = tasks.filter((t) => t.parent_task_id === task?.id);
-  
-  // Determine if task is read-only based on work package phase
-  const isReadOnly = task?._isReadOnly || false;
-  const workPackageStatus = task?._workPackageStatus;
-  const workPackagePhase = task?._workPackagePhase;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Read-Only Banner */}
-      {isReadOnly && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-          <p className="text-sm text-amber-400">
-            🔒 This task is read-only. 
-            {workPackageStatus === 'complete' && ' Work package is complete.'}
-            {workPackagePhase !== task?.phase && ' Task is in a different phase than the active work package.'}
-          </p>
-        </div>
-      )}
-
       {/* Action Buttons */}
-      {!task && !isReadOnly &&
+      {!task &&
       <div className="flex gap-2 pb-4 border-b border-zinc-800">
           <Button
           type="button"
@@ -343,7 +327,6 @@ export default function TaskForm({
           <Select 
             value={formData.work_package_id || ''} 
             onValueChange={(v) => handleChange('work_package_id', v)}
-            disabled={!!task}
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
               <SelectValue placeholder="None - Standalone Task" />
@@ -361,11 +344,6 @@ export default function TaskForm({
                 ))}
             </SelectContent>
           </Select>
-          {!!task && (
-            <p className="text-xs text-zinc-500 mt-1">
-              🔒 Cannot change work package after creation
-            </p>
-          )}
         </div>
       </div>
 
@@ -435,7 +413,6 @@ export default function TaskForm({
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder="e.g., Fabricate Level 2 Columns"
           required
-          disabled={isReadOnly}
           className="bg-zinc-800 border-zinc-700" />
 
       </div>
@@ -466,7 +443,6 @@ export default function TaskForm({
         <Select 
           value={formData.status} 
           onValueChange={(v) => handleChange('status', v)}
-          disabled={isReadOnly}
         >
           <SelectTrigger className="bg-zinc-800 border-zinc-700">
             <SelectValue />
@@ -491,7 +467,6 @@ export default function TaskForm({
             value={formData.start_date}
             onChange={(e) => handleChange('start_date', e.target.value)}
             required
-            disabled={isReadOnly}
             className="bg-zinc-800 border-zinc-700" />
 
         </div>
@@ -503,7 +478,6 @@ export default function TaskForm({
             value={formData.duration_days}
             onChange={(e) => handleChange('duration_days', e.target.value)}
             min="0"
-            disabled={isReadOnly}
             className="bg-zinc-800 border-zinc-700" />
 
         </div>
@@ -515,7 +489,6 @@ export default function TaskForm({
             value={formData.end_date}
             onChange={(e) => handleChange('end_date', e.target.value)}
             required
-            disabled={isReadOnly}
             className="bg-zinc-800 border-zinc-700" />
 
         </div>
@@ -876,21 +849,19 @@ export default function TaskForm({
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
         <Button type="button" variant="outline" onClick={onCancel} className="bg-background text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-9 border-zinc-700">
-          {isReadOnly ? 'Close' : 'Cancel'}
+          Cancel
         </Button>
-        {!isReadOnly && (
-          <Button 
-            type="submit" 
-            disabled={isLoading} 
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            {isLoading 
-              ? 'Saving...' 
-              : task 
-                ? 'Update Task' 
-                : 'Create Task'}
-          </Button>
-        )}
+        <Button 
+          type="submit" 
+          disabled={isLoading} 
+          className="bg-amber-500 hover:bg-amber-600 text-black"
+        >
+          {isLoading 
+            ? 'Saving...' 
+            : task 
+              ? 'Update Task' 
+              : 'Create Task'}
+        </Button>
       </div>
     </form>);
 

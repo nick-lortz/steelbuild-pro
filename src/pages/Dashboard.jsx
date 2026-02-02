@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building, AlertTriangle, Clock, Flag, Activity, Plus, MessageSquareWarning
+  Building, AlertTriangle, Clock, Flag, Activity, MessageSquareWarning
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
@@ -15,13 +15,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { calculateProjectRiskScore, RISK_LEVELS } from '@/components/shared/riskScoring';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Pencil } from 'lucide-react';
+
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -29,8 +23,6 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
-  const [showRFIModal, setShowRFIModal] = useState(false);
-  const [editingRFI, setEditingRFI] = useState(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -264,38 +256,7 @@ export default function Dashboard() {
     setRiskFilter('all');
   };
 
-  const queryClient = useQueryClient();
 
-  const createRFIMutation = useMutation({
-    mutationFn: (data) => base44.entities.RFI.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-rfis'] });
-      toast.success('RFI created');
-      setShowRFIModal(false);
-      setEditingRFI(null);
-    },
-    onError: () => toast.error('Failed to create RFI')
-  });
-
-  const updateRFIMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.RFI.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-rfis'] });
-      toast.success('RFI updated');
-      setShowRFIModal(false);
-      setEditingRFI(null);
-    },
-    onError: () => toast.error('Failed to update RFI')
-  });
-
-  const deleteRFIMutation = useMutation({
-    mutationFn: (id) => base44.entities.RFI.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-rfis'] });
-      toast.success('RFI deleted');
-    },
-    onError: () => toast.error('Failed to delete RFI')
-  });
 
   if (projectsLoading || !currentUser) {
     return (
@@ -327,17 +288,6 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              size="sm"
-              onClick={() => {
-                setEditingRFI(null);
-                setShowRFIModal(true);
-              }}
-              className="gap-2 bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={14} />
-              Add RFI
-            </Button>
             <Button 
               variant="outline" 
               size="sm"
@@ -496,175 +446,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* RFI Modal */}
-      <Dialog open={showRFIModal} onOpenChange={setShowRFIModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingRFI ? 'Edit RFI' : 'Create RFI'}</DialogTitle>
-          </DialogHeader>
-          <RFIForm
-            rfi={editingRFI}
-            projects={userProjects}
-            allRFIs={allRFIs}
-            onSubmit={(data) => {
-              if (editingRFI) {
-                updateRFIMutation.mutate({ id: editingRFI.id, data });
-              } else {
-                createRFIMutation.mutate(data);
-              }
-            }}
-            onCancel={() => {
-              setShowRFIModal(false);
-              setEditingRFI(null);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+
     </div>
-  );
-}
-
-function RFIForm({ rfi, projects, onSubmit, onCancel, allRFIs = [] }) {
-  const [formData, setFormData] = useState(() => {
-    if (rfi) return rfi;
-    
-    const projectId = projects[0]?.id || '';
-    const projectRFIs = allRFIs.filter(r => r.project_id === projectId);
-    const maxNumber = projectRFIs.length > 0 
-      ? Math.max(...projectRFIs.map(r => r.rfi_number || 0))
-      : 0;
-    
-    return {
-      project_id: projectId,
-      rfi_number: maxNumber + 1,
-      subject: '',
-      question: '',
-      status: 'draft',
-      priority: 'medium',
-      ball_in_court: 'internal'
-    };
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.project_id || !formData.subject) {
-      toast.error('Project and subject required');
-      return;
-    }
-    
-    // Recalculate RFI number on submit to ensure it's current
-    if (!rfi) {
-      const projectRFIs = allRFIs.filter(r => r.project_id === formData.project_id);
-      const maxNumber = projectRFIs.length > 0 
-        ? Math.max(...projectRFIs.map(r => r.rfi_number || 0))
-        : 0;
-      formData.rfi_number = maxNumber + 1;
-    }
-    
-    onSubmit(formData);
-  };
-
-  const handleProjectChange = (projectId) => {
-    const projectRFIs = allRFIs.filter(r => r.project_id === projectId);
-    const maxNumber = projectRFIs.length > 0 
-      ? Math.max(...projectRFIs.map(r => r.rfi_number || 0))
-      : 0;
-    
-    setFormData({
-      ...formData,
-      project_id: projectId,
-      rfi_number: maxNumber + 1
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="text-xs text-zinc-400 mb-2 block">Project *</label>
-        <Select 
-          value={formData.project_id} 
-          onValueChange={handleProjectChange}
-        >
-          <SelectTrigger className="bg-zinc-800 border-zinc-700">
-            <SelectValue placeholder="Select project" />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-800 border-zinc-700">
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-[10px] text-zinc-500 mt-1">Next RFI #: {formData.rfi_number}</p>
-      </div>
-
-      <div>
-        <label className="text-xs text-zinc-400 mb-2 block">Subject *</label>
-        <Input
-          value={formData.subject}
-          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-          placeholder="RFI subject"
-          className="bg-zinc-800 border-zinc-700"
-        />
-      </div>
-
-      <div>
-        <label className="text-xs text-zinc-400 mb-2 block">Question</label>
-        <Textarea
-          value={formData.question}
-          onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-          placeholder="Detailed question"
-          className="bg-zinc-800 border-zinc-700"
-          rows={4}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs text-zinc-400 mb-2 block">Priority</label>
-          <Select 
-            value={formData.priority} 
-            onValueChange={(val) => setFormData({ ...formData, priority: val })}
-          >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="text-xs text-zinc-400 mb-2 block">Status</label>
-          <Select 
-            value={formData.status} 
-            onValueChange={(val) => setFormData({ ...formData, status: val })}
-          >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="submitted">Submitted</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-              <SelectItem value="answered">Answered</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-black">
-          {rfi ? 'Update' : 'Create'}
-        </Button>
-      </div>
-    </form>
   );
 }

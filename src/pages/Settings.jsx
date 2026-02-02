@@ -50,6 +50,13 @@ export default function Settings() {
     date_format: 'MM/dd/yyyy',
     time_zone: 'America/New_York'
   });
+  const [phaseNames, setPhaseNames] = useState({
+    detailing: 'Detailing',
+    fabrication: 'Fabrication',
+    delivery: 'Delivery',
+    erection: 'Erection',
+    closeout: 'Closeout'
+  });
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -68,6 +75,9 @@ export default function Settings() {
       });
       if (currentUser.preferences) {
         setPreferences((prev) => ({ ...prev, ...currentUser.preferences }));
+      }
+      if (currentUser.phase_names) {
+        setPhaseNames((prev) => ({ ...prev, ...currentUser.phase_names }));
       }
     }
   }, [currentUser]);
@@ -110,6 +120,10 @@ export default function Settings() {
 
   const savePreferences = () => {
     updateProfileMutation.mutate({ preferences });
+  };
+
+  const savePhaseNames = () => {
+    updateProfileMutation.mutate({ phase_names: phaseNames });
   };
 
   const [feedbackForm, setFeedbackForm] = useState({
@@ -224,6 +238,12 @@ export default function Settings() {
             <SettingsIcon size={14} className="mr-2" />
             App Settings
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="phases">
+              <FileText size={14} className="mr-2" />
+              Phase Names
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Profile Tab */}
@@ -628,6 +648,96 @@ export default function Settings() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* Phase Names Tab (Admin Only) */}
+        {isAdmin && (
+          <TabsContent value="phases">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-white">Customize Phase Names</CardTitle>
+                <p className="text-sm text-zinc-400 mt-2">
+                  Customize the names of the five standard phases used throughout the application
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-white">Phase 1: Detailing</Label>
+                    <Input
+                      value={phaseNames.detailing}
+                      onChange={(e) => setPhaseNames({ ...phaseNames, detailing: e.target.value })}
+                      placeholder="Detailing"
+                      className="bg-zinc-800 border-zinc-700 text-white"
+                    />
+                    <p className="text-xs text-zinc-500">Default: Detailing</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-white">Phase 2: Fabrication</Label>
+                    <Input
+                      value={phaseNames.fabrication}
+                      onChange={(e) => setPhaseNames({ ...phaseNames, fabrication: e.target.value })}
+                      placeholder="Fabrication"
+                      className="bg-zinc-800 border-zinc-700 text-white"
+                    />
+                    <p className="text-xs text-zinc-500">Default: Fabrication</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-white">Phase 3: Delivery</Label>
+                    <Input
+                      value={phaseNames.delivery}
+                      onChange={(e) => setPhaseNames({ ...phaseNames, delivery: e.target.value })}
+                      placeholder="Delivery"
+                      className="bg-zinc-800 border-zinc-700 text-white"
+                    />
+                    <p className="text-xs text-zinc-500">Default: Delivery</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-white">Phase 4: Erection</Label>
+                    <Input
+                      value={phaseNames.erection}
+                      onChange={(e) => setPhaseNames({ ...phaseNames, erection: e.target.value })}
+                      placeholder="Erection"
+                      className="bg-zinc-800 border-zinc-700 text-white"
+                    />
+                    <p className="text-xs text-zinc-500">Default: Erection</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-white">Phase 5: Closeout</Label>
+                    <Input
+                      value={phaseNames.closeout}
+                      onChange={(e) => setPhaseNames({ ...phaseNames, closeout: e.target.value })}
+                      placeholder="Closeout"
+                      className="bg-zinc-800 border-zinc-700 text-white"
+                    />
+                    <p className="text-xs text-zinc-500">Default: Closeout</p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <p className="text-xs text-amber-400">
+                    ⚠️ Note: Custom phase names are currently stored in your user profile and will only affect your view. 
+                    Full app-wide phase renaming requires database schema updates.
+                  </p>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button
+                    onClick={savePhaseNames}
+                    disabled={updateProfileMutation.isPending}
+                    className="bg-amber-500 hover:bg-amber-600 text-black"
+                  >
+                    <Save size={16} className="mr-2" />
+                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Phase Names'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         {/* App Settings Tab */}
         <TabsContent value="app">

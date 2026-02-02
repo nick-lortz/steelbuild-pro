@@ -13,7 +13,7 @@ const statusStyles = {
   
   // Drawing statuses
   IFA: "bg-blue-500/30 text-blue-300 border-blue-400/40 font-medium",
-  BFA: "bg-purple-500/30 text-purple-300 border-purple-400/40 font-medium",
+  BFA: "bg-blue-900/40 text-blue-300 border-blue-700/50 font-medium",
   BFS: "bg-cyan-500/30 text-cyan-300 border-cyan-400/40 font-medium",
   FFF: "bg-green-500/30 text-green-300 border-green-400/40 font-medium",
   "As-Built": "bg-emerald-500/30 text-emerald-300 border-emerald-400/40 font-medium",

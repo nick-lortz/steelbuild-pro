@@ -339,7 +339,7 @@ export default function TaskForm({
                 .filter(wp => wp.project_id === formData.project_id)
                 .map((wp) => (
                   <SelectItem key={wp.id} value={wp.id} className="text-white">
-                    {wp.name} ({wp.phase})
+                    {wp.name}
                   </SelectItem>
                 ))}
             </SelectContent>

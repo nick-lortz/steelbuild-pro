@@ -13,6 +13,7 @@ import { differenceInDays, addDays } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { calculateProjectRiskScore, RISK_LEVELS } from '@/components/shared/riskScoring';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -150,6 +151,15 @@ export default function Dashboard() {
       // Progress: % of tasks complete
       const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length * 100) : 0;
 
+      // Calculate risk score
+      const riskAnalysis = calculateProjectRiskScore(
+        project,
+        projectTasks,
+        projectRFIs,
+        projectFinancials,
+        projectCOs
+      );
+
       return {
         id: project.id,
         name: project.name,
@@ -163,7 +173,10 @@ export default function Dashboard() {
         overdueTasks,
         budgetVsActual: Math.round(budgetVsActual),
         openRFIs,
-        pendingCOs
+        pendingCOs,
+        riskScore: riskAnalysis.totalScore,
+        riskLevel: riskAnalysis.riskLevel,
+        riskFactors: riskAnalysis.factors
       };
     });
   }, [userProjects, allTasks, allFinancials, allRFIs, allChangeOrders]);
@@ -171,12 +184,17 @@ export default function Dashboard() {
   // Update portfolio metrics with actual at-risk count
   const enhancedMetrics = useMemo(() => {
     const atRiskCount = projectsWithHealth.filter(p => 
-      p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0
+      p.riskLevel.value >= RISK_LEVELS.HIGH.value
+    ).length;
+    
+    const criticalCount = projectsWithHealth.filter(p => 
+      p.riskLevel.value === RISK_LEVELS.CRITICAL.value
     ).length;
 
     return {
       ...portfolioMetrics,
-      atRiskProjects: atRiskCount
+      atRiskProjects: atRiskCount,
+      criticalProjects: criticalCount
     };
   }, [portfolioMetrics, projectsWithHealth]);
 
@@ -199,18 +217,20 @@ export default function Dashboard() {
     }
 
     // Risk filter
-    if (riskFilter === 'at_risk') {
-      filtered = filtered.filter(p => p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0);
+    if (riskFilter === 'critical') {
+      filtered = filtered.filter(p => p.riskLevel.value === RISK_LEVELS.CRITICAL.value);
+    } else if (riskFilter === 'high') {
+      filtered = filtered.filter(p => p.riskLevel.value === RISK_LEVELS.HIGH.value);
+    } else if (riskFilter === 'at_risk') {
+      filtered = filtered.filter(p => p.riskLevel.value >= RISK_LEVELS.HIGH.value);
     } else if (riskFilter === 'healthy') {
-      filtered = filtered.filter(p => p.costHealth >= -5 && p.daysSlip <= 3 && p.overdueTasks === 0);
+      filtered = filtered.filter(p => p.riskLevel.value === RISK_LEVELS.LOW.value);
     }
 
     // Sort
     if (sortBy === 'risk') {
       filtered.sort((a, b) => {
-        const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
-        const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
-        if (bRisk !== aRisk) return bRisk - aRisk;
+        if (b.riskScore !== a.riskScore) return b.riskScore - a.riskScore;
         return (a.name || '').localeCompare(b.name || '');
       });
     } else if (sortBy === 'name') {

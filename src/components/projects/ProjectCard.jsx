@@ -1,11 +1,12 @@
 import React from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Trash2, Settings2 } from 'lucide-react';
+import { Trash2, Settings2, AlertTriangle } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 import QuickStatusUpdate from './QuickStatusUpdate';
 import ProjectPhaseUpdater from './ProjectPhaseUpdater';
 
-export default function ProjectCard({ project, progress, onClick, onDelete, onEdit, noBorder }) {
+export default function ProjectCard({ project, progress, onClick, onDelete, onEdit, noBorder, riskLevel, riskScore }) {
   const daysUntilCompletion = project.target_completion 
     ? differenceInDays(new Date(project.target_completion), new Date())
     : null;
@@ -28,6 +29,12 @@ export default function ProjectCard({ project, progress, onClick, onDelete, onEd
           <div className="flex items-center gap-3 mb-1">
             <span className="text-xs text-white font-medium truncate">{project.name}</span>
             <span className="text-[10px] text-zinc-600 font-mono flex-shrink-0">{project.project_number}</span>
+            {riskLevel && (
+              <Badge className={`text-[9px] px-1.5 py-0.5 ${riskLevel.bg} ${riskLevel.color} border ${riskLevel.border}`}>
+                <AlertTriangle size={9} className="mr-1" />
+                {riskLevel.label}
+              </Badge>
+            )}
           </div>
           {project.client && (
             <span className="text-[10px] text-zinc-600 truncate block">{project.client}</span>

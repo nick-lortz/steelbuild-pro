@@ -1,17 +1,20 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   AlertTriangle, 
   Clock, 
   CheckCircle2,
   Lock,
   Calendar,
-  User
+  User,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 
-export default function RFIListCompact({ rfis, projects, onSelect }) {
+export default function RFIListCompact({ rfis, projects, onSelect, onEdit, onDelete }) {
   const projectMap = React.useMemo(() => {
     const map = {};
     projects.forEach(p => { map[p.id] = p; });
@@ -62,7 +65,7 @@ export default function RFIListCompact({ rfis, projects, onSelect }) {
         return (
           <Card 
             key={rfi.id} 
-            className={`p-4 cursor-pointer hover:bg-accent transition-colors ${overdue ? 'border-red-600' : ''}`}
+            className={`p-4 cursor-pointer hover:bg-accent transition-colors group ${overdue ? 'border-red-600' : ''}`}
             onClick={() => onSelect(rfi)}
           >
             <div className="flex items-start gap-4">
@@ -157,6 +160,38 @@ export default function RFIListCompact({ rfis, projects, onSelect }) {
                   )}
                 </div>
               </div>
+
+              {/* Action Buttons */}
+              {(onEdit || onDelete) && (
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {onEdit && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(rfi);
+                      }}
+                      className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                    >
+                      <Pencil size={14} />
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(rfi);
+                      }}
+                      className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
         );

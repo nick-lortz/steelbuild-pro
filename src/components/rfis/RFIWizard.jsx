@@ -18,7 +18,7 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
   const editingRFI = initialData || rfi;
   
   const [formData, setFormData] = useState({
-    project_id: editingRFI?.project_id || templateData?.project_id || '',
+    project_id: editingRFI?.project_id || templateData?.project_id || projects[0]?.id || '',
     rfi_number: editingRFI?.rfi_number || '',
     subject: editingRFI?.subject || templateData?.fields?.subject || '',
     category: editingRFI?.category || templateData?.category || 'structural',
@@ -47,6 +47,33 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
   });
 
   const [newContact, setNewContact] = useState({ name: '', email: '', company: '', role: '' });
+  const [nextRFINumber, setNextRFINumber] = React.useState(null);
+
+  // Calculate next RFI number for selected project
+  React.useEffect(() => {
+    async function calculateNextNumber() {
+      if (!formData.project_id || editingRFI) {
+        setNextRFINumber(null);
+        return;
+      }
+      
+      try {
+        const projectRFIs = await base44.entities.RFI.filter({ project_id: formData.project_id });
+        const maxNumber = projectRFIs.length > 0 
+          ? Math.max(...projectRFIs.map(r => {
+              const num = parseInt(String(r.rfi_number).replace(/\D/g, ''));
+              return isNaN(num) ? 0 : num;
+            }))
+          : 0;
+        setNextRFINumber(maxNumber + 1);
+      } catch (error) {
+        console.error('Error calculating RFI number:', error);
+        setNextRFINumber(1);
+      }
+    }
+    
+    calculateNextNumber();
+  }, [formData.project_id, editingRFI]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -88,7 +115,10 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
         // Create new RFI - calculate next RFI number
         const allProjectRFIs = await base44.entities.RFI.filter({ project_id: formData.project_id });
         const maxNumber = allProjectRFIs.length > 0 
-          ? Math.max(...allProjectRFIs.map(r => parseInt(r.rfi_number) || 0))
+          ? Math.max(...allProjectRFIs.map(r => {
+              const num = parseInt(String(r.rfi_number).replace(/\D/g, ''));
+              return isNaN(num) ? 0 : num;
+            }))
           : 0;
         
         const newRFIData = {
@@ -154,7 +184,7 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Project *</Label>
-            <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
+            <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} disabled={!!editingRFI}>
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
@@ -164,6 +194,12 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
                 ))}
               </SelectContent>
             </Select>
+            {!editingRFI && nextRFINumber !== null && (
+              <p className="text-xs text-zinc-500">Next RFI #: {nextRFINumber}</p>
+            )}
+            {editingRFI && (
+              <p className="text-xs text-zinc-500">RFI #: {editingRFI.rfi_number}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

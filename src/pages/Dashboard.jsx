@@ -524,6 +524,7 @@ export default function Dashboard() {
           <RFIForm
             rfi={editingRFI}
             projects={userProjects}
+            allRFIs={allRFIs}
             onSubmit={(data) => {
               if (editingRFI) {
                 updateRFIMutation.mutate({ id: editingRFI.id, data });
@@ -542,15 +543,25 @@ export default function Dashboard() {
   );
 }
 
-function RFIForm({ rfi, projects, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(rfi || {
-    project_id: projects[0]?.id || '',
-    rfi_number: Date.now(),
-    subject: '',
-    question: '',
-    status: 'draft',
-    priority: 'medium',
-    ball_in_court: 'internal'
+function RFIForm({ rfi, projects, onSubmit, onCancel, allRFIs = [] }) {
+  const [formData, setFormData] = useState(() => {
+    if (rfi) return rfi;
+    
+    const projectId = projects[0]?.id || '';
+    const projectRFIs = allRFIs.filter(r => r.project_id === projectId);
+    const maxNumber = projectRFIs.length > 0 
+      ? Math.max(...projectRFIs.map(r => r.rfi_number || 0))
+      : 0;
+    
+    return {
+      project_id: projectId,
+      rfi_number: maxNumber + 1,
+      subject: '',
+      question: '',
+      status: 'draft',
+      priority: 'medium',
+      ball_in_court: 'internal'
+    };
   });
 
   const handleSubmit = (e) => {
@@ -559,7 +570,30 @@ function RFIForm({ rfi, projects, onSubmit, onCancel }) {
       toast.error('Project and subject required');
       return;
     }
+    
+    // Recalculate RFI number on submit to ensure it's current
+    if (!rfi) {
+      const projectRFIs = allRFIs.filter(r => r.project_id === formData.project_id);
+      const maxNumber = projectRFIs.length > 0 
+        ? Math.max(...projectRFIs.map(r => r.rfi_number || 0))
+        : 0;
+      formData.rfi_number = maxNumber + 1;
+    }
+    
     onSubmit(formData);
+  };
+
+  const handleProjectChange = (projectId) => {
+    const projectRFIs = allRFIs.filter(r => r.project_id === projectId);
+    const maxNumber = projectRFIs.length > 0 
+      ? Math.max(...projectRFIs.map(r => r.rfi_number || 0))
+      : 0;
+    
+    setFormData({
+      ...formData,
+      project_id: projectId,
+      rfi_number: maxNumber + 1
+    });
   };
 
   return (
@@ -568,7 +602,7 @@ function RFIForm({ rfi, projects, onSubmit, onCancel }) {
         <label className="text-xs text-zinc-400 mb-2 block">Project *</label>
         <Select 
           value={formData.project_id} 
-          onValueChange={(val) => setFormData({ ...formData, project_id: val })}
+          onValueChange={handleProjectChange}
         >
           <SelectTrigger className="bg-zinc-800 border-zinc-700">
             <SelectValue placeholder="Select project" />
@@ -579,6 +613,7 @@ function RFIForm({ rfi, projects, onSubmit, onCancel }) {
             ))}
           </SelectContent>
         </Select>
+        <p className="text-[10px] text-zinc-500 mt-1">Next RFI #: {formData.rfi_number}</p>
       </div>
 
       <div>

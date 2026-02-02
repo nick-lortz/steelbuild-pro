@@ -12,7 +12,7 @@ import RFIListCompact from '@/components/rfis/RFIListCompact';
 import RFIProjectSummary from '@/components/rfis/RFIProjectSummary';
 import RFIDetailPanel from '@/components/rfis/RFIDetailPanel';
 import RFIWizard from '@/components/rfis/RFIWizard';
-import { Plus, LayoutDashboard, List, BarChart3 } from 'lucide-react';
+import { Plus, LayoutDashboard, List, BarChart3, Pencil, Trash2 } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 export default function RFIsPage() {
@@ -20,6 +20,7 @@ export default function RFIsPage() {
   const [view, setView] = useState('portfolio');
   const [selectedRFI, setSelectedRFI] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [editingRFI, setEditingRFI] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     project_id: 'all',
@@ -83,8 +84,8 @@ export default function RFIsPage() {
 
   const handleEdit = (rfi) => {
     setSelectedRFI(null);
+    setEditingRFI(rfi);
     setShowWizard(true);
-    // Note: RFIWizard needs to accept initialData prop for editing
   };
 
   const handleDelete = (rfi) => {
@@ -116,6 +117,7 @@ This RFI requires your attention.`;
 
   const handleWizardClose = () => {
     setShowWizard(false);
+    setEditingRFI(null);
     queryClient.invalidateQueries({ queryKey: ['rfis'] });
   };
 
@@ -286,6 +288,11 @@ This RFI requires your attention.`;
                   rfis={filteredRFIs} 
                   projects={projects}
                   onSelect={setSelectedRFI}
+                  onEdit={(rfi) => {
+                    setEditingRFI(rfi);
+                    setShowWizard(true);
+                  }}
+                  onDelete={handleDelete}
                 />
               </div>
               <div>
@@ -307,6 +314,11 @@ This RFI requires your attention.`;
               rfis={filteredRFIs} 
               projects={projects}
               onSelect={setSelectedRFI}
+              onEdit={(rfi) => {
+                setEditingRFI(rfi);
+                setShowWizard(true);
+              }}
+              onDelete={handleDelete}
             />
           </TabsContent>
 
@@ -331,6 +343,11 @@ This RFI requires your attention.`;
                     rfis={projectRFIs} 
                     projects={projects}
                     onSelect={setSelectedRFI}
+                    onEdit={(rfi) => {
+                      setEditingRFI(rfi);
+                      setShowWizard(true);
+                    }}
+                    onDelete={handleDelete}
                   />
                 </div>
               );
@@ -360,6 +377,7 @@ This RFI requires your attention.`;
       {/* RFI Creation Wizard */}
       {showWizard && (
         <RFIWizard
+          initialData={editingRFI}
           onClose={handleWizardClose}
         />
       )}

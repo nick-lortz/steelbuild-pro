@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageHeader from '@/components/ui/PageHeader';
-import { Camera, CheckSquare, FileText, AlertCircle, Wrench, Plus, Search, Upload, Image as ImageIcon, Folder, FolderPlus } from 'lucide-react';
+import { Camera, CheckSquare, FileText, AlertCircle, Wrench, Plus, Search, Upload, Image as ImageIcon, Folder, FolderPlus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -116,6 +116,40 @@ export default function FieldToolsPage() {
     setNewFolderName('');
     setShowForm(null);
     toast.success(`Folder "${newFolderName}" created`);
+  };
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: (id) => base44.entities.Document.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-photos'] });
+      toast.success('Photo deleted');
+    }
+  });
+
+  const handleDeleteFolder = async (folderName) => {
+    const folderPath = currentFolder === '/' ? `/${folderName}` : `${currentFolder}/${folderName}`;
+    
+    if (!confirm(`Delete folder "${folderName}" and all its contents?`)) return;
+
+    try {
+      const allDocs = await base44.entities.Document.filter({
+        project_id: activeProjectId,
+        category: 'photo'
+      });
+
+      const docsToDelete = allDocs.filter(doc => 
+        doc.folder_path && doc.folder_path.startsWith(folderPath)
+      );
+
+      for (const doc of docsToDelete) {
+        await base44.entities.Document.delete(doc.id);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['daily-photos'] });
+      toast.success(`Folder deleted (${docsToDelete.length} photos)`);
+    } catch (error) {
+      toast.error('Delete failed');
+    }
   };
 
   const folders = useMemo(() => {
@@ -234,14 +268,27 @@ export default function FieldToolsPage() {
             {folders.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
                 {folders.map(folder => (
-                  <button
+                  <div
                     key={folder}
-                    onClick={() => setCurrentFolder(currentFolder === '/' ? `/${folder}` : `${currentFolder}/${folder}`)}
-                    className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded p-3 hover:bg-zinc-800 transition-colors"
+                    className="relative group bg-zinc-900 border border-zinc-800 rounded overflow-hidden"
                   >
-                    <Folder size={20} className="text-amber-500 flex-shrink-0" />
-                    <span className="text-xs text-white truncate">{folder}</span>
-                  </button>
+                    <button
+                      onClick={() => setCurrentFolder(currentFolder === '/' ? `/${folder}` : `${currentFolder}/${folder}`)}
+                      className="flex items-center gap-2 w-full p-3 hover:bg-zinc-800 transition-colors"
+                    >
+                      <Folder size={20} className="text-amber-500 flex-shrink-0" />
+                      <span className="text-xs text-white truncate">{folder}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFolder(folder);
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-red-500/90 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 size={12} className="text-white" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -258,8 +305,14 @@ export default function FieldToolsPage() {
                 {dailyPhotos.map(photo => (
                   <div key={photo.id} className="relative aspect-square bg-zinc-900 rounded border border-zinc-800 overflow-hidden group cursor-pointer">
                     <img src={photo.file_url} alt={photo.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-2">
-                      <span className="text-[10px] text-white font-medium truncate">{photo.title}</span>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-end justify-between p-2">
+                      <button
+                        onClick={() => deletePhotoMutation.mutate(photo.id)}
+                        className="p-1.5 bg-red-500/90 rounded hover:bg-red-600"
+                      >
+                        <X size={14} className="text-white" />
+                      </button>
+                      <span className="text-[10px] text-white font-medium truncate w-full">{photo.title}</span>
                     </div>
                   </div>
                 ))}

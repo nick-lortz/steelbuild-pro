@@ -42,7 +42,7 @@ const HealthIndicator = ({ value, type = 'cost' }) => {
     <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded border", config.bg, config.border)}>
       <Icon className={cn("w-3 h-3", config.color)} />
       <span className={cn("text-xs font-semibold", config.color)}>
-        {value > 0 ? '+' : ''}{value.toFixed(1)}%
+        {Math.abs(value).toFixed(1)}%
       </span>
     </div>
   );

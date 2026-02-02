@@ -378,6 +378,7 @@ This RFI requires your attention.`;
       {showWizard && (
         <RFIWizard
           initialData={editingRFI}
+          projects={projects}
           onClose={handleWizardClose}
         />
       )}

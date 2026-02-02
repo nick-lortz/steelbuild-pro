@@ -10,13 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageHeader from '@/components/ui/PageHeader';
-import { Camera, CheckSquare, FileText, AlertCircle, Wrench, Plus, Search, Upload, Image as ImageIcon, Folder, FolderPlus, Trash2, X } from 'lucide-react';
+import { Camera, CheckSquare, FileText, AlertCircle, Wrench, Plus, Search, Upload, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import DocumentUploadZone from '@/components/documents/DocumentUploadZone';
 import FolderBreadcrumb from '@/components/documents/FolderBreadcrumb';
-import FieldReportGenerator from '@/components/field/FieldReportGenerator';
 
 export default function FieldToolsPage() {
   const { activeProjectId } = useActiveProject();
@@ -25,9 +24,8 @@ export default function FieldToolsPage() {
   const [showForm, setShowForm] = useState(null);
   const [currentFolder, setCurrentFolder] = useState('/');
   const [uploading, setUploading] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
 
-  const { data: allPhotos = [] } = useQuery({
+  const { data: dailyPhotos = [] } = useQuery({
     queryKey: ['daily-photos', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return [];
@@ -39,10 +37,6 @@ export default function FieldToolsPage() {
     enabled: !!activeProjectId
   });
 
-  const dailyPhotos = useMemo(() => {
-    return allPhotos.filter(p => p.folder_path === currentFolder);
-  }, [allPhotos, currentFolder]);
-
   const { data: installs = [] } = useQuery({
     queryKey: ['field-installs', activeProjectId],
     queryFn: () => activeProjectId ? base44.entities.FieldInstall.filter({ project_id: activeProjectId }) : [],
@@ -52,16 +46,6 @@ export default function FieldToolsPage() {
   const { data: punchItems = [] } = useQuery({
     queryKey: ['punch-items', activeProjectId],
     queryFn: () => activeProjectId ? base44.entities.PunchItem.filter({ project_id: activeProjectId }) : [],
-    enabled: !!activeProjectId
-  });
-
-  const { data: activeProject } = useQuery({
-    queryKey: ['active-project', activeProjectId],
-    queryFn: async () => {
-      if (!activeProjectId) return null;
-      const projects = await base44.entities.Project.filter({ id: activeProjectId });
-      return projects[0] || null;
-    },
     enabled: !!activeProjectId
   });
 
@@ -120,70 +104,11 @@ export default function FieldToolsPage() {
     }
   };
 
-  const handleCreateFolder = () => {
-    if (!newFolderName.trim()) {
-      toast.error('Folder name required');
-      return;
-    }
-    const newPath = currentFolder === '/' ? `/${newFolderName}` : `${currentFolder}/${newFolderName}`;
-    setCurrentFolder(newPath);
-    setNewFolderName('');
-    setShowForm(null);
-    toast.success(`Folder "${newFolderName}" created`);
-  };
-
-  const deletePhotoMutation = useMutation({
-    mutationFn: (id) => base44.entities.Document.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['daily-photos'] });
-      toast.success('Photo deleted');
-    }
-  });
-
-  const handleDeleteFolder = async (folderName) => {
-    const folderPath = currentFolder === '/' ? `/${folderName}` : `${currentFolder}/${folderName}`;
-    
-    if (!confirm(`Delete folder "${folderName}" and all its contents?`)) return;
-
-    try {
-      const allDocs = await base44.entities.Document.filter({
-        project_id: activeProjectId,
-        category: 'photo'
-      });
-
-      const docsToDelete = allDocs.filter(doc => 
-        doc.folder_path && doc.folder_path.startsWith(folderPath)
-      );
-
-      for (const doc of docsToDelete) {
-        await base44.entities.Document.delete(doc.id);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['daily-photos'] });
-      toast.success(`Folder deleted (${docsToDelete.length} photos)`);
-    } catch (error) {
-      toast.error('Delete failed');
-    }
-  };
-
-  const folders = useMemo(() => {
-    const uniquePaths = new Set();
-    allPhotos.forEach(photo => {
-      if (photo.folder_path && photo.folder_path.startsWith(currentFolder) && photo.folder_path !== currentFolder) {
-        const relativePath = photo.folder_path.substring(currentFolder.length).split('/').filter(Boolean)[0];
-        if (relativePath) {
-          uniquePaths.add(relativePath);
-        }
-      }
-    });
-    return Array.from(uniquePaths);
-  }, [allPhotos, currentFolder]);
-
   const todayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const todayInstalls = installs.filter(i => i.install_date === today);
     const openPunch = punchItems.filter(p => p.status !== 'closed').length;
-    const todayPhotos = allPhotos.filter(p => p.created_date?.split('T')[0] === today);
+    const todayPhotos = dailyPhotos.filter(p => p.created_date?.split('T')[0] === today);
     
     return {
       installed: todayInstalls.filter(i => i.status === 'complete').length,
@@ -191,7 +116,7 @@ export default function FieldToolsPage() {
       openPunch,
       photosToday: todayPhotos.length
     };
-  }, [installs, punchItems, allPhotos]);
+  }, [installs, punchItems, dailyPhotos]);
 
   if (!activeProjectId) {
     return (
@@ -241,14 +166,6 @@ export default function FieldToolsPage() {
         </Card>
       </div>
 
-      <FieldReportGenerator 
-        photos={allPhotos}
-        punchItems={punchItems}
-        installs={installs}
-        project={activeProject}
-        currentFolder={currentFolder}
-      />
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="daily">
@@ -267,53 +184,13 @@ export default function FieldToolsPage() {
 
         {/* Daily Photos Tab */}
         <TabsContent value="daily" className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <h3 className="font-semibold text-white mb-3">Capture Site Conditions</h3>
-              <DocumentUploadZone onUpload={handlePhotoUpload} isLoading={uploading} multiple />
-            </div>
-            <Button
-              onClick={() => setShowForm('folder')}
-              variant="outline"
-              size="sm"
-              className="border-zinc-700 flex-shrink-0"
-            >
-              <FolderPlus size={14} className="mr-2" />
-              New Folder
-            </Button>
+          <div>
+            <h3 className="font-semibold text-white mb-3">Capture Site Conditions</h3>
+            <DocumentUploadZone onUpload={handlePhotoUpload} isLoading={uploading} multiple />
           </div>
 
           <div className="space-y-3">
             <FolderBreadcrumb currentPath={currentFolder} onNavigate={setCurrentFolder} />
-
-            {/* Folders */}
-            {folders.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {folders.map(folder => (
-                  <div
-                    key={folder}
-                    className="relative group bg-zinc-900 border border-zinc-800 rounded overflow-hidden"
-                  >
-                    <button
-                      onClick={() => setCurrentFolder(currentFolder === '/' ? `/${folder}` : `${currentFolder}/${folder}`)}
-                      className="flex items-center gap-2 w-full p-3 hover:bg-zinc-800 transition-colors"
-                    >
-                      <Folder size={20} className="text-amber-500 flex-shrink-0" />
-                      <span className="text-xs text-white truncate">{folder}</span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteFolder(folder);
-                      }}
-                      className="absolute top-1 right-1 p-1 bg-red-500/90 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 size={12} className="text-white" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
             
             {dailyPhotos.length === 0 ? (
               <Card className="bg-zinc-900 border-zinc-800">
@@ -327,14 +204,8 @@ export default function FieldToolsPage() {
                 {dailyPhotos.map(photo => (
                   <div key={photo.id} className="relative aspect-square bg-zinc-900 rounded border border-zinc-800 overflow-hidden group cursor-pointer">
                     <img src={photo.file_url} alt={photo.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-end justify-between p-2">
-                      <button
-                        onClick={() => deletePhotoMutation.mutate(photo.id)}
-                        className="p-1.5 bg-red-500/90 rounded hover:bg-red-600"
-                      >
-                        <X size={14} className="text-white" />
-                      </button>
-                      <span className="text-[10px] text-white font-medium truncate w-full">{photo.title}</span>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-2">
+                      <span className="text-[10px] text-white font-medium truncate">{photo.title}</span>
                     </div>
                   </div>
                 ))}
@@ -465,36 +336,6 @@ export default function FieldToolsPage() {
           onSubmit={(data) => createPunchMutation.mutate(data)}
           onCancel={() => setShowForm(null)}
         />
-      )}
-
-      {showForm === 'folder' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-zinc-900 border-zinc-800 w-full max-w-sm">
-            <CardContent className="p-6 space-y-4">
-              <h2 className="text-lg font-bold text-white">Create Folder</h2>
-              <div>
-                <label className="text-xs text-zinc-400 mb-2 block">Folder Name *</label>
-                <Input
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  placeholder="e.g., South Elevation"
-                  className="bg-zinc-800 border-zinc-700"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="ghost" onClick={() => { setShowForm(null); setNewFolderName(''); }}>Cancel</Button>
-                <Button 
-                  onClick={handleCreateFolder}
-                  disabled={!newFolderName.trim()}
-                  className="bg-amber-500 hover:bg-amber-600 text-black"
-                >
-                  Create
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       )}
     </div>
   );

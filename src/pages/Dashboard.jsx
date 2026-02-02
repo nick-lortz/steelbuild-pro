@@ -3,19 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building, AlertTriangle, Clock, Flag, Activity, MessageSquareWarning
+  Building, AlertTriangle, Clock, Flag, Activity
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
-import UnapprovedHoursPanel from '@/components/labor/UnapprovedHoursPanel';
 import { differenceInDays, addDays } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { calculateProjectRiskScore, RISK_LEVELS } from '@/components/shared/riskScoring';
-
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -47,26 +44,22 @@ export default function Dashboard() {
 
   const { data: allTasks = [], refetch: refetchTasks } = useQuery({
     queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 1000),
-    staleTime: 2 * 60 * 1000
+    queryFn: () => base44.entities.Task.list('-updated_date')
   });
 
   const { data: allFinancials = [], refetch: refetchFinancials } = useQuery({
     queryKey: ['all-financials'],
-    queryFn: () => base44.entities.Financial.list('project_id', 1000),
-    staleTime: 5 * 60 * 1000
+    queryFn: () => base44.entities.Financial.list()
   });
 
   const { data: allChangeOrders = [], refetch: refetchCOs } = useQuery({
     queryKey: ['all-change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 500),
-    staleTime: 5 * 60 * 1000
+    queryFn: () => base44.entities.ChangeOrder.list()
   });
 
   const { data: allRFIs = [], refetch: refetchRFIs } = useQuery({
     queryKey: ['all-rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date', 500),
-    staleTime: 2 * 60 * 1000
+    queryFn: () => base44.entities.RFI.list()
   });
 
   // Portfolio metrics calculation
@@ -125,25 +118,16 @@ export default function Dashboard() {
       if (project.target_completion) {
         try {
           const targetDate = new Date(project.target_completion + 'T00:00:00');
-          const validTasks = projectTasks.filter(t => t.end_date);
-          if (validTasks.length > 0) {
-            const latestTaskEnd = validTasks
-              .map(t => {
-                try {
-                  return new Date(t.end_date + 'T00:00:00');
-                } catch {
-                  return null;
-                }
-              })
-              .filter(d => d !== null)
-              .sort((a, b) => b - a)[0];
+          const latestTaskEnd = projectTasks
+            .filter(t => t.end_date)
+            .map(t => new Date(t.end_date + 'T00:00:00'))
+            .sort((a, b) => b - a)[0];
 
-            if (latestTaskEnd && latestTaskEnd > targetDate) {
-              daysSlip = differenceInDays(latestTaskEnd, targetDate);
-            }
+          if (latestTaskEnd && latestTaskEnd > targetDate) {
+            daysSlip = differenceInDays(latestTaskEnd, targetDate);
           }
         } catch (error) {
-          console.warn('Date calculation error for project:', project.id, error);
+          // Skip
         }
       }
 
@@ -152,15 +136,6 @@ export default function Dashboard() {
 
       // Progress: % of tasks complete
       const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length * 100) : 0;
-
-      // Calculate risk score
-      const riskAnalysis = calculateProjectRiskScore(
-        project,
-        projectTasks,
-        projectRFIs,
-        projectFinancials,
-        projectCOs
-      );
 
       return {
         id: project.id,
@@ -175,10 +150,7 @@ export default function Dashboard() {
         overdueTasks,
         budgetVsActual: Math.round(budgetVsActual),
         openRFIs,
-        pendingCOs,
-        riskScore: riskAnalysis.totalScore,
-        riskLevel: riskAnalysis.riskLevel,
-        riskFactors: riskAnalysis.factors
+        pendingCOs
       };
     });
   }, [userProjects, allTasks, allFinancials, allRFIs, allChangeOrders]);
@@ -186,17 +158,12 @@ export default function Dashboard() {
   // Update portfolio metrics with actual at-risk count
   const enhancedMetrics = useMemo(() => {
     const atRiskCount = projectsWithHealth.filter(p => 
-      p.riskLevel.value >= RISK_LEVELS.HIGH.value
-    ).length;
-    
-    const criticalCount = projectsWithHealth.filter(p => 
-      p.riskLevel.value === RISK_LEVELS.CRITICAL.value
+      p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0
     ).length;
 
     return {
       ...portfolioMetrics,
-      atRiskProjects: atRiskCount,
-      criticalProjects: criticalCount
+      atRiskProjects: atRiskCount
     };
   }, [portfolioMetrics, projectsWithHealth]);
 
@@ -219,20 +186,18 @@ export default function Dashboard() {
     }
 
     // Risk filter
-    if (riskFilter === 'critical') {
-      filtered = filtered.filter(p => p.riskLevel.value === RISK_LEVELS.CRITICAL.value);
-    } else if (riskFilter === 'high') {
-      filtered = filtered.filter(p => p.riskLevel.value === RISK_LEVELS.HIGH.value);
-    } else if (riskFilter === 'at_risk') {
-      filtered = filtered.filter(p => p.riskLevel.value >= RISK_LEVELS.HIGH.value);
+    if (riskFilter === 'at_risk') {
+      filtered = filtered.filter(p => p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0);
     } else if (riskFilter === 'healthy') {
-      filtered = filtered.filter(p => p.riskLevel.value === RISK_LEVELS.LOW.value);
+      filtered = filtered.filter(p => p.costHealth >= -5 && p.daysSlip <= 3 && p.overdueTasks === 0);
     }
 
     // Sort
     if (sortBy === 'risk') {
       filtered.sort((a, b) => {
-        if (b.riskScore !== a.riskScore) return b.riskScore - a.riskScore;
+        const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
+        const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
+        if (bRisk !== aRisk) return bRisk - aRisk;
         return (a.name || '').localeCompare(b.name || '');
       });
     } else if (sortBy === 'name') {
@@ -255,8 +220,6 @@ export default function Dashboard() {
     setStatusFilter('all');
     setRiskFilter('all');
   };
-
-
 
   if (projectsLoading || !currentUser) {
     return (
@@ -287,23 +250,21 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                refetchProjects();
-                refetchTasks();
-                refetchFinancials();
-                refetchCOs();
-                refetchRFIs();
-              }}
-              className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
-            >
-              <RefreshCw size={14} />
-              Refresh
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              refetchProjects();
+              refetchTasks();
+              refetchFinancials();
+              refetchCOs();
+              refetchRFIs();
+            }}
+            className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
+          >
+            <RefreshCw size={14} />
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -380,11 +341,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Unapproved Hours */}
-      <div className="mb-6">
-        <UnapprovedHoursPanel />
-      </div>
-
       {/* Filters */}
       <div className="my-6">
         <ProjectFiltersBar
@@ -402,51 +358,16 @@ export default function Dashboard() {
       </div>
 
       {/* Project Health Table */}
-      <div className="mb-4">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">
-          Project Health Overview
-        </h2>
-        <ProjectHealthTable 
-          projects={filteredProjects}
-          onProjectClick={(projectId) => setActiveProjectId(projectId)}
-        />
-      </div>
+      <ProjectHealthTable 
+        projects={filteredProjects}
+        onProjectClick={(projectId) => setActiveProjectId(projectId)}
+      />
 
       {filteredProjects.length === 0 && (
         <div className="text-center py-12">
           <p className="text-sm text-muted-foreground">No projects match your filters</p>
         </div>
       )}
-
-      {/* RFI List Section */}
-      {allRFIs.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-3">
-            Recent RFIs
-          </h2>
-          <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
-            <div className="p-4">
-              <div className="space-y-2">
-                {allRFIs.slice(0, 10).map(rfi => (
-                  <div key={rfi.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3">
-                        <MessageSquareWarning size={16} className="text-amber-500 flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-white truncate">{rfi.subject}</p>
-                          <p className="text-xs text-zinc-500">RFI #{rfi.rfi_number}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-
     </div>
   );
 }

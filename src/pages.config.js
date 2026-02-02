@@ -76,7 +76,6 @@ import LookAheadPlanning from './pages/LookAheadPlanning';
 import LookAheadResourcePlanning from './pages/LookAheadResourcePlanning';
 import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
-import MyActionItems from './pages/MyActionItems';
 import NotificationSettings from './pages/NotificationSettings';
 import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -98,6 +97,7 @@ import TermsOfService from './pages/TermsOfService';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import MyActionItems from './pages/MyActionItems';
 import __Layout from './Layout.jsx';
 
 
@@ -131,7 +131,6 @@ export const PAGES = {
     "LookAheadResourcePlanning": LookAheadResourcePlanning,
     "Meetings": Meetings,
     "Messages": Messages,
-    "MyActionItems": MyActionItems,
     "NotificationSettings": NotificationSettings,
     "Performance": Performance,
     "PrivacyPolicy": PrivacyPolicy,
@@ -153,6 +152,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "MyActionItems": MyActionItems,
 }
 
 export const pagesConfig = {

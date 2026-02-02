@@ -9,71 +9,39 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CheckCircle, X, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
 
-export default function RFIWizard({ initialData, rfi, projects = [], drawings = [], changeOrders = [], submittals = [], deliveries = [], onSubmit, onCancel, isLoading, templateData, onClose }) {
+export default function RFIWizard({ rfi, projects = [], drawings = [], changeOrders = [], submittals = [], deliveries = [], onSubmit, onCancel, isLoading, templateData }) {
   const [step, setStep] = useState(1);
-  
-  // Use initialData if provided, fallback to rfi for backwards compatibility
-  const editingRFI = initialData || rfi;
-  
   const [formData, setFormData] = useState({
-    project_id: editingRFI?.project_id || templateData?.project_id || projects[0]?.id || '',
-    rfi_number: editingRFI?.rfi_number || '',
-    subject: editingRFI?.subject || templateData?.fields?.subject || '',
-    category: editingRFI?.category || templateData?.category || 'structural',
-    discipline: editingRFI?.discipline || templateData?.fields?.discipline || '',
-    location_area: editingRFI?.location_area || '',
-    spec_section: editingRFI?.spec_section || templateData?.fields?.spec_section || '',
-    question: editingRFI?.question || templateData?.fields?.question || '',
-    status: editingRFI?.status || 'draft',
-    priority: editingRFI?.priority || 'medium',
-    ball_in_court: editingRFI?.ball_in_court || 'internal',
-    assigned_to: editingRFI?.assigned_to || '',
-    response_owner: editingRFI?.response_owner || '',
-    distribution_list: editingRFI?.distribution_list || [],
-    external_contacts: editingRFI?.external_contacts || [],
-    due_date: editingRFI?.due_date?.split('T')[0] || '',
-    days_to_respond: editingRFI?.days_to_respond || 5,
-    cost_impact: editingRFI?.cost_impact || 'unknown',
-    schedule_impact: editingRFI?.schedule_impact || 'unknown',
-    estimated_cost_impact: editingRFI?.estimated_cost_impact || 0,
-    schedule_impact_days: editingRFI?.schedule_impact_days || 0,
-    linked_drawing_set_ids: editingRFI?.linked_drawing_set_ids || [],
-    linked_change_order_ids: editingRFI?.linked_change_order_ids || [],
-    linked_submittal_ids: editingRFI?.linked_submittal_ids || [],
-    linked_delivery_ids: editingRFI?.linked_delivery_ids || [],
-    template_used: templateData?.name || editingRFI?.template_used || ''
+    project_id: rfi?.project_id || templateData?.project_id || '',
+    rfi_number: rfi?.rfi_number || '',
+    subject: rfi?.subject || templateData?.fields?.subject || '',
+    category: rfi?.category || templateData?.category || 'structural',
+    discipline: rfi?.discipline || templateData?.fields?.discipline || '',
+    location_area: rfi?.location_area || '',
+    spec_section: rfi?.spec_section || templateData?.fields?.spec_section || '',
+    question: rfi?.question || templateData?.fields?.question || '',
+    status: rfi?.status || 'draft',
+    priority: rfi?.priority || 'medium',
+    ball_in_court: rfi?.ball_in_court || 'internal',
+    assigned_to: rfi?.assigned_to || '',
+    response_owner: rfi?.response_owner || '',
+    distribution_list: rfi?.distribution_list || [],
+    external_contacts: rfi?.external_contacts || [],
+    due_date: rfi?.due_date?.split('T')[0] || '',
+    days_to_respond: rfi?.days_to_respond || 5,
+    cost_impact: rfi?.cost_impact || 'unknown',
+    schedule_impact: rfi?.schedule_impact || 'unknown',
+    estimated_cost_impact: rfi?.estimated_cost_impact || 0,
+    schedule_impact_days: rfi?.schedule_impact_days || 0,
+    linked_drawing_set_ids: rfi?.linked_drawing_set_ids || [],
+    linked_change_order_ids: rfi?.linked_change_order_ids || [],
+    linked_submittal_ids: rfi?.linked_submittal_ids || [],
+    linked_delivery_ids: rfi?.linked_delivery_ids || [],
+    template_used: templateData?.name || rfi?.template_used || ''
   });
 
   const [newContact, setNewContact] = useState({ name: '', email: '', company: '', role: '' });
-  const [nextRFINumber, setNextRFINumber] = React.useState(null);
-
-  // Calculate next RFI number for selected project
-  React.useEffect(() => {
-    async function calculateNextNumber() {
-      if (!formData.project_id || editingRFI) {
-        setNextRFINumber(null);
-        return;
-      }
-      
-      try {
-        const projectRFIs = await base44.entities.RFI.filter({ project_id: formData.project_id });
-        const maxNumber = projectRFIs.length > 0 
-          ? Math.max(...projectRFIs.map(r => {
-              const num = parseInt(String(r.rfi_number).replace(/\D/g, ''));
-              return isNaN(num) ? 0 : num;
-            }))
-          : 0;
-        setNextRFINumber(maxNumber + 1);
-      } catch (error) {
-        console.error('Error calculating RFI number:', error);
-        setNextRFINumber(1);
-      }
-    }
-    
-    calculateNextNumber();
-  }, [formData.project_id, editingRFI]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -100,47 +68,16 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
     handleChange('external_contacts', formData.external_contacts.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.project_id || !formData.subject) {
       toast.error('Project and subject are required');
       return;
     }
 
-    try {
-      if (editingRFI) {
-        // Update existing RFI
-        await base44.entities.RFI.update(editingRFI.id, formData);
-        toast.success('RFI updated');
-      } else {
-        // Create new RFI - calculate next RFI number
-        const allProjectRFIs = await base44.entities.RFI.filter({ project_id: formData.project_id });
-        const maxNumber = allProjectRFIs.length > 0 
-          ? Math.max(...allProjectRFIs.map(r => {
-              const num = parseInt(String(r.rfi_number).replace(/\D/g, ''));
-              return isNaN(num) ? 0 : num;
-            }))
-          : 0;
-        
-        const newRFIData = {
-          ...formData,
-          rfi_number: maxNumber + 1,
-          submitted_date: formData.status === 'submitted' ? new Date().toISOString() : null
-        };
-        
-        await base44.entities.RFI.create(newRFIData);
-        toast.success('RFI created');
-      }
-
-      if (typeof onSubmit === 'function') {
-        onSubmit(formData);
-      }
-      
-      if (typeof onClose === 'function') {
-        onClose();
-      }
-    } catch (error) {
-      console.error('RFI save error:', error);
-      toast.error('Failed to save RFI');
+    if (typeof onSubmit === 'function') {
+      onSubmit(formData);
+    } else {
+      toast.error('Submit handler not configured');
     }
   };
 
@@ -184,7 +121,7 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Project *</Label>
-            <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)} disabled={!!editingRFI}>
+            <Select value={formData.project_id} onValueChange={(v) => handleChange('project_id', v)}>
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
@@ -194,12 +131,6 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
                 ))}
               </SelectContent>
             </Select>
-            {!editingRFI && nextRFINumber !== null && (
-              <p className="text-xs text-zinc-500">Next RFI #: {nextRFINumber}</p>
-            )}
-            {editingRFI && (
-              <p className="text-xs text-zinc-500">RFI #: {editingRFI.rfi_number}</p>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -659,7 +590,7 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               <CheckCircle size={16} className="mr-2" />
-              {isLoading ? 'Saving...' : editingRFI ? 'Update RFI' : 'Submit RFI'}
+              {isLoading ? 'Saving...' : rfi ? 'Update RFI' : 'Submit RFI'}
             </Button>
           )}
         </div>

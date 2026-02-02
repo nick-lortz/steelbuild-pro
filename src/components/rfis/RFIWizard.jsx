@@ -86,15 +86,18 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
         toast.success('RFI updated');
       } else {
         // Create new RFI - calculate next RFI number
-        const allRFIs = await base44.entities.RFI.filter({ project_id: formData.project_id });
-        const maxNumber = allRFIs.length > 0 
-          ? Math.max(...allRFIs.map(r => r.rfi_number || 0))
+        const allProjectRFIs = await base44.entities.RFI.filter({ project_id: formData.project_id });
+        const maxNumber = allProjectRFIs.length > 0 
+          ? Math.max(...allProjectRFIs.map(r => parseInt(r.rfi_number) || 0))
           : 0;
         
-        await base44.entities.RFI.create({
+        const newRFIData = {
           ...formData,
-          rfi_number: maxNumber + 1
-        });
+          rfi_number: maxNumber + 1,
+          submitted_date: formData.status === 'submitted' ? new Date().toISOString() : null
+        };
+        
+        await base44.entities.RFI.create(newRFIData);
         toast.success('RFI created');
       }
 
@@ -106,6 +109,7 @@ export default function RFIWizard({ initialData, rfi, projects = [], drawings = 
         onClose();
       }
     } catch (error) {
+      console.error('RFI save error:', error);
       toast.error('Failed to save RFI');
     }
   };

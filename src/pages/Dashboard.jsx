@@ -472,7 +472,7 @@ export default function Dashboard() {
             <div className="p-4">
               <div className="space-y-2">
                 {allRFIs.slice(0, 10).map(rfi => (
-                  <div key={rfi.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors group">
+                  <div key={rfi.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
                         <MessageSquareWarning size={16} className="text-amber-500 flex-shrink-0" />
@@ -481,31 +481,6 @@ export default function Dashboard() {
                           <p className="text-xs text-zinc-500">RFI #{rfi.rfi_number}</p>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingRFI(rfi);
-                          setShowRFIModal(true);
-                        }}
-                        className="h-7 w-7 p-0"
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          if (confirm('Delete this RFI?')) {
-                            deleteRFIMutation.mutate(rfi.id);
-                          }
-                        }}
-                        className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
                     </div>
                   </div>
                 ))}

@@ -1,6 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { requireAuth } from './utils/auth.js';
-
 /**
  * Server-side Project Health Calculation
  * 

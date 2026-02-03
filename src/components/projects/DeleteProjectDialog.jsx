@@ -29,8 +29,8 @@ export default function DeleteProjectDialog({ project, open, onOpenChange, onSuc
 
     try {
       // Call cascade delete function
-      const response = await base44.functions.invoke('cascadeDeleteProject', {
-        project_id: project.id
+      const response = await base44.functions.invoke('deleteProject', {
+        id: project.id
       });
 
       if (response.data.success) {

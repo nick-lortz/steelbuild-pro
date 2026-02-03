@@ -10,17 +10,10 @@ import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
-import { differenceInDays, addDays } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
-import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
-import { RISK_THRESHOLDS, getBusinessDaysBetween } from '@/components/shared/businessRules';
-import { groupBy } from '@/components/shared/arrayUtils';
-import { logger, measurePerf } from '@/components/shared/logging';
-import { calculateCostHealth, calculateTaskProgress } from '@/components/shared/financialUtils';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();

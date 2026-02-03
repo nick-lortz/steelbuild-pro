@@ -18,14 +18,17 @@ import RFIHubTable from '@/components/rfi-hub/RFIHubTable';
 import RFIHubForm from '@/components/rfi-hub/RFIHubForm';
 import RFIHubTrends from '@/components/rfi-hub/RFIHubTrends';
 import { toast } from 'sonner';
+import { usePagination } from '@/components/shared/hooks/usePagination';
+import Pagination from '@/components/ui/Pagination';
 
 export default function RFIHub() {
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState('portfolio'); // 'portfolio' or 'project'
+  const [viewMode, setViewMode] = useState('portfolio');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingRFI, setEditingRFI] = useState(null);
+  const { page, pageSize, skip, limit, goToPage, changePageSize, reset } = usePagination(1, 50);
   
   const [filters, setFilters] = useState({
     status: 'all',
@@ -132,16 +135,28 @@ export default function RFIHub() {
     return result;
   }, [enrichedRFIs, viewMode, selectedProjectId, filters, searchTerm]);
 
-  // Group RFIs by category
-  const groupedRFIs = useMemo(() => {
-    return {
+  // Group RFIs by category with pagination
+  const { groupedRFIs, paginatedGroups } = useMemo(() => {
+    const grouped = {
       active: filteredRFIs.filter(r => ['draft', 'internal_review', 'submitted', 'under_review'].includes(r.status)),
       awaiting: filteredRFIs.filter(r => r.ball_in_court === 'external' && r.status === 'submitted'),
       closed: filteredRFIs.filter(r => ['answered', 'closed'].includes(r.status)),
       highPriority: filteredRFIs.filter(r => r.priority === 'critical' || r.priority === 'high'),
-      coordination: filteredRFIs.filter(r => r.category === 'coordination')
+      coordination: filteredRFIs.filter(r => r.category === 'coordination'),
+      all: filteredRFIs
     };
-  }, [filteredRFIs]);
+    
+    const paginated = {
+      active: grouped.active.slice(skip, skip + limit),
+      awaiting: grouped.awaiting.slice(skip, skip + limit),
+      closed: grouped.closed.slice(skip, skip + limit),
+      highPriority: grouped.highPriority.slice(skip, skip + limit),
+      coordination: grouped.coordination.slice(skip, skip + limit),
+      all: grouped.all.slice(skip, skip + limit)
+    };
+    
+    return { groupedRFIs: grouped, paginatedGroups: paginated };
+  }, [filteredRFIs, skip, limit]);
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -300,56 +315,122 @@ export default function RFIHub() {
 
           <TabsContent value="active">
             <RFIHubTable 
-              rfis={groupedRFIs.active} 
+              rfis={paginatedGroups.active} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
               title="Active RFIs"
             />
+            {groupedRFIs.active.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  total={groupedRFIs.active.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={changePageSize}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="awaiting">
             <RFIHubTable 
-              rfis={groupedRFIs.awaiting} 
+              rfis={paginatedGroups.awaiting} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
               title="RFIs Awaiting External Response"
             />
+            {groupedRFIs.awaiting.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  total={groupedRFIs.awaiting.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={changePageSize}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="closed">
             <RFIHubTable 
-              rfis={groupedRFIs.closed} 
+              rfis={paginatedGroups.closed} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
               title="Closed RFIs"
             />
+            {groupedRFIs.closed.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  total={groupedRFIs.closed.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={changePageSize}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="highPriority">
             <RFIHubTable 
-              rfis={groupedRFIs.highPriority} 
+              rfis={paginatedGroups.highPriority} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
               title="High Priority RFIs"
             />
+            {groupedRFIs.highPriority.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  total={groupedRFIs.highPriority.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={changePageSize}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="coordination">
             <RFIHubTable 
-              rfis={groupedRFIs.coordination} 
+              rfis={paginatedGroups.coordination} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
               title="Coordination RFIs"
             />
+            {groupedRFIs.coordination.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  total={groupedRFIs.coordination.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={changePageSize}
+                />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="all">
             <RFIHubTable 
-              rfis={filteredRFIs} 
+              rfis={paginatedGroups.all} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
               title="All RFIs"
             />
+            {groupedRFIs.all.length > 0 && (
+              <div className="mt-4">
+                <Pagination
+                  total={groupedRFIs.all.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={goToPage}
+                  onPageSizeChange={changePageSize}
+                />
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

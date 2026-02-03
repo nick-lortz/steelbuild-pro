@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
 export default function DocumentCard({ doc, onDelete, onViewVersions, onPreview }) {
   const isImage = doc.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
@@ -67,9 +69,20 @@ export default function DocumentCard({ doc, onDelete, onViewVersions, onPreview 
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  window.open(doc.file_url, '_blank');
+                  try {
+                    const { data } = await base44.functions.invoke('validateFileAccess', {
+                      document_id: doc.id
+                    });
+                    if (data.allowed) {
+                      window.open(data.file_url || doc.file_url, '_blank');
+                    } else {
+                      toast.error('Access denied');
+                    }
+                  } catch (error) {
+                    toast.error('Failed to access file');
+                  }
                 }}
                 className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
                 title="View"
@@ -81,12 +94,23 @@ export default function DocumentCard({ doc, onDelete, onViewVersions, onPreview 
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  const a = document.createElement('a');
-                  a.href = doc.file_url;
-                  a.download = doc.file_name;
-                  a.click();
+                  try {
+                    const { data } = await base44.functions.invoke('validateFileAccess', {
+                      document_id: doc.id
+                    });
+                    if (data.allowed) {
+                      const a = document.createElement('a');
+                      a.href = data.file_url || doc.file_url;
+                      a.download = doc.file_name;
+                      a.click();
+                    } else {
+                      toast.error('Access denied');
+                    }
+                  } catch (error) {
+                    toast.error('Failed to download file');
+                  }
                 }}
                 className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
                 title="Download"

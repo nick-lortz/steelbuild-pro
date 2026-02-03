@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from '@/components/ui/PageHeader';
@@ -174,6 +175,7 @@ export default function Financials() {
 
   if (!selectedProject) {
     return (
+      <ErrorBoundary>
       <div className="min-h-screen bg-black">
         <div className="bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5 text-slate-50 border-b border-amber-500/20">
           <div className="max-w-[1600px] mx-auto px-6 py-4">
@@ -199,11 +201,13 @@ export default function Financials() {
             </Select>
           </div>
         </div>
-      </div>);
+      </div>
+      </ErrorBoundary>);
 
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-black">
       {/* Header Bar */}
       <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
@@ -288,6 +292,7 @@ export default function Financials() {
           <ETCManager projectId={selectedProject} expenses={expenses} estimatedCosts={estimatedCosts} />
         </div>
       </div>
-    </div>);
+    </div>
+    </ErrorBoundary>);
 
 }

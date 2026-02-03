@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -313,6 +314,7 @@ export default function Schedule() {
   }, [filteredTasks]);
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-black">
       {/* Modern Header */}
       <div className="border-b border-zinc-800 bg-zinc-950">
@@ -662,5 +664,6 @@ export default function Schedule() {
         </SheetContent>
       </Sheet>
     </div>
+    </ErrorBoundary>
   );
 }

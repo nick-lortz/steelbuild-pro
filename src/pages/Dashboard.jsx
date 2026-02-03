@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
   Building, AlertTriangle, Clock, Flag, Activity
@@ -142,11 +143,11 @@ export default function Dashboard() {
         t.status !== 'completed' && t.end_date && t.end_date < today
       ).length;
 
-      // Cost Health: % over/under budget
+      // Cost Health: % over/under budget (with div-by-zero protection)
       const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : 0;
-      const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : 0;
+      const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : (actual > 0 ? 100 : 0);
+      const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : (actual > 0 ? -100 : 0);
 
       // Schedule health: business days slip
       let daysSlip = 0;
@@ -290,6 +291,7 @@ export default function Dashboard() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
       {/* Header */}
       <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5 border border-amber-500/20 p-8">
@@ -440,5 +442,6 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 }

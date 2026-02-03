@@ -63,7 +63,11 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
       }
       onSuccess();
     } catch (error) {
-      showErrorToast(error, rfi ? ErrorMessages.RFI_UPDATE_FAILED : ErrorMessages.RFI_CREATE_FAILED);
+      if (error?.response?.status === 409 || error?.status === 409) {
+        showErrorToast(null, 'RFI number already exists for this project. Please choose another number.');
+      } else {
+        showErrorToast(error, rfi ? ErrorMessages.RFI_UPDATE_FAILED : ErrorMessages.RFI_CREATE_FAILED);
+      }
     } finally {
       setIsSubmitting(false);
     }

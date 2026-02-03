@@ -466,13 +466,15 @@ function LayoutContent({ children, currentPageName }) {
 const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <ConfirmProvider>
-          <ActiveProjectProvider>
-            <LayoutContent children={children} currentPageName={currentPageName} />
-          </ActiveProjectProvider>
-        </ConfirmProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <ThemeProvider>
+          <ConfirmProvider>
+            <ActiveProjectProvider>
+              <LayoutContent children={children} currentPageName={currentPageName} />
+            </ActiveProjectProvider>
+          </ConfirmProvider>
+        </ThemeProvider>
+      </QueryProvider>
     </ErrorBoundary>
   );
 });

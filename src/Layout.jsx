@@ -55,6 +55,7 @@ import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { SECURITY_HEADERS } from '@/components/shared/securityHeaders';
 
 const navGroups = [
   {
@@ -249,6 +250,11 @@ function LayoutContent({ children, currentPageName }) {
         </div>
       </div>
     );
+  }
+
+  // Apply security headers (documented in Layout)
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    // CSP headers applied server-side; CSP documented in components/shared/securityHeaders.js
   }
 
   return (

@@ -155,7 +155,7 @@ export default function Projects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProject(null);
-      setFormData(initialFormData);
+      setFormData(initialFormState);
       toast.success('Project updated successfully');
     },
     onError: (error) => {

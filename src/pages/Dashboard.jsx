@@ -20,6 +20,7 @@ import { useEntitySubscription } from '@/components/shared/hooks/useSubscription
 import { RISK_THRESHOLDS, getBusinessDaysBetween } from '@/components/shared/businessRules';
 import { groupBy } from '@/components/shared/arrayUtils';
 import { logger, measurePerf } from '@/components/shared/logging';
+import { calculateCostHealth, calculateTaskProgress } from '@/components/shared/financialUtils';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -143,11 +144,11 @@ export default function Dashboard() {
         t.status !== 'completed' && t.end_date && t.end_date < today
       ).length;
 
-      // Cost Health: % over/under budget (with div-by-zero protection)
+      // Cost Health: % over/under budget (centralized formula)
       const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : (actual > 0 ? 100 : 0);
-      const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : (actual > 0 ? -100 : 0);
+      const budgetVsActual = Math.round((budget > 0 ? ((actual / budget) * 100) : (actual > 0 ? 100 : 0)));
+      const costHealth = calculateCostHealth(budget, actual);
 
       // Schedule health: business days slip
       let daysSlip = 0;
@@ -170,8 +171,8 @@ export default function Dashboard() {
       const openRFIs = projectRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
       const pendingCOs = projectCOs.filter(c => c.status === 'pending' || c.status === 'submitted').length;
 
-      // Progress: % of tasks complete
-      const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length * 100) : 0;
+      // Progress: % of tasks complete (centralized formula)
+      const progress = calculateTaskProgress(completedTasks, projectTasks.length);
 
       return {
         id: project.id,

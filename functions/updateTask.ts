@@ -1,5 +1,48 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+function validateTaskData(data: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  // Progress validation
+  if (data.progress_percent != null) {
+    const progress = Number(data.progress_percent);
+    if (isNaN(progress) || progress < 0 || progress > 100) {
+      errors.push('progress_percent must be between 0 and 100');
+    }
+  }
+
+  // Hours validation
+  if (data.estimated_hours != null && (isNaN(Number(data.estimated_hours)) || Number(data.estimated_hours) < 0)) {
+    errors.push('estimated_hours must be a non-negative number');
+  }
+  if (data.actual_hours != null && (isNaN(Number(data.actual_hours)) || Number(data.actual_hours) < 0)) {
+    errors.push('actual_hours must be a non-negative number');
+  }
+
+  // Cost validation
+  if (data.estimated_cost != null && (isNaN(Number(data.estimated_cost)) || Number(data.estimated_cost) < 0)) {
+    errors.push('estimated_cost must be a non-negative number');
+  }
+  if (data.actual_cost != null && (isNaN(Number(data.actual_cost)) || Number(data.actual_cost) < 0)) {
+    errors.push('actual_cost must be a non-negative number');
+  }
+
+  // Date range validation
+  if (data.start_date && data.end_date) {
+    if (data.start_date > data.end_date) {
+      errors.push('end_date must be after start_date');
+    }
+  }
+
+  // Status validation
+  const validStatuses = ['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled', 'blocked'];
+  if (data.status != null && !validStatuses.includes(data.status)) {
+    errors.push(`status must be one of: ${validStatuses.join(', ')}`);
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -13,6 +56,15 @@ Deno.serve(async (req) => {
 
     if (!task_id || !task_data) {
       return Response.json({ error: 'task_id and task_data required' }, { status: 400 });
+    }
+
+    // Validate task data
+    const validation = validateTaskData(task_data);
+    if (!validation.valid) {
+      return Response.json({ 
+        error: 'Validation failed', 
+        details: validation.errors 
+      }, { status: 400 });
     }
 
     // Get existing task to verify access

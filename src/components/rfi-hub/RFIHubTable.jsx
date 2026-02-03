@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { SafeText } from '@/components/shared/sanitization';
 
 export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
   if (!rfis || rfis.length === 0) {
@@ -73,7 +74,9 @@ export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
                     </div>
                   </td>
                   <td className="py-2 px-3">
-                    <p className="text-white font-medium truncate max-w-[250px]">{rfi.subject || ''}</p>
+                    <p className="text-white font-medium truncate max-w-[250px]">
+                      <SafeText content={rfi.subject || ''} />
+                    </p>
                   </td>
                   <td className="py-2 px-3">
                     <Badge variant="outline" className="text-[10px] capitalize">

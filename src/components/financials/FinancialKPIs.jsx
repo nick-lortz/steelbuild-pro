@@ -1,22 +1,18 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { calculateSOVMetrics, calculateCostHealth, calculateBudgetVsActual } from '@/components/shared/financialUtils';
 
 export default function FinancialKPIs({ budgetLines = [], expenses = [], invoices = [], sovItems = [], useSOV = false }) {
   let kpis = [];
 
   if (useSOV && sovItems.length > 0) {
-    // SOV-based KPIs
-    const contractValue = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
-    const earnedToDate = sovItems.reduce((sum, s) => 
-      sum + ((s.scheduled_value || 0) * ((s.percent_complete || 0) / 100)), 0);
-    const billedToDate = sovItems.reduce((sum, s) => sum + (s.billed_to_date || 0), 0);
-    const remainingToBill = contractValue - billedToDate;
+    // SOV-based KPIs (using centralized calculation)
+    const { contractValue, earnedToDate, billedToDate, remainingToBill, percentBilled, percentEarned } = 
+      calculateSOVMetrics(sovItems);
     const actualCost = expenses.filter(e => e.payment_status === 'paid' || e.payment_status === 'approved')
       .reduce((sum, e) => sum + (e.amount || 0), 0);
     const costVariance = earnedToDate - actualCost;
-    const percentBilled = contractValue > 0 ? (billedToDate / contractValue) * 100 : 0;
-    const percentEarned = contractValue > 0 ? (earnedToDate / contractValue) * 100 : 0;
 
     kpis = [
       { label: 'Contract Value', value: `$${contractValue.toLocaleString()}`, icon: Target },
@@ -37,7 +33,7 @@ export default function FinancialKPIs({ budgetLines = [], expenses = [], invoice
       .reduce((sum, e) => sum + (e.amount || 0), 0);
     const costRemaining = currentBudget - actualCost;
     const costVariance = currentBudget - actualCost;
-    const percentSpent = currentBudget > 0 ? (actualCost / currentBudget) * 100 : 0;
+    const percentSpent = calculateBudgetVsActual(currentBudget, actualCost);
     const billingToDate = invoices.filter(i => i.payment_status === 'paid')
       .reduce((sum, i) => sum + (i.total_amount || 0), 0);
 

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { checkRateLimit, rateLimitResponse } from './utils/rateLimit.js';
 
 /**
  * calculateProjectHealth (TIME_LIMIT hardened)
@@ -67,6 +68,12 @@ Deno.serve(async (req) => {
     // AUTH
     const user = await base44.auth.me();
     if (!user) return json(401, { error: "Unauthorized" });
+
+    // Rate limiting: 30 health calculations per minute per user (compute-heavy)
+    const rateLimit = checkRateLimit(user.email, 30, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.retryAfter);
+    }
 
     // PARSE BODY
     let body;

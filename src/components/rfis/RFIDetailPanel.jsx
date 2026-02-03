@@ -154,7 +154,7 @@ export default function RFIDetailPanel({
             </CardHeader>
             <CardContent>
               <div className="text-sm text-white whitespace-pre-wrap bg-zinc-800 p-4 rounded-lg">
-                {rfi.question || 'No question provided'}
+                <SafeText content={rfi.question || 'No question provided'} />
               </div>
               {rfi.question_version > 1 && (
                 <div className="mt-2 text-xs text-zinc-500">Version {rfi.question_version}</div>
@@ -172,7 +172,7 @@ export default function RFIDetailPanel({
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-white whitespace-pre-wrap bg-zinc-800 p-4 rounded-lg">
-                  {rfi.response}
+                  <SafeText content={rfi.response} />
                 </div>
                 {rfi.response_version > 1 && (
                   <div className="mt-2 text-xs text-zinc-500">Version {rfi.response_version}</div>

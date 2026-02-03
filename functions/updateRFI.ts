@@ -11,6 +11,7 @@
  */
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { checkRateLimit, rateLimitResponse } from './utils/rateLimit.js';
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -79,6 +80,12 @@ Deno.serve(async (req) => {
     // 1) AUTH
     const user = await base44.auth.me();
     if (!user) return json(401, { error: "Unauthorized" });
+
+    // Rate limiting: 150 RFI updates per minute per user
+    const rateLimit = checkRateLimit(user.email, 150, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return rateLimitResponse(rateLimit.retryAfter);
+    }
 
     // 2) PARSE BODY
     let body;

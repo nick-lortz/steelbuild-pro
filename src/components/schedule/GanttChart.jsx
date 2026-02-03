@@ -258,8 +258,10 @@ export default function GanttChart({
     document.body.style.cursor = 'grabbing';
   };
 
-  const handleDragEnd = (e) => {
+  const handleDragEnd = async (e) => {
     if (!draggingTask || !chartRef.current) return;
+    
+    const originalTask = draggingTask;
     
     try {
       const chartRect = chartRef.current.getBoundingClientRect();
@@ -282,11 +284,17 @@ export default function GanttChart({
       const newStartDate = addDays(startDate, newDaysFromStart);
       const newEndDate = addDays(newStartDate, taskDuration);
       
-      // Update task
-      onTaskUpdate(draggingTask.id, {
-        start_date: format(newStartDate, 'yyyy-MM-dd'),
-        end_date: format(newEndDate, 'yyyy-MM-dd')
-      });
+      // Update task with error handling
+      try {
+        await onTaskUpdate(draggingTask.id, {
+          start_date: format(newStartDate, 'yyyy-MM-dd'),
+          end_date: format(newEndDate, 'yyyy-MM-dd')
+        });
+      } catch (updateError) {
+        // Revert visual state on failure
+        console.error('Task update failed during drag:', updateError);
+        // Query will refetch and restore original position
+      }
     } catch (error) {
       console.error('Error during drag end:', error);
     }

@@ -17,6 +17,8 @@ import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import { RISK_THRESHOLDS, getBusinessDaysBetween } from '@/components/shared/businessRules';
+import { groupBy } from '@/components/shared/arrayUtils';
+import { logger, measurePerf } from '@/components/shared/logging';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -117,15 +119,22 @@ export default function Dashboard() {
     };
   }, [userProjects, allTasks]);
 
-  // Enhanced project data with health metrics
+  // Enhanced project data with health metrics (pre-indexed for O(1) lookup)
   const projectsWithHealth = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    return measurePerf('Dashboard', 'Calculate project health', () => {
+      const today = new Date().toISOString().split('T')[0];
 
-    return userProjects.map(project => {
-      const projectTasks = allTasks.filter(t => t.project_id === project.id);
-      const projectFinancials = allFinancials.filter(f => f.project_id === project.id);
-      const projectRFIs = allRFIs.filter(r => r.project_id === project.id);
-      const projectCOs = allChangeOrders.filter(c => c.project_id === project.id);
+      // Pre-index arrays by project_id (O(n) instead of O(n²))
+      const tasksByProject = groupBy(allTasks, 'project_id');
+      const financialsByProject = groupBy(allFinancials, 'project_id');
+      const rfisByProject = groupBy(allRFIs, 'project_id');
+      const cosByProject = groupBy(allChangeOrders, 'project_id');
+
+      return userProjects.map(project => {
+        const projectTasks = tasksByProject[project.id] || [];
+        const projectFinancials = financialsByProject[project.id] || [];
+        const projectRFIs = rfisByProject[project.id] || [];
+        const projectCOs = cosByProject[project.id] || [];
 
       // Tasks
       const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
@@ -178,6 +187,7 @@ export default function Dashboard() {
         openRFIs,
         pendingCOs
       };
+      });
     });
   }, [userProjects, allTasks, allFinancials, allRFIs, allChangeOrders]);
 

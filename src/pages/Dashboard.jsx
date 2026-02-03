@@ -13,6 +13,8 @@ import { differenceInDays, addDays } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { usePagination } from '@/components/shared/hooks/usePagination';
+import Pagination from '@/components/ui/Pagination';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -20,6 +22,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
+  const { page, pageSize, skip, limit, goToPage, changePageSize } = usePagination(1, 25);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -167,8 +170,8 @@ export default function Dashboard() {
     };
   }, [portfolioMetrics, projectsWithHealth]);
 
-  // Filtered projects
-  const filteredProjects = useMemo(() => {
+  // Filtered projects with pagination
+  const { filteredProjects, paginatedProjects, totalFiltered } = useMemo(() => {
     let filtered = [...projectsWithHealth];
 
     // Search
@@ -210,8 +213,11 @@ export default function Dashboard() {
       filtered.sort((a, b) => b.daysSlip - a.daysSlip);
     }
 
-    return filtered;
-  }, [projectsWithHealth, searchTerm, statusFilter, riskFilter, sortBy]);
+    const totalFiltered = filtered.length;
+    const paginated = filtered.slice(skip, skip + limit);
+
+    return { filteredProjects: filtered, paginatedProjects: paginated, totalFiltered };
+  }, [projectsWithHealth, searchTerm, statusFilter, riskFilter, sortBy, skip, limit]);
 
   const hasActiveFilters = searchTerm || statusFilter !== 'all' || riskFilter !== 'all';
 
@@ -359,13 +365,26 @@ export default function Dashboard() {
 
       {/* Project Health Table */}
       <ProjectHealthTable 
-        projects={filteredProjects}
+        projects={paginatedProjects}
         onProjectClick={(projectId) => setActiveProjectId(projectId)}
       />
 
-      {filteredProjects.length === 0 && (
+      {totalFiltered === 0 && (
         <div className="text-center py-12">
           <p className="text-sm text-muted-foreground">No projects match your filters</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalFiltered > 0 && (
+        <div className="mt-6">
+          <Pagination
+            total={totalFiltered}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={goToPage}
+            onPageSizeChange={changePageSize}
+          />
         </div>
       )}
     </div>

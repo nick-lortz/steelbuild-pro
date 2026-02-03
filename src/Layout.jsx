@@ -257,47 +257,6 @@ function LayoutContent({ children, currentPageName }) {
       <OfflineIndicator />
       <Toaster />
       <CommandPalette />
-          <style>{`
-            .dark {
-              --background: 0 0% 4%;
-              --foreground: 0 0% 95%;
-              --card: 0 0% 7%;
-              --card-foreground: 0 0% 95%;
-              --primary: 35 100% 50%;
-              --primary-foreground: 0 0% 0%;
-              --secondary: 0 0% 12%;
-              --secondary-foreground: 0 0% 95%;
-              --muted: 0 0% 15%;
-              --muted-foreground: 0 0% 65%;
-              --accent: 35 100% 50%;
-              --accent-foreground: 0 0% 0%;
-              --destructive: 0 62% 50%;
-              --destructive-foreground: 0 0% 95%;
-              --border: 0 0% 18%;
-              --input: 0 0% 15%;
-              --ring: 35 100% 50%;
-            }
-            
-            .light {
-              --background: 0 0% 100%;
-              --foreground: 0 0% 10%;
-              --card: 0 0% 98%;
-              --card-foreground: 0 0% 10%;
-              --primary: 35 100% 50%;
-              --primary-foreground: 0 0% 100%;
-              --secondary: 0 0% 95%;
-              --secondary-foreground: 0 0% 10%;
-              --muted: 0 0% 90%;
-              --muted-foreground: 0 0% 40%;
-              --accent: 35 100% 50%;
-              --accent-foreground: 0 0% 100%;
-              --destructive: 0 62% 50%;
-              --destructive-foreground: 0 0% 98%;
-              --border: 0 0% 85%;
-              --input: 0 0% 90%;
-              --ring: 35 100% 50%;
-            }
-          `}</style>
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-4">

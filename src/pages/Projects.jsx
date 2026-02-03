@@ -142,7 +142,11 @@ export default function Projects() {
       toast.success('Project created successfully');
     },
     onError: (error) => {
-      toast.error('Failed to create project: ' + error.message);
+      if (error?.response?.status === 409 || error?.status === 409) {
+        toast.error('Project number already exists. Please choose a different project number.');
+      } else {
+        toast.error('Failed to create project. Please try again.');
+      }
     }
   });
 
@@ -151,11 +155,15 @@ export default function Projects() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProject(null);
-      setFormData(initialFormState);
+      setFormData(initialFormData);
       toast.success('Project updated successfully');
     },
     onError: (error) => {
-      toast.error('Failed to update project: ' + error.message);
+      if (error?.response?.status === 409 || error?.status === 409) {
+        toast.error('Project number already exists. Please choose a different project number.');
+      } else {
+        toast.error('Failed to update project. Please try again.');
+      }
     }
   });
 

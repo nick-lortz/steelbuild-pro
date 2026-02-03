@@ -1,4 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { validateInput, RFICreateSchema } from './utils/validation.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -51,8 +53,9 @@ Deno.serve(async (req) => {
 
     const data = await req.json();
 
-    if (!data?.project_id) return json(400, { error: "project_id is required" });
-    if (!String(data?.subject ?? "").trim()) return json(400, { error: "subject is required" });
+    // Validate input
+    const validation = validateInput(RFICreateSchema, data);
+    if (!validation.valid) return json(400, { error: validation.error });
 
     const access = await requireProjectAccess(base44, user, data.project_id);
     if (access.error) return access.error;
@@ -112,7 +115,7 @@ Deno.serve(async (req) => {
 
     return json(500, { error: "Unexpected createRFI failure" });
   } catch (error: any) {
-    console.error("createRFI error:", error);
-    return json(500, { error: "Internal server error", message: String(error?.message ?? error) });
+    const { status, body } = handleFunctionError(error, 'createRFI');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

@@ -1,10 +1,11 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 
 /**
- * Server-side Project Health Calculation
- * 
- * Computes health scores, risk levels, and derived metrics
- * Reduces client-side computation and ensures consistency
+ * calculateProjectHealth (TIME_LIMIT hardened)
+ * - Adds caps to reduce compute on huge datasets
+ * - Avoids expensive sorts
+ * - Single-pass aggregation
+ * - Returns partial=true if caps were hit
  */
 
 const RISK_THRESHOLDS = {
@@ -17,142 +18,190 @@ const RISK_THRESHOLDS = {
   rfi_aging_warning: 10,
   rfi_aging_urgent: 15,
   rfi_aging_overdue: 16,
-  progress_behind_warning: -10,
-  progress_behind_critical: -20
 };
 
-function getBusinessDaysBetween(startDate, endDate) {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+function json(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function getISODate(d = new Date()) {
+  return d.toISOString().split("T")[0];
+}
+
+// Inclusive business days between start/end (counts weekdays)
+function businessDaysInclusive(startDate, endDate) {
+  const start = startDate instanceof Date ? startDate : new Date(startDate);
+  const end = endDate instanceof Date ? endDate : new Date(endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+  if (start > end) return 0;
+
   let count = 0;
-  let current = new Date(start);
-  
-  while (current <= end) {
-    if (current.getDay() !== 0 && current.getDay() !== 6) {
-      count++;
-    }
-    current.setDate(current.getDate() + 1);
+  const cur = new Date(start);
+
+  while (cur <= end) {
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) count++;
+    cur.setDate(cur.getDate() + 1);
   }
-  
+
   return count;
 }
 
 function getRFIEscalationLevel(submittedDate, status) {
-  if (status === 'closed' || status === 'answered') return 'normal';
-  
-  const businessDaysOpen = getBusinessDaysBetween(new Date(submittedDate), new Date());
-  
-  if (businessDaysOpen >= RISK_THRESHOLDS.rfi_aging_overdue) return 'overdue';
-  if (businessDaysOpen >= RISK_THRESHOLDS.rfi_aging_urgent) return 'urgent';
-  if (businessDaysOpen >= RISK_THRESHOLDS.rfi_aging_warning) return 'warning';
-  return 'normal';
+  if (status === "closed" || status === "answered") return "normal";
+  const daysOpen = businessDaysInclusive(submittedDate, new Date());
+  if (daysOpen >= RISK_THRESHOLDS.rfi_aging_overdue) return "overdue";
+  if (daysOpen >= RISK_THRESHOLDS.rfi_aging_urgent) return "urgent";
+  if (daysOpen >= RISK_THRESHOLDS.rfi_aging_warning) return "warning";
+  return "normal";
 }
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    // AUTH
     const user = await base44.auth.me();
-    
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) return json(401, { error: "Unauthorized" });
+
+    // PARSE BODY
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return json(400, { error: "Invalid JSON body" });
     }
 
-    const { project_id, include_details = false } = await req.json();
+    const project_id = body?.project_id;
+    const include_details = body?.include_details === true;
 
-    if (!project_id) {
-      return Response.json({ error: 'project_id required' }, { status: 400 });
-    }
+    // Hard caps (tune if needed)
+    const max_tasks = Number.isFinite(body?.max_tasks) ? body.max_tasks : 2500;
+    const max_rfis = Number.isFinite(body?.max_rfis) ? body.max_rfis : 2500;
+    const max_financials = Number.isFinite(body?.max_financials) ? body.max_financials : 2500;
+    const max_change_orders = Number.isFinite(body?.max_change_orders) ? body.max_change_orders : 2500;
 
-    // Fetch project data
-    const [project] = await base44.entities.Project.filter({ id: project_id });
-    if (!project) {
-      return Response.json({ error: 'Project not found' }, { status: 404 });
-    }
+    if (!project_id) return json(400, { error: "project_id required" });
 
-    // Fetch related data
-    const [tasks, financials, rfis, changeOrders] = await Promise.all([
+    // Fetch project
+    const projectArr = await base44.entities.Project.filter({ id: project_id });
+    const project = projectArr?.[0];
+    if (!project) return json(404, { error: "Project not found" });
+
+    // Fetch related datasets (may be large)
+    const results = await Promise.all([
       base44.entities.Task.filter({ project_id }),
       base44.entities.Financial.filter({ project_id }),
       base44.entities.RFI.filter({ project_id }),
-      base44.entities.ChangeOrder.filter({ project_id })
+      base44.entities.ChangeOrder.filter({ project_id }),
     ]);
 
-    const today = new Date().toISOString().split('T')[0];
+    const tasksRaw = results[0] || [];
+    const financialsRaw = results[1] || [];
+    const rfisRaw = results[2] || [];
+    const changeOrdersRaw = results[3] || [];
 
-    // Task Metrics
-    const completedTasks = tasks.filter(t => t.status === 'completed').length;
-    const overdueTasks = tasks.filter(t => 
-      t.status !== 'completed' && t.end_date && t.end_date < today
-    ).length;
-    const progress = tasks.length > 0 ? (completedTasks / tasks.length * 100) : 0;
+    let partial = false;
 
-    // Cost Health
-    const budget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
-    const actual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : (actual > 0 ? -100 : 0);
-    const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : (actual > 0 ? 100 : 0);
+    const tasks = tasksRaw.length > max_tasks ? (partial = true, tasksRaw.slice(0, max_tasks)) : tasksRaw;
+    const financials =
+      financialsRaw.length > max_financials
+        ? (partial = true, financialsRaw.slice(0, max_financials))
+        : financialsRaw;
+    const rfis = rfisRaw.length > max_rfis ? (partial = true, rfisRaw.slice(0, max_rfis)) : rfisRaw;
+    const changeOrders =
+      changeOrdersRaw.length > max_change_orders
+        ? (partial = true, changeOrdersRaw.slice(0, max_change_orders))
+        : changeOrdersRaw;
 
-    // Schedule Health (business days)
-    let daysSlip = 0;
-    if (project.target_completion) {
-      const targetDate = new Date(project.target_completion + 'T00:00:00');
-      const latestTaskEnd = tasks
-        .filter(t => t.end_date)
-        .map(t => new Date(t.end_date + 'T00:00:00'))
-        .sort((a, b) => b - a)[0];
+    const todayISO = getISODate();
 
-      if (latestTaskEnd && latestTaskEnd > targetDate) {
-        daysSlip = getBusinessDaysBetween(targetDate, latestTaskEnd);
+    // TASK METRICS (single pass, no sort)
+    let completedTasks = 0;
+    let overdueTasks = 0;
+    let latestTaskEndISO = null;
+
+    for (const t of tasks) {
+      if (t?.status === "completed") completedTasks++;
+      if (t?.status !== "completed" && t?.end_date && t.end_date < todayISO) overdueTasks++;
+
+      if (t?.end_date) {
+        if (!latestTaskEndISO || t.end_date > latestTaskEndISO) latestTaskEndISO = t.end_date;
       }
     }
 
-    // RFI Health with Escalation
-    const rfisByEscalation = {
-      normal: 0,
-      warning: 0,
-      urgent: 0,
-      overdue: 0
-    };
+    const totalTasks = tasks.length;
+    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-    const openRFIs = rfis.filter(r => r.status !== 'answered' && r.status !== 'closed');
-    openRFIs.forEach(rfi => {
-      if (rfi.submitted_date) {
-        const level = getRFIEscalationLevel(rfi.submitted_date, rfi.status);
-        rfisByEscalation[level]++;
+    // FINANCIAL METRICS (single pass)
+    let budget = 0;
+    let actual = 0;
+
+    for (const f of financials) {
+      budget += Number(f?.current_budget || 0);
+      actual += Number(f?.actual_amount || 0);
+    }
+
+    // Division-by-zero hardened
+    const costHealth = budget > 0 ? ((budget - actual) / budget) * 100 : actual > 0 ? -100 : 0;
+    const budgetVsActual = budget > 0 ? (actual / budget) * 100 : actual > 0 ? 100 : 0;
+
+    // SCHEDULE SLIP
+    let daysSlip = 0;
+    if (project?.target_completion && latestTaskEndISO && latestTaskEndISO > project.target_completion) {
+      daysSlip = businessDaysInclusive(project.target_completion, latestTaskEndISO);
+    }
+
+    // RFI METRICS
+    const rfisByEscalation = { normal: 0, warning: 0, urgent: 0, overdue: 0 };
+    let openRfiCount = 0;
+
+    for (const r of rfis) {
+      const st = r?.status;
+      const isOpen = st !== "answered" && st !== "closed";
+      if (!isOpen) continue;
+
+      openRfiCount++;
+      if (r?.submitted_date) {
+        const lvl = getRFIEscalationLevel(r.submitted_date, st);
+        rfisByEscalation[lvl] = (rfisByEscalation[lvl] || 0) + 1;
       }
-    });
+    }
 
-    // Change Order Impact
-    const pendingCOs = changeOrders.filter(c => 
-      c.status === 'pending' || c.status === 'submitted'
-    ).length;
-    const totalCOImpact = changeOrders
-      .filter(c => c.status === 'approved')
-      .reduce((sum, c) => sum + (c.cost_impact || 0), 0);
+    // CHANGE ORDERS
+    let pendingCOs = 0;
+    let approvedImpact = 0;
 
-    // Risk Score Calculation
+    for (const c of changeOrders) {
+      const st = c?.status;
+      if (st === "pending" || st === "submitted") pendingCOs++;
+      if (st === "approved") approvedImpact += Number(c?.cost_impact || 0);
+    }
+
+    // RISK SCORING
     let riskScore = 0;
     const riskFactors = [];
 
-    // Cost risk (0-30 points)
     if (costHealth < RISK_THRESHOLDS.cost_critical) {
       riskScore += 30;
-      riskFactors.push('Critical cost overrun');
+      riskFactors.push("Critical cost overrun");
     } else if (costHealth < RISK_THRESHOLDS.cost_warning) {
       riskScore += 15;
-      riskFactors.push('Cost overrun');
+      riskFactors.push("Cost overrun");
     }
 
-    // Schedule risk (0-30 points)
     if (overdueTasks >= RISK_THRESHOLDS.tasks_overdue_critical) {
       riskScore += 30;
-      riskFactors.push('Critical task delays');
+      riskFactors.push("Critical task delays");
     } else if (overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning) {
       riskScore += 15;
-      riskFactors.push('Task delays');
+      riskFactors.push("Task delays");
     }
 
-    // RFI risk (0-25 points)
     if (rfisByEscalation.overdue > 0) {
       riskScore += 25;
       riskFactors.push(`${rfisByEscalation.overdue} overdue RFIs`);
@@ -161,66 +210,92 @@ Deno.serve(async (req) => {
       riskFactors.push(`${rfisByEscalation.urgent} urgent RFIs`);
     }
 
-    // Schedule slip risk (0-15 points)
     if (daysSlip >= RISK_THRESHOLDS.schedule_critical) {
       riskScore += 15;
       riskFactors.push(`${daysSlip} business days behind`);
     } else if (daysSlip >= RISK_THRESHOLDS.schedule_warning) {
       riskScore += 8;
-      riskFactors.push('Schedule slip detected');
+      riskFactors.push("Schedule slip detected");
     }
 
-    const riskLevel = riskScore >= 70 ? 'critical' : riskScore >= 40 ? 'warning' : 'healthy';
+    const riskLevel = riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "healthy";
 
     const healthMetrics = {
       project_id,
       computed_at: new Date().toISOString(),
-      
+      partial,
+      caps: {
+        max_tasks,
+        max_rfis,
+        max_financials,
+        max_change_orders,
+        fetched: {
+          tasks: tasksRaw.length,
+          rfis: rfisRaw.length,
+          financials: financialsRaw.length,
+          change_orders: changeOrdersRaw.length,
+        },
+      },
+
       // Summary
       risk_score: Math.min(riskScore, 100),
       risk_level: riskLevel,
       risk_factors: riskFactors,
-      
-      // Task Metrics
-      total_tasks: tasks.length,
+
+      // Tasks
+      total_tasks: totalTasks,
       completed_tasks: completedTasks,
       overdue_tasks: overdueTasks,
       progress_percent: Math.round(progress),
-      
-      // Cost Metrics
+
+      // Cost
       budget_total: budget,
       actual_total: actual,
       cost_health_percent: Math.round(costHealth * 10) / 10,
       budget_vs_actual_percent: Math.round(budgetVsActual),
-      
-      // Schedule Metrics
+
+      // Schedule
       days_slip_business: daysSlip,
-      
-      // RFI Metrics
+
+      // RFI
       total_rfis: rfis.length,
-      open_rfis: openRFIs.length,
+      open_rfis: openRfiCount,
       rfis_by_escalation: rfisByEscalation,
-      
-      // Change Order Metrics
+
+      // CO
       pending_change_orders: pendingCOs,
-      approved_co_impact: totalCOImpact
+      approved_co_impact: approvedImpact,
     };
 
     if (include_details) {
-      return Response.json({
+      // Only compute IDs if requested (keeps default fast)
+      const overdue_task_ids = [];
+      for (const t of tasks) {
+        if (t?.status !== "completed" && t?.end_date && t.end_date < todayISO) overdue_task_ids.push(t.id);
+      }
+
+      const overdue_rfi_ids = [];
+      const urgent_rfi_ids = [];
+
+      for (const r of rfis) {
+        const st = r?.status;
+        const isOpen = st !== "answered" && st !== "closed";
+        if (!isOpen || !r?.submitted_date) continue;
+
+        const lvl = getRFIEscalationLevel(r.submitted_date, st);
+        if (lvl === "overdue") overdue_rfi_ids.push(r.id);
+        if (lvl === "urgent") urgent_rfi_ids.push(r.id);
+      }
+
+      return json(200, {
         health_metrics: healthMetrics,
-        details: {
-          overdue_task_ids: tasks.filter(t => t.status !== 'completed' && t.end_date && t.end_date < today).map(t => t.id),
-          overdue_rfi_ids: openRFIs.filter(r => getRFIEscalationLevel(r.submitted_date, r.status) === 'overdue').map(r => r.id),
-          urgent_rfi_ids: openRFIs.filter(r => getRFIEscalationLevel(r.submitted_date, r.status) === 'urgent').map(r => r.id)
-        }
+        details: { overdue_task_ids, overdue_rfi_ids, urgent_rfi_ids },
       });
     }
 
-    return Response.json(healthMetrics);
-
+    return json(200, healthMetrics);
   } catch (error) {
-    console.error('Calculate project health error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("calculateProjectHealth error:", error);
+    return json(500, { error: "Internal server error" });
   }
 });

@@ -90,8 +90,8 @@ Deno.serve(async (req) => {
     // Cost Health
     const budget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
     const actual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : 0;
-    const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : 0;
+    const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : (actual > 0 ? -100 : 0);
+    const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : (actual > 0 ? 100 : 0);
 
     // Schedule Health (business days)
     let daysSlip = 0;

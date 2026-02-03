@@ -15,6 +15,7 @@ import InvoiceManager from '@/components/sov/InvoiceManager';
 import SOVCostAlignment from '@/components/sov/SOVCostAlignment';
 import JobStatusReport from '@/components/sov/JobStatusReport';
 import CostCodeManager from '@/components/financials/CostCodeManager';
+import AdvancedForecastingDashboard from '@/components/financials/AdvancedForecastingDashboard';
 
 
 export default function Financials() {
@@ -257,6 +258,7 @@ export default function Financials() {
             <TabsTrigger value="sov">SOV & Billing</TabsTrigger>
             <TabsTrigger value="budget">Budget</TabsTrigger>
             <TabsTrigger value="actuals">Actuals</TabsTrigger>
+            <TabsTrigger value="forecast">AI Forecast</TabsTrigger>
           </TabsList>
 
         <TabsContent value="sov">
@@ -284,6 +286,10 @@ export default function Financials() {
               costCodes={costCodes}
               canEdit={canEdit} />
 
+        </TabsContent>
+
+        <TabsContent value="forecast">
+          <AdvancedForecastingDashboard projectId={selectedProject} />
         </TabsContent>
       </Tabs>
 

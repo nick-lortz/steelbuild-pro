@@ -39,238 +39,27 @@ export default function Dashboard() {
     refetchOnMount: false
   });
 
-  const { data: allProjects = [], isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchProjects } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const userProjects = useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter(p => 
-      p.project_manager === currentUser.email || 
-      p.superintendent === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
-    );
-  }, [currentUser, allProjects]);
-
-  const { data: allTasks = [], refetch: refetchTasks } = useQuery({
-    queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date'),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: allFinancials = [], refetch: refetchFinancials } = useQuery({
-    queryKey: ['all-financials'],
-    queryFn: () => base44.entities.Financial.list(),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: allChangeOrders = [], refetch: refetchCOs } = useQuery({
-    queryKey: ['all-change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  const { data: allRFIs = [], refetch: refetchRFIs } = useQuery({
-    queryKey: ['all-rfis'],
-    queryFn: () => base44.entities.RFI.list(),
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
-  });
-
-  // Real-time subscriptions with delta updates (disabled on Dashboard to prevent render loops)
-  // Dashboard uses paginated backend functions with manual refresh instead
-  // useEntitySubscription('Project', ['projects']);
-  // useEntitySubscription('Task', ['all-tasks']);
-  // useEntitySubscription('RFI', ['all-rfis']);
-  // useEntitySubscription('ChangeOrder', ['all-change-orders']);
-  // useEntitySubscription('Financial', ['all-financials']);
-
-  // Portfolio metrics calculation
-  const portfolioMetrics = useMemo(() => {
-    const totalProjects = userProjects.length;
-    const activeProjects = userProjects.filter(p => p.status === 'in_progress' || p.status === 'awarded').length;
-
-    const projectTasks = allTasks.filter(t => userProjects.some(p => p.id === t.project_id));
-    const today = new Date().toISOString().split('T')[0];
-    const overdueTasks = projectTasks.filter(t => 
-      t.status !== 'completed' && t.end_date && t.end_date < today
-    ).length;
-
-    const upcomingMilestones = projectTasks.filter(t => 
-      t.is_milestone && 
-      t.end_date && 
-      t.end_date >= today &&
-      t.end_date <= addDays(new Date(), 30).toISOString().split('T')[0]
-    ).length;
-
-    return {
-      totalProjects,
-      activeProjects,
-      atRiskProjects: 0, // Calculated below
-      overdueTasks,
-      upcomingMilestones,
-      totalTasks: projectTasks.length,
-      riskTrend: 0
-    };
-  }, [userProjects, allTasks]);
-
-  // Enhanced project data with health metrics (pre-indexed for O(1) lookup)
-  const projectsWithHealth = useMemo(() => {
-    return measurePerf('Dashboard', 'Calculate project health', () => {
-      const today = new Date().toISOString().split('T')[0];
-
-      // Pre-index arrays by project_id (O(n) instead of O(n²))
-      const tasksByProject = groupBy(allTasks, 'project_id');
-      const financialsByProject = groupBy(allFinancials, 'project_id');
-      const rfisByProject = groupBy(allRFIs, 'project_id');
-      const cosByProject = groupBy(allChangeOrders, 'project_id');
-
-      return userProjects.map(project => {
-        const projectTasks = tasksByProject[project.id] || [];
-        const projectFinancials = financialsByProject[project.id] || [];
-        const projectRFIs = rfisByProject[project.id] || [];
-        const projectCOs = cosByProject[project.id] || [];
-
-      // Tasks
-      const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
-      const overdueTasks = projectTasks.filter(t => 
-        t.status !== 'completed' && t.end_date && t.end_date < today
-      ).length;
-
-      // Cost Health: % over/under budget (centralized formula)
-      const budget = projectFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
-      const actual = projectFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      const budgetVsActual = Math.round((budget > 0 ? ((actual / budget) * 100) : (actual > 0 ? 100 : 0)));
-      const costHealth = calculateCostHealth(budget, actual);
-
-      // Schedule health: business days slip
-      let daysSlip = 0;
-      if (project.target_completion) {
-        try {
-          const targetDate = new Date(project.target_completion + 'T00:00:00');
-          const latestTaskEnd = projectTasks
-            .filter(t => t.end_date)
-            .map(t => new Date(t.end_date + 'T00:00:00'))
-            .sort((a, b) => b - a)[0];
-
-          if (latestTaskEnd && latestTaskEnd > targetDate) {
-            daysSlip = getBusinessDaysBetween(targetDate, latestTaskEnd);
-          }
-        } catch (error) {
-          // Skip
-        }
-      }
-
-      const openRFIs = projectRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
-      const pendingCOs = projectCOs.filter(c => c.status === 'pending' || c.status === 'submitted').length;
-
-      // Progress: % of tasks complete (centralized formula)
-      const progress = calculateTaskProgress(completedTasks, projectTasks.length);
-
-      return {
-        id: project.id,
-        name: project.name,
-        project_number: project.project_number,
-        status: project.status,
-        progress: Math.round(progress),
-        costHealth,
-        daysSlip,
-        totalTasks: projectTasks.length,
-        completedTasks,
-        overdueTasks,
-        budgetVsActual: Math.round(budgetVsActual),
-        openRFIs,
-        pendingCOs
-      };
+  const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchDashboard } = useQuery({
+    queryKey: ['dashboard', { page, pageSize, search: searchTerm, status: statusFilter, risk: riskFilter, sort: sortBy }],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getDashboardData', {
+        page,
+        pageSize,
+        search: searchTerm,
+        status: statusFilter,
+        risk: riskFilter,
+        sort: sortBy
       });
-    });
-  }, [userProjects, allTasks, allFinancials, allRFIs, allChangeOrders]);
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
+  });
 
-  // Update portfolio metrics with actual at-risk count (using business rules)
-  const enhancedMetrics = useMemo(() => {
-    const atRiskCount = projectsWithHealth.filter(p => 
-      p.costHealth < RISK_THRESHOLDS.cost_warning || 
-      p.daysSlip > RISK_THRESHOLDS.schedule_warning || 
-      p.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
-    ).length;
-
-    return {
-      ...portfolioMetrics,
-      atRiskProjects: atRiskCount
-    };
-  }, [portfolioMetrics, projectsWithHealth]);
-
-  // Filtered projects with pagination
-  const { filteredProjects, paginatedProjects, totalFiltered } = useMemo(() => {
-    let filtered = [...projectsWithHealth];
-
-    // Search
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name?.toLowerCase().includes(search) || 
-        p.project_number?.toLowerCase().includes(search)
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(p => p.status === statusFilter);
-    }
-
-    // Risk filter (using business rules)
-    if (riskFilter === 'at_risk') {
-      filtered = filtered.filter(p => 
-        p.costHealth < RISK_THRESHOLDS.cost_warning || 
-        p.daysSlip > RISK_THRESHOLDS.schedule_warning || 
-        p.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
-      );
-    } else if (riskFilter === 'healthy') {
-      filtered = filtered.filter(p => 
-        p.costHealth >= RISK_THRESHOLDS.cost_warning && 
-        p.daysSlip <= RISK_THRESHOLDS.schedule_warning && 
-        p.overdueTasks < RISK_THRESHOLDS.tasks_overdue_warning
-      );
-    }
-
-    // Sort (using business rules)
-    if (sortBy === 'risk') {
-      filtered.sort((a, b) => {
-        const aRisk = (
-          a.costHealth < RISK_THRESHOLDS.cost_warning || 
-          a.daysSlip > RISK_THRESHOLDS.schedule_warning || 
-          a.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
-        ) ? 1 : 0;
-        const bRisk = (
-          b.costHealth < RISK_THRESHOLDS.cost_warning || 
-          b.daysSlip > RISK_THRESHOLDS.schedule_warning || 
-          b.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
-        ) ? 1 : 0;
-        if (bRisk !== aRisk) return bRisk - aRisk;
-        return (a.name || '').localeCompare(b.name || '');
-      });
-    } else if (sortBy === 'name') {
-      filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    } else if (sortBy === 'progress') {
-      filtered.sort((a, b) => b.progress - a.progress);
-    } else if (sortBy === 'budget') {
-      filtered.sort((a, b) => b.budgetVsActual - a.budgetVsActual);
-    } else if (sortBy === 'schedule') {
-      filtered.sort((a, b) => b.daysSlip - a.daysSlip);
-    }
-
-    const totalFiltered = filtered.length;
-    const paginated = filtered.slice(skip, skip + limit);
-
-    return { filteredProjects: filtered, paginatedProjects: paginated, totalFiltered };
-  }, [projectsWithHealth, searchTerm, statusFilter, riskFilter, sortBy, skip, limit]);
+  // Data from server (filtering, calc, pagination all server-side)
+  const enhancedMetrics = dashboardData.metrics || {};
+  const paginatedProjects = dashboardData.projects || [];
+  const totalFiltered = dashboardData.pagination?.totalFiltered || 0;
 
   const hasActiveFilters = searchTerm || statusFilter !== 'all' || riskFilter !== 'all';
 
@@ -313,13 +102,7 @@ export default function Dashboard() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => {
-              refetchProjects();
-              refetchTasks();
-              refetchFinancials();
-              refetchCOs();
-              refetchRFIs();
-            }}
+            onClick={refetchDashboard}
             disabled={projectsFetching}
             className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
           >

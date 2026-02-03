@@ -80,7 +80,9 @@
     "react-pdf": "^9.1.1",
     "pdfjs-dist": "^4.0.379",
     "dompurify": "^3.0.8",
-    "isomorphic-dompurify": "^2.9.0"
+    "isomorphic-dompurify": "^2.9.0",
+    "@sentry/react": "^7.88.0",
+    "@sentry/tracing": "^7.88.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

@@ -78,7 +78,9 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.2",
     "react-pdf": "^9.1.1",
-    "pdfjs-dist": "^4.0.379"
+    "pdfjs-dist": "^4.0.379",
+    "dompurify": "^3.0.8",
+    "isomorphic-dompurify": "^2.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

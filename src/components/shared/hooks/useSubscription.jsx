@@ -23,9 +23,16 @@ export function useEntitySubscription(entityName, queryKey, options = {}) {
 
   useEffect(() => {
     let mounted = true;
+    
+    // Check if online
+    const isOnline = navigator.onLine;
+    if (!isOnline) {
+      setIsConnected(false);
+      return;
+    }
 
     const subscribe = () => {
-      if (!mounted) return;
+      if (!mounted || !navigator.onLine) return;
 
       try {
         // Subscribe to entity changes
@@ -83,13 +90,20 @@ export function useEntitySubscription(entityName, queryKey, options = {}) {
         console.error(`Subscription error for ${entityName}:`, error);
         setIsConnected(false);
         
-        // Attempt reconnection with exponential backoff
+        // Don't reconnect if offline
+        if (!navigator.onLine) {
+          return;
+        }
+        
+        // Attempt reconnection with exponential backoff + jitter
         if (reconnectAttempts.current < maxReconnectAttempts) {
           reconnectAttempts.current++;
-          const delay = reconnectDelay * Math.pow(2, reconnectAttempts.current - 1);
+          const baseDelay = reconnectDelay * Math.pow(2, reconnectAttempts.current - 1);
+          const jitter = Math.random() * 1000; // 0-1000ms jitter
+          const delay = baseDelay + jitter;
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            if (mounted) {
+            if (mounted && navigator.onLine) {
               subscribe();
             }
           }, delay);
@@ -97,11 +111,30 @@ export function useEntitySubscription(entityName, queryKey, options = {}) {
       }
     };
 
+    // Listen for online/offline
+    const handleOnline = () => {
+      if (mounted && reconnectAttempts.current < maxReconnectAttempts) {
+        subscribe();
+      }
+    };
+    
+    const handleOffline = () => {
+      setIsConnected(false);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     subscribe();
 
     // Cleanup
     return () => {
       mounted = false;
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
       }
@@ -109,7 +142,7 @@ export function useEntitySubscription(entityName, queryKey, options = {}) {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [entityName, queryClient, JSON.stringify(queryKey), maxReconnectAttempts, reconnectDelay]);
+  }, [entityName, maxReconnectAttempts, reconnectDelay]);
 
   return { isConnected, reconnectAttempts: reconnectAttempts.current };
 }

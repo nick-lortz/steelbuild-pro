@@ -66,12 +66,13 @@ export default function Dashboard() {
     queryFn: () => base44.entities.RFI.list()
   });
 
-  // Real-time subscriptions with delta updates
-  useEntitySubscription('Project', ['projects']);
-  useEntitySubscription('Task', ['all-tasks']);
-  useEntitySubscription('RFI', ['all-rfis']);
-  useEntitySubscription('ChangeOrder', ['all-change-orders']);
-  useEntitySubscription('Financial', ['all-financials']);
+  // Real-time subscriptions with delta updates (disabled on Dashboard to prevent render loops)
+  // Dashboard uses paginated backend functions with manual refresh instead
+  // useEntitySubscription('Project', ['projects']);
+  // useEntitySubscription('Task', ['all-tasks']);
+  // useEntitySubscription('RFI', ['all-rfis']);
+  // useEntitySubscription('ChangeOrder', ['all-change-orders']);
+  // useEntitySubscription('Financial', ['all-financials']);
 
   // Portfolio metrics calculation
   const portfolioMetrics = useMemo(() => {

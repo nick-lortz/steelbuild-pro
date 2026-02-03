@@ -101,34 +101,74 @@ export default function Financials() {
     gcTime: 60 * 60 * 1000
   });
 
-  // Real-time subscriptions
+  // Real-time subscriptions with hardened hooks
   useEffect(() => {
     if (!selectedProject) return;
 
-    const unsubFinancials = base44.entities.Financial.subscribe((event) => {
-      if (event.data?.project_id === selectedProject) {
-        queryClient.invalidateQueries({ queryKey: ['financials', selectedProject] });
-      }
-    });
+    let mounted = true;
+    const subscriptions = [];
 
-    const unsubExpenses = base44.entities.Expense.subscribe((event) => {
-      if (event.data?.project_id === selectedProject) {
-        queryClient.invalidateQueries({ queryKey: ['expenses', selectedProject] });
-      }
-    });
+    const setupSubscriptions = () => {
+      try {
+        const unsubFinancials = base44.entities.Financial.subscribe((event) => {
+          if (!mounted) return;
+          if (event.data?.project_id === selectedProject) {
+            queryClient.setQueryData(['financials', selectedProject], (old) => {
+              if (!old) return old;
+              if (event.type === 'create') return [...old, event.data];
+              if (event.type === 'update') return old.map(item => item.id === event.id ? event.data : item);
+              if (event.type === 'delete') return old.filter(item => item.id !== event.id);
+              return old;
+            });
+          }
+        });
+        subscriptions.push(unsubFinancials);
 
-    const unsubSOV = base44.entities.SOVItem.subscribe((event) => {
-      if (event.data?.project_id === selectedProject) {
-        queryClient.invalidateQueries({ queryKey: ['sov-items', selectedProject] });
+        const unsubExpenses = base44.entities.Expense.subscribe((event) => {
+          if (!mounted) return;
+          if (event.data?.project_id === selectedProject) {
+            queryClient.setQueryData(['expenses', selectedProject], (old) => {
+              if (!old) return old;
+              if (event.type === 'create') return [...old, event.data];
+              if (event.type === 'update') return old.map(item => item.id === event.id ? event.data : item);
+              if (event.type === 'delete') return old.filter(item => item.id !== event.id);
+              return old;
+            });
+          }
+        });
+        subscriptions.push(unsubExpenses);
+
+        const unsubSOV = base44.entities.SOVItem.subscribe((event) => {
+          if (!mounted) return;
+          if (event.data?.project_id === selectedProject) {
+            queryClient.setQueryData(['sov-items', selectedProject], (old) => {
+              if (!old) return old;
+              if (event.type === 'create') return [...old, event.data];
+              if (event.type === 'update') return old.map(item => item.id === event.id ? event.data : item);
+              if (event.type === 'delete') return old.filter(item => item.id !== event.id);
+              return old;
+            });
+          }
+        });
+        subscriptions.push(unsubSOV);
+      } catch (error) {
+        console.error('Subscription setup error:', error);
       }
-    });
+    };
+
+    setupSubscriptions();
 
     return () => {
-      unsubFinancials();
-      unsubExpenses();
-      unsubSOV();
+      mounted = false;
+      subscriptions.forEach(unsub => {
+        try {
+          unsub();
+        } catch (error) {
+          console.error('Unsubscribe error:', error);
+        }
+      });
     };
-  }, [selectedProject, queryClient]);
+  }, [selectedProject]);
 
   const selectedProjectData = projects.find((p) => p.id === selectedProject);
 

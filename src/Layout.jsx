@@ -200,7 +200,9 @@ function LayoutContent({ children, currentPageName }) {
     gcTime: Infinity,
     retry: false,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    refetchOnMount: false,
+    refetchInterval: false,
+    refetchIntervalInBackground: false
   });
 
   const { data: activeProject } = useQuery({
@@ -211,7 +213,9 @@ function LayoutContent({ children, currentPageName }) {
     },
     enabled: !!activeProjectId,
     select: (data) => data?.[0] || null,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const handleLogout = () => {

@@ -1,73 +1,65 @@
-/**
- * PAGINATED PROJECT LIST ENDPOINT
- */
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { requireAuth } from './utils/auth.js';
 
 Deno.serve(async (req) => {
   try {
-    const { user, error, base44 } = await requireAuth(req);
-    if (error) return error;
-    
-    // Parse pagination params
-    const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const skip = (page - 1) * limit;
-    const sortBy = url.searchParams.get('sort') || '-updated_date';
-    const status = url.searchParams.get('status');
-    
-    // Build filter
-    const filter = {};
-    if (status && status !== 'all') {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { page = 1, page_size = 25, search = '', status = 'all', risk_level = 'all', sort_by = 'name' } = await req.json();
+
+    const skip = Math.max(0, (page - 1) * page_size);
+    const limit = Math.min(page_size, 100); // Cap at 100 per page
+
+    // Build filter: user sees only assigned projects unless admin
+    let filter = {};
+    if (user.role !== 'admin') {
+      filter = {
+        '$or': [
+          { 'project_manager': user.email },
+          { 'superintendent': user.email },
+          { 'assigned_users': { '$contains': user.email } }
+        ]
+      };
+    }
+
+    // Apply status filter
+    if (status !== 'all') {
       filter.status = status;
     }
-    
-    // Fetch all projects (Base44 doesn't support skip/limit in filter, so we do it manually)
-    const allProjects = await base44.entities.Project.list(sortBy);
-    
-    // Filter by user access
-    let accessibleProjects;
-    if (user.role === 'admin') {
-      accessibleProjects = allProjects;
-    } else {
-      accessibleProjects = allProjects.filter(p =>
-        p.project_manager === user.email ||
-        p.superintendent === user.email ||
-        (p.assigned_users && p.assigned_users.includes(user.email))
+
+    // Get total matching projects (for pagination)
+    const allMatching = await base44.asServiceRole.entities.Project.filter(filter);
+    const total = allMatching.length;
+
+    // Fetch page of projects
+    let projects = allMatching.slice(skip, skip + limit);
+
+    // Apply search filter (client-side on this page only, not entire result set)
+    if (search && search.length > 0) {
+      const searchLower = search.toLowerCase();
+      projects = projects.filter(p => 
+        p.name?.toLowerCase().includes(searchLower) || 
+        p.project_number?.toLowerCase().includes(searchLower)
       );
     }
-    
-    // Apply status filter
-    let filteredProjects = accessibleProjects;
-    if (status && status !== 'all') {
-      filteredProjects = filteredProjects.filter(p => p.status === status);
+
+    // Apply sort
+    if (sort_by === 'name') {
+      projects.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (sort_by === 'date') {
+      projects.sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
     }
-    
-    // Paginate
-    const total = filteredProjects.length;
-    const projects = filteredProjects.slice(skip, skip + limit);
-    const totalPages = Math.ceil(total / limit);
-    
+
     return Response.json({
-      success: true,
-      projects,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
-      }
+      data: projects,
+      total: total,
+      page: page,
+      page_size: limit,
+      has_more: skip + limit < total
     });
-    
   } catch (error) {
-    console.error('List projects error:', error);
-    return Response.json({
-      error: 'Internal server error',
-      message: error.message
-    }, { status: 500 });
+    console.error('[listProjectsPaginated]', error.message);
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 });

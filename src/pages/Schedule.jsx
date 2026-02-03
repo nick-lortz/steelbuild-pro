@@ -33,14 +33,18 @@ export default function Schedule() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: Infinity
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   // Fetch projects for multi-project scheduling
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000
   });
 
   // Filter projects by user access
@@ -104,6 +108,7 @@ export default function Schedule() {
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
     staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({

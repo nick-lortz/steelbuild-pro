@@ -215,7 +215,9 @@ function LayoutContent({ children, currentPageName }) {
   });
 
   const handleLogout = () => {
-    base44.auth.logout();
+    if (window.confirm('Are you sure you want to logout?')) {
+      base44.auth.logout();
+    }
   };
 
   const projectPhase = activeProject?.phase || 'fabrication';

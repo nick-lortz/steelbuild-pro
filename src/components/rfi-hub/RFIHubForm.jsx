@@ -43,6 +43,7 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsDirty(false);
     
     // Validation
     if (!formData.project_id || !formData.subject || !formData.question) {

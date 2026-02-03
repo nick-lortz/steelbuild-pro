@@ -3,6 +3,8 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { validateInput, TaskCreateSchema } from './utils/schemas.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 import { requireProjectAccess } from './utils/auth.js';
 import { validateTask } from './utils/validation.js';
 

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
 import {
   Building,
@@ -166,6 +167,11 @@ const navGroups = [
 function LayoutContent({ children, currentPageName }) {
   useRenderCount('LayoutContent');
   useMountLogger('LayoutContent');
+
+  // Initialize Sentry on app load
+  useEffect(() => {
+    initSentry();
+  }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {

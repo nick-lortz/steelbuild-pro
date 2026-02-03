@@ -1,11 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Structured logging
+const createLogger = (fn) => ({
+  perf: (op, ms) => ms > 1000 && console.warn(JSON.stringify({ fn, op, ms, level: 'perf' })),
+  error: (msg, err) => console.error(JSON.stringify({ fn, msg, error: err?.message, level: 'error' }))
+});
+
 /**
  * Server-side dashboard aggregation
  * Returns only the projects visible to the user + aggregated metrics
  * Filters & calculations happen here, not in the browser
  */
 Deno.serve(async (req) => {
+  const logger = createLogger('getDashboardData');
+  const startTime = Date.now();
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();

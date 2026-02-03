@@ -202,7 +202,7 @@ function LayoutContent({ children, currentPageName }) {
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchInterval: false,
+    refetchInterval: 30 * 60 * 1000, // Revalidate every 30 minutes to catch token expiry
     refetchIntervalInBackground: false
   });
 

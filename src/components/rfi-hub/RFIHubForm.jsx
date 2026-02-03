@@ -13,6 +13,7 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
     rfi_number: rfi?.rfi_number || 0,
     subject: rfi?.subject || '',
     question: rfi?.question || '',
+    response: rfi?.response || '',
     rfi_type: rfi?.rfi_type || 'other',
     category: rfi?.category || 'structural',
     discipline: rfi?.discipline || '',
@@ -23,6 +24,8 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
     assigned_to: rfi?.assigned_to || '',
     due_date: rfi?.due_date || '',
     response_owner: rfi?.response_owner || '',
+    response_date: rfi?.response_date || '',
+    closed_date: rfi?.closed_date || '',
     created_date: rfi?.created_date || new Date().toISOString().split('T')[0],
     notes: rfi?.notes || ''
   });
@@ -137,6 +140,17 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
               value={formData.question}
               onChange={(e) => setFormData({ ...formData, question: e.target.value })}
               placeholder="Detailed question or clarification needed"
+              className="bg-zinc-800 border-zinc-700 min-h-[100px]"
+            />
+          </div>
+
+          {/* Response */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Response</label>
+            <Textarea
+              value={formData.response}
+              onChange={(e) => setFormData({ ...formData, response: e.target.value })}
+              placeholder="Response from architect/engineer"
               className="bg-zinc-800 border-zinc-700 min-h-[100px]"
             />
           </div>
@@ -278,6 +292,30 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
                 type="date"
                 value={formData.due_date}
                 onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Response Date */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Response Date</label>
+              <Input
+                type="date"
+                value={formData.response_date}
+                onChange={(e) => setFormData({ ...formData, response_date: e.target.value })}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            {/* Closed Date */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Closed Date</label>
+              <Input
+                type="date"
+                value={formData.closed_date}
+                onChange={(e) => setFormData({ ...formData, closed_date: e.target.value })}
                 className="bg-zinc-800 border-zinc-700"
               />
             </div>

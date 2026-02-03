@@ -12,6 +12,8 @@
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import { checkRateLimit, rateLimitResponse } from './utils/rateLimit.js';
+import { validateInput, RFIUpdateSchema } from './utils/validation.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -218,7 +220,7 @@ Deno.serve(async (req) => {
       return json(500, { error: "Internal server error" });
     }
   } catch (error) {
-    console.error("Update RFI fatal error:", error);
-    return json(500, { error: "Internal server error" });
+    const { status, body } = handleFunctionError(error, 'updateRFI');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

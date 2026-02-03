@@ -1,18 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { validateInput, ProjectIdSchema } from './utils/validation.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
 
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  const { project_id } = await req.json();
+    const payload = await req.json();
+    const validation = validateInput(ProjectIdSchema, payload);
+    if (!validation.valid) {
+      return Response.json({ error: validation.error }, { status: 400 });
+    }
 
-  if (!project_id) {
-    return Response.json({ error: 'Missing project_id' }, { status: 400 });
-  }
+    const { project_id } = validation.data;
 
   // Fetch SOV items
   const sovItems = await base44.entities.SOVItem.filter({ project_id });
@@ -73,21 +78,25 @@ Deno.serve(async (req) => {
   const projectedProfit = totalContract - estimatedCostAtCompletion;
   const projectedMargin = totalContract > 0 ? (projectedProfit / totalContract) * 100 : 0;
 
-  return Response.json({
-    project_id,
-    contract_value: contractValue,
-    signed_extras: signedExtras,
-    total_contract: totalContract,
-    earned_to_date: earnedToDate,
-    billed_to_date: billedToDate,
-    remaining_to_bill: remainingToBill,
-    over_under_billed: overUnderBilled,
-    actual_cost_to_date: actualCostToDate,
-    committed_costs: committedCosts,
-    cost_risk: costRisk,
-    estimated_cost_at_completion: estimatedCostAtCompletion,
-    projected_profit: projectedProfit,
-    projected_margin: projectedMargin,
-    percent_complete: percentComplete
-  });
+    return Response.json({
+      project_id,
+      contract_value: contractValue,
+      signed_extras: signedExtras,
+      total_contract: totalContract,
+      earned_to_date: earnedToDate,
+      billed_to_date: billedToDate,
+      remaining_to_bill: remainingToBill,
+      over_under_billed: overUnderBilled,
+      actual_cost_to_date: actualCostToDate,
+      committed_costs: committedCosts,
+      cost_risk: costRisk,
+      estimated_cost_at_completion: estimatedCostAtCompletion,
+      projected_profit: projectedProfit,
+      projected_margin: projectedMargin,
+      percent_complete: percentComplete
+    });
+  } catch (error) {
+    const { status, body } = handleFunctionError(error, 'getProjectFinancialSummary');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
+  }
 });

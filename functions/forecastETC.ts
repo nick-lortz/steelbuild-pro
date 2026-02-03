@@ -1,4 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { z } from 'npm:zod@3.24.2';
+import { validateInput, ProjectIdSchema } from './utils/validation.js';
+import { handleFunctionError } from './utils/errorHandler.js';
+
+const ForecastQuerySchema = ProjectIdSchema.extend({
+  cost_code_id: z.string().optional()
+});
 
 Deno.serve(async (req) => {
   try {
@@ -8,7 +15,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { project_id, cost_code_id } = await req.json();
+    const payload = await req.json();
+    const validation = validateInput(ForecastQuerySchema, payload);
+    if (!validation.valid) {
+      return Response.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { project_id, cost_code_id } = validation.data;
 
     // Fetch data
     const [financial, expenses, tasks, changeOrders] = await Promise.all([
@@ -145,6 +158,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    const { status, body } = handleFunctionError(error, 'forecastETC');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

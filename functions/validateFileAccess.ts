@@ -1,87 +1,134 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { requireAuth } from './utils/auth.js';
-import { logger } from './utils/logging.js';
-
 /**
- * Validate user has permission to access a file/document
- * Enforces project-based authorization
+ * validateFileAccess (Self-contained)
+ *
+ * Validates whether the current user is allowed to access a document/file
+ * based on project membership (assigned_users / project_manager / superintendent).
+ *
+ * Recommended usage: pass document_id (strong authorization).
+ * file_url-only checks are allowed but flagged as weaker.
  */
+
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+
+function json(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function isNonEmptyString(v) {
+  return typeof v === "string" && v.trim().length > 0;
+}
+
+function userHasProjectAccess(user, project) {
+  const isAdmin = user?.role === "admin" || user?.is_admin === true;
+  if (isAdmin) return true;
+
+  const email = user?.email ? String(user.email).toLowerCase() : null;
+  if (!email) return false;
+
+  const pm = project?.project_manager ? String(project.project_manager).toLowerCase() : null;
+  const supt = project?.superintendent ? String(project.superintendent).toLowerCase() : null;
+
+  const assigned = Array.isArray(project?.assigned_users) ? project.assigned_users : [];
+  const assignedMatch = assigned.some((x) => String(x).toLowerCase() === email);
+
+  return email === pm || email === supt || assignedMatch;
+}
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await requireAuth(base44);
 
-    const { document_id, file_url } = await req.json();
+    // 1) AUTH
+    const user = await base44.auth.me();
+    if (!user) return json(401, { error: "Unauthorized" });
 
-    if (!document_id && !file_url) {
-      return Response.json({ error: 'document_id or file_url required' }, { status: 400 });
+    // 2) PARSE BODY
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return json(400, { error: "Invalid JSON body" });
     }
 
-    // If document_id provided, check project access
-    if (document_id) {
-      const [document] = await base44.entities.Document.filter({ id: document_id });
-      
+    const document_id = body?.document_id;
+    const file_url = body?.file_url;
+
+    if (!isNonEmptyString(document_id) && !isNonEmptyString(file_url)) {
+      return json(400, { error: "document_id or file_url required" });
+    }
+
+    // 3) Preferred path: document_id -> enforce project access
+    if (isNonEmptyString(document_id)) {
+      // Use service role to ensure we can fetch the doc even if user is not authorized;
+      // authorization is enforced explicitly below.
+      const docs = await base44.asServiceRole.entities.Document.filter({ id: document_id });
+      const document = docs?.[0];
+
       if (!document) {
-        logger.warn('validateFileAccess', 'Document not found', { document_id, user: user.email });
-        return Response.json({ error: 'Document not found' }, { status: 404 });
+        console.warn("validateFileAccess: Document not found", { document_id, user: user.email });
+        return json(404, { error: "Document not found" });
       }
 
-      // Check project access
-      const [project] = await base44.entities.Project.filter({ id: document.project_id });
-      
+      const projects = await base44.asServiceRole.entities.Project.filter({ id: document.project_id });
+      const project = projects?.[0];
+
       if (!project) {
-        return Response.json({ error: 'Project not found' }, { status: 404 });
+        console.warn("validateFileAccess: Project not found for document", {
+          document_id,
+          project_id: document.project_id,
+          user: user.email,
+        });
+        return json(404, { error: "Project not found" });
       }
 
-      // Admin has access to all
-      if (user.role === 'admin') {
-        logger.info('validateFileAccess', 'Admin access granted', { document_id, user: user.email });
-        return Response.json({ 
-          allowed: true, 
+      // Admin bypass
+      const isAdmin = user?.role === "admin" || user?.is_admin === true;
+      if (isAdmin) {
+        console.info("validateFileAccess: Admin access granted", { document_id, user: user.email });
+        return json(200, {
+          allowed: true,
           file_url: document.file_url,
-          document 
+          document,
         });
       }
 
-      // Check if user is assigned to project
-      const isAssigned = 
-        project.project_manager === user.email ||
-        project.superintendent === user.email ||
-        (project.assigned_users && project.assigned_users.includes(user.email));
-
-      if (!isAssigned) {
-        logger.warn('validateFileAccess', 'Access denied - not assigned to project', {
+      // Assigned check
+      const allowed = userHasProjectAccess(user, project);
+      if (!allowed) {
+        console.warn("validateFileAccess: Access denied (not assigned)", {
           document_id,
           project_id: project.id,
-          user: user.email
+          user: user.email,
         });
-        return Response.json({ error: 'Access denied' }, { status: 403 });
+        return json(403, { error: "Access denied" });
       }
 
-      logger.info('validateFileAccess', 'Access granted', {
+      console.info("validateFileAccess: Access granted", {
         document_id,
         project_id: project.id,
-        user: user.email
+        user: user.email,
       });
 
-      return Response.json({ 
-        allowed: true, 
+      return json(200, {
+        allowed: true,
         file_url: document.file_url,
-        document 
+        document,
       });
     }
 
-    // If just validating a file_url (less secure, should have document_id)
-    logger.warn('validateFileAccess', 'File URL validation without document_id', { user: user.email });
-    return Response.json({ 
-      allowed: true, 
-      file_url,
-      warning: 'Direct file access not fully validated'
-    });
+    // 4) Weaker path: file_url-only validation
+    console.warn("validateFileAccess: file_url validation without document_id (weak)", { user: user.email });
 
+    return json(200, {
+      allowed: true,
+      file_url,
+      warning: "Direct file access not fully validated (prefer document_id)",
+    });
   } catch (error) {
-    logger.error('validateFileAccess', 'Validation error', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("validateFileAccess error:", error);
+    return json(500, { error: "Internal server error" });
   }
 });

@@ -1,39 +1,65 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
+    console.error('ErrorBoundary caught:', error, errorInfo);
+    this.setState({ error, errorInfo });
+    
+    // In production, send to monitoring service
+    // Example: Sentry.captureException(error, { extra: errorInfo });
   }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    window.location.reload();
+  };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="text-center max-w-md">
-            <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle size={32} className="text-red-500" />
+        <div className="min-h-screen bg-background flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-card border border-destructive/20 rounded-lg p-8 text-center">
+            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-destructive" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              An unexpected error occurred. Try refreshing the page.
+            
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              Something went wrong
+            </h1>
+            
+            <p className="text-muted-foreground mb-6">
+              The application encountered an unexpected error. Our team has been notified.
             </p>
+            
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="text-left mb-6 bg-muted p-4 rounded-md text-xs">
+                <summary className="cursor-pointer font-medium mb-2">
+                  Error Details (Dev Only)
+                </summary>
+                <pre className="whitespace-pre-wrap overflow-auto">
+                  {this.state.error.toString()}
+                  {this.state.errorInfo?.componentStack}
+                </pre>
+              </details>
+            )}
+            
             <Button 
-              onClick={() => window.location.reload()}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
+              onClick={this.handleReset}
+              className="gap-2"
             >
-              <RefreshCw size={16} className="mr-2" />
-              Reload App
+              <RefreshCw size={16} />
+              Reload Application
             </Button>
           </div>
         </div>

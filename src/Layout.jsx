@@ -52,6 +52,7 @@ import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 const navGroups = [
   {
@@ -464,13 +465,15 @@ function LayoutContent({ children, currentPageName }) {
 
 const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
   return (
-    <ThemeProvider>
-      <ConfirmProvider>
-        <ActiveProjectProvider>
-          <LayoutContent children={children} currentPageName={currentPageName} />
-        </ActiveProjectProvider>
-      </ConfirmProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ConfirmProvider>
+          <ActiveProjectProvider>
+            <LayoutContent children={children} currentPageName={currentPageName} />
+          </ActiveProjectProvider>
+        </ConfirmProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 });
 

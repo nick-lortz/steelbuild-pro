@@ -28,6 +28,8 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
     response_date: rfi?.response_date || '',
     closed_date: rfi?.closed_date || '',
     created_date: rfi?.created_date || new Date().toISOString().split('T')[0],
+    cost_impact: rfi?.cost_impact || 'unknown',
+    schedule_impact: rfi?.schedule_impact || 'unknown',
     notes: rfi?.notes || ''
   });
 

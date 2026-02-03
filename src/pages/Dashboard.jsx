@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
+import { RISK_THRESHOLDS, getBusinessDaysBetween } from '@/components/shared/businessRules';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -138,7 +139,7 @@ export default function Dashboard() {
       const budgetVsActual = budget > 0 ? ((actual / budget) * 100) : 0;
       const costHealth = budget > 0 ? ((budget - actual) / budget * 100) : 0;
 
-      // Schedule health: days slip
+      // Schedule health: business days slip
       let daysSlip = 0;
       if (project.target_completion) {
         try {
@@ -149,7 +150,7 @@ export default function Dashboard() {
             .sort((a, b) => b - a)[0];
 
           if (latestTaskEnd && latestTaskEnd > targetDate) {
-            daysSlip = differenceInDays(latestTaskEnd, targetDate);
+            daysSlip = getBusinessDaysBetween(targetDate, latestTaskEnd);
           }
         } catch (error) {
           // Skip
@@ -180,10 +181,12 @@ export default function Dashboard() {
     });
   }, [userProjects, allTasks, allFinancials, allRFIs, allChangeOrders]);
 
-  // Update portfolio metrics with actual at-risk count
+  // Update portfolio metrics with actual at-risk count (using business rules)
   const enhancedMetrics = useMemo(() => {
     const atRiskCount = projectsWithHealth.filter(p => 
-      p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0
+      p.costHealth < RISK_THRESHOLDS.cost_warning || 
+      p.daysSlip > RISK_THRESHOLDS.schedule_warning || 
+      p.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
     ).length;
 
     return {
@@ -210,18 +213,34 @@ export default function Dashboard() {
       filtered = filtered.filter(p => p.status === statusFilter);
     }
 
-    // Risk filter
+    // Risk filter (using business rules)
     if (riskFilter === 'at_risk') {
-      filtered = filtered.filter(p => p.costHealth < -5 || p.daysSlip > 3 || p.overdueTasks > 0);
+      filtered = filtered.filter(p => 
+        p.costHealth < RISK_THRESHOLDS.cost_warning || 
+        p.daysSlip > RISK_THRESHOLDS.schedule_warning || 
+        p.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
+      );
     } else if (riskFilter === 'healthy') {
-      filtered = filtered.filter(p => p.costHealth >= -5 && p.daysSlip <= 3 && p.overdueTasks === 0);
+      filtered = filtered.filter(p => 
+        p.costHealth >= RISK_THRESHOLDS.cost_warning && 
+        p.daysSlip <= RISK_THRESHOLDS.schedule_warning && 
+        p.overdueTasks < RISK_THRESHOLDS.tasks_overdue_warning
+      );
     }
 
-    // Sort
+    // Sort (using business rules)
     if (sortBy === 'risk') {
       filtered.sort((a, b) => {
-        const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
-        const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
+        const aRisk = (
+          a.costHealth < RISK_THRESHOLDS.cost_warning || 
+          a.daysSlip > RISK_THRESHOLDS.schedule_warning || 
+          a.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
+        ) ? 1 : 0;
+        const bRisk = (
+          b.costHealth < RISK_THRESHOLDS.cost_warning || 
+          b.daysSlip > RISK_THRESHOLDS.schedule_warning || 
+          b.overdueTasks >= RISK_THRESHOLDS.tasks_overdue_warning
+        ) ? 1 : 0;
         if (bRisk !== aRisk) return bRisk - aRisk;
         return (a.name || '').localeCompare(b.name || '');
       });

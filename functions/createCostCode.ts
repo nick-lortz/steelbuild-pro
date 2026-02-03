@@ -1,36 +1,47 @@
+/**
+ * SECURE COST CODE CREATION ENDPOINT
+ */
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireAdmin } from './utils/auth.js';
+import { checkCostCodeUnique } from './utils/uniqueness.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. AUTH - Only admins can create cost codes
+    const { user, error, base44 } = await requireAdmin(req);
+    if (error) return error;
+    
+    // 2. PARSE & VALIDATE
+    const data = await req.json();
+    
+    if (!data.code || !data.name) {
+      return Response.json({
+        error: 'Code and name are required'
+      }, { status: 400 });
     }
-
-    const { project_id, code, description, category } = await req.json();
-
-    if (!project_id || !code || !description || !category) {
-      return Response.json({ error: 'project_id, code, description, and category required' }, { status: 400 });
+    
+    // 3. UNIQUE CONSTRAINT
+    const uniqueCheck = await checkCostCodeUnique(base44.asServiceRole, data.code);
+    if (!uniqueCheck.unique) {
+      return Response.json({
+        error: uniqueCheck.error
+      }, { status: 409 });
     }
-
-    // Validate uniqueness per project
-    const existing = await base44.entities.CostCode.filter({ project_id, code });
-    if (existing.length > 0) {
-      return Response.json({ error: 'Cost code already exists for this project' }, { status: 409 });
-    }
-
-    const costCode = await base44.entities.CostCode.create({
-      project_id,
-      code,
-      description,
-      category,
-      is_active: true
-    });
-
-    return Response.json({ costCode });
+    
+    // 4. CREATE
+    const costCode = await base44.asServiceRole.entities.CostCode.create(data);
+    
+    return Response.json({
+      success: true,
+      costCode
+    }, { status: 201 });
+    
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Create cost code error:', error);
+    return Response.json({
+      error: 'Internal server error',
+      message: error.message
+    }, { status: 500 });
   }
 });

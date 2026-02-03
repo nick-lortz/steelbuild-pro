@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Eye, Pencil, Trash2, AlertCircle, TrendingUp, Clock, Settings } from 'lucide-react';
+import { SafeText } from '@/components/shared/sanitization';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
 
@@ -119,7 +120,7 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
                         {isOverdue && <AlertCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />}
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate leading-tight">
-                            {project.name}
+                            <SafeText content={project.name} />
                           </p>
                           <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
                             {project.project_number}
@@ -132,7 +133,7 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
                   {/* Client */}
                   <td className="px-3 py-3">
                     <span className="text-xs text-foreground truncate max-w-[140px] inline-block">
-                      {project.client || '—'}
+                      <SafeText content={project.client || '—'} />
                     </span>
                   </td>
 

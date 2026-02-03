@@ -6,6 +6,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { requireAdmin } from './utils/auth.js';
+import { cascadeDeleteProject } from './utils/cascadeDelete.js';
 
 Deno.serve(async (req) => {
   try {
@@ -31,51 +32,7 @@ Deno.serve(async (req) => {
     }
     
     // 4. CASCADE DELETE ALL RELATED ENTITIES
-    // NOTE: This is a simplified version. Production should use cascadeDeleteProject function
-    const deletePromises = [
-      // Work packages and tasks
-      base44.asServiceRole.entities.WorkPackage.filter({ project_id: id })
-        .then(wps => Promise.all(wps.map(wp => base44.asServiceRole.entities.WorkPackage.delete(wp.id)))),
-      
-      base44.asServiceRole.entities.Task.filter({ project_id: id })
-        .then(tasks => Promise.all(tasks.map(t => base44.asServiceRole.entities.Task.delete(t.id)))),
-      
-      // Financials
-      base44.asServiceRole.entities.Financial.filter({ project_id: id })
-        .then(fins => Promise.all(fins.map(f => base44.asServiceRole.entities.Financial.delete(f.id)))),
-      
-      base44.asServiceRole.entities.Expense.filter({ project_id: id })
-        .then(exps => Promise.all(exps.map(e => base44.asServiceRole.entities.Expense.delete(e.id)))),
-      
-      // RFIs and change orders
-      base44.asServiceRole.entities.RFI.filter({ project_id: id })
-        .then(rfis => Promise.all(rfis.map(r => base44.asServiceRole.entities.RFI.delete(r.id)))),
-      
-      base44.asServiceRole.entities.ChangeOrder.filter({ project_id: id })
-        .then(cos => Promise.all(cos.map(c => base44.asServiceRole.entities.ChangeOrder.delete(c.id)))),
-      
-      // Documents and drawings
-      base44.asServiceRole.entities.Document.filter({ project_id: id })
-        .then(docs => Promise.all(docs.map(d => base44.asServiceRole.entities.Document.delete(d.id)))),
-      
-      base44.asServiceRole.entities.DrawingSet.filter({ project_id: id })
-        .then(sets => Promise.all(sets.map(s => base44.asServiceRole.entities.DrawingSet.delete(s.id)))),
-      
-      // Other entities
-      base44.asServiceRole.entities.DailyLog.filter({ project_id: id })
-        .then(logs => Promise.all(logs.map(l => base44.asServiceRole.entities.DailyLog.delete(l.id)))),
-      
-      base44.asServiceRole.entities.Meeting.filter({ project_id: id })
-        .then(mtgs => Promise.all(mtgs.map(m => base44.asServiceRole.entities.Meeting.delete(m.id)))),
-      
-      base44.asServiceRole.entities.ProductionNote.filter({ project_id: id })
-        .then(notes => Promise.all(notes.map(n => base44.asServiceRole.entities.ProductionNote.delete(n.id))))
-    ];
-    
-    await Promise.all(deletePromises);
-    
-    // 5. DELETE PROJECT ITSELF
-    await base44.asServiceRole.entities.Project.delete(id);
+    await cascadeDeleteProject(base44.asServiceRole, id);
     
     return Response.json({
       success: true,

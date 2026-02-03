@@ -22,6 +22,7 @@ import { Plus, Search, Hash, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
+import { validateTextLength, validateForm } from '@/components/shared/validation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +57,7 @@ export default function CostCodes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [deleteCode, setDeleteCode] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
   const queryClient = useQueryClient();
 
@@ -94,6 +96,21 @@ export default function CostCodes() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate
+    const validation = validateForm({
+      code: validateTextLength(formData.code, 'name'),
+      name: validateTextLength(formData.name, 'name'),
+      unit: validateTextLength(formData.unit, 'name')
+    });
+    
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      return;
+    }
+    
+    setValidationErrors({});
+    
     if (editingCode) {
       updateMutation.mutate({ id: editingCode.id, data: formData });
     } else {
@@ -289,9 +306,13 @@ export default function CostCodes() {
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 placeholder="e.g., 05100"
+                maxLength={50}
                 required
                 className="bg-zinc-800 border-zinc-700 font-mono"
               />
+              {validationErrors.code && (
+                <p className="text-xs text-red-400 mt-1">{validationErrors.code}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Name *</Label>
@@ -299,9 +320,13 @@ export default function CostCodes() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Cost code description"
+                maxLength={100}
                 required
                 className="bg-zinc-800 border-zinc-700"
               />
+              {validationErrors.name && (
+                <p className="text-xs text-red-400 mt-1">{validationErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -327,8 +352,12 @@ export default function CostCodes() {
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 placeholder="e.g., LF, EA, TON, HR"
+                maxLength={20}
                 className="bg-zinc-800 border-zinc-700"
               />
+              {validationErrors.unit && (
+                <p className="text-xs text-red-400 mt-1">{validationErrors.unit}</p>
+              )}
             </div>
             <div className="flex items-center justify-between py-2">
               <Label>Active</Label>

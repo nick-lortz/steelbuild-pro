@@ -43,6 +43,22 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    const validation = validateForm({
+      subject: validateTextLength(formData.subject, 'subject'),
+      question: validateTextLength(formData.question, 'rfi_question'),
+      response: validateTextLength(formData.response, 'rfi_response'),
+      assigned_to: validateEmail(formData.assigned_to),
+      response_owner: validateEmail(formData.response_owner)
+    });
+    
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      return;
+    }
+    
+    setValidationErrors({});
     setIsDirty(false);
     
     // Validation

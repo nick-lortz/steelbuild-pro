@@ -96,10 +96,10 @@ import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import Submittals from './pages/Submittals';
 import TermsOfService from './pages/TermsOfService';
+import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import TestSuite from './pages/TestSuite';
 import __Layout from './Layout.jsx';
 
 
@@ -153,10 +153,10 @@ export const PAGES = {
     "Settings": Settings,
     "Submittals": Submittals,
     "TermsOfService": TermsOfService,
+    "TestSuite": TestSuite,
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "TestSuite": TestSuite,
 }
 
 export const pagesConfig = {

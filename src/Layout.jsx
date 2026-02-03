@@ -46,6 +46,7 @@ import { Toaster } from '@/components/ui/Toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { SkipToMainContent } from '@/components/shared/accessibility';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
@@ -252,6 +253,7 @@ function LayoutContent({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SkipToMainContent />
       <OfflineIndicator />
       <Toaster />
       <CommandPalette />
@@ -461,7 +463,7 @@ function LayoutContent({ children, currentPageName }) {
 
       }
 
-      <main className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0">
+      <main id="main-content" className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0" role="main">
         <div className="text-slate-50 p-4 lg:p-6">{children}</div>
       </main>
 

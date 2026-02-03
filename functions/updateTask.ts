@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { validateInput, TaskUpdateSchema } from './utils/schemas.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
 function validateTaskData(data: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -54,11 +56,16 @@ Deno.serve(async (req) => {
 
     const { task_id, task_data } = await req.json();
 
-    if (!task_id || !task_data) {
-      return Response.json({ error: 'task_id and task_data required' }, { status: 400 });
+    if (!task_id) {
+      return Response.json({ error: 'task_id required' }, { status: 400 });
     }
 
-    // Validate task data
+    // Validate task data with schema
+    const schemaValidation = validateInput(TaskUpdateSchema.extend({ id: TaskUpdateSchema.shape.id }).omit({ id: true }), task_data);
+    if (!schemaValidation.valid) {
+      return Response.json({ error: schemaValidation.error }, { status: 400 });
+    }
+
     const validation = validateTaskData(task_data);
     if (!validation.valid) {
       return Response.json({ 
@@ -101,7 +108,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error updating task:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    const { status, body } = handleFunctionError(error, 'updateTask');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

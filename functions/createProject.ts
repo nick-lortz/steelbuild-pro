@@ -1,4 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { validateInput, ProjectCreateSchema } from './utils/schemas.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -43,13 +45,10 @@ Deno.serve(async (req) => {
 
     const data = await req.json();
 
-    // Required fields (match your validation expectations)
-    const missing = requireFields(data, ["project_number", "name", "client"]);
-    if (missing.length) {
-      return json(400, {
-        error: "Validation failed",
-        details: missing.map((f) => `${f} is required`),
-      });
+    // Validate against schema
+    const validation = validateInput(ProjectCreateSchema, data);
+    if (!validation.valid) {
+      return json(400, { error: validation.error });
     }
 
     const project_number = normalizeProjectNumber(data.project_number);
@@ -106,7 +105,7 @@ Deno.serve(async (req) => {
 
     return json(500, { error: "Unexpected createProject failure" });
   } catch (error: any) {
-    console.error("createProject error:", error);
-    return json(500, { error: "Internal server error", message: String(error?.message ?? error) });
+    const { status, body } = handleFunctionError(error, 'createProject');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

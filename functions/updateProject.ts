@@ -10,6 +10,8 @@
  */
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { validateInput, ProjectUpdateSchema } from './utils/schemas.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -149,7 +151,7 @@ Deno.serve(async (req) => {
       return json(500, { error: "Internal server error" });
     }
   } catch (error) {
-    console.error("Update project fatal error:", error);
-    return json(500, { error: "Internal server error" });
+    const { status, body } = handleFunctionError(error, 'updateProject');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

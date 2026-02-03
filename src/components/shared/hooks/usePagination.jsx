@@ -1,28 +1,74 @@
+/**
+ * Pagination Hook
+ * 
+ * Provides pagination state and controls for data tables
+ */
+
 import { useState, useMemo } from 'react';
 
-export function usePagination(items, pageSize = 20) {
-  const [currentPage, setCurrentPage] = useState(1);
+export function usePagination(initialPage = 1, initialPageSize = 50) {
+  const [page, setPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(initialPageSize);
 
-  const totalPages = Math.ceil(items.length / pageSize);
+  const pagination = useMemo(() => ({
+    page,
+    pageSize,
+    skip: (page - 1) * pageSize,
+    limit: pageSize
+  }), [page, pageSize]);
 
-  const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return items.slice(startIndex, endIndex);
-  }, [items, currentPage, pageSize]);
+  const goToPage = (newPage) => {
+    setPage(Math.max(1, newPage));
+  };
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  const nextPage = () => {
+    setPage(prev => prev + 1);
+  };
+
+  const prevPage = () => {
+    setPage(prev => Math.max(1, prev - 1));
+  };
+
+  const changePageSize = (newSize) => {
+    setPageSize(newSize);
+    setPage(1); // Reset to first page
+  };
+
+  const reset = () => {
+    setPage(1);
   };
 
   return {
-    currentPage,
+    page,
+    pageSize,
+    skip: pagination.skip,
+    limit: pagination.limit,
+    goToPage,
+    nextPage,
+    prevPage,
+    changePageSize,
+    reset
+  };
+}
+
+/**
+ * Calculate pagination metadata
+ */
+export function getPaginationInfo(total, page, pageSize) {
+  const totalPages = Math.ceil(total / pageSize);
+  const hasNextPage = page < totalPages;
+  const hasPrevPage = page > 1;
+  const startIndex = (page - 1) * pageSize + 1;
+  const endIndex = Math.min(page * pageSize, total);
+
+  return {
+    total,
     totalPages,
-    paginatedItems,
-    handlePageChange,
-    totalItems: items.length,
+    currentPage: page,
+    pageSize,
+    hasNextPage,
+    hasPrevPage,
+    startIndex,
+    endIndex
   };
 }

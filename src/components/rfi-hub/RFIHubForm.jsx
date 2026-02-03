@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from 'sonner';
+import { showErrorToast, showSuccessToast, ErrorMessages } from '@/components/shared/errorHandling';
 
 export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -45,16 +45,8 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
     e.preventDefault();
     
     // Validation
-    if (!formData.project_id) {
-      toast.error('Project is required');
-      return;
-    }
-    if (!formData.subject) {
-      toast.error('Subject is required');
-      return;
-    }
-    if (!formData.question) {
-      toast.error('Question is required');
+    if (!formData.project_id || !formData.subject || !formData.question) {
+      showErrorToast(null, 'Please fill in all required fields (Project, Subject, Question)');
       return;
     }
 
@@ -62,17 +54,15 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
     try {
       if (rfi) {
-        // Update existing RFI
         await base44.entities.RFI.update(rfi.id, formData);
-        toast.success('RFI updated');
+        showSuccessToast('RFI updated successfully');
       } else {
-        // Create new RFI
         await base44.entities.RFI.create(formData);
-        toast.success('RFI created');
+        showSuccessToast('RFI created successfully');
       }
       onSuccess();
     } catch (error) {
-      toast.error(error.message || 'Failed to save RFI');
+      showErrorToast(error, rfi ? ErrorMessages.RFI_UPDATE_FAILED : ErrorMessages.RFI_CREATE_FAILED);
     } finally {
       setIsSubmitting(false);
     }

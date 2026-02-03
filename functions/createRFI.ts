@@ -1,202 +1,118 @@
-/**
- * SECURE RFI CREATION ENDPOINT (Self-contained)
- *
- * Avoids local imports to prevent Base44 packaging/module resolution errors.
- * Implements:
- * - Auth + project access enforcement (assigned_users)
- * - Input validation
- * - Auto-increment RFI number per project (best-effort)
- * - Uniqueness with retry (relies on DB unique index: ["project_id","rfi_number"])
- * - Safe error handling
- */
-
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 
-function json(status, body) {
+function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json; charset=utf-8" },
   });
 }
 
-function isNonEmptyString(v) {
-  return typeof v === "string" && v.trim().length > 0;
+async function requireUser(base44: any) {
+  const user = await base44.auth.me();
+  if (!user) return { error: json(401, { error: "Unauthorized" }) };
+  return { user };
 }
 
-function isISODate(v) {
-  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+async function requireProjectAccess(base44: any, user: any, project_id: string) {
+  const [project] = await base44.entities.Project.filter({ id: project_id });
+  if (!project) return { error: json(404, { error: "Project not found" }) };
+
+  if (user.role === "admin") return { project };
+
+  const assigned =
+    project.project_manager === user.email ||
+    project.superintendent === user.email ||
+    (Array.isArray(project.assigned_users) && project.assigned_users.includes(user.email));
+
+  if (!assigned) return { error: json(403, { error: "Forbidden: No access to this project" }) };
+  return { project };
 }
 
-function asNumber(v) {
-  if (typeof v === "number") return v;
-  if (typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v))) return Number(v);
-  return null;
+async function rfiNumberExists(base44: any, project_id: string, rfi_number: number, excludeId?: string) {
+  const existing = await base44.entities.RFI.filter({ project_id, rfi_number });
+  const filtered = excludeId ? existing.filter((r: any) => r.id !== excludeId) : existing;
+  return filtered.length > 0 ? filtered : null;
 }
 
-function normalizeEnum(v) {
-  return typeof v === "string" ? v.trim().toLowerCase() : v;
-}
-
-function hasProjectAccess(user, project) {
-  // Admin bypass
-  const isAdmin = user?.role === "admin" || user?.is_admin === true;
-  if (isAdmin) return true;
-
-  // Project-level access via assigned_users (array of emails or ids)
-  const assigned = project?.assigned_users || [];
-  const email = user?.email;
-
-  if (!email) return false;
-  return Array.isArray(assigned) && assigned.some((x) => String(x).toLowerCase() === String(email).toLowerCase());
-}
-
-async function getNextRfiNumber(base44, projectId) {
-  // Best-effort: compute max existing rfi_number for project, then +1
-  // This is NOT perfectly concurrency-safe by itself; we combine it with DB unique constraint + retry.
-  const existing = await base44.asServiceRole.entities.RFI.filter({ project_id: projectId });
-
-  let maxNum = 0;
-  for (const r of existing || []) {
-    const n = asNumber(r?.rfi_number);
-    if (n != null && n > maxNum) maxNum = n;
-  }
-  return maxNum + 1;
-}
-
-function isConflictError(err) {
-  // Base44/SDK error shapes can vary. Detect common patterns.
-  const msg = (err?.message || "").toLowerCase();
-  const detail = (err?.detail || "").toLowerCase();
-  const errType = (err?.error_type || "").toLowerCase();
-
-  return (
-    msg.includes("unique") ||
-    msg.includes("duplicate") ||
-    msg.includes("conflict") ||
-    detail.includes("unique") ||
-    detail.includes("duplicate") ||
-    detail.includes("conflict") ||
-    errType.includes("conflict")
-  );
+async function getNextRfiNumber(base44: any, project_id: string) {
+  // best-effort: look at existing RFIs and choose max+1
+  const rfis = await base44.entities.RFI.filter({ project_id });
+  const max = rfis.reduce((m: number, r: any) => Math.max(m, Number(r.rfi_number || 0)), 0);
+  return max + 1;
 }
 
 Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
+
   try {
-    const base44 = createClientFromRequest(req);
+    const auth = await requireUser(base44);
+    if (auth.error) return auth.error;
+    const user = auth.user;
 
-    // 1) AUTH
-    const user = await base44.auth.me();
-    if (!user) return json(401, { error: "Unauthorized" });
+    const data = await req.json();
 
-    // 2) PARSE BODY
-    let data;
-    try {
-      data = await req.json();
-    } catch {
-      return json(400, { error: "Invalid JSON body" });
+    if (!data?.project_id) return json(400, { error: "project_id is required" });
+    if (!String(data?.subject ?? "").trim()) return json(400, { error: "subject is required" });
+
+    const access = await requireProjectAccess(base44, user, data.project_id);
+    if (access.error) return access.error;
+
+    // determine rfi_number
+    let rfi_number = data.rfi_number ? Number(data.rfi_number) : await getNextRfiNumber(base44.asServiceRole, data.project_id);
+    if (!Number.isFinite(rfi_number) || rfi_number <= 0) {
+      return json(400, { error: "rfi_number must be a positive number" });
     }
 
-    const projectId = data?.project_id;
-    if (!isNonEmptyString(projectId)) {
-      return json(400, { error: "Validation failed", details: ["project_id is required"] });
+    // pre-check uniqueness
+    const dup = await rfiNumberExists(base44.asServiceRole, data.project_id, rfi_number);
+    if (dup) {
+      return json(409, {
+        error: "Duplicate RFI number for project",
+        project_id: data.project_id,
+        rfi_number,
+        existing_ids: dup.map((r: any) => r.id),
+      });
     }
 
-    // 3) LOAD PROJECT (service role so access filtering doesn't hide record)
-    const projects = await base44.asServiceRole.entities.Project.filter({ id: projectId });
-    const project = projects?.[0];
-    if (!project) return json(404, { error: "Project not found" });
-
-    // 4) PROJECT ACCESS ENFORCEMENT (assigned_users)
-    if (!hasProjectAccess(user, project)) {
-      return json(403, { error: "Forbidden (no project access)" });
-    }
-
-    // 5) VALIDATION (minimal required + safe guards)
-    const errors = [];
-
-    const subject = data?.subject;
-    if (!isNonEmptyString(subject)) errors.push("subject is required");
-
-    const rfiType = normalizeEnum(data?.rfi_type);
-    if (rfiType && !isNonEmptyString(rfiType)) errors.push("rfi_type must be a string");
-
-    const status = normalizeEnum(data?.status || "draft");
-    const priority = normalizeEnum(data?.priority || "medium");
-
-    // Date guards
-    if (data?.submitted_date && !isISODate(data.submitted_date)) errors.push("submitted_date must be YYYY-MM-DD");
-    if (data?.due_date && !isISODate(data.due_date)) errors.push("due_date must be YYYY-MM-DD");
-    if (data?.response_date && !isISODate(data.response_date)) errors.push("response_date must be YYYY-MM-DD");
-
-    // Impact guards
-    if (data?.estimated_cost_impact != null) {
-      const n = asNumber(data.estimated_cost_impact);
-      if (n == null || n < 0) errors.push("estimated_cost_impact must be a number >= 0");
-    }
-    if (data?.schedule_impact_days != null) {
-      const n = asNumber(data.schedule_impact_days);
-      if (n == null || n < 0) errors.push("schedule_impact_days must be a number >= 0");
-    }
-
-    // Basic length limits (enterprise-safe, prevents abuse)
-    if (typeof subject === "string" && subject.length > 200) errors.push("subject max length is 200");
-    if (typeof data?.question === "string" && data.question.length > 5000) errors.push("question max length is 5000");
-    if (typeof data?.response === "string" && data.response.length > 5000) errors.push("response max length is 5000");
-
-    if (errors.length) {
-      return json(400, { error: "Validation failed", details: errors });
-    }
-
-    // 6) RFI NUMBER: accept provided or generate next
-    let rfiNumber = asNumber(data?.rfi_number);
-    if (rfiNumber == null) {
-      rfiNumber = await getNextRfiNumber(base44, projectId);
-    }
-    if (!Number.isFinite(rfiNumber) || rfiNumber <= 0) {
-      return json(400, { error: "Validation failed", details: ["rfi_number must be a positive number"] });
-    }
-
-    // 7) CREATE with uniqueness retry
-    // Relies on DB unique index: ["project_id","rfi_number"]
-    const MAX_RETRIES = 5;
-    let lastErr = null;
-
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    // create with retry to mitigate collisions
+    for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const rfi = await base44.asServiceRole.entities.RFI.create({
           ...data,
-          project_id: projectId,
-          rfi_type: rfiType || data?.rfi_type || "general",
-          status,
-          priority,
-          rfi_number: rfiNumber,
-          project_number: project?.project_number ?? data?.project_number,
-          project_name: project?.name ?? data?.project_name,
+          rfi_number,
           created_by: user.email,
-          updated_by: user.email,
         });
 
-        return json(201, { success: true, rfi });
-      } catch (err) {
-        lastErr = err;
-        if (isConflictError(err)) {
-          // pick next number and retry
-          rfiNumber += 1;
-          continue;
+        // post-check: detect race duplicates
+        const post = await rfiNumberExists(base44.asServiceRole, data.project_id, rfi_number);
+        if (post && post.length > 1) {
+          // best-effort rollback of our insert
+          await base44.asServiceRole.entities.RFI.delete(rfi.id);
+          return json(409, {
+            error: "Duplicate RFI number detected (race)",
+            project_id: data.project_id,
+            rfi_number,
+          });
         }
-        // Non-conflict error
-        console.error("Create RFI error:", err);
-        return json(500, { error: "Internal server error" });
+
+        return json(201, { success: true, rfi });
+      } catch (e: any) {
+        const msg = String(e?.message ?? e);
+        if (msg.toLowerCase().includes("duplicate") || msg.includes("409")) {
+          // Recompute next number and retry once
+          if (attempt === 1) {
+            rfi_number = await getNextRfiNumber(base44.asServiceRole, data.project_id);
+            continue;
+          }
+          return json(409, { error: "Duplicate RFI number for project", project_id: data.project_id, rfi_number });
+        }
+        if (attempt === 2) throw e;
       }
     }
 
-    // If we got here: repeated conflicts
-    console.error("Create RFI conflict retries exhausted:", lastErr);
-    return json(409, {
-      error: "Failed to allocate a unique RFI number. Please retry.",
-    });
-  } catch (error) {
-    console.error("Create RFI fatal error:", error);
-    return json(500, { error: "Internal server error" });
+    return json(500, { error: "Unexpected createRFI failure" });
+  } catch (error: any) {
+    console.error("createRFI error:", error);
+    return json(500, { error: "Internal server error", message: String(error?.message ?? error) });
   }
 });

@@ -167,6 +167,7 @@ Deno.serve(async (req) => {
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
     ).length;
 
+    logger.perf('total', Date.now() - startTime);
     return Response.json({
       projects: paginated,
       pagination: { page, pageSize, totalFiltered, totalProjects: projectsWithHealth.length },
@@ -180,7 +181,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[getDashboardData]', error.message);
+    logger.error('getDashboardData failed', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

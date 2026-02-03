@@ -26,6 +26,7 @@ import TrendForecast from '@/components/analytics/TrendForecast';
 import ProjectComparison from '@/components/analytics/ProjectComparison';
 import KPIDashboard from '@/components/analytics/KPIDashboard';
 import InteractiveDrillDown from '@/components/analytics/InteractiveDrillDown';
+import ProjectAnalyticsInsights from '@/components/analytics/ProjectAnalyticsInsights';
 import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
@@ -406,6 +407,10 @@ export default function Analytics() {
               <BarChart3 size={16} className="mr-2" />
               Compare
             </TabsTrigger>
+            <TabsTrigger value="insights" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <Sparkles size={16} className="mr-2" />
+              AI Insights
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="health" className="space-y-6">
@@ -539,6 +544,10 @@ export default function Analytics() {
               financials={financials}
               tasks={tasks}
             />
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-6">
+            <ProjectAnalyticsInsights />
           </TabsContent>
         </Tabs>
       )}

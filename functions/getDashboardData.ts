@@ -1,9 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { z } from 'npm:zod@3.24.2';
+import { validateInput, PaginationSchema } from './utils/validation.js';
+import { handleFunctionError } from './utils/errorHandler.js';
 
-// Structured logging
-const createLogger = (fn) => ({
-  perf: (op, ms) => ms > 1000 && console.warn(JSON.stringify({ fn, op, ms, level: 'perf' })),
-  error: (msg, err) => console.error(JSON.stringify({ fn, msg, error: err?.message, level: 'error' }))
+const DashboardQuerySchema = PaginationSchema.extend({
+  search: z.string().default(''),
+  status: z.enum(['all', 'bidding', 'awarded', 'in_progress', 'on_hold', 'completed', 'closed']).default('all'),
+  risk: z.enum(['all', 'at_risk', 'healthy']).default('all'),
+  sort: z.enum(['risk', 'name', 'progress', 'budget', 'schedule']).default('risk')
 });
 
 /**
@@ -12,7 +16,6 @@ const createLogger = (fn) => ({
  * Filters & calculations happen here, not in the browser
  */
 Deno.serve(async (req) => {
-  const logger = createLogger('getDashboardData');
   const startTime = Date.now();
 
   try {
@@ -20,7 +23,13 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { page = 1, pageSize = 25, search = '', status = 'all', risk = 'all', sort = 'risk' } = await req.json();
+    const payload = await req.json();
+    const validation = validateInput(DashboardQuerySchema, payload);
+    if (!validation.valid) {
+      return Response.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { page, pageSize, search, status, risk, sort } = validation.data;
     const skip = (page - 1) * pageSize;
 
     // === LOAD ONLY USER'S PROJECTS ===
@@ -167,7 +176,9 @@ Deno.serve(async (req) => {
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
     ).length;
 
-    logger.perf('total', Date.now() - startTime);
+    const duration = Date.now() - startTime;
+    if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
+
     return Response.json({
       projects: paginated,
       pagination: { page, pageSize, totalFiltered, totalProjects: projectsWithHealth.length },
@@ -181,7 +192,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    logger.error('getDashboardData failed', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    const { status, body } = handleFunctionError(error, 'getDashboardData');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

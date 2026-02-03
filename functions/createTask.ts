@@ -12,18 +12,15 @@ Deno.serve(async (req) => {
   try {
     const data = await req.json();
     
-    // 1. AUTH - Verify project access
+    // 1. INPUT VALIDATION
+    const validation = validateInput(TaskCreateSchema, data);
+    if (!validation.valid) {
+      return Response.json({ error: validation.error }, { status: 400 });
+    }
+    
+    // 2. AUTH - Verify project access
     const { user, project, error, base44 } = await requireProjectAccess(req, data.project_id);
     if (error) return error;
-    
-    // 2. VALIDATION
-    const validation = validateTask(data, false);
-    if (!validation.valid) {
-      return Response.json({
-        error: 'Validation failed',
-        details: validation.errors
-      }, { status: 400 });
-    }
     
     // 3. CIRCULAR DEPENDENCY CHECK (if predecessors provided)
     if (data.predecessor_ids && data.predecessor_ids.length > 0) {
@@ -49,10 +46,7 @@ Deno.serve(async (req) => {
     }, { status: 201 });
     
   } catch (error) {
-    console.error('Create task error:', error);
-    return Response.json({
-      error: 'Internal server error',
-      message: error.message
-    }, { status: 500 });
+    const { status, body } = handleFunctionError(error, 'createTask');
+    return new Response(body, { status, headers: { 'Content-Type': 'application/json' } });
   }
 });

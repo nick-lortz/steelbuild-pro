@@ -73,9 +73,7 @@ export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
                     </div>
                   </td>
                   <td className="py-2 px-3">
-                    <div className="text-white font-medium truncate max-w-[250px]" 
-                         dangerouslySetInnerHTML={{ __html: (rfi.subject || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') }} 
-                    />
+                    <p className="text-white font-medium truncate max-w-[250px]">{rfi.subject || ''}</p>
                   </td>
                   <td className="py-2 px-3">
                     <Badge variant="outline" className="text-[10px] capitalize">

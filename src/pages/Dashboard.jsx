@@ -28,12 +28,17 @@ export default function Dashboard() {
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: Infinity
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
-  const { data: allProjects = [], isLoading: projectsLoading, refetch: refetchProjects } = useQuery({
+  const { data: allProjects = [], isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchProjects } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name')
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const userProjects = useMemo(() => {
@@ -48,22 +53,30 @@ export default function Dashboard() {
 
   const { data: allTasks = [], refetch: refetchTasks } = useQuery({
     queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date')
+    queryFn: () => base44.entities.Task.list('-updated_date'),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: allFinancials = [], refetch: refetchFinancials } = useQuery({
     queryKey: ['all-financials'],
-    queryFn: () => base44.entities.Financial.list()
+    queryFn: () => base44.entities.Financial.list(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: allChangeOrders = [], refetch: refetchCOs } = useQuery({
     queryKey: ['all-change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list()
+    queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   const { data: allRFIs = [], refetch: refetchRFIs } = useQuery({
     queryKey: ['all-rfis'],
-    queryFn: () => base44.entities.RFI.list()
+    queryFn: () => base44.entities.RFI.list(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
   // Real-time subscriptions with delta updates (disabled on Dashboard to prevent render loops)
@@ -275,10 +288,11 @@ export default function Dashboard() {
               refetchCOs();
               refetchRFIs();
             }}
+            disabled={projectsFetching}
             className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
           >
-            <RefreshCw size={14} />
-            Refresh
+            <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
+            {projectsFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
       </div>

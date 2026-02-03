@@ -20,6 +20,7 @@ import RFIHubTrends from '@/components/rfi-hub/RFIHubTrends';
 import { toast } from 'sonner';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 
 export default function RFIHub() {
   const queryClient = useQueryClient();
@@ -48,6 +49,18 @@ export default function RFIHub() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list()
+  });
+
+  // Real-time subscription with auto-reconnect
+  useEntitySubscription('RFI', ['rfis'], {
+    onEvent: (event) => {
+      // Visual notification for new/updated RFIs
+      if (event.type === 'create') {
+        toast.info(`New RFI #${event.data.rfi_number}: ${event.data.subject}`);
+      } else if (event.type === 'update' && event.data.status) {
+        toast.info(`RFI #${event.data.rfi_number} → ${event.data.status}`);
+      }
+    }
   });
 
   // Computed RFIs with enrichment

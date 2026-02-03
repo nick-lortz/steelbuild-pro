@@ -12,6 +12,7 @@ import TaskListView from '@/components/schedule/TaskListView';
 import CalendarView from '@/components/schedule/CalendarView';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from '@/components/ui/notifications';
+import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -85,6 +86,17 @@ export default function Schedule() {
     },
     enabled: activeProjectIds.length > 0,
     staleTime: 2 * 60 * 1000
+  });
+
+  // Real-time subscription with delta updates
+  useEntitySubscription('Task', ['schedule-tasks', activeProjectIds], {
+    onEvent: (event) => {
+      // Only process if task belongs to active projects
+      if (!event.data?.project_id || !activeProjectIds.includes(event.data.project_id)) {
+        return;
+      }
+      toast.info(`Task ${event.type}d: ${event.data.name || 'Unknown'}`);
+    }
   });
 
   // Fetch resources

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -64,6 +65,13 @@ export default function Dashboard() {
     queryKey: ['all-rfis'],
     queryFn: () => base44.entities.RFI.list()
   });
+
+  // Real-time subscriptions with delta updates
+  useEntitySubscription('Project', ['projects']);
+  useEntitySubscription('Task', ['all-tasks']);
+  useEntitySubscription('RFI', ['all-rfis']);
+  useEntitySubscription('ChangeOrder', ['all-change-orders']);
+  useEntitySubscription('Financial', ['all-financials']);
 
   // Portfolio metrics calculation
   const portfolioMetrics = useMemo(() => {

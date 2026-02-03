@@ -21,6 +21,8 @@ import { toast } from 'sonner';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
+import { groupBy, indexBy } from '@/components/shared/arrayUtils';
+import { getRFIEscalationLevel, getBusinessDaysBetween } from '@/components/shared/businessRules';
 
 export default function RFIHub() {
   const queryClient = useQueryClient();
@@ -63,26 +65,36 @@ export default function RFIHub() {
     }
   });
 
-  // Computed RFIs with enrichment
+  // Computed RFIs with enrichment (optimized with pre-indexed projects)
   const enrichedRFIs = useMemo(() => {
+    // Pre-index projects for O(1) lookup instead of O(n²)
+    const projectsById = indexBy(projects, 'id');
+    
     return allRFIs.map(rfi => {
-      const project = projects.find(p => p.id === rfi.project_id);
-      const createdDate = rfi.created_date ? parseISO(rfi.created_date) : null;
+      const project = projectsById[rfi.project_id];
+      const submittedDate = rfi.submitted_date || rfi.created_date;
       const dueDate = rfi.due_date ? parseISO(rfi.due_date) : null;
       const today = new Date();
       
-      // Calculate age
-      const ageDays = createdDate ? differenceInDays(today, createdDate) : 0;
+      // Calculate business days age
+      const businessDaysOpen = submittedDate 
+        ? getBusinessDaysBetween(new Date(submittedDate), today)
+        : 0;
       
-      // Aging bucket
-      let aging_bucket = '0-7 days';
-      if (ageDays > 30) aging_bucket = '30+ days';
-      else if (ageDays > 14) aging_bucket = '15-30 days';
-      else if (ageDays > 7) aging_bucket = '8-14 days';
+      // Escalation level (normal → warning → urgent → overdue)
+      const escalationLevel = submittedDate 
+        ? getRFIEscalationLevel(submittedDate, rfi.status)
+        : 'normal';
+      
+      // Aging bucket based on business days
+      let aging_bucket = '0-5 days';
+      if (businessDaysOpen > 20) aging_bucket = '20+ days';
+      else if (businessDaysOpen > 10) aging_bucket = '11-20 days';
+      else if (businessDaysOpen > 5) aging_bucket = '6-10 days';
       
       // At risk flag
       const isOverdue = dueDate && today > dueDate;
-      const isAtRisk = isOverdue || ageDays > 14;
+      const isAtRisk = escalationLevel === 'urgent' || escalationLevel === 'overdue';
       
       // Days until due
       const daysUntilDue = dueDate ? differenceInDays(dueDate, today) : null;
@@ -91,7 +103,8 @@ export default function RFIHub() {
         ...rfi,
         project_name: project?.name || 'Unknown',
         project_number: project?.project_number || 'N/A',
-        age_days: ageDays,
+        business_days_open: businessDaysOpen,
+        escalation_level: escalationLevel,
         aging_bucket,
         is_at_risk: isAtRisk,
         is_overdue: isOverdue,

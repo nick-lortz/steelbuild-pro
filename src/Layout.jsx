@@ -47,6 +47,7 @@ import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
+import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -463,55 +464,16 @@ function LayoutContent({ children, currentPageName }) {
 
 }
 
-// Create QueryClient with global error handling
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      onError: (error) => {
-        if (isAuthError(error)) {
-          base44.auth.redirectToLogin(window.location.pathname);
-          return;
-        }
-        showErrorToast(error);
-      },
-      retry: (failureCount, error) => {
-        if (isAuthError(error) || (error?.response?.status >= 400 && error?.response?.status < 500)) {
-          return false;
-        }
-        return failureCount < 2;
-      },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      staleTime: 5000,
-      gcTime: 10 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      refetchOnMount: true
-    },
-    mutations: {
-      onError: (error) => {
-        if (isAuthError(error)) {
-          base44.auth.redirectToLogin(window.location.pathname);
-          return;
-        }
-        showErrorToast(error);
-      },
-      retry: false
-    }
-  }
-});
-
 const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <ConfirmProvider>
-            <ActiveProjectProvider>
-              <LayoutContent children={children} currentPageName={currentPageName} />
-            </ActiveProjectProvider>
-          </ConfirmProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ThemeProvider>
+        <ConfirmProvider>
+          <ActiveProjectProvider>
+            <LayoutContent children={children} currentPageName={currentPageName} />
+          </ActiveProjectProvider>
+        </ConfirmProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 });

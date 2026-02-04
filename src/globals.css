@@ -127,6 +127,28 @@ a {
 }
 
 /* Theme variables */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 95%;
+    --primary: 35 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 35 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
+    --ring: 35 100% 50%;
+  }
+}
+
 .dark {
   --background: 0 0% 4%;
   --foreground: 0 0% 95%;

@@ -54,6 +54,20 @@ export default function TaskForm({
 
   const createSubtaskMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
+    onMutate: async (newSubtask) => {
+      await queryClient.cancelQueries({ queryKey: ['subtasks', task?.id] });
+      const previousSubtasks = queryClient.getQueryData(['subtasks', task?.id]);
+      
+      queryClient.setQueryData(['subtasks', task?.id], (old = []) => [
+        ...old,
+        { ...newSubtask, id: `temp-${Date.now()}`, created_date: new Date().toISOString() }
+      ]);
+      
+      return { previousSubtasks };
+    },
+    onError: (err, newSubtask, context) => {
+      queryClient.setQueryData(['subtasks', task?.id], context.previousSubtasks);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', task?.id] });
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
@@ -63,6 +77,19 @@ export default function TaskForm({
 
   const updateSubtaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['subtasks', task?.id] });
+      const previousSubtasks = queryClient.getQueryData(['subtasks', task?.id]);
+      
+      queryClient.setQueryData(['subtasks', task?.id], (old = []) =>
+        old.map(subtask => subtask.id === id ? { ...subtask, ...data } : subtask)
+      );
+      
+      return { previousSubtasks };
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(['subtasks', task?.id], context.previousSubtasks);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', task?.id] });
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
@@ -72,6 +99,19 @@ export default function TaskForm({
 
   const deleteSubtaskMutation = useMutation({
     mutationFn: (id) => base44.entities.Task.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['subtasks', task?.id] });
+      const previousSubtasks = queryClient.getQueryData(['subtasks', task?.id]);
+      
+      queryClient.setQueryData(['subtasks', task?.id], (old = []) =>
+        old.filter(subtask => subtask.id !== id)
+      );
+      
+      return { previousSubtasks };
+    },
+    onError: (err, id, context) => {
+      queryClient.setQueryData(['subtasks', task?.id], context.previousSubtasks);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', task?.id] });
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });

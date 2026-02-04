@@ -106,6 +106,26 @@ a {
   touch-action: manipulation;
 }
 
+/* ========================================
+   Minimum Tap Target Size (44px on mobile)
+   ======================================== */
+@media (max-width: 1023px) {
+  button,
+  [role="button"],
+  a[href],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Ensure interactive elements inside buttons meet target size */
+  button > *,
+  [role="button"] > * {
+    pointer-events: none;
+  }
+}
+
 /* Theme variables */
 .dark {
   --background: 0 0% 4%;

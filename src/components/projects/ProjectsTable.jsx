@@ -7,6 +7,7 @@ import { Eye, Pencil, Trash2, AlertCircle, TrendingUp, Clock, Settings } from 'l
 import { SafeText } from '@/components/shared/sanitization';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
+import ProjectCard from './ProjectCard';
 
 const getStatusConfig = (status) => {
   const configs = {
@@ -65,9 +66,31 @@ const DaysIndicator = ({ targetDate }) => {
 
 export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSettings, canEdit }) {
   return (
-    <Card className="bg-card border-border">
-      <div className="overflow-x-auto">
-        <table className="w-full">
+    <>
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {projects.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onView={onView}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onSettings={onSettings}
+            canEdit={canEdit}
+          />
+        ))}
+        {projects.length === 0 && (
+          <Card className="py-12">
+            <p className="text-sm text-muted-foreground text-center">No projects found</p>
+          </Card>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <Card className="hidden lg:block bg-card border-border">
+        <div className="overflow-x-auto">
+          <table className="w-full">
           <thead>
             <tr className="border-b border-border">
               <th className="text-left px-3 py-2.5">
@@ -251,13 +274,14 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
             })}
           </tbody>
         </table>
-      </div>
 
-      {projects.length === 0 && (
-        <div className="py-12 text-center">
-          <p className="text-sm text-muted-foreground">No projects found</p>
-        </div>
-      )}
+        {projects.length === 0 && (
+          <div className="py-12 text-center">
+            <p className="text-sm text-muted-foreground">No projects found</p>
+          </div>
+        )}
+      </div>
     </Card>
+    </>
   );
 }

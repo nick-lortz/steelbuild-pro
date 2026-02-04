@@ -7,12 +7,48 @@ import {
   TableHeader,
   TableRow } from
 "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function DataTable({ columns, data, onRowClick, emptyMessage = "No data found" }) {
   return (
-    <div className="border border-zinc-700 rounded-lg overflow-hidden bg-zinc-900" role="region" aria-label="Data table">
-      <Table role="table">
+    <>
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-3">
+        {data.length === 0 ? (
+          <Card className="py-12">
+            <p className="text-sm text-muted-foreground text-center">{emptyMessage}</p>
+          </Card>
+        ) : (
+          data.map((row, rowIdx) => (
+            <Card
+              key={row.id || rowIdx}
+              onClick={() => onRowClick?.(row)}
+              className={cn(
+                "bg-card border-border",
+                onRowClick && "cursor-pointer hover:bg-muted/30 transition-colors"
+              )}
+            >
+              <CardContent className="pt-6 space-y-3">
+                {columns.map((col, colIdx) => (
+                  <div key={colIdx}>
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-1">
+                      {col.header}
+                    </div>
+                    <div className="text-sm text-foreground">
+                      {col.render ? col.render(row) : row[col.accessor]}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block border border-zinc-700 rounded-lg overflow-hidden bg-zinc-900" role="region" aria-label="Data table">
+        <Table role="table">
         <TableHeader>
           <TableRow role="row" className="border-b-2 border-zinc-700 hover:bg-transparent">
             {columns.map((col, idx) =>
@@ -69,6 +105,7 @@ export default function DataTable({ columns, data, onRowClick, emptyMessage = "N
           )}
         </TableBody>
       </Table>
-    </div>);
+      </div>
+    </>);
 
 }

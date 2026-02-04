@@ -58,6 +58,7 @@ import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { SECURITY_HEADERS } from '@/components/shared/securityHeaders';
+import PullToRefresh from '@/components/shared/PullToRefresh';
 
 const navGroups = [
   {
@@ -180,6 +181,11 @@ function LayoutContent({ children, currentPageName }) {
     return saved ? JSON.parse(saved) : ['Overview', 'Project Execution'];
   });
   const { activeProjectId } = useActiveProject();
+  const queryClient = useQueryClient();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries();
+  };
 
   const toggleGroup = (groupName) => {
     setExpandedGroups(prev => {
@@ -436,18 +442,20 @@ function LayoutContent({ children, currentPageName }) {
       }
 
       <main id="main-content" className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0" role="main">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPageName}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="text-slate-50 p-4 lg:p-6"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        <PullToRefresh onRefresh={handleRefresh}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPageName}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="text-slate-50 p-4 lg:p-6"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </PullToRefresh>
       </main>
 
       <MobileNav currentPageName={currentPageName} />

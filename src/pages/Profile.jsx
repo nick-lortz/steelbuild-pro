@@ -6,11 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { UserCircle, Bell, LogOut, Moon, Sun, Mail, Briefcase } from 'lucide-react';
+import { UserCircle, Bell, LogOut, Moon, Sun, Mail, Briefcase, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { toast } from '@/components/ui/notifications';
 import ScreenContainer from '@/components/layout/ScreenContainer';
 import PageHeader from '@/components/ui/PageHeader';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Profile() {
   const { theme, toggleTheme } = useTheme();
@@ -47,6 +58,27 @@ export default function Profile() {
 
   const handleLogout = () => {
     base44.auth.logout();
+  };
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      // Delete user account via backend function
+      return await base44.functions.invoke('deleteUserAccount', {});
+    },
+    onSuccess: () => {
+      toast.success('Account deleted successfully');
+      setTimeout(() => {
+        base44.auth.logout();
+      }, 1500);
+    },
+    onError: (error) => {
+      toast.error('Failed to delete account. Please contact support.');
+      console.error('Delete account error:', error);
+    }
+  });
+
+  const handleDeleteAccount = () => {
+    deleteAccountMutation.mutate();
   };
 
   if (isLoading) {
@@ -203,13 +235,71 @@ export default function Profile() {
       <Card className="mb-4">
         <CardContent className="pt-6">
           <Button
-            variant="destructive"
+            variant="outline"
             className="w-full"
             onClick={handleLogout}
           >
             <LogOut size={18} className="mr-2" />
             Sign Out
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account */}
+      <Card className="mb-4 border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2 text-destructive">
+            <AlertTriangle size={18} />
+            Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 mb-4">
+            <p className="text-sm">Permanently delete your account and all associated data.</p>
+            <p className="text-xs text-muted-foreground">
+              This action cannot be undone. All projects, RFIs, documents, and settings will be permanently removed.
+            </p>
+          </div>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="w-full"
+                disabled={deleteAccountMutation.isPending}
+              >
+                <Trash2 size={18} className="mr-2" />
+                {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete your account and remove all your data from our servers.
+                  This action cannot be undone.
+                  <br /><br />
+                  <strong>All of the following will be permanently deleted:</strong>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Your profile and account information</li>
+                    <li>All projects you created or manage</li>
+                    <li>RFIs, deliveries, and daily logs</li>
+                    <li>Documents and photos</li>
+                    <li>Schedule and task data</li>
+                  </ul>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete My Account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </ScreenContainer>

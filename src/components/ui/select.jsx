@@ -66,18 +66,20 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
   if (isMobile) {
     return (
       <SelectPrimitive.Portal>
-        <Drawer open>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>Select an option</DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 pb-4 max-h-[60vh] overflow-y-auto">
-              <SelectPrimitive.Viewport>
-                {children}
-              </SelectPrimitive.Viewport>
-            </div>
-          </DrawerContent>
-        </Drawer>
+        <SelectPrimitive.Content ref={ref} {...props}>
+          <Drawer open>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Select an option</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 pb-4 max-h-[60vh] overflow-y-auto">
+                <SelectPrimitive.Viewport>
+                  {children}
+                </SelectPrimitive.Viewport>
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </SelectPrimitive.Content>
       </SelectPrimitive.Portal>
     );
   }

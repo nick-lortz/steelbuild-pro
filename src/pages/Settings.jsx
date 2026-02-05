@@ -31,6 +31,7 @@ import {
   Layout,
   DollarSign
 } from 'lucide-react';
+import PermissionManager from '@/components/settings/PermissionManager';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from "sonner";
@@ -199,6 +200,7 @@ export default function Settings() {
           <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="profile"><UserCircle size={12} className="mr-1.5" />Profile</TabsTrigger>
             {isAdmin && <TabsTrigger value="users"><Users size={12} className="mr-1.5" />Users</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="permissions"><Shield size={12} className="mr-1.5" />Permissions</TabsTrigger>}
             <TabsTrigger value="display"><Monitor size={12} className="mr-1.5" />Display</TabsTrigger>
             <TabsTrigger value="workflow"><Zap size={12} className="mr-1.5" />Workflow</TabsTrigger>
             <TabsTrigger value="notifications"><Bell size={12} className="mr-1.5" />Notifications</TabsTrigger>
@@ -271,6 +273,13 @@ export default function Settings() {
                   <DataTable columns={userColumns} data={allUsers} emptyMessage="No users" />
                 </CardContent>
               </Card>
+            </TabsContent>
+          )}
+
+          {/* Permissions */}
+          {isAdmin && (
+            <TabsContent value="permissions">
+              <PermissionManager />
             </TabsContent>
           )}
 
@@ -451,6 +460,13 @@ export default function Settings() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Permissions */}
+          {isAdmin && (
+            <TabsContent value="permissions">
+              <PermissionManager />
+            </TabsContent>
+          )}
 
           {/* Notifications */}
           <TabsContent value="notifications">

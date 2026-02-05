@@ -108,6 +108,25 @@ Deno.serve(async (req) => {
       topConcerns.push(`${highRiskProjects.length} projects at high risk`);
     }
 
+    // Generate AI forecasts for top projects
+    const projectForecasts = await Promise.all(
+      activeProjects.slice(0, 3).map(async (proj) => {
+        try {
+          const forecastResp = await base44.functions.invoke('aiProjectForecast', { project_id: proj.id });
+          return {
+            project_id: proj.id,
+            project_name: proj.name,
+            project_number: proj.project_number,
+            forecast: forecastResp.data?.forecast
+          };
+        } catch (err) {
+          return null;
+        }
+      })
+    );
+
+    const validForecasts = projectForecasts.filter(f => f && f.forecast);
+
     // Build summary
     const executiveSummary = {
       period: {
@@ -130,6 +149,7 @@ Deno.serve(async (req) => {
         rfis_closed: closedRFIsThisWeek,
         deliveries: deliveriesThisWeek
       },
+      forecasts: validForecasts,
       top_performers: projectHealthScores
         .filter(p => p.healthScore >= 80)
         .sort((a, b) => b.healthScore - a.healthScore)

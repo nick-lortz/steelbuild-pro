@@ -17,6 +17,7 @@ import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
 import AIRiskPanel from '@/components/dashboard/AIRiskPanel';
 import RoleBasedKPIs from '@/components/dashboard/RoleBasedKPIs';
+import AIForecastPanel from '@/components/dashboard/AIForecastPanel';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -128,8 +129,12 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* AI Risk Panel + Weekly Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      {/* AI Forecast + Risk Panel + Weekly Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        {activeProjectId && (
+          <AIForecastPanel projectId={activeProjectId} />
+        )}
+        
         {activeProjectId && (
           <AIRiskPanel projectId={activeProjectId} />
         )}
@@ -169,6 +174,35 @@ export default function Dashboard() {
                     <div key={idx} className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded">
                       <AlertTriangle size={10} className="text-red-400 mt-0.5" />
                       <p className="text-[10px] text-red-400">{concern}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {weeklySummary.forecasts?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">Project Forecasts</p>
+                  {weeklySummary.forecasts.map((f, idx) => (
+                    <div key={idx} className="p-2 bg-blue-500/10 border border-blue-500/30 rounded">
+                      <p className="text-[10px] text-white font-bold">{f.project_number}</p>
+                      <div className="grid grid-cols-2 gap-1 mt-1">
+                        <div>
+                          <p className="text-[8px] text-zinc-600">Completion</p>
+                          <p className={cn("text-[9px] font-bold", 
+                            f.forecast?.completion_forecast?.variance_days > 0 ? "text-red-400" : "text-green-400"
+                          )}>
+                            {f.forecast?.completion_forecast?.variance_days > 0 ? '+' : ''}{f.forecast?.completion_forecast?.variance_days} days
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] text-zinc-600">Budget</p>
+                          <p className={cn("text-[9px] font-bold",
+                            f.forecast?.budget_forecast?.projected_overrun > 0 ? "text-red-400" : "text-green-400"
+                          )}>
+                            {f.forecast?.budget_forecast?.projected_overrun > 0 ? '+' : ''}{((f.forecast?.budget_forecast?.projected_overrun || 0) / 1000).toFixed(0)}K
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

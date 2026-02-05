@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';

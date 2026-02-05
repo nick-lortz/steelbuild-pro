@@ -54,9 +54,7 @@ import ChangeOrders from './pages/ChangeOrders';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
-import Dashboard from './pages/Dashboard';
 import Deliveries from './pages/Deliveries';
-import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
@@ -73,7 +71,6 @@ import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
 import LoadTesting from './pages/LoadTesting';
-import LookAheadPlanning from './pages/LookAheadPlanning';
 import LookAheadResourcePlanning from './pages/LookAheadResourcePlanning';
 import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
@@ -88,7 +85,6 @@ import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
 import Projects from './pages/Projects';
-import RFIHub from './pages/RFIHub';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
@@ -99,8 +95,12 @@ import Submittals from './pages/Submittals';
 import TermsOfService from './pages/TermsOfService';
 import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
+import Detailing from './pages/Detailing';
+import LookAheadPlanning from './pages/LookAheadPlanning';
+import RFIHub from './pages/RFIHub';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -112,9 +112,7 @@ export const PAGES = {
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
-    "Dashboard": Dashboard,
     "Deliveries": Deliveries,
-    "Detailing": Detailing,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
     "Drawings": Drawings,
@@ -131,7 +129,6 @@ export const PAGES = {
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
     "LoadTesting": LoadTesting,
-    "LookAheadPlanning": LookAheadPlanning,
     "LookAheadResourcePlanning": LookAheadResourcePlanning,
     "Meetings": Meetings,
     "Messages": Messages,
@@ -146,7 +143,6 @@ export const PAGES = {
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
     "Projects": Projects,
-    "RFIHub": RFIHub,
     "RFIs": RFIs,
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
@@ -157,8 +153,12 @@ export const PAGES = {
     "TermsOfService": TermsOfService,
     "TestSuite": TestSuite,
     "ToDoList": ToDoList,
+    "Detailing": Detailing,
+    "LookAheadPlanning": LookAheadPlanning,
+    "RFIHub": RFIHub,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {

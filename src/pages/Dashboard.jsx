@@ -4,9 +4,10 @@ import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building, AlertTriangle, Clock, Flag, Activity
+  Building, AlertTriangle, Clock, Flag, Activity, Zap
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
@@ -14,6 +15,8 @@ import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
+import AIRiskPanel from '@/components/dashboard/AIRiskPanel';
+import RoleBasedKPIs from '@/components/dashboard/RoleBasedKPIs';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -21,6 +24,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
+  const [showAIRisk, setShowAIRisk] = useState(false);
   const { page, pageSize, skip, limit, goToPage, changePageSize } = usePagination(1, 25);
 
   const { data: currentUser } = useQuery({
@@ -61,6 +65,16 @@ export default function Dashboard() {
     setStatusFilter('all');
     setRiskFilter('all');
   };
+
+  const { data: weeklySummary } = useQuery({
+    queryKey: ['weekly-executive-summary'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('generateWeeklyExecutiveSummary', {});
+      return response.data.summary;
+    },
+    enabled: currentUser?.role === 'admin',
+    staleTime: 60 * 60 * 1000
+  });
 
   if (projectsLoading || !currentUser) {
     return (
@@ -105,77 +119,84 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center ring-1 ring-blue-500/30">
-                <Building className="w-5 h-5 text-blue-400" />
-              </div>
-              <p className="text-3xl font-bold text-white">{enhancedMetrics.totalProjects}</p>
-            </div>
-            <p className="text-sm text-zinc-400">Total Projects</p>
-          </div>
-        </Card>
+      {/* KPI Grid - Role-based */}
+      <div className="mb-6">
+        <RoleBasedKPIs 
+          role={currentUser.role} 
+          metrics={enhancedMetrics} 
+          projects={paginatedProjects}
+        />
+      </div>
 
-        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center ring-1 ring-green-500/30">
-                <Activity className="w-5 h-5 text-green-400" />
+      {/* AI Risk Panel + Weekly Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        {activeProjectId && (
+          <AIRiskPanel projectId={activeProjectId} />
+        )}
+        
+        {currentUser.role === 'admin' && weeklySummary && (
+          <Card className="bg-gradient-to-br from-purple-500/10 to-transparent border-purple-500/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base uppercase tracking-wide flex items-center gap-2">
+                <Activity size={16} className="text-purple-500" />
+                Weekly Executive Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2 bg-zinc-800/50 rounded">
+                  <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">Tasks Done</p>
+                  <p className="text-xl font-black text-green-400">{weeklySummary.activity?.tasks_completed || 0}</p>
+                </div>
+                <div className="p-2 bg-zinc-800/50 rounded">
+                  <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">Labor Hours</p>
+                  <p className="text-xl font-black text-white">{weeklySummary.activity?.labor_hours?.toFixed(0) || 0}</p>
+                </div>
+                <div className="p-2 bg-zinc-800/50 rounded">
+                  <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">Weekly Spend</p>
+                  <p className="text-xl font-black text-amber-500">${(weeklySummary.portfolio?.weekly_spend / 1000).toFixed(0)}K</p>
+                </div>
+                <div className="p-2 bg-zinc-800/50 rounded">
+                  <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">Avg Health</p>
+                  <p className="text-xl font-black text-white">{weeklySummary.portfolio?.avg_health_score?.toFixed(0) || 0}</p>
+                </div>
               </div>
-              <p className="text-3xl font-bold text-white">{enhancedMetrics.activeProjects}</p>
-            </div>
-            <p className="text-sm text-zinc-400">Active Projects</p>
-          </div>
-        </Card>
 
-        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center ring-1",
-                enhancedMetrics.atRiskProjects > 0 
-                  ? "bg-amber-500/20 ring-amber-500/30" 
-                  : "bg-green-500/20 ring-green-500/30"
-              )}>
-                <AlertTriangle className={cn("w-5 h-5", enhancedMetrics.atRiskProjects > 0 ? "text-amber-400" : "text-green-400")} />
-              </div>
-              <p className="text-3xl font-bold text-white">{enhancedMetrics.atRiskProjects}</p>
-            </div>
-            <p className="text-sm text-zinc-400">At Risk</p>
-          </div>
-        </Card>
+              {weeklySummary.concerns?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-red-400 uppercase tracking-wider">Top Concerns</p>
+                  {weeklySummary.concerns.map((concern, idx) => (
+                    <div key={idx} className="flex items-start gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded">
+                      <AlertTriangle size={10} className="text-red-400 mt-0.5" />
+                      <p className="text-[10px] text-red-400">{concern}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center ring-1",
-                enhancedMetrics.overdueTasks > 0 
-                  ? "bg-red-500/20 ring-red-500/30" 
-                  : "bg-zinc-500/20 ring-zinc-500/30"
-              )}>
-                <Clock className={cn("w-5 h-5", enhancedMetrics.overdueTasks > 0 ? "text-red-400" : "text-zinc-500")} />
-              </div>
-              <p className="text-3xl font-bold text-white">{enhancedMetrics.overdueTasks}</p>
-            </div>
-            <p className="text-sm text-zinc-400">Overdue Tasks</p>
-          </div>
-        </Card>
-
-        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
-          <div className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center ring-1 ring-purple-500/30">
-                <Flag className="w-5 h-5 text-purple-400" />
-              </div>
-              <p className="text-3xl font-bold text-white">{enhancedMetrics.upcomingMilestones}</p>
-            </div>
-            <p className="text-sm text-zinc-400">Upcoming Milestones</p>
-          </div>
-        </Card>
+              {weeklySummary.projects_needing_attention?.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-amber-400 uppercase tracking-wider">Projects Needing Attention</p>
+                  {weeklySummary.projects_needing_attention.map((proj, idx) => (
+                    <div key={idx} className="p-2 bg-amber-500/10 border border-amber-500/30 rounded">
+                      <p className="text-[10px] text-white font-bold">{proj.number} - {proj.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className="bg-zinc-800 text-white text-[8px] px-1 py-0">
+                          Health: {proj.healthScore?.toFixed(0)}
+                        </Badge>
+                        {proj.openRFIs > 0 && (
+                          <Badge className="bg-red-500/20 text-red-400 text-[8px] px-1 py-0">
+                            {proj.openRFIs} RFIs
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Filters */}

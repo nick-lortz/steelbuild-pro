@@ -310,9 +310,11 @@ function EquipmentContent() {
           </SheetHeader>
           <div className="mt-6">
             <ResourceForm
-              resource={{ type: 'equipment', current_project_id: activeProjectId }}
+              resource={{ type: 'equipment', current_project_id: activeProjectId, assigned_project_ids: [] }}
+              projects={projects || []}
               onSubmit={async (data) => {
                 await base44.entities.Resource.create(data);
+                queryClient.invalidateQueries({ queryKey: ['equipment'] });
                 setShowAddEquipment(false);
               }}
               onCancel={() => setShowAddEquipment(false)}

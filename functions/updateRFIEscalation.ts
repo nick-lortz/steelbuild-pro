@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { logger } from './utils/logging.js';
 
 /**
  * Auto-update RFI escalation level and business days
@@ -51,7 +50,7 @@ Deno.serve(async (req) => {
     
     // Skip if no submitted date
     if (!rfi.submitted_date && !rfi.created_date) {
-      logger.info('updateRFIEscalation', 'Skipped - no date available', { rfi_id: event.entity_id });
+      console.log('Skipped - no date available', { rfi_id: event.entity_id });
       return Response.json({ skipped: true });
     }
 
@@ -70,7 +69,7 @@ Deno.serve(async (req) => {
       escalation_level: escalationLevel
     });
 
-    logger.info('updateRFIEscalation', 'Updated RFI escalation', {
+    console.log('Updated RFI escalation', {
       rfi_id: event.entity_id,
       rfi_number: rfi.rfi_number,
       business_days_open: businessDaysOpen,
@@ -84,7 +83,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    logger.error('updateRFIEscalation', 'Update failed', error);
+    console.error('Update failed', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

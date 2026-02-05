@@ -29,6 +29,7 @@ import {
 import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import DocumentPreview from '@/components/documents/DocumentPreview';
 import CSVUpload from '@/components/shared/CSVUpload';
 import FacetedSearchPanel from '@/components/documents/FacetedSearchPanel';
 import PageHeader from '@/components/ui/PageHeader';
@@ -99,8 +100,15 @@ export default function Documents() {
   const [bulkActing, setBulkActing] = useState(false);
   const [analyzingDoc, setAnalyzingDoc] = useState(null);
   const [linkSuggestions, setLinkSuggestions] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   const queryClient = useQueryClient();
+  
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -1079,7 +1087,7 @@ export default function Documents() {
                                 variant="ghost"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  window.open(doc.file_url, '_blank');
+                                  setPreviewDoc(doc);
                                 }}
                                 className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
                               >
@@ -1425,6 +1433,14 @@ export default function Documents() {
         }}
         open={showCSVImport}
         onOpenChange={setShowCSVImport}
+      />
+
+      {/* Document Preview */}
+      <DocumentPreview
+        document={previewDoc}
+        open={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        currentUser={currentUser}
       />
 
       {/* Delete Confirmation */}

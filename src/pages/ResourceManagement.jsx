@@ -22,6 +22,7 @@ import CrossProjectResourceDashboard from '@/components/resources/CrossProjectRe
 import ResourceForm from '@/components/resources/ResourceForm';
 import ResourceForecasting from '@/components/resources/ResourceForecasting';
 import SkillGapAnalysis from '@/components/resources/SkillGapAnalysis';
+import ResourceDashboard from '@/components/resources/ResourceDashboard';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {
@@ -479,6 +480,13 @@ export default function ResourceManagement() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
+            <ResourceDashboard
+              resources={resources}
+              tasks={tasks}
+              projects={projects}
+            />
+            
+            {/* Keep existing overview content below */}
             {/* KPI Cards */}
             {resourceMetrics && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

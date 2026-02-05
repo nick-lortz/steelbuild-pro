@@ -169,14 +169,14 @@ export default function WeeklySchedule() {
   const goToThisWeek = () => setCurrentWeek(new Date());
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b-2 border-amber-500 bg-black">
+      <div className="border-b border-border bg-card">
         <div className="max-w-[1800px] mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Weekly Schedule</h1>
-              <p className="text-xs text-zinc-500 font-mono mt-1 uppercase tracking-wider">
+              <h1 className="text-2xl font-semibold text-foreground tracking-tight">Weekly Schedule</h1>
+              <p className="text-xs text-muted-foreground mt-1.5">
                 {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
               </p>
             </div>
@@ -185,7 +185,7 @@ export default function WeeklySchedule() {
                 variant="outline"
                 size="sm"
                 onClick={goToPreviousWeek}
-                className="border-zinc-700 h-9"
+                className="h-9"
               >
                 <ChevronLeft size={16} />
               </Button>
@@ -193,20 +193,15 @@ export default function WeeklySchedule() {
                 variant={isToday(currentWeek) ? 'default' : 'outline'}
                 size="sm"
                 onClick={goToThisWeek}
-                className={cn(
-                  "h-9 text-xs uppercase tracking-wider font-bold",
-                  isToday(currentWeek) 
-                    ? "bg-amber-500 hover:bg-amber-600 text-black" 
-                    : "border-zinc-700"
-                )}
+                className="h-9"
               >
-                THIS WEEK
+                This Week
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={goToNextWeek}
-                className="border-zinc-700 h-9"
+                className="h-9"
               >
                 <ChevronRight size={16} />
               </Button>
@@ -216,50 +211,50 @@ export default function WeeklySchedule() {
       </div>
 
       {/* Stats Bar */}
-      <div className="bg-zinc-950 border-b border-zinc-800">
+      <div className="bg-muted/30 border-b border-border">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="grid grid-cols-5 gap-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Total Tasks</div>
-                <div className="text-2xl font-black text-white">{weekStats.total}</div>
+            <Card className="card-elevated">
+              <CardContent className="p-4">
+                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Total Tasks</div>
+                <div className="text-3xl font-semibold text-foreground tabular-nums">{weekStats.total}</div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-green-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                  <CheckCircle2 size={9} />
-                  COMPLETED
+            <Card className="card-elevated border-success/20 bg-success/5">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-[11px] text-success uppercase tracking-wider font-semibold mb-2">
+                  <CheckCircle2 size={14} />
+                  Completed
                 </div>
-                <div className="text-2xl font-black text-green-400">{weekStats.completed}</div>
+                <div className="text-3xl font-semibold text-foreground tabular-nums">{weekStats.completed}</div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                  <TrendingUp size={9} />
-                  IN PROGRESS
+            <Card className="card-elevated border-info/20 bg-info/5">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-[11px] text-info uppercase tracking-wider font-semibold mb-2">
+                  <TrendingUp size={14} />
+                  In Progress
                 </div>
-                <div className="text-2xl font-black text-blue-400">{weekStats.inProgress}</div>
+                <div className="text-3xl font-semibold text-foreground tabular-nums">{weekStats.inProgress}</div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-red-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                  <AlertCircle size={9} />
-                  BLOCKED
+            <Card className="card-elevated border-destructive/20 bg-destructive/5">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-[11px] text-destructive uppercase tracking-wider font-semibold mb-2">
+                  <AlertCircle size={14} />
+                  Blocked
                 </div>
-                <div className="text-2xl font-black text-red-400">{weekStats.blocked}</div>
+                <div className="text-3xl font-semibold text-foreground tabular-nums">{weekStats.blocked}</div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-amber-400 uppercase tracking-widest font-bold mb-1">Completion</div>
-                <div className="text-2xl font-black text-amber-400">{weekStats.completionRate}%</div>
+            <Card className="card-elevated border-primary/20 bg-primary/5">
+              <CardContent className="p-4">
+                <div className="text-[11px] text-primary uppercase tracking-wider font-semibold mb-2">Completion</div>
+                <div className="text-3xl font-semibold text-foreground tabular-nums">{weekStats.completionRate}%</div>
               </CardContent>
             </Card>
           </div>
@@ -267,15 +262,15 @@ export default function WeeklySchedule() {
       </div>
 
       {/* Filters */}
-      <div className="bg-black border-b border-zinc-800">
+      <div className="bg-card border-b border-border">
         <div className="max-w-[1800px] mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-                <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
+                <SelectTrigger className="w-40 h-9">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent>
                   <SelectItem value="all">All Phases</SelectItem>
                   <SelectItem value="detailing">Detailing</SelectItem>
                   <SelectItem value="fabrication">Fabrication</SelectItem>
@@ -285,29 +280,29 @@ export default function WeeklySchedule() {
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded text-xs">
-                <span className="text-zinc-500 uppercase tracking-wider font-bold">View:</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-lg text-xs">
+                <span className="text-muted-foreground font-medium">View:</span>
                 <button
                   onClick={() => setViewMode('day')}
                   className={cn(
-                    "px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors",
+                    "px-3 py-1.5 rounded-md font-medium transition-smooth",
                     viewMode === 'day' 
-                      ? "bg-amber-500 text-black" 
-                      : "text-zinc-500 hover:text-white"
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  BY DAY
+                  By Day
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={cn(
-                    "px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors",
+                    "px-3 py-1.5 rounded-md font-medium transition-smooth",
                     viewMode === 'list' 
-                      ? "bg-amber-500 text-black" 
-                      : "text-zinc-500 hover:text-white"
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  LIST
+                  List
                 </button>
               </div>
             </div>
@@ -331,42 +326,42 @@ export default function WeeklySchedule() {
                 <Card
                   key={dayIdx}
                   className={cn(
-                    "bg-zinc-900 border-zinc-800 overflow-hidden",
-                    isCurrentDay && "border-2 border-amber-500 shadow-lg shadow-amber-500/20"
+                    "card-elevated overflow-hidden",
+                    isCurrentDay && "border-l-4 border-primary"
                   )}
                 >
                   <CardHeader className={cn(
-                    "p-3 border-b border-zinc-800",
-                    isCurrentDay && "bg-gradient-to-b from-amber-500/10 to-transparent"
+                    "p-4 border-b border-border",
+                    isCurrentDay && "bg-primary/5"
                   )}>
                     <div className="text-center">
-                      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">
+                      <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5">
                         {format(day, 'EEE')}
                       </div>
                       <div className={cn(
-                        "text-2xl font-black",
-                        isCurrentDay ? "text-amber-500" : dayPassed ? "text-zinc-600" : "text-white"
+                        "text-3xl font-semibold tabular-nums",
+                        isCurrentDay ? "text-primary" : dayPassed ? "text-muted-foreground/50" : "text-foreground"
                       )}>
                         {format(day, 'd')}
                       </div>
                       {isCurrentDay && (
-                        <Badge className="bg-amber-500 text-black text-[9px] mt-1 font-bold">
-                          TODAY
+                        <Badge variant="outline" className="border-primary text-primary text-[10px] mt-2 font-semibold">
+                          Today
                         </Badge>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent className="p-2 min-h-[400px] space-y-1.5">
+                  <CardContent className="p-3 min-h-[400px] space-y-2">
                     {dayTasks.length === 0 ? (
-                      <div className="flex items-center justify-center h-32 text-zinc-700 text-xs">
+                      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
                         No tasks
                       </div>
                     ) : (
                       <>
-                        <div className="mb-2 p-2 bg-zinc-800/50 rounded text-center">
-                          <div className="text-xs text-zinc-400 mb-1">Progress</div>
-                          <div className="text-lg font-black text-amber-500">{dayProgress}%</div>
-                          <div className="text-[10px] text-zinc-600">
+                        <div className="mb-3 p-3 bg-muted/50 rounded-lg text-center">
+                          <div className="text-xs text-muted-foreground mb-1.5">Progress</div>
+                          <div className="text-2xl font-semibold text-primary tabular-nums">{dayProgress}%</div>
+                          <div className="text-xs text-muted-foreground mt-1">
                             {completedToday}/{dayTasks.length}
                           </div>
                         </div>
@@ -379,54 +374,55 @@ export default function WeeklySchedule() {
                             <div
                               key={task.id}
                               className={cn(
-                                "p-2 rounded border group hover:border-amber-500/50 transition-all cursor-pointer",
-                                isCompleted && "bg-green-500/5 border-green-500/20",
-                                isBlocked && "bg-red-500/5 border-red-500/30",
-                                !isCompleted && !isBlocked && "bg-zinc-800/50 border-zinc-700"
+                                "p-2.5 rounded-lg border group hover:border-primary/50 transition-smooth cursor-pointer",
+                                isCompleted && "bg-success/5 border-success/20",
+                                isBlocked && "bg-destructive/5 border-destructive/30",
+                                !isCompleted && !isBlocked && "bg-muted/30 border-border"
                               )}
                               onClick={() => toggleTaskStatus(task)}
                             >
                               <div className="flex items-start gap-2">
                                 <Checkbox
                                   checked={isCompleted}
-                                  className="mt-0.5"
+                                  className="mt-1"
                                   onClick={(e) => e.stopPropagation()}
                                   onCheckedChange={() => toggleTaskStatus(task)}
                                 />
                                 <div className="flex-1 min-w-0">
                                   <p className={cn(
-                                    "text-xs font-bold leading-tight mb-1",
-                                    isCompleted ? "line-through text-zinc-600" : "text-white group-hover:text-amber-400"
+                                    "text-xs font-medium leading-snug mb-1.5",
+                                    isCompleted ? "line-through text-muted-foreground" : "text-foreground group-hover:text-primary"
                                   )}>
                                     {task.name}
                                   </p>
                                   <div className="flex flex-wrap gap-1">
-                                    <Badge className={cn(
-                                      "text-[9px] font-bold px-1 py-0",
-                                      task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
-                                      task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                      task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                      task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                    <Badge variant="outline" className={cn(
+                                      "text-[10px] font-medium",
+                                      task.phase === 'detailing' && "border-blue-500/50 text-blue-400",
+                                      task.phase === 'fabrication' && "border-purple-500/50 text-purple-400",
+                                      task.phase === 'delivery' && "border-warning/50 text-warning",
+                                      task.phase === 'erection' && "border-success/50 text-success"
                                     )}>
                                       {task.phase.substring(0, 3).toUpperCase()}
                                     </Badge>
                                     {wp && (
-                                      <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono">
+                                      <Badge variant="outline" className="text-[10px] font-mono">
                                         {wp.package_number}
                                       </Badge>
                                     )}
                                   </div>
                                   {task.estimated_hours > 0 && (
-                                    <p className="text-[10px] text-zinc-600 mt-1">
+                                    <p className="text-[10px] text-muted-foreground mt-1.5 tabular-nums">
                                       {task.estimated_hours}h est.
                                     </p>
                                   )}
                                 </div>
                               </div>
                               {isBlocked && (
-                                <div className="mt-1 pt-1 border-t border-red-500/20">
-                                  <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider">
-                                    ⚠ BLOCKED
+                                <div className="mt-2 pt-2 border-t border-destructive/20">
+                                  <p className="text-[10px] text-destructive font-semibold flex items-center gap-1">
+                                    <AlertCircle size={10} />
+                                    Blocked
                                   </p>
                                 </div>
                               )}
@@ -443,11 +439,11 @@ export default function WeeklySchedule() {
         ) : (
           <div className="space-y-3">
             {weekTasks.length === 0 ? (
-              <Card className="bg-zinc-900 border-zinc-800">
+              <Card className="card-elevated">
                 <CardContent className="p-12 text-center">
-                  <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-                  <h3 className="text-xl font-bold text-zinc-400 mb-2">No Tasks This Week</h3>
-                  <p className="text-zinc-600">Schedule tasks with start dates in this week</p>
+                  <Calendar size={64} className="mx-auto mb-4 text-muted-foreground/40" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks This Week</h3>
+                  <p className="text-sm text-muted-foreground">Schedule tasks with start dates in this week</p>
                 </CardContent>
               </Card>
             ) : (
@@ -467,9 +463,9 @@ export default function WeeklySchedule() {
                     <Card
                       key={task.id}
                       className={cn(
-                        "bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group",
+                        "card-elevated hover:border-border/80 transition-smooth cursor-pointer group",
                         isCompleted && "opacity-60",
-                        isBlocked && "border-red-500/30"
+                        isBlocked && "border-destructive/30"
                       )}
                       onClick={() => toggleTaskStatus(task)}
                     >
@@ -486,8 +482,8 @@ export default function WeeklySchedule() {
                             <div className="flex items-start justify-between gap-4 mb-2">
                               <div>
                                 <h3 className={cn(
-                                  "text-base font-bold mb-2",
-                                  isCompleted ? "line-through text-zinc-600" : "text-white group-hover:text-amber-400"
+                                  "text-sm font-medium mb-2",
+                                  isCompleted ? "line-through text-muted-foreground" : "text-foreground group-hover:text-primary"
                                 )}>
                                   {task.name}
                                 </h3>
@@ -497,25 +493,25 @@ export default function WeeklySchedule() {
                                   </Badge>
                                   {wp && (
                                     <Badge variant="outline" className="text-[10px]">
-                                      <Package size={8} className="mr-1" />
+                                      <Package size={10} className="mr-1" />
                                       {wp.package_number}
                                     </Badge>
                                   )}
-                                  <Badge className={cn(
-                                    "text-[10px] font-bold uppercase",
-                                    task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
-                                    task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                    task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                    task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                  <Badge variant="outline" className={cn(
+                                    "text-[10px] font-medium",
+                                    task.phase === 'detailing' && "border-blue-500/50 text-blue-400",
+                                    task.phase === 'fabrication' && "border-purple-500/50 text-purple-400",
+                                    task.phase === 'delivery' && "border-warning/50 text-warning",
+                                    task.phase === 'erection' && "border-success/50 text-success"
                                   )}>
                                     {task.phase}
                                   </Badge>
-                                  <span className="text-xs text-zinc-600 font-mono flex items-center gap-1">
-                                    <Clock size={10} />
+                                  <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
+                                    <Clock size={12} />
                                     {format(parseISO(task.start_date), 'EEE, MMM d')}
                                   </span>
                                   {task.estimated_hours > 0 && (
-                                    <span className="text-xs text-zinc-600">
+                                    <span className="text-xs text-muted-foreground tabular-nums">
                                       {task.estimated_hours}h est.
                                     </span>
                                   )}
@@ -525,10 +521,10 @@ export default function WeeklySchedule() {
                               <div className="flex items-center gap-2">
                                 {task.progress_percent > 0 && (
                                   <div className="text-right">
-                                    <div className="text-lg font-black text-amber-500">
+                                    <div className="text-xl font-semibold text-primary tabular-nums">
                                       {task.progress_percent}%
                                     </div>
-                                    <div className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                                    <div className="text-[10px] text-muted-foreground">
                                       Progress
                                     </div>
                                   </div>
@@ -537,10 +533,10 @@ export default function WeeklySchedule() {
                             </div>
 
                             {isBlocked && (
-                              <div className="p-2 bg-red-500/10 border border-red-500/30 rounded">
-                                <p className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
-                                  <AlertCircle size={12} />
-                                  BLOCKED - CANNOT PROCEED
+                              <div className="p-2.5 bg-destructive/10 border border-destructive/30 rounded-md">
+                                <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+                                  <AlertCircle size={14} />
+                                  Blocked - cannot proceed
                                 </p>
                               </div>
                             )}
@@ -555,15 +551,12 @@ export default function WeeklySchedule() {
         )}
 
         {weekTasks.length === 0 && (
-          <Card className="bg-zinc-900 border-zinc-800 mt-6">
+          <Card className="card-elevated mt-6">
             <CardContent className="p-12 text-center">
-              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-              <h3 className="text-xl font-bold text-zinc-400 mb-2">No Tasks Scheduled</h3>
-              <p className="text-zinc-600 mb-4">No tasks found for the selected week and filters</p>
-              <Button
-                onClick={goToThisWeek}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
-              >
+              <Calendar size={64} className="mx-auto mb-4 text-muted-foreground/40" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks Scheduled</h3>
+              <p className="text-sm text-muted-foreground mb-4">No tasks found for the selected week and filters</p>
+              <Button onClick={goToThisWeek}>
                 Go to Current Week
               </Button>
             </CardContent>

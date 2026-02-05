@@ -344,7 +344,13 @@ export default function LaborScope() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-zinc-800">
-              {breakdowns.map(bd => {
+              {breakdowns
+                .sort((a, b) => {
+                  const catA = categories.find(c => c.id === a.labor_category_id);
+                  const catB = categories.find(c => c.id === b.labor_category_id);
+                  return (catA?.sequence_order || 999) - (catB?.sequence_order || 999);
+                })
+                .map(bd => {
                 const category = categories.find(c => c.id === bd.labor_category_id);
                 const total = (Number(bd.shop_hours) || 0) + (Number(bd.field_hours) || 0);
                 const scheduledForCategory = tasks

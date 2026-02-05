@@ -4,13 +4,21 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus } from 'lucide-react';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DataTable from '@/components/ui/DataTable';
+import { toast } from 'sonner';
 
 export default function Contracts() {
   const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
+  const [editingProject, setEditingProject] = useState(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -29,6 +37,30 @@ export default function Contracts() {
   const filteredProjects = activeProjectId 
     ? projects.filter(p => p.id === activeProjectId)
     : projects;
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setShowEditDialog(false);
+      setEditingProject(null);
+      toast.success('Contract updated');
+    }
+  });
+
+  const handleEdit = (project) => {
+    setEditingProject(project);
+    setShowEditDialog(true);
+  };
+
+  const handleSave = () => {
+    if (editingProject) {
+      updateMutation.mutate({ 
+        id: editingProject.id, 
+        data: editingProject 
+      });
+    }
+  };
 
   // Calculate KPIs
   const totalContractValue = filteredProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
@@ -253,9 +285,165 @@ export default function Contracts() {
           <DataTable
             columns={contractColumns}
             data={filteredProjects}
+            onRowClick={handleEdit}
           />
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Contract</DialogTitle>
+          </DialogHeader>
+          {editingProject && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Project Number</Label>
+                  <Input
+                    value={editingProject.project_number}
+                    onChange={(e) => setEditingProject({...editingProject, project_number: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select 
+                    value={editingProject.status} 
+                    onValueChange={(v) => setEditingProject({...editingProject, status: v})}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bidding">Bidding</SelectItem>
+                      <SelectItem value="awarded">Awarded</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="on_hold">On Hold</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Project Name</Label>
+                <Input
+                  value={editingProject.name}
+                  onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Client</Label>
+                  <Input
+                    value={editingProject.client || ''}
+                    onChange={(e) => setEditingProject({...editingProject, client: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input
+                    value={editingProject.location || ''}
+                    onChange={(e) => setEditingProject({...editingProject, location: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Contract Value</Label>
+                  <Input
+                    type="number"
+                    value={editingProject.contract_value || 0}
+                    onChange={(e) => setEditingProject({...editingProject, contract_value: parseFloat(e.target.value)})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Project Manager</Label>
+                  <Input
+                    value={editingProject.project_manager || ''}
+                    onChange={(e) => setEditingProject({...editingProject, project_manager: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={editingProject.start_date || ''}
+                    onChange={(e) => setEditingProject({...editingProject, start_date: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Target Completion</Label>
+                  <Input
+                    type="date"
+                    value={editingProject.target_completion || ''}
+                    onChange={(e) => setEditingProject({...editingProject, target_completion: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Scope of Work</Label>
+                <Textarea
+                  value={editingProject.scope_of_work || ''}
+                  onChange={(e) => setEditingProject({...editingProject, scope_of_work: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700 h-24"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Exclusions</Label>
+                <Textarea
+                  value={editingProject.exclusions || ''}
+                  onChange={(e) => setEditingProject({...editingProject, exclusions: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700 h-20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notes</Label>
+                <Textarea
+                  value={editingProject.notes || ''}
+                  onChange={(e) => setEditingProject({...editingProject, notes: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700 h-20"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEditDialog(false)}
+                  className="border-zinc-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={updateMutation.isPending}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

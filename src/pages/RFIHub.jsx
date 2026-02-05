@@ -24,6 +24,7 @@ import Pagination from '@/components/ui/Pagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import { groupBy, indexBy } from '@/components/shared/arrayUtils';
 import { getRFIEscalationLevel, getBusinessDaysBetween } from '@/components/shared/businessRules';
+import { cn } from '@/lib/utils';
 
 export default function RFIHub() {
   const queryClient = useQueryClient();

@@ -20,6 +20,14 @@ export default function NotificationSettings() {
     queryFn: () => base44.auth.me()
   });
 
+  // Check push notification support
+  useEffect(() => {
+    if ('Notification' in window && 'serviceWorker' in navigator) {
+      setPushSupported(true);
+      setPushPermission(Notification.permission);
+    }
+  }, []);
+
   const { data: preferences = null, isLoading } = useQuery({
     queryKey: ['notificationPrefs', currentUser?.email],
     queryFn: async () => {

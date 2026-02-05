@@ -24,6 +24,7 @@ import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 export default function LaborScope() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [expandedSection, setExpandedSection] = useState('breakdown');
+  const [editingValues, setEditingValues] = useState({});
   const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
@@ -372,13 +373,27 @@ export default function LaborScope() {
                         <div className="text-right">
                           <Input
                             type="number"
-                            value={bd.shop_hours || 0}
-                            onChange={(e) => updateBreakdownMutation.mutate({ 
-                              id: bd.id, 
-                              data: { shop_hours: Number(e.target.value) || 0 }
-                            })}
+                            value={editingValues[`${bd.id}-shop`] !== undefined ? editingValues[`${bd.id}-shop`] : (bd.shop_hours || '')}
+                            onChange={(e) => {
+                              setEditingValues(prev => ({
+                                ...prev,
+                                [`${bd.id}-shop`]: e.target.value
+                              }));
+                            }}
+                            onBlur={(e) => {
+                              const value = Number(e.target.value) || 0;
+                              updateBreakdownMutation.mutate({ 
+                                id: bd.id, 
+                                data: { shop_hours: value }
+                              });
+                              setEditingValues(prev => {
+                                const newState = {...prev};
+                                delete newState[`${bd.id}-shop`];
+                                return newState;
+                              });
+                            }}
                             className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
-                            placeholder="Shop"
+                            placeholder=""
                           />
                           <p className="text-[8px] text-zinc-600 uppercase mt-0.5">Shop</p>
                         </div>
@@ -386,13 +401,27 @@ export default function LaborScope() {
                         <div className="text-right">
                           <Input
                             type="number"
-                            value={bd.field_hours || 0}
-                            onChange={(e) => updateBreakdownMutation.mutate({ 
-                              id: bd.id, 
-                              data: { field_hours: Number(e.target.value) || 0 }
-                            })}
+                            value={editingValues[`${bd.id}-field`] !== undefined ? editingValues[`${bd.id}-field`] : (bd.field_hours || '')}
+                            onChange={(e) => {
+                              setEditingValues(prev => ({
+                                ...prev,
+                                [`${bd.id}-field`]: e.target.value
+                              }));
+                            }}
+                            onBlur={(e) => {
+                              const value = Number(e.target.value) || 0;
+                              updateBreakdownMutation.mutate({ 
+                                id: bd.id, 
+                                data: { field_hours: value }
+                              });
+                              setEditingValues(prev => {
+                                const newState = {...prev};
+                                delete newState[`${bd.id}-field`];
+                                return newState;
+                              });
+                            }}
                             className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
-                            placeholder="Field"
+                            placeholder=""
                           />
                           <p className="text-[8px] text-zinc-600 uppercase mt-0.5">Field</p>
                         </div>

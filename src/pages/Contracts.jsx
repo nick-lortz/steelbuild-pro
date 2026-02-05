@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus } from 'lucide-react';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { DataTable } from '@/components/ui/DataTable';
+import DataTable from '@/components/ui/DataTable';
 
 export default function Contracts() {
   const { activeProjectId } = useActiveProject();
@@ -47,28 +47,28 @@ export default function Contracts() {
 
   const contractColumns = [
     {
-      accessorKey: 'project_number',
+      accessor: 'project_number',
       header: 'Project #'
     },
     {
-      accessorKey: 'name',
+      accessor: 'name',
       header: 'Project Name'
     },
     {
-      accessorKey: 'client',
+      accessor: 'client',
       header: 'Client'
     },
     {
-      accessorKey: 'contract_value',
+      accessor: 'contract_value',
       header: 'Original Value',
-      cell: ({ row }) => `$${(row.original.contract_value || 0).toLocaleString()}`
+      render: (row) => `$${(row.contract_value || 0).toLocaleString()}`
     },
     {
-      id: 'co_value',
+      accessor: 'co_value',
       header: 'CO Value',
-      cell: ({ row }) => {
+      render: (row) => {
         const projectCOs = changeOrders.filter(co => 
-          co.project_id === row.original.id && co.status === 'approved'
+          co.project_id === row.id && co.status === 'approved'
         );
         const coValue = projectCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
         return (
@@ -79,23 +79,23 @@ export default function Contracts() {
       }
     },
     {
-      id: 'revised_value',
+      accessor: 'revised_value',
       header: 'Revised Value',
-      cell: ({ row }) => {
+      render: (row) => {
         const projectCOs = changeOrders.filter(co => 
-          co.project_id === row.original.id && co.status === 'approved'
+          co.project_id === row.id && co.status === 'approved'
         );
         const coValue = projectCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-        const revised = (row.original.contract_value || 0) + coValue;
+        const revised = (row.contract_value || 0) + coValue;
         return `$${revised.toLocaleString()}`;
       }
     },
     {
-      id: 'pending_cos',
+      accessor: 'pending_cos',
       header: 'Pending COs',
-      cell: ({ row }) => {
+      render: (row) => {
         const pending = changeOrders.filter(co => 
-          co.project_id === row.original.id && 
+          co.project_id === row.id && 
           ['submitted', 'under_review'].includes(co.status)
         ).length;
         return (
@@ -106,9 +106,9 @@ export default function Contracts() {
       }
     },
     {
-      accessorKey: 'status',
+      accessor: 'status',
       header: 'Status',
-      cell: ({ row }) => {
+      render: (row) => {
         const statusColors = {
           bidding: 'bg-yellow-500/20 text-yellow-400',
           awarded: 'bg-blue-500/20 text-blue-400',
@@ -118,8 +118,8 @@ export default function Contracts() {
           closed: 'bg-zinc-700/20 text-zinc-500'
         };
         return (
-          <Badge className={statusColors[row.original.status]}>
-            {row.original.status.replace('_', ' ')}
+          <Badge className={statusColors[row.status]}>
+            {row.status.replace('_', ' ')}
           </Badge>
         );
       }

@@ -1,569 +1,575 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Calendar, Clock, Plus, FileText, AlertCircle, CheckCircle2, Users } from 'lucide-react';
-import { format, parseISO, isAfter, isBefore, addMinutes } from 'date-fns';
-import PageHeader from '@/components/ui/PageHeader';
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  Calendar, 
+  CheckCircle2, 
+  Clock, 
+  Users,
+  Package,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Filter,
+  Download,
+  FileText,
+  TrendingUp
+} from 'lucide-react';
+import { 
+  format, 
+  parseISO, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  isSameDay,
+  addWeeks,
+  isToday,
+  isFuture,
+  isPast
+} from 'date-fns';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function WeeklySchedule() {
-  const [showEventDialog, setShowEventDialog] = useState(false);
-  const [showNoteDialog, setShowNoteDialog] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [eventForm, setEventForm] = useState({
-    summary: '',
-    description: '',
-    start: '',
-    end: '',
-    attendees: '',
-  });
-  const [noteForm, setNoteForm] = useState({
-    pre_meeting_notes: '',
-    follow_up_notes: '',
-    action_items: [],
-  });
-
+  const { activeProjectId } = useActiveProject();
+  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [phaseFilter, setPhaseFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('day'); // 'day' or 'list'
   const queryClient = useQueryClient();
 
-  const { data: calendarEvents = [], isLoading } = useQuery({
-    queryKey: ['calendarEvents'],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('calendarSync', {
-        action: 'fetchWeekEvents',
-      });
-      return response.data.events || [];
-    },
-    refetchInterval: 60000, // Refresh every minute
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Monday
+  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 }); // Sunday
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+      : base44.entities.Task.list('start_date'),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: notes = [] } = useQuery({
-    queryKey: ['calendarNotes'],
-    queryFn: () => base44.entities.CalendarNote.list('-event_date'),
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000
   });
 
-  const createEventMutation = useMutation({
-    mutationFn: async (eventData) => {
-      const action = selectedEvent ? 'updateEvent' : 'createEvent';
-      const response = await base44.functions.invoke('calendarSync', {
-        action,
-        eventId: selectedEvent?.id,
-        eventData: {
-          summary: eventData.summary,
-          description: eventData.description,
-          start: { dateTime: eventData.start },
-          end: { dateTime: eventData.end },
-          attendees: eventData.attendees
-            ? eventData.attendees.split(',').map(email => ({ email: email.trim() }))
-            : [],
-        },
-      });
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+      : base44.entities.WorkPackage.list(),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
 
-      if (response.data.error) {
-        throw new Error(response.data.error);
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Filter tasks for this week
+  const weekTasks = useMemo(() => {
+    return tasks.filter(task => {
+      if (!task.start_date) return false;
+      if (task.status === 'completed' || task.status === 'cancelled') return false;
+      if (phaseFilter !== 'all' && task.phase !== phaseFilter) return false;
+      
+      try {
+        const taskStart = parseISO(task.start_date);
+        const taskEnd = task.end_date ? parseISO(task.end_date) : taskStart;
+        
+        // Task overlaps with current week
+        return (taskStart >= weekStart && taskStart <= weekEnd) ||
+               (taskEnd >= weekStart && taskEnd <= weekEnd) ||
+               (taskStart <= weekStart && taskEnd >= weekEnd);
+      } catch {
+        return false;
       }
-
-      return response.data.event;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
-      setShowEventDialog(false);
-      setSelectedEvent(null);
-      resetEventForm();
-    },
-  });
-
-  const createNoteMutation = useMutation({
-    mutationFn: (noteData) => base44.entities.CalendarNote.create(noteData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendarNotes'] });
-      setShowNoteDialog(false);
-      setSelectedEvent(null);
-      resetNoteForm();
-    },
-  });
-
-  const updateNoteMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.CalendarNote.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['calendarNotes'] });
-      setShowNoteDialog(false);
-      setSelectedEvent(null);
-      resetNoteForm();
-    },
-  });
-
-  const resetEventForm = () => {
-    setEventForm({
-      summary: '',
-      description: '',
-      start: '',
-      end: '',
-      attendees: '',
     });
-  };
+  }, [tasks, weekStart, weekEnd, phaseFilter]);
 
-  const resetNoteForm = () => {
-    setNoteForm({
-      pre_meeting_notes: '',
-      follow_up_notes: '',
-      action_items: [],
+  // Group tasks by day
+  const tasksByDay = useMemo(() => {
+    const grouped = {};
+    weekDays.forEach(day => {
+      grouped[format(day, 'yyyy-MM-dd')] = [];
     });
-  };
+    
+    weekTasks.forEach(task => {
+      try {
+        const taskStart = parseISO(task.start_date);
+        const taskEnd = task.end_date ? parseISO(task.end_date) : taskStart;
+        
+        weekDays.forEach(day => {
+          if (day >= taskStart && day <= taskEnd) {
+            const key = format(day, 'yyyy-MM-dd');
+            grouped[key].push(task);
+          }
+        });
+      } catch (e) {
+        console.error('Error processing task:', task, e);
+      }
+    });
+    
+    return grouped;
+  }, [weekTasks, weekDays]);
 
-  const handleCreateEvent = (e) => {
-    e.preventDefault();
-    createEventMutation.mutate(eventForm);
-  };
-
-  const handleSaveNote = (e) => {
-    e.preventDefault();
-
-    const existingNote = notes.find(n => n.event_id === selectedEvent.id);
-
-    const noteData = {
-      event_id: selectedEvent.id,
-      event_title: selectedEvent.summary,
-      event_date: selectedEvent.start.dateTime || selectedEvent.start.date,
-      pre_meeting_notes: noteForm.pre_meeting_notes,
-      follow_up_notes: noteForm.follow_up_notes,
-      action_items: noteForm.action_items,
-      attendees: selectedEvent.attendees?.map(a => a.email) || [],
+  // Week stats
+  const weekStats = useMemo(() => {
+    const completed = weekTasks.filter(t => t.status === 'completed').length;
+    const inProgress = weekTasks.filter(t => t.status === 'in_progress').length;
+    const notStarted = weekTasks.filter(t => t.status === 'not_started').length;
+    const blocked = weekTasks.filter(t => t.status === 'blocked').length;
+    
+    return {
+      total: weekTasks.length,
+      completed,
+      inProgress,
+      notStarted,
+      blocked,
+      completionRate: weekTasks.length > 0 ? Math.round((completed / weekTasks.length) * 100) : 0
     };
+  }, [weekTasks]);
 
-    if (existingNote) {
-      updateNoteMutation.mutate({ id: existingNote.id, data: noteData });
-    } else {
-      createNoteMutation.mutate(noteData);
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Task updated');
     }
-  };
+  });
 
-  const openNoteDialog = (event) => {
-    setSelectedEvent(event);
-    const existingNote = notes.find(n => n.event_id === event.id);
-    
-    if (existingNote) {
-      setNoteForm({
-        pre_meeting_notes: existingNote.pre_meeting_notes || '',
-        follow_up_notes: existingNote.follow_up_notes || '',
-        action_items: existingNote.action_items || [],
-      });
-    } else {
-      resetNoteForm();
-    }
-    
-    setShowNoteDialog(true);
-  };
-
-  const addActionItem = () => {
-    setNoteForm({
-      ...noteForm,
-      action_items: [
-        ...noteForm.action_items,
-        { item: '', assignee: '', completed: false },
-      ],
+  const toggleTaskStatus = (task) => {
+    const newStatus = task.status === 'completed' ? 'in_progress' : 'completed';
+    updateTaskMutation.mutate({
+      id: task.id,
+      data: { 
+        status: newStatus,
+        progress_percent: newStatus === 'completed' ? 100 : task.progress_percent
+      }
     });
   };
 
-  const updateActionItem = (index, field, value) => {
-    const updated = [...noteForm.action_items];
-    updated[index][field] = value;
-    setNoteForm({ ...noteForm, action_items: updated });
-  };
-
-  const removeActionItem = (index) => {
-    const updated = noteForm.action_items.filter((_, i) => i !== index);
-    setNoteForm({ ...noteForm, action_items: updated });
-  };
-
-  // Group events by day
-  const eventsByDay = calendarEvents.reduce((acc, event) => {
-    const startDate = event.start.dateTime || event.start.date;
-    const day = format(parseISO(startDate), 'yyyy-MM-dd');
-    
-    if (!acc[day]) {
-      acc[day] = [];
-    }
-    acc[day].push(event);
-    return acc;
-  }, {});
-
-  // Sort days
-  const sortedDays = Object.keys(eventsByDay).sort();
-
-  const getEventStatus = (event) => {
-    const now = new Date();
-    const startTime = parseISO(event.start.dateTime || event.start.date);
-    const endTime = parseISO(event.end.dateTime || event.end.date);
-    const reminderTime = addMinutes(startTime, -15);
-
-    if (isAfter(now, endTime)) {
-      return { status: 'past', label: 'Completed', color: 'bg-zinc-700 text-zinc-400' };
-    }
-    if (isAfter(now, startTime)) {
-      return { status: 'ongoing', label: 'In Progress', color: 'bg-green-500/20 text-green-400 border-green-500/30' };
-    }
-    if (isAfter(now, reminderTime)) {
-      return { status: 'upcoming', label: 'Starting Soon', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30' };
-    }
-    return { status: 'scheduled', label: 'Scheduled', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' };
-  };
+  const goToPreviousWeek = () => setCurrentWeek(addWeeks(currentWeek, -1));
+  const goToNextWeek = () => setCurrentWeek(addWeeks(currentWeek, 1));
+  const goToThisWeek = () => setCurrentWeek(new Date());
 
   return (
-    <div>
-      <PageHeader
-        title="Weekly Schedule"
-        subtitle="Google Calendar sync with meeting notes and reminders"
-        actions={
-          <Button
-            onClick={() => setShowEventDialog(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={18} className="mr-2" />
-            Add Event
-          </Button>
-        }
-      />
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Weekly Schedule</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1 uppercase tracking-wider">
+                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousWeek}
+                className="border-zinc-700 h-9"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <Button
+                variant={isToday(currentWeek) ? 'default' : 'outline'}
+                size="sm"
+                onClick={goToThisWeek}
+                className={cn(
+                  "h-9 text-xs uppercase tracking-wider font-bold",
+                  isToday(currentWeek) 
+                    ? "bg-amber-500 hover:bg-amber-600 text-black" 
+                    : "border-zinc-700"
+                )}
+              >
+                THIS WEEK
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextWeek}
+                className="border-zinc-700 h-9"
+              >
+                <ChevronRight size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {isLoading ? (
-        <div className="text-center py-12 text-zinc-400">Loading calendar events...</div>
-      ) : sortedDays.length === 0 ? (
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-12 text-center">
-            <Calendar size={48} className="mx-auto mb-4 text-zinc-600" />
-            <p className="text-zinc-400">No events scheduled this week</p>
-            <Button
-              onClick={() => setShowEventDialog(true)}
-              className="mt-4 bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              Create Your First Event
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {sortedDays.map(day => {
-            const events = eventsByDay[day];
-            const dayDate = parseISO(day);
+      {/* Stats Bar */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="grid grid-cols-5 gap-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Total Tasks</div>
+                <div className="text-2xl font-black text-white">{weekStats.total}</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[10px] text-green-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
+                  <CheckCircle2 size={9} />
+                  COMPLETED
+                </div>
+                <div className="text-2xl font-black text-green-400">{weekStats.completed}</div>
+              </CardContent>
+            </Card>
 
-            return (
-              <Card key={day} className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Calendar size={20} className="text-amber-500" />
-                    {format(dayDate, 'EEEE, MMMM d, yyyy')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {events.map(event => {
-                    const eventNote = notes.find(n => n.event_id === event.id);
-                    const eventStatus = getEventStatus(event);
-                    const startTime = parseISO(event.start.dateTime || event.start.date);
-                    const endTime = parseISO(event.end.dateTime || event.end.date);
+            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+              <CardContent className="p-3">
+                <div className="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
+                  <TrendingUp size={9} />
+                  IN PROGRESS
+                </div>
+                <div className="text-2xl font-black text-blue-400">{weekStats.inProgress}</div>
+              </CardContent>
+            </Card>
 
-                    return (
-                      <div
-                        key={event.id}
-                        className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/30 transition-all"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium text-white">{event.summary}</h3>
-                              <Badge variant="outline" className={eventStatus.color}>
-                                {eventStatus.label}
-                              </Badge>
-                              {eventStatus.status === 'upcoming' && (
-                                <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">
-                                  <AlertCircle size={12} className="mr-1" />
-                                  15 min reminder
-                                </Badge>
+            <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[10px] text-red-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
+                  <AlertCircle size={9} />
+                  BLOCKED
+                </div>
+                <div className="text-2xl font-black text-red-400">{weekStats.blocked}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+              <CardContent className="p-3">
+                <div className="text-[10px] text-amber-400 uppercase tracking-widest font-bold mb-1">Completion</div>
+                <div className="text-2xl font-black text-amber-400">{weekStats.completionRate}%</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+                <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Phases</SelectItem>
+                  <SelectItem value="detailing">Detailing</SelectItem>
+                  <SelectItem value="fabrication">Fabrication</SelectItem>
+                  <SelectItem value="delivery">Delivery</SelectItem>
+                  <SelectItem value="erection">Erection</SelectItem>
+                  <SelectItem value="closeout">Closeout</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded text-xs">
+                <span className="text-zinc-500 uppercase tracking-wider font-bold">View:</span>
+                <button
+                  onClick={() => setViewMode('day')}
+                  className={cn(
+                    "px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors",
+                    viewMode === 'day' 
+                      ? "bg-amber-500 text-black" 
+                      : "text-zinc-500 hover:text-white"
+                  )}
+                >
+                  BY DAY
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    "px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors",
+                    viewMode === 'list' 
+                      ? "bg-amber-500 text-black" 
+                      : "text-zinc-500 hover:text-white"
+                  )}
+                >
+                  LIST
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-6 py-6">
+        {viewMode === 'day' ? (
+          <div className="grid grid-cols-7 gap-3">
+            {weekDays.map((day, dayIdx) => {
+              const dayKey = format(day, 'yyyy-MM-dd');
+              const dayTasks = tasksByDay[dayKey] || [];
+              const isCurrentDay = isToday(day);
+              const dayPassed = isPast(day) && !isToday(day);
+              const completedToday = dayTasks.filter(t => t.status === 'completed').length;
+              const dayProgress = dayTasks.length > 0 ? Math.round((completedToday / dayTasks.length) * 100) : 0;
+              
+              return (
+                <Card
+                  key={dayIdx}
+                  className={cn(
+                    "bg-zinc-900 border-zinc-800 overflow-hidden",
+                    isCurrentDay && "border-2 border-amber-500 shadow-lg shadow-amber-500/20"
+                  )}
+                >
+                  <CardHeader className={cn(
+                    "p-3 border-b border-zinc-800",
+                    isCurrentDay && "bg-gradient-to-b from-amber-500/10 to-transparent"
+                  )}>
+                    <div className="text-center">
+                      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">
+                        {format(day, 'EEE')}
+                      </div>
+                      <div className={cn(
+                        "text-2xl font-black",
+                        isCurrentDay ? "text-amber-500" : dayPassed ? "text-zinc-600" : "text-white"
+                      )}>
+                        {format(day, 'd')}
+                      </div>
+                      {isCurrentDay && (
+                        <Badge className="bg-amber-500 text-black text-[9px] mt-1 font-bold">
+                          TODAY
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-2 min-h-[400px] space-y-1.5">
+                    {dayTasks.length === 0 ? (
+                      <div className="flex items-center justify-center h-32 text-zinc-700 text-xs">
+                        No tasks
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-2 p-2 bg-zinc-800/50 rounded text-center">
+                          <div className="text-xs text-zinc-400 mb-1">Progress</div>
+                          <div className="text-lg font-black text-amber-500">{dayProgress}%</div>
+                          <div className="text-[10px] text-zinc-600">
+                            {completedToday}/{dayTasks.length}
+                          </div>
+                        </div>
+                        {dayTasks.map((task, idx) => {
+                          const wp = workPackages.find(w => w.id === task.work_package_id);
+                          const isCompleted = task.status === 'completed';
+                          const isBlocked = task.status === 'blocked';
+                          
+                          return (
+                            <div
+                              key={task.id}
+                              className={cn(
+                                "p-2 rounded border group hover:border-amber-500/50 transition-all cursor-pointer",
+                                isCompleted && "bg-green-500/5 border-green-500/20",
+                                isBlocked && "bg-red-500/5 border-red-500/30",
+                                !isCompleted && !isBlocked && "bg-zinc-800/50 border-zinc-700"
                               )}
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-zinc-400">
-                              <div className="flex items-center gap-1">
-                                <Clock size={14} />
-                                {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+                              onClick={() => toggleTaskStatus(task)}
+                            >
+                              <div className="flex items-start gap-2">
+                                <Checkbox
+                                  checked={isCompleted}
+                                  className="mt-0.5"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onCheckedChange={() => toggleTaskStatus(task)}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className={cn(
+                                    "text-xs font-bold leading-tight mb-1",
+                                    isCompleted ? "line-through text-zinc-600" : "text-white group-hover:text-amber-400"
+                                  )}>
+                                    {task.name}
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    <Badge className={cn(
+                                      "text-[9px] font-bold px-1 py-0",
+                                      task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                                      task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                                      task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                      task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                    )}>
+                                      {task.phase.substring(0, 3).toUpperCase()}
+                                    </Badge>
+                                    {wp && (
+                                      <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono">
+                                        {wp.package_number}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {task.estimated_hours > 0 && (
+                                    <p className="text-[10px] text-zinc-600 mt-1">
+                                      {task.estimated_hours}h est.
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              {event.attendees && event.attendees.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <Users size={14} />
-                                  {event.attendees.length} attendee{event.attendees.length !== 1 ? 's' : ''}
+                              {isBlocked && (
+                                <div className="mt-1 pt-1 border-t border-red-500/20">
+                                  <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider">
+                                    ⚠ BLOCKED
+                                  </p>
                                 </div>
                               )}
                             </div>
-                            {event.description && (
-                              <p className="text-sm text-zinc-500 mt-2">{event.description}</p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedEvent(event);
-                                setEventForm({
-                                  summary: event.summary,
-                                  description: event.description || '',
-                                  start: event.start.dateTime ? new Date(event.start.dateTime).toISOString().slice(0, 16) : '',
-                                  end: event.end.dateTime ? new Date(event.end.dateTime).toISOString().slice(0, 16) : '',
-                                  attendees: event.attendees?.map(a => a.email).join(', ') || '',
-                                });
-                                setShowEventDialog(true);
-                              }}
-                              className="text-zinc-400 hover:text-white hover:bg-zinc-700"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openNoteDialog(event)}
-                              className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
-                            >
-                              <FileText size={16} className="mr-1" />
-                              {eventNote ? 'Notes' : 'Add Notes'}
-                            </Button>
-                          </div>
-                        </div>
-
-                        {eventNote && (eventNote.pre_meeting_notes || eventNote.follow_up_notes) && (
-                          <div className="mt-3 pt-3 border-t border-zinc-700 space-y-2">
-                            {eventNote.pre_meeting_notes && (
-                              <div className="text-sm">
-                                <p className="text-zinc-400 font-medium mb-1">Pre-meeting notes:</p>
-                                <p className="text-zinc-300">{eventNote.pre_meeting_notes}</p>
-                              </div>
-                            )}
-                            {eventNote.follow_up_notes && (
-                              <div className="text-sm">
-                                <p className="text-zinc-400 font-medium mb-1">Follow-up notes:</p>
-                                <p className="text-zinc-300">{eventNote.follow_up_notes}</p>
-                              </div>
-                            )}
-                            {eventNote.action_items && eventNote.action_items.length > 0 && (
-                              <div className="text-sm">
-                                <p className="text-zinc-400 font-medium mb-1">Action items:</p>
-                                <ul className="space-y-1">
-                                  {eventNote.action_items.map((item, idx) => (
-                                    <li key={idx} className="flex items-center gap-2">
-                                      {item.completed ? (
-                                        <CheckCircle2 size={14} className="text-green-400" />
-                                      ) : (
-                                        <div className="w-3.5 h-3.5 rounded-full border border-zinc-600" />
-                                      )}
-                                      <span className={cn("text-zinc-300", item.completed && "line-through text-zinc-500")}>
-                                        {item.item}
-                                        {item.assignee && <span className="text-zinc-500"> - {item.assignee}</span>}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          );
+                        })}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {weekTasks.length === 0 ? (
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardContent className="p-12 text-center">
+                  <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+                  <h3 className="text-xl font-bold text-zinc-400 mb-2">No Tasks This Week</h3>
+                  <p className="text-zinc-600">Schedule tasks with start dates in this week</p>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Create Event Dialog */}
-      <Dialog open={showEventDialog} onOpenChange={(open) => {
-        setShowEventDialog(open);
-        if (!open) {
-          setSelectedEvent(null);
-          resetEventForm();
-        }
-      }}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>{selectedEvent ? 'Edit Event' : 'Create Calendar Event'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreateEvent} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Title *</Label>
-              <Input
-                value={eventForm.summary}
-                onChange={(e) => setEventForm({ ...eventForm, summary: e.target.value })}
-                placeholder="Meeting title"
-                className="bg-zinc-800 border-zinc-700"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={eventForm.description}
-                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                placeholder="Meeting description"
-                className="bg-zinc-800 border-zinc-700"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start Time *</Label>
-                <Input
-                  type="datetime-local"
-                  value={eventForm.start}
-                  onChange={(e) => setEventForm({ ...eventForm, start: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>End Time *</Label>
-                <Input
-                  type="datetime-local"
-                  value={eventForm.end}
-                  onChange={(e) => setEventForm({ ...eventForm, end: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700"
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Attendees (comma-separated emails)</Label>
-              <Input
-                value={eventForm.attendees}
-                onChange={(e) => setEventForm({ ...eventForm, attendees: e.target.value })}
-                placeholder="email1@example.com, email2@example.com"
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
-            {createEventMutation.error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                {createEventMutation.error.message}
-              </div>
-            )}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowEventDialog(false)}
-                className="border-zinc-700"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createEventMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {createEventMutation.isPending ? (selectedEvent ? 'Updating...' : 'Creating...') : (selectedEvent ? 'Update Event' : 'Create Event')}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Notes Dialog */}
-      <Dialog open={showNoteDialog} onOpenChange={setShowNoteDialog}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Meeting Notes - {selectedEvent?.summary}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSaveNote} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Pre-meeting Notes</Label>
-              <Textarea
-                value={noteForm.pre_meeting_notes}
-                onChange={(e) => setNoteForm({ ...noteForm, pre_meeting_notes: e.target.value })}
-                placeholder="Preparation notes, agenda items, questions..."
-                className="bg-zinc-800 border-zinc-700"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Follow-up Notes</Label>
-              <Textarea
-                value={noteForm.follow_up_notes}
-                onChange={(e) => setNoteForm({ ...noteForm, follow_up_notes: e.target.value })}
-                placeholder="Meeting summary, decisions made, next steps..."
-                className="bg-zinc-800 border-zinc-700"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Action Items</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addActionItem}
-                  className="border-zinc-700"
-                >
-                  <Plus size={14} className="mr-1" />
-                  Add Item
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {noteForm.action_items.map((item, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <Input
-                      value={item.item}
-                      onChange={(e) => updateActionItem(idx, 'item', e.target.value)}
-                      placeholder="Action item"
-                      className="bg-zinc-800 border-zinc-700 flex-1"
-                    />
-                    <Input
-                      value={item.assignee}
-                      onChange={(e) => updateActionItem(idx, 'assignee', e.target.value)}
-                      placeholder="Assignee"
-                      className="bg-zinc-800 border-zinc-700 w-40"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeActionItem(idx)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            ) : (
+              weekTasks
+                .sort((a, b) => {
+                  const dateA = parseISO(a.start_date);
+                  const dateB = parseISO(b.start_date);
+                  return dateA - dateB;
+                })
+                .map(task => {
+                  const wp = workPackages.find(w => w.id === task.work_package_id);
+                  const project = projects.find(p => p.id === task.project_id);
+                  const isCompleted = task.status === 'completed';
+                  const isBlocked = task.status === 'blocked';
+                  
+                  return (
+                    <Card
+                      key={task.id}
+                      className={cn(
+                        "bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group",
+                        isCompleted && "opacity-60",
+                        isBlocked && "border-red-500/30"
+                      )}
+                      onClick={() => toggleTaskStatus(task)}
                     >
-                      ×
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-4">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          <Checkbox
+                            checked={isCompleted}
+                            className="mt-1"
+                            onClick={(e) => e.stopPropagation()}
+                            onCheckedChange={() => toggleTaskStatus(task)}
+                          />
+                          
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <div>
+                                <h3 className={cn(
+                                  "text-base font-bold mb-2",
+                                  isCompleted ? "line-through text-zinc-600" : "text-white group-hover:text-amber-400"
+                                )}>
+                                  {task.name}
+                                </h3>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="outline" className="text-[10px] font-mono">
+                                    {project?.project_number}
+                                  </Badge>
+                                  {wp && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      <Package size={8} className="mr-1" />
+                                      {wp.package_number}
+                                    </Badge>
+                                  )}
+                                  <Badge className={cn(
+                                    "text-[10px] font-bold uppercase",
+                                    task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                                    task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                                    task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                                    task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                  )}>
+                                    {task.phase}
+                                  </Badge>
+                                  <span className="text-xs text-zinc-600 font-mono flex items-center gap-1">
+                                    <Clock size={10} />
+                                    {format(parseISO(task.start_date), 'EEE, MMM d')}
+                                  </span>
+                                  {task.estimated_hours > 0 && (
+                                    <span className="text-xs text-zinc-600">
+                                      {task.estimated_hours}h est.
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                {task.progress_percent > 0 && (
+                                  <div className="text-right">
+                                    <div className="text-lg font-black text-amber-500">
+                                      {task.progress_percent}%
+                                    </div>
+                                    <div className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                                      Progress
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {isBlocked && (
+                              <div className="p-2 bg-red-500/10 border border-red-500/30 rounded">
+                                <p className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
+                                  <AlertCircle size={12} />
+                                  BLOCKED - CANNOT PROCEED
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+            )}
+          </div>
+        )}
+
+        {weekTasks.length === 0 && (
+          <Card className="bg-zinc-900 border-zinc-800 mt-6">
+            <CardContent className="p-12 text-center">
+              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-xl font-bold text-zinc-400 mb-2">No Tasks Scheduled</h3>
+              <p className="text-zinc-600 mb-4">No tasks found for the selected week and filters</p>
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowNoteDialog(false)}
-                className="border-zinc-700"
+                onClick={goToThisWeek}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
               >
-                Cancel
+                Go to Current Week
               </Button>
-              <Button
-                type="submit"
-                disabled={createNoteMutation.isPending || updateNoteMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {createNoteMutation.isPending || updateNoteMutation.isPending ? 'Saving...' : 'Save Notes'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

@@ -241,7 +241,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const projectPhase = activeProject?.phase || 'fabrication';
 
-  const visibleNavGroups = useMemo(() => {
+  const visibleNavGroups = React.useMemo(() => {
     if (!currentUser) return navGroups;
     return navGroups.map(group => ({
       ...group,

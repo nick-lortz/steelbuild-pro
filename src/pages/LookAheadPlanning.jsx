@@ -240,23 +240,23 @@ export default function LookAheadPlanning() {
   const displayTasks = showConstraintsOnly ? taskAnalysis.filter(t => t.constraints.length > 0) : taskAnalysis;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground tracking-tight">Look-Ahead Planning</h1>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                {weeksAhead}-week window · {stats.total} tasks · {stats.blocked} blocked
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Look-Ahead Planning</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1 uppercase tracking-wider">
+                {weeksAhead}-WEEK WINDOW • {stats.total} TASKS • {stats.blocked} BLOCKED
               </p>
             </div>
             <div className="flex items-center gap-3">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 h-9">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9">
                   <SelectValue placeholder="Select project..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   <SelectItem value={null}>All Projects</SelectItem>
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
@@ -264,10 +264,10 @@ export default function LookAheadPlanning() {
                 </SelectContent>
               </Select>
               <Select value={weeksAhead.toString()} onValueChange={(v) => setWeeksAhead(parseInt(v))}>
-                <SelectTrigger className="w-28 h-9">
+                <SelectTrigger className="w-32 bg-zinc-900 border-zinc-800 text-white h-9">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   <SelectItem value="2">2 Weeks</SelectItem>
                   <SelectItem value="4">4 Weeks</SelectItem>
                   <SelectItem value="6">6 Weeks</SelectItem>
@@ -280,44 +280,44 @@ export default function LookAheadPlanning() {
       </div>
 
       {/* Metrics */}
-      <div className="bg-muted/30 border-b border-border">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="card-elevated border-success/20 bg-success/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-semibold text-success mb-2">
-                  <CheckCircle2 size={14} />
-                  Ready
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-4 gap-3">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <CheckCircle2 size={9} />
+                  READY
                 </div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{stats.ready}</div>
-                <div className="text-xs text-muted-foreground mt-1">{Math.round((stats.ready / stats.total) * 100) || 0}% of total</div>
+                <div className="text-2xl font-black text-green-400">{stats.ready}</div>
+                <div className="text-[9px] text-zinc-600">{Math.round((stats.ready / stats.total) * 100) || 0}%</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated border-destructive/20 bg-destructive/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-semibold text-destructive mb-2">
-                  <XCircle size={14} />
-                  Blocked
+            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <XCircle size={9} />
+                  BLOCKED
                 </div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{stats.blocked}</div>
+                <div className="text-2xl font-black text-red-400">{stats.blocked}</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated border-warning/20 bg-warning/5">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-semibold text-warning mb-2">
-                  <AlertTriangle size={14} />
-                  Attention
+            <Card className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-amber-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <AlertTriangle size={9} />
+                  ATTENTION
                 </div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{stats.needsAttention}</div>
+                <div className="text-2xl font-black text-amber-400">{stats.needsAttention}</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
-                  <Layers size={14} />
-                  Total
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <Layers size={9} />
+                  TOTAL
                 </div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{stats.total}</div>
+                <div className="text-2xl font-black text-white">{stats.total}</div>
               </CardContent>
             </Card>
           </div>
@@ -325,24 +325,24 @@ export default function LookAheadPlanning() {
       </div>
 
       {/* Filters */}
-      <div className="bg-card border-b border-border">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="flex items-center gap-3">
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-2">
+          <div className="flex items-center gap-2">
             <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <Input
                 placeholder="Search tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-9"
+                className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
               />
             </div>
             
             <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-              <SelectTrigger className="w-40 h-9">
+              <SelectTrigger className="w-36 bg-zinc-900 border-zinc-800 h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
                 <SelectItem value="all">All Phases</SelectItem>
                 <SelectItem value="detailing">Detailing</SelectItem>
                 <SelectItem value="fabrication">Fabrication</SelectItem>
@@ -356,10 +356,13 @@ export default function LookAheadPlanning() {
               variant={showConstraintsOnly ? 'default' : 'outline'}
               size="sm"
               onClick={() => setShowConstraintsOnly(!showConstraintsOnly)}
-              className="h-9 gap-2"
+              className={cn(
+                "h-8 text-[10px] uppercase tracking-wider font-bold",
+                showConstraintsOnly ? "bg-red-500 hover:bg-red-600 text-white" : "border-zinc-700 text-zinc-400"
+              )}
             >
-              <AlertTriangle size={14} />
-              {showConstraintsOnly ? 'Issues Only' : 'Show Issues'}
+              <AlertTriangle size={12} className="mr-1" />
+              {showConstraintsOnly ? 'ISSUES ONLY' : 'SHOW ISSUES'}
             </Button>
           </div>
         </div>
@@ -376,8 +379,8 @@ export default function LookAheadPlanning() {
               <Card 
                 key={weekIdx} 
                 className={cn(
-                  "card-elevated",
-                  isCurrentWeek && "border-l-4 border-primary"
+                  "bg-zinc-900 border-zinc-800",
+                  isCurrentWeek && "border-amber-500 border-l-4"
                 )}
               >
                 <button
@@ -386,39 +389,39 @@ export default function LookAheadPlanning() {
                   )}
                   className="w-full"
                 >
-                  <CardHeader className="p-4 hover:bg-muted/30 transition-smooth">
+                  <CardHeader className="p-3 hover:bg-zinc-800/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <ChevronDown 
-                          size={18} 
+                          size={16} 
                           className={cn(
-                            "text-muted-foreground transition-transform",
+                            "text-zinc-500 transition-transform",
                             !isExpanded && "-rotate-90"
                           )}
                         />
-                        <CardTitle className="text-base font-semibold">
-                          {isCurrentWeek && <span className="text-primary mr-2">▸</span>}
-                          Week {weekIdx + 1}
-                          <span className="text-muted-foreground font-normal ml-2 text-sm">{week.label}</span>
+                        <CardTitle className="text-sm font-black uppercase tracking-wide">
+                          {isCurrentWeek && <span className="text-amber-500 mr-2">►</span>}
+                          WEEK {weekIdx + 1}
+                          <span className="text-zinc-600 font-normal ml-2 text-xs">{week.label}</span>
                         </CardTitle>
                         {isCurrentWeek && (
-                          <Badge variant="outline" className="border-primary text-primary text-[10px] font-semibold">
-                            Current Week
+                          <Badge className="bg-amber-500 text-black font-bold text-[9px] px-2 py-0">
+                            THIS WEEK
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-success rounded-full" />
-                          <span className="text-muted-foreground tabular-nums">{week.readyCount}</span>
+                      <div className="flex items-center gap-4 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-green-500 rounded-full" />
+                          <span className="text-zinc-400">{week.readyCount}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-destructive rounded-full" />
-                          <span className="text-muted-foreground tabular-nums">{week.blockedCount}</span>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-red-500 rounded-full" />
+                          <span className="text-zinc-400">{week.blockedCount}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-muted-foreground rounded-full" />
-                          <span className="text-muted-foreground tabular-nums">{week.tasks.length}</span>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-zinc-500 rounded-full" />
+                          <span className="text-zinc-400">{week.tasks.length}</span>
                         </div>
                       </div>
                     </div>
@@ -426,13 +429,13 @@ export default function LookAheadPlanning() {
                 </button>
                 
                 {isExpanded && (
-                  <CardContent className="p-0 border-t border-border">
+                  <CardContent className="p-0 border-t border-zinc-800">
                     {week.tasks.length === 0 ? (
-                      <div className="p-8 text-center text-muted-foreground text-sm">
+                      <div className="p-8 text-center text-zinc-600 text-xs">
                         No tasks scheduled
                       </div>
                     ) : (
-                      <div className="divide-y divide-border">
+                      <div className="divide-y divide-zinc-800">
                         {week.tasks.sort((a, b) => a.daysUntilStart - b.daysUntilStart).map(task => {
                           const wp = workPackages.find(w => w.id === task.work_package_id);
                           const project = projects.find(p => p.id === task.project_id);
@@ -441,55 +444,55 @@ export default function LookAheadPlanning() {
                             <div
                               key={task.id}
                               className={cn(
-                                "p-4 hover:bg-muted/40 transition-smooth group",
-                                task.hasIssues && "bg-destructive/5",
-                                task.isReady && "bg-success/5"
+                                "p-3 hover:bg-zinc-800/50 transition-colors group",
+                                task.hasIssues && "bg-red-500/5",
+                                task.isReady && "bg-green-500/5"
                               )}
                             >
                               <div className="flex items-start gap-3">
                                 {/* Readiness */}
-                                <div className="flex flex-col items-center gap-1 pt-1">
+                                <div className="flex flex-col items-center gap-0.5 pt-0.5">
                                   <div className={cn(
-                                    "w-12 h-12 rounded-lg flex items-center justify-center font-semibold text-sm border-2",
+                                    "w-10 h-10 rounded flex items-center justify-center font-black text-sm border",
                                     task.isReady 
-                                      ? "bg-success/10 border-success text-success" 
+                                      ? "bg-green-500/20 border-green-500 text-green-400" 
                                       : task.hasIssues
-                                      ? "bg-destructive/10 border-destructive text-destructive"
-                                      : "bg-warning/10 border-warning text-warning"
+                                      ? "bg-red-500/20 border-red-500 text-red-400"
+                                      : "bg-amber-500/20 border-amber-500 text-amber-400"
                                   )}>
                                     {task.readinessScore}
                                   </div>
-                                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                                  <span className="text-[8px] text-zinc-600 uppercase tracking-wider font-bold">
                                     {task.daysUntilStart}d
                                   </span>
                                 </div>
 
                                 {/* Task Info */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-3 mb-2">
+                                  <div className="flex items-start justify-between gap-3 mb-1">
                                     <div className="flex-1">
-                                      <h3 className="font-medium text-foreground text-sm mb-2 group-hover:text-primary transition-smooth">
+                                      <h3 className="font-bold text-white text-sm mb-1 group-hover:text-amber-400 transition-colors">
                                         {task.name}
                                       </h3>
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge variant="outline" className="text-[10px] font-mono">
+                                        <Badge variant="outline" className="text-[9px] font-mono px-1.5 py-0">
                                           {project?.project_number}
                                         </Badge>
                                         {wp && (
-                                          <Badge variant="outline" className="text-[10px]">
+                                          <Badge variant="outline" className="text-[9px] px-1.5 py-0">
                                             {wp.package_number}
                                           </Badge>
                                         )}
-                                        <Badge variant="outline" className={cn(
-                                          "text-[10px] font-medium",
-                                          task.phase === 'detailing' && "border-blue-500/50 text-blue-400",
-                                          task.phase === 'fabrication' && "border-purple-500/50 text-purple-400",
-                                          task.phase === 'delivery' && "border-warning/50 text-warning",
-                                          task.phase === 'erection' && "border-success/50 text-success"
+                                        <Badge className={cn(
+                                          "text-[9px] font-bold uppercase px-1.5 py-0",
+                                          task.phase === 'detailing' && "bg-blue-500/20 text-blue-400",
+                                          task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400",
+                                          task.phase === 'delivery' && "bg-amber-500/20 text-amber-400",
+                                          task.phase === 'erection' && "bg-green-500/20 text-green-400"
                                         )}>
                                           {task.phase}
                                         </Badge>
-                                        <span className="text-xs text-muted-foreground font-mono">
+                                        <span className="text-[10px] text-zinc-600 font-mono">
                                           {format(parseISO(task.start_date), 'MMM d')} 
                                           {task.end_date && ` → ${format(parseISO(task.end_date), 'MMM d')}`}
                                         </span>
@@ -499,31 +502,31 @@ export default function LookAheadPlanning() {
 
                                   {/* Constraints */}
                                   {task.constraints.length > 0 && (
-                                    <div className="space-y-2 mt-3">
+                                    <div className="space-y-1 mt-2">
                                       {task.constraints.map((constraint, idx) => (
                                         <div
                                           key={idx}
                                           className={cn(
-                                            "flex items-start gap-2 p-2.5 rounded-md border text-xs",
+                                            "flex items-start gap-2 p-2 rounded text-[10px]",
                                             constraint.severity === 'critical' 
-                                              ? "bg-destructive/5 border-destructive/30" 
-                                              : "bg-warning/5 border-warning/30"
+                                              ? "bg-red-500/10 border border-red-500/30" 
+                                              : "bg-amber-500/10 border border-amber-500/30"
                                           )}
                                         >
                                           {constraint.severity === 'critical' ? (
-                                            <XCircle size={14} className="text-destructive mt-0.5 flex-shrink-0" />
+                                            <XCircle size={12} className="text-red-400 mt-0.5 flex-shrink-0" />
                                           ) : (
-                                            <AlertTriangle size={14} className="text-warning mt-0.5 flex-shrink-0" />
+                                            <AlertTriangle size={12} className="text-amber-400 mt-0.5 flex-shrink-0" />
                                           )}
                                           <div className="flex-1">
                                             <p className={cn(
-                                              "font-medium",
-                                              constraint.severity === 'critical' ? "text-destructive" : "text-warning"
+                                              "font-bold uppercase tracking-wider",
+                                              constraint.severity === 'critical' ? "text-red-400" : "text-amber-400"
                                             )}>
                                               {constraint.message}
                                             </p>
                                             {constraint.details && (
-                                              <p className="text-muted-foreground mt-1 text-xs">{constraint.details}</p>
+                                              <p className="text-zinc-500 mt-0.5 text-[9px]">{constraint.details}</p>
                                             )}
                                           </div>
                                         </div>
@@ -537,9 +540,10 @@ export default function LookAheadPlanning() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => setEditingTask(task)}
-                                  className="opacity-0 group-hover:opacity-100 h-8"
+                                  className="opacity-0 group-hover:opacity-100 h-7 px-2 text-xs"
                                 >
-                                  <Edit size={14} />
+                                  <Edit size={12} className="mr-1" />
+                                  EDIT
                                 </Button>
                               </div>
                             </div>
@@ -555,11 +559,11 @@ export default function LookAheadPlanning() {
         </div>
 
         {displayTasks.length === 0 && (
-          <Card className="card-elevated mt-6">
+          <Card className="bg-zinc-900 border-zinc-800 mt-4">
             <CardContent className="p-12 text-center">
-              <Calendar size={64} className="mx-auto mb-4 text-muted-foreground/40" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Tasks in Window</h3>
-              <p className="text-sm text-muted-foreground">
+              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-lg font-bold text-zinc-400 mb-2">No Tasks in Window</h3>
+              <p className="text-xs text-zinc-600">
                 {showConstraintsOnly 
                   ? 'No tasks with constraints - all clear!' 
                   : `Add tasks with start dates in the next ${weeksAhead} weeks`}
@@ -571,9 +575,9 @@ export default function LookAheadPlanning() {
 
       {/* Edit Task Sheet */}
       <Sheet open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
-        <SheetContent className="overflow-y-auto sm:max-w-2xl">
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle>Edit Task</SheetTitle>
+            <SheetTitle className="text-white">Edit Task</SheetTitle>
           </SheetHeader>
           {editingTask && (
             <div className="mt-6">

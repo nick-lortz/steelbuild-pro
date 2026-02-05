@@ -224,15 +224,15 @@ export default function Detailing() {
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center max-w-md">
-          <FileText size={64} className="mx-auto mb-4 text-muted-foreground/40" />
-          <h3 className="text-lg font-semibold text-foreground mb-4">Select Project</h3>
+          <FileText size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
           <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
               <SelectValue placeholder="Choose project..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
               {userProjects.map(p => (
                 <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
               ))}
@@ -244,29 +244,29 @@ export default function Detailing() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground tracking-tight">Detailing</h1>
-              <p className="text-xs text-muted-foreground mt-1.5">{selectedProject?.project_number} · {metrics.total} sets · {metrics.released} FFF</p>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Detailing</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {metrics.total} SETS • {metrics.released} FFF</p>
             </div>
             <div className="flex items-center gap-3">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 h-9">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   {userProjects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={() => setShowCreateDialog(true)} className="h-9 gap-2">
-                <Plus size={14} />
-                New Set
+              <Button onClick={() => setShowCreateDialog(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
+                <Plus size={14} className="mr-1" />
+                NEW
               </Button>
             </div>
           </div>
@@ -274,49 +274,49 @@ export default function Detailing() {
       </div>
 
       {/* Metrics */}
-      <div className="bg-muted/30 border-b border-border">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-6 gap-4">
-            <Card className="card-elevated border-success/20 bg-success/5">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-success uppercase tracking-wider font-semibold mb-2">Released</div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{metrics.releasedPercent.toFixed(0)}%</div>
-                <div className="text-xs text-muted-foreground mt-1">{metrics.released}/{metrics.total}</div>
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-6 gap-3">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Released</div>
+                <div className="text-2xl font-black text-green-400">{metrics.releasedPercent.toFixed(0)}%</div>
+                <div className="text-[9px] text-zinc-600">{metrics.released}/{metrics.total}</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated border-destructive/20 bg-destructive/5">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-destructive uppercase tracking-wider font-semibold mb-2">Action Today</div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{metrics.actionToday}</div>
-                <div className="text-xs text-muted-foreground mt-1">Need response</div>
+            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5">Action Today</div>
+                <div className="text-2xl font-black text-red-400">{metrics.actionToday}</div>
+                <div className="text-[9px] text-zinc-600">Need response</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Open RFIs</div>
-                <div className="text-3xl font-semibold text-primary tabular-nums">{metrics.openRFIs}</div>
-                <div className="text-xs text-muted-foreground mt-1">Impacting</div>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Open RFIs</div>
+                <div className="text-2xl font-black text-amber-500">{metrics.openRFIs}</div>
+                <div className="text-[9px] text-zinc-600">Impacting</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Avg Review</div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{metrics.avgTurnaround}d</div>
-                <div className="text-xs text-muted-foreground mt-1">Turnaround</div>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Review</div>
+                <div className="text-2xl font-black text-white">{metrics.avgTurnaround}d</div>
+                <div className="text-[9px] text-zinc-600">Turnaround</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">In Review</div>
-                <div className="text-3xl font-semibold text-primary tabular-nums">{metrics.byZone.external_review}</div>
-                <div className="text-xs text-muted-foreground mt-1">Out for approval</div>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Review</div>
+                <div className="text-2xl font-black text-amber-500">{metrics.byZone.external_review}</div>
+                <div className="text-[9px] text-zinc-600">Out for approval</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Returned</div>
-                <div className="text-3xl font-semibold text-destructive tabular-nums">{metrics.byZone.returned}</div>
-                <div className="text-xs text-muted-foreground mt-1">Need revision</div>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Returned</div>
+                <div className="text-2xl font-black text-red-500">{metrics.byZone.returned}</div>
+                <div className="text-[9px] text-zinc-600">Need revision</div>
               </CardContent>
             </Card>
           </div>
@@ -324,14 +324,14 @@ export default function Detailing() {
       </div>
 
       {/* Zone Filter */}
-      <div className="bg-card border-b border-border">
+      <div className="bg-black border-b border-zinc-800">
         <div className="max-w-[1800px] mx-auto px-6 py-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedZone('all')}
               className={cn(
-                "px-4 py-2 rounded-lg font-medium text-xs transition-smooth",
-                selectedZone === 'all' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+                "px-4 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors",
+                selectedZone === 'all' ? "bg-amber-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
               )}
             >
               All ({metrics.total})
@@ -344,11 +344,11 @@ export default function Detailing() {
                   key={key}
                   onClick={() => setSelectedZone(key)}
                   className={cn(
-                    "px-4 py-2 rounded-lg font-medium text-xs transition-smooth flex items-center gap-2",
-                    selectedZone === key ? zone.color + " text-white" : "bg-muted text-muted-foreground hover:text-foreground"
+                    "px-4 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5",
+                    selectedZone === key ? zone.color + " text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
                   )}
                 >
-                  <Icon size={13} />
+                  <Icon size={11} />
                   {zone.label} ({count})
                 </button>
               );
@@ -361,74 +361,74 @@ export default function Detailing() {
       <div className="max-w-[1800px] mx-auto px-6 py-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredSets.length === 0 ? (
-          <Card className="card-elevated">
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-12 text-center">
-              <CheckCircle2 size={64} className="mx-auto mb-4 text-success/30" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <CheckCircle2 size={64} className="mx-auto mb-4 text-green-500/30" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">
                 {selectedZone === 'all' ? 'No Sets' : `No Sets in ${CONTROL_ZONES[selectedZone]?.label}`}
               </h3>
-              <p className="text-sm text-muted-foreground">All clear in this zone</p>
+              <p className="text-xs text-zinc-600">All clear in this zone</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredSets.map((ds, idx) => {
               const ZoneIcon = CONTROL_ZONES[ds.zone]?.icon;
               return (
                 <Card 
                   key={ds.id} 
                   className={cn(
-                    "card-elevated border-l-4 hover:bg-muted/30 transition-smooth cursor-pointer",
+                    "bg-zinc-900 border-l-4 hover:bg-zinc-800/50 transition-all cursor-pointer",
                     CONTROL_ZONES[ds.zone]?.border
                   )}
                   onClick={() => setDetailViewSetId(ds.id)}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     <div className="flex items-center gap-3">
                       {/* Priority Rank */}
                       {idx < 10 && ds.priorityScore > 100 && (
-                        <div className="flex flex-col items-center justify-center w-9 h-9 bg-destructive/10 border border-destructive/30 rounded-lg font-semibold text-destructive text-xs">
+                        <div className="flex flex-col items-center justify-center w-8 h-8 bg-red-500/20 border border-red-500/30 rounded font-bold text-red-400 text-xs">
                           #{idx + 1}
                         </div>
                       )}
 
                       {/* Zone Badge */}
-                      <Badge className={cn(CONTROL_ZONES[ds.zone]?.color, "text-white text-[10px] px-2.5 py-1 font-semibold")}>
-                        <ZoneIcon size={12} className="mr-1.5" />
+                      <Badge className={cn(CONTROL_ZONES[ds.zone]?.color, "text-black text-[10px] px-2 py-0.5 font-bold")}>
+                        <ZoneIcon size={10} className="mr-1" />
                         {CONTROL_ZONES[ds.zone]?.label.toUpperCase()}
                       </Badge>
 
                       {/* Drawing Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <p className="font-medium text-foreground text-sm">{ds.set_name}</p>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-bold text-white text-sm">{ds.set_name}</p>
                           {ds.isOverdue && ds.status !== 'FFF' && (
-                            <Badge className="bg-destructive text-destructive-foreground text-[10px]">Overdue</Badge>
+                            <Badge className="bg-red-500 text-white text-[9px] px-1.5 py-0">OVERDUE</Badge>
                           )}
                           {ds.linkedRFIs.length > 0 && (
-                            <Badge variant="outline" className="border-destructive/50 text-destructive text-[10px]">
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[9px] px-1.5 py-0">
                               {ds.linkedRFIs.length} RFI
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="font-mono text-foreground">{ds.set_number}</span>
-                          <span>·</span>
-                          <span>Rev {ds.current_revision || '0'}</span>
-                          <span>·</span>
-                          <span className={ds.isOverdue ? 'text-destructive font-medium' : ds.isDueSoon ? 'text-warning' : ''}>
-                            {ds.due_date ? format(parseISO(ds.due_date), 'MMM d') : 'No due date'}
+                        <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono">
+                          <span className="text-white">{ds.set_number}</span>
+                          <span>•</span>
+                          <span>R{ds.current_revision || '0'}</span>
+                          <span>•</span>
+                          <span className={ds.isOverdue ? 'text-red-500 font-bold' : ds.isDueSoon ? 'text-amber-500' : ''}>
+                            {ds.due_date ? format(parseISO(ds.due_date), 'MMM d') : 'No due'}
                           </span>
-                          <span>·</span>
+                          <span>•</span>
                           <span>{ds.sheet_count || 0} sheets</span>
-                          <span>·</span>
+                          <span>•</span>
                           <span className={
-                            ds.status === 'FFF' ? 'text-success' :
-                            ds.daysSinceMovement > 14 ? 'text-destructive font-medium' : 
-                            ds.daysSinceMovement > 7 ? 'text-warning' : ''
+                            ds.status === 'FFF' ? 'text-green-500' :
+                            ds.daysSinceMovement > 14 ? 'text-red-500 font-bold' : 
+                            ds.daysSinceMovement > 7 ? 'text-amber-500' : ''
                           }>
                             {ds.daysSinceMovement}d stagnant
                           </span>
@@ -445,10 +445,10 @@ export default function Detailing() {
                           })}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <SelectTrigger className="w-36 h-8 text-xs">
+                          <SelectTrigger className="w-32 h-7 text-[10px] bg-zinc-950 border-zinc-700">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-zinc-900 border-zinc-800">
                             <SelectItem value="unassigned">Unassigned</SelectItem>
                             {users.map(u => (
                               <SelectItem key={u.email} value={u.email}>{u.full_name?.split(' ')[0] || u.email}</SelectItem>
@@ -461,10 +461,10 @@ export default function Detailing() {
                           onValueChange={(val) => updateStatusMutation.mutate({ id: ds.id, status: val })}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <SelectTrigger className="w-32 h-8 text-xs">
+                          <SelectTrigger className="w-36 h-7 text-[10px] bg-zinc-950 border-zinc-700">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-zinc-900 border-zinc-800">
                             <SelectItem value="IFA">IFA</SelectItem>
                             <SelectItem value="BFA">BFA</SelectItem>
                             <SelectItem value="BFS">BFS</SelectItem>
@@ -480,7 +480,7 @@ export default function Detailing() {
                             e.stopPropagation();
                             setRevisionHistorySetId(ds.id);
                           }}
-                          className="h-8"
+                          className="h-7 px-2 text-zinc-500 hover:text-white"
                         >
                           <History size={14} />
                         </Button>
@@ -493,7 +493,7 @@ export default function Detailing() {
                               deleteDrawingSetMutation.mutate(ds.id);
                             }
                           }}
-                          className="h-8 hover:text-destructive"
+                          className="h-7 px-2 text-zinc-500 hover:text-red-500"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -522,7 +522,7 @@ export default function Detailing() {
       />
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
             <DialogTitle>New Drawing Set</DialogTitle>
           </DialogHeader>

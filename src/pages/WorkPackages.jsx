@@ -158,15 +158,15 @@ export default function WorkPackages() {
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center max-w-md">
-          <Package size={64} className="mx-auto mb-4 text-muted-foreground/40" />
-          <h3 className="text-lg font-semibold text-foreground mb-4">Select Project</h3>
+          <Package size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
           <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
               <SelectValue placeholder="Choose project..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
               {projects.map(p => (
                 <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
               ))}
@@ -178,29 +178,29 @@ export default function WorkPackages() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground tracking-tight">Work Packages</h1>
-              <p className="text-xs text-muted-foreground mt-1.5">{selectedProject?.project_number} · {stats.total} packages</p>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Work Packages</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {stats.total} PACKAGES</p>
             </div>
             <div className="flex items-center gap-3">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 h-9">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={() => setShowForm(true)} className="h-9 gap-2">
-                <Plus size={14} />
-                New Package
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
+                <Plus size={14} className="mr-1" />
+                NEW
               </Button>
             </div>
           </div>
@@ -208,47 +208,47 @@ export default function WorkPackages() {
       </div>
 
       {/* Metrics */}
-      <div className="bg-muted/30 border-b border-border">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-5 gap-4">
-            <Card className="card-elevated border-info/20 bg-info/5">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-info uppercase tracking-wider font-semibold mb-2">In Progress</div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{stats.inProgress}</div>
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-5 gap-3">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Progress</div>
+                <div className="text-2xl font-black text-blue-400">{stats.inProgress}</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated border-success/20 bg-success/5">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-success uppercase tracking-wider font-semibold mb-2">Completed</div>
-                <div className="text-3xl font-semibold text-foreground tabular-nums">{stats.completed}</div>
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Completed</div>
+                <div className="text-2xl font-black text-green-400">{stats.completed}</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Avg Progress</div>
-                <div className="text-3xl font-semibold text-primary tabular-nums">{stats.avgProgress.toFixed(0)}%</div>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Progress</div>
+                <div className="text-2xl font-black text-amber-500">{stats.avgProgress.toFixed(0)}%</div>
               </CardContent>
             </Card>
-            <Card className="card-elevated">
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Budget</div>
-                <div className="text-xl font-semibold text-foreground tabular-nums">${(stats.totalBudget / 1000).toFixed(0)}K</div>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Budget</div>
+                <div className="text-xl font-black text-white">${(stats.totalBudget / 1000).toFixed(0)}K</div>
               </CardContent>
             </Card>
             <Card className={cn(
-              "card-elevated",
-              stats.variance > 0 ? "bg-destructive/5 border-destructive/20" : ""
+              "border",
+              stats.variance > 0 ? "bg-red-500/10 border-red-500/20" : "bg-zinc-900 border-zinc-800"
             )}>
-              <CardContent className="p-4">
-                <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-2">Forecast</div>
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Forecast</div>
                 <div className={cn(
-                  "text-xl font-semibold tabular-nums",
-                  stats.variance > 0 ? "text-destructive" : "text-foreground"
+                  "text-xl font-black",
+                  stats.variance > 0 ? "text-red-400" : "text-white"
                 )}>
                   ${(stats.totalForecast / 1000).toFixed(0)}K
                 </div>
                 {stats.variance !== 0 && (
-                  <div className={cn("text-xs tabular-nums", stats.variance > 0 ? "text-destructive" : "text-success")}>
+                  <div className={cn("text-[9px]", stats.variance > 0 ? "text-red-400" : "text-green-400")}>
                     {stats.variance > 0 ? '+' : ''}{(stats.variance / 1000).toFixed(0)}K
                   </div>
                 )}
@@ -259,13 +259,13 @@ export default function WorkPackages() {
       </div>
 
       {/* Filter */}
-      <div className="bg-card border-b border-border">
+      <div className="bg-black border-b border-zinc-800">
         <div className="max-w-[1800px] mx-auto px-6 py-3">
           <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-            <SelectTrigger className="w-40 h-9">
+            <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
               <SelectItem value="all">All Phases</SelectItem>
               <SelectItem value="pre_fab">Pre-Fab</SelectItem>
               <SelectItem value="shop">Shop</SelectItem>
@@ -281,22 +281,22 @@ export default function WorkPackages() {
       <div className="max-w-[1800px] mx-auto px-6 py-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredPackages.length === 0 ? (
-          <Card className="card-elevated">
+          <Card className="bg-zinc-900 border-zinc-800">
             <CardContent className="p-12 text-center">
-              <Package size={64} className="mx-auto mb-4 text-muted-foreground/40" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Work Packages</h3>
-              <p className="text-sm text-muted-foreground mb-4">Create packages to track execution</p>
-              <Button onClick={() => setShowForm(true)}>
+              <Package size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">No Work Packages</h3>
+              <p className="text-xs text-zinc-600 mb-4">Create packages to track execution</p>
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
                 <Plus size={16} className="mr-2" />
                 Create First Package
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredPackages.map(pkg => {
               const project = projects.find(p => p.id === pkg.project_id);
               const taskCount = tasks.filter(t => t.work_package_id === pkg.id).length;
@@ -308,75 +308,75 @@ export default function WorkPackages() {
               const phaseMap = {
                 'pre_fab': { next: 'shop', label: 'To Shop', color: 'bg-blue-500' },
                 'shop': { next: 'delivery', label: 'To Delivery', color: 'bg-purple-500' },
-                'delivery': { next: 'erection', label: 'To Erection', color: 'bg-primary' },
-                'erection': { next: 'punch', label: 'To Punch', color: 'bg-success' },
-                'punch': { next: 'completed', label: 'Complete', color: 'bg-muted-foreground' }
+                'delivery': { next: 'erection', label: 'To Erection', color: 'bg-amber-500' },
+                'erection': { next: 'punch', label: 'To Punch', color: 'bg-green-500' },
+                'punch': { next: 'completed', label: 'Complete', color: 'bg-zinc-500' }
               };
               const currentPhase = phaseMap[pkg.phase];
 
               return (
                 <Card 
                   key={pkg.id} 
-                  className="card-elevated hover:border-border/80 transition-smooth cursor-pointer group"
+                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group"
                   onClick={() => setViewingPackage(pkg)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
                       {/* Phase Indicator */}
-                      <div className={cn("w-1.5 h-20 rounded-full", currentPhase?.color || 'bg-muted-foreground')} />
+                      <div className={cn("w-1.5 h-16 rounded-full", currentPhase?.color || 'bg-zinc-700')} />
 
                       {/* Package Info */}
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-medium text-foreground text-sm group-hover:text-primary transition-smooth">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-white text-sm group-hover:text-amber-400 transition-colors">
                             {pkg.title}
                           </h3>
                           <Badge variant="outline" className="text-[10px] font-mono">
                             {pkg.wpid || pkg.id.slice(0, 8)}
                           </Badge>
-                          <Badge variant="outline" className={cn(
-                            "text-[10px] font-medium",
-                            pkg.status === 'completed' && "border-success/50 text-success",
-                            pkg.status === 'in_progress' && "border-info/50 text-info",
-                            pkg.status === 'on_hold' && "border-warning/50 text-warning"
+                          <Badge className={cn(
+                            "text-[10px] font-bold",
+                            pkg.status === 'completed' && "bg-green-500/20 text-green-400",
+                            pkg.status === 'in_progress' && "bg-blue-500/20 text-blue-400",
+                            pkg.status === 'on_hold' && "bg-amber-500/20 text-amber-400"
                           )}>
-                            {pkg.status?.replace('_', ' ')}
+                            {pkg.status?.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="font-mono text-foreground">{project?.project_number}</span>
-                          <span>·</span>
+                        <div className="flex items-center gap-4 text-[10px] text-zinc-500 font-mono">
+                          <span className="text-white">{project?.project_number}</span>
+                          <span>•</span>
                           <span>{pkg.assigned_pm || 'No PM'}</span>
-                          <span>·</span>
+                          <span>•</span>
                           <span>{(pkg.linked_drawing_set_ids?.length || 0)} dwgs</span>
-                          <span>·</span>
+                          <span>•</span>
                           <span>{(pkg.linked_delivery_ids?.length || 0)} deliveries</span>
-                          <span>·</span>
+                          <span>•</span>
                           <span>{taskCount} tasks</span>
                           {pkg.target_date && (
                             <>
-                              <span>·</span>
-                              <span className="text-primary">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>
+                              <span>•</span>
+                              <span className="text-amber-500">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>
                             </>
                           )}
                         </div>
                       </div>
 
                       {/* Progress */}
-                      <div className="flex items-center gap-4">
-                        <div className="text-right min-w-[70px]">
-                          <div className="text-2xl font-semibold text-primary tabular-nums">{pkg.percent_complete || 0}%</div>
-                          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden mt-1.5">
-                            <div className="h-full bg-primary transition-smooth" style={{ width: `${pkg.percent_complete || 0}%` }} />
+                      <div className="flex items-center gap-3">
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-xl font-black text-amber-500">{pkg.percent_complete || 0}%</div>
+                          <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
+                            <div className="h-full bg-amber-500 transition-all" style={{ width: `${pkg.percent_complete || 0}%` }} />
                           </div>
                         </div>
 
                         {/* Budget */}
-                        <div className="text-right min-w-[90px]">
-                          <div className="text-sm font-medium text-foreground tabular-nums">${(budget / 1000).toFixed(0)}K</div>
+                        <div className="text-right min-w-[80px]">
+                          <div className="text-sm font-bold text-white">${(budget / 1000).toFixed(0)}K</div>
                           <div className={cn(
-                            "text-xs font-medium tabular-nums",
-                            variance > 0 ? "text-destructive" : variance < 0 ? "text-success" : "text-muted-foreground"
+                            "text-[10px] font-bold",
+                            variance > 0 ? "text-red-400" : variance < 0 ? "text-green-400" : "text-zinc-600"
                           )}>
                             {variance !== 0 && (variance > 0 ? '+' : '')}{variancePercent.toFixed(0)}%
                           </div>
@@ -391,7 +391,7 @@ export default function WorkPackages() {
                                 e.stopPropagation();
                                 advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: currentPhase.next });
                               }}
-                              className="h-8 px-3 bg-success hover:bg-success/90 text-white"
+                              className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
                             >
                               <ArrowRight size={14} />
                             </Button>
@@ -403,7 +403,7 @@ export default function WorkPackages() {
                               e.stopPropagation();
                               setDeletePackage(pkg);
                             }}
-                            className="h-8 px-2 hover:text-destructive"
+                            className="h-8 px-2 text-zinc-500 hover:text-red-500"
                           >
                             <Trash2 size={14} />
                           </Button>
@@ -422,9 +422,9 @@ export default function WorkPackages() {
         setShowForm(open);
         if (!open) setEditingPackage(null);
       }}>
-        <SheetContent className="overflow-y-auto sm:max-w-2xl">
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle>{editingPackage ? 'Edit' : 'New'} Work Package</SheetTitle>
+            <SheetTitle className="text-white">{editingPackage ? 'Edit' : 'New'} Work Package</SheetTitle>
           </SheetHeader>
           <WorkPackageForm
             package={editingPackage}
@@ -453,9 +453,9 @@ export default function WorkPackages() {
       <Sheet open={!!viewingPackage} onOpenChange={(open) => {
         if (!open) setViewingPackage(null);
       }}>
-        <SheetContent className="overflow-y-auto sm:max-w-3xl">
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-3xl">
           <SheetHeader>
-            <SheetTitle>Package Details</SheetTitle>
+            <SheetTitle className="text-white">Package Details</SheetTitle>
           </SheetHeader>
           {viewingPackage && (
             <WorkPackageDetails
@@ -480,16 +480,16 @@ export default function WorkPackages() {
       </Sheet>
 
       <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Package?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">Delete Package?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
               Delete "{deletePackage?.wpid} - {deletePackage?.title}" and {tasks.filter(t => t.work_package_id === deletePackage?.id).length} tasks? Cannot undo.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-red-500 hover:bg-red-600">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

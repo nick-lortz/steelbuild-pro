@@ -1,41 +1,38 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
-  RefreshCw, 
-  DollarSign, 
-  Building, 
-  AlertTriangle, 
-  Clock, 
-  Flag, 
-  Activity,
-  TrendingUp,
-  CheckCircle2
+  RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
+  Building, AlertTriangle, Clock, Flag, Activity
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
 import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
 
 export default function Dashboard() {
-  const { setActiveProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
-  const { page, pageSize, goToPage, changePageSize } = usePagination(1, 25);
+  const { page, pageSize, skip, limit, goToPage, changePageSize } = usePagination(1, 25);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: Infinity
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
-  const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading, isFetching, refetch } = useQuery({
+  const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchDashboard } = useQuery({
     queryKey: ['dashboard', { page, pageSize, search: searchTerm, status: statusFilter, risk: riskFilter, sort: sortBy }],
     queryFn: async () => {
       const response = await base44.functions.invoke('getDashboardData', {
@@ -48,170 +45,141 @@ export default function Dashboard() {
       });
       return response.data;
     },
-    staleTime: 2 * 60 * 1000
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
   });
 
-  const metrics = dashboardData.metrics || {};
-  const projects = dashboardData.projects || [];
+  // Data from server (filtering, calc, pagination all server-side)
+  const enhancedMetrics = dashboardData.metrics || {};
+  const paginatedProjects = dashboardData.projects || [];
   const totalFiltered = dashboardData.pagination?.totalFiltered || 0;
-  const hasFilters = searchTerm || statusFilter !== 'all' || riskFilter !== 'all';
 
-  if (isLoading || !currentUser) {
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || riskFilter !== 'all';
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setRiskFilter('all');
+  };
+
+  if (projectsLoading || !currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Executive Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="max-w-[1600px] mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold text-foreground tracking-tight">Portfolio Overview</h1>
-              <p className="text-sm text-muted-foreground mt-1.5">
-                {metrics.totalProjects || 0} Active Projects • Last updated {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-              </p>
+    <ErrorBoundary>
+    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      {/* Header */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5 border border-amber-500/20 p-8">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
+              <Building className="w-8 h-8 text-black" />
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={refetch}
-              disabled={isFetching}
-              className="gap-2"
-            >
-              <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
-              Refresh
-            </Button>
+            <div>
+              <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-zinc-400 font-medium">{enhancedMetrics.totalProjects} Projects</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              </div>
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={refetchDashboard}
+            disabled={projectsFetching}
+            className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
+          >
+            <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
+            {projectsFetching ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
       </div>
 
-      {/* Executive KPI Strip */}
-      <div className="border-b border-border bg-card/30">
-        <div className="max-w-[1600px] mx-auto px-8 py-6">
-          <div className="grid grid-cols-6 gap-4">
-            {/* Total Contract Value */}
-            <Card className="bg-card border-border card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <DollarSign size={18} className="text-blue-400" />
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Contract Value
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-foreground tabular-nums">
-                  ${((metrics.totalContractValue || 0) / 1000000).toFixed(1)}M
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Active Projects */}
-            <Card className="bg-card border-border card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <Activity size={18} className="text-green-400" />
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Active
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-foreground tabular-nums">
-                  {metrics.activeProjects || 0}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* On Track */}
-            <Card className="bg-card border-border card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <CheckCircle2 size={18} className="text-green-400" />
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    On Track
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-foreground tabular-nums">
-                  {metrics.onTrackProjects || 0}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {metrics.totalProjects > 0 ? Math.round(((metrics.onTrackProjects || 0) / metrics.totalProjects) * 100) : 0}%
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* At Risk */}
-            <Card className="bg-card border-border card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                    <AlertTriangle size={18} className="text-amber-400" />
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    At Risk
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-foreground tabular-nums">
-                  {metrics.atRiskProjects || 0}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Overdue Tasks */}
-            <Card className="bg-card border-border card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center",
-                    (metrics.overdueTasks || 0) > 0 ? "bg-red-500/10" : "bg-zinc-500/10"
-                  )}>
-                    <Clock size={18} className={(metrics.overdueTasks || 0) > 0 ? "text-red-400" : "text-zinc-500"} />
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Overdue
-                  </div>
-                </div>
-                <div className={cn(
-                  "text-2xl font-semibold tabular-nums",
-                  (metrics.overdueTasks || 0) > 0 ? "text-red-400" : "text-foreground"
-                )}>
-                  {metrics.overdueTasks || 0}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Milestones */}
-            <Card className="bg-card border-border card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <Flag size={18} className="text-purple-400" />
-                  </div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Milestones
-                  </div>
-                </div>
-                <div className="text-2xl font-semibold text-foreground tabular-nums">
-                  {metrics.upcomingMilestones || 0}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">Next 30 days</div>
-              </CardContent>
-            </Card>
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center ring-1 ring-blue-500/30">
+                <Building className="w-5 h-5 text-blue-400" />
+              </div>
+              <p className="text-3xl font-bold text-white">{enhancedMetrics.totalProjects}</p>
+            </div>
+            <p className="text-sm text-zinc-400">Total Projects</p>
           </div>
-        </div>
+        </Card>
+
+        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center ring-1 ring-green-500/30">
+                <Activity className="w-5 h-5 text-green-400" />
+              </div>
+              <p className="text-3xl font-bold text-white">{enhancedMetrics.activeProjects}</p>
+            </div>
+            <p className="text-sm text-zinc-400">Active Projects</p>
+          </div>
+        </Card>
+
+        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center ring-1",
+                enhancedMetrics.atRiskProjects > 0 
+                  ? "bg-amber-500/20 ring-amber-500/30" 
+                  : "bg-green-500/20 ring-green-500/30"
+              )}>
+                <AlertTriangle className={cn("w-5 h-5", enhancedMetrics.atRiskProjects > 0 ? "text-amber-400" : "text-green-400")} />
+              </div>
+              <p className="text-3xl font-bold text-white">{enhancedMetrics.atRiskProjects}</p>
+            </div>
+            <p className="text-sm text-zinc-400">At Risk</p>
+          </div>
+        </Card>
+
+        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center ring-1",
+                enhancedMetrics.overdueTasks > 0 
+                  ? "bg-red-500/20 ring-red-500/30" 
+                  : "bg-zinc-500/20 ring-zinc-500/30"
+              )}>
+                <Clock className={cn("w-5 h-5", enhancedMetrics.overdueTasks > 0 ? "text-red-400" : "text-zinc-500")} />
+              </div>
+              <p className="text-3xl font-bold text-white">{enhancedMetrics.overdueTasks}</p>
+            </div>
+            <p className="text-sm text-zinc-400">Overdue Tasks</p>
+          </div>
+        </Card>
+
+        <Card className="border-zinc-800/50 bg-zinc-900/40 backdrop-blur-xl">
+          <div className="p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center ring-1 ring-purple-500/30">
+                <Flag className="w-5 h-5 text-purple-400" />
+              </div>
+              <p className="text-3xl font-bold text-white">{enhancedMetrics.upcomingMilestones}</p>
+            </div>
+            <p className="text-sm text-zinc-400">Upcoming Milestones</p>
+          </div>
+        </Card>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-8 py-6 space-y-6">
-        {/* Filters */}
+      {/* Filters */}
+      <div className="my-6">
         <ProjectFiltersBar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -221,33 +189,26 @@ export default function Dashboard() {
           onRiskChange={setRiskFilter}
           sortBy={sortBy}
           onSortChange={setSortBy}
-          onClearFilters={() => {
-            setSearchTerm('');
-            setStatusFilter('all');
-            setRiskFilter('all');
-          }}
-          hasActiveFilters={hasFilters}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
         />
+      </div>
 
-        {/* Project Table */}
-        <Card className="bg-card border-border card-elevated">
-          <CardContent className="p-0">
-            <ProjectHealthTable 
-              projects={projects}
-              onProjectClick={(projectId) => setActiveProjectId(projectId)}
-            />
-          </CardContent>
-        </Card>
+      {/* Project Health Table */}
+      <ProjectHealthTable 
+        projects={paginatedProjects}
+        onProjectClick={(projectId) => setActiveProjectId(projectId)}
+      />
 
-        {totalFiltered === 0 && (
-          <div className="text-center py-16">
-            <Building size={48} className="mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No projects match your filters</p>
-          </div>
-        )}
+      {totalFiltered === 0 && (
+        <div className="text-center py-12">
+          <p className="text-sm text-muted-foreground">No projects match your filters</p>
+        </div>
+      )}
 
-        {/* Pagination */}
-        {totalFiltered > 0 && (
+      {/* Pagination */}
+      {totalFiltered > 0 && (
+        <div className="mt-6">
           <Pagination
             total={totalFiltered}
             page={page}
@@ -255,8 +216,9 @@ export default function Dashboard() {
             onPageChange={goToPage}
             onPageSizeChange={changePageSize}
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
+    </ErrorBoundary>
   );
 }

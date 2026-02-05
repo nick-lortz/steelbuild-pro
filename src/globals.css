@@ -46,47 +46,6 @@ a:focus-visible {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
-/* Enterprise Typography Scale */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-/* Refined Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
-}
-
-/* Executive Card Elevation */
-.card-elevated {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-}
-
-.card-elevated-lg {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
-
-/* Subtle Animations */
-.transition-smooth {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 /* ========================================
    Disable Text Selection on UI Elements
    ======================================== */
@@ -167,98 +126,65 @@ a {
   }
 }
 
-/* Executive Dark Mode - Enterprise Grade Design System */
+/* Theme variables */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    /* Surfaces */
-    --background: 222 15% 6%;
-    --foreground: 210 12% 96%;
-    --card: 222 15% 9%;
-    --card-foreground: 210 12% 96%;
-    
-    /* Brand */
-    --primary: 38 92% 50%;
-    --primary-foreground: 222 15% 6%;
-    
-    /* Interactive */
-    --secondary: 217 32% 17%;
-    --secondary-foreground: 210 12% 96%;
-    --muted: 217 32% 12%;
-    --muted-foreground: 215 16% 60%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 222 15% 6%;
-    
-    /* Feedback */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 12% 96%;
-    --success: 142 72% 45%;
-    --warning: 38 92% 50%;
-    --info: 217 91% 60%;
-    
-    /* UI Elements */
-    --border: 217 19% 15%;
-    --input: 217 32% 12%;
-    --ring: 38 92% 50%;
-    --radius: 0.5rem;
-    
-    /* Elevations */
-    --surface-1: 222 15% 9%;
-    --surface-2: 222 15% 11%;
-    --surface-3: 222 15% 13%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 95%;
+    --primary: 35 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 35 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
+    --ring: 35 100% 50%;
   }
 }
 
 .dark {
-  --background: 222 15% 6%;
-  --foreground: 210 12% 96%;
-  --card: 222 15% 9%;
-  --card-foreground: 210 12% 96%;
-  --primary: 38 92% 50%;
-  --primary-foreground: 222 15% 6%;
-  --secondary: 217 32% 17%;
-  --secondary-foreground: 210 12% 96%;
-  --muted: 217 32% 12%;
-  --muted-foreground: 215 16% 60%;
-  --accent: 38 92% 50%;
-  --accent-foreground: 222 15% 6%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 210 12% 96%;
-  --success: 142 72% 45%;
-  --warning: 38 92% 50%;
-  --info: 217 91% 60%;
-  --border: 217 19% 15%;
-  --input: 217 32% 12%;
-  --ring: 38 92% 50%;
-  --radius: 0.5rem;
-  --surface-1: 222 15% 9%;
-  --surface-2: 222 15% 11%;
-  --surface-3: 222 15% 13%;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 95%;
+  --card: 0 0% 7%;
+  --card-foreground: 0 0% 95%;
+  --primary: 35 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 35 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 0 0% 95%;
+  --border: 0 0% 18%;
+  --input: 0 0% 15%;
+  --ring: 35 100% 50%;
 }
 
 .light {
-  /* Executive Light Mode - Clean & Professional */
-  --background: 210 20% 98%;
-  --foreground: 222 15% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 15% 12%;
-  --primary: 38 92% 50%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 98%;
+  --card-foreground: 0 0% 10%;
+  --primary: 35 100% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 217 32% 92%;
-  --secondary-foreground: 222 15% 12%;
-  --muted: 217 32% 95%;
-  --muted-foreground: 215 16% 45%;
-  --accent: 38 92% 50%;
+  --secondary: 0 0% 95%;
+  --secondary-foreground: 0 0% 10%;
+  --muted: 0 0% 90%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 35 100% 50%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --success: 142 72% 45%;
-  --warning: 38 92% 50%;
-  --info: 217 91% 60%;
-  --border: 217 19% 88%;
-  --input: 0 0% 100%;
-  --ring: 38 92% 50%;
-  --radius: 0.5rem;
-  --surface-1: 0 0% 100%;
-  --surface-2: 210 20% 99%;
-  --surface-3: 210 20% 97%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 85%;
+  --input: 0 0% 90%;
+  --ring: 35 100% 50%;
 }

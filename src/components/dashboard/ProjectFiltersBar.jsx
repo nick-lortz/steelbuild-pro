@@ -4,11 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Search, X, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Search, Filter, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function ProjectFiltersBar({
   searchTerm,
@@ -85,9 +80,7 @@ export default function ProjectFiltersBar({
       </div>
     </div>
   );
-}
-
-function OldProjectFiltersBar({ 
+} 
   searchTerm, 
   onSearchChange, 
   statusFilter, 

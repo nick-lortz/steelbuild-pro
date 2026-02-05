@@ -145,6 +145,7 @@ const navGroups = [
     icon: BarChart3,
     items: [
       { name: 'Analytics', page: 'Analytics', icon: BarChart3 },
+      { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: TrendingUp },
       { name: 'Reports', page: 'Reports', icon: FileText },
       { name: 'Performance', page: 'Performance', icon: Gauge },
       { name: 'Job Status Report', page: 'JobStatusReport', icon: FileText },

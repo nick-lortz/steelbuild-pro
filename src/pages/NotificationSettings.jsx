@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,15 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, Mail, Clock } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Bell, Mail, Clock, AlertTriangle, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '@/components/ui/PageHeader';
 
 export default function NotificationSettings() {
   const [isSaving, setIsSaving] = useState(false);
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushPermission, setPushPermission] = useState('default');
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -20,7 +23,6 @@ export default function NotificationSettings() {
     queryFn: () => base44.auth.me()
   });
 
-  // Check push notification support
   useEffect(() => {
     if ('Notification' in window && 'serviceWorker' in navigator) {
       setPushSupported(true);
@@ -54,7 +56,9 @@ export default function NotificationSettings() {
     email_digest_frequency: 'immediate',
     quiet_hours_enabled: false,
     quiet_hours_start: '22:00',
-    quiet_hours_end: '08:00'
+    quiet_hours_end: '08:00',
+    push_enabled: false,
+    push_notification_types: ['equipment_maintenance', 'equipment_safety', 'project_delay', 'certification_overdue']
   }));
 
   React.useEffect(() => {
@@ -88,6 +92,77 @@ export default function NotificationSettings() {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const enablePushNotifications = async () => {
+    if (!pushSupported) {
+      toast.error('Push notifications not supported in this browser');
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+
+      if (permission === 'granted') {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(
+            'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
+          )
+        });
+
+        const newFormData = {
+          ...formData,
+          push_enabled: true,
+          push_subscription: JSON.parse(JSON.stringify(subscription))
+        };
+
+        setFormData(newFormData);
+        
+        if (preferences?.id) {
+          await base44.entities.NotificationPreference.update(preferences.id, newFormData);
+        } else {
+          await base44.entities.NotificationPreference.create({
+            ...newFormData,
+            user_id: currentUser.email
+          });
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['notificationPrefs'] });
+        toast.success('Push notifications enabled');
+      } else {
+        toast.error('Push notification permission denied');
+      }
+    } catch (error) {
+      console.error('Push notification error:', error);
+      toast.error('Failed to enable push notifications');
+    }
+  };
+
+  const togglePushNotificationType = (type) => {
+    const current = formData.push_notification_types || [];
+    const updated = current.includes(type)
+      ? current.filter(t => t !== type)
+      : [...current, type];
+    
+    const newFormData = { ...formData, push_notification_types: updated };
+    setFormData(newFormData);
+    saveMutation.mutate();
   };
 
   if (isLoading) {
@@ -203,13 +278,115 @@ export default function NotificationSettings() {
                   <SelectTrigger className="mt-2 bg-zinc-700 border-zinc-600">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectContent>
                     <SelectItem value="immediate">Immediate</SelectItem>
                     <SelectItem value="daily">Daily Digest</SelectItem>
                     <SelectItem value="weekly">Weekly Digest</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Push Notifications */}
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell size={20} />
+              Push Notifications (Critical Alerts)
+            </CardTitle>
+            <CardDescription>
+              Receive instant mobile/desktop notifications for critical events
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!pushSupported ? (
+              <div className="p-4 bg-yellow-900/20 border border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-600">Push notifications are not supported in this browser</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between p-4 bg-zinc-800 rounded-lg">
+                  <div>
+                    <p className="font-medium text-white">Enable Push Notifications</p>
+                    <p className="text-xs text-zinc-400 mt-1">
+                      Status: <Badge variant={pushPermission === 'granted' ? 'default' : 'outline'}>
+                        {pushPermission === 'granted' ? 'Enabled' : pushPermission === 'denied' ? 'Blocked' : 'Not enabled'}
+                      </Badge>
+                    </p>
+                  </div>
+                  <Button
+                    onClick={enablePushNotifications}
+                    disabled={formData.push_enabled || pushPermission === 'denied'}
+                    variant={formData.push_enabled ? 'outline' : 'default'}
+                  >
+                    {formData.push_enabled ? 'Enabled' : 'Enable'}
+                  </Button>
+                </div>
+
+                {formData.push_enabled && (
+                  <div className="space-y-3 pl-4 border-l-2 border-amber-500">
+                    <p className="text-sm font-bold text-zinc-300">Alert Types</p>
+                    
+                    <div className="flex items-center justify-between p-3 bg-zinc-800 rounded">
+                      <div className="flex items-center gap-3">
+                        <Wrench size={16} className="text-red-500" />
+                        <div>
+                          <p className="text-sm font-medium text-white">Equipment Maintenance</p>
+                          <p className="text-xs text-zinc-500">Critical maintenance alerts</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.push_notification_types?.includes('equipment_maintenance')}
+                        onCheckedChange={() => togglePushNotificationType('equipment_maintenance')}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-zinc-800 rounded">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle size={16} className="text-orange-500" />
+                        <div>
+                          <p className="text-sm font-medium text-white">Equipment Safety</p>
+                          <p className="text-xs text-zinc-500">Safety incidents & conflicts</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.push_notification_types?.includes('equipment_safety')}
+                        onCheckedChange={() => togglePushNotificationType('equipment_safety')}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-zinc-800 rounded">
+                      <div className="flex items-center gap-3">
+                        <Clock size={16} className="text-yellow-500" />
+                        <div>
+                          <p className="text-sm font-medium text-white">Project Delays</p>
+                          <p className="text-xs text-zinc-500">Significant delays (4+ hours)</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.push_notification_types?.includes('project_delay')}
+                        onCheckedChange={() => togglePushNotificationType('project_delay')}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-zinc-800 rounded">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle size={16} className="text-red-500" />
+                        <div>
+                          <p className="text-sm font-medium text-white">Certification Issues</p>
+                          <p className="text-xs text-zinc-500">Overdue or missing certifications</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.push_notification_types?.includes('certification_overdue')}
+                        onCheckedChange={() => togglePushNotificationType('certification_overdue')}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

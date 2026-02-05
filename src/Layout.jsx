@@ -76,32 +76,22 @@ const navGroups = [
     name: 'Project Execution',
     icon: CheckCircle2,
     items: [
-      { name: 'Schedule', page: 'Schedule', icon: Calendar },
-      { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
-      { name: 'Weekly Schedule', page: 'WeeklySchedule', icon: Calendar },
       { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck },
-      { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 },
+      { name: 'Detailing', page: 'Detailing', icon: FileText },
+      { name: 'Fabrication', page: 'Fabrication', icon: Wrench },
+      { name: 'Deliveries', page: 'Deliveries', icon: Truck },
       { name: 'Field Tools', page: 'FieldTools', icon: Camera }
     ],
     roles: ['admin', 'user']
   },
   {
-    name: 'Design & Fabrication',
-    icon: Wrench,
+    name: 'Schedule & Planning',
+    icon: Calendar,
     items: [
-      { name: 'Detailing', page: 'Detailing', icon: FileText },
-      { name: 'Fabrication', page: 'Fabrication', icon: TrendingUp },
-      { name: 'Documents', page: 'Documents', icon: File },
-      { name: 'Photos', page: 'ProjectPhotos', icon: Camera }
-    ],
-    roles: ['admin', 'user']
-  },
-  {
-    name: 'Logistics',
-    icon: Truck,
-    items: [
-      { name: 'Deliveries', page: 'Deliveries', icon: Truck },
-      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar }
+      { name: 'Schedule', page: 'Schedule', icon: Calendar },
+      { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
+      { name: 'Weekly Schedule', page: 'WeeklySchedule', icon: Calendar },
+      { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 }
     ],
     roles: ['admin', 'user']
   },
@@ -109,6 +99,7 @@ const navGroups = [
     name: 'Cost Management',
     icon: DollarSign,
     items: [
+      { name: 'Contracts', page: 'Contracts', icon: FileText },
       { name: 'Financials', page: 'Financials', icon: DollarSign },
       { name: 'Budget Control', page: 'BudgetControl', icon: DollarSign },
       { name: 'Cost Codes', page: 'CostCodes', icon: Hash },
@@ -137,6 +128,16 @@ const navGroups = [
       { name: 'Meetings', page: 'Meetings', icon: Users },
       { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar },
       { name: 'My Action Items', page: 'MyActionItems', icon: CheckCircle2 }
+    ],
+    roles: ['admin', 'user']
+  },
+  {
+    name: 'Documents & Media',
+    icon: File,
+    items: [
+      { name: 'Documents', page: 'Documents', icon: File },
+      { name: 'Photos', page: 'ProjectPhotos', icon: Camera },
+      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar }
     ],
     roles: ['admin', 'user']
   },

@@ -83,6 +83,7 @@ import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
+import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
 import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
@@ -101,7 +102,7 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
+import Contracts from './pages/Contracts';
 import __Layout from './Layout.jsx';
 
 
@@ -142,6 +143,7 @@ export const PAGES = {
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
+    "ProjectAnalyticsDashboard": ProjectAnalyticsDashboard,
     "ProjectBudget": ProjectBudget,
     "ProjectDashboard": ProjectDashboard,
     "ProjectPhotos": ProjectPhotos,
@@ -160,7 +162,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ProjectAnalyticsDashboard": ProjectAnalyticsDashboard,
+    "Contracts": Contracts,
 }
 
 export const pagesConfig = {

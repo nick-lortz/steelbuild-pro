@@ -1,22 +1,17 @@
-// Build cache clear
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle,
   Clock,
   CheckCircle2,
   FileText,
-  User,
   MessageSquare,
-  ChevronRight,
   Plus,
   History,
   Inbox,
@@ -24,90 +19,27 @@ import {
   Send,
   RefreshCw,
   Rocket,
-  Ban,
-  ExternalLink,
-  TrendingUp,
   Activity,
   Trash2,
-  ArrowRight } from
-'lucide-react';
-import { format, differenceInDays, differenceInCalendarDays, isPast, parseISO, isValid } from 'date-fns';
+  TrendingUp,
+  User
+} from 'lucide-react';
+import { format, differenceInCalendarDays, isPast, parseISO, isValid } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
-import BatchActionsPanel from '@/components/drawings/BatchActionsPanel';
 import RevisionHistory from '@/components/drawings/RevisionHistory';
 import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
 
-// CONTROL ZONES - Production Control System
 const CONTROL_ZONES = {
-  'intake': { 
-    label: 'Intake / New Set', 
-    icon: Inbox, 
-    color: 'bg-blue-500',
-    borderColor: 'border-blue-500',
-    description: 'New sets entering detailing workflow'
-  },
-  'active_detailing': { 
-    label: 'Active Detailing', 
-    icon: Edit3, 
-    color: 'bg-purple-500',
-    borderColor: 'border-purple-500',
-    description: 'Currently being detailed'
-  },
-  'external_review': { 
-    label: 'External Review', 
-    icon: Send, 
-    color: 'bg-amber-500',
-    borderColor: 'border-amber-500',
-    description: 'Out for approval or review'
-  },
-  'returned': { 
-    label: 'Returned – Action Required', 
-    icon: RefreshCw, 
-    color: 'bg-red-500',
-    borderColor: 'border-red-500',
-    description: 'Returned with comments - action needed'
-  },
-  'released': { 
-    label: 'Released / Fabrication Ready', 
-    icon: Rocket, 
-    color: 'bg-green-500',
-    borderColor: 'border-green-500',
-    description: 'Approved for fabrication'
-  }
+  'intake': { label: 'Intake', icon: Inbox, color: 'bg-blue-500', border: 'border-blue-500' },
+  'active_detailing': { label: 'Active', icon: Edit3, color: 'bg-purple-500', border: 'border-purple-500' },
+  'external_review': { label: 'Review', icon: Send, color: 'bg-amber-500', border: 'border-amber-500' },
+  'returned': { label: 'Returned', icon: RefreshCw, color: 'bg-red-500', border: 'border-red-500' },
+  'released': { label: 'Released', icon: Rocket, color: 'bg-green-500', border: 'border-green-500' }
 };
 
-// ACTION STATUSES - What needs to happen next
-const ACTION_STATUSES = {
-  'action_today': { 
-    label: 'Action Required Today', 
-    icon: AlertTriangle, 
-    color: 'bg-red-500',
-    severity: 'critical'
-  },
-  'waiting_external': { 
-    label: 'Waiting on External Party', 
-    icon: ExternalLink, 
-    color: 'bg-amber-500',
-    severity: 'medium'
-  },
-  'blocked': { 
-    label: 'Blocked (RFI / Missing Info)', 
-    icon: Ban, 
-    color: 'bg-red-600',
-    severity: 'critical'
-  },
-  'clear': { 
-    label: 'Clear / No Action Needed', 
-    icon: CheckCircle2, 
-    color: 'bg-green-500',
-    severity: 'low'
-  }
-};
-
-// Map legacy statuses to control zones
 const STATUS_TO_ZONE = {
   'IFA': 'external_review',
   'BFA': 'returned',
@@ -120,18 +52,10 @@ const STATUS_TO_ZONE = {
 export default function Detailing() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const queryClient = useQueryClient();
-  const [selectedReviewer, setSelectedReviewer] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedDiscipline, setSelectedDiscipline] = useState('all');
+  const [selectedZone, setSelectedZone] = useState('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedSets, setSelectedSets] = useState([]);
   const [revisionHistorySetId, setRevisionHistorySetId] = useState(null);
   const [detailViewSetId, setDetailViewSetId] = useState(null);
-
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
@@ -139,51 +63,42 @@ export default function Detailing() {
     staleTime: 5 * 60 * 1000
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const userProjects = useMemo(() => {
     if (!currentUser) return [];
-    return currentUser.role === 'admin' ?
-    allProjects :
-    allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
+    return currentUser.role === 'admin' ? allProjects : allProjects.filter(p => p.assigned_users?.includes(currentUser.email));
   }, [currentUser, allProjects]);
 
-  // Real-time subscription for drawing set changes
   useEffect(() => {
     if (!activeProjectId) return;
-
     const unsubscribe = base44.entities.DrawingSet.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['drawing-sets', activeProjectId] });
-        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
-        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
       }
     });
-
     return unsubscribe;
   }, [activeProjectId, queryClient]);
 
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => activeProjectId ?
-    base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') :
-    [],
+    queryFn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') : [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: async () => {
-      const allUsers = await base44.entities.User.list();
-      return allUsers;
-    },
+    queryFn: () => base44.entities.User.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId ?
-      base44.entities.RFI.filter({ project_id: activeProjectId }) :
-      [],
+    queryFn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }) : [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
@@ -191,15 +106,12 @@ export default function Detailing() {
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, {
       status,
-      [`${status.toLowerCase()}_date`]: new Date().toISOString().split('T')[0]
+      [`${status.toLowerCase().replace(/\s+/g, '_').replace('&', 'and')}_date`]: new Date().toISOString().split('T')[0]
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      queryClient.invalidateQueries({ queryKey: ['fabrication'] });
-      queryClient.invalidateQueries({ queryKey: ['work-packages'] });
       toast.success('Status updated');
-    },
-    onError: () => toast.error('Update failed')
+    }
   });
 
   const assignReviewerMutation = useMutation({
@@ -207,15 +119,12 @@ export default function Detailing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       toast.success('Reviewer assigned');
-    },
-    onError: () => toast.error('Assignment failed')
+    }
   });
 
   const createDrawingSetMutation = useMutation({
     mutationFn: async (data) => {
       const createdSet = await base44.entities.DrawingSet.create(data);
-      
-      // Create initial revision
       await base44.entities.DrawingRevision.create({
         drawing_set_id: createdSet.id,
         revision_number: data.current_revision || 'Rev 0',
@@ -223,30 +132,13 @@ export default function Detailing() {
         description: 'Initial submission',
         status: data.status || 'IFA',
       });
-      
       return createdSet;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       setShowCreateDialog(false);
       toast.success('Drawing set created');
-    },
-    onError: () => toast.error('Creation failed')
-  });
-
-  const batchUpdateMutation = useMutation({
-    mutationFn: async (updateData) => {
-      const promises = selectedSets.map(id => 
-        base44.entities.DrawingSet.update(id, updateData)
-      );
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      setSelectedSets([]);
-      toast.success('Batch update complete');
-    },
-    onError: () => toast.error('Batch update failed')
+    }
   });
 
   const deleteDrawingSetMutation = useMutation({
@@ -254,51 +146,14 @@ export default function Detailing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       toast.success('Drawing set deleted');
-    },
-    onError: () => toast.error('Delete failed')
+    }
   });
 
-  const advancePhaseMutation = useMutation({
-    mutationFn: (projectId) => {
-      const phaseSequence = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
-      return base44.entities.Project.filter({ id: projectId }).then(([project]) => {
-        const currentPhaseIndex = phaseSequence.indexOf(project.phase);
-        const nextPhase = phaseSequence[Math.min(currentPhaseIndex + 1, phaseSequence.length - 1)];
-        return base44.entities.Project.update(projectId, { phase: nextPhase });
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success('Phase advanced');
-    },
-    onError: () => toast.error('Phase advance failed')
-  });
-
-  const handleSelectSet = (setId, checked) => {
-    if (checked) {
-      setSelectedSets(prev => [...prev, setId]);
-    } else {
-      setSelectedSets(prev => prev.filter(id => id !== setId));
-    }
-  };
-
-  const handleSelectAll = (checked) => {
-    if (checked) {
-      setSelectedSets(filteredSets.map(ds => ds.id));
-    } else {
-      setSelectedSets([]);
-    }
-  };
-
-  // Enhanced Drawing Sets with Control Zone and Action Status
   const enhancedDrawingSets = useMemo(() => {
     const today = new Date();
-    
     return drawingSets.map(ds => {
-      // Determine control zone
       const zone = STATUS_TO_ZONE[ds.status] || 'intake';
       
-      // Calculate days since last movement
       let lastMovementDate = null;
       if (ds.bfs_date) lastMovementDate = parseISO(ds.bfs_date);
       else if (ds.bfa_date) lastMovementDate = parseISO(ds.bfa_date);
@@ -306,719 +161,358 @@ export default function Detailing() {
       else if (ds.created_date) lastMovementDate = parseISO(ds.created_date);
       
       const daysSinceMovement = lastMovementDate && isValid(lastMovementDate) 
-        ? differenceInCalendarDays(today, lastMovementDate) 
-        : 0;
+        ? differenceInCalendarDays(today, lastMovementDate) : 0;
       
-      // Determine action status
-      let actionStatus = 'clear';
       const dueDate = ds.due_date ? parseISO(ds.due_date) : null;
       const isOverdue = dueDate && isValid(dueDate) && isPast(dueDate);
       const isDueSoon = dueDate && isValid(dueDate) && differenceInCalendarDays(dueDate, today) <= 3 && !isPast(dueDate);
       
-      // Check for linked RFIs
       const linkedRFIs = rfis.filter(r => 
-        r.linked_drawing_set_id === ds.id && 
-        !['answered', 'closed'].includes(r.status)
+        (r.linked_drawing_set_ids || []).includes(ds.id) && !['answered', 'closed'].includes(r.status)
       );
       
-      if (linkedRFIs.length > 0) {
-        actionStatus = 'blocked';
-      } else if (zone === 'returned' || (isOverdue && zone !== 'released')) {
-        actionStatus = 'action_today';
-      } else if (zone === 'external_review') {
-        actionStatus = 'waiting_external';
-      } else if (zone === 'released') {
-        actionStatus = 'clear';
-      } else if (isDueSoon) {
-        actionStatus = 'action_today';
-      }
-      
-      // Determine next owner
-      let nextOwner = 'Unassigned';
-      if (actionStatus === 'waiting_external') {
-        nextOwner = 'External Reviewer';
-      } else if (ds.reviewer) {
-        nextOwner = users.find(u => u.email === ds.reviewer)?.full_name || ds.reviewer;
-      }
-      
-      // Calculate fabrication impact (days until fab needs it)
-      const fabImpactDays = dueDate && isValid(dueDate) ? differenceInCalendarDays(dueDate, today) : 999;
+      let priorityScore = 0;
+      if (isOverdue && zone !== 'released') priorityScore += 1000;
+      if (zone === 'returned') priorityScore += 500;
+      if (linkedRFIs.length > 0) priorityScore += linkedRFIs.length * 300;
+      if (daysSinceMovement > 14) priorityScore += 200;
+      else if (daysSinceMovement > 7) priorityScore += 100;
       
       return {
         ...ds,
         zone,
-        actionStatus,
         daysSinceMovement,
-        nextOwner,
         linkedRFIs,
         isOverdue,
         isDueSoon,
-        fabImpactDays
+        priorityScore
       };
-    });
-  }, [drawingSets, rfis, users]);
+    }).sort((a, b) => b.priorityScore - a.priorityScore);
+  }, [drawingSets, rfis]);
 
-  // Dashboard KPIs
-  const dashboardMetrics = useMemo(() => {
-    if (!enhancedDrawingSets.length) {
-      return {
-        releasedPercent: 0,
-        openRFIsImpactingDetailing: 0,
-        avgReviewTurnaround: 0,
-        bottleneckDiscipline: 'None',
-        bottleneckReviewer: 'None',
-        zoneBreakdown: {},
-        actionBreakdown: {}
-      };
-    }
-    
+  const metrics = useMemo(() => {
     const total = enhancedDrawingSets.length;
     const released = enhancedDrawingSets.filter(ds => ds.zone === 'released').length;
-    const releasedPercent = total > 0 ? (released / total * 100) : 0;
+    const actionToday = enhancedDrawingSets.filter(ds => ds.zone === 'returned' || ds.isOverdue).length;
+    const openRFIs = rfis.filter(r => !['answered', 'closed'].includes(r.status)).length;
     
-    const openRFIsImpactingDetailing = rfis.filter(r => 
-      !['answered', 'closed'].includes(r.status) &&
-      enhancedDrawingSets.some(ds => ds.id === r.linked_drawing_set_id)
-    ).length;
-    
-    // Calculate average review turnaround (IFA to BFA)
     const reviewTimes = enhancedDrawingSets
       .filter(ds => ds.ifa_date && ds.bfa_date)
       .map(ds => {
-        try {
-          const ifa = parseISO(ds.ifa_date);
-          const bfa = parseISO(ds.bfa_date);
-          if (isValid(ifa) && isValid(bfa)) {
-            return differenceInCalendarDays(bfa, ifa);
-          }
-        } catch {
-          return null;
-        }
-        return null;
+        const ifa = parseISO(ds.ifa_date);
+        const bfa = parseISO(ds.bfa_date);
+        return isValid(ifa) && isValid(bfa) ? differenceInCalendarDays(bfa, ifa) : null;
       })
       .filter(t => t !== null && t >= 0);
     
-    const avgReviewTurnaround = reviewTimes.length > 0 
-      ? Math.round(reviewTimes.reduce((a, b) => a + b, 0) / reviewTimes.length) 
-      : 0;
+    const avgTurnaround = reviewTimes.length > 0 ? Math.round(reviewTimes.reduce((a, b) => a + b, 0) / reviewTimes.length) : 0;
     
-    // Find bottleneck discipline (most sets not released)
-    const disciplineCounts = {};
-    enhancedDrawingSets
-      .filter(ds => ds.zone !== 'released')
-      .forEach(ds => {
-        const disc = ds.discipline || 'unknown';
-        disciplineCounts[disc] = (disciplineCounts[disc] || 0) + 1;
-      });
-    const bottleneckDiscipline = Object.keys(disciplineCounts).length > 0
-      ? Object.entries(disciplineCounts).sort((a, b) => b[1] - a[1])[0][0]
-      : 'None';
-    
-    // Find bottleneck reviewer (most sets assigned)
-    const reviewerCounts = {};
-    enhancedDrawingSets
-      .filter(ds => ds.reviewer && ds.zone !== 'released')
-      .forEach(ds => {
-        reviewerCounts[ds.reviewer] = (reviewerCounts[ds.reviewer] || 0) + 1;
-      });
-    const bottleneckReviewer = Object.keys(reviewerCounts).length > 0
-      ? Object.entries(reviewerCounts).sort((a, b) => b[1] - a[1])[0][0]
-      : 'None';
-    
-    // Zone breakdown
-    const zoneBreakdown = {};
+    const byZone = {};
     Object.keys(CONTROL_ZONES).forEach(zone => {
-      zoneBreakdown[zone] = enhancedDrawingSets.filter(ds => ds.zone === zone).length;
+      byZone[zone] = enhancedDrawingSets.filter(ds => ds.zone === zone).length;
     });
     
-    // Action breakdown
-    const actionBreakdown = {};
-    Object.keys(ACTION_STATUSES).forEach(action => {
-      actionBreakdown[action] = enhancedDrawingSets.filter(ds => ds.actionStatus === action).length;
-    });
-    
-    return {
-      releasedPercent,
-      openRFIsImpactingDetailing,
-      avgReviewTurnaround,
-      bottleneckDiscipline,
-      bottleneckReviewer,
-      zoneBreakdown,
-      actionBreakdown
-    };
+    return { total, released, releasedPercent: total > 0 ? (released / total * 100) : 0, actionToday, openRFIs, avgTurnaround, byZone };
   }, [enhancedDrawingSets, rfis]);
 
-  // PRIORITY QUEUE ENGINE - Automated ranking based on multiple factors
-  const priorityQueue = useMemo(() => {
-    return enhancedDrawingSets
-      .filter(ds => ds.zone !== 'released')
-      .map(ds => {
-        let priorityScore = 0;
-        
-        // Factor 1: Fabrication impact (closer due date = higher priority)
-        if (ds.fabImpactDays <= 0) priorityScore += 1000; // Overdue
-        else if (ds.fabImpactDays <= 3) priorityScore += 500; // Due within 3 days
-        else if (ds.fabImpactDays <= 7) priorityScore += 200; // Due within week
-        else priorityScore += Math.max(0, 100 - ds.fabImpactDays);
-        
-        // Factor 2: Returned from review status (needs immediate action)
-        if (ds.zone === 'returned') priorityScore += 400;
-        
-        // Factor 3: Open RFIs (blocking)
-        priorityScore += ds.linkedRFIs.length * 300;
-        
-        // Factor 4: Days stagnant (longer stagnant = higher priority)
-        if (ds.daysSinceMovement > 14) priorityScore += 200;
-        else if (ds.daysSinceMovement > 7) priorityScore += 100;
-        else if (ds.daysSinceMovement > 3) priorityScore += 50;
-        
-        // Factor 5: Action status severity
-        if (ds.actionStatus === 'blocked') priorityScore += 350;
-        else if (ds.actionStatus === 'action_today') priorityScore += 250;
-        
-        return { ...ds, priorityScore };
-      })
-      .sort((a, b) => b.priorityScore - a.priorityScore)
-      .slice(0, 10); // Top 10 priority items
-  }, [enhancedDrawingSets]);
-
-  // Filtered sets by zone/filters
   const filteredSets = useMemo(() => {
-    let filtered = enhancedDrawingSets;
+    if (selectedZone === 'all') return enhancedDrawingSets;
+    return enhancedDrawingSets.filter(ds => ds.zone === selectedZone);
+  }, [enhancedDrawingSets, selectedZone]);
 
-    if (selectedReviewer !== 'all') {
-      filtered = filtered.filter((ds) => ds.reviewer === selectedReviewer);
-    }
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter((ds) => ds.status === selectedStatus);
-    }
-    if (selectedDiscipline !== 'all') {
-      filtered = filtered.filter((ds) => ds.discipline === selectedDiscipline);
-    }
+  const selectedProject = allProjects.find(p => p.id === activeProjectId);
 
-    return filtered.sort((a, b) => b.priorityScore || 0 - (a.priorityScore || 0));
-  }, [enhancedDrawingSets, selectedReviewer, selectedStatus, selectedDiscipline]);
-
-  // Group by control zone
-  const setsByZone = useMemo(() => {
-    const grouped = {};
-    Object.keys(CONTROL_ZONES).forEach(zone => {
-      grouped[zone] = filteredSets.filter(ds => ds.zone === zone);
-    });
-    return grouped;
-  }, [filteredSets]);
-
-  const selectedProject = allProjects.find((p) => p.id === activeProjectId);
+  if (!activeProjectId) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <FileText size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Choose project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {userProjects.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black">
-      {/* Header Bar - Always visible */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Detailing</h1>
-              {selectedProject &&
-              <p className="text-xs text-zinc-600 font-mono mt-1">{selectedProject.project_number} • {selectedProject.name}</p>
-              }
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Detailing</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {metrics.total} SETS • {metrics.released} FFF</p>
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-xs text-zinc-400 uppercase tracking-widest font-bold">PROJECT:</label>
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-700 text-white">
-                  <SelectValue placeholder="Select a project..." />
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {userProjects.length === 0 ?
-                  <div className="p-2 text-xs text-zinc-500">No projects assigned</div> :
-
-                  userProjects.map((project) =>
-                  <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
-                        {project.project_number} - {project.name}
-                      </SelectItem>
-                  )
-                  }
+                  {userProjects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {activeProjectId && (
-                <div className="flex items-center gap-2">
-                  <Button 
-                    onClick={() => advancePhaseMutation.mutate(activeProjectId)}
-                    disabled={advancePhaseMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider h-9 px-4"
-                  >
-                    <ArrowRight size={16} className="mr-2" />
-                    Advance Phase
-                  </Button>
-                  <Button 
-                    onClick={() => setShowCreateDialog(true)}
-                    className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider h-9 px-4"
-                  >
-                    <Plus size={16} className="mr-2" />
-                    NEW SET
-                  </Button>
-                </div>
-              )}
+              <Button onClick={() => setShowCreateDialog(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
+                <Plus size={14} className="mr-1" />
+                NEW
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : !activeProjectId ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <FileText size={48} className="mx-auto mb-4 text-zinc-700" />
-            <h3 className="text-lg font-bold text-white uppercase tracking-wide mb-2">No Project Selected</h3>
-            <p className="text-slate-50 text-xs uppercase tracking-widest">SELECT A PROJECT TO VIEW DETAILING</p>
+      {/* Metrics */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-6 gap-3">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Released</div>
+                <div className="text-2xl font-black text-green-400">{metrics.releasedPercent.toFixed(0)}%</div>
+                <div className="text-[9px] text-zinc-600">{metrics.released}/{metrics.total}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5">Action Today</div>
+                <div className="text-2xl font-black text-red-400">{metrics.actionToday}</div>
+                <div className="text-[9px] text-zinc-600">Need response</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Open RFIs</div>
+                <div className="text-2xl font-black text-amber-500">{metrics.openRFIs}</div>
+                <div className="text-[9px] text-zinc-600">Impacting</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Review</div>
+                <div className="text-2xl font-black text-white">{metrics.avgTurnaround}d</div>
+                <div className="text-[9px] text-zinc-600">Turnaround</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Review</div>
+                <div className="text-2xl font-black text-amber-500">{metrics.byZone.external_review}</div>
+                <div className="text-[9px] text-zinc-600">Out for approval</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Returned</div>
+                <div className="text-2xl font-black text-red-500">{metrics.byZone.returned}</div>
+                <div className="text-[9px] text-zinc-600">Need revision</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      ) : (
-        <>
-          {/* DETAILING DASHBOARD */}
-          <div className="border-b border-zinc-800 bg-black">
-            <div className="max-w-[1600px] mx-auto px-6 py-4">
-              <div className="grid grid-cols-6 gap-4">
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="p-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <Rocket size={10} />
-                      % Released
-                    </div>
-                    <div className="text-2xl font-bold font-mono text-green-500">
-                      {dashboardMetrics.releasedPercent.toFixed(0)}%
-                    </div>
-                    <div className="text-[10px] text-zinc-600 mt-1">
-                      {dashboardMetrics.zoneBreakdown.released || 0} / {enhancedDrawingSets.length}
-                    </div>
-                  </CardContent>
-                </Card>
+      </div>
 
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="p-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <MessageSquare size={10} />
-                      Open RFIs
-                    </div>
-                    <div className="text-2xl font-bold font-mono text-red-500">
-                      {dashboardMetrics.openRFIsImpactingDetailing}
-                    </div>
-                    <div className="text-[10px] text-zinc-600 mt-1">Impacting detailing</div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="p-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <Clock size={10} />
-                      Avg Review
-                    </div>
-                    <div className="text-2xl font-bold font-mono text-amber-500">
-                      {dashboardMetrics.avgReviewTurnaround}d
-                    </div>
-                    <div className="text-[10px] text-zinc-600 mt-1">Turnaround time</div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="p-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <AlertTriangle size={10} />
-                      Action Today
-                    </div>
-                    <div className="text-2xl font-bold font-mono text-red-500">
-                      {dashboardMetrics.actionBreakdown.action_today || 0}
-                    </div>
-                    <div className="text-[10px] text-zinc-600 mt-1">Require action</div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="p-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <TrendingUp size={10} />
-                      Bottleneck
-                    </div>
-                    <div className="text-sm font-bold text-white truncate capitalize">
-                      {dashboardMetrics.bottleneckDiscipline.replace('_', ' ')}
-                    </div>
-                    <div className="text-[10px] text-zinc-600 mt-1">By discipline</div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardContent className="p-4">
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                      <User size={10} />
-                      Reviewer
-                    </div>
-                    <div className="text-sm font-bold text-white truncate">
-                      {users.find(u => u.email === dashboardMetrics.bottleneckReviewer)?.full_name?.split(' ')[0] || 'None'}
-                    </div>
-                    <div className="text-[10px] text-zinc-600 mt-1">Most assigned</div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
-
-        {/* PRIORITY QUEUE ENGINE */}
-        {priorityQueue.length > 0 &&
-        <Card className="bg-red-950/20 border-red-500/30">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="text-red-500" size={18} />
-                <CardTitle className="text-sm uppercase tracking-widest text-red-400">
-                  Priority Queue Engine
-                </CardTitle>
-              </div>
-              <Badge variant="outline" className="text-red-400 border-red-500/50">
-                Top {priorityQueue.length} Critical
-              </Badge>
-            </div>
-            <p className="text-[10px] text-zinc-500 mt-1">
-              Auto-ranked by fabrication impact, review status, RFIs, and stagnation
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {priorityQueue.map((ds, idx) => {
-                const ActionIcon = ACTION_STATUSES[ds.actionStatus]?.icon || Activity;
-                const ZoneIcon = CONTROL_ZONES[ds.zone]?.icon || FileText;
-
-                return (
-                  <div
-                    key={ds.id}
-                    className="flex items-center gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded hover:border-red-500/50 transition-colors">
-
-                    {/* Priority Rank */}
-                    <div className="flex flex-col items-center justify-center w-10">
-                      <div className="text-xs font-bold text-red-400">#{idx + 1}</div>
-                      <div className="text-[9px] text-zinc-600">{ds.priorityScore}</div>
-                    </div>
-
-                    {/* Control Zone + Action Status */}
-                    <div className="flex flex-col gap-1">
-                      <Badge className={cn(ACTION_STATUSES[ds.actionStatus]?.color, "text-black text-[10px] px-2 py-0.5")}>
-                        <ActionIcon size={10} className="mr-1" />
-                        {ACTION_STATUSES[ds.actionStatus]?.label}
-                      </Badge>
-                      <Badge variant="outline" className={cn("text-[9px] px-2 py-0.5", CONTROL_ZONES[ds.zone]?.borderColor)}>
-                        <ZoneIcon size={9} className="mr-1" />
-                        {CONTROL_ZONES[ds.zone]?.label}
-                      </Badge>
-                    </div>
-
-                    {/* Drawing Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-white text-sm truncate">{ds.set_name}</p>
-                        {ds.linkedRFIs.length > 0 && (
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                            {ds.linkedRFIs.length} RFI
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-mono">
-                        <span>{ds.set_number}</span>
-                        <span>•</span>
-                        <span>R{ds.current_revision || '—'}</span>
-                        <span>•</span>
-                        <span className={ds.isOverdue ? 'text-red-500 font-bold' : ds.isDueSoon ? 'text-amber-500' : ''}>
-                          {ds.due_date ? format(parseISO(ds.due_date), 'MMM d') : 'No due date'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Days Stagnant */}
-                    <div className="text-center">
-                      <div className={cn(
-                        "text-lg font-bold font-mono",
-                        ds.status === 'FFF' ? "text-green-500" : 
-                        ds.daysSinceMovement > 14 ? "text-red-500" : 
-                        ds.daysSinceMovement > 7 ? "text-amber-500" : "text-zinc-400"
-                      )}>
-                        {ds.daysSinceMovement}d
-                      </div>
-                      <div className="text-[9px] text-zinc-600">stagnant</div>
-                    </div>
-
-                    {/* Next Owner */}
-                    <div className="w-32">
-                      <div className="text-[9px] text-zinc-600 uppercase mb-1">Next Owner:</div>
-                      <div className="text-xs font-semibold text-white truncate">{ds.nextOwner}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-        }
-
-        {/* Filters */}
-        <div className="flex items-center justify-between">
+      {/* Zone Filter */}
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
           <div className="flex items-center gap-2">
-            <Select value={selectedDiscipline} onValueChange={setSelectedDiscipline}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by Discipline" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Disciplines</SelectItem>
-                <SelectItem value="structural">Structural</SelectItem>
-                <SelectItem value="misc_metals">Misc Metals</SelectItem>
-                <SelectItem value="stairs">Stairs</SelectItem>
-                <SelectItem value="handrails">Handrails</SelectItem>
-                <SelectItem value="connections">Connections</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedReviewer} onValueChange={setSelectedReviewer}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by Reviewer" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Reviewers</SelectItem>
-                {users.map((u) =>
-                  <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <button
+              onClick={() => setSelectedZone('all')}
+              className={cn(
+                "px-4 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors",
+                selectedZone === 'all' ? "bg-amber-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
+              )}
+            >
+              All ({metrics.total})
+            </button>
+            {Object.entries(CONTROL_ZONES).map(([key, zone]) => {
+              const Icon = zone.icon;
+              const count = metrics.byZone[key] || 0;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedZone(key)}
+                  className={cn(
+                    "px-4 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5",
+                    selectedZone === key ? zone.color + " text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
+                  )}
+                >
+                  <Icon size={11} />
+                  {zone.label} ({count})
+                </button>
+              );
+            })}
           </div>
         </div>
+      </div>
 
-        {/* CONTROL ZONES VIEW */}
-        <Tabs defaultValue="all" className="space-y-4">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="all">All Sets ({filteredSets.length})</TabsTrigger>
-            {Object.entries(CONTROL_ZONES).map(([key, zone]) => (
-              <TabsTrigger key={key} value={key}>
-                {zone.label} ({setsByZone[key]?.length || 0})
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {['all', ...Object.keys(CONTROL_ZONES)].map(zoneKey => (
-            <TabsContent key={zoneKey} value={zoneKey} className="space-y-2">
-              {(zoneKey === 'all' ? filteredSets : setsByZone[zoneKey] || []).map((ds) => {
-                const isSelected = selectedSets.includes(ds.id);
-                const ZoneIcon = CONTROL_ZONES[ds.zone]?.icon || FileText;
-                const ActionIcon = ACTION_STATUSES[ds.actionStatus]?.icon || Activity;
-
-                return (
-                  <Card 
-                    key={ds.id} 
-                    className={cn(
-                      "border hover:border-zinc-600 transition-colors cursor-pointer",
-                      isSelected ? "border-amber-500" : "border-zinc-800",
-                      CONTROL_ZONES[ds.zone]?.borderColor
-                    )}
-                    onClick={() => setDetailViewSetId(ds.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        {/* Left: Zone Indicator */}
-                        <div className={cn("w-1 h-full rounded", CONTROL_ZONES[ds.zone]?.color)} />
-
-                        {/* Control Zone & Action Status */}
-                        <div className="flex flex-col gap-2 min-w-[180px]">
-                          <Badge className={cn(CONTROL_ZONES[ds.zone]?.color, "text-black text-[10px] px-2 py-1")}>
-                            <ZoneIcon size={11} className="mr-1" />
-                            {CONTROL_ZONES[ds.zone]?.label}
-                          </Badge>
-                          <Badge className={cn(ACTION_STATUSES[ds.actionStatus]?.color, "text-black text-[10px] px-2 py-1")}>
-                            <ActionIcon size={11} className="mr-1" />
-                            {ACTION_STATUSES[ds.actionStatus]?.label}
-                          </Badge>
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-6 py-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredSets.length === 0 ? (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-12 text-center">
+              <CheckCircle2 size={64} className="mx-auto mb-4 text-green-500/30" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">
+                {selectedZone === 'all' ? 'No Sets' : `No Sets in ${CONTROL_ZONES[selectedZone]?.label}`}
+              </h3>
+              <p className="text-xs text-zinc-600">All clear in this zone</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {filteredSets.map((ds, idx) => {
+              const ZoneIcon = CONTROL_ZONES[ds.zone]?.icon;
+              return (
+                <Card 
+                  key={ds.id} 
+                  className={cn(
+                    "bg-zinc-900 border-l-4 hover:bg-zinc-800/50 transition-all cursor-pointer",
+                    CONTROL_ZONES[ds.zone]?.border
+                  )}
+                  onClick={() => setDetailViewSetId(ds.id)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
+                      {/* Priority Rank */}
+                      {idx < 10 && ds.priorityScore > 100 && (
+                        <div className="flex flex-col items-center justify-center w-8 h-8 bg-red-500/20 border border-red-500/30 rounded font-bold text-red-400 text-xs">
+                          #{idx + 1}
                         </div>
+                      )}
 
-                        {/* Drawing Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                           <h4 className="font-bold text-white truncate">{ds.set_name}</h4>
-                           {ds.isOverdue && ds.status !== 'FFF' && (
-                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">OVERDUE</Badge>
-                           )}
-                            {ds.linkedRFIs.length > 0 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-red-500 text-red-400">
-                                {ds.linkedRFIs.length} RFI
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-zinc-500">
-                            <div>
-                              <span className="text-zinc-600">Set:</span> <span className="font-mono text-white">{ds.set_number}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-600">Rev:</span> <span className="font-mono text-white">{ds.current_revision || '—'}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-600">Due:</span> 
-                              <span className={cn(
-                                "font-mono ml-1",
-                                ds.isOverdue ? "text-red-500 font-bold" : ds.isDueSoon ? "text-amber-500" : "text-white"
-                              )}>
-                                {ds.due_date ? format(parseISO(ds.due_date), 'MMM d') : 'Not set'}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-600">Sheets:</span> <span className="font-mono text-white">{ds.sheet_count || 0}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-600">Last Movement:</span> 
-                              <span className={cn(
-                                "font-mono ml-1",
-                                ds.status === 'FFF' ? "text-green-500" :
-                                ds.daysSinceMovement > 14 ? "text-red-500" : 
-                                ds.daysSinceMovement > 7 ? "text-amber-500" : "text-white"
-                              )}>
-                                {ds.daysSinceMovement}d ago
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-600">Next Owner:</span> <span className="text-white ml-1">{ds.nextOwner}</span>
-                            </div>
-                          </div>
+                      {/* Zone Badge */}
+                      <Badge className={cn(CONTROL_ZONES[ds.zone]?.color, "text-black text-[10px] px-2 py-0.5 font-bold")}>
+                        <ZoneIcon size={10} className="mr-1" />
+                        {CONTROL_ZONES[ds.zone]?.label.toUpperCase()}
+                      </Badge>
 
-                          {/* RFI Impact Summary */}
+                      {/* Drawing Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-bold text-white text-sm">{ds.set_name}</p>
+                          {ds.isOverdue && ds.status !== 'FFF' && (
+                            <Badge className="bg-red-500 text-white text-[9px] px-1.5 py-0">OVERDUE</Badge>
+                          )}
                           {ds.linkedRFIs.length > 0 && (
-                            <div className="mt-2 p-2 bg-red-950/30 border border-red-500/30 rounded">
-                              <div className="text-[10px] text-red-400 font-bold uppercase mb-1">RFI Impact:</div>
-                              {ds.linkedRFIs.slice(0, 2).map(rfi => (
-                                <div key={rfi.id} className="text-[9px] text-zinc-400">
-                                  • RFI #{rfi.rfi_number}: {rfi.subject}
-                                </div>
-                              ))}
-                            </div>
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[9px] px-1.5 py-0">
+                              {ds.linkedRFIs.length} RFI
+                            </Badge>
                           )}
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-col gap-2 min-w-[200px]">
-                          <Select
-                            value={ds.reviewer || 'unassigned'}
-                            onValueChange={(val) => assignReviewerMutation.mutate({
-                              id: ds.id,
-                              reviewer: val === 'unassigned' ? null : val
-                            })}>
-                            <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-700 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-zinc-900 border-zinc-800">
-                              <SelectItem value="unassigned">Unassigned</SelectItem>
-                              {users.map((u) =>
-                                <SelectItem key={u.email} value={u.email}>{u.full_name}</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-
-                          <Select
-                            value={ds.status}
-                            onValueChange={(val) => updateStatusMutation.mutate({ id: ds.id, status: val })}>
-                            <SelectTrigger className="h-8 text-xs bg-zinc-950 border-zinc-700 text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-zinc-900 border-zinc-800">
-                              <SelectItem value="IFA">IFA</SelectItem>
-                              <SelectItem value="BFA">BFA</SelectItem>
-                              <SelectItem value="BFS">BFS</SelectItem>
-                              <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
-                              <SelectItem value="FFF">FFF</SelectItem>
-                              <SelectItem value="As-Built">As-Built</SelectItem>
-                            </SelectContent>
-                          </Select>
-
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRevisionHistorySetId(ds.id);
-                              }}
-                              className="h-7 text-[10px] flex-1 border-zinc-700"
-                            >
-                              <History size={12} className="mr-1" />
-                              History
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDetailViewSetId(ds.id);
-                              }}
-                              className="h-7 text-[10px] flex-1 border-zinc-700"
-                            >
-                              <Edit3 size={12} className="mr-1" />
-                              Edit
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm(`Delete "${ds.set_name}"? This cannot be undone.`)) {
-                                  deleteDrawingSetMutation.mutate(ds.id);
-                                }
-                              }}
-                              className="h-7 text-[10px] border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-400"
-                            >
-                              <Trash2 size={12} />
-                            </Button>
-                          </div>
+                        <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono">
+                          <span className="text-white">{ds.set_number}</span>
+                          <span>•</span>
+                          <span>R{ds.current_revision || '0'}</span>
+                          <span>•</span>
+                          <span className={ds.isOverdue ? 'text-red-500 font-bold' : ds.isDueSoon ? 'text-amber-500' : ''}>
+                            {ds.due_date ? format(parseISO(ds.due_date), 'MMM d') : 'No due'}
+                          </span>
+                          <span>•</span>
+                          <span>{ds.sheet_count || 0} sheets</span>
+                          <span>•</span>
+                          <span className={
+                            ds.status === 'FFF' ? 'text-green-500' :
+                            ds.daysSinceMovement > 14 ? 'text-red-500 font-bold' : 
+                            ds.daysSinceMovement > 7 ? 'text-amber-500' : ''
+                          }>
+                            {ds.daysSinceMovement}d stagnant
+                          </span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
 
-              {(zoneKey === 'all' ? filteredSets : setsByZone[zoneKey] || []).length === 0 && (
-                <div className="flex items-center justify-center py-20">
-                  <div className="text-center">
-                    <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wide mb-2">
-                      {zoneKey === 'all' ? 'No Sets Found' : `No Sets in ${CONTROL_ZONES[zoneKey]?.label}`}
-                    </h3>
-                    <p className="text-xs text-zinc-600 uppercase tracking-widest">
-                      {zoneKey === 'all' ? 'Adjust filters or create a new set' : 'All clear in this zone'}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={ds.reviewer || 'unassigned'}
+                          onValueChange={(val) => assignReviewerMutation.mutate({
+                            id: ds.id,
+                            reviewer: val === 'unassigned' ? null : val
+                          })}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SelectTrigger className="w-32 h-7 text-[10px] bg-zinc-950 border-zinc-700">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-900 border-zinc-800">
+                            <SelectItem value="unassigned">Unassigned</SelectItem>
+                            {users.map(u => (
+                              <SelectItem key={u.email} value={u.email}>{u.full_name?.split(' ')[0] || u.email}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Select
+                          value={ds.status}
+                          onValueChange={(val) => updateStatusMutation.mutate({ id: ds.id, status: val })}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SelectTrigger className="w-36 h-7 text-[10px] bg-zinc-950 border-zinc-700">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-900 border-zinc-800">
+                            <SelectItem value="IFA">IFA</SelectItem>
+                            <SelectItem value="BFA">BFA</SelectItem>
+                            <SelectItem value="BFS">BFS</SelectItem>
+                            <SelectItem value="Revise & Resubmit">R&R</SelectItem>
+                            <SelectItem value="FFF">FFF</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRevisionHistorySetId(ds.id);
+                          }}
+                          className="h-7 px-2 text-zinc-500 hover:text-white"
+                        >
+                          <History size={14} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete "${ds.set_name}"?`)) {
+                              deleteDrawingSetMutation.mutate(ds.id);
+                            }
+                          }}
+                          className="h-7 px-2 text-zinc-500 hover:text-red-500"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        </>
-      )}
+        )}
+      </div>
 
-      {/* Batch Actions Panel */}
-      <BatchActionsPanel
-        selectedSets={selectedSets}
-        onClearSelection={() => setSelectedSets([])}
-        onBatchUpdate={(data) => batchUpdateMutation.mutate(data)}
-        users={users}
-      />
-
-      {/* Revision History Dialog */}
       <RevisionHistory
         drawingSetId={revisionHistorySetId}
         open={!!revisionHistorySetId}
         onOpenChange={(open) => !open && setRevisionHistorySetId(null)}
       />
 
-      {/* Drawing Set Detail Dialog */}
       <DrawingSetDetailDialog
         drawingSetId={detailViewSetId}
         open={!!detailViewSetId}
@@ -1027,7 +521,6 @@ export default function Detailing() {
         rfis={rfis}
       />
 
-      {/* Create Drawing Set Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
@@ -1041,6 +534,6 @@ export default function Detailing() {
           />
         </DialogContent>
       </Dialog>
-      </div>
-      );
-      }
+    </div>
+  );
+}

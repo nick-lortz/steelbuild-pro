@@ -40,6 +40,19 @@ Deno.serve(async (req) => {
     try {
       const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar');
 
+      // Convert datetime-local format to proper ISO format
+      const formattedEventData = {
+        ...eventData,
+        start: {
+          dateTime: new Date(eventData.start.dateTime).toISOString(),
+          timeZone: 'America/Phoenix'
+        },
+        end: {
+          dateTime: new Date(eventData.end.dateTime).toISOString(),
+          timeZone: 'America/Phoenix'
+        }
+      };
+
       const response = await fetch(
         'https://www.googleapis.com/calendar/v3/calendars/primary/events',
         {
@@ -48,17 +61,19 @@ Deno.serve(async (req) => {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(eventData)
+          body: JSON.stringify(formattedEventData)
         }
       );
 
       if (!response.ok) {
-        throw new Error(`Google Calendar API error: ${response.status}`);
+        const errorData = await response.text();
+        throw new Error(`Google Calendar API error: ${response.status} - ${errorData}`);
       }
 
       const event = await response.json();
       return Response.json({ event });
     } catch (error) {
+      console.error('Create event error:', error);
       return Response.json({ error: error.message }, { status: 500 });
     }
   }
@@ -71,6 +86,19 @@ Deno.serve(async (req) => {
 
       const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar');
 
+      // Convert datetime-local format to proper ISO format
+      const formattedEventData = {
+        ...eventData,
+        start: {
+          dateTime: new Date(eventData.start.dateTime).toISOString(),
+          timeZone: 'America/Phoenix'
+        },
+        end: {
+          dateTime: new Date(eventData.end.dateTime).toISOString(),
+          timeZone: 'America/Phoenix'
+        }
+      };
+
       const response = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
         {
@@ -79,17 +107,19 @@ Deno.serve(async (req) => {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(eventData)
+          body: JSON.stringify(formattedEventData)
         }
       );
 
       if (!response.ok) {
-        throw new Error(`Google Calendar API error: ${response.status}`);
+        const errorData = await response.text();
+        throw new Error(`Google Calendar API error: ${response.status} - ${errorData}`);
       }
 
       const event = await response.json();
       return Response.json({ event });
     } catch (error) {
+      console.error('Update event error:', error);
       return Response.json({ error: error.message }, { status: 500 });
     }
   }

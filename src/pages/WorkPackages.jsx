@@ -3,18 +3,17 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Package, Trash2, FileText, Link as LinkIcon, ArrowRight, List, LayoutGrid } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { format, isValid, parseISO } from 'date-fns';
+import { Plus, Package, Trash2, FileText, ArrowRight, Truck, DollarSign, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { format, parseISO, isValid } from 'date-fns';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
 import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
-import KanbanView from '@/components/schedule/KanbanView';
 
 export default function WorkPackages() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -22,9 +21,7 @@ export default function WorkPackages() {
   const [editingPackage, setEditingPackage] = useState(null);
   const [viewingPackage, setViewingPackage] = useState(null);
   const [deletePackage, setDeletePackage] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('all');
   const [phaseFilter, setPhaseFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('table');
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -34,148 +31,87 @@ export default function WorkPackages() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 10 * 60 * 1000
   });
 
-  const projects = currentUser?.role === 'admin' ?
-  allProjects :
-  allProjects.filter((p) => p.assigned_users?.includes(currentUser?.email));
+  const projects = currentUser?.role === 'admin' ? allProjects : allProjects.filter(p => p.assigned_users?.includes(currentUser.email));
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages', activeProjectId],
     queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
-  // Real-time subscriptions
   React.useEffect(() => {
     if (!activeProjectId) return;
-
-    const unsubWP = base44.entities.WorkPackage.subscribe((event) => {
-      if (event.data?.project_id === activeProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
-        queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectId] });
-        queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
-      }
-    });
-
-    const unsubTask = base44.entities.Task.subscribe((event) => {
-      if (event.data?.project_id === activeProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
-        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
-      }
-    });
-
-    const unsubFab = base44.entities.Fabrication.subscribe((event) => {
+    const unsub = base44.entities.WorkPackage.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
       }
     });
-
-    return () => {
-      unsubWP();
-      unsubTask();
-      unsubFab();
-    };
+    return unsub;
   }, [activeProjectId, queryClient]);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
-  });
-
-  const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['tasks', activeProjectId]);
-      toast.success('Task updated');
-    }
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
     queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code')
+    queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents', activeProjectId],
     queryFn: () => base44.entities.Document.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
     queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
     queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const createdWP = await base44.entities.WorkPackage.create(data);
-      
-      // Sync target date with linked deliveries
-      if (data.linked_delivery_ids?.length > 0 && data.target_date) {
-        const updatePromises = data.linked_delivery_ids.map(deliveryId =>
-          base44.entities.Delivery.update(deliveryId, {
-            scheduled_date: data.target_date
-          })
-        );
-        await Promise.all(updatePromises);
-      }
-      
-      return createdWP;
-    },
+    mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
-      queryClient.invalidateQueries(['fabrication', activeProjectId]);
-      queryClient.invalidateQueries(['schedule-tasks', activeProjectId]);
-      queryClient.invalidateQueries(['deliveries', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
-    },
-    onError: (error) => {
-      toast.error('Failed to create: ' + error.message);
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const updatedWP = await base44.entities.WorkPackage.update(id, data);
-      
-      // Sync target date with linked deliveries
-      if (data.linked_delivery_ids?.length > 0 && data.target_date) {
-        const updatePromises = data.linked_delivery_ids.map(deliveryId =>
-          base44.entities.Delivery.update(deliveryId, {
-            scheduled_date: data.target_date
-          })
-        );
-        await Promise.all(updatePromises);
-      }
-      
-      return updatedWP;
-    },
+    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
-      queryClient.invalidateQueries(['fabrication', activeProjectId]);
-      queryClient.invalidateQueries(['schedule-tasks', activeProjectId]);
-      queryClient.invalidateQueries(['deliveries', activeProjectId]);
       setShowForm(false);
       setEditingPackage(null);
       setViewingPackage(null);
-      toast.success('Work package updated');
+      toast.success('Updated');
     }
   });
 
@@ -184,217 +120,56 @@ export default function WorkPackages() {
       const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       queryClient.invalidateQueries(['tasks', activeProjectId]);
       setDeletePackage(null);
-      toast.success(data.message || 'Work package deleted');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to delete');
+      toast.success('Deleted');
     }
   });
 
   const advancePhaseMutation = useMutation({
     mutationFn: async ({ work_package_id, target_phase }) => {
-      const response = await base44.functions.invoke('advanceWorkPackagePhase', {
-        work_package_id,
-        target_phase
-      });
+      const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
-      queryClient.invalidateQueries(['tasks', activeProjectId]);
       toast.success('Phase advanced');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to advance phase');
     }
   });
 
-  const handleAdvancePhase = (pkg, nextPhase) => {
-    advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: nextPhase });
-  };
-
-  const getPackageTaskCount = (packageId) => {
-    return tasks.filter((t) => t.work_package_id === packageId).length;
-  };
-
-  const columns = [
-  {
-    header: 'Package',
-    accessor: 'wpid',
-    render: (pkg) => {
-      const project = projects.find(p => p.id === pkg.project_id);
-      const deliveryCount = pkg.linked_delivery_ids?.length || 0;
-      const drawingCount = pkg.linked_drawing_set_ids?.length || 0;
-      return (
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="text-sm text-white font-bold">{pkg.title}</div>
-            <div className="font-mono text-xs text-amber-400">{pkg.wpid || pkg.id.slice(0, 8)}</div>
-          </div>
-          <div className="text-xs text-zinc-500 mt-0.5">
-            {project?.project_number} • {pkg.assigned_pm || 'No PM'} • {drawingCount} dwgs • {deliveryCount} del
-          </div>
-          {pkg.scope_summary && (
-            <div className="text-xs text-zinc-600 mt-1 line-clamp-2 max-w-md">{pkg.scope_summary}</div>
-          )}
-        </div>
-      );
-    }
-  },
-  {
-    header: 'Phase',
-    render: (pkg) => <StatusBadge status={pkg.phase} />
-  },
-  {
-    header: 'Status',
-    render: (pkg) => <StatusBadge status={pkg.status} />
-  },
-  {
-    header: 'Budget / Forecast',
-    render: (pkg) => {
-      const budget = pkg.budget_at_award || 0;
-      const forecast = pkg.forecast_at_completion || 0;
-      const variance = forecast - budget;
-      const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
-      return (
-        <div className="text-sm">
-          <div className="text-white font-mono">${((budget) / 1000).toFixed(0)}K</div>
-          <div className={`text-xs ${variance > 0 ? 'text-red-400' : variance < 0 ? 'text-green-400' : 'text-zinc-500'}`}>
-            ${((forecast) / 1000).toFixed(0)}K {variance !== 0 && `(${variance > 0 ? '+' : ''}${variancePercent.toFixed(0)}%)`}
-          </div>
-        </div>
-      );
-    }
-  },
-  {
-    header: 'Progress',
-    render: (pkg) =>
-    <div className="flex items-center gap-2">
-          <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden">
-            <div
-          className="h-full bg-amber-500 transition-all"
-          style={{ width: `${pkg.percent_complete || 0}%` }} />
-
-          </div>
-          <span className="text-sm text-zinc-400">{pkg.percent_complete || 0}%</span>
-        </div>
-
-  },
-  {
-    header: 'SOV Lines',
-    render: (pkg) =>
-    <div className="text-zinc-200">{pkg.sov_item_ids?.length || 0}</div>
-
-  },
-  {
-    header: 'Tasks',
-    render: (pkg) =>
-    <div className="text-zinc-200">{getPackageTaskCount(pkg.id)}</div>
-
-  },
-  {
-    header: 'Target',
-    render: (pkg) => {
-      try {
-        const date = parseISO(pkg.target_date);
-        return isValid(date) ? format(date, 'MMM d') : '-';
-      } catch {
-        return '-';
-      }
-    }
-  },
-  {
-    header: '',
-    render: (pkg) => {
-      const phaseMap = {
-        'pre_fab': { next: 'shop', label: 'To Shop' },
-        'shop': { next: 'delivery', label: 'To Delivery' },
-        'delivery': { next: 'erection', label: 'To Erection' },
-        'erection': { next: 'punch', label: 'To Punch' },
-        'punch': { next: 'completed', label: 'Complete' }
-      };
-      const currentPhase = phaseMap[pkg.phase];
-
-      return (
-        <div className="flex items-center gap-2">
-            {currentPhase && pkg.status !== 'complete' &&
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAdvancePhase(pkg, currentPhase.next);
-            }}
-            className="text-green-400 hover:text-green-300 hover:bg-green-500/10">
-
-                <ArrowRight size={16} />
-              </Button>
-          }
-            <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeletePackage(pkg);
-            }}
-            className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10">
-
-              <Trash2 size={16} />
-            </Button>
-          </div>);
-
-    }
-  }];
-
-
-  const selectedProject = projects.find((p) => p.id === activeProjectId);
-
   const filteredPackages = useMemo(() => {
-    return workPackages.filter((wp) => {
-      const matchesStatus = statusFilter === 'all' || wp.status === statusFilter;
-      const matchesPhase = phaseFilter === 'all' || wp.phase === phaseFilter;
-      return matchesStatus && matchesPhase;
-    });
-  }, [workPackages, statusFilter, phaseFilter]);
+    return workPackages.filter(wp => phaseFilter === 'all' || wp.phase === phaseFilter);
+  }, [workPackages, phaseFilter]);
 
-  const summaryStats = useMemo(() => {
-    const inProgress = workPackages.filter((wp) => wp.status === 'in_progress').length;
-    const completed = workPackages.filter((wp) => wp.status === 'completed' || wp.status === 'closed').length;
+  const stats = useMemo(() => {
+    const total = workPackages.length;
+    const inProgress = workPackages.filter(wp => wp.status === 'in_progress').length;
+    const completed = workPackages.filter(wp => wp.status === 'completed' || wp.status === 'closed').length;
     const totalBudget = workPackages.reduce((sum, wp) => sum + (wp.budget_at_award || 0), 0);
     const totalForecast = workPackages.reduce((sum, wp) => sum + (wp.forecast_at_completion || 0), 0);
-    const avgProgress = workPackages.length > 0 ?
-    workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / workPackages.length :
-    0;
-
-    return { inProgress, completed, totalBudget, totalForecast, avgProgress };
+    const avgProgress = total > 0 ? workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / total : 0;
+    const variance = totalForecast - totalBudget;
+    return { total, inProgress, completed, totalBudget, totalForecast, avgProgress, variance };
   }, [workPackages]);
+
+  const selectedProject = projects.find(p => p.id === activeProjectId);
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Work Packages</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">SELECT PROJECT</p>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-[1600px] mx-auto px-6 py-12">
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <Package size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
           <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="SELECT PROJECT" />
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Choose project..." />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-              {projects.map((p) =>
-                <SelectItem key={p.id} value={p.id} className="text-white">
-                  {p.project_number} - {p.name}
-                </SelectItem>
-              )}
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -404,32 +179,26 @@ export default function WorkPackages() {
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Work Packages</h1>
-              <p className="text-xs text-zinc-400 mt-1">{selectedProject?.name}</p>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Work Packages</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {stats.total} PACKAGES</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
-                  <SelectValue>
-                    {selectedProject ? `${selectedProject.project_number} - ${selectedProject.name}` : 'Select project'}
-                  </SelectValue>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
-                  {projects.map((p) =>
-                    <SelectItem key={p.id} value={p.id} className="text-white">
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  )}
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
                 <Plus size={14} className="mr-1" />
                 NEW
               </Button>
@@ -438,123 +207,224 @@ export default function WorkPackages() {
         </div>
       </div>
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">IN PROGRESS</div>
-              <div className="text-2xl font-bold font-mono text-white">{summaryStats.inProgress}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">COMPLETED</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{summaryStats.completed}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">BUDGET</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">${(summaryStats.totalBudget / 1000).toFixed(0)}K</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FORECAST</div>
-              <div className="text-2xl font-bold font-mono text-white">${(summaryStats.totalForecast / 1000).toFixed(0)}K</div>
-            </div>
+      {/* Metrics */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-5 gap-3">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Progress</div>
+                <div className="text-2xl font-black text-blue-400">{stats.inProgress}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Completed</div>
+                <div className="text-2xl font-black text-green-400">{stats.completed}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Progress</div>
+                <div className="text-2xl font-black text-amber-500">{stats.avgProgress.toFixed(0)}%</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Budget</div>
+                <div className="text-xl font-black text-white">${(stats.totalBudget / 1000).toFixed(0)}K</div>
+              </CardContent>
+            </Card>
+            <Card className={cn(
+              "border",
+              stats.variance > 0 ? "bg-red-500/10 border-red-500/20" : "bg-zinc-900 border-zinc-800"
+            )}>
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Forecast</div>
+                <div className={cn(
+                  "text-xl font-black",
+                  stats.variance > 0 ? "text-red-400" : "text-white"
+                )}>
+                  ${(stats.totalForecast / 1000).toFixed(0)}K
+                </div>
+                {stats.variance !== 0 && (
+                  <div className={cn("text-[9px]", stats.variance > 0 ? "text-red-400" : "text-green-400")}>
+                    {stats.variance > 0 ? '+' : ''}{(stats.variance / 1000).toFixed(0)}K
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <div className="flex gap-3 items-center justify-between">
-            <div className="flex gap-3">
-            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Phases</SelectItem>
-                <SelectItem value="pre_fab">Pre-Fab</SelectItem>
-                <SelectItem value="shop">Shop</SelectItem>
-                <SelectItem value="delivery">Delivery</SelectItem>
-                <SelectItem value="erection">Erection</SelectItem>
-                <SelectItem value="punch">Punch</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
-            </div>
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
-              <Button
-                size="sm"
-                variant={viewMode === 'table' ? 'default' : 'ghost'}
-                onClick={() => setViewMode('table')}
-                className={viewMode === 'table' ? 'bg-amber-500 text-black hover:bg-amber-600' : 'text-zinc-400 hover:text-white'}
-              >
-                <List size={14} />
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === 'kanban' ? 'default' : 'ghost'}
-                onClick={() => setViewMode('kanban')}
-                className={viewMode === 'kanban' ? 'bg-amber-500 text-black hover:bg-amber-600' : 'text-zinc-400 hover:text-white'}
-              >
-                <LayoutGrid size={14} />
-              </Button>
-            </div>
-          </div>
+      {/* Filter */}
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+            <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Phases</SelectItem>
+              <SelectItem value="pre_fab">Pre-Fab</SelectItem>
+              <SelectItem value="shop">Shop</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="erection">Erection</SelectItem>
+              <SelectItem value="punch">Punch</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-6 py-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-3" />
-              <p className="text-xs text-zinc-600 uppercase tracking-widest">LOADING...</p>
-            </div>
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : viewMode === 'kanban' ? (
-          <KanbanView
-            tasks={tasks}
-            projects={projects}
-            onTaskUpdate={(taskId, updates) => updateTaskMutation.mutate({ id: taskId, data: updates })}
-            onTaskClick={(task) => {
-              const pkg = workPackages.find(wp => wp.id === task.work_package_id);
-              if (pkg) setViewingPackage(pkg);
-            }}
-          />
+        ) : filteredPackages.length === 0 ? (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-12 text-center">
+              <Package size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">No Work Packages</h3>
+              <p className="text-xs text-zinc-600 mb-4">Create packages to track execution</p>
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+                <Plus size={16} className="mr-2" />
+                Create First Package
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
-          <DataTable
-            columns={columns}
-            data={filteredPackages}
-            onRowClick={(pkg) => setViewingPackage(pkg)}
-            emptyMessage="No work packages yet. Create packages to track execution, link to SOV and cost codes."
-          />
+          <div className="space-y-2">
+            {filteredPackages.map(pkg => {
+              const project = projects.find(p => p.id === pkg.project_id);
+              const taskCount = tasks.filter(t => t.work_package_id === pkg.id).length;
+              const budget = pkg.budget_at_award || 0;
+              const forecast = pkg.forecast_at_completion || 0;
+              const variance = forecast - budget;
+              const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
+              
+              const phaseMap = {
+                'pre_fab': { next: 'shop', label: 'To Shop', color: 'bg-blue-500' },
+                'shop': { next: 'delivery', label: 'To Delivery', color: 'bg-purple-500' },
+                'delivery': { next: 'erection', label: 'To Erection', color: 'bg-amber-500' },
+                'erection': { next: 'punch', label: 'To Punch', color: 'bg-green-500' },
+                'punch': { next: 'completed', label: 'Complete', color: 'bg-zinc-500' }
+              };
+              const currentPhase = phaseMap[pkg.phase];
+
+              return (
+                <Card 
+                  key={pkg.id} 
+                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group"
+                  onClick={() => setViewingPackage(pkg)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
+                      {/* Phase Indicator */}
+                      <div className={cn("w-1.5 h-16 rounded-full", currentPhase?.color || 'bg-zinc-700')} />
+
+                      {/* Package Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-white text-sm group-hover:text-amber-400 transition-colors">
+                            {pkg.title}
+                          </h3>
+                          <Badge variant="outline" className="text-[10px] font-mono">
+                            {pkg.wpid || pkg.id.slice(0, 8)}
+                          </Badge>
+                          <Badge className={cn(
+                            "text-[10px] font-bold",
+                            pkg.status === 'completed' && "bg-green-500/20 text-green-400",
+                            pkg.status === 'in_progress' && "bg-blue-500/20 text-blue-400",
+                            pkg.status === 'on_hold' && "bg-amber-500/20 text-amber-400"
+                          )}>
+                            {pkg.status?.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] text-zinc-500 font-mono">
+                          <span className="text-white">{project?.project_number}</span>
+                          <span>•</span>
+                          <span>{pkg.assigned_pm || 'No PM'}</span>
+                          <span>•</span>
+                          <span>{(pkg.linked_drawing_set_ids?.length || 0)} dwgs</span>
+                          <span>•</span>
+                          <span>{(pkg.linked_delivery_ids?.length || 0)} deliveries</span>
+                          <span>•</span>
+                          <span>{taskCount} tasks</span>
+                          {pkg.target_date && (
+                            <>
+                              <span>•</span>
+                              <span className="text-amber-500">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Progress */}
+                      <div className="flex items-center gap-3">
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-xl font-black text-amber-500">{pkg.percent_complete || 0}%</div>
+                          <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
+                            <div className="h-full bg-amber-500 transition-all" style={{ width: `${pkg.percent_complete || 0}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Budget */}
+                        <div className="text-right min-w-[80px]">
+                          <div className="text-sm font-bold text-white">${(budget / 1000).toFixed(0)}K</div>
+                          <div className={cn(
+                            "text-[10px] font-bold",
+                            variance > 0 ? "text-red-400" : variance < 0 ? "text-green-400" : "text-zinc-600"
+                          )}>
+                            {variance !== 0 && (variance > 0 ? '+' : '')}{variancePercent.toFixed(0)}%
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                          {currentPhase && pkg.status !== 'completed' && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: currentPhase.next });
+                              }}
+                              className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+                            >
+                              <ArrowRight size={14} />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletePackage(pkg);
+                            }}
+                            className="h-8 px-2 text-zinc-500 hover:text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Create/Edit Sheet */}
       <Sheet open={showForm} onOpenChange={(open) => {
         setShowForm(open);
         if (!open) setEditingPackage(null);
       }}>
         <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle className="text-white">
-              {editingPackage ? 'Edit Work Package' : 'New Work Package'}
-            </SheetTitle>
+            <SheetTitle className="text-white">{editingPackage ? 'Edit' : 'New'} Work Package</SheetTitle>
           </SheetHeader>
           <WorkPackageForm
             package={editingPackage}
@@ -575,63 +445,56 @@ export default function WorkPackages() {
               setShowForm(false);
               setEditingPackage(null);
             }}
-            isLoading={createMutation.isPending || updateMutation.isPending} />
-
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
         </SheetContent>
       </Sheet>
 
-      {/* Details Sheet */}
       <Sheet open={!!viewingPackage} onOpenChange={(open) => {
         if (!open) setViewingPackage(null);
       }}>
         <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-3xl">
           <SheetHeader>
-            <SheetTitle className="text-white">Work Package Details</SheetTitle>
+            <SheetTitle className="text-white">Package Details</SheetTitle>
           </SheetHeader>
-          {viewingPackage &&
-          <WorkPackageDetails
-            package={viewingPackage}
-            projectId={activeProjectId}
-            tasks={tasks.filter((t) => t.work_package_id === viewingPackage.id)}
-            sovItems={sovItems}
-            costCodes={costCodes}
-            documents={documents}
-            drawings={drawings}
-            deliveries={deliveries}
-            onEdit={() => {
-              setEditingPackage(viewingPackage);
-              setViewingPackage(null);
-              setShowForm(true);
-            }}
-            onAdvancePhase={handleAdvancePhase}
-            onUpdate={(data) => updateMutation.mutate({ id: viewingPackage.id, data })} />
-
-          }
+          {viewingPackage && (
+            <WorkPackageDetails
+              package={viewingPackage}
+              projectId={activeProjectId}
+              tasks={tasks.filter(t => t.work_package_id === viewingPackage.id)}
+              sovItems={sovItems}
+              costCodes={costCodes}
+              documents={documents}
+              drawings={drawings}
+              deliveries={deliveries}
+              onEdit={() => {
+                setEditingPackage(viewingPackage);
+                setViewingPackage(null);
+                setShowForm(true);
+              }}
+              onAdvancePhase={(pkg, nextPhase) => advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: nextPhase })}
+              onUpdate={(data) => updateMutation.mutate({ id: viewingPackage.id, data })}
+            />
+          )}
         </SheetContent>
       </Sheet>
 
-      {/* Delete Confirmation */}
       <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
         <AlertDialogContent className="bg-zinc-900 border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Work Package?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">Delete Package?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Permanently delete "{deletePackage?.wpid} - {deletePackage?.title}" and {getPackageTaskCount(deletePackage?.id || '')} tasks. Cannot be undone.
+              Delete "{deletePackage?.wpid} - {deletePackage?.title}" and {tasks.filter(t => t.work_package_id === deletePackage?.id).length} tasks? Cannot undo.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteMutation.mutate(deletePackage.id)}
-              className="bg-red-500 hover:bg-red-600">
-
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-red-500 hover:bg-red-600">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>);
-
+    </div>
+  );
 }

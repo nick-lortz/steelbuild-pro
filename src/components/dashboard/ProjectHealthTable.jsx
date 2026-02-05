@@ -71,55 +71,49 @@ const ScheduleHealth = ({ daysSlip }) => {
 
 export default function ProjectHealthTable({ projects, onProjectClick }) {
   const sortedProjects = useMemo(() => {
-    // Sort by risk level, then overdue tasks, then name
     return [...projects].sort((a, b) => {
-      // Risk first
       const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
       const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
       if (bRisk !== aRisk) return bRisk - aRisk;
-
-      // Then overdue
       if (b.overdueTasks !== a.overdueTasks) return b.overdueTasks - a.overdueTasks;
-
-      // Then alphabetical
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [projects]);
 
   return (
-    <Card className="bg-card border-border">
+    <div className="bg-card border border-border rounded-lg overflow-hidden card-elevated">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border">
-              <th className="text-left px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Project</span>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="text-left px-6 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Project</span>
               </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Status</span>
+              <th className="text-left px-4 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Status</span>
               </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Progress</span>
+              <th className="text-left px-4 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Progress</span>
               </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Cost Health</span>
+              <th className="text-left px-4 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Cost Health</span>
               </th>
-              <th className="text-left px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Schedule</span>
+              <th className="text-left px-4 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Schedule</span>
               </th>
-              <th className="text-center px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Tasks</span>
+              <th className="text-center px-4 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Tasks</span>
               </th>
-              <th className="text-right px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Budget vs Actual</span>
+              <th className="text-right px-4 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Budget</span>
               </th>
-              <th className="text-center px-4 py-3">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Action</span>
+              <th className="text-right px-6 py-3.5">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Action</span>
               </th>
             </tr>
           </thead>
           <tbody>
-            {sortedProjects.map((project) => {
+            {sortedProjects.map((project, idx) => {
               const isAtRisk = project.costHealth < -5 || project.daysSlip > 3 || project.overdueTasks > 0;
               const statusConfig = getStatusConfig(project.status);
 
@@ -127,83 +121,80 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
                 <tr 
                   key={project.id} 
                   className={cn(
-                    "border-b border-border hover:bg-muted/50 transition-colors",
-                    isAtRisk && "bg-red-500/5"
+                    "border-b border-border transition-smooth",
+                    "hover:bg-muted/40",
+                    isAtRisk && "bg-destructive/5"
                   )}
                 >
-                  {/* Project Name & Number */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-start gap-2">
-                      {isAtRisk && <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />}
+                  <td className="px-6 py-4">
+                    <div className="flex items-start gap-2.5">
+                      {isAtRisk && <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />}
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{project.name}</p>
+                        <p className="text-sm font-medium text-foreground mb-0.5">{project.name}</p>
                         <p className="text-xs text-muted-foreground font-mono">{project.project_number}</p>
                       </div>
                     </div>
                   </td>
 
-                  {/* Status */}
-                  <td className="px-4 py-3">
-                    <Badge className={cn("text-[10px] font-bold uppercase", statusConfig.className)}>
+                  <td className="px-4 py-4">
+                    <Badge variant="outline" className={cn("text-[10px] font-semibold", statusConfig.className)}>
                       {statusConfig.label}
                     </Badge>
                   </td>
 
-                  {/* Progress */}
-                  <td className="px-4 py-3">
-                    <div className="w-24">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-foreground">{project.progress}%</span>
+                  <td className="px-4 py-4">
+                    <div className="w-28">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-foreground tabular-nums">{project.progress}%</span>
                       </div>
-                      <Progress value={project.progress} className="h-1.5" />
+                      <Progress value={project.progress} className="h-2" />
                     </div>
                   </td>
 
-                  {/* Cost Health */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <HealthIndicator value={project.costHealth} type="cost" />
                   </td>
 
-                  {/* Schedule Health */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-4">
                     <ScheduleHealth daysSlip={project.daysSlip} />
                   </td>
 
-                  {/* Tasks */}
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-4 text-center">
                     <div className="inline-flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold text-foreground">
+                      <span className="text-sm font-medium text-foreground tabular-nums">
                         {project.completedTasks}/{project.totalTasks}
                       </span>
                       {project.overdueTasks > 0 && (
-                        <span className="text-[10px] text-red-400 font-bold">
-                          {project.overdueTasks} late
+                        <span className="text-[10px] text-destructive font-semibold">
+                          {project.overdueTasks} overdue
                         </span>
                       )}
                     </div>
                   </td>
 
-                  {/* Budget vs Actual */}
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-4 text-right">
                     <div className="inline-flex flex-col items-end gap-0.5">
                       <span className={cn(
-                        "text-xs font-semibold",
-                        project.budgetVsActual > 100 ? "text-red-400" : 
-                        project.budgetVsActual > 95 ? "text-amber-400" : "text-green-400"
+                        "text-sm font-medium tabular-nums",
+                        project.budgetVsActual > 100 ? "text-destructive" : 
+                        project.budgetVsActual > 95 ? "text-warning" : "text-success"
                       )}>
                         {project.budgetVsActual}%
                       </span>
                       {project.budgetVsActual > 100 && (
-                        <span className="text-[10px] text-red-400">over</span>
+                        <span className="text-[10px] text-destructive font-medium">over budget</span>
                       )}
                     </div>
                   </td>
 
-                  {/* Action */}
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-6 py-4 text-right">
                     <Link to={createPageUrl('ProjectDashboard') + `?project=${project.id}`}>
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
-                        <Eye size={14} className="mr-1" />
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 px-3 text-xs font-medium hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Eye size={14} className="mr-1.5" />
                         View
                       </Button>
                     </Link>
@@ -214,6 +205,6 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 }

@@ -210,7 +210,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select equipment" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 {cranes.map(eq => (
                   <SelectItem key={eq.id} value={eq.id}>{eq.name}</SelectItem>
                 ))}
@@ -223,7 +223,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 {EQUIPMENT_TYPES.map(t => (
                   <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
@@ -240,7 +240,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select crew" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 {crews.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.crew_name}</SelectItem>
                 ))}
@@ -253,7 +253,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select task" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 {tasks.map(t => (
                   <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                 ))}
@@ -288,7 +288,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 <SelectItem value="day">Day</SelectItem>
                 <SelectItem value="swing">Swing</SelectItem>
                 <SelectItem value="night">Night</SelectItem>
@@ -361,7 +361,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-amber-900/30 border-amber-700">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 <SelectItem value="waiting_crew">Waiting on Crew</SelectItem>
                 <SelectItem value="waiting_material">Waiting on Material</SelectItem>
                 <SelectItem value="waiting_crane">Waiting on Crane</SelectItem>

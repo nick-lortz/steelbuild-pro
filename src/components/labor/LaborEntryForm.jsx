@@ -196,7 +196,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select crew" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 {crews?.map(crew => (
                   <SelectItem key={crew.id} value={crew.id}>
                     {crew.crew_name}
@@ -211,7 +211,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 <SelectItem value="day">Day</SelectItem>
                 <SelectItem value="swing">Swing</SelectItem>
                 <SelectItem value="night">Night</SelectItem>
@@ -251,7 +251,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
               <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Select task" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-800 border-zinc-700">
+              <SelectContent>
                 {tasks?.map(task => (
                   <SelectItem key={task.id} value={task.id}>{task.name}</SelectItem>
                 ))}
@@ -373,7 +373,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
                   <SelectTrigger className="bg-zinc-700 border-zinc-600">
                     <SelectValue placeholder="Select reason" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectContent>
                     <SelectItem value="waiting_steel">Waiting on Steel</SelectItem>
                     <SelectItem value="crane_unavailable">Crane Unavailable</SelectItem>
                     <SelectItem value="weather">Weather</SelectItem>

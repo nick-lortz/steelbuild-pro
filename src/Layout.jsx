@@ -80,6 +80,7 @@ const navGroups = [
       { name: 'Detailing', page: 'Detailing', icon: FileText },
       { name: 'Fabrication', page: 'Fabrication', icon: Wrench },
       { name: 'Deliveries', page: 'Deliveries', icon: Truck },
+      { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
       { name: 'Field Tools', page: 'FieldTools', icon: Camera }
     ],
     roles: ['admin', 'user']
@@ -89,9 +90,9 @@ const navGroups = [
     icon: Calendar,
     items: [
       { name: 'Schedule', page: 'Schedule', icon: Calendar },
-      { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
       { name: 'Weekly Schedule', page: 'WeeklySchedule', icon: Calendar },
-      { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 }
+      { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 },
+      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar }
     ],
     roles: ['admin', 'user']
   },
@@ -136,8 +137,7 @@ const navGroups = [
     icon: File,
     items: [
       { name: 'Documents', page: 'Documents', icon: File },
-      { name: 'Photos', page: 'ProjectPhotos', icon: Camera },
-      { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar }
+      { name: 'Photos', page: 'ProjectPhotos', icon: Camera }
     ],
     roles: ['admin', 'user']
   },

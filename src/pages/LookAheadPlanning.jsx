@@ -5,34 +5,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Calendar, 
   AlertTriangle, 
   CheckCircle2, 
   Clock, 
-  TrendingUp,
-  Package,
-  Truck,
-  FileText,
-  AlertCircle,
   XCircle,
   Filter,
-  ChevronRight,
   Layers,
-  Search
+  Search,
+  ChevronDown,
+  Edit,
+  Plus
 } from 'lucide-react';
-import { format, addWeeks, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isWithinInterval, differenceInDays } from 'date-fns';
+import { format, addWeeks, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, differenceInDays } from 'date-fns';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import TaskForm from '@/components/schedule/TaskForm';
 
 export default function LookAheadPlanning() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [weeksAhead, setWeeksAhead] = useState(4);
   const [phaseFilter, setPhaseFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showConstraintsOnly, setShowConstraintsOnly] = useState(false);
+  const [expandedWeeks, setExpandedWeeks] = useState([0]);
+  const [editingTask, setEditingTask] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: tasks = [] } = useQuery({
@@ -53,7 +54,7 @@ export default function LookAheadPlanning() {
     queryKey: ['work-packages', activeProjectId],
     queryFn: () => activeProjectId 
       ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
-      : base44.entities.WorkPackage.list(),
+      : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
@@ -85,7 +86,15 @@ export default function LookAheadPlanning() {
     staleTime: 5 * 60 * 1000
   });
 
-  // Calculate look-ahead window
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setEditingTask(null);
+      toast.success('Task updated');
+    }
+  });
+
   const lookAheadWindow = useMemo(() => {
     const today = new Date();
     const endDate = addWeeks(today, weeksAhead);
@@ -95,7 +104,6 @@ export default function LookAheadPlanning() {
     };
   }, [weeksAhead]);
 
-  // Filter tasks in window
   const lookAheadTasks = useMemo(() => {
     return tasks.filter(task => {
       if (!task.start_date) return false;
@@ -116,13 +124,11 @@ export default function LookAheadPlanning() {
     });
   }, [tasks, lookAheadWindow, phaseFilter, searchTerm]);
 
-  // Analyze readiness and constraints
   const taskAnalysis = useMemo(() => {
     return lookAheadTasks.map(task => {
       const constraints = [];
       const wp = workPackages.find(w => w.id === task.work_package_id);
       
-      // Check drawing readiness
       if (wp?.linked_drawing_set_ids?.length > 0) {
         const linkedSets = drawingSets.filter(ds => wp.linked_drawing_set_ids.includes(ds.id));
         const notFFF = linkedSets.filter(ds => ds.status !== 'FFF');
@@ -136,10 +142,7 @@ export default function LookAheadPlanning() {
         }
       }
       
-      // Check RFI blockers
-      const linkedRFIs = (task.linked_rfi_ids || [])
-        .map(id => rfis.find(r => r.id === id))
-        .filter(Boolean);
+      const linkedRFIs = (task.linked_rfi_ids || []).map(id => rfis.find(r => r.id === id)).filter(Boolean);
       const openRFIs = linkedRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed');
       if (openRFIs.length > 0) {
         const blockerRFIs = openRFIs.filter(r => r.blocker_info?.is_blocker);
@@ -147,41 +150,27 @@ export default function LookAheadPlanning() {
           constraints.push({
             type: 'rfi',
             severity: 'critical',
-            message: `${blockerRFIs.length} blocker RFI(s) open`,
+            message: `${blockerRFIs.length} blocker RFI(s)`,
             details: blockerRFIs.map(r => `RFI ${r.rfi_number}: ${r.subject}`).join('; ')
-          });
-        } else if (openRFIs.length > 0) {
-          constraints.push({
-            type: 'rfi',
-            severity: 'warning',
-            message: `${openRFIs.length} open RFI(s)`,
-            details: openRFIs.map(r => `RFI ${r.rfi_number}`).join(', ')
           });
         }
       }
       
-      // Check material delivery
       const taskDeliveries = deliveries.filter(d => 
-        d.package_name === wp?.package_number || 
-        (task.linked_delivery_ids || []).includes(d.id)
+        d.package_name === wp?.package_number || (task.linked_delivery_ids || []).includes(d.id)
       );
-      const pendingDeliveries = taskDeliveries.filter(d => 
-        d.delivery_status !== 'received' && d.delivery_status !== 'closed'
-      );
+      const pendingDeliveries = taskDeliveries.filter(d => d.delivery_status !== 'received' && d.delivery_status !== 'closed');
       if (task.phase === 'erection' && pendingDeliveries.length > 0) {
         constraints.push({
           type: 'delivery',
           severity: 'critical',
-          message: `Material not received (${pendingDeliveries.length} delivery)`,
+          message: `Material not received`,
           details: pendingDeliveries.map(d => d.package_name).join(', ')
         });
       }
       
-      // Check predecessor completion
       if (task.predecessor_ids?.length > 0) {
-        const predecessors = task.predecessor_ids
-          .map(id => tasks.find(t => t.id === id))
-          .filter(Boolean);
+        const predecessors = task.predecessor_ids.map(id => tasks.find(t => t.id === id)).filter(Boolean);
         const incomplete = predecessors.filter(p => p.status !== 'completed');
         if (incomplete.length > 0) {
           constraints.push({
@@ -193,19 +182,8 @@ export default function LookAheadPlanning() {
         }
       }
       
-      // Check resource assignment
-      const hasResources = (task.assigned_resources?.length > 0) || (task.assigned_equipment?.length > 0);
-      if (!hasResources && task.phase === 'erection') {
-        constraints.push({
-          type: 'resources',
-          severity: 'warning',
-          message: 'No resources assigned',
-          details: 'Crew and equipment needed'
-        });
-      }
-      
       const readinessScore = constraints.filter(c => c.severity === 'critical').length === 0 ? 
-        (constraints.length === 0 ? 100 : 50) : 0;
+        (constraints.length === 0 ? 100 : 60) : 0;
       
       return {
         ...task,
@@ -218,7 +196,6 @@ export default function LookAheadPlanning() {
     });
   }, [lookAheadTasks, workPackages, drawingSets, rfis, deliveries, tasks]);
 
-  // Group by week
   const weeklyGroups = useMemo(() => {
     const weeks = [];
     let currentWeekStart = lookAheadWindow.start;
@@ -234,22 +211,20 @@ export default function LookAheadPlanning() {
         }
       });
       
-      if (weekTasks.length > 0 || weeks.length < weeksAhead) {
-        weeks.push({
-          start: currentWeekStart,
-          end: weekEnd,
-          label: format(currentWeekStart, 'MMM d') + ' - ' + format(weekEnd, 'MMM d'),
-          tasks: weekTasks,
-          readyCount: weekTasks.filter(t => t.isReady).length,
-          blockedCount: weekTasks.filter(t => t.hasIssues).length
-        });
-      }
+      weeks.push({
+        start: currentWeekStart,
+        end: weekEnd,
+        label: format(currentWeekStart, 'MMM d') + ' - ' + format(weekEnd, 'MMM d'),
+        tasks: weekTasks,
+        readyCount: weekTasks.filter(t => t.isReady).length,
+        blockedCount: weekTasks.filter(t => t.hasIssues).length
+      });
       
       currentWeekStart = addWeeks(currentWeekStart, 1);
     }
     
     return weeks;
-  }, [taskAnalysis, lookAheadWindow, weeksAhead]);
+  }, [taskAnalysis, lookAheadWindow]);
 
   const stats = useMemo(() => {
     const filteredTasks = showConstraintsOnly ? taskAnalysis.filter(t => t.constraints.length > 0) : taskAnalysis;
@@ -268,15 +243,26 @@ export default function LookAheadPlanning() {
     <div className="min-h-screen bg-black">
       {/* Header */}
       <div className="border-b-2 border-amber-500 bg-black">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-black text-white uppercase tracking-tight">Look-Ahead Planning</h1>
               <p className="text-xs text-zinc-500 font-mono mt-1 uppercase tracking-wider">
-                {weeksAhead}-WEEK WINDOW • {stats.total} ACTIVITIES • {stats.blocked} BLOCKED
+                {weeksAhead}-WEEK WINDOW • {stats.total} TASKS • {stats.blocked} BLOCKED
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9">
+                  <SelectValue placeholder="Select project..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value={null}>All Projects</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={weeksAhead.toString()} onValueChange={(v) => setWeeksAhead(parseInt(v))}>
                 <SelectTrigger className="w-32 bg-zinc-900 border-zinc-800 text-white h-9">
                   <SelectValue />
@@ -293,89 +279,67 @@ export default function LookAheadPlanning() {
         </div>
       </div>
 
-      {/* Critical Status Bar */}
+      {/* Metrics */}
       <div className="bg-zinc-950 border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] text-green-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                      <CheckCircle2 size={10} />
-                      READY TO START
-                    </div>
-                    <div className="text-3xl font-black text-green-400">{stats.ready}</div>
-                  </div>
-                  <div className="text-5xl font-black text-green-500/20">{Math.round((stats.ready / stats.total) * 100) || 0}%</div>
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-4 gap-3">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <CheckCircle2 size={9} />
+                  READY
                 </div>
+                <div className="text-2xl font-black text-green-400">{stats.ready}</div>
+                <div className="text-[9px] text-zinc-600">{Math.round((stats.ready / stats.total) * 100) || 0}%</div>
               </CardContent>
             </Card>
-
-            <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] text-red-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                      <XCircle size={10} />
-                      BLOCKED
-                    </div>
-                    <div className="text-3xl font-black text-red-400">{stats.blocked}</div>
-                  </div>
-                  <AlertCircle size={48} className="text-red-500/20" />
+            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <XCircle size={9} />
+                  BLOCKED
                 </div>
+                <div className="text-2xl font-black text-red-400">{stats.blocked}</div>
               </CardContent>
             </Card>
-
-            <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] text-amber-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                      <AlertTriangle size={10} />
-                      NEEDS ATTENTION
-                    </div>
-                    <div className="text-3xl font-black text-amber-400">{stats.needsAttention}</div>
-                  </div>
-                  <Clock size={48} className="text-amber-500/20" />
+            <Card className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-amber-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <AlertTriangle size={9} />
+                  ATTENTION
                 </div>
+                <div className="text-2xl font-black text-amber-400">{stats.needsAttention}</div>
               </CardContent>
             </Card>
-
             <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                      <Layers size={10} />
-                      TOTAL PLANNED
-                    </div>
-                    <div className="text-3xl font-black text-white">{stats.total}</div>
-                  </div>
-                  <TrendingUp size={48} className="text-zinc-700" />
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <Layers size={9} />
+                  TOTAL
                 </div>
+                <div className="text-2xl font-black text-white">{stats.total}</div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
 
-      {/* Filters Bar */}
+      {/* Filters */}
       <div className="bg-black border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="flex items-center gap-3">
+        <div className="max-w-[1800px] mx-auto px-6 py-2">
+          <div className="flex items-center gap-2">
             <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <Input
                 placeholder="Search tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 h-9 text-sm"
+                className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
               />
             </div>
             
             <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-              <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
+              <SelectTrigger className="w-36 bg-zinc-900 border-zinc-800 h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -393,79 +357,86 @@ export default function LookAheadPlanning() {
               size="sm"
               onClick={() => setShowConstraintsOnly(!showConstraintsOnly)}
               className={cn(
-                "h-9 text-xs uppercase tracking-wider font-bold",
-                showConstraintsOnly 
-                  ? "bg-red-500 hover:bg-red-600 text-white" 
-                  : "border-zinc-700 text-zinc-400"
+                "h-8 text-[10px] uppercase tracking-wider font-bold",
+                showConstraintsOnly ? "bg-red-500 hover:bg-red-600 text-white" : "border-zinc-700 text-zinc-400"
               )}
             >
-              <AlertTriangle size={14} className="mr-2" />
-              {showConstraintsOnly ? 'SHOWING ISSUES ONLY' : 'SHOW ISSUES ONLY'}
+              <AlertTriangle size={12} className="mr-1" />
+              {showConstraintsOnly ? 'ISSUES ONLY' : 'SHOW ISSUES'}
             </Button>
           </div>
         </div>
       </div>
 
       {/* Weekly Timeline */}
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <div className="space-y-4">
+      <div className="max-w-[1800px] mx-auto px-6 py-4">
+        <div className="space-y-2">
           {weeklyGroups.map((week, weekIdx) => {
-            const weekDays = eachDayOfInterval({ start: week.start, end: week.end });
+            const isExpanded = expandedWeeks.includes(weekIdx);
             const isCurrentWeek = weekIdx === 0;
             
             return (
               <Card 
                 key={weekIdx} 
                 className={cn(
-                  "bg-zinc-900 border-zinc-800 overflow-hidden",
-                  isCurrentWeek && "border-amber-500 border-2"
+                  "bg-zinc-900 border-zinc-800",
+                  isCurrentWeek && "border-amber-500 border-l-4"
                 )}
               >
-                <CardHeader className={cn(
-                  "pb-3",
-                  isCurrentWeek && "bg-gradient-to-r from-amber-500/10 to-transparent"
-                )}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <CardTitle className="text-base font-black uppercase tracking-wide">
-                        {isCurrentWeek && <span className="text-amber-500 mr-2">►</span>}
-                        WEEK {weekIdx + 1}
-                        <span className="text-zinc-600 font-normal ml-3 text-sm">{week.label}</span>
-                      </CardTitle>
-                      {isCurrentWeek && (
-                        <Badge className="bg-amber-500 text-black font-bold text-xs">
-                          THIS WEEK
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setExpandedWeeks(prev => 
+                    prev.includes(weekIdx) ? prev.filter(w => w !== weekIdx) : [...prev, weekIdx]
+                  )}
+                  className="w-full"
+                >
+                  <CardHeader className="p-3 hover:bg-zinc-800/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <ChevronDown 
+                          size={16} 
+                          className={cn(
+                            "text-zinc-500 transition-transform",
+                            !isExpanded && "-rotate-90"
+                          )}
+                        />
+                        <CardTitle className="text-sm font-black uppercase tracking-wide">
+                          {isCurrentWeek && <span className="text-amber-500 mr-2">►</span>}
+                          WEEK {weekIdx + 1}
+                          <span className="text-zinc-600 font-normal ml-2 text-xs">{week.label}</span>
+                        </CardTitle>
+                        {isCurrentWeek && (
+                          <Badge className="bg-amber-500 text-black font-bold text-[9px] px-2 py-0">
+                            THIS WEEK
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <div className="flex items-center gap-1.5">
                           <div className="w-2 h-2 bg-green-500 rounded-full" />
                           <span className="text-zinc-400">{week.readyCount}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <div className="w-2 h-2 bg-red-500 rounded-full" />
                           <span className="text-zinc-400">{week.blockedCount}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <div className="w-2 h-2 bg-zinc-500 rounded-full" />
                           <span className="text-zinc-400">{week.tasks.length}</span>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {week.tasks.length === 0 ? (
-                    <div className="p-8 text-center text-zinc-600">
-                      No activities scheduled for this week
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-zinc-800">
-                      {week.tasks
-                        .sort((a, b) => a.daysUntilStart - b.daysUntilStart)
-                        .map((task, taskIdx) => {
+                  </CardHeader>
+                </button>
+                
+                {isExpanded && (
+                  <CardContent className="p-0 border-t border-zinc-800">
+                    {week.tasks.length === 0 ? (
+                      <div className="p-8 text-center text-zinc-600 text-xs">
+                        No tasks scheduled
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-zinc-800">
+                        {week.tasks.sort((a, b) => a.daysUntilStart - b.daysUntilStart).map(task => {
                           const wp = workPackages.find(w => w.id === task.work_package_id);
                           const project = projects.find(p => p.id === task.project_id);
                           
@@ -473,16 +444,16 @@ export default function LookAheadPlanning() {
                             <div
                               key={task.id}
                               className={cn(
-                                "p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer group",
+                                "p-3 hover:bg-zinc-800/50 transition-colors group",
                                 task.hasIssues && "bg-red-500/5",
                                 task.isReady && "bg-green-500/5"
                               )}
                             >
-                              <div className="flex items-start gap-4">
-                                {/* Readiness Indicator */}
-                                <div className="flex flex-col items-center gap-1 pt-1">
+                              <div className="flex items-start gap-3">
+                                {/* Readiness */}
+                                <div className="flex flex-col items-center gap-0.5 pt-0.5">
                                   <div className={cn(
-                                    "w-12 h-12 rounded-lg flex items-center justify-center font-black text-lg border-2",
+                                    "w-10 h-10 rounded flex items-center justify-center font-black text-sm border",
                                     task.isReady 
                                       ? "bg-green-500/20 border-green-500 text-green-400" 
                                       : task.hasIssues
@@ -491,39 +462,39 @@ export default function LookAheadPlanning() {
                                   )}>
                                     {task.readinessScore}
                                   </div>
-                                  <span className="text-[9px] text-zinc-600 uppercase tracking-wider font-bold">
+                                  <span className="text-[8px] text-zinc-600 uppercase tracking-wider font-bold">
                                     {task.daysUntilStart}d
                                   </span>
                                 </div>
 
                                 {/* Task Info */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-3 mb-2">
+                                  <div className="flex items-start justify-between gap-3 mb-1">
                                     <div className="flex-1">
-                                      <h3 className="font-bold text-white text-base mb-1 group-hover:text-amber-400 transition-colors">
+                                      <h3 className="font-bold text-white text-sm mb-1 group-hover:text-amber-400 transition-colors">
                                         {task.name}
                                       </h3>
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge variant="outline" className="text-[10px] font-mono">
+                                        <Badge variant="outline" className="text-[9px] font-mono px-1.5 py-0">
                                           {project?.project_number}
                                         </Badge>
                                         {wp && (
-                                          <Badge variant="outline" className="text-[10px]">
-                                            <Package size={8} className="mr-1" />
+                                          <Badge variant="outline" className="text-[9px] px-1.5 py-0">
                                             {wp.package_number}
                                           </Badge>
                                         )}
                                         <Badge className={cn(
-                                          "text-[10px] font-bold uppercase",
-                                          task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
-                                          task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                          task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                          task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                          "text-[9px] font-bold uppercase px-1.5 py-0",
+                                          task.phase === 'detailing' && "bg-blue-500/20 text-blue-400",
+                                          task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400",
+                                          task.phase === 'delivery' && "bg-amber-500/20 text-amber-400",
+                                          task.phase === 'erection' && "bg-green-500/20 text-green-400"
                                         )}>
                                           {task.phase}
                                         </Badge>
-                                        <span className="text-xs text-zinc-600 font-mono">
-                                          {format(parseISO(task.start_date), 'MMM d')} → {task.end_date ? format(parseISO(task.end_date), 'MMM d') : 'TBD'}
+                                        <span className="text-[10px] text-zinc-600 font-mono">
+                                          {format(parseISO(task.start_date), 'MMM d')} 
+                                          {task.end_date && ` → ${format(parseISO(task.end_date), 'MMM d')}`}
                                         </span>
                                       </div>
                                     </div>
@@ -531,23 +502,23 @@ export default function LookAheadPlanning() {
 
                                   {/* Constraints */}
                                   {task.constraints.length > 0 && (
-                                    <div className="space-y-1.5 mt-3">
+                                    <div className="space-y-1 mt-2">
                                       {task.constraints.map((constraint, idx) => (
                                         <div
                                           key={idx}
                                           className={cn(
-                                            "flex items-start gap-2 p-2 rounded text-xs",
+                                            "flex items-start gap-2 p-2 rounded text-[10px]",
                                             constraint.severity === 'critical' 
                                               ? "bg-red-500/10 border border-red-500/30" 
                                               : "bg-amber-500/10 border border-amber-500/30"
                                           )}
                                         >
                                           {constraint.severity === 'critical' ? (
-                                            <XCircle size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
+                                            <XCircle size={12} className="text-red-400 mt-0.5 flex-shrink-0" />
                                           ) : (
-                                            <AlertTriangle size={14} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                                            <AlertTriangle size={12} className="text-amber-400 mt-0.5 flex-shrink-0" />
                                           )}
-                                          <div className="flex-1 min-w-0">
+                                          <div className="flex-1">
                                             <p className={cn(
                                               "font-bold uppercase tracking-wider",
                                               constraint.severity === 'critical' ? "text-red-400" : "text-amber-400"
@@ -555,60 +526,72 @@ export default function LookAheadPlanning() {
                                               {constraint.message}
                                             </p>
                                             {constraint.details && (
-                                              <p className="text-zinc-500 mt-0.5 text-[11px]">{constraint.details}</p>
+                                              <p className="text-zinc-500 mt-0.5 text-[9px]">{constraint.details}</p>
                                             )}
                                           </div>
                                         </div>
                                       ))}
                                     </div>
                                   )}
-
-                                  {/* Action Required Banner */}
-                                  {task.hasIssues && (
-                                    <div className="mt-3 p-2 bg-red-500/20 border-l-4 border-red-500 rounded-r">
-                                      <p className="text-xs font-bold text-red-400 uppercase tracking-wider">
-                                        ⚠ ACTION REQUIRED - RESOLVE BEFORE START DATE
-                                      </p>
-                                    </div>
-                                  )}
                                 </div>
 
-                                {/* Quick Actions */}
-                                <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-zinc-700 text-xs h-8 whitespace-nowrap"
-                                  >
-                                    VIEW TASK
-                                  </Button>
-                                </div>
+                                {/* Actions */}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingTask(task)}
+                                  className="opacity-0 group-hover:opacity-100 h-7 px-2 text-xs"
+                                >
+                                  <Edit size={12} className="mr-1" />
+                                  EDIT
+                                </Button>
                               </div>
                             </div>
                           );
                         })}
-                    </div>
-                  )}
-                </CardContent>
+                      </div>
+                    )}
+                  </CardContent>
+                )}
               </Card>
             );
           })}
         </div>
 
         {displayTasks.length === 0 && (
-          <Card className="bg-zinc-900 border-zinc-800">
+          <Card className="bg-zinc-900 border-zinc-800 mt-4">
             <CardContent className="p-12 text-center">
               <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-              <h3 className="text-xl font-bold text-zinc-400 mb-2">No Activities in Look-Ahead Window</h3>
-              <p className="text-zinc-600">
+              <h3 className="text-lg font-bold text-zinc-400 mb-2">No Tasks in Window</h3>
+              <p className="text-xs text-zinc-600">
                 {showConstraintsOnly 
-                  ? 'No tasks with constraints found - all clear!' 
-                  : `Add tasks to the schedule with start dates in the next ${weeksAhead} weeks`}
+                  ? 'No tasks with constraints - all clear!' 
+                  : `Add tasks with start dates in the next ${weeksAhead} weeks`}
               </p>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Edit Task Sheet */}
+      <Sheet open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle className="text-white">Edit Task</SheetTitle>
+          </SheetHeader>
+          {editingTask && (
+            <div className="mt-6">
+              <TaskForm
+                task={editingTask}
+                projectId={activeProjectId}
+                onSubmit={(data) => updateTaskMutation.mutate({ id: editingTask.id, data })}
+                onCancel={() => setEditingTask(null)}
+                isLoading={updateTaskMutation.isPending}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

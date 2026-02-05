@@ -1,80 +1,89 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import PageHeader from '@/components/ui/PageHeader';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Filter, X, Clock, Users, Activity, AlertTriangle, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import CalendarGrid from '@/components/calendar/CalendarGrid';
-import CalendarEventList from '@/components/calendar/CalendarEventList';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
+  Calendar as CalendarIcon, 
+  ChevronLeft, 
+  ChevronRight, 
+  Plus,
+  Clock,
+  Truck,
+  Package,
+  FileText,
+  AlertCircle,
+  Users,
+  CheckCircle2,
+  Edit,
+  Trash2,
+  X
+} from 'lucide-react';
+import { 
+  format, 
   startOfMonth, 
   endOfMonth, 
   addMonths, 
   subMonths, 
-  format,
+  eachDayOfInterval,
   startOfWeek,
   endOfWeek,
-  addDays,
   isSameMonth,
   isToday,
   parseISO,
-  isWithinInterval
+  isSameDay,
+  isPast,
+  differenceInDays
 } from 'date-fns';
-import { toast } from '@/components/ui/notifications';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import TaskForm from '@/components/schedule/TaskForm';
 
 export default function Calendar() {
+  const { activeProjectId } = useActiveProject();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState('month');
-  const [showCriticalPathOnly, setShowCriticalPathOnly] = useState(false);
-  const [projectFilter, setProjectFilter] = useState('all');
-  const [resourceFilter, setResourceFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [eventTypeFilter, setEventTypeFilter] = useState('all');
-
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [phaseFilter, setPhaseFilter] = useState('all');
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const queryClient = useQueryClient();
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+      : base44.entities.Task.list('start_date'),
+    staleTime: 2 * 60 * 1000
+  });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000
+    staleTime: 10 * 60 * 1000
   });
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
-    staleTime: 2 * 60 * 1000
-  });
-
-  const { data: resources = [] } = useQuery({
-    queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list('name'),
-    staleTime: 5 * 60 * 1000
-  });
-
-  const { data: allocations = [] } = useQuery({
-    queryKey: ['resourceAllocations'],
-    queryFn: () => base44.entities.ResourceAllocation.list(),
-    staleTime: 2 * 60 * 1000
-  });
-
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.list(),
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+      : base44.entities.Delivery.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: meetings = [] } = useQuery({
-    queryKey: ['meetings'],
-    queryFn: () => base44.entities.Meeting.list(),
-    staleTime: 5 * 60 * 1000
-  });
-
-  const { data: workPackages = [] } = useQuery({
-    queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryKey: ['meetings', activeProjectId],
+    queryFn: () => activeProjectId
+      ? base44.entities.Meeting.filter({ project_id: activeProjectId })
+      : base44.entities.Meeting.list(),
     staleTime: 5 * 60 * 1000
   });
 
@@ -82,450 +91,430 @@ export default function Calendar() {
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success('Task rescheduled');
-    },
+      setEditingTask(null);
+      toast.success('Task updated');
+    }
   });
 
-  const updateAllocationMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ResourceAllocation.update(id, data),
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
-      toast.success('Allocation rescheduled');
-    },
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.success('Task deleted');
+    }
   });
 
-  const updateWorkPackageMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-packages'] });
-      toast.success('Work package rescheduled');
-    },
-  });
+  // Calendar grid setup
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  // Compile all calendar events
+  // Compile events
   const calendarEvents = useMemo(() => {
     const events = [];
 
-    // Tasks
-    (tasks || []).forEach(task => {
-      if (task.start_date || task.end_date) {
+    tasks.forEach(task => {
+      if (task.start_date && task.status !== 'cancelled') {
+        if (phaseFilter === 'all' || task.phase === phaseFilter) {
+          events.push({
+            id: task.id,
+            type: 'task',
+            title: task.name,
+            date: task.start_date,
+            endDate: task.end_date,
+            phase: task.phase,
+            status: task.status,
+            project_id: task.project_id,
+            data: task
+          });
+        }
+      }
+    });
+
+    deliveries.forEach(d => {
+      const date = d.scheduled_date || d.confirmed_date || d.requested_date;
+      if (date) {
         events.push({
-          id: task.id,
-          type: 'task',
-          title: task.name,
-          start_date: task.start_date,
-          end_date: task.end_date,
-          project_id: task.project_id,
-          status: task.status,
-          priority: task.priority,
-          data: task,
+          id: d.id,
+          type: 'delivery',
+          title: d.package_name,
+          date,
+          status: d.delivery_status,
+          project_id: d.project_id,
+          data: d
         });
       }
     });
 
-    // Projects (timeline)
-    (projects || []).forEach(project => {
-      if (project.start_date || project.target_completion) {
+    meetings.forEach(m => {
+      if (m.meeting_date) {
         events.push({
-          id: project.id,
-          type: 'project',
-          title: project.name,
-          start_date: project.start_date,
-          end_date: project.target_completion,
-          project_id: project.id,
-          status: project.status,
-          data: project,
-        });
-      }
-    });
-
-    // Resource allocations
-    (allocations || []).forEach(allocation => {
-      const resource = (resources || []).find(r => r.id === allocation.resource_id);
-      if (resource && allocation.start_date && allocation.end_date) {
-        events.push({
-          id: allocation.id,
-          type: 'allocation',
-          title: `${resource.name} - ${(projects || []).find(p => p.id === allocation.project_id)?.name || 'Project'}`,
-          start_date: allocation.start_date,
-          end_date: allocation.end_date,
-          project_id: allocation.project_id,
-          resource_id: allocation.resource_id,
-          allocation_percentage: allocation.allocation_percentage,
-          data: allocation,
-        });
-      }
-    });
-
-    // Document reviews
-    (documents || []).forEach(doc => {
-      if (doc.review_due_date && doc.workflow_stage === 'pending_review') {
-        events.push({
-          id: doc.id,
-          type: 'review',
-          title: `Review: ${doc.title}`,
-          start_date: doc.review_due_date,
-          end_date: doc.review_due_date,
-          project_id: doc.project_id,
-          data: doc,
-        });
-      }
-    });
-
-    // Meetings
-    (meetings || []).forEach(meeting => {
-      if (meeting.meeting_date) {
-        events.push({
-          id: meeting.id,
+          id: m.id,
           type: 'meeting',
-          title: meeting.title,
-          start_date: meeting.meeting_date.split('T')[0],
-          end_date: meeting.meeting_date.split('T')[0],
-          project_id: meeting.project_id,
-          data: meeting,
-        });
-      }
-    });
-
-    // Work packages
-    (workPackages || []).forEach(wp => {
-      if (wp.start_date || wp.target_date) {
-        events.push({
-          id: wp.id,
-          type: 'work_package',
-          title: `WP: ${wp.name}`,
-          start_date: wp.start_date,
-          end_date: wp.target_date,
-          project_id: wp.project_id,
-          status: wp.status,
-          phase: wp.phase,
-          data: wp,
+          title: m.title,
+          date: m.meeting_date.split('T')[0],
+          project_id: m.project_id,
+          data: m
         });
       }
     });
 
     return events;
-  }, [tasks, projects, allocations, resources, documents, meetings, workPackages]);
+  }, [tasks, deliveries, meetings, phaseFilter]);
 
-  // Apply filters
-  const filteredEvents = useMemo(() => {
-    return (calendarEvents || []).filter(event => {
-      const matchesProject = projectFilter === 'all' || event.project_id === projectFilter;
-      const matchesResource = resourceFilter === 'all' || event.resource_id === resourceFilter;
-      const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
-      const matchesType = eventTypeFilter === 'all' || event.type === eventTypeFilter;
-
-      return matchesProject && matchesResource && matchesStatus && matchesType;
+  // Events by date
+  const eventsByDate = useMemo(() => {
+    const grouped = {};
+    calendarEvents.forEach(event => {
+      const key = event.date;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(event);
     });
-  }, [calendarEvents, projectFilter, resourceFilter, statusFilter, eventTypeFilter]);
+    return grouped;
+  }, [calendarEvents]);
 
-  // Get events for current view
-  const viewEvents = useMemo(() => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    
-    return (filteredEvents || []).filter(event => {
-      if (!event.start_date && !event.end_date) return false;
-      
-      const eventStart = event.start_date ? parseISO(event.start_date) : null;
-      const eventEnd = event.end_date ? parseISO(event.end_date) : eventStart;
+  const selectedDateEvents = selectedDate ? (eventsByDate[format(selectedDate, 'yyyy-MM-dd')] || []) : [];
 
-      if (!eventStart) return false;
-
-      // Check if event overlaps with current month
-      return (
-        isWithinInterval(eventStart, { start: monthStart, end: monthEnd }) ||
-        isWithinInterval(eventEnd, { start: monthStart, end: monthEnd }) ||
-        (eventStart < monthStart && eventEnd > monthEnd)
-      );
-    });
-  }, [filteredEvents, currentDate]);
-
-  const handleEventDrop = async (event, newStartDate, newEndDate) => {
-    const daysDiff = Math.round((parseISO(newStartDate) - parseISO(event.start_date)) / (1000 * 60 * 60 * 24));
-
-    try {
-      if (event.type === 'task') {
-        const originalEnd = event.end_date ? parseISO(event.end_date) : null;
-        const calculatedEndDate = originalEnd 
-          ? format(addDays(originalEnd, daysDiff), 'yyyy-MM-dd')
-          : newStartDate;
-
-        await updateTaskMutation.mutateAsync({
-          id: event.id,
-          data: {
-            start_date: newStartDate,
-            end_date: calculatedEndDate,
-          }
-        });
-      } else if (event.type === 'allocation') {
-        const originalEnd = event.end_date ? parseISO(event.end_date) : null;
-        const calculatedEndDate = originalEnd 
-          ? format(addDays(originalEnd, daysDiff), 'yyyy-MM-dd')
-          : newStartDate;
-
-        await updateAllocationMutation.mutateAsync({
-          id: event.id,
-          data: {
-            start_date: newStartDate,
-            end_date: calculatedEndDate,
-          }
-        });
-      } else if (event.type === 'work_package') {
-        const originalEnd = event.end_date ? parseISO(event.end_date) : null;
-        const calculatedEndDate = originalEnd 
-          ? format(addDays(originalEnd, daysDiff), 'yyyy-MM-dd')
-          : newStartDate;
-
-        await updateWorkPackageMutation.mutateAsync({
-          id: event.id,
-          data: {
-            start_date: newStartDate,
-            target_date: calculatedEndDate,
-          }
-        });
+  const monthStats = useMemo(() => {
+    const monthEvents = calendarEvents.filter(e => {
+      try {
+        const eventDate = parseISO(e.date);
+        return isSameMonth(eventDate, currentDate);
+      } catch {
+        return false;
       }
-    } catch (error) {
-      toast.error('Failed to reschedule');
-    }
-  };
+    });
 
-  const activeFilterCount = [projectFilter, resourceFilter, statusFilter, eventTypeFilter]
-    .filter(f => f !== 'all').length;
+    const overdue = monthEvents.filter(e => {
+      try {
+        const eventDate = parseISO(e.date);
+        return isPast(eventDate) && e.status !== 'completed' && e.status !== 'received' && e.status !== 'closed';
+      } catch {
+        return false;
+      }
+    }).length;
+
+    const thisWeek = monthEvents.filter(e => {
+      try {
+        const eventDate = parseISO(e.date);
+        const now = new Date();
+        return differenceInDays(eventDate, now) >= 0 && differenceInDays(eventDate, now) <= 7;
+      } catch {
+        return false;
+      }
+    }).length;
+
+    return {
+      total: monthEvents.length,
+      overdue,
+      thisWeek,
+      byType: {
+        task: monthEvents.filter(e => e.type === 'task').length,
+        delivery: monthEvents.filter(e => e.type === 'delivery').length,
+        meeting: monthEvents.filter(e => e.type === 'meeting').length
+      }
+    };
+  }, [calendarEvents, currentDate]);
 
   return (
-    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-      {/* Modern Calendar Header */}
-      <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5 border border-amber-500/20 p-8">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
-              <CalendarIcon className="w-8 h-8 text-black" />
-            </div>
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">Calendar</h1>
-              <p className="text-zinc-400 font-medium mt-1">Unified project timeline & schedule</p>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Project Calendar</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">
+                {format(currentDate, 'MMMM yyyy').toUpperCase()} • {monthStats.total} EVENTS
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                className="border-zinc-700 h-9 px-3"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <Button
+                variant={isToday(currentDate) ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentDate(new Date())}
+                className={cn(
+                  "h-9 px-4 text-xs uppercase tracking-wider font-bold",
+                  isToday(currentDate) ? "bg-amber-500 hover:bg-amber-600 text-black" : "border-zinc-700"
+                )}
+              >
+                TODAY
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+                className="border-zinc-700 h-9 px-3"
+              >
+                <ChevronRight size={16} />
+              </Button>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentDate(new Date())}
-            className="bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
-          >
-            Today
-          </Button>
         </div>
       </div>
 
-      {/* Controls & Navigation */}
-      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-            className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-white"
-          >
-            <ChevronLeft size={18} />
-          </Button>
-          <div className="px-6 py-2 rounded-xl bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 border border-cyan-500/20">
-            <h2 className="text-xl font-bold text-white min-w-[200px] text-center">
-              {format(currentDate, 'MMMM yyyy')}
-            </h2>
+      {/* Metrics */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1600px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-5 gap-3">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Tasks</div>
+                <div className="text-2xl font-black text-white">{monthStats.byType.task}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Deliveries</div>
+                <div className="text-2xl font-black text-amber-500">{monthStats.byType.delivery}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Meetings</div>
+                <div className="text-2xl font-black text-blue-400">{monthStats.byType.meeting}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5">Overdue</div>
+                <div className="text-2xl font-black text-red-400">{monthStats.overdue}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">This Week</div>
+                <div className="text-2xl font-black text-green-400">{monthStats.thisWeek}</div>
+              </CardContent>
+            </Card>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-            className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-white"
-          >
-            <ChevronRight size={18} />
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant={showCriticalPathOnly ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowCriticalPathOnly(!showCriticalPathOnly)}
-            className={showCriticalPathOnly ? "bg-gradient-to-r from-red-600 to-orange-600" : "border-zinc-800 text-white"}
-          >
-            <Zap size={14} className="mr-1" />
-            Critical Path
-          </Button>
-          
-          <Tabs value={view} onValueChange={setView}>
-            <TabsList className="bg-zinc-900/50 border border-zinc-800">
-              <TabsTrigger value="month" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">Month</TabsTrigger>
-              <TabsTrigger value="list" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-blue-600">List</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="task">Tasks</SelectItem>
-            <SelectItem value="project">Projects</SelectItem>
-            <SelectItem value="allocation">Resources</SelectItem>
-            <SelectItem value="work_package">Work Packages</SelectItem>
-            <SelectItem value="review">Reviews</SelectItem>
-            <SelectItem value="meeting">Meetings</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Filter */}
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1600px] mx-auto px-6 py-2">
+          <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+            <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Phases</SelectItem>
+              <SelectItem value="detailing">Detailing</SelectItem>
+              <SelectItem value="fabrication">Fabrication</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="erection">Erection</SelectItem>
+              <SelectItem value="closeout">Closeout</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="All Projects" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.project_number} - {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Calendar Grid */}
+      <div className="max-w-[1600px] mx-auto px-6 py-4">
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4">
+            {/* Weekday Headers */}
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="text-center text-[10px] font-bold text-zinc-600 uppercase tracking-widest py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
 
-        <Select value={resourceFilter} onValueChange={setResourceFilter}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="All Resources" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            <SelectItem value="all">All Resources</SelectItem>
-            {resources.map(r => (
-              <SelectItem key={r.id} value={r.id}>
-                {r.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            {/* Calendar Days */}
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map((day, idx) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayEvents = eventsByDate[dateKey] || [];
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isCurrentDay = isToday(day);
+                const isSelected = selectedDate && isSameDay(day, selectedDate);
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="on_hold">On Hold</SelectItem>
-          </SelectContent>
-        </Select>
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedDate(day)}
+                    className={cn(
+                      "min-h-[100px] p-2 rounded border transition-all text-left",
+                      isCurrentMonth ? "bg-zinc-800/50 border-zinc-700" : "bg-zinc-900/30 border-zinc-800/50 opacity-40",
+                      isCurrentDay && "border-amber-500 border-2 bg-amber-500/10",
+                      isSelected && "bg-zinc-700 border-zinc-500",
+                      "hover:bg-zinc-700/50"
+                    )}
+                  >
+                    <div className={cn(
+                      "text-sm font-bold mb-1",
+                      isCurrentDay ? "text-amber-500" : isCurrentMonth ? "text-white" : "text-zinc-600"
+                    )}>
+                      {format(day, 'd')}
+                    </div>
+                    
+                    <div className="space-y-0.5">
+                      {dayEvents.slice(0, 3).map(event => (
+                        <div
+                          key={event.id}
+                          className={cn(
+                            "text-[9px] px-1.5 py-0.5 rounded font-bold truncate",
+                            event.type === 'task' && "bg-blue-500/20 text-blue-400",
+                            event.type === 'delivery' && "bg-amber-500/20 text-amber-400",
+                            event.type === 'meeting' && "bg-purple-500/20 text-purple-400"
+                          )}
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                      {dayEvents.length > 3 && (
+                        <div className="text-[9px] text-zinc-600 font-bold px-1.5">
+                          +{dayEvents.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-        {activeFilterCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setProjectFilter('all');
-              setResourceFilter('all');
-              setStatusFilter('all');
-              setEventTypeFilter('all');
-            }}
-            className="text-zinc-400 hover:text-white"
-          >
-            <X size={16} className="mr-2" />
-            Clear Filters ({activeFilterCount})
-          </Button>
+        {/* Selected Date Details */}
+        {selectedDate && (
+          <Card className="bg-zinc-900 border-zinc-800 mt-4">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-bold uppercase">
+                  {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                </CardTitle>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSelectedDate(null)}
+                  className="h-7 px-2 text-zinc-500"
+                >
+                  <X size={14} />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {selectedDateEvents.length === 0 ? (
+                <div className="text-center py-8 text-zinc-600 text-sm">
+                  No events scheduled
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {selectedDateEvents.map(event => {
+                    const project = projects.find(p => p.id === event.project_id);
+                    
+                    return (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          "p-3 rounded border",
+                          event.type === 'task' && "bg-blue-500/5 border-blue-500/20",
+                          event.type === 'delivery' && "bg-amber-500/5 border-amber-500/20",
+                          event.type === 'meeting' && "bg-purple-500/5 border-purple-500/20"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              {event.type === 'task' && <FileText size={12} className="text-blue-400" />}
+                              {event.type === 'delivery' && <Truck size={12} className="text-amber-400" />}
+                              {event.type === 'meeting' && <Users size={12} className="text-purple-400" />}
+                              <h4 className="font-bold text-white text-sm">{event.title}</h4>
+                            </div>
+                            {project && (
+                              <p className="text-[10px] text-zinc-600 font-mono mb-1">
+                                {project.project_number} • {project.name}
+                              </p>
+                            )}
+                            {event.phase && (
+                              <Badge className={cn(
+                                "text-[9px] font-bold uppercase px-1.5 py-0",
+                                event.phase === 'detailing' && "bg-blue-500/20 text-blue-400",
+                                event.phase === 'fabrication' && "bg-purple-500/20 text-purple-400",
+                                event.phase === 'delivery' && "bg-amber-500/20 text-amber-400",
+                                event.phase === 'erection' && "bg-green-500/20 text-green-400"
+                              )}>
+                                {event.phase}
+                              </Badge>
+                            )}
+                            {event.status && (
+                              <Badge className={cn(
+                                "text-[9px] ml-1 px-1.5 py-0",
+                                event.status === 'completed' && "bg-green-500/20 text-green-400",
+                                event.status === 'in_progress' && "bg-blue-500/20 text-blue-400",
+                                event.status === 'blocked' && "bg-red-500/20 text-red-400"
+                              )}>
+                                {event.status}
+                              </Badge>
+                            )}
+                          </div>
+                          {event.type === 'task' && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingTask(event.data)}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <Edit size={12} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (confirm('Delete this task?')) {
+                                    deleteTaskMutation.mutate(event.id);
+                                  }
+                                }}
+                                className="h-7 px-2 text-red-500 hover:text-red-400"
+                              >
+                                <Trash2 size={12} />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
       </div>
 
-      {/* KPI Dashboard - Real-time Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {/* Critical Path Items */}
-        <div className="bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-red-500/10 transition-all cursor-pointer hover:border-red-500/40" 
-          onClick={() => {/* Filter to critical path */}}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-red-400" />
-              </div>
-              <p className="text-xs text-zinc-400 font-medium">Critical Path</p>
+      {/* Edit Task Sheet */}
+      <Sheet open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle className="text-white">Edit Task</SheetTitle>
+          </SheetHeader>
+          {editingTask && (
+            <div className="mt-6">
+              <TaskForm
+                task={editingTask}
+                projectId={activeProjectId}
+                onSubmit={(data) => updateTaskMutation.mutate({ id: editingTask.id, data })}
+                onCancel={() => setEditingTask(null)}
+                isLoading={updateTaskMutation.isPending}
+              />
             </div>
-            <span className="text-[10px] text-red-400 bg-red-500/20 px-2 py-1 rounded">HIGH</span>
-          </div>
-          <p className="text-2xl font-bold text-red-400">
-            {viewEvents.filter(e => e.is_critical).length}
-          </p>
-          <p className="text-[10px] text-zinc-500 mt-1">No float remaining</p>
-        </div>
-
-        {/* Overdue Items */}
-        <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-orange-500/10 transition-all cursor-pointer hover:border-orange-500/40">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
-              <Clock className="w-4 h-4 text-orange-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Overdue</p>
-          </div>
-          <p className="text-2xl font-bold text-orange-400">
-            {viewEvents.filter(e => new Date(e.end_date) < new Date() && e.status !== 'completed').length}
-          </p>
-          <p className="text-[10px] text-zinc-500 mt-1">Action required</p>
-        </div>
-
-        {/* Due This Week */}
-        <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-yellow-500/10 transition-all cursor-pointer hover:border-yellow-500/40">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-              <CalendarIcon className="w-4 h-4 text-yellow-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Due This Week</p>
-          </div>
-          <p className="text-2xl font-bold text-yellow-400">
-            {viewEvents.filter(e => {
-              const d = new Date(e.end_date);
-              const now = new Date();
-              const week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-              return d >= now && d <= week;
-            }).length}
-          </p>
-          <p className="text-[10px] text-zinc-500 mt-1">Monitor closely</p>
-        </div>
-
-        {/* Resource Conflicts */}
-        <div className="bg-gradient-to-br from-pink-500/10 to-pink-600/5 border border-pink-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-pink-500/10 transition-all cursor-pointer hover:border-pink-500/40">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
-              <Users className="w-4 h-4 text-pink-400" />
-            </div>
-            <p className="text-xs text-zinc-400 font-medium">Conflicts</p>
-          </div>
-          <p className="text-2xl font-bold text-pink-400">
-            {viewEvents.filter(e => e.has_resource_conflict).length}
-          </p>
-          <p className="text-[10px] text-zinc-500 mt-1">Resource overlap</p>
-        </div>
-      </div>
-
-      {/* Calendar Content */}
-      {view === 'month' ? (
-        <CalendarGrid
-          currentDate={currentDate}
-          events={viewEvents}
-          projects={projects}
-          resources={resources}
-          onEventDrop={handleEventDrop}
-        />
-      ) : (
-        <CalendarEventList
-          events={viewEvents}
-          projects={projects}
-          resources={resources}
-          onEventDrop={handleEventDrop}
-        />
-      )}
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

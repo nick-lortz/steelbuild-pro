@@ -8,28 +8,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle } from
-"@/components/ui/dialog";
-import { UserCircle, Mail, Shield, Users, Plus, Trash2, Settings as SettingsIcon, Bell, Palette, Save, MessageSquare, Send, FileText, ExternalLink, Truck } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  UserCircle, 
+  Shield, 
+  Users, 
+  Plus, 
+  Save, 
+  MessageSquare, 
+  Send, 
+  FileText, 
+  ExternalLink,
+  Bell,
+  Palette,
+  Settings as SettingsIcon,
+  Clock,
+  Globe,
+  Monitor,
+  Zap,
+  Layout,
+  DollarSign
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import { format } from 'date-fns';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
+import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -41,21 +49,26 @@ export default function Settings() {
     title: '',
     department: ''
   });
-  const [preferences, setPreferences] = useState({
-    email_notifications: true,
-    project_notifications: true,
-    rfi_notifications: true,
-    change_order_notifications: true,
-    theme: 'dark',
+  const [displayPrefs, setDisplayPrefs] = useState({
     date_format: 'MM/dd/yyyy',
-    time_zone: 'America/New_York'
+    time_zone: 'America/Phoenix',
+    currency_format: 'USD',
+    number_format: 'en-US',
+    start_of_week: 'monday',
+    default_view: 'dashboard',
+    compact_mode: false,
+    show_project_codes: true,
+    show_tooltips: true,
+    animation_speed: 'normal'
   });
-  const [phaseNames, setPhaseNames] = useState({
-    detailing: 'Detailing',
-    fabrication: 'Fabrication',
-    delivery: 'Delivery',
-    erection: 'Erection',
-    closeout: 'Closeout'
+  const [workflowPrefs, setWorkflowPrefs] = useState({
+    auto_assign_tasks: false,
+    require_task_approval: false,
+    auto_advance_phase: false,
+    enable_quick_actions: true,
+    default_task_duration: 1,
+    default_priority: 'medium',
+    require_cost_code: true
   });
   const queryClient = useQueryClient();
 
@@ -73,11 +86,11 @@ export default function Settings() {
         title: currentUser.title || '',
         department: currentUser.department || ''
       });
-      if (currentUser.preferences) {
-        setPreferences((prev) => ({ ...prev, ...currentUser.preferences }));
+      if (currentUser.display_preferences) {
+        setDisplayPrefs(prev => ({ ...prev, ...currentUser.display_preferences }));
       }
-      if (currentUser.phase_names) {
-        setPhaseNames((prev) => ({ ...prev, ...currentUser.phase_names }));
+      if (currentUser.workflow_preferences) {
+        setWorkflowPrefs(prev => ({ ...prev, ...currentUser.workflow_preferences }));
       }
     }
   }, [currentUser]);
@@ -94,7 +107,7 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowInviteDialog(false);
       setInviteEmail('');
-      setInviteRole('user');
+      toast.success('Invite sent');
     }
   });
 
@@ -104,27 +117,11 @@ export default function Settings() {
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success('Profile updated successfully');
-    },
-    onError: (error) => {
-      console.error('Profile update error:', error);
-      toast.error(error?.message || 'Failed to update profile');
+      toast.success('Saved');
     }
   });
-
-  const saveProfile = () => {
-    updateProfileMutation.mutate(profileData);
-  };
-
-  const savePreferences = () => {
-    updateProfileMutation.mutate({ preferences });
-  };
-
-  const savePhaseNames = () => {
-    updateProfileMutation.mutate({ phase_names: phaseNames });
-  };
 
   const [feedbackForm, setFeedbackForm] = useState({
     type: 'feature_request',
@@ -136,25 +133,15 @@ export default function Settings() {
   const submitFeedbackMutation = useMutation({
     mutationFn: (data) => base44.entities.Feedback.create({
       ...data,
-      user_email: currentUser?.email || '',
-      user_name: currentUser?.full_name || currentUser?.email || ''
+      user_email: currentUser?.email,
+      user_name: currentUser?.full_name || currentUser?.email
     }),
     onSuccess: () => {
-      setFeedbackForm({
-        type: 'feature_request',
-        title: '',
-        description: '',
-        priority: 'medium'
-      });
+      setFeedbackForm({ type: 'feature_request', title: '', description: '', priority: 'medium' });
       queryClient.invalidateQueries({ queryKey: ['feedback'] });
+      toast.success('Feedback submitted');
     }
   });
-
-  const handleFeedbackSubmit = (e) => {
-    e.preventDefault();
-    if (!feedbackForm.title || !feedbackForm.description) return;
-    submitFeedbackMutation.mutate(feedbackForm);
-  };
 
   const { data: myFeedback = [] } = useQuery({
     queryKey: ['feedback'],
@@ -162,693 +149,445 @@ export default function Settings() {
     enabled: !!currentUser?.email
   });
 
-  const handleInviteUser = (e) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-    inviteMutation.mutate({ email: inviteEmail, role: inviteRole });
-  };
-
   const isAdmin = currentUser?.role === 'admin';
 
   const userColumns = [
-  {
-    header: 'User',
-    accessor: 'email',
-    render: (row) =>
-    <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-            <UserCircle size={20} className="text-amber-500" />
+    {
+      header: 'User',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
+            <UserCircle size={16} className="text-amber-500" />
           </div>
           <div>
-            <p className="font-medium text-white">{row.full_name || 'No name set'}</p>
-            <p className="text-sm text-zinc-400">{row.email}</p>
+            <p className="font-bold text-white text-sm">{row.full_name || 'No name'}</p>
+            <p className="text-[10px] text-zinc-500">{row.email}</p>
           </div>
         </div>
-
-  },
-  {
-    header: 'Role',
-    accessor: 'role',
-    render: (row) =>
-    <Badge variant="outline" className={row.role === 'admin' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}>
-          <Shield size={12} className="mr-1" />
-          {row.role}
+      )
+    },
+    {
+      header: 'Role',
+      render: (row) => (
+        <Badge className={cn(
+          "text-[10px] font-bold",
+          row.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
+        )}>
+          <Shield size={9} className="mr-1" />
+          {row.role.toUpperCase()}
         </Badge>
-
-  },
-  {
-    header: 'Joined',
-    accessor: 'created_date',
-    render: (row) => row.created_date ? format(new Date(row.created_date), 'MMM d, yyyy') : '-'
-  }];
-
+      )
+    },
+    {
+      header: 'Joined',
+      render: (row) => row.created_date ? format(new Date(row.created_date), 'MMM d, yyyy') : '-'
+    }
+  ];
 
   return (
-    <div className="text-slate-50">
-      <PageHeader
-        title="Settings"
-        subtitle="Manage your profile and application settings" />
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1400px] mx-auto px-6 py-4">
+          <h1 className="text-2xl font-black text-white uppercase tracking-tight">Settings</h1>
+          <p className="text-xs text-zinc-500 font-mono mt-1">PROFILE • PREFERENCES • CUSTOMIZATION</p>
+        </div>
+      </div>
 
+      <div className="max-w-[1400px] mx-auto px-6 py-6">
+        <Tabs defaultValue="profile" className="space-y-4">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsTrigger value="profile"><UserCircle size={12} className="mr-1.5" />Profile</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users"><Users size={12} className="mr-1.5" />Users</TabsTrigger>}
+            <TabsTrigger value="display"><Monitor size={12} className="mr-1.5" />Display</TabsTrigger>
+            <TabsTrigger value="workflow"><Zap size={12} className="mr-1.5" />Workflow</TabsTrigger>
+            <TabsTrigger value="notifications"><Bell size={12} className="mr-1.5" />Notifications</TabsTrigger>
+            <TabsTrigger value="feedback"><MessageSquare size={12} className="mr-1.5" />Feedback</TabsTrigger>
+          </TabsList>
 
-      <Tabs defaultValue="profile" className="text-slate-50 space-y-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="profile">
-            <UserCircle size={14} className="mr-2" />
-            Profile
-          </TabsTrigger>
-          {isAdmin &&
-          <TabsTrigger value="users">
-              <Users size={14} className="mr-2" />
-              User Management
-            </TabsTrigger>
-          }
-          <TabsTrigger value="preferences">
-            <Bell size={14} className="mr-2" />
-            Preferences
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Truck size={14} className="mr-2" />
-            Notifications
-          </TabsTrigger>
-          <TabsTrigger value="feedback">
-            <MessageSquare size={14} className="mr-2" />
-            Feedback
-          </TabsTrigger>
-          <TabsTrigger value="app">
-            <SettingsIcon size={14} className="mr-2" />
-            App Settings
-          </TabsTrigger>
+          {/* Profile */}
+          <TabsContent value="profile">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base uppercase tracking-wide">Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
+                  <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center">
+                    <UserCircle size={32} className="text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-white">{currentUser?.full_name || 'No name'}</p>
+                    <p className="text-xs text-zinc-400">{currentUser?.email}</p>
+                    <Badge className="mt-1 bg-amber-500/20 text-amber-400 text-[9px] font-bold px-2 py-0">
+                      {currentUser?.role?.toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Full Name</Label>
+                    <Input value={profileData.full_name} onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })} className="bg-zinc-800 border-zinc-700 h-9" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Job Title</Label>
+                    <Input value={profileData.title} onChange={(e) => setProfileData({ ...profileData, title: e.target.value })} placeholder="Project Manager" className="bg-zinc-800 border-zinc-700 h-9" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Phone</Label>
+                    <Input value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} placeholder="+1 (555) 123-4567" className="bg-zinc-800 border-zinc-700 h-9" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Department</Label>
+                    <Input value={profileData.department} onChange={(e) => setProfileData({ ...profileData, department: e.target.value })} placeholder="Operations" className="bg-zinc-800 border-zinc-700 h-9" />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button onClick={() => updateProfileMutation.mutate(profileData)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                    <Save size={14} className="mr-1" />
+                    SAVE
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Users */}
           {isAdmin && (
-            <TabsTrigger value="phases">
-              <FileText size={14} className="mr-2" />
-              Phase Names
-            </TabsTrigger>
+            <TabsContent value="users">
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base uppercase tracking-wide">User Management</CardTitle>
+                    <Button onClick={() => setShowInviteDialog(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-8 text-xs">
+                      <Plus size={14} className="mr-1" />
+                      INVITE
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <DataTable columns={userColumns} data={allUsers} emptyMessage="No users" />
+                </CardContent>
+              </Card>
+            </TabsContent>
           )}
-        </TabsList>
 
-        {/* Profile Tab */}
-        <TabsContent value="profile">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-slate-50 font-semibold tracking-tight leading-none">Profile Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  <UserCircle size={40} className="text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-lg font-medium text-white">{currentUser?.full_name || 'No name set'}</p>
-                  <p className="text-sm text-zinc-400">{currentUser?.email}</p>
-                  <Badge variant="outline" className="text-slate-50 mt-2 px-2.5 py-0.5 text-xs font-semibold capitalize rounded-md inline-flex items-center border transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                    {currentUser?.role}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="text-slate-50 space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Full Name</Label>
-                  <Input
-                    value={profileData.full_name}
-                    onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700" />
-
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</Label>
-                  <Input
-                    value={currentUser?.email || ''}
-                    disabled
-                    className="bg-zinc-800 border-zinc-700 opacity-50" />
-
-                  <p className="text-xs text-zinc-500">Email cannot be changed</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Job Title</Label>
-                  <Input
-                    value={profileData.title}
-                    onChange={(e) => setProfileData({ ...profileData, title: e.target.value })}
-                    placeholder="Project Manager"
-                    className="bg-zinc-800 border-zinc-700" />
-
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Department</Label>
-                  <Input
-                    value={profileData.department}
-                    onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
-                    placeholder="Engineering"
-                    className="bg-zinc-800 border-zinc-700" />
-
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Phone Number</Label>
-                  <Input
-                    value={profileData.phone}
-                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                    placeholder="+1 (555) 123-4567"
-                    className="bg-zinc-800 border-zinc-700" />
-
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <Input
-                    value={currentUser?.role || ''}
-                    disabled
-                    className="bg-zinc-800 border-zinc-700 opacity-50 capitalize" />
-
-                  <p className="text-xs text-zinc-500">Contact an admin to change your role</p>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button
-                    onClick={saveProfile}
-                    disabled={updateProfileMutation.isPending}
-                    className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                    <Save size={16} className="mr-2" />
-                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* User Management Tab (Admin Only) */}
-        {isAdmin &&
-        <TabsContent value="users">
+          {/* Display Preferences */}
+          <TabsContent value="display">
             <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>User Management</CardTitle>
-                  <Button
-                  onClick={() => setShowInviteDialog(true)}
-                  className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                    <Plus size={16} className="mr-2" />
-                    Invite User
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <DataTable
-                columns={userColumns}
-                data={allUsers}
-                emptyMessage="No users found. Invite users to get started." />
-
-              </CardContent>
-            </Card>
-          </TabsContent>
-        }
-
-        {/* Preferences Tab */}
-        <TabsContent value="preferences">
-          <div className="space-y-6">
-            {/* Notifications */}
-            <Card className="bg-zinc-900 text-slate-50 rounded-xl border shadow border-zinc-800">
-              <CardHeader className="text-slate-50 p-6 flex flex-col space-y-1.5">
-                <CardTitle className="flex items-center gap-2">
-                  <Bell size={20} />
-                  Notification Preferences
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base uppercase tracking-wide flex items-center gap-2">
+                  <Monitor size={16} />
+                  Display Preferences
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-zinc-400">Receive general email updates</p>
-                  </div>
-                  <Switch
-                    checked={preferences.email_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, email_notifications: checked })} />
-
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Project Updates</Label>
-                    <p className="text-sm text-zinc-400">Get notified about project changes</p>
-                  </div>
-                  <Switch
-                    checked={preferences.project_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, project_notifications: checked })} />
-
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>RFI Notifications</Label>
-                    <p className="text-sm text-zinc-400">Alerts for new and updated RFIs</p>
-                  </div>
-                  <Switch
-                    checked={preferences.rfi_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, rfi_notifications: checked })} />
-
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Change Order Notifications</Label>
-                    <p className="text-sm text-zinc-400">Updates on change orders</p>
-                  </div>
-                  <Switch
-                    checked={preferences.change_order_notifications}
-                    onCheckedChange={(checked) => setPreferences({ ...preferences, change_order_notifications: checked })} />
-
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Display Preferences */}
-            <Card className="bg-zinc-900 text-slate-50 rounded-xl border shadow border-zinc-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette size={20} />
-                  Display & Format
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Date Format</Label>
-                  <Select value={preferences.date_format} onValueChange={(value) => setPreferences({ ...preferences, date_format: value })}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MM/dd/yyyy">MM/DD/YYYY (12/31/2025)</SelectItem>
-                      <SelectItem value="dd/MM/yyyy">DD/MM/YYYY (31/12/2025)</SelectItem>
-                      <SelectItem value="yyyy-MM-dd">YYYY-MM-DD (2025-12-31)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Time Zone</Label>
-                  <Select value={preferences.time_zone} onValueChange={(value) => setPreferences({ ...preferences, time_zone: value })}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      <SelectItem value="America/New_York">Eastern (New York)</SelectItem>
-                      <SelectItem value="America/Chicago">Central (Chicago)</SelectItem>
-                      <SelectItem value="America/Denver">Mountain (Denver)</SelectItem>
-                      <SelectItem value="America/Phoenix">Mountain - No DST (Phoenix)</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific (Los Angeles)</SelectItem>
-                      <SelectItem value="America/Anchorage">Alaska (Anchorage)</SelectItem>
-                      <SelectItem value="Pacific/Honolulu">Hawaii (Honolulu)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Theme</Label>
-                  <Select value={preferences.theme} onValueChange={(value) => setPreferences({ ...preferences, theme: value })}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dark">Dark (Current)</SelectItem>
-                      <SelectItem value="light" disabled>Light (Coming Soon)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button
-                    onClick={savePreferences}
-                    disabled={updateProfileMutation.isPending}
-                    className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                    <Save size={16} className="mr-2" />
-                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Preferences'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Notifications Tab */}
-        <TabsContent value="notifications">
-          <NotificationPreferences />
-        </TabsContent>
-
-        {/* Feedback Tab */}
-        <TabsContent value="feedback">
-          <div className="text-slate-50 space-y-6">
-            {/* Submit Feedback */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-slate-50 font-semibold tracking-tight leading-none flex items-center gap-2">
-                  <MessageSquare size={20} />
-                  Submit Feedback
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                  <div className="text-slate-50 space-y-2">
-                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Feedback Type *</Label>
-                    <Select
-                      value={feedbackForm.type}
-                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}>
-
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Date Format</Label>
+                    <Select value={displayPrefs.date_format} onValueChange={(v) => setDisplayPrefs({ ...displayPrefs, date_format: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="feature_request">Feature Request</SelectItem>
-                        <SelectItem value="bug_report">Bug Report</SelectItem>
-                        <SelectItem value="general_feedback">General Feedback</SelectItem>
+                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                        <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
+                        <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Title *</Label>
-                    <Input
-                      value={feedbackForm.title}
-                      onChange={(e) => setFeedbackForm({ ...feedbackForm, title: e.target.value })}
-                      placeholder="Brief summary of your feedback"
-                      required className="bg-zinc-800 text-slate-50 px-3 py-1 text-base rounded-md flex h-9 w-full border shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm border-zinc-700" />
-
-
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Description *</Label>
-                    <Textarea
-                      value={feedbackForm.description}
-                      onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })}
-                      placeholder="Provide detailed information about your feedback..."
-                      required
-                      rows={5}
-                      className="bg-zinc-800 border-zinc-700" />
-
-                  </div>
-
-                  <div className="text-slate-50 space-y-2">
-                    <Label className="text-slate-50 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Priority</Label>
-                    <Select
-                      value={feedbackForm.priority}
-                      onValueChange={(value) => setFeedbackForm({ ...feedbackForm, priority: value })}>
-
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Time Zone</Label>
+                    <Select value={displayPrefs.time_zone} onValueChange={(v) => setDisplayPrefs({ ...displayPrefs, time_zone: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low - Nice to have</SelectItem>
-                        <SelectItem value="medium">Medium - Would be helpful</SelectItem>
-                        <SelectItem value="high">High - Important to me</SelectItem>
+                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                        <SelectItem value="America/New_York">Eastern</SelectItem>
+                        <SelectItem value="America/Chicago">Central</SelectItem>
+                        <SelectItem value="America/Denver">Mountain</SelectItem>
+                        <SelectItem value="America/Phoenix">Arizona</SelectItem>
+                        <SelectItem value="America/Los_Angeles">Pacific</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="flex justify-end pt-2">
-                    <Button
-                      type="submit"
-                      disabled={submitFeedbackMutation.isPending || !feedbackForm.title || !feedbackForm.description}
-                      className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                      <Send size={16} className="mr-2" />
-                      {submitFeedbackMutation.isPending ? 'Submitting...' : 'Submit Feedback'}
-                    </Button>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Currency</Label>
+                    <Select value={displayPrefs.currency_format} onValueChange={(v) => setDisplayPrefs({ ...displayPrefs, currency_format: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="CAD">CAD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  {submitFeedbackMutation.isSuccess &&
-                  <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 text-sm">
-                      ✓ Thank you! Your feedback has been submitted successfully.
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Week Starts On</Label>
+                    <Select value={displayPrefs.start_of_week} onValueChange={(v) => setDisplayPrefs({ ...displayPrefs, start_of_week: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                        <SelectItem value="sunday">Sunday</SelectItem>
+                        <SelectItem value="monday">Monday</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-zinc-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="font-bold text-sm">Compact Mode</Label>
+                      <p className="text-xs text-zinc-500">Reduce spacing and padding</p>
                     </div>
-                  }
-                </form>
-              </CardContent>
-            </Card>
-
-            {/* My Feedback History */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-slate-50 font-semibold tracking-tight leading-none">My Feedback History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {myFeedback.length === 0 ?
-                <p className="text-center text-zinc-500 py-6">No feedback submitted yet</p> :
-
-                <div className="space-y-3">
-                    {myFeedback.map((item) =>
-                  <div key={item.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-800">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant="outline" className="capitalize">
-                                {item.type.replace('_', ' ')}
-                              </Badge>
-                              <Badge
-                            variant="outline"
-                            className={
-                            item.status === 'completed' ?
-                            'bg-green-500/20 text-green-400 border-green-500/30' :
-                            item.status === 'in_progress' ?
-                            'bg-blue-500/20 text-blue-400 border-blue-500/30' :
-                            'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
-                            }>
-
-                                {item.status.replace('_', ' ')}
-                              </Badge>
-                              <Badge
-                            variant="outline"
-                            className={
-                            item.priority === 'high' ?
-                            'bg-red-500/20 text-red-400 border-red-500/30' :
-                            item.priority === 'medium' ?
-                            'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                            'bg-blue-500/20 text-blue-400 border-blue-500/30'
-                            }>
-
-                                {item.priority}
-                              </Badge>
-                            </div>
-                            <h4 className="font-medium text-white">{item.title}</h4>
-                            <p className="text-sm text-zinc-400 mt-1">{item.description}</p>
-                          </div>
-                        </div>
-                        <p className="text-xs text-zinc-500 mt-2">
-                          Submitted {item.created_date ? format(new Date(item.created_date), 'MMM d, yyyy') : 'recently'}
-                        </p>
-                      </div>
-                  )}
+                    <Switch checked={displayPrefs.compact_mode} onCheckedChange={(v) => setDisplayPrefs({ ...displayPrefs, compact_mode: v })} />
                   </div>
-                }
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Phase Names Tab (Admin Only) */}
-        {isAdmin && (
-          <TabsContent value="phases">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Customize Phase Names</CardTitle>
-                <p className="text-sm text-zinc-400 mt-2">
-                  Customize the names of the five standard phases used throughout the application
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-white">Phase 1: Detailing</Label>
-                    <Input
-                      value={phaseNames.detailing}
-                      onChange={(e) => setPhaseNames({ ...phaseNames, detailing: e.target.value })}
-                      placeholder="Detailing"
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                    <p className="text-xs text-zinc-500">Default: Detailing</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="font-bold text-sm">Show Project Codes</Label>
+                      <p className="text-xs text-zinc-500">Display project numbers in lists</p>
+                    </div>
+                    <Switch checked={displayPrefs.show_project_codes} onCheckedChange={(v) => setDisplayPrefs({ ...displayPrefs, show_project_codes: v })} />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Phase 2: Fabrication</Label>
-                    <Input
-                      value={phaseNames.fabrication}
-                      onChange={(e) => setPhaseNames({ ...phaseNames, fabrication: e.target.value })}
-                      placeholder="Fabrication"
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                    <p className="text-xs text-zinc-500">Default: Fabrication</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Phase 3: Delivery</Label>
-                    <Input
-                      value={phaseNames.delivery}
-                      onChange={(e) => setPhaseNames({ ...phaseNames, delivery: e.target.value })}
-                      placeholder="Delivery"
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                    <p className="text-xs text-zinc-500">Default: Delivery</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Phase 4: Erection</Label>
-                    <Input
-                      value={phaseNames.erection}
-                      onChange={(e) => setPhaseNames({ ...phaseNames, erection: e.target.value })}
-                      placeholder="Erection"
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                    <p className="text-xs text-zinc-500">Default: Erection</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-white">Phase 5: Closeout</Label>
-                    <Input
-                      value={phaseNames.closeout}
-                      onChange={(e) => setPhaseNames({ ...phaseNames, closeout: e.target.value })}
-                      placeholder="Closeout"
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                    <p className="text-xs text-zinc-500">Default: Closeout</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="font-bold text-sm">Show Tooltips</Label>
+                      <p className="text-xs text-zinc-500">Enable helpful hints</p>
+                    </div>
+                    <Switch checked={displayPrefs.show_tooltips} onCheckedChange={(v) => setDisplayPrefs({ ...displayPrefs, show_tooltips: v })} />
                   </div>
                 </div>
 
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <p className="text-xs text-amber-400">
-                    ⚠️ Note: Custom phase names are currently stored in your user profile and will only affect your view. 
-                    Full app-wide phase renaming requires database schema updates.
-                  </p>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button
-                    onClick={savePhaseNames}
-                    disabled={updateProfileMutation.isPending}
-                    className="bg-amber-500 hover:bg-amber-600 text-black"
-                  >
-                    <Save size={16} className="mr-2" />
-                    {updateProfileMutation.isPending ? 'Saving...' : 'Save Phase Names'}
+                <div className="flex justify-end pt-2">
+                  <Button onClick={() => updateProfileMutation.mutate({ display_preferences: displayPrefs })} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                    <Save size={14} className="mr-1" />
+                    SAVE
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
-        )}
 
-        {/* App Settings Tab */}
-        <TabsContent value="app">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle>Application Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-zinc-800/50 rounded-lg">
-                <h3 className="font-medium text-white mb-2">Application Information</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Application Name</span>
-                    <span className="text-white">SteelBuild Pro (Stabilized Edition)</span>
+          {/* Workflow */}
+          <TabsContent value="workflow">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base uppercase tracking-wide flex items-center gap-2">
+                  <Zap size={16} />
+                  Workflow Automation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="font-bold text-sm">Auto-assign Tasks</Label>
+                      <p className="text-xs text-zinc-500">Automatically assign to PM when created</p>
+                    </div>
+                    <Switch checked={workflowPrefs.auto_assign_tasks} onCheckedChange={(v) => setWorkflowPrefs({ ...workflowPrefs, auto_assign_tasks: v })} />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Version</span>
-                    <span className="text-white">1.0.0</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="font-bold text-sm">Require Cost Code</Label>
+                      <p className="text-xs text-zinc-500">Mandatory cost code on tasks</p>
+                    </div>
+                    <Switch checked={workflowPrefs.require_cost_code} onCheckedChange={(v) => setWorkflowPrefs({ ...workflowPrefs, require_cost_code: v })} />
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Total Users</span>
-                    <span className="text-white">{allUsers.length}</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="font-bold text-sm">Enable Quick Actions</Label>
+                      <p className="text-xs text-zinc-500">Show quick action buttons in lists</p>
+                    </div>
+                    <Switch checked={workflowPrefs.enable_quick_actions} onCheckedChange={(v) => setWorkflowPrefs({ ...workflowPrefs, enable_quick_actions: v })} />
                   </div>
                 </div>
-              </div>
 
-              <div className="p-4 border border-zinc-800 rounded-lg">
-                <h3 className="font-medium text-white mb-2">Access Control</h3>
-                <p className="text-sm text-zinc-400">
-                  This application uses role-based access control. Users are assigned either 'admin' or 'user' roles. 
-                  Admins have full access to all features including user management.
-                </p>
-              </div>
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-zinc-800">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Default Task Duration</Label>
+                    <Select value={workflowPrefs.default_task_duration.toString()} onValueChange={(v) => setWorkflowPrefs({ ...workflowPrefs, default_task_duration: parseInt(v) })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                        <SelectItem value="1">1 Day</SelectItem>
+                        <SelectItem value="2">2 Days</SelectItem>
+                        <SelectItem value="3">3 Days</SelectItem>
+                        <SelectItem value="5">1 Week</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="p-4 border border-zinc-800 rounded-lg">
-                <h3 className="font-medium text-white mb-2 flex items-center gap-2">
-                  <FileText size={16} />
-                  Legal & Policies
-                </h3>
-                <div className="space-y-2 mt-3">
-                  <Link to={createPageUrl('PrivacyPolicy')}>
-                    <Button variant="outline" className="w-full justify-between border-zinc-700">
-                      Privacy Policy
-                      <ExternalLink size={14} />
-                    </Button>
-                  </Link>
-                  <Link to={createPageUrl('TermsOfService')}>
-                    <Button variant="outline" className="w-full justify-between border-zinc-700">
-                      Terms of Service
-                      <ExternalLink size={14} />
-                    </Button>
-                  </Link>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Default Priority</Label>
+                    <Select value={workflowPrefs.default_priority} onValueChange={(v) => setWorkflowPrefs({ ...workflowPrefs, default_priority: v })}>
+                      <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-zinc-800">
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
-      {/* Invite User Dialog */}
+                <div className="flex justify-end pt-2">
+                  <Button onClick={() => updateProfileMutation.mutate({ workflow_preferences: workflowPrefs })} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                    <Save size={14} className="mr-1" />
+                    SAVE
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notifications */}
+          <TabsContent value="notifications">
+            <NotificationPreferences />
+          </TabsContent>
+
+          {/* Feedback */}
+          <TabsContent value="feedback">
+            <div className="space-y-4">
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base uppercase tracking-wide flex items-center gap-2">
+                    <MessageSquare size={16} />
+                    Submit Feedback
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={(e) => { e.preventDefault(); submitFeedbackMutation.mutate(feedbackForm); }} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Type</Label>
+                        <Select value={feedbackForm.type} onValueChange={(v) => setFeedbackForm({ ...feedbackForm, type: v })}>
+                          <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-900 border-zinc-800">
+                            <SelectItem value="feature_request">Feature Request</SelectItem>
+                            <SelectItem value="bug_report">Bug Report</SelectItem>
+                            <SelectItem value="general_feedback">General</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Priority</Label>
+                        <Select value={feedbackForm.priority} onValueChange={(v) => setFeedbackForm({ ...feedbackForm, priority: v })}>
+                          <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-900 border-zinc-800">
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Title</Label>
+                      <Input value={feedbackForm.title} onChange={(e) => setFeedbackForm({ ...feedbackForm, title: e.target.value })} placeholder="Brief summary" required className="bg-zinc-800 border-zinc-700 h-9" />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Description</Label>
+                      <Textarea value={feedbackForm.description} onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })} placeholder="Details..." required rows={4} className="bg-zinc-800 border-zinc-700" />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button type="submit" disabled={!feedbackForm.title || !feedbackForm.description} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                        <Send size={14} className="mr-1" />
+                        SUBMIT
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base uppercase tracking-wide">History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {myFeedback.length === 0 ? (
+                    <p className="text-center text-zinc-600 py-6 text-sm">No feedback yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {myFeedback.map(item => (
+                        <div key={item.id} className="p-3 bg-zinc-800/50 rounded border border-zinc-800">
+                          <div className="flex items-start justify-between mb-1">
+                            <h4 className="font-bold text-white text-sm">{item.title}</h4>
+                            <Badge className={cn(
+                              "text-[9px] font-bold",
+                              item.status === 'completed' && "bg-green-500/20 text-green-400",
+                              item.status === 'in_progress' && "bg-blue-500/20 text-blue-400"
+                            )}>
+                              {item.status?.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-zinc-400">{item.description}</p>
+                          <p className="text-[10px] text-zinc-600 mt-2 font-mono">
+                            {item.created_date ? format(new Date(item.created_date), 'MMM d, yyyy') : ''}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
             <DialogTitle>Invite User</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleInviteUser} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email Address *</Label>
-              <Input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="user@example.com"
-                required
-                className="bg-zinc-800 border-zinc-700" />
-
+          <form onSubmit={(e) => { e.preventDefault(); inviteMutation.mutate({ email: inviteEmail, role: inviteRole }); }} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Email</Label>
+              <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required className="bg-zinc-800 border-zinc-700 h-9" />
             </div>
-
-            <div className="space-y-2">
-              <Label>Role *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Role</Label>
               <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 h-9">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User - Standard Access</SelectItem>
-                  <SelectItem value="admin">Admin - Full Access</SelectItem>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowInviteDialog(false)}
-                className="border-zinc-700">
-
-                Cancel
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowInviteDialog(false)} className="border-zinc-700 h-9 text-xs">
+                CANCEL
               </Button>
-              <Button
-                type="submit"
-                disabled={inviteMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black">
-
-                {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
+              <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                SEND INVITE
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
-    </div>);
-
+    </div>
+  );
 }

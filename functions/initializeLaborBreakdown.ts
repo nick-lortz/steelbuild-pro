@@ -1,18 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const LABOR_CATEGORIES = [
-  { name: 'Embeds/Anchor Bolts', sequence_order: 1, is_specialty: false },
-  { name: 'Columns', sequence_order: 2, is_specialty: false },
-  { name: 'Beams', sequence_order: 3, is_specialty: false },
-  { name: 'Joists', sequence_order: 4, is_specialty: false },
-  { name: 'Bridging', sequence_order: 5, is_specialty: false },
-  { name: 'Ledger', sequence_order: 6, is_specialty: false },
-  { name: 'Deck-Support Embeds/Plates', sequence_order: 7, is_specialty: false },
-  { name: 'Roof Frames/Mechanical Frames', sequence_order: 8, is_specialty: false },
-  { name: 'Lintels', sequence_order: 9, is_specialty: false },
-  { name: 'Moment Frame Bracing', sequence_order: 10, is_specialty: false },
-  { name: 'Stairs and Rail', sequence_order: 11, is_specialty: false },
-  { name: 'Site Steel', sequence_order: 12, is_specialty: false },
+  { name: 'Embeds/Anchor Bolts (If Applicable)', sequence_order: 1, is_specialty: false },
+  { name: 'Columns (If Applicable)', sequence_order: 2, is_specialty: false },
+  { name: 'Beams (If Applicable)', sequence_order: 3, is_specialty: false },
+  { name: 'Joists (If Applicable)', sequence_order: 4, is_specialty: false },
+  { name: 'Bridging (If Applicable)', sequence_order: 5, is_specialty: false },
+  { name: 'Ledger (If Applicable)', sequence_order: 6, is_specialty: false },
+  { name: 'Deck-Support Embeds/Plates (If Applicable)', sequence_order: 7, is_specialty: false },
+  { name: 'Roof Frames/Mechanical Frames (If Applicable)', sequence_order: 8, is_specialty: false },
+  { name: 'Lintels (If Applicable)', sequence_order: 9, is_specialty: false },
+  { name: 'Moment Frame Bracing (If Applicable)', sequence_order: 10, is_specialty: false },
+  { name: 'Stairs and Rail (If Applicable)', sequence_order: 11, is_specialty: false },
+  { name: 'Site Steel (If Applicable)', sequence_order: 12, is_specialty: false },
 ];
 
 Deno.serve(async (req) => {

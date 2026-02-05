@@ -3,751 +3,238 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, AlertTriangle, Save, TrendingUp, Users, AlertCircle, Trash2 } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
-import { toast } from '@/components/ui/notifications';
-import { usePermissions } from '@/components/shared/usePermissions';
-import { validateLaborScheduleAlignment, calculateProjectLaborTotals } from '@/components/shared/laborScheduleUtils';
-import { ArrowRight } from 'lucide-react';
-import EditableHoursCell from '@/components/labor/EditableHoursCell';
+import { 
+  AlertTriangle, 
+  ArrowRight, 
+  Users, 
+  Plus,
+  TrendingUp,
+  DollarSign,
+  Trash2,
+  Edit,
+  CheckCircle2
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 export default function LaborScope() {
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const [expandedSection, setExpandedSection] = useState('breakdown');
   const queryClient = useQueryClient();
-  const { can } = usePermissions();
-  const [selectedProject, setSelectedProject] = useState('');
-  const [showSpecialtyDialog, setShowSpecialtyDialog] = useState(false);
-  const [showGapDialog, setShowGapDialog] = useState(false);
-  const [editingBreakdown, setEditingBreakdown] = useState(null);
-  const [selectedBreakdowns, setSelectedBreakdowns] = useState(new Set());
-  const [showBulkEdit, setShowBulkEdit] = useState(false);
-  const [bulkEditData, setBulkEditData] = useState({ category_id: '', notes: '' });
 
-  // Queries - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['labor-categories'],
     queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: breakdowns = [], refetch: refetchBreakdowns } = useQuery({
-    queryKey: ['labor-breakdowns', selectedProject],
-    queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject,
+    queryKey: ['labor-breakdowns', activeProjectId],
+    queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: specialtyItems = [] } = useQuery({
-    queryKey: ['specialty-items', selectedProject],
-    queryFn: () => base44.entities.SpecialtyDiscussionItem.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject,
+    queryKey: ['specialty-items', activeProjectId],
+    queryFn: () => base44.entities.SpecialtyDiscussionItem.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: scopeGaps = [] } = useQuery({
-    queryKey: ['scope-gaps', selectedProject],
-    queryFn: () => base44.entities.ScopeGap.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject,
+    queryKey: ['scope-gaps', activeProjectId],
+    queryFn: () => base44.entities.ScopeGap.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['tasks', selectedProject],
-    queryFn: () => base44.entities.Task.filter({ project_id: selectedProject }),
-    enabled: !!selectedProject,
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
-  // Initialize breakdown mutation
   const initializeMutation = useMutation({
     mutationFn: (projectId) => base44.functions.invoke('initializeLaborBreakdown', { project_id: projectId }),
-    onSuccess: (response) => {
+    onSuccess: () => {
       refetchBreakdowns();
-      toast.success(response.data.message);
-    },
-    onError: (error) => {
-      toast.error(`Failed to initialize: ${error.message}`);
+      toast.success('Initialized');
     }
   });
 
-  // Repair duplicates mutation
-  const repairMutation = useMutation({
-    mutationFn: (projectId) => base44.functions.invoke('repairLaborBreakdowns', { project_id: projectId }),
-    onSuccess: (response) => {
-      refetchBreakdowns();
-      toast.success(response.data.message);
-    },
-    onError: (error) => {
-      toast.error(`Repair failed: ${error.message}`);
-    }
-  });
-
-  // Allocate labor to schedule mutation
-  const allocateLaborMutation = useMutation({
+  const allocateMutation = useMutation({
     mutationFn: (projectId) => base44.functions.invoke('allocateLaborToSchedule', { project_id: projectId }),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success(response.data.message);
-      if (response.data.warnings) {
-        response.data.warnings.forEach(w => toast.warning(w));
-      }
-    },
-    onError: (error) => {
-      toast.error(`Allocation failed: ${error.message}`);
+      toast.success('Labor allocated to schedule');
     }
   });
 
-  // Update breakdown mutation
   const updateBreakdownMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.LaborBreakdown.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
-      toast.success('Updated');
-    },
-    onError: (error) => {
-      toast.error(`Update failed: ${error.message}`);
     }
   });
 
-  // Delete breakdown mutation
   const deleteBreakdownMutation = useMutation({
     mutationFn: (id) => base44.entities.LaborBreakdown.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
-      toast.success('Breakdown deleted');
-    },
-    onError: (error) => {
-      toast.error(`Delete failed: ${error.message}`);
+      toast.success('Deleted');
     }
   });
 
-  const handleDeleteBreakdown = (breakdownId) => {
-    if (window.confirm('Delete this labor breakdown entry?')) {
-      deleteBreakdownMutation.mutate(breakdownId);
-    }
-  };
-
-  const handleBulkDelete = () => {
-    if (window.confirm(`Delete ${selectedBreakdowns.size} selected breakdowns?`)) {
-      Promise.all(
-        Array.from(selectedBreakdowns).map(id => base44.entities.LaborBreakdown.delete(id))
-      ).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
-        toast.success(`Deleted ${selectedBreakdowns.size} breakdowns`);
-        setSelectedBreakdowns(new Set());
-      }).catch((error) => {
-        toast.error('Failed to delete some breakdowns');
-        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
-      });
-    }
-  };
-
-  // Specialty item mutations
   const createSpecialtyMutation = useMutation({
     mutationFn: (data) => base44.entities.SpecialtyDiscussionItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
-      setShowSpecialtyDialog(false);
-      toast.success('Specialty item added');
-    },
-    onError: (error) => {
-      toast.error(`Failed to add: ${error.message}`);
+      toast.success('Added');
     }
   });
 
   const updateSpecialtyMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.SpecialtyDiscussionItem.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
-    },
-    onError: (error) => {
-      toast.error(`Update failed: ${error.message}`);
-    }
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['specialty-items'] })
   });
-
-  // Scope gap mutations
-  const createGapMutation = useMutation({
-    mutationFn: (data) => base44.entities.ScopeGap.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
-      setShowGapDialog(false);
-      toast.success('Scope gap added');
-    },
-    onError: (error) => {
-      toast.error(`Failed to add: ${error.message}`);
-    }
-  });
-
-  const updateGapMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ScopeGap.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
-    },
-    onError: (error) => {
-      toast.error(`Update failed: ${error.message}`);
-    }
-  });
-
-  // Calculations - ALL useMemo MUST BE CALLED UNCONDITIONALLY
-  const selectedProjectData = useMemo(() => 
-    selectedProject ? projects.find(p => p.id === selectedProject) : null,
-    [projects, selectedProject]
-  );
-
-  const totals = useMemo(() => {
-    if (!selectedProject) return { totalShop: 0, totalField: 0, baselineShop: 0, baselineField: 0, shopDiscrepancy: 0, fieldDiscrepancy: 0, hasDiscrepancy: false };
-    const categoryShop = breakdowns.reduce((sum, b) => sum + (Number(b.shop_hours) || 0), 0);
-    const categoryField = breakdowns.reduce((sum, b) => sum + (Number(b.field_hours) || 0), 0);
-    const specialtyShop = specialtyItems.reduce((sum, s) => sum + (Number(s.shop_hours) || 0), 0);
-    const specialtyField = specialtyItems.reduce((sum, s) => sum + (Number(s.field_hours) || 0), 0);
-
-    const totalShop = categoryShop + specialtyShop;
-    const totalField = categoryField + specialtyField;
-
-    const baselineShop = Number(selectedProjectData?.baseline_shop_hours) || 0;
-    const baselineField = Number(selectedProjectData?.baseline_field_hours) || 0;
-
-    const shopDiscrepancy = totalShop - baselineShop;
-    const fieldDiscrepancy = totalField - baselineField;
-
-    return {
-      totalShop,
-      totalField,
-      baselineShop,
-      baselineField,
-      shopDiscrepancy,
-      fieldDiscrepancy,
-      hasDiscrepancy: shopDiscrepancy !== 0 || fieldDiscrepancy !== 0
-    };
-  }, [breakdowns, specialtyItems, selectedProjectData]);
-
-  const gapTotals = useMemo(() => {
-    if (!selectedProject) return { openCount: 0, totalCost: 0 };
-    const openGaps = scopeGaps.filter(g => g.status === 'open');
-    const totalCost = scopeGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
-    return { openCount: openGaps.length, totalCost };
-  }, [scopeGaps, selectedProject]);
-
-  // Labor vs Schedule validation
-  const laborScheduleMismatches = useMemo(() => 
-    selectedProject ? validateLaborScheduleAlignment(breakdowns, tasks, categories) : [],
-    [breakdowns, tasks, categories, selectedProject]
-  );
-
-  const laborScheduleTotals = useMemo(() =>
-    selectedProject ? calculateProjectLaborTotals(breakdowns, tasks) : { has_mismatch: false, breakdown_shop: 0, breakdown_field: 0, scheduled_shop: 0, scheduled_field: 0, shop_variance: 0, field_variance: 0 },
-    [breakdowns, tasks, selectedProject]
-  );
-
-  const hasDuplicates = useMemo(() => {
-    if (!selectedProject || breakdowns.length === 0) return false;
-    const categoryIds = breakdowns.map(b => b.labor_category_id);
-    return categoryIds.length !== new Set(categoryIds).size;
-  }, [breakdowns, selectedProject]);
-
-  const handleUpdateBreakdown = (breakdownId, field, value) => {
-    try {
-      // Validate category change to prevent duplicates
-      if (field === 'labor_category_id') {
-        const existingBreakdown = breakdowns.find(b => b.labor_category_id === value && b.id !== breakdownId);
-        if (existingBreakdown) {
-          toast.error('A breakdown already exists for this category');
-          return;
-        }
-      }
-      
-      const processedValue = field === 'shop_hours' || field === 'field_hours' 
-        ? Number(value) || 0 
-        : value;
-      
-      updateBreakdownMutation.mutate({ 
-        id: breakdownId, 
-        data: { [field]: processedValue } 
-      });
-    } catch (error) {
-      toast.error('Update failed');
-      console.error('Update breakdown error:', error);
-    }
-  };
-
-  const handleBulkEdit = () => {
-    const promises = Array.from(selectedBreakdowns).map(breakdownId => {
-      const updateData = {};
-      if (bulkEditData.category_id) {
-        // Check if category already exists for other breakdowns
-        const targetBreakdown = breakdowns.find(b => b.id === breakdownId);
-        const existingBreakdown = breakdowns.find(
-          b => b.labor_category_id === bulkEditData.category_id && b.id !== breakdownId
-        );
-        if (existingBreakdown) {
-          toast.error(`Cannot assign category to multiple breakdowns`);
-          return Promise.reject();
-        }
-        updateData.labor_category_id = bulkEditData.category_id;
-      }
-      if (bulkEditData.notes) {
-        updateData.notes = bulkEditData.notes;
-      }
-      if (Object.keys(updateData).length === 0) return Promise.resolve();
-      return base44.entities.LaborBreakdown.update(breakdownId, updateData);
-    });
-
-    Promise.all(promises)
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
-        toast.success(`Updated ${selectedBreakdowns.size} breakdowns`);
-        setSelectedBreakdowns(new Set());
-        setShowBulkEdit(false);
-        setBulkEditData({ category_id: '', notes: '' });
-      })
-      .catch(() => {
-        queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
-      });
-  };
-
-  const toggleBreakdownSelection = (breakdownId) => {
-    setSelectedBreakdowns(prev => {
-      const next = new Set(prev);
-      if (next.has(breakdownId)) {
-        next.delete(breakdownId);
-      } else {
-        next.add(breakdownId);
-      }
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedBreakdowns.size === breakdowns.length) {
-      setSelectedBreakdowns(new Set());
-    } else {
-      setSelectedBreakdowns(new Set(breakdowns.map(b => b.id)));
-    }
-  };
-
-  const getCategoryName = (categoryId) => {
-    const cat = categories.find(c => c.id === categoryId);
-    return cat?.name || 'Unknown';
-  };
-
-  const breakdownColumns = [
-    {
-      header: () => (
-        <input
-          type="checkbox"
-          checked={selectedBreakdowns.size === breakdowns.length && breakdowns.length > 0}
-          onChange={toggleSelectAll}
-          className="w-4 h-4"
-        />
-      ),
-      accessor: 'select',
-      render: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedBreakdowns.has(row.id)}
-          onChange={() => toggleBreakdownSelection(row.id)}
-          className="w-4 h-4"
-        />
-      )
-    },
-    {
-      header: 'Category',
-      accessor: 'labor_category_id',
-      render: (row) => (
-        <Select 
-          value={row.labor_category_id} 
-          onValueChange={(v) => handleUpdateBreakdown(row.id, 'labor_category_id', v)}
-          disabled={!can.editProject}
-        >
-          <SelectTrigger className="w-48 bg-zinc-800 border-zinc-700">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(cat => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )
-    },
-    {
-      header: 'Shop Hours',
-      accessor: 'shop_hours',
-      render: (row) => (
-        <EditableHoursCell
-          value={row.shop_hours}
-          onSave={(value) => handleUpdateBreakdown(row.id, 'shop_hours', value)}
-          disabled={!can.editProject}
-        />
-      )
-    },
-    {
-      header: 'Field Hours',
-      accessor: 'field_hours',
-      render: (row) => (
-        <EditableHoursCell
-          value={row.field_hours}
-          onSave={(value) => handleUpdateBreakdown(row.id, 'field_hours', value)}
-          disabled={!can.editProject}
-        />
-      )
-    },
-    {
-      header: 'Total',
-      accessor: 'total',
-      render: (row) => (
-        <span className="font-semibold text-amber-400">
-          {(Number(row.shop_hours) || 0) + (Number(row.field_hours) || 0)}
-        </span>
-      )
-    },
-    {
-      header: 'Notes',
-      accessor: 'notes',
-      render: (row) => (
-        <Input
-          value={row.notes || ''}
-          onChange={(e) => updateBreakdownMutation.mutate({ 
-            id: row.id, 
-            data: { notes: e.target.value } 
-          })}
-          placeholder="Optional notes"
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    {
-      header: '',
-      accessor: 'actions',
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleDeleteBreakdown(row.id)}
-          disabled={!can.editProject}
-          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <Trash2 size={16} />
-        </Button>
-      )
-    }
-  ];
-
-  const handleUpdateSpecialty = (itemId, field, value) => {
-    updateSpecialtyMutation.mutate({ 
-      id: itemId, 
-      data: { [field]: field === 'shop_hours' || field === 'field_hours' ? Number(value) || 0 : value } 
-    });
-  };
 
   const deleteSpecialtyMutation = useMutation({
     mutationFn: (id) => base44.entities.SpecialtyDiscussionItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
-      toast.success('Specialty item deleted');
-    },
-    onError: (error) => {
-      toast.error(`Delete failed: ${error.message}`);
+      toast.success('Deleted');
     }
   });
 
-  const handleDeleteSpecialty = (itemId) => {
-    if (window.confirm('Delete this specialty item?')) {
-      deleteSpecialtyMutation.mutate(itemId);
+  const createGapMutation = useMutation({
+    mutationFn: (data) => base44.entities.ScopeGap.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
+      toast.success('Gap added');
     }
-  };
+  });
 
-  const specialtyColumns = [
-    { 
-      header: 'Location/Detail', 
-      accessor: 'location_detail',
-      render: (row) => (
-        <Input
-          value={row.location_detail || ''}
-          onChange={(e) => handleUpdateSpecialty(row.id, 'location_detail', e.target.value)}
-          disabled={!can.editProject}
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    { 
-      header: 'Shop Hours', 
-      accessor: 'shop_hours',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.shop_hours || 0}
-          onChange={(e) => handleUpdateSpecialty(row.id, 'shop_hours', e.target.value)}
-          disabled={!can.editProject}
-          className="w-24 bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    { 
-      header: 'Field Hours', 
-      accessor: 'field_hours',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.field_hours || 0}
-          onChange={(e) => handleUpdateSpecialty(row.id, 'field_hours', e.target.value)}
-          disabled={!can.editProject}
-          className="w-24 bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    { 
-      header: 'Status', 
-      accessor: 'status', 
-      render: (row) => (
-        <Select 
-          value={row.status || 'open'} 
-          onValueChange={(v) => handleUpdateSpecialty(row.id, 'status', v)}
-          disabled={!can.editProject}
-        >
-          <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="reviewed">Reviewed</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-      )
-    },
-    { 
-      header: 'Notes', 
-      accessor: 'notes',
-      render: (row) => (
-        <Input
-          value={row.notes || ''}
-          onChange={(e) => handleUpdateSpecialty(row.id, 'notes', e.target.value)}
-          disabled={!can.editProject}
-          placeholder="Optional notes"
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    {
-      header: '',
-      accessor: 'actions',
-      render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleDeleteSpecialty(row.id)}
-          disabled={!can.editProject}
-          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <Trash2 size={16} />
-        </Button>
-      )
+  const updateGapMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ScopeGap.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['scope-gaps'] })
+  });
+
+  const deleteGapMutation = useMutation({
+    mutationFn: (id) => base44.entities.ScopeGap.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
+      toast.success('Deleted');
     }
-  ];
+  });
 
-  const handleUpdateGap = (gapId, field, value) => {
-    updateGapMutation.mutate({ 
-      id: gapId, 
-      data: { [field]: field === 'rough_cost' ? Number(value) || 0 : value } 
-    });
-  };
+  const project = projects.find(p => p.id === activeProjectId);
 
-  const gapColumns = [
-    { 
-      header: 'Location/Description', 
-      accessor: 'location_description',
-      render: (row) => (
-        <Input
-          value={row.location_description || ''}
-          onChange={(e) => handleUpdateGap(row.id, 'location_description', e.target.value)}
-          disabled={!can.editProject}
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    { 
-      header: 'Rough Cost', 
-      accessor: 'rough_cost',
-      render: (row) => (
-        <Input
-          type="number"
-          value={row.rough_cost || 0}
-          onChange={(e) => handleUpdateGap(row.id, 'rough_cost', e.target.value)}
-          disabled={!can.editProject}
-          className="w-32 bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    { 
-      header: 'Explanation', 
-      accessor: 'explanation',
-      render: (row) => (
-        <Input
-          value={row.explanation || ''}
-          onChange={(e) => handleUpdateGap(row.id, 'explanation', e.target.value)}
-          disabled={!can.editProject}
-          placeholder="Explanation"
-          className="bg-zinc-800 border-zinc-700 text-white"
-        />
-      )
-    },
-    { 
-      header: 'Status', 
-      accessor: 'status', 
-      render: (row) => (
-        <Select 
-          value={row.status || 'open'} 
-          onValueChange={(v) => handleUpdateGap(row.id, 'status', v)}
-          disabled={!can.editProject}
-        >
-          <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="priced">Priced</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
-          </SelectContent>
-        </Select>
-      )
-    },
-  ];
+  const totals = useMemo(() => {
+    const categoryShop = breakdowns.reduce((sum, b) => sum + (Number(b.shop_hours) || 0), 0);
+    const categoryField = breakdowns.reduce((sum, b) => sum + (Number(b.field_hours) || 0), 0);
+    const specialtyShop = specialtyItems.reduce((sum, s) => sum + (Number(s.shop_hours) || 0), 0);
+    const specialtyField = specialtyItems.reduce((sum, s) => sum + (Number(s.field_hours) || 0), 0);
+    const totalShop = categoryShop + specialtyShop;
+    const totalField = categoryField + specialtyField;
+    const baselineShop = Number(project?.baseline_shop_hours) || 0;
+    const baselineField = Number(project?.baseline_field_hours) || 0;
+    const shopVar = totalShop - baselineShop;
+    const fieldVar = totalField - baselineField;
+    const gapCost = scopeGaps.reduce((sum, g) => sum + (Number(g.rough_cost) || 0), 0);
+    const openGaps = scopeGaps.filter(g => g.status === 'open').length;
 
-  if (!selectedProject) {
+    return { 
+      totalShop, totalField, baselineShop, baselineField, shopVar, fieldVar, 
+      categoryShop, categoryField, specialtyShop, specialtyField,
+      gapCost, openGaps
+    };
+  }, [breakdowns, specialtyItems, scopeGaps, project]);
+
+  const scheduledHours = useMemo(() => {
+    const shop = tasks.reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0), 0);
+    const field = tasks.reduce((sum, t) => sum + (Number(t.planned_field_hours) || 0), 0);
+    return { shop, field };
+  }, [tasks]);
+
+  if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="border-b border-zinc-800 bg-black">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">SELECT PROJECT</p>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-[1600px] mx-auto px-6 py-12">
-          <div className="max-w-md">
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="SELECT PROJECT..." />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <Users size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Choose project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     );
   }
 
-  if (breakdowns.length === 0 && selectedProject) {
+  if (breakdowns.length === 0) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="border-b border-zinc-800 bg-black">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
-              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-[1600px] mx-auto px-6 py-12">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="pt-6">
-              <p className="text-zinc-400 mb-4">Labor breakdown not initialized for this project.</p>
-              <Button 
-                onClick={() => initializeMutation.mutate(selectedProject)}
-                disabled={initializeMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-              >
-                {initializeMutation.isPending ? 'INITIALIZING...' : 'INITIALIZE'}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasDuplicates) {
-    return (
-      <div className="min-h-screen bg-black">
-        <div className="border-b border-zinc-800 bg-black">
-          <div className="max-w-[1600px] mx-auto px-6 py-4">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
-              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
-            </div>
-          </div>
-        </div>
-        <div className="max-w-[1600px] mx-auto px-6 py-12">
-          <Card className="bg-red-950/20 border-red-500/30">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3 mb-4">
-                <AlertTriangle className="text-red-400 flex-shrink-0 mt-1" size={24} />
-                <div>
-                  <p className="font-bold text-red-400 text-lg uppercase tracking-wide">DUPLICATE CATEGORIES DETECTED</p>
-                  <p className="text-zinc-300 mt-2 text-sm">
-                    System integrity error: Multiple breakdown rows exist for the same category. 
-                    This must be repaired before continuing.
-                  </p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => repairMutation.mutate(selectedProject)}
-                disabled={repairMutation.isPending}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider"
-              >
-                {repairMutation.isPending ? 'REPAIRING...' : 'REPAIR'}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Card className="bg-zinc-900 border-zinc-800 max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Users size={48} className="mx-auto mb-4 text-zinc-700" />
+            <h3 className="text-lg font-bold text-white uppercase mb-2">Initialize Labor Breakdown</h3>
+            <p className="text-xs text-zinc-500 mb-4">No breakdown exists for this project</p>
+            <Button onClick={() => initializeMutation.mutate(activeProjectId)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+              <Plus size={14} className="mr-1" />
+              INITIALIZE
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Labor & Scope</h1>
-              <p className="text-xs text-zinc-600 mt-1">{selectedProjectData?.name}</p>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Labor & Scope</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">
+                {project?.project_number} • {totals.totalShop + totals.totalField}h TOTAL
+              </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Button
-                onClick={() => allocateLaborMutation.mutate(selectedProject)}
-                disabled={allocateLaborMutation.isPending || !can.editProject}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider"
+                onClick={() => allocateMutation.mutate(activeProjectId)}
+                disabled={allocateMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold h-9 text-xs uppercase"
               >
                 <ArrowRight size={14} className="mr-1" />
-                ALLOCATE
+                ALLOCATE TO SCHEDULE
               </Button>
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
                   {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.project_number} - {p.name}
-                    </SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -756,457 +243,364 @@ export default function LaborScope() {
         </div>
       </div>
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SHOP HOURS</div>
-              <div className="text-2xl font-bold font-mono text-white">{totals.totalShop}</div>
-              <div className={`text-xs font-mono ${totals.shopDiscrepancy !== 0 ? 'text-red-500' : 'text-zinc-600'}`}>
-                BASELINE: {totals.baselineShop} {totals.shopDiscrepancy !== 0 && `(${totals.shopDiscrepancy > 0 ? '+' : ''}${totals.shopDiscrepancy})`}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">FIELD HOURS</div>
-              <div className="text-2xl font-bold font-mono text-white">{totals.totalField}</div>
-              <div className={`text-xs font-mono ${totals.fieldDiscrepancy !== 0 ? 'text-red-500' : 'text-zinc-600'}`}>
-                BASELINE: {totals.baselineField} {totals.fieldDiscrepancy !== 0 && `(${totals.fieldDiscrepancy > 0 ? '+' : ''}${totals.fieldDiscrepancy})`}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SCOPE GAPS</div>
-              <div className={`text-2xl font-bold font-mono ${gapTotals.openCount > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {gapTotals.openCount}
-              </div>
-              <div className="text-xs text-zinc-600">OPEN</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">GAP COST</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">
-                ${(gapTotals.totalCost / 1000).toFixed(0)}K
-              </div>
-            </div>
+      {/* Metrics */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-6 gap-3">
+            <Card className={cn(
+              "border",
+              totals.shopVar === 0 ? "bg-zinc-900 border-zinc-800" : "bg-red-500/10 border-red-500/20"
+            )}>
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Shop Hours</div>
+                <div className={cn("text-2xl font-black", totals.shopVar !== 0 ? "text-red-400" : "text-white")}>
+                  {totals.totalShop}
+                </div>
+                <div className="text-[9px] text-zinc-600">
+                  Base: {totals.baselineShop} {totals.shopVar !== 0 && `(${totals.shopVar > 0 ? '+' : ''}${totals.shopVar})`}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className={cn(
+              "border",
+              totals.fieldVar === 0 ? "bg-zinc-900 border-zinc-800" : "bg-red-500/10 border-red-500/20"
+            )}>
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Field Hours</div>
+                <div className={cn("text-2xl font-black", totals.fieldVar !== 0 ? "text-red-400" : "text-white")}>
+                  {totals.totalField}
+                </div>
+                <div className="text-[9px] text-zinc-600">
+                  Base: {totals.baselineField} {totals.fieldVar !== 0 && `(${totals.fieldVar > 0 ? '+' : ''}${totals.fieldVar})`}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Scheduled</div>
+                <div className="text-xl font-black text-white">{scheduledHours.shop + scheduledHours.field}</div>
+                <div className="text-[9px] text-zinc-600">
+                  {scheduledHours.shop}sh / {scheduledHours.field}fh
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Specialty</div>
+                <div className="text-xl font-black text-purple-400">{totals.specialtyShop + totals.specialtyField}</div>
+                <div className="text-[9px] text-zinc-600">{specialtyItems.length} items</div>
+              </CardContent>
+            </Card>
+
+            <Card className={cn(
+              "border",
+              totals.openGaps > 0 ? "bg-red-500/10 border-red-500/20" : "bg-green-500/10 border-green-500/20"
+            )}>
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Scope Gaps</div>
+                <div className={cn("text-2xl font-black", totals.openGaps > 0 ? "text-red-400" : "text-green-400")}>
+                  {totals.openGaps}
+                </div>
+                <div className="text-[9px] text-zinc-600">Open</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Gap Cost</div>
+                <div className="text-xl font-black text-amber-500">${(totals.gapCost / 1000).toFixed(0)}K</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
-
-        {/* Overall Project Info */}
-        <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader>
-          <CardTitle>Overall Project Info</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-zinc-400 text-xs">Structure Anatomy/Job Type</Label>
-              <p className="text-white font-medium">{selectedProjectData?.structure_anatomy_job_type || '-'}</p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-xs">Rough Square Footage</Label>
-              <p className="text-white font-medium">
-                {selectedProjectData?.rough_square_footage ? selectedProjectData.rough_square_footage.toLocaleString() : '-'}
-              </p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-xs">Rough Price/SqFt</Label>
-              <p className="text-white font-medium">
-                {selectedProjectData?.rough_price_per_sqft ? `$${selectedProjectData.rough_price_per_sqft.toFixed(2)}` : '-'}
-              </p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-xs">Crane Budget</Label>
-              <p className="text-white font-medium">
-                ${(selectedProjectData?.crane_budget || 0).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-xs">Sub Budget</Label>
-              <p className="text-white font-medium">
-                ${(selectedProjectData?.sub_budget || 0).toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <Label className="text-zinc-400 text-xs">Rough Lift/Hr Rate</Label>
-              <p className="text-white font-medium">
-                {selectedProjectData?.rough_lift_hr_rate || '-'}
+      {/* Variance Alerts */}
+      {(totals.shopVar !== 0 || totals.fieldVar !== 0) && (
+        <div className="bg-black border-b border-zinc-800">
+          <div className="max-w-[1800px] mx-auto px-6 py-2">
+            <div className="flex items-center gap-2 p-2 bg-red-500/10 border border-red-500/30 rounded">
+              <AlertTriangle size={14} className="text-red-400" />
+              <p className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                BASELINE VARIANCE: Shop {totals.shopVar > 0 ? '+' : ''}{totals.shopVar}h, Field {totals.fieldVar > 0 ? '+' : ''}{totals.fieldVar}h
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-        {/* Baseline vs Breakdown Warning */}
-        {totals.hasDiscrepancy && (
-          <div className="p-4 bg-red-950/20 border border-red-500/30 rounded flex items-start gap-3">
-            <AlertTriangle className="text-red-400 flex-shrink-0 mt-0.5" size={18} />
-            <div className="flex-1">
-              <p className="font-bold text-red-400 text-xs uppercase tracking-widest">BASELINE MISMATCH</p>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">
-                SHOP: {totals.shopDiscrepancy > 0 ? '+' : ''}{totals.shopDiscrepancy}h | FIELD: {totals.fieldDiscrepancy > 0 ? '+' : ''}{totals.fieldDiscrepancy}h
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Breakdown vs Schedule Warning */}
-        {laborScheduleTotals.has_mismatch && (
-          <div className="p-4 bg-amber-950/20 border border-amber-500/30 rounded flex items-start gap-3">
-            <AlertTriangle className="text-amber-400 flex-shrink-0 mt-0.5" size={18} />
-            <div className="flex-1">
-              <p className="font-bold text-amber-400 text-xs uppercase tracking-widest">SCHEDULE VARIANCE</p>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">
-                SHOP Δ{laborScheduleTotals.shop_variance}h | FIELD Δ{laborScheduleTotals.field_variance}h
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Category-Level Variances */}
-        {laborScheduleMismatches.length > 0 && (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
-              <CardTitle className="text-amber-400 flex items-center gap-2 text-sm uppercase tracking-wide">
-                <AlertTriangle size={16} />
-                Category Variances ({laborScheduleMismatches.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {laborScheduleMismatches.map(mismatch => (
-                  <div key={mismatch.category_id} className="flex justify-between items-center p-2 bg-zinc-950 border-b border-zinc-800">
-                    <span className="text-white text-sm font-medium">{mismatch.category_name}</span>
-                    <div className="text-xs text-zinc-400 font-mono">
-                      BRK: {mismatch.breakdown_shop + mismatch.breakdown_field}h | 
-                      SCH: {mismatch.scheduled_shop + mismatch.scheduled_field}h | 
-                      <span className={mismatch.total_variance > 0 ? 'text-red-400' : 'text-green-400'}>
-                        {' '}Δ{mismatch.total_variance > 0 ? '+' : ''}{mismatch.total_variance}h
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-6 py-4 space-y-3">
         {/* Labor Breakdown */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
-                <Users size={16} />
-                Labor Breakdown
-              </CardTitle>
-              {selectedBreakdowns.size > 0 && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setShowBulkEdit(true)}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider"
-                  >
-                    EDIT ({selectedBreakdowns.size})
-                  </Button>
-                  <Button
-                    onClick={handleBulkDelete}
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider"
-                  >
-                    <Trash2 size={12} className="mr-1" />
-                    DEL ({selectedBreakdowns.size})
-                  </Button>
-                </div>
-              )}
-            </div>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wide flex items-center gap-2">
+              <Users size={14} />
+              Labor Breakdown ({breakdowns.length} categories)
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <DataTable 
-              columns={breakdownColumns}
-              data={breakdowns}
-              emptyMessage="No breakdown data"
-            />
+          <CardContent className="p-0">
+            <div className="divide-y divide-zinc-800">
+              {breakdowns.map(bd => {
+                const category = categories.find(c => c.id === bd.labor_category_id);
+                const total = (Number(bd.shop_hours) || 0) + (Number(bd.field_hours) || 0);
+                const scheduledForCategory = tasks
+                  .filter(t => t.labor_category_id === bd.labor_category_id)
+                  .reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0) + (Number(t.planned_field_hours) || 0), 0);
+                const variance = total - scheduledForCategory;
+
+                return (
+                  <div key={bd.id} className="p-3 hover:bg-zinc-800/50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <h4 className="font-bold text-white text-sm">{category?.name || 'Unknown Category'}</h4>
+                        <p className="text-[10px] text-zinc-600 font-mono mt-0.5">
+                          {bd.shop_hours}sh / {bd.field_hours}fh → {total}h total
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <Input
+                            type="number"
+                            value={bd.shop_hours || 0}
+                            onChange={(e) => updateBreakdownMutation.mutate({ 
+                              id: bd.id, 
+                              data: { shop_hours: Number(e.target.value) || 0 }
+                            })}
+                            className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
+                            placeholder="Shop"
+                          />
+                          <p className="text-[8px] text-zinc-600 uppercase mt-0.5">Shop</p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <Input
+                            type="number"
+                            value={bd.field_hours || 0}
+                            onChange={(e) => updateBreakdownMutation.mutate({ 
+                              id: bd.id, 
+                              data: { field_hours: Number(e.target.value) || 0 }
+                            })}
+                            className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
+                            placeholder="Field"
+                          />
+                          <p className="text-[8px] text-zinc-600 uppercase mt-0.5">Field</p>
+                        </div>
+
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-lg font-black text-amber-500">{total}</div>
+                          <p className="text-[8px] text-zinc-600 uppercase">Total</p>
+                        </div>
+
+                        {variance !== 0 && (
+                          <Badge className={cn(
+                            "text-[9px] font-bold",
+                            variance > 0 ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"
+                          )}>
+                            Δ{variance > 0 ? '+' : ''}{variance}
+                          </Badge>
+                        )}
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (confirm('Delete this breakdown?')) {
+                              deleteBreakdownMutation.mutate(bd.id);
+                            }
+                          }}
+                          className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
 
         {/* Specialty Items */}
         <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
-                <TrendingUp size={16} />
-                Specialty Items
+              <CardTitle className="text-sm uppercase tracking-wide flex items-center gap-2">
+                <TrendingUp size={14} />
+                Specialty Items ({specialtyItems.length})
               </CardTitle>
               <Button
-                onClick={() => setShowSpecialtyDialog(true)}
-                size="sm"
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                onClick={() => {
+                  const detail = prompt('Location/Detail:');
+                  if (!detail) return;
+                  const shop = Number(prompt('Shop hours:', '0')) || 0;
+                  const field = Number(prompt('Field hours:', '0')) || 0;
+                  createSpecialtyMutation.mutate({
+                    project_id: activeProjectId,
+                    location_detail: detail,
+                    shop_hours: shop,
+                    field_hours: field,
+                    status: 'open'
+                  });
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white h-7 text-[10px] font-bold px-3"
               >
-                <Plus size={12} className="mr-1" />
+                <Plus size={10} className="mr-1" />
                 ADD
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <DataTable 
-              columns={specialtyColumns}
-              data={specialtyItems}
-              emptyMessage="No specialty items"
-            />
+          <CardContent className="p-0">
+            {specialtyItems.length === 0 ? (
+              <p className="text-center text-zinc-600 py-6 text-xs">No specialty items</p>
+            ) : (
+              <div className="divide-y divide-zinc-800">
+                {specialtyItems.map(item => (
+                  <div key={item.id} className="p-3 hover:bg-zinc-800/50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-white text-sm font-bold">{item.location_detail}</p>
+                        <p className="text-[10px] text-zinc-600 font-mono mt-0.5">
+                          {item.shop_hours}sh / {item.field_hours}fh
+                        </p>
+                      </div>
+                      
+                      <Badge className={cn(
+                        "text-[9px] font-bold",
+                        item.status === 'closed' && "bg-green-500/20 text-green-400",
+                        item.status === 'reviewed' && "bg-blue-500/20 text-blue-400",
+                        item.status === 'open' && "bg-amber-500/20 text-amber-400"
+                      )}>
+                        {item.status.toUpperCase()}
+                      </Badge>
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm('Delete specialty item?')) {
+                            deleteSpecialtyMutation.mutate(item.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Scope Gaps */}
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
+        <Card className={cn(
+          "border",
+          totals.openGaps > 0 ? "bg-red-500/5 border-red-500/20" : "bg-zinc-900 border-zinc-800"
+        )}>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wide">
-                <AlertCircle size={16} />
-                Scope Gaps
+              <CardTitle className="text-sm uppercase tracking-wide flex items-center gap-2">
+                <AlertTriangle size={14} className={totals.openGaps > 0 ? "text-red-400" : "text-zinc-600"} />
+                Scope Gaps ({scopeGaps.length})
               </CardTitle>
               <Button
-                onClick={() => setShowGapDialog(true)}
-                size="sm"
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                onClick={() => {
+                  const location = prompt('Location/Description:');
+                  if (!location) return;
+                  const cost = Number(prompt('Rough cost:', '0')) || 0;
+                  const explanation = prompt('Explanation:', '');
+                  createGapMutation.mutate({
+                    project_id: activeProjectId,
+                    location_description: location,
+                    rough_cost: cost,
+                    explanation: explanation || '',
+                    status: 'open'
+                  });
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white h-7 text-[10px] font-bold px-3"
               >
-                <Plus size={12} className="mr-1" />
-                ADD
+                <Plus size={10} className="mr-1" />
+                ADD GAP
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            <DataTable 
-              columns={gapColumns}
-              data={scopeGaps}
-              emptyMessage="No scope gaps identified"
-            />
+          <CardContent className="p-0">
+            {scopeGaps.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle2 size={48} className="mx-auto mb-2 text-green-500/30" />
+                <p className="text-xs text-zinc-600">No scope gaps identified</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-zinc-800">
+                {scopeGaps.map(gap => (
+                  <div key={gap.id} className="p-3 hover:bg-zinc-800/50 transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <h4 className="text-white text-sm font-bold">{gap.location_description}</h4>
+                        {gap.explanation && (
+                          <p className="text-[10px] text-zinc-500 mt-0.5">{gap.explanation}</p>
+                        )}
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-lg font-black text-red-400">
+                          ${(gap.rough_cost / 1000).toFixed(0)}K
+                        </div>
+                      </div>
+
+                      <Badge className={cn(
+                        "text-[9px] font-bold min-w-[70px] justify-center",
+                        gap.status === 'resolved' && "bg-green-500/20 text-green-400",
+                        gap.status === 'submitted' && "bg-blue-500/20 text-blue-400",
+                        gap.status === 'priced' && "bg-purple-500/20 text-purple-400",
+                        gap.status === 'open' && "bg-red-500/20 text-red-400"
+                      )}>
+                        {gap.status.toUpperCase()}
+                      </Badge>
+
+                      <Select
+                        value={gap.status}
+                        onValueChange={(v) => updateGapMutation.mutate({ id: gap.id, data: { status: v }})}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <SelectTrigger className="w-28 h-7 text-[10px] bg-zinc-950 border-zinc-700 opacity-0 group-hover:opacity-100">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800">
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="priced">Priced</SelectItem>
+                          <SelectItem value="submitted">Submitted</SelectItem>
+                          <SelectItem value="resolved">Resolved</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm('Delete gap?')) {
+                            deleteGapMutation.mutate(gap.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Specialty Item Dialog */}
-      <SpecialtyDialog
-        open={showSpecialtyDialog}
-        onOpenChange={setShowSpecialtyDialog}
-        projectId={selectedProject}
-        onSubmit={(data) => createSpecialtyMutation.mutate(data)}
-      />
-
-      {/* Scope Gap Dialog */}
-      <GapDialog
-        open={showGapDialog}
-        onOpenChange={setShowGapDialog}
-        projectId={selectedProject}
-        onSubmit={(data) => createGapMutation.mutate(data)}
-      />
-
-      {/* Bulk Edit Dialog */}
-      <Dialog open={showBulkEdit} onOpenChange={setShowBulkEdit}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Bulk Edit {selectedBreakdowns.size} Breakdowns</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Change Category (optional)</Label>
-              <Select value={bulkEditData.category_id} onValueChange={(v) => setBulkEditData({ ...bulkEditData, category_id: v })}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                  <SelectValue placeholder="Select new category..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Update Notes (optional)</Label>
-              <Textarea
-                value={bulkEditData.notes}
-                onChange={(e) => setBulkEditData({ ...bulkEditData, notes: e.target.value })}
-                placeholder="Enter notes to apply to all selected breakdowns..."
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setShowBulkEdit(false)} className="border-zinc-700">
-                Cancel
-              </Button>
-              <Button onClick={handleBulkEdit} className="bg-blue-600 hover:bg-blue-700">
-                Apply Changes
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-function SpecialtyDialog({ open, onOpenChange, projectId, onSubmit }) {
-  const [formData, setFormData] = useState({
-    location_detail: '',
-    shop_hours: 0,
-    field_hours: 0,
-    status: 'open',
-    notes: ''
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ ...formData, project_id: projectId });
-    setFormData({ location_detail: '', shop_hours: 0, field_hours: 0, status: 'open', notes: '' });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
-        <DialogHeader>
-          <DialogTitle>Add Specialty Item</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Location/Related Detail *</Label>
-            <Textarea
-              value={formData.location_detail}
-              onChange={(e) => setFormData({ ...formData, location_detail: e.target.value })}
-              required
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Shop Hours</Label>
-              <Input
-                type="number"
-                value={formData.shop_hours}
-                onChange={(e) => setFormData({ ...formData, shop_hours: Number(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
-            <div>
-              <Label>Field Hours</Label>
-              <Input
-                type="number"
-                value={formData.field_hours}
-                onChange={(e) => setFormData({ ...formData, field_hours: Number(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
-              />
-            </div>
-          </div>
-          <div>
-            <Label>Status</Label>
-            <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="reviewed">Reviewed</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Notes</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-zinc-700">
-              Cancel
-            </Button>
-            <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-black">
-              Add Item
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function GapDialog({ open, onOpenChange, projectId, onSubmit }) {
-  const [formData, setFormData] = useState({
-    location_description: '',
-    rough_cost: 0,
-    explanation: '',
-    status: 'open'
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({ ...formData, project_id: projectId });
-    setFormData({ location_description: '', rough_cost: 0, explanation: '', status: 'open' });
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
-        <DialogHeader>
-          <DialogTitle>Add Scope Gap</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Location/Description *</Label>
-            <Textarea
-              value={formData.location_description}
-              onChange={(e) => setFormData({ ...formData, location_description: e.target.value })}
-              required
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div>
-            <Label>Rough Cost *</Label>
-            <Input
-              type="number"
-              value={formData.rough_cost}
-              onChange={(e) => setFormData({ ...formData, rough_cost: Number(e.target.value) })}
-              required
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div>
-            <Label>Explanation *</Label>
-            <Textarea
-              value={formData.explanation}
-              onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
-              required
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div>
-            <Label>Status</Label>
-            <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="priced">Priced</SelectItem>
-                <SelectItem value="submitted">Submitted</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-zinc-700">
-              Cancel
-            </Button>
-            <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-black">
-              Add Gap
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

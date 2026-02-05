@@ -13,7 +13,7 @@ import NoteComposer from './NoteComposer';
 import { useWeeklyContext } from './WeeklyContext';
 import { format, parseISO, isPast } from 'date-fns';
 
-export default function ProjectSection({ project, notes = [], onCreateNote, onUpdateNote }) {
+export default function ProjectSection({ project, notes = [], onCreateNote, onUpdateNote, onDeleteNote }) {
   const [isOpen, setIsOpen] = useState(true);
   const [showComposer, setShowComposer] = useState(false);
   const [composerType, setComposerType] = useState('note');
@@ -140,7 +140,7 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
                   <div className="mb-3">
                     <div className="text-xs font-bold text-amber-500 mb-2">Carried from Last Week</div>
                     {categorizedNotes.carried.map(note => (
-                      <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} />
+                      <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
                     ))}
                   </div>
                 )}
@@ -150,7 +150,7 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
                   <div className="text-sm text-zinc-500 italic p-4 text-center">No notes yet</div>
                 )}
                 {categorizedNotes.notes.map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} />
+                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
                 ))}
               </TabsContent>
 
@@ -159,7 +159,7 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
                   <div className="text-sm text-zinc-500 italic p-4 text-center">No action items</div>
                 )}
                 {categorizedNotes.actions.map(action => (
-                  <ActionItemCard key={action.id} action={action} onUpdate={onUpdateNote} />
+                  <ActionItemCard key={action.id} action={action} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
                 ))}
               </TabsContent>
 
@@ -168,7 +168,7 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
                   <div className="text-sm text-zinc-500 italic p-4 text-center">No decisions logged</div>
                 )}
                 {categorizedNotes.decisions.map(decision => (
-                  <DecisionCard key={decision.id} decision={decision} onUpdate={onUpdateNote} />
+                  <DecisionCard key={decision.id} decision={decision} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
                 ))}
               </TabsContent>
             </Tabs>
@@ -179,23 +179,84 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
   );
 }
 
-function NoteCard({ note }) {
+function NoteCard({ note, onUpdate, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    title: note.title,
+    body: note.body,
+    category: note.category
+  });
+
+  const handleSave = () => {
+    onUpdate(note.id, editData);
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Delete this note?')) {
+      onDelete(note.id);
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <div className="p-3 bg-zinc-800 rounded border border-orange-600 space-y-2">
+        <Input
+          placeholder="Title"
+          value={editData.title || ''}
+          onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+          className="bg-zinc-900 border-zinc-700 text-sm"
+        />
+        <Textarea
+          placeholder="Details"
+          value={editData.body}
+          onChange={(e) => setEditData({ ...editData, body: e.target.value })}
+          className="bg-zinc-900 border-zinc-700 text-sm h-16"
+        />
+        <Select value={editData.category} onValueChange={(val) => setEditData({ ...editData, category: val })}>
+          <SelectTrigger className="bg-zinc-900 border-zinc-700 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="general">General</SelectItem>
+            <SelectItem value="technical">Technical</SelectItem>
+            <SelectItem value="safety">Safety</SelectItem>
+            <SelectItem value="quality">Quality</SelectItem>
+            <SelectItem value="schedule">Schedule</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
+          <Button size="sm" onClick={handleSave}>Save</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-3 bg-zinc-800 rounded text-sm">
-      {note.title && <div className="font-medium mb-1">{note.title}</div>}
-      <div className="text-zinc-300 whitespace-pre-wrap">{note.body}</div>
-      <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500">
-        <Badge variant="outline" className="text-xs">{note.category}</Badge>
-        {note.carried_from_week_id && (
-          <Badge className="bg-amber-700 text-xs">Carried</Badge>
-        )}
-        <span>{note.created_by} • {note.created_date ? format(parseISO(note.created_date), 'MMM d') : ''}</span>
+    <div className="p-3 bg-zinc-800 rounded text-sm group">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          {note.title && <div className="font-medium mb-1">{note.title}</div>}
+          <div className="text-zinc-300 whitespace-pre-wrap">{note.body}</div>
+          <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500">
+            <Badge variant="outline" className="text-xs">{note.category}</Badge>
+            {note.carried_from_week_id && (
+              <Badge className="bg-amber-700 text-xs">Carried</Badge>
+            )}
+            <span>{note.created_by} • {note.created_date ? format(parseISO(note.created_date), 'MMM d') : ''}</span>
+          </div>
+        </div>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+          <Button size="sm" variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300">Delete</Button>
+        </div>
       </div>
     </div>
   );
 }
 
-function ActionItemCard({ action, onUpdate }) {
+function ActionItemCard({ action, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: action.title,
@@ -215,6 +276,12 @@ function ActionItemCard({ action, onUpdate }) {
   const handleSave = () => {
     onUpdate(action.id, editData);
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Delete this action item?')) {
+      onDelete(action.id);
+    }
   };
 
   if (isEditing) {
@@ -302,20 +369,16 @@ function ActionItemCard({ action, onUpdate }) {
             )}
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setIsEditing(true)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          Edit
-        </Button>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+          <Button size="sm" variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300">Delete</Button>
+        </div>
       </div>
     </div>
   );
 }
 
-function DecisionCard({ decision, onUpdate }) {
+function DecisionCard({ decision, onUpdate, onDelete }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     title: decision.title,
@@ -325,6 +388,12 @@ function DecisionCard({ decision, onUpdate }) {
   const handleSave = () => {
     onUpdate(decision.id, editData);
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Delete this decision?')) {
+      onDelete(decision.id);
+    }
   };
 
   if (isEditing) {
@@ -360,14 +429,10 @@ function DecisionCard({ decision, onUpdate }) {
             {decision.created_by} • {decision.created_date ? format(parseISO(decision.created_date), 'MMM d, h:mm a') : ''}
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setIsEditing(true)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          Edit
-        </Button>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
+          <Button size="sm" variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300">Delete</Button>
+        </div>
       </div>
     </div>
   );

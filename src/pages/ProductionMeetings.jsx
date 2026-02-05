@@ -66,6 +66,14 @@ function ProductionNotesContent() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.ProductionNote.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['production-notes'] });
+      toast.success('Deleted');
+    }
+  });
+
   const filteredProjects = useMemo(() => {
     return projects.filter(p => {
       const matchesSearch = !searchTerm || 
@@ -157,7 +165,7 @@ function ProductionNotesContent() {
       {/* Main Content */}
       <div className="flex">
         {/* Left Rail - Project Index */}
-        <div className="hidden lg:block w-64 border-r border-border p-4 sticky top-[180px] h-[calc(100vh-180px)] overflow-y-auto">
+        <div className="hidden lg:block w-80 border-r border-border p-4 sticky top-[180px] h-[calc(100vh-180px)] overflow-y-auto">
           <div className="space-y-3">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
@@ -193,25 +201,25 @@ function ProductionNotesContent() {
               const overdue = openActions.filter(a => a.due_date && isPast(parseISO(a.due_date)));
 
               const phaseColors = {
-                detailing: 'bg-blue-600',
-                fabrication: 'bg-purple-600',
+                detailing: 'bg-slate-600',
+                fabrication: 'bg-orange-600',
                 delivery: 'bg-amber-600',
-                erection: 'bg-orange-600',
+                erection: 'bg-red-600',
                 closeout: 'bg-green-600'
               };
 
               const statusColor = overdue.length > 0 ? 'border-red-600' : 
-                                 openActions.length > 5 ? 'border-amber-600' : 'border-green-600';
+                                 openActions.length > 5 ? 'border-orange-600' : 'border-green-600';
 
               return (
                 <button
                   key={p.id}
                   onClick={() => scrollToProject(p.id)}
-                  className={`w-full text-left p-2 rounded hover:bg-zinc-800 transition-colors text-sm border-l-2 ${statusColor}`}
+                  className={`w-full text-left p-2 rounded hover:bg-orange-900/30 transition-colors text-sm border-l-2 ${statusColor}`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{p.name}</div>
+                      <div className="font-medium">{p.name}</div>
                       <div className="text-xs text-zinc-500">{p.project_number}</div>
                     </div>
                     {p.phase && (
@@ -253,6 +261,7 @@ function ProductionNotesContent() {
                 notes={projectNotes}
                 onCreateNote={(data) => createMutation.mutate(data)}
                 onUpdateNote={(id, data) => updateMutation.mutate({ id, data })}
+                onDeleteNote={(id) => deleteMutation.mutate(id)}
               />
             );
           })}

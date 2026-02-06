@@ -353,7 +353,7 @@ export default function WorkPackages() {
                           <span>{(pkg.linked_delivery_ids?.length || 0)} deliveries</span>
                           <span>•</span>
                           <span>{taskCount} tasks</span>
-                          {pkg.target_date && (
+                          {pkg.target_date && isValid(parseISO(pkg.target_date)) && (
                             <>
                               <span>•</span>
                               <span className="text-amber-500">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>

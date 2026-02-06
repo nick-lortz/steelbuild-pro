@@ -172,10 +172,10 @@ function LayoutContent({ children, currentPageName }) {
   useRenderCount('LayoutContent');
   useMountLogger('LayoutContent');
 
-  // Initialize Sentry on app load
-  useEffect(() => {
-    initSentry();
-  }, []);
+  // Sentry disabled - causes console noise in dev
+  // useEffect(() => {
+  //   initSentry();
+  // }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {

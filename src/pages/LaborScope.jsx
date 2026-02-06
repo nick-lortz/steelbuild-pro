@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
-export default function LaborScope() {
+const LaborScope = React.memo(function LaborScope() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [expandedSection, setExpandedSection] = useState('breakdown');
   const [editingValues, setEditingValues] = useState({});
@@ -167,6 +167,17 @@ export default function LaborScope() {
     const shop = tasks.reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0), 0);
     const field = tasks.reduce((sum, t) => sum + (Number(t.planned_field_hours) || 0), 0);
     return { shop, field };
+  }, [tasks]);
+
+  // Pre-calculate scheduled hours per category to avoid nested loops
+  const scheduledByCategory = useMemo(() => {
+    const map = {};
+    tasks.forEach(t => {
+      if (!t.labor_category_id) return;
+      if (!map[t.labor_category_id]) map[t.labor_category_id] = 0;
+      map[t.labor_category_id] += (Number(t.planned_shop_hours) || 0) + (Number(t.planned_field_hours) || 0);
+    });
+    return map;
   }, [tasks]);
 
   if (!activeProjectId) {
@@ -354,9 +365,7 @@ export default function LaborScope() {
                 .map(bd => {
                 const category = categories.find(c => c.id === bd.labor_category_id);
                 const total = (Number(bd.shop_hours) || 0) + (Number(bd.field_hours) || 0);
-                const scheduledForCategory = tasks
-                  .filter(t => t.labor_category_id === bd.labor_category_id)
-                  .reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0) + (Number(t.planned_field_hours) || 0), 0);
+                const scheduledForCategory = scheduledByCategory[bd.labor_category_id] || 0;
                 const variance = total - scheduledForCategory;
 
                 return (
@@ -638,4 +647,6 @@ export default function LaborScope() {
       </div>
     </div>
   );
-}
+});
+
+export default LaborScope;

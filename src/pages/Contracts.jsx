@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,12 +51,26 @@ export default function Contracts() {
   const { data: changeOrders } = useQuery({
     queryKey: ['change-orders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
-    initialData: []
+    initialData: [],
+    staleTime: 5 * 60 * 1000
   });
 
-  const filteredProjects = activeProjectId 
-    ? projects.filter(p => p.id === activeProjectId)
-    : projects;
+  const filteredProjects = useMemo(() => 
+    activeProjectId 
+      ? projects.filter(p => p.id === activeProjectId)
+      : projects,
+    [projects, activeProjectId]
+  );
+
+  // Memoize CO lookup by project
+  const cosByProject = useMemo(() => {
+    const map = {};
+    changeOrders.forEach(co => {
+      if (!map[co.project_id]) map[co.project_id] = [];
+      map[co.project_id].push(co);
+    });
+    return map;
+  }, [changeOrders]);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
@@ -193,13 +207,13 @@ export default function Contracts() {
     }
   });
 
-  const handleCreateCO = () => {
+  const handleCreateCO = useCallback(() => {
     if (!newCO.title) {
       toast.error('Title is required');
       return;
     }
     
-    const projectCOs = changeOrders.filter(co => co.project_id === editingProject.id);
+    const projectCOs = cosByProject[editingProject.id] || [];
     const nextNumber = projectCOs.length > 0 
       ? Math.max(...projectCOs.map(co => co.co_number || 0)) + 1 
       : 1;
@@ -209,20 +223,32 @@ export default function Contracts() {
       project_id: editingProject.id,
       co_number: nextNumber
     });
-  };
+  }, [newCO, editingProject, cosByProject, createCOMutation]);
 
-  // Calculate KPIs
-  const totalContractValue = filteredProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
-  const totalApprovedCOs = changeOrders.filter(co => co.status === 'approved').length;
-  const totalCOValue = changeOrders
-    .filter(co => co.status === 'approved')
-    .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
-  const revisedContractValue = totalContractValue + totalCOValue;
-  const pendingCOs = changeOrders.filter(co => ['submitted', 'under_review'].includes(co.status)).length;
-  
-  const awaitingSignature = filteredProjects.filter(p => p.contract_status === 'awaiting_signature').length;
-  const underReview = filteredProjects.filter(p => p.contract_status === 'under_review').length;
-  const internalBall = filteredProjects.filter(p => p.ball_in_court === 'internal').length;
+  // Calculate KPIs - memoized
+  const kpis = useMemo(() => {
+    const totalContractValue = filteredProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
+    const totalApprovedCOs = changeOrders.filter(co => co.status === 'approved').length;
+    const totalCOValue = changeOrders
+      .filter(co => co.status === 'approved')
+      .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+    const revisedContractValue = totalContractValue + totalCOValue;
+    const pendingCOs = changeOrders.filter(co => ['submitted', 'under_review'].includes(co.status)).length;
+    const awaitingSignature = filteredProjects.filter(p => p.contract_status === 'awaiting_signature').length;
+    const underReview = filteredProjects.filter(p => p.contract_status === 'under_review').length;
+    const internalBall = filteredProjects.filter(p => p.ball_in_court === 'internal').length;
+    
+    return {
+      totalContractValue,
+      totalApprovedCOs,
+      totalCOValue,
+      revisedContractValue,
+      pendingCOs,
+      awaitingSignature,
+      underReview,
+      internalBall
+    };
+  }, [filteredProjects, changeOrders]);
 
   const contractColumns = [
     {
@@ -329,10 +355,10 @@ export default function Contracts() {
       accessor: 'revised_value',
       header: 'Current Value',
       render: (row) => {
-        const projectCOs = changeOrders.filter(co => 
-          co.project_id === row.id && co.status === 'approved'
-        );
-        const coValue = projectCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+        const projectCOs = cosByProject[row.id] || [];
+        const coValue = projectCOs
+          .filter(co => co.status === 'approved')
+          .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
         const revised = (row.contract_value || 0) + coValue;
         const diff = coValue;
         
@@ -398,7 +424,7 @@ export default function Contracts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Total Contract Value</p>
-                <p className="text-2xl font-bold text-white mt-1">${(totalContractValue / 1000000).toFixed(2)}M</p>
+                <p className="text-2xl font-bold text-white mt-1">${(kpis.totalContractValue / 1000000).toFixed(2)}M</p>
                 <p className="text-xs text-zinc-500 mt-1">{filteredProjects.length} contracts</p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-500" />
@@ -411,9 +437,9 @@ export default function Contracts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Current Value</p>
-                <p className="text-2xl font-bold text-green-500 mt-1">${(revisedContractValue / 1000000).toFixed(2)}M</p>
+                <p className="text-2xl font-bold text-green-500 mt-1">${(kpis.revisedContractValue / 1000000).toFixed(2)}M</p>
                 <p className="text-xs text-zinc-500 mt-1">
-                  +${((revisedContractValue - totalContractValue) / 1000).toFixed(0)}k from COs
+                  +${((kpis.revisedContractValue - kpis.totalContractValue) / 1000).toFixed(0)}k from COs
                 </p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-500" />
@@ -426,9 +452,9 @@ export default function Contracts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Awaiting Action</p>
-                <p className="text-2xl font-bold text-amber-500 mt-1">{awaitingSignature + underReview}</p>
+                <p className="text-2xl font-bold text-amber-500 mt-1">{kpis.awaitingSignature + kpis.underReview}</p>
                 <p className="text-xs text-zinc-500 mt-1">
-                  {awaitingSignature} signature, {underReview} review
+                  {kpis.awaitingSignature} signature, {kpis.underReview} review
                 </p>
               </div>
               <Clock className="w-8 h-8 text-amber-500" />
@@ -441,7 +467,7 @@ export default function Contracts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Internal Responsibility</p>
-                <p className="text-2xl font-bold text-blue-500 mt-1">{internalBall}</p>
+                <p className="text-2xl font-bold text-blue-500 mt-1">{kpis.internalBall}</p>
                 <p className="text-xs text-zinc-500 mt-1">Ball in our court</p>
               </div>
               <Users className="w-8 h-8 text-blue-500" />
@@ -981,7 +1007,7 @@ export default function Contracts() {
                 )}
                 
                 {(() => {
-                  const projectCOs = changeOrders.filter(co => co.project_id === editingProject.id);
+                  const projectCOs = cosByProject[editingProject.id] || [];
                   return projectCOs.length > 0 ? (
                     <div className="space-y-2">
                       {projectCOs.map((co) => (

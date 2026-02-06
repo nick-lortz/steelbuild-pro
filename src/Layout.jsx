@@ -245,15 +245,16 @@ function LayoutContent({ children, currentPageName }) {
 
   const visibleNavGroups = React.useMemo(() => {
     if (!currentUser) return navGroups;
+    const userRole = currentUser.role;
     return navGroups.map(group => ({
       ...group,
       items: group.items.filter(item => 
-        !item.roles || item.roles.includes(currentUser.role)
+        !item.roles || item.roles.includes(userRole)
       )
     })).filter(group => 
-      (!group.roles || group.roles.includes(currentUser.role)) && group.items.length > 0
+      (!group.roles || group.roles.includes(userRole)) && group.items.length > 0
     );
-  }, [currentUser]);
+  }, [currentUser?.role]);
 
   // Show loading state while checking auth
   if (userLoading) {

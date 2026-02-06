@@ -9,16 +9,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus } from 'lucide-react';
+import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus, Edit, Users } from 'lucide-react';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DataTable from '@/components/ui/DataTable';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export default function Contracts() {
   const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
   const [editingProject, setEditingProject] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newProject, setNewProject] = useState({
+    project_number: '',
+    name: '',
+    client: '',
+    contract_value: 0,
+    contract_received_date: '',
+    contract_due_date: '',
+    ball_in_court: 'internal',
+    contract_status: 'received',
+    status: 'bidding'
+  });
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -44,12 +57,38 @@ export default function Contracts() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowEditDialog(false);
       setEditingProject(null);
-      toast.success('Contract updated');
+      toast.success('Contract updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update contract');
+    }
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Project.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setShowAddDialog(false);
+      setNewProject({
+        project_number: '',
+        name: '',
+        client: '',
+        contract_value: 0,
+        contract_received_date: '',
+        contract_due_date: '',
+        ball_in_court: 'internal',
+        contract_status: 'received',
+        status: 'bidding'
+      });
+      toast.success('Contract added successfully');
+    },
+    onError: () => {
+      toast.error('Failed to add contract');
     }
   });
 
   const handleEdit = (project) => {
-    setEditingProject(project);
+    setEditingProject({...project});
     setShowEditDialog(true);
   };
 
@@ -62,6 +101,14 @@ export default function Contracts() {
     }
   };
 
+  const handleAdd = () => {
+    if (!newProject.project_number || !newProject.name) {
+      toast.error('Project number and name are required');
+      return;
+    }
+    createMutation.mutate(newProject);
+  };
+
   // Calculate KPIs
   const totalContractValue = filteredProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
   const totalApprovedCOs = changeOrders.filter(co => co.status === 'approved').length;
@@ -70,91 +117,151 @@ export default function Contracts() {
     .reduce((sum, co) => sum + (co.cost_impact || 0), 0);
   const revisedContractValue = totalContractValue + totalCOValue;
   const pendingCOs = changeOrders.filter(co => ['submitted', 'under_review'].includes(co.status)).length;
-  const avgCOProcessingDays = changeOrders
-    .filter(co => co.approved_date && co.submitted_date)
-    .reduce((sum, co) => {
-      const days = Math.ceil((new Date(co.approved_date) - new Date(co.submitted_date)) / (1000 * 60 * 60 * 24));
-      return sum + days;
-    }, 0) / (changeOrders.filter(co => co.approved_date).length || 1);
+  
+  const awaitingSignature = filteredProjects.filter(p => p.contract_status === 'awaiting_signature').length;
+  const underReview = filteredProjects.filter(p => p.contract_status === 'under_review').length;
+  const internalBall = filteredProjects.filter(p => p.ball_in_court === 'internal').length;
 
   const contractColumns = [
     {
       accessor: 'project_number',
-      header: 'Project #'
+      header: 'Project #',
+      render: (row) => (
+        <div className="font-mono font-bold text-white">{row.project_number}</div>
+      )
     },
     {
       accessor: 'name',
-      header: 'Project Name'
+      header: 'Project Name',
+      render: (row) => (
+        <div className="font-medium text-white">{row.name}</div>
+      )
     },
     {
       accessor: 'client',
-      header: 'Client'
+      header: 'Client',
+      render: (row) => (
+        <div className="text-zinc-400">{row.client || '—'}</div>
+      )
     },
     {
-      accessor: 'contract_value',
-      header: 'Original Value',
-      render: (row) => `$${(row.contract_value || 0).toLocaleString()}`
+      accessor: 'contract_received_date',
+      header: 'Received',
+      render: (row) => (
+        <div className="text-sm text-zinc-400">
+          {row.contract_received_date ? format(new Date(row.contract_received_date), 'MMM d, yyyy') : '—'}
+        </div>
+      )
     },
     {
-      accessor: 'co_value',
-      header: 'CO Value',
+      accessor: 'contract_due_date',
+      header: 'Due',
       render: (row) => {
-        const projectCOs = changeOrders.filter(co => 
-          co.project_id === row.id && co.status === 'approved'
-        );
-        const coValue = projectCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
+        if (!row.contract_due_date) return <span className="text-zinc-600">—</span>;
+        const dueDate = new Date(row.contract_due_date);
+        const today = new Date();
+        const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const isOverdue = daysUntil < 0;
+        const isUrgent = daysUntil >= 0 && daysUntil <= 7;
+        
         return (
-          <span className={coValue > 0 ? 'text-green-500' : coValue < 0 ? 'text-red-500' : ''}>
-            ${Math.abs(coValue).toLocaleString()}
-          </span>
+          <div className={`text-sm font-medium ${isOverdue ? 'text-red-500' : isUrgent ? 'text-amber-500' : 'text-zinc-400'}`}>
+            {format(dueDate, 'MMM d, yyyy')}
+            {isOverdue && <span className="text-xs ml-1">({Math.abs(daysUntil)}d late)</span>}
+            {isUrgent && !isOverdue && <span className="text-xs ml-1">({daysUntil}d)</span>}
+          </div>
         );
       }
     },
     {
+      accessor: 'ball_in_court',
+      header: 'Responsibility',
+      render: (row) => {
+        const ballColors = {
+          internal: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+          client: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+          gc: 'bg-green-500/20 text-green-400 border-green-500/30',
+          architect: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+          engineer: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+          legal: 'bg-red-500/20 text-red-400 border-red-500/30',
+          finance: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+          estimating: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+          operations: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+        };
+        return (
+          <Badge className={`${ballColors[row.ball_in_court]} border font-medium`}>
+            {row.ball_in_court?.toUpperCase() || 'INTERNAL'}
+          </Badge>
+        );
+      }
+    },
+    {
+      accessor: 'contract_status',
+      header: 'Contract Status',
+      render: (row) => {
+        const statusColors = {
+          received: 'bg-zinc-500/20 text-zinc-400',
+          under_review: 'bg-blue-500/20 text-blue-400',
+          awaiting_signature: 'bg-amber-500/20 text-amber-400',
+          signed: 'bg-green-500/20 text-green-400',
+          executed: 'bg-emerald-500/20 text-emerald-400',
+          void: 'bg-red-500/20 text-red-400'
+        };
+        return (
+          <Badge className={statusColors[row.contract_status || 'received']}>
+            {(row.contract_status || 'received').replace('_', ' ').toUpperCase()}
+          </Badge>
+        );
+      }
+    },
+    {
+      accessor: 'contract_value',
+      header: 'Contract Value',
+      render: (row) => (
+        <div className="text-right font-mono font-bold text-green-400">
+          ${(row.contract_value || 0).toLocaleString()}
+        </div>
+      )
+    },
+    {
       accessor: 'revised_value',
-      header: 'Revised Value',
+      header: 'Current Value',
       render: (row) => {
         const projectCOs = changeOrders.filter(co => 
           co.project_id === row.id && co.status === 'approved'
         );
         const coValue = projectCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0);
         const revised = (row.contract_value || 0) + coValue;
-        return `$${revised.toLocaleString()}`;
-      }
-    },
-    {
-      accessor: 'pending_cos',
-      header: 'Pending COs',
-      render: (row) => {
-        const pending = changeOrders.filter(co => 
-          co.project_id === row.id && 
-          ['submitted', 'under_review'].includes(co.status)
-        ).length;
+        const diff = coValue;
+        
         return (
-          <Badge variant={pending > 0 ? 'default' : 'outline'}>
-            {pending}
-          </Badge>
+          <div className="text-right">
+            <div className="font-mono font-bold text-white">${revised.toLocaleString()}</div>
+            {diff !== 0 && (
+              <div className={`text-xs ${diff > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {diff > 0 ? '+' : ''}{diff.toLocaleString()}
+              </div>
+            )}
+          </div>
         );
       }
     },
     {
-      accessor: 'status',
-      header: 'Status',
-      render: (row) => {
-        const statusColors = {
-          bidding: 'bg-yellow-500/20 text-yellow-400',
-          awarded: 'bg-blue-500/20 text-blue-400',
-          in_progress: 'bg-green-500/20 text-green-400',
-          on_hold: 'bg-red-500/20 text-red-400',
-          completed: 'bg-zinc-500/20 text-zinc-400',
-          closed: 'bg-zinc-700/20 text-zinc-500'
-        };
-        return (
-          <Badge className={statusColors[row.status]}>
-            {row.status.replace('_', ' ')}
-          </Badge>
-        );
-      }
+      accessor: 'actions',
+      header: '',
+      render: (row) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEdit(row);
+          }}
+          className="text-zinc-400 hover:text-white"
+        >
+          <Edit size={14} />
+        </Button>
+      )
     }
   ];
 
@@ -168,10 +275,17 @@ export default function Contracts() {
               <FileText className="w-7 h-7 text-black" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Contracts & Contract Reviews</h1>
-              <p className="text-zinc-400 font-medium mt-1">Contract values, change orders, and compliance tracking</p>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Contract Management</h1>
+              <p className="text-zinc-400 font-medium mt-1">Track contracts, execution status, and responsibility chain</p>
             </div>
           </div>
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-black font-bold"
+          >
+            <Plus size={18} className="mr-2" />
+            New Contract
+          </Button>
         </div>
       </div>
 
@@ -181,8 +295,9 @@ export default function Contracts() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Original Contract Value</p>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Total Contract Value</p>
                 <p className="text-2xl font-bold text-white mt-1">${(totalContractValue / 1000000).toFixed(2)}M</p>
+                <p className="text-xs text-zinc-500 mt-1">{filteredProjects.length} contracts</p>
               </div>
               <DollarSign className="w-8 h-8 text-blue-500" />
             </div>
@@ -193,10 +308,10 @@ export default function Contracts() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Revised Contract Value</p>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Current Value</p>
                 <p className="text-2xl font-bold text-green-500 mt-1">${(revisedContractValue / 1000000).toFixed(2)}M</p>
                 <p className="text-xs text-zinc-500 mt-1">
-                  +${((revisedContractValue - totalContractValue) / 1000).toFixed(0)}k
+                  +${((revisedContractValue - totalContractValue) / 1000).toFixed(0)}k from COs
                 </p>
               </div>
               <TrendingUp className="w-8 h-8 text-green-500" />
@@ -208,13 +323,13 @@ export default function Contracts() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Approved Change Orders</p>
-                <p className="text-2xl font-bold text-white mt-1">{totalApprovedCOs}</p>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Awaiting Action</p>
+                <p className="text-2xl font-bold text-amber-500 mt-1">{awaitingSignature + underReview}</p>
                 <p className="text-xs text-zinc-500 mt-1">
-                  ${(totalCOValue / 1000).toFixed(0)}k total
+                  {awaitingSignature} signature, {underReview} review
                 </p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
+              <Clock className="w-8 h-8 text-amber-500" />
             </div>
           </CardContent>
         </Card>
@@ -223,55 +338,12 @@ export default function Contracts() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Pending COs</p>
-                <p className="text-2xl font-bold text-amber-500 mt-1">{pendingCOs}</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {avgCOProcessingDays.toFixed(0)} days avg
-                </p>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Internal Responsibility</p>
+                <p className="text-2xl font-bold text-blue-500 mt-1">{internalBall}</p>
+                <p className="text-xs text-zinc-500 mt-1">Ball in our court</p>
               </div>
-              <Clock className="w-8 h-8 text-amber-500" />
+              <Users className="w-8 h-8 text-blue-500" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-sm uppercase tracking-wide">CO Growth Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-white">
-              {((totalCOValue / totalContractValue) * 100).toFixed(1)}%
-            </p>
-            <p className="text-xs text-zinc-500 mt-2">Change order value vs original contract</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-sm uppercase tracking-wide">CO Approval Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-white">
-              {((totalApprovedCOs / (changeOrders.length || 1)) * 100).toFixed(0)}%
-            </p>
-            <p className="text-xs text-zinc-500 mt-2">
-              {totalApprovedCOs} of {changeOrders.length} submitted
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-sm uppercase tracking-wide">Avg Processing Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-white">
-              {avgCOProcessingDays.toFixed(0)} days
-            </p>
-            <p className="text-xs text-zinc-500 mt-2">Submission to approval</p>
           </CardContent>
         </Card>
       </div>
@@ -279,28 +351,183 @@ export default function Contracts() {
       {/* Contract Table */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
-          <CardTitle className="text-sm uppercase tracking-wide">Contract Summary by Project</CardTitle>
+          <CardTitle className="text-sm uppercase tracking-wide">Contract Registry</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
             columns={contractColumns}
             data={filteredProjects}
             onRowClick={handleEdit}
+            emptyMessage="No contracts found. Add a new contract to get started."
           />
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+      {/* Add Contract Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Contract</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Add New Contract</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Project Number *</Label>
+                <Input
+                  value={newProject.project_number}
+                  onChange={(e) => setNewProject({...newProject, project_number: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="e.g., 2025-001"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Project Name *</Label>
+                <Input
+                  value={newProject.name}
+                  onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="e.g., Downtown Office Tower"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Client</Label>
+                <Input
+                  value={newProject.client}
+                  onChange={(e) => setNewProject({...newProject, client: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="GC name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Contract Value</Label>
+                <Input
+                  type="number"
+                  value={newProject.contract_value}
+                  onChange={(e) => setNewProject({...newProject, contract_value: parseFloat(e.target.value) || 0})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Status</Label>
+                <Select 
+                  value={newProject.status} 
+                  onValueChange={(v) => setNewProject({...newProject, status: v})}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bidding">Bidding</SelectItem>
+                    <SelectItem value="awarded">Awarded</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Contract Received</Label>
+                <Input
+                  type="date"
+                  value={newProject.contract_received_date}
+                  onChange={(e) => setNewProject({...newProject, contract_received_date: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Due Date</Label>
+                <Input
+                  type="date"
+                  value={newProject.contract_due_date}
+                  onChange={(e) => setNewProject({...newProject, contract_due_date: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Ball in Court</Label>
+                <Select 
+                  value={newProject.ball_in_court} 
+                  onValueChange={(v) => setNewProject({...newProject, ball_in_court: v})}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Internal</SelectItem>
+                    <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="gc">GC</SelectItem>
+                    <SelectItem value="architect">Architect</SelectItem>
+                    <SelectItem value="engineer">Engineer</SelectItem>
+                    <SelectItem value="legal">Legal</SelectItem>
+                    <SelectItem value="finance">Finance</SelectItem>
+                    <SelectItem value="estimating">Estimating</SelectItem>
+                    <SelectItem value="operations">Operations</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs uppercase font-bold text-zinc-400">Contract Status</Label>
+                <Select 
+                  value={newProject.contract_status} 
+                  onValueChange={(v) => setNewProject({...newProject, contract_status: v})}
+                >
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="received">Received</SelectItem>
+                    <SelectItem value="under_review">Under Review</SelectItem>
+                    <SelectItem value="awaiting_signature">Awaiting Signature</SelectItem>
+                    <SelectItem value="signed">Signed</SelectItem>
+                    <SelectItem value="executed">Executed</SelectItem>
+                    <SelectItem value="void">Void</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddDialog(false)}
+                className="border-zinc-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAdd}
+                disabled={createMutation.isPending}
+                className="bg-blue-500 hover:bg-blue-600 text-black font-bold"
+              >
+                {createMutation.isPending ? 'Adding...' : 'Add Contract'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-3xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Edit Contract</DialogTitle>
           </DialogHeader>
           {editingProject && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Project Number</Label>
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Project Number</Label>
                   <Input
                     value={editingProject.project_number}
                     onChange={(e) => setEditingProject({...editingProject, project_number: e.target.value})}
@@ -308,7 +535,34 @@ export default function Contracts() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Project Name</Label>
+                  <Input
+                    value={editingProject.name}
+                    onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Client</Label>
+                  <Input
+                    value={editingProject.client || ''}
+                    onChange={(e) => setEditingProject({...editingProject, client: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Location</Label>
+                  <Input
+                    value={editingProject.location || ''}
+                    onChange={(e) => setEditingProject({...editingProject, location: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Status</Label>
                   <Select 
                     value={editingProject.status} 
                     onValueChange={(v) => setEditingProject({...editingProject, status: v})}
@@ -328,37 +582,9 @@ export default function Contracts() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Project Name</Label>
-                <Input
-                  value={editingProject.name}
-                  onChange={(e) => setEditingProject({...editingProject, name: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Client</Label>
-                  <Input
-                    value={editingProject.client || ''}
-                    onChange={(e) => setEditingProject({...editingProject, client: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Location</Label>
-                  <Input
-                    value={editingProject.location || ''}
-                    onChange={(e) => setEditingProject({...editingProject, location: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Contract Value</Label>
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Contract Value</Label>
                   <Input
                     type="number"
                     value={editingProject.contract_value || 0}
@@ -367,7 +593,7 @@ export default function Contracts() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Project Manager</Label>
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Project Manager</Label>
                   <Input
                     value={editingProject.project_manager || ''}
                     onChange={(e) => setEditingProject({...editingProject, project_manager: e.target.value})}
@@ -378,7 +604,72 @@ export default function Contracts() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Start Date</Label>
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Contract Received</Label>
+                  <Input
+                    type="date"
+                    value={editingProject.contract_received_date || ''}
+                    onChange={(e) => setEditingProject({...editingProject, contract_received_date: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Due Date</Label>
+                  <Input
+                    type="date"
+                    value={editingProject.contract_due_date || ''}
+                    onChange={(e) => setEditingProject({...editingProject, contract_due_date: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Ball in Court</Label>
+                  <Select 
+                    value={editingProject.ball_in_court || 'internal'} 
+                    onValueChange={(v) => setEditingProject({...editingProject, ball_in_court: v})}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="internal">Internal</SelectItem>
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="gc">GC</SelectItem>
+                      <SelectItem value="architect">Architect</SelectItem>
+                      <SelectItem value="engineer">Engineer</SelectItem>
+                      <SelectItem value="legal">Legal</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="estimating">Estimating</SelectItem>
+                      <SelectItem value="operations">Operations</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Contract Status</Label>
+                  <Select 
+                    value={editingProject.contract_status || 'received'} 
+                    onValueChange={(v) => setEditingProject({...editingProject, contract_status: v})}
+                  >
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="received">Received</SelectItem>
+                      <SelectItem value="under_review">Under Review</SelectItem>
+                      <SelectItem value="awaiting_signature">Awaiting Signature</SelectItem>
+                      <SelectItem value="signed">Signed</SelectItem>
+                      <SelectItem value="executed">Executed</SelectItem>
+                      <SelectItem value="void">Void</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Start Date</Label>
                   <Input
                     type="date"
                     value={editingProject.start_date || ''}
@@ -387,7 +678,7 @@ export default function Contracts() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Target Completion</Label>
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Target Completion</Label>
                   <Input
                     type="date"
                     value={editingProject.target_completion || ''}
@@ -398,29 +689,32 @@ export default function Contracts() {
               </div>
 
               <div className="space-y-2">
-                <Label>Scope of Work</Label>
+                <Label className="text-xs uppercase font-bold text-zinc-400">Scope of Work</Label>
                 <Textarea
                   value={editingProject.scope_of_work || ''}
                   onChange={(e) => setEditingProject({...editingProject, scope_of_work: e.target.value})}
                   className="bg-zinc-800 border-zinc-700 h-24"
+                  placeholder="Detailed scope description..."
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Exclusions</Label>
+                <Label className="text-xs uppercase font-bold text-zinc-400">Exclusions</Label>
                 <Textarea
                   value={editingProject.exclusions || ''}
                   onChange={(e) => setEditingProject({...editingProject, exclusions: e.target.value})}
                   className="bg-zinc-800 border-zinc-700 h-20"
+                  placeholder="Items excluded from scope..."
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
+                <Label className="text-xs uppercase font-bold text-zinc-400">Notes</Label>
                 <Textarea
                   value={editingProject.notes || ''}
                   onChange={(e) => setEditingProject({...editingProject, notes: e.target.value})}
                   className="bg-zinc-800 border-zinc-700 h-20"
+                  placeholder="Internal notes..."
                 />
               </div>
 
@@ -435,7 +729,7 @@ export default function Contracts() {
                 <Button
                   onClick={handleSave}
                   disabled={updateMutation.isPending}
-                  className="bg-blue-500 hover:bg-blue-600"
+                  className="bg-blue-500 hover:bg-blue-600 text-black font-bold"
                 >
                   {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>

@@ -394,11 +394,17 @@ const LaborScope = React.memo(function LaborScope() {
                               updateBreakdownMutation.mutate({ 
                                 id: bd.id, 
                                 data: { shop_hours: value }
-                              });
-                              setEditingValues(prev => {
-                                const newState = {...prev};
-                                delete newState[`${bd.id}-shop`];
-                                return newState;
+                              }, {
+                                onSuccess: () => {
+                                  setEditingValues(prev => {
+                                    const newState = {...prev};
+                                    delete newState[`${bd.id}-shop`];
+                                    return newState;
+                                  });
+                                },
+                                onError: () => {
+                                  toast.error('Failed to update shop hours');
+                                }
                               });
                             }}
                             className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
@@ -422,11 +428,17 @@ const LaborScope = React.memo(function LaborScope() {
                               updateBreakdownMutation.mutate({ 
                                 id: bd.id, 
                                 data: { field_hours: value }
-                              });
-                              setEditingValues(prev => {
-                                const newState = {...prev};
-                                delete newState[`${bd.id}-field`];
-                                return newState;
+                              }, {
+                                onSuccess: () => {
+                                  setEditingValues(prev => {
+                                    const newState = {...prev};
+                                    delete newState[`${bd.id}-field`];
+                                    return newState;
+                                  });
+                                },
+                                onError: () => {
+                                  toast.error('Failed to update field hours');
+                                }
                               });
                             }}
                             className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
@@ -452,8 +464,10 @@ const LaborScope = React.memo(function LaborScope() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => {
-                            if (confirm('Delete this breakdown?')) {
+                          onClick={async () => {
+                            const category = categories.find(c => c.id === bd.labor_category_id);
+                            const confirmed = await window.confirm(`Delete ${category?.name || 'this breakdown'}?`);
+                            if (confirmed) {
                               deleteBreakdownMutation.mutate(bd.id);
                             }
                           }}
@@ -524,16 +538,17 @@ const LaborScope = React.memo(function LaborScope() {
                       </Badge>
 
                       <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          if (confirm('Delete specialty item?')) {
-                            deleteSpecialtyMutation.mutate(item.id);
-                          }
-                        }}
-                        className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                       size="sm"
+                       variant="ghost"
+                       onClick={async () => {
+                         const confirmed = await window.confirm(`Delete specialty item: ${item.location_detail}?`);
+                         if (confirmed) {
+                           deleteSpecialtyMutation.mutate(item.id);
+                         }
+                       }}
+                       className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
                       >
-                        <Trash2 size={12} />
+                       <Trash2 size={12} />
                       </Button>
                     </div>
                   </div>
@@ -626,16 +641,17 @@ const LaborScope = React.memo(function LaborScope() {
                       </Select>
 
                       <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          if (confirm('Delete gap?')) {
-                            deleteGapMutation.mutate(gap.id);
-                          }
-                        }}
-                        className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                       size="sm"
+                       variant="ghost"
+                       onClick={async () => {
+                         const confirmed = await window.confirm(`Delete scope gap: ${gap.location_description}?`);
+                         if (confirmed) {
+                           deleteGapMutation.mutate(gap.id);
+                         }
+                       }}
+                       className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
                       >
-                        <Trash2 size={12} />
+                       <Trash2 size={12} />
                       </Button>
                     </div>
                   </div>

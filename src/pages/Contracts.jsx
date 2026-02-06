@@ -123,7 +123,7 @@ export default function Contracts() {
   };
 
   const handleAdd = () => {
-    if (!newProject.project_number || !newProject.name) {
+    if (!newProject.project_number?.trim() || !newProject.name?.trim()) {
       toast.error('Project number and name are required');
       return;
     }
@@ -133,6 +133,14 @@ export default function Contracts() {
   const handleFileUpload = async (e, project) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file size (50MB limit)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File too large. Maximum size is 50MB');
+      e.target.value = '';
+      return;
+    }
 
     setUploadingFile(true);
     try {
@@ -178,7 +186,10 @@ export default function Contracts() {
   };
 
   const createCOMutation = useMutation({
-    mutationFn: (data) => base44.entities.ChangeOrder.create(data),
+    mutationFn: async (data) => {
+      const response = await base44.functions.invoke('createChangeOrder', data);
+      return response.data.change_order;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['change-orders'] });
       setShowAddCO(false);
@@ -191,8 +202,8 @@ export default function Contracts() {
       });
       toast.success('Change order created');
     },
-    onError: () => {
-      toast.error('Failed to create change order');
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || 'Failed to create change order');
     }
   });
 
@@ -208,22 +219,16 @@ export default function Contracts() {
   });
 
   const handleCreateCO = useCallback(() => {
-    if (!newCO.title) {
+    if (!newCO.title?.trim()) {
       toast.error('Title is required');
       return;
     }
-    
-    const projectCOs = cosByProject[editingProject.id] || [];
-    const nextNumber = projectCOs.length > 0 
-      ? Math.max(...projectCOs.map(co => co.co_number || 0)) + 1 
-      : 1;
 
     createCOMutation.mutate({
       ...newCO,
-      project_id: editingProject.id,
-      co_number: nextNumber
+      project_id: editingProject.id
     });
-  }, [newCO, editingProject, cosByProject, createCOMutation]);
+  }, [newCO, editingProject, createCOMutation]);
 
   // Calculate KPIs - memoized
   const kpis = useMemo(() => {
@@ -286,8 +291,9 @@ export default function Contracts() {
       header: 'Due',
       render: (row) => {
         if (!row.contract_due_date) return <span className="text-zinc-600">—</span>;
-        const dueDate = new Date(row.contract_due_date);
+        const dueDate = new Date(row.contract_due_date + 'T00:00:00');
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
         const isOverdue = daysUntil < 0;
         const isUrgent = daysUntil >= 0 && daysUntil <= 7;
@@ -894,7 +900,12 @@ export default function Contracts() {
                             <Download size={14} className="text-zinc-400" />
                           </a>
                           <button
-                            onClick={() => handleDeleteDocument(editingProject, index)}
+                            onClick={async () => {
+                              const confirmed = await window.confirm(`Delete ${doc.file_name}?`);
+                              if (confirmed) {
+                                handleDeleteDocument(editingProject, index);
+                              }
+                            }}
                             className="p-2 hover:bg-zinc-700 rounded"
                           >
                             <Trash2 size={14} className="text-red-400" />
@@ -1024,7 +1035,12 @@ export default function Contracts() {
                             </div>
                             <Select
                               value={co.status}
-                              onValueChange={(v) => updateCOMutation.mutate({ id: co.id, data: { status: v } })}
+                              onValueChange={(v) => {
+                                const currentCO = changeOrders.find(c => c.id === co.id);
+                                if (currentCO) {
+                                  updateCOMutation.mutate({ id: co.id, data: { ...currentCO, status: v } });
+                                }
+                              }}
                             >
                               <SelectTrigger className="w-32 h-7 bg-zinc-950 border-zinc-700 text-xs">
                                 <SelectValue />

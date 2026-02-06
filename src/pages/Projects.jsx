@@ -445,7 +445,7 @@ export default function Projects() {
         open={!!deleteProject}
         onOpenChange={(open) => !open && setDeleteProject(null)}
         onSuccess={() => {
-          queryClient.invalidateQueries();
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
         }}
       />
     </div>

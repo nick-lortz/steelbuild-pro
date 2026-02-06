@@ -202,7 +202,7 @@ export default function Schedule() {
       return await base44.entities.Task.create(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectIds] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task created');
@@ -217,7 +217,7 @@ export default function Schedule() {
       return await base44.entities.Task.update(id, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectIds] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task updated');
@@ -232,7 +232,7 @@ export default function Schedule() {
       return await base44.entities.Task.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks', activeProjectIds] });
       toast.success('Task deleted');
     },
     onError: (error) => {

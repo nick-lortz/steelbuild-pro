@@ -44,14 +44,18 @@ export default function RFIHub() {
   });
 
   // Fetch all data
-  const { data: allRFIs = [], isLoading: rfisLoading } = useQuery({
+  const { data: allRFIs = [], isLoading: rfisLoading, isError: rfisError, error: rfisErrorObj } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date')
+    queryFn: () => base44.entities.RFI.list('-created_date'),
+    retry: 2,
+    retryDelay: 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list(),
+    retry: 2,
+    retryDelay: 1000
   });
 
   // Real-time subscription with auto-reconnect
@@ -217,6 +221,21 @@ export default function RFIHub() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-zinc-400">Loading RFI Hub...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (rfisError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="text-center max-w-md">
+          <AlertTriangle size={48} className="mx-auto mb-4 text-red-500" />
+          <h3 className="text-lg font-bold text-white mb-2">Failed to Load RFIs</h3>
+          <p className="text-sm text-zinc-500 mb-4">{rfisErrorObj?.message || 'Network error'}</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['rfis'] })} className="bg-amber-500 hover:bg-amber-600 text-black">
+            Retry
+          </Button>
         </div>
       </div>
     );

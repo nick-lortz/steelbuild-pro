@@ -99,7 +99,9 @@ Deno.serve(async (req) => {
 
       const budget = pFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = pFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      const costHealth = budget > 0 ? Math.round((actual / budget) * 100) : 0;
+      const committed = pFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+      const totalCost = actual + committed;
+      const costHealth = budget > 0 ? Math.round((totalCost / budget) * 100) : 0;
 
       // Simple schedule slip (days, not business days for perf)
       let daysSlip = 0;

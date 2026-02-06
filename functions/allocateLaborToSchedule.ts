@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { withRateLimit } from './utils/rateLimit.js';
 
-Deno.serve(async (req) => {
+Deno.serve(withRateLimit(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -123,4 +124,4 @@ Deno.serve(async (req) => {
     console.error('Error allocating labor:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

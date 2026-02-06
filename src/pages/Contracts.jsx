@@ -42,17 +42,19 @@ export default function Contracts() {
     status: 'bidding'
   });
 
-  const { data: projects } = useQuery({
+  const { data: projects = [], isError: projectsError, error: projectsErrorObj } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    initialData: []
+    retry: 2,
+    retryDelay: 1000
   });
 
-  const { data: changeOrders } = useQuery({
+  const { data: changeOrders = [], isError: cosError } = useQuery({
     queryKey: ['change-orders'],
     queryFn: () => base44.entities.ChangeOrder.list(),
-    initialData: [],
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   const filteredProjects = useMemo(() => 
@@ -74,19 +76,23 @@ export default function Contracts() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowEditDialog(false);
       setEditingProject(null);
       toast.success('Contract updated successfully');
     },
-    onError: () => {
-      toast.error('Failed to update contract');
+    onError: (error, variables, context) => {
+      toast.error(error?.response?.data?.error || 'Failed to update contract');
     }
   });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Project.create(data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowAddDialog(false);
@@ -103,8 +109,8 @@ export default function Contracts() {
       });
       toast.success('Contract added successfully');
     },
-    onError: () => {
-      toast.error('Failed to add contract');
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || 'Failed to add contract');
     }
   });
 
@@ -134,39 +140,28 @@ export default function Contracts() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (50MB limit)
-    const MAX_FILE_SIZE = 50 * 1024 * 1024;
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error('File too large. Maximum size is 50MB');
-      e.target.value = '';
-      return;
-    }
-
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const user = await base44.auth.me();
+      // Use backend validation function
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('document_type', 'contract');
       
-      const newDoc = {
-        file_url,
-        file_name: file.name,
-        uploaded_date: new Date().toISOString(),
-        uploaded_by: user.email,
-        document_type: 'contract'
-      };
+      const response = await base44.functions.invoke('validateAndUploadContractDocument', formData);
+      const docMetadata = response.data;
 
       const existingDocs = project.contract_documents || [];
       updateMutation.mutate({
         id: project.id,
         data: {
-          ...project,
-          contract_documents: [...existingDocs, newDoc]
+          contract_documents: [...existingDocs, docMetadata]
         }
       });
       
       toast.success('Document uploaded');
     } catch (error) {
-      toast.error('Failed to upload document');
+      const message = error?.response?.data?.error || error?.message || 'Failed to upload document';
+      toast.error(message);
     } finally {
       setUploadingFile(false);
       e.target.value = '';
@@ -209,12 +204,14 @@ export default function Contracts() {
 
   const updateCOMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ChangeOrder.update(id, data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['change-orders'] });
       toast.success('Change order updated');
     },
-    onError: () => {
-      toast.error('Failed to update change order');
+    onError: (error) => {
+      toast.error(error?.response?.data?.error || 'Failed to update change order');
     }
   });
 
@@ -398,6 +395,21 @@ export default function Contracts() {
       )
     }
   ];
+
+  if (projectsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle size={48} className="mx-auto mb-4 text-red-500" />
+          <h3 className="text-lg font-bold text-white mb-2">Failed to Load Contracts</h3>
+          <p className="text-sm text-zinc-500 mb-4">{projectsErrorObj?.message || 'Network error'}</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['projects'] })} className="bg-amber-500 hover:bg-amber-600 text-black">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-8">

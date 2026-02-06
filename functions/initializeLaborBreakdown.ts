@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { withRateLimit } from './utils/rateLimit.js';
 
 const LABOR_CATEGORIES = [
   { name: 'Embeds/Anchor Bolts (If Applicable)', sequence_order: 1, is_specialty: false },
@@ -15,7 +16,7 @@ const LABOR_CATEGORIES = [
   { name: 'Site Steel (If Applicable)', sequence_order: 12, is_specialty: false },
 ];
 
-Deno.serve(async (req) => {
+Deno.serve(withRateLimit(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -101,4 +102,4 @@ Deno.serve(async (req) => {
     console.error('Error initializing labor breakdown:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

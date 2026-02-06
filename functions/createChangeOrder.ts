@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { z } from 'npm:zod@3.24.2';
+import { withRateLimit } from './utils/rateLimit.js';
 
 const CreateCOSchema = z.object({
   project_id: z.string().min(1),
@@ -14,7 +15,7 @@ const CreateCOSchema = z.object({
  * Create Change Order with atomic CO number assignment
  * Prevents race condition where multiple users create COs simultaneously
  */
-Deno.serve(async (req) => {
+Deno.serve(withRateLimit(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -63,4 +64,4 @@ Deno.serve(async (req) => {
     console.error('Error creating change order:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}));

@@ -27,10 +27,12 @@ const LaborScope = React.memo(function LaborScope() {
   const [editingValues, setEditingValues] = useState({});
   const queryClient = useQueryClient();
 
-  const { data: projects = [] } = useQuery({
+  const { data: projects = [], isError: projectsError } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000
+    staleTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   const { data: categories = [] } = useQuery({
@@ -39,11 +41,13 @@ const LaborScope = React.memo(function LaborScope() {
     staleTime: 10 * 60 * 1000
   });
 
-  const { data: breakdowns = [], refetch: refetchBreakdowns } = useQuery({
+  const { data: breakdowns = [], refetch: refetchBreakdowns, isError: breakdownsError } = useQuery({
     queryKey: ['labor-breakdowns', activeProjectId],
     queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
+    staleTime: 2 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   const { data: specialtyItems = [] } = useQuery({
@@ -85,6 +89,8 @@ const LaborScope = React.memo(function LaborScope() {
 
   const updateBreakdownMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.LaborBreakdown.update(id, data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
     }

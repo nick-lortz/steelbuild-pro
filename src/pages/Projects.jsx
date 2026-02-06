@@ -135,6 +135,8 @@ export default function Projects() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Project.create(data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowForm(false);
@@ -152,6 +154,8 @@ export default function Projects() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+    retry: 2,
+    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProject(null);

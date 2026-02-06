@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useDebounce } from '@/components/shared/hooks/useDebounce';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
@@ -22,6 +23,7 @@ import AIForecastPanel from '@/components/dashboard/AIForecastPanel';
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
   const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
@@ -38,12 +40,12 @@ export default function Dashboard() {
   });
 
   const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchDashboard } = useQuery({
-    queryKey: ['dashboard', { page, pageSize, search: searchTerm, status: statusFilter, risk: riskFilter, sort: sortBy }],
+    queryKey: ['dashboard', { page, pageSize, search: debouncedSearch, status: statusFilter, risk: riskFilter, sort: sortBy }],
     queryFn: async () => {
       const response = await base44.functions.invoke('getDashboardData', {
         page,
         pageSize,
-        search: searchTerm,
+        search: debouncedSearch,
         status: statusFilter,
         risk: riskFilter,
         sort: sortBy
@@ -51,7 +53,9 @@ export default function Dashboard() {
       return response.data;
     },
     staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   // Data from server (filtering, calc, pagination all server-side)
@@ -59,7 +63,7 @@ export default function Dashboard() {
   const paginatedProjects = dashboardData.projects || [];
   const totalFiltered = dashboardData.pagination?.totalFiltered || 0;
 
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || riskFilter !== 'all';
+  const hasActiveFilters = debouncedSearch || statusFilter !== 'all' || riskFilter !== 'all';
 
   const handleClearFilters = () => {
     setSearchTerm('');

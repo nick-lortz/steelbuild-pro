@@ -5,7 +5,7 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, Download, Sliders } from 'lucide-react';
+import { Plus, Search, Calendar, Download, Sliders, AlertTriangle } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import TaskForm from '@/components/schedule/TaskForm';
 import GanttChart from '@/components/schedule/GanttChart';
@@ -78,19 +78,19 @@ export default function Schedule() {
   );
 
   // Fetch tasks for selected projects
-  const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
+  const { data: allScheduleTasks = [], isLoading, refetch, isError: tasksError, error: tasksErrorObj } = useQuery({
     queryKey: ['schedule-tasks', activeProjectIds],
     queryFn: async () => {
       if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.Task.filter({ project_id: projectId }, 'end_date')
-        )
-      );
-      return results.flat();
+      // Single query with $in for better performance
+      return await base44.entities.Task.filter({ 
+        project_id: { $in: activeProjectIds } 
+      }, 'end_date');
     },
     enabled: activeProjectIds.length > 0,
-    staleTime: 2 * 60 * 1000
+    staleTime: 2 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   // Real-time subscription with delta updates
@@ -109,52 +109,51 @@ export default function Schedule() {
     queryKey: ['resources'],
     queryFn: () => base44.entities.Resource.list(),
     staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectIds],
     queryFn: async () => {
       if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.RFI.filter({ project_id: projectId })
-        )
-      );
-      return results.flat();
+      return await base44.entities.RFI.filter({ 
+        project_id: { $in: activeProjectIds } 
+      });
     },
     enabled: activeProjectIds.length > 0,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders', activeProjectIds],
     queryFn: async () => {
       if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.ChangeOrder.filter({ project_id: projectId })
-        )
-      );
-      return results.flat();
+      return await base44.entities.ChangeOrder.filter({ 
+        project_id: { $in: activeProjectIds } 
+      });
     },
     enabled: activeProjectIds.length > 0,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawings', activeProjectIds],
     queryFn: async () => {
       if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.DrawingSet.filter({ project_id: projectId })
-        )
-      );
-      return results.flat();
+      return await base44.entities.DrawingSet.filter({ 
+        project_id: { $in: activeProjectIds } 
+      });
     },
     enabled: activeProjectIds.length > 0,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
 
   // Filter tasks
@@ -575,6 +574,17 @@ export default function Schedule() {
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-4 rounded-full" />
               <p className="text-sm text-zinc-500">Loading schedule...</p>
+            </div>
+          </div>
+        ) : tasksError ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center max-w-md">
+              <AlertTriangle size={48} className="mx-auto mb-4 text-red-500" />
+              <h3 className="text-lg font-bold text-white mb-2">Failed to Load Tasks</h3>
+              <p className="text-sm text-zinc-500 mb-4">{tasksErrorObj?.message || 'Network error'}</p>
+              <Button onClick={() => refetch()} className="bg-amber-500 hover:bg-amber-600 text-black">
+                Retry
+              </Button>
             </div>
           </div>
         ) : filteredTasks.length === 0 ? (

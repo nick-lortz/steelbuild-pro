@@ -163,7 +163,7 @@ export default function Dashboard() {
                 </div>
                 <div className="p-2 bg-zinc-800/50 rounded">
                   <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">Weekly Spend</p>
-                  <p className="text-xl font-black text-amber-500">${(weeklySummary.portfolio?.weekly_spend / 1000).toFixed(0)}K</p>
+                  <p className="text-xl font-black text-amber-500">${((weeklySummary.portfolio?.weekly_spend || 0) / 1000).toFixed(0)}K</p>
                 </div>
                 <div className="p-2 bg-zinc-800/50 rounded">
                   <p className="text-[9px] text-zinc-600 uppercase tracking-widest font-bold mb-0.5">Avg Health</p>
@@ -201,9 +201,9 @@ export default function Dashboard() {
                         <div>
                           <p className="text-[8px] text-zinc-600">Budget</p>
                           <p className={cn("text-[9px] font-bold",
-                            f.forecast?.budget_forecast?.projected_overrun > 0 ? "text-red-400" : "text-green-400"
+                            (f.forecast?.budget_forecast?.projected_overrun || 0) > 0 ? "text-red-400" : "text-green-400"
                           )}>
-                            {f.forecast?.budget_forecast?.projected_overrun > 0 ? '+' : ''}{((f.forecast?.budget_forecast?.projected_overrun || 0) / 1000).toFixed(0)}K
+                            {(f.forecast?.budget_forecast?.projected_overrun || 0) > 0 ? '+' : ''}${(Math.abs(f.forecast?.budget_forecast?.projected_overrun || 0) / 1000).toFixed(0)}K
                           </p>
                         </div>
                       </div>

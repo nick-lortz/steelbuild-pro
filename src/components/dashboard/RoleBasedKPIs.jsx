@@ -22,7 +22,7 @@ export default function RoleBasedKPIs({ role, metrics, projects }) {
   const executiveKPIs = [
     {
       label: 'Portfolio Value',
-      value: `$${(metrics.totalContractValue / 1000000).toFixed(1)}M`,
+      value: `$${((metrics.totalContractValue || 0) / 1000000).toFixed(1)}M`,
       icon: DollarSign,
       trend: metrics.portfolioGrowth > 0 ? 'up' : 'down',
       trendValue: `${Math.abs(metrics.portfolioGrowth || 0).toFixed(1)}%`,
@@ -39,15 +39,15 @@ export default function RoleBasedKPIs({ role, metrics, projects }) {
       label: 'At Risk',
       value: metrics.atRiskProjects || 0,
       icon: AlertTriangle,
-      subtitle: `${((metrics.atRiskProjects / metrics.totalProjects) * 100).toFixed(0)}% of portfolio`,
+      subtitle: `${metrics.totalProjects > 0 ? (((metrics.atRiskProjects || 0) / metrics.totalProjects) * 100).toFixed(0) : 0}% of portfolio`,
       color: metrics.atRiskProjects > 0 ? 'bg-red-500' : 'bg-green-500'
     },
     {
       label: 'Budget Performance',
-      value: `${metrics.avgBudgetVariance > 0 ? '+' : ''}${metrics.avgBudgetVariance?.toFixed(1) || 0}%`,
+      value: `${(metrics.avgBudgetVariance || 0) > 0 ? '+' : ''}${(metrics.avgBudgetVariance || 0).toFixed(1)}%`,
       icon: TrendingUp,
-      trend: metrics.avgBudgetVariance > 0 ? 'down' : 'up',
-      color: metrics.avgBudgetVariance > 0 ? 'bg-red-500' : 'bg-green-500'
+      trend: (metrics.avgBudgetVariance || 0) < 0 ? 'up' : 'down',
+      color: Math.abs(metrics.avgBudgetVariance || 0) > 5 ? 'bg-red-500' : 'bg-green-500'
     },
     {
       label: 'Schedule Performance',

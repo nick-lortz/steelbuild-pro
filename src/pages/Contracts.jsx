@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus, Edit, Users } from 'lucide-react';
+import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus, Edit, Users, Upload, Download, Trash2, File } from 'lucide-react';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import DataTable from '@/components/ui/DataTable';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ export default function Contracts() {
   const [editingProject, setEditingProject] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [newProject, setNewProject] = useState({
     project_number: '',
     name: '',
@@ -107,6 +108,53 @@ export default function Contracts() {
       return;
     }
     createMutation.mutate(newProject);
+  };
+
+  const handleFileUpload = async (e, project) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const user = await base44.auth.me();
+      
+      const newDoc = {
+        file_url,
+        file_name: file.name,
+        uploaded_date: new Date().toISOString(),
+        uploaded_by: user.email,
+        document_type: 'contract'
+      };
+
+      const existingDocs = project.contract_documents || [];
+      updateMutation.mutate({
+        id: project.id,
+        data: {
+          ...project,
+          contract_documents: [...existingDocs, newDoc]
+        }
+      });
+      
+      toast.success('Document uploaded');
+    } catch (error) {
+      toast.error('Failed to upload document');
+    } finally {
+      setUploadingFile(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteDocument = (project, docIndex) => {
+    const updatedDocs = (project.contract_documents || []).filter((_, i) => i !== docIndex);
+    updateMutation.mutate({
+      id: project.id,
+      data: {
+        ...project,
+        contract_documents: updatedDocs
+      }
+    });
+    toast.success('Document removed');
   };
 
   // Calculate KPIs
@@ -716,6 +764,68 @@ export default function Contracts() {
                   className="bg-zinc-800 border-zinc-700 h-20"
                   placeholder="Internal notes..."
                 />
+              </div>
+
+              {/* Contract Documents */}
+              <div className="space-y-3 pt-4 border-t border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Contract Documents</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-zinc-700"
+                    disabled={uploadingFile}
+                    onClick={() => document.getElementById('contract-file-upload').click()}
+                  >
+                    <Upload size={14} className="mr-2" />
+                    {uploadingFile ? 'Uploading...' : 'Upload'}
+                  </Button>
+                  <input
+                    id="contract-file-upload"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileUpload(e, editingProject)}
+                  />
+                </div>
+                
+                {editingProject.contract_documents && editingProject.contract_documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {editingProject.contract_documents.map((doc, index) => (
+                      <div key={index} className="flex items-center justify-between bg-zinc-800 border border-zinc-700 rounded-lg p-3">
+                        <div className="flex items-center gap-3 flex-1">
+                          <File size={16} className="text-blue-400" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">{doc.file_name}</p>
+                            <p className="text-xs text-zinc-500">
+                              {doc.uploaded_date && format(new Date(doc.uploaded_date), 'MMM d, yyyy')} · {doc.uploaded_by}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-zinc-700 rounded"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Download size={14} className="text-zinc-400" />
+                          </a>
+                          <button
+                            onClick={() => handleDeleteDocument(editingProject, index)}
+                            className="p-2 hover:bg-zinc-700 rounded"
+                          >
+                            <Trash2 size={14} className="text-red-400" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-500 text-center py-4">No documents uploaded</p>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">

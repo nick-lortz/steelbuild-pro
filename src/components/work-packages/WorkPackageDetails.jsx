@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Pencil, ArrowRight, FileText, Link as LinkIcon, CheckCircle2, Package as PackageIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import BudgetManager from '@/components/budget/BudgetManager';
@@ -167,11 +167,15 @@ export default function WorkPackageDetails({
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-zinc-400">Start</span>
-              <span className="text-white">{pkg.start_date ? format(new Date(pkg.start_date), 'MMM d, yyyy') : '-'}</span>
+              <span className="text-white">
+                {pkg.start_date && isValid(new Date(pkg.start_date)) ? format(new Date(pkg.start_date), 'MMM d, yyyy') : '-'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-zinc-400">Target</span>
-              <span className="text-white">{pkg.target_date ? format(new Date(pkg.target_date), 'MMM d, yyyy') : '-'}</span>
+              <span className="text-white">
+                {pkg.target_date && isValid(new Date(pkg.target_date)) ? format(new Date(pkg.target_date), 'MMM d, yyyy') : '-'}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -429,7 +433,7 @@ export default function WorkPackageDetails({
                       </div>
                       <div className="text-right">
                         <StatusBadge status={delivery.delivery_status} />
-                        {delivery.scheduled_date && (
+                        {delivery.scheduled_date && isValid(new Date(delivery.scheduled_date)) && (
                           <div className="text-xs text-zinc-400 mt-1">
                             {format(new Date(delivery.scheduled_date), 'MMM d, yyyy')}
                           </div>

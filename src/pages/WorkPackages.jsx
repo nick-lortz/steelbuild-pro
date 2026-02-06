@@ -37,35 +37,47 @@ export default function WorkPackages() {
 
   const projects = currentUser?.role === 'admin' ? allProjects : allProjects.filter(p => p.assigned_users?.includes(currentUser.email));
 
-  const { data: workPackages = [], isLoading } = useQuery({
+  const { data: workPackages = [], isLoading, error: workPackagesError } = useQuery({
     queryKey: ['work-packages', activeProjectId],
     queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
     enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
+    staleTime: 2 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   React.useEffect(() => {
     if (!activeProjectId) return;
+    
+    let unsubscribed = false;
     const unsub = base44.entities.WorkPackage.subscribe((event) => {
-      if (event.data?.project_id === activeProjectId) {
+      if (!unsubscribed && event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
       }
     });
-    return unsub;
+    
+    return () => {
+      unsubscribed = true;
+      if (typeof unsub === 'function') {
+        unsub();
+      }
+    };
   }, [activeProjectId, queryClient]);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
     queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2
   });
 
   const { data: costCodes = [] } = useQuery({
@@ -78,21 +90,24 @@ export default function WorkPackages() {
     queryKey: ['documents', activeProjectId],
     queryFn: () => base44.entities.Document.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
     queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
     queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2
   });
 
   const createMutation = useMutation({
@@ -101,7 +116,11 @@ export default function WorkPackages() {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
       toast.success('Work package created');
-    }
+    },
+    onError: (error) => {
+      toast.error('Failed to create: ' + (error?.message || 'Unknown error'));
+    },
+    retry: 2
   });
 
   const updateMutation = useMutation({
@@ -112,7 +131,11 @@ export default function WorkPackages() {
       setEditingPackage(null);
       setViewingPackage(null);
       toast.success('Updated');
-    }
+    },
+    onError: (error) => {
+      toast.error('Update failed: ' + (error?.message || 'Unknown error'));
+    },
+    retry: 2
   });
 
   const deleteMutation = useMutation({
@@ -125,7 +148,11 @@ export default function WorkPackages() {
       queryClient.invalidateQueries(['tasks', activeProjectId]);
       setDeletePackage(null);
       toast.success('Deleted');
-    }
+    },
+    onError: (error) => {
+      toast.error('Delete failed: ' + (error?.message || 'Unknown error'));
+    },
+    retry: 1
   });
 
   const advancePhaseMutation = useMutation({
@@ -136,7 +163,11 @@ export default function WorkPackages() {
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       toast.success('Phase advanced');
-    }
+    },
+    onError: (error) => {
+      toast.error('Failed to advance: ' + (error?.message || 'Unknown error'));
+    },
+    retry: 1
   });
 
   const filteredPackages = useMemo(() => {
@@ -279,7 +310,18 @@ export default function WorkPackages() {
 
       {/* Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-4">
-        {isLoading ? (
+        {workPackagesError ? (
+          <Card className="bg-red-900/20 border-red-500/50">
+            <CardContent className="p-12 text-center">
+              <AlertTriangle size={64} className="mx-auto mb-4 text-red-500" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">Load Failed</h3>
+              <p className="text-xs text-zinc-400 mb-4">{workPackagesError?.message || 'Unable to load work packages'}</p>
+              <Button onClick={() => queryClient.invalidateQueries(['work-packages', activeProjectId])} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
@@ -391,9 +433,14 @@ export default function WorkPackages() {
                                 e.stopPropagation();
                                 advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: currentPhase.next });
                               }}
-                              className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+                              disabled={advancePhaseMutation.isPending}
+                              className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold disabled:opacity-50"
                             >
-                              <ArrowRight size={14} />
+                              {advancePhaseMutation.isPending ? (
+                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <ArrowRight size={14} />
+                              )}
                             </Button>
                           )}
                           <Button
@@ -489,8 +536,12 @@ export default function WorkPackages() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-red-500 hover:bg-red-600">
-              Delete
+            <AlertDialogAction 
+              onClick={() => deleteMutation.mutate(deletePackage.id)} 
+              disabled={deleteMutation.isPending}
+              className="bg-red-500 hover:bg-red-600 disabled:opacity-50"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

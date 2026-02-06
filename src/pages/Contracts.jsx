@@ -22,6 +22,14 @@ export default function Contracts() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [showAddCO, setShowAddCO] = useState(false);
+  const [newCO, setNewCO] = useState({
+    title: '',
+    description: '',
+    cost_impact: 0,
+    schedule_impact_days: 0,
+    status: 'draft'
+  });
   const [newProject, setNewProject] = useState({
     project_number: '',
     name: '',
@@ -41,10 +49,8 @@ export default function Contracts() {
   });
 
   const { data: changeOrders } = useQuery({
-    queryKey: ['change-orders', activeProjectId],
-    queryFn: () => base44.entities.ChangeOrder.filter(
-      activeProjectId ? { project_id: activeProjectId } : {}
-    ),
+    queryKey: ['change-orders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
     initialData: []
   });
 
@@ -155,6 +161,54 @@ export default function Contracts() {
       }
     });
     toast.success('Document removed');
+  };
+
+  const createCOMutation = useMutation({
+    mutationFn: (data) => base44.entities.ChangeOrder.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['change-orders'] });
+      setShowAddCO(false);
+      setNewCO({
+        title: '',
+        description: '',
+        cost_impact: 0,
+        schedule_impact_days: 0,
+        status: 'draft'
+      });
+      toast.success('Change order created');
+    },
+    onError: () => {
+      toast.error('Failed to create change order');
+    }
+  });
+
+  const updateCOMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ChangeOrder.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['change-orders'] });
+      toast.success('Change order updated');
+    },
+    onError: () => {
+      toast.error('Failed to update change order');
+    }
+  });
+
+  const handleCreateCO = () => {
+    if (!newCO.title) {
+      toast.error('Title is required');
+      return;
+    }
+    
+    const projectCOs = changeOrders.filter(co => co.project_id === editingProject.id);
+    const nextNumber = projectCOs.length > 0 
+      ? Math.max(...projectCOs.map(co => co.co_number || 0)) + 1 
+      : 1;
+
+    createCOMutation.mutate({
+      ...newCO,
+      project_id: editingProject.id,
+      co_number: nextNumber
+    });
   };
 
   // Calculate KPIs
@@ -826,6 +880,165 @@ export default function Contracts() {
                 ) : (
                   <p className="text-sm text-zinc-500 text-center py-4">No documents uploaded</p>
                 )}
+              </div>
+
+              {/* Change Orders */}
+              <div className="space-y-3 pt-4 border-t border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs uppercase font-bold text-zinc-400">Change Orders</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="border-zinc-700"
+                    onClick={() => setShowAddCO(true)}
+                  >
+                    <Plus size={14} className="mr-2" />
+                    New CO
+                  </Button>
+                </div>
+
+                {showAddCO && (
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-lg p-4 space-y-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-zinc-400">CO Title *</Label>
+                      <Input
+                        value={newCO.title}
+                        onChange={(e) => setNewCO({...newCO, title: e.target.value})}
+                        className="bg-zinc-950 border-zinc-700 text-sm"
+                        placeholder="Brief description"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-zinc-400">Description</Label>
+                      <Textarea
+                        value={newCO.description}
+                        onChange={(e) => setNewCO({...newCO, description: e.target.value})}
+                        className="bg-zinc-950 border-zinc-700 text-sm h-20"
+                        placeholder="Detailed description"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-zinc-400">Cost Impact ($)</Label>
+                        <Input
+                          type="number"
+                          value={newCO.cost_impact}
+                          onChange={(e) => setNewCO({...newCO, cost_impact: parseFloat(e.target.value) || 0})}
+                          className="bg-zinc-950 border-zinc-700 text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-zinc-400">Schedule Impact (Days)</Label>
+                        <Input
+                          type="number"
+                          value={newCO.schedule_impact_days}
+                          onChange={(e) => setNewCO({...newCO, schedule_impact_days: parseFloat(e.target.value) || 0})}
+                          className="bg-zinc-950 border-zinc-700 text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-zinc-400">Status</Label>
+                      <Select value={newCO.status} onValueChange={(v) => setNewCO({...newCO, status: v})}>
+                        <SelectTrigger className="bg-zinc-950 border-zinc-700 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft</SelectItem>
+                          <SelectItem value="submitted">Submitted</SelectItem>
+                          <SelectItem value="under_review">Under Review</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                          <SelectItem value="void">Void</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setShowAddCO(false);
+                          setNewCO({ title: '', description: '', cost_impact: 0, schedule_impact_days: 0, status: 'draft' });
+                        }}
+                        className="border-zinc-700"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleCreateCO}
+                        disabled={createCOMutation.isPending}
+                        className="bg-blue-500 hover:bg-blue-600 text-black"
+                      >
+                        {createCOMutation.isPending ? 'Creating...' : 'Create CO'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {(() => {
+                  const projectCOs = changeOrders.filter(co => co.project_id === editingProject.id);
+                  return projectCOs.length > 0 ? (
+                    <div className="space-y-2">
+                      {projectCOs.map((co) => (
+                        <div key={co.id} className="bg-zinc-800 border border-zinc-700 rounded-lg p-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-mono font-bold text-zinc-400">CO-{co.co_number}</span>
+                                <span className="text-sm font-medium text-white">{co.title}</span>
+                              </div>
+                              {co.description && (
+                                <p className="text-xs text-zinc-500 mb-2">{co.description}</p>
+                              )}
+                            </div>
+                            <Select
+                              value={co.status}
+                              onValueChange={(v) => updateCOMutation.mutate({ id: co.id, data: { status: v } })}
+                            >
+                              <SelectTrigger className="w-32 h-7 bg-zinc-950 border-zinc-700 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="submitted">Submitted</SelectItem>
+                                <SelectItem value="under_review">Under Review</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="void">Void</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs">
+                            <div className={`flex items-center gap-1 ${co.cost_impact >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              <DollarSign size={12} />
+                              <span className="font-mono font-bold">
+                                {co.cost_impact >= 0 ? '+' : ''}{co.cost_impact?.toLocaleString() || 0}
+                              </span>
+                            </div>
+                            {co.schedule_impact_days !== 0 && (
+                              <div className="flex items-center gap-1 text-amber-400">
+                                <Clock size={12} />
+                                <span>{co.schedule_impact_days > 0 ? '+' : ''}{co.schedule_impact_days}d</span>
+                              </div>
+                            )}
+                            {co.submitted_date && (
+                              <span className="text-zinc-500">
+                                Submitted {format(new Date(co.submitted_date), 'MMM d')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-500 text-center py-4">No change orders</p>
+                  );
+                })()}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">

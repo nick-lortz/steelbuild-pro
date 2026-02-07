@@ -19,6 +19,18 @@ import ChangeOrderImpact from '@/components/change-orders/ChangeOrderImpact';
 import CostTrendProjection from '@/components/sov/CostTrendProjection';
 import WeeklyCostNarrative from '@/components/financials/WeeklyCostNarrative';
 
+function SectionHeader({ title, subtitle, right }) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-3 border-b border-border">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        {subtitle ? <p className="text-xs text-muted-foreground mt-1">{subtitle}</p> : null}
+      </div>
+      {right ? <div className="shrink-0">{right}</div> : null}
+    </div>
+  );
+}
+
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);

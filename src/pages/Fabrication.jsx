@@ -572,7 +572,7 @@ function NewFabPackageForm({ projectId, onSubmit, onCancel }) {
         <div><Label>Stage</Label><Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_started">Not Started</SelectItem><SelectItem value="cutting">Cutting</SelectItem><SelectItem value="fit_up">Fit-up</SelectItem><SelectItem value="weld">Weld</SelectItem><SelectItem value="paint">Paint</SelectItem><SelectItem value="qa">QA</SelectItem></SelectContent></Select></div>
         <div><Label>Progress (%)</Label><Input type="number" min="0" max="100" value={formData.progress_percent} onChange={(e) => setFormData({ ...formData, progress_percent: e.target.value })} className={errors.progress_percent ? 'border-red-500' : ''} />{errors.progress_percent && <p className="text-xs text-red-500 mt-1">{errors.progress_percent}</p>}</div>
       </div>
-      <div><Label>Ship Target Date</Label><Input type="date" value={formData.ship_target_date} onChange={(e) => setFormData({ ...formData, ship_target_date: e.target.value })} /></div>
+      <div><Label>Ship Target Date</Label><Input type="date" value={formatDateForInput(formData.ship_target_date)} onChange={(e) => setFormData({ ...formData, ship_target_date: parseInputDate(e.target.value) })} /></div>
       <div className="flex gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
         <Button type="submit" className="flex-1">Create Package</Button>

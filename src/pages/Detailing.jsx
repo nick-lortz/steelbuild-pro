@@ -772,12 +772,12 @@ function DetailingItemTabs({ item, onUpdate, onDelete }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium mb-2">Submitted</p>
-                <p className="text-sm">{item.submitted_date ? new Date(item.submitted_date).toLocaleDateString() : 'Not submitted'}</p>
+                <p className="text-sm">{item.submitted_date ? formatDateDisplay(item.submitted_date) : 'Not submitted'}</p>
               </div>
 
               <div>
                 <p className="text-sm font-medium mb-2">Approved</p>
-                <p className="text-sm">{item.approved_date ? new Date(item.approved_date).toLocaleDateString() : 'Pending'}</p>
+                <p className="text-sm">{item.approved_date ? formatDateDisplay(item.approved_date) : 'Pending'}</p>
               </div>
             </div>
 

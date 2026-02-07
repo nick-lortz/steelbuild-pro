@@ -769,20 +769,20 @@ export default function ResourceManagement() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-zinc-800">
-                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Name</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Type</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Active Tasks</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Utilization</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Actions</th>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Name</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Active Tasks</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Utilization</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredResources.map((resource) => (
-                          <tr key={resource.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
+                          <tr key={resource.id} className="border-b border-border hover:bg-muted/50">
                             <td className="py-3 px-4">
-                             <p className="font-medium text-white">{resource.name}</p>
+                             <p className="font-medium">{resource.name}</p>
                             </td>
                             <td className="py-3 px-4">
                              <Badge variant="outline" className="capitalize">
@@ -793,14 +793,14 @@ export default function ResourceManagement() {
                              <StatusBadge status={resource.status} />
                             </td>
                             <td className="py-3 px-4">
-                             <span className={resource.activeTasks > 3 ? 'text-red-400 font-medium' : 'text-white'}>
+                             <span className={resource.activeTasks > 3 ? 'text-red-600 font-medium' : ''}>
                                {resource.activeTasks}
                              </span>
                             </td>
                             <td className="py-3 px-4">
                              <div className="flex items-center gap-3">
                                <div className="flex-1 max-w-[120px]">
-                                 <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                                    <div
                                      className={`h-full transition-all ${
                                        resource.utilization > 80 ? 'bg-red-500' :
@@ -811,7 +811,7 @@ export default function ResourceManagement() {
                                    />
                                  </div>
                                </div>
-                               <span className="text-sm text-zinc-300 min-w-[45px]">
+                               <span className="text-sm text-muted-foreground min-w-[45px]">
                                  {Math.round(resource.utilization)}%
                                </span>
                              </div>

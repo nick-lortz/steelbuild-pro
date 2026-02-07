@@ -178,6 +178,45 @@ Deno.serve(async (req) => {
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
     ).length;
 
+    // Calculate portfolio-wide financial metrics
+    const totalContractValue = allUserProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
+    const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
+    const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
+    const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+    
+    // Budget variance: (actual + committed - budget) / budget * 100
+    const avgBudgetVariance = totalBudget > 0 
+      ? ((totalActual + totalCommitted - totalBudget) / totalBudget) * 100 
+      : 0;
+
+    // Average schedule progress
+    const avgScheduleProgress = projectsWithHealth.length > 0
+      ? projectsWithHealth.reduce((sum, p) => sum + p.progress, 0) / projectsWithHealth.length
+      : 0;
+
+    // Critical issues: overdue tasks + open RFIs with priority high/critical
+    const criticalRFIs = rfis.filter(r => 
+      (r.status === 'submitted' || r.status === 'under_review') && 
+      (r.priority === 'high' || r.priority === 'critical')
+    ).length;
+    const criticalIssues = overdueTasks + criticalRFIs;
+
+    // Open RFIs
+    const openRFIs = rfis.filter(r => 
+      r.status !== 'answered' && r.status !== 'closed'
+    ).length;
+
+    // Overdue RFIs (business days logic simplified)
+    const overdueRFIs = rfis.filter(r => 
+      (r.status === 'submitted' || r.status === 'under_review') && 
+      r.due_date && r.due_date < today
+    ).length;
+
+    // Pending approvals (COs + drawings)
+    const pendingApprovals = changeOrders.filter(c => 
+      c.status === 'submitted' || c.status === 'under_review'
+    ).length;
+
     const duration = Date.now() - startTime;
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
 
@@ -189,7 +228,15 @@ Deno.serve(async (req) => {
         activeProjects,
         atRiskProjects,
         overdueTasks,
-        upcomingMilestones
+        upcomingMilestones,
+        totalContractValue,
+        avgBudgetVariance,
+        avgScheduleProgress,
+        criticalIssues,
+        openRFIs,
+        overdueRFIs,
+        pendingApprovals,
+        portfolioGrowth: 0 // Would need historical data to calculate
       }
     });
 

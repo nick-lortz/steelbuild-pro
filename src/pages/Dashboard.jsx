@@ -5,9 +5,11 @@ import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
   RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building, AlertTriangle, Clock, Flag, Activity, Zap
+  Building, AlertTriangle, Clock, Flag, Activity, Zap, FileText, Mail, Download
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { toast } from 'sonner';
 import { Badge } from "@/components/ui/badge";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
@@ -19,6 +21,7 @@ import Pagination from '@/components/ui/Pagination';
 import AIRiskPanel from '@/components/dashboard/AIRiskPanel';
 import RoleBasedKPIs from '@/components/dashboard/RoleBasedKPIs';
 import AIForecastPanel from '@/components/dashboard/AIForecastPanel';
+import ReportScheduler from '@/components/reports/ReportScheduler';
 
 export default function Dashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -28,6 +31,8 @@ export default function Dashboard() {
   const [riskFilter, setRiskFilter] = useState('all');
   const [sortBy, setSortBy] = useState('risk');
   const [showAIRisk, setShowAIRisk] = useState(false);
+  const [showReportScheduler, setShowReportScheduler] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   const { page, pageSize, skip, limit, goToPage, changePageSize } = usePagination(1, 25);
 
   const { data: currentUser } = useQuery({
@@ -71,6 +76,32 @@ export default function Dashboard() {
     setRiskFilter('all');
   };
 
+  const generatePDF = async () => {
+    setGeneratingPDF(true);
+    try {
+      const response = await base44.functions.invoke('generateDashboardPDF', {
+        report_type: 'portfolio',
+        date_range: 'current'
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Dashboard_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      toast.success('PDF report generated');
+    } catch (error) {
+      toast.error('Failed to generate PDF: ' + (error?.message || 'Unknown error'));
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+
   const { data: weeklySummary } = useQuery({
     queryKey: ['weekly-executive-summary'],
     queryFn: async () => {
@@ -111,16 +142,37 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={refetchDashboard}
-            disabled={projectsFetching}
-            className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
-          >
-            <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
-            {projectsFetching ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowReportScheduler(true)}
+              className="gap-2 bg-blue-500/10 border-blue-500/20 text-blue-500 hover:bg-blue-500/20 hover:text-blue-400"
+            >
+              <Mail size={14} />
+              Schedule Report
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={generatePDF}
+              disabled={generatingPDF}
+              className="gap-2 bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-500/20 hover:text-green-400"
+            >
+              <Download size={14} className={generatingPDF ? 'animate-pulse' : ''} />
+              {generatingPDF ? 'Generating...' : 'Export PDF'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={refetchDashboard}
+              disabled={projectsFetching}
+              className="gap-2 bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20 hover:text-amber-400"
+            >
+              <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
+              {projectsFetching ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -277,6 +329,18 @@ export default function Dashboard() {
           />
         </div>
       )}
+
+      {/* Report Scheduler Sheet */}
+      <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}>
+        <SheetContent side="right" className="w-full sm:max-w-lg bg-zinc-950 border-zinc-800">
+          <SheetHeader>
+            <SheetTitle className="text-white">Schedule Report Delivery</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <ReportScheduler projectId={activeProjectId} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
     </ErrorBoundary>
   );

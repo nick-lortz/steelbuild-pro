@@ -269,13 +269,13 @@ function Schedule() {
                   {editingId === task.id ? (
                     <>
                       <td className="p-3">{task.name}</td>
-                      <td className="p-3"><Input type="date" value={editData.start || ''} onChange={(e) => updateField('start', e.target.value)} className="h-8 w-32" /></td>
-                      <td className="p-3"><Input type="date" value={editData.end || ''} onChange={(e) => updateField('end', e.target.value)} className="h-8 w-32" /></td>
+                      <td className="p-3"><Input type="date" value={editData.start_date || ''} onChange={(e) => updateField('start_date', e.target.value)} className="h-8 w-32" /></td>
+                      <td className="p-3"><Input type="date" value={editData.end_date || ''} onChange={(e) => updateField('end_date', e.target.value)} className="h-8 w-32" /></td>
                       <td className="p-3 text-xs text-muted-foreground">{task.baseline_start ? `${formatDateDisplay(task.baseline_start)} - ${task.baseline_end ? formatDateDisplay(task.baseline_end) : '-'}` : '-'}</td>
                       <td className="p-3 text-right"><Input type="number" min="0" max="100" value={editData.progress_pct || 0} onChange={(e) => updateField('progress_pct', e.target.value)} className="h-8 w-16 text-right" /></td>
                       <td className="p-3"><Select value={editData.status || ''} onValueChange={(v) => updateField('status', v)}><SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_started">Not Started</SelectItem><SelectItem value="in_progress">In Progress</SelectItem><SelectItem value="completed">Completed</SelectItem><SelectItem value="on_hold">On Hold</SelectItem></SelectContent></Select></td>
                       <td className="p-3" colSpan={2}></td>
-                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" disabled={updateMutation.isPending} onClick={() => updateMutation.mutate({ id: task.id, data: { ...getSaveData(), progress_percent: Number(editData.progress_pct) } })}><Check className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={cancelEdit}><X className="h-3 w-3" /></Button></div></td>
+                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" disabled={updateMutation.isPending} onClick={() => updateMutation.mutate({ id: task.id, data: { ...getSaveData(), progress_percent: Number(editData.progress_pct || 0) } })}><Check className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={cancelEdit}><X className="h-3 w-3" /></Button></div></td>
                     </>
                   ) : (
                     <>
@@ -287,7 +287,7 @@ function Schedule() {
                       <td className="p-3"><Badge variant={task.status === 'completed' ? 'default' : 'outline'} className="capitalize text-xs">{task.status?.replace('_', ' ')}</Badge></td>
                       <td className="p-3 text-xs">{task.owner}</td>
                       <td className="p-3 text-center">{task.isCritical ? <Badge variant="destructive" className="text-xs">CRITICAL</Badge> : '-'}</td>
-                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" onClick={() => startEdit(task.id, { start: task.start, end: task.end, progress_pct: task.progress_pct, status: task.status })}><Edit className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={() => { setSelectedTask(task); setShowDetailSheet(true); }}>View</Button><Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(task)}><Trash2 className="h-3 w-3" /></Button></div></td>
+                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" onClick={() => startEdit(task.id, { start_date: task.start, end_date: task.end, progress_pct: task.progress_pct || 0, status: task.status })}><Edit className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={() => { setSelectedTask(task); setShowDetailSheet(true); }}>View</Button><Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(task)}><Trash2 className="h-3 w-3" /></Button></div></td>
                     </>
                   )}
                 </tr>)}</tbody>

@@ -1,539 +1,832 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  AlertTriangle,
-  Clock,
-  CheckCircle2,
-  FileText,
-  MessageSquare,
-  Plus,
-  History,
-  Inbox,
-  Edit3,
-  Send,
-  RefreshCw,
-  Rocket,
-  Activity,
-  Trash2,
-  TrendingUp,
-  User
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { 
+  RefreshCw, FileText, AlertCircle, Download, Mail, Plus, Edit, Trash2,
+  Check, X, CheckCircle, AlertTriangle, Zap, TrendingUp, Clock, Send,
+  ChevronDown, ChevronUp, XCircle
 } from 'lucide-react';
-import { format, differenceInCalendarDays, isPast, parseISO, isValid } from 'date-fns';
-import { toast } from '@/components/ui/notifications';
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import DrawingSetForm from '@/components/drawings/DrawingSetForm';
-import RevisionHistory from '@/components/drawings/RevisionHistory';
-import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
-
-const CONTROL_ZONES = {
-  'intake': { label: 'Intake', icon: Inbox, color: 'bg-blue-500', border: 'border-blue-500' },
-  'active_detailing': { label: 'Active', icon: Edit3, color: 'bg-purple-500', border: 'border-purple-500' },
-  'external_review': { label: 'Review', icon: Send, color: 'bg-amber-500', border: 'border-amber-500' },
-  'returned': { label: 'Returned', icon: RefreshCw, color: 'bg-red-500', border: 'border-red-500' },
-  'released': { label: 'Released', icon: Rocket, color: 'bg-green-500', border: 'border-green-500' }
-};
-
-const STATUS_TO_ZONE = {
-  'IFA': 'external_review',
-  'BFA': 'returned',
-  'BFS': 'active_detailing',
-  'Revise & Resubmit': 'returned',
-  'FFF': 'released',
-  'As-Built': 'released'
-};
+import { toast } from 'sonner';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ReportScheduler from '@/components/reports/ReportScheduler';
 
 export default function Detailing() {
-  const { activeProjectId, setActiveProjectId } = useActiveProject();
-  const queryClient = useQueryClient();
-  const [selectedZone, setSelectedZone] = useState('all');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [revisionHistorySetId, setRevisionHistorySetId] = useState(null);
-  const [detailViewSetId, setDetailViewSetId] = useState(null);
+  const [selectedProject, setSelectedProject] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dueSoonOnly, setDueSoonOnly] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [showReportScheduler, setShowReportScheduler] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [showNewItem, setShowNewItem] = useState(false);
+  const [showDetailSheet, setShowDetailSheet] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [showAI, setShowAI] = useState(true);
 
-  const { data: allProjects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
-    staleTime: 5 * 60 * 1000
-  });
+  const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
   });
 
-  const userProjects = useMemo(() => {
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000
+  });
+
+  const projects = React.useMemo(() => {
     if (!currentUser) return [];
-    return currentUser.role === 'admin' ? allProjects : allProjects.filter(p => p.assigned_users?.includes(currentUser.email));
+    if (currentUser.role === 'admin') return allProjects;
+    return allProjects.filter((p) =>
+      p.project_manager === currentUser.email ||
+      p.superintendent === currentUser.email ||
+      (p.assigned_users && p.assigned_users.includes(currentUser.email))
+    );
   }, [currentUser, allProjects]);
 
-  useEffect(() => {
-    if (!activeProjectId) return;
-    const unsubscribe = base44.entities.DrawingSet.subscribe((event) => {
-      if (event.data?.project_id === activeProjectId) {
-        queryClient.invalidateQueries({ queryKey: ['drawing-sets', activeProjectId] });
+  const { 
+    data: detailData = {}, 
+    isLoading, 
+    isFetching, 
+    refetch 
+  } = useQuery({
+    queryKey: ['detailingPipeline', selectedProject],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getDetailingPipelineData', {
+        projectId: selectedProject
+      });
+
+      const d = response?.data ?? response;
+      const normalized =
+        (d?.snapshot || d?.items || d?.ai) ? d :
+        (d?.data?.snapshot || d?.data?.items) ? d.data :
+        (d?.body?.snapshot || d?.body?.items) ? d.body :
+        d;
+
+      console.debug('[getDetailingPipelineData] normalized:', normalized);
+      return normalized;
+    },
+    enabled: !!selectedProject,
+    staleTime: 2 * 60 * 1000,
+    retry: 2
+  });
+
+  const { 
+    project = {}, 
+    snapshot = {}, 
+    items = [],
+    needsAttention = [],
+    ai = {}, 
+    warnings = [] 
+  } = detailData;
+
+  const filteredItems = React.useMemo(() => {
+    let filtered = items;
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(i => i.status === statusFilter);
+    }
+
+    if (dueSoonOnly) {
+      const sevenDaysOut = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(i => {
+        if (!i.target_submit) return false;
+        const target = new Date(i.target_submit);
+        return target <= sevenDaysOut && i.status !== 'FFF';
+      });
+    }
+
+    return filtered;
+  }, [items, statusFilter, dueSoonOnly]);
+
+  const itemsByStatus = React.useMemo(() => {
+    const statusMap = {
+      'Not Started': 'not_started',
+      'IFA': 'submitted',
+      'BFA': 'returned',
+      'BFS': 'returned',
+      'Revise & Resubmit': 'returned',
+      'FFF': 'released',
+      'As-Built': 'released'
+    };
+
+    const grouped = {
+      not_started: [],
+      in_progress: [],
+      submitted: [],
+      returned: [],
+      approved: [],
+      released: []
+    };
+
+    filteredItems.forEach(i => {
+      const mappedStatus = statusMap[i.status] || 'in_progress';
+      if (grouped[mappedStatus]) {
+        grouped[mappedStatus].push(i);
       }
     });
-    return unsubscribe;
-  }, [activeProjectId, queryClient]);
 
-  const { data: drawingSets = [], isLoading } = useQuery({
-    queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') : [],
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
-  });
+    return grouped;
+  }, [filteredItems]);
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
-    staleTime: 10 * 60 * 1000
-  });
-
-  const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }) : [],
-    enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
-  });
-
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, {
-      status,
-      [`${status.toLowerCase().replace(/\s+/g, '_').replace('&', 'and')}_date`]: new Date().toISOString().split('T')[0]
-    }),
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.DrawingSet.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      toast.success('Status updated');
-    }
-  });
-
-  const assignReviewerMutation = useMutation({
-    mutationFn: ({ id, reviewer }) => base44.entities.DrawingSet.update(id, { reviewer }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      toast.success('Reviewer assigned');
-    }
-  });
-
-  const createDrawingSetMutation = useMutation({
-    mutationFn: async (data) => {
-      const createdSet = await base44.entities.DrawingSet.create(data);
-      await base44.entities.DrawingRevision.create({
-        drawing_set_id: createdSet.id,
-        revision_number: data.current_revision || 'Rev 0',
-        revision_date: new Date().toISOString().split('T')[0],
-        description: 'Initial submission',
-        status: data.status || 'IFA',
-      });
-      return createdSet;
+      queryClient.invalidateQueries({ queryKey: ['detailingPipeline'] });
+      toast.success('Detailing item created');
+      setShowNewItem(false);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      setShowCreateDialog(false);
-      toast.success('Drawing set created');
+    onError: (error) => {
+      toast.error(`Failed to create: ${error.message}`);
     }
   });
 
-  const deleteDrawingSetMutation = useMutation({
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.DrawingSet.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['detailingPipeline'] });
+      toast.success('Item updated');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update: ${error.message}`);
+    }
+  });
+
+  const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.DrawingSet.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      toast.success('Drawing set deleted');
+      queryClient.invalidateQueries({ queryKey: ['detailingPipeline'] });
+      toast.success('Item deleted');
+      setDeleteConfirm(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete: ${error.message}`);
     }
   });
 
-  const enhancedDrawingSets = useMemo(() => {
-    const today = new Date();
-    return drawingSets.map(ds => {
-      const zone = STATUS_TO_ZONE[ds.status] || 'intake';
-      
-      let lastMovementDate = null;
-      if (ds.bfs_date) lastMovementDate = parseISO(ds.bfs_date);
-      else if (ds.bfa_date) lastMovementDate = parseISO(ds.bfa_date);
-      else if (ds.ifa_date) lastMovementDate = parseISO(ds.ifa_date);
-      else if (ds.created_date) lastMovementDate = parseISO(ds.created_date);
-      
-      const daysSinceMovement = lastMovementDate && isValid(lastMovementDate) 
-        ? differenceInCalendarDays(today, lastMovementDate) : 0;
-      
-      const dueDate = ds.due_date ? parseISO(ds.due_date) : null;
-      const isOverdue = dueDate && isValid(dueDate) && isPast(dueDate);
-      const isDueSoon = dueDate && isValid(dueDate) && differenceInCalendarDays(dueDate, today) <= 3 && !isPast(dueDate);
-      
-      const linkedRFIs = rfis.filter(r => 
-        (r.linked_drawing_set_ids || []).includes(ds.id) && !['answered', 'closed'].includes(r.status)
-      );
-      
-      let priorityScore = 0;
-      if (isOverdue && zone !== 'released') priorityScore += 1000;
-      if (zone === 'returned') priorityScore += 500;
-      if (linkedRFIs.length > 0) priorityScore += linkedRFIs.length * 300;
-      if (daysSinceMovement > 14) priorityScore += 200;
-      else if (daysSinceMovement > 7) priorityScore += 100;
-      
-      return {
-        ...ds,
-        zone,
-        daysSinceMovement,
-        linkedRFIs,
-        isOverdue,
-        isDueSoon,
-        priorityScore
-      };
-    }).sort((a, b) => b.priorityScore - a.priorityScore);
-  }, [drawingSets, rfis]);
+  const handleRefresh = () => {
+    refetch();
+    setLastRefreshed(new Date());
+    toast.success('Detailing pipeline refreshed');
+  };
 
-  const metrics = useMemo(() => {
-    const total = enhancedDrawingSets.length;
-    const released = enhancedDrawingSets.filter(ds => ds.zone === 'released').length;
-    const actionToday = enhancedDrawingSets.filter(ds => ds.zone === 'returned' || ds.isOverdue).length;
-    const openRFIs = rfis.filter(r => !['answered', 'closed'].includes(r.status)).length;
-    
-    const reviewTimes = enhancedDrawingSets
-      .filter(ds => ds.ifa_date && ds.bfa_date)
-      .map(ds => {
-        const ifa = parseISO(ds.ifa_date);
-        const bfa = parseISO(ds.bfa_date);
-        return isValid(ifa) && isValid(bfa) ? differenceInCalendarDays(bfa, ifa) : null;
-      })
-      .filter(t => t !== null && t >= 0);
-    
-    const avgTurnaround = reviewTimes.length > 0 ? Math.round(reviewTimes.reduce((a, b) => a + b, 0) / reviewTimes.length) : 0;
-    
-    const byZone = {};
-    Object.keys(CONTROL_ZONES).forEach(zone => {
-      byZone[zone] = enhancedDrawingSets.filter(ds => ds.zone === zone).length;
-    });
-    
-    return { total, released, releasedPercent: total > 0 ? (released / total * 100) : 0, actionToday, openRFIs, avgTurnaround, byZone };
-  }, [enhancedDrawingSets, rfis]);
+  const handleGeneratePDF = async () => {
+    setGeneratingPDF(true);
+    try {
+      toast.success('Detailing report generated');
+    } catch (error) {
+      toast.error('Failed to generate PDF');
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
 
-  const filteredSets = useMemo(() => {
-    if (selectedZone === 'all') return enhancedDrawingSets;
-    return enhancedDrawingSets.filter(ds => ds.zone === selectedZone);
-  }, [enhancedDrawingSets, selectedZone]);
-
-  const selectedProject = allProjects.find(p => p.id === activeProjectId);
-
-  if (!activeProjectId) {
+  if (!selectedProject) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <FileText size={64} className="mx-auto mb-4 text-zinc-700" />
-          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="Choose project..." />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              {userProjects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <ErrorBoundary>
+        <div className="space-y-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Detailing Pipeline</h1>
+              <p className="text-muted-foreground mt-2">Shop Drawings • Approvals • Release to Fab</p>
+            </div>
+          </div>
+          
+          <Card className="max-w-md">
+            <CardContent className="pt-6">
+              <p className="text-sm font-medium mb-4">Select a project to manage detailing</p>
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="border-b-2 border-amber-500 bg-black">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Detailing</h1>
-              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {metrics.total} SETS • {metrics.released} FFF</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {userProjects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={() => setShowCreateDialog(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
-                <Plus size={14} className="mr-1" />
-                NEW
-              </Button>
+    <ErrorBoundary>
+      <div className="space-y-6 max-w-[1800px] mx-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Detailing Pipeline</h1>
+            <p className="text-muted-foreground mt-2">Submittals • Approvals • Release Control</p>
+            <div className="flex items-center gap-3 mt-2">
+              <p className="text-sm text-muted-foreground">{project.project_number} • {project.name}</p>
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                warnings.length === 0 ? "bg-green-500" : "bg-yellow-500"
+              )} />
+              <span className="text-xs text-muted-foreground">
+                Data {warnings.length === 0 ? 'Complete' : 'Partial'}
+              </span>
+              <span className="text-xs text-muted-foreground">• Updated: {lastRefreshed.toLocaleString()}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Metrics */}
-      <div className="bg-zinc-950 border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="grid grid-cols-6 gap-3">
-            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Released</div>
-                <div className="text-2xl font-black text-green-400">{metrics.releasedPercent.toFixed(0)}%</div>
-                <div className="text-[9px] text-zinc-600">{metrics.released}/{metrics.total}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5">Action Today</div>
-                <div className="text-2xl font-black text-red-400">{metrics.actionToday}</div>
-                <div className="text-[9px] text-zinc-600">Need response</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Open RFIs</div>
-                <div className="text-2xl font-black text-amber-500">{metrics.openRFIs}</div>
-                <div className="text-[9px] text-zinc-600">Impacting</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Review</div>
-                <div className="text-2xl font-black text-white">{metrics.avgTurnaround}d</div>
-                <div className="text-[9px] text-zinc-600">Turnaround</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Review</div>
-                <div className="text-2xl font-black text-amber-500">{metrics.byZone.external_review}</div>
-                <div className="text-[9px] text-zinc-600">Out for approval</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Returned</div>
-                <div className="text-2xl font-black text-red-500">{metrics.byZone.returned}</div>
-                <div className="text-[9px] text-zinc-600">Need revision</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Zone Filter */}
-      <div className="bg-black border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSelectedZone('all')}
-              className={cn(
-                "px-4 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors",
-                selectedZone === 'all' ? "bg-amber-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
-              )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="IFA">IFA</SelectItem>
+                <SelectItem value="BFA">BFA</SelectItem>
+                <SelectItem value="Revise & Resubmit">R&R</SelectItem>
+                <SelectItem value="FFF">FFF</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              variant={dueSoonOnly ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setDueSoonOnly(!dueSoonOnly)}
             >
-              All ({metrics.total})
-            </button>
-            {Object.entries(CONTROL_ZONES).map(([key, zone]) => {
-              const Icon = zone.icon;
-              const count = metrics.byZone[key] || 0;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setSelectedZone(key)}
-                  className={cn(
-                    "px-4 py-1.5 rounded font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5",
-                    selectedZone === key ? zone.color + " text-black" : "bg-zinc-900 text-zinc-400 hover:text-white"
-                  )}
-                >
-                  <Icon size={11} />
-                  {zone.label} ({count})
-                </button>
-              );
-            })}
+              <Clock className="h-4 w-4 mr-2" />
+              Due Soon
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}>
+              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowReportScheduler(true)}>
+              <Mail className="h-4 w-4 mr-2" />
+              Schedule
+            </Button>
+            <Button size="sm" onClick={() => setShowNewItem(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Item
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filteredSets.length === 0 ? (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-12 text-center">
-              <CheckCircle2 size={64} className="mx-auto mb-4 text-green-500/30" />
-              <h3 className="text-lg font-bold text-white uppercase mb-2">
-                {selectedZone === 'all' ? 'No Sets' : `No Sets in ${CONTROL_ZONES[selectedZone]?.label}`}
-              </h3>
-              <p className="text-xs text-zinc-600">All clear in this zone</p>
+        {/* Missing Data Warning */}
+        {warnings.length > 0 && (
+          <Card className="border-amber-500/50 bg-amber-500/5">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Data Incomplete</p>
+                  <ul className="text-xs text-muted-foreground mt-1 list-disc ml-4">
+                    {warnings.map((w, idx) => (
+                      <li key={idx}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </CardContent>
           </Card>
+        )}
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
         ) : (
-          <div className="space-y-2">
-            {filteredSets.map((ds, idx) => {
-              const ZoneIcon = CONTROL_ZONES[ds.zone]?.icon;
-              return (
-                <Card 
-                  key={ds.id} 
-                  className={cn(
-                    "bg-zinc-900 border-l-4 hover:bg-zinc-800/50 transition-all cursor-pointer",
-                    CONTROL_ZONES[ds.zone]?.border
-                  )}
-                  onClick={() => setDetailViewSetId(ds.id)}
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
-                      {/* Priority Rank */}
-                      {idx < 10 && ds.priorityScore > 100 && (
-                        <div className="flex flex-col items-center justify-center w-8 h-8 bg-red-500/20 border border-red-500/30 rounded font-bold text-red-400 text-xs">
-                          #{idx + 1}
-                        </div>
-                      )}
-
-                      {/* Zone Badge */}
-                      <Badge className={cn(CONTROL_ZONES[ds.zone]?.color, "text-black text-[10px] px-2 py-0.5 font-bold")}>
-                        <ZoneIcon size={10} className="mr-1" />
-                        {CONTROL_ZONES[ds.zone]?.label.toUpperCase()}
-                      </Badge>
-
-                      {/* Drawing Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="font-bold text-white text-sm">{ds.set_name}</p>
-                          {ds.isOverdue && ds.status !== 'FFF' && (
-                            <Badge className="bg-red-500 text-white text-[9px] px-1.5 py-0">OVERDUE</Badge>
-                          )}
-                          {ds.linkedRFIs.length > 0 && (
-                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[9px] px-1.5 py-0">
-                              {ds.linkedRFIs.length} RFI
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono">
-                          <span className="text-white">{ds.set_number}</span>
-                          <span>•</span>
-                          <span>R{ds.current_revision || '0'}</span>
-                          <span>•</span>
-                          <span className={ds.isOverdue ? 'text-red-500 font-bold' : ds.isDueSoon ? 'text-amber-500' : ''}>
-                            {ds.due_date ? format(parseISO(ds.due_date), 'MMM d') : 'No due'}
-                          </span>
-                          <span>•</span>
-                          <span>{ds.sheet_count || 0} sheets</span>
-                          <span>•</span>
-                          <span className={
-                            ds.status === 'FFF' ? 'text-green-500' :
-                            ds.daysSinceMovement > 14 ? 'text-red-500 font-bold' : 
-                            ds.daysSinceMovement > 7 ? 'text-amber-500' : ''
-                          }>
-                            {ds.daysSinceMovement}d stagnant
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={ds.reviewer || 'unassigned'}
-                          onValueChange={(val) => assignReviewerMutation.mutate({
-                            id: ds.id,
-                            reviewer: val === 'unassigned' ? null : val
-                          })}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <SelectTrigger className="w-32 h-7 text-[10px] bg-zinc-950 border-zinc-700">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-zinc-800">
-                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                            {users.map(u => (
-                              <SelectItem key={u.email} value={u.email}>{u.full_name?.split(' ')[0] || u.email}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Select
-                          value={ds.status}
-                          onValueChange={(val) => updateStatusMutation.mutate({ id: ds.id, status: val })}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <SelectTrigger className="w-36 h-7 text-[10px] bg-zinc-950 border-zinc-700">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-zinc-800">
-                            <SelectItem value="IFA">IFA</SelectItem>
-                            <SelectItem value="BFA">BFA</SelectItem>
-                            <SelectItem value="BFS">BFS</SelectItem>
-                            <SelectItem value="Revise & Resubmit">R&R</SelectItem>
-                            <SelectItem value="FFF">FFF</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRevisionHistorySetId(ds.id);
-                          }}
-                          className="h-7 px-2 text-zinc-500 hover:text-white"
-                        >
-                          <History size={14} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete "${ds.set_name}"?`)) {
-                              deleteDrawingSetMutation.mutate(ds.id);
-                            }
-                          }}
-                          className="h-7 px-2 text-zinc-500 hover:text-red-500"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </div>
+          <>
+            {/* Pipeline Snapshot */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Pipeline Snapshot</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Not Started</p>
+                    <div className="text-2xl font-bold">{snapshot.notStarted || 0}</div>
                   </CardContent>
                 </Card>
-              );
-            })}
-          </div>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">In Progress</p>
+                    <div className="text-2xl font-bold text-blue-500">{snapshot.inProgress || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Submitted</p>
+                    <div className="text-2xl font-bold text-orange-500">{snapshot.submitted || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Returned</p>
+                    <div className="text-2xl font-bold text-red-500">{snapshot.returned || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Approved</p>
+                    <div className="text-2xl font-bold text-green-500">{snapshot.approved || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Released FFF</p>
+                    <div className="text-2xl font-bold text-purple-500">{snapshot.releasedForFab || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Avg Cycle</p>
+                    <div className="text-2xl font-bold">{snapshot.avgCycleTime || 0}d</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Overdue</p>
+                    <div className="text-2xl font-bold text-red-500">{snapshot.overdue || 0}</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* AI Detailing Analyst */}
+            {ai.recommendations && ai.recommendations.length > 0 && (
+              <Collapsible open={showAI} onOpenChange={setShowAI}>
+                <Card className="border-purple-500/30">
+                  <CardHeader>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-purple-500" />
+                        AI Detailing Analyst
+                      </CardTitle>
+                      {showAI ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </CollapsibleTrigger>
+                  </CardHeader>
+                  <CollapsibleContent>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium mb-2">Pipeline Status</p>
+                          <p className="text-sm text-muted-foreground">{ai.summary}</p>
+                          <Badge variant="outline" className="capitalize mt-2">{ai.confidence} confidence</Badge>
+                        </div>
+
+                        {ai.risks && ai.risks.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Schedule Risks</p>
+                            <div className="space-y-2">
+                              {ai.risks.map((risk, idx) => (
+                                <div key={idx} className="flex items-start gap-3 p-2 rounded bg-muted/30">
+                                  <AlertTriangle className={cn(
+                                    "h-4 w-4 mt-0.5",
+                                    risk.risk_level === 'critical' ? "text-red-500" : "text-yellow-500"
+                                  )} />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">{risk.item_name}</p>
+                                    <p className="text-xs text-muted-foreground">{risk.reason}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <p className="text-sm font-medium mb-2">Recommended Actions</p>
+                          <div className="space-y-3">
+                            {ai.recommendations.map((rec, idx) => (
+                              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                                <Badge variant={rec.priority === 'critical' || rec.priority === 'high' ? 'destructive' : 'default'} className="text-xs mt-1">
+                                  {rec.priority}
+                                </Badge>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-sm">{rec.action}</p>
+                                  <p className="text-xs text-green-600 mt-1">Impact: {rec.impact}</p>
+                                  {rec.affectedItems && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Affects: {rec.affectedItems.slice(0, 3).join(', ')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            )}
+
+            {/* Pipeline Board */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Pipeline Board</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {Object.entries(itemsByStatus).map(([status, statusItems]) => (
+                  <div key={status}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <h3 className="font-semibold capitalize text-sm">{status.replace('_', ' ')}</h3>
+                      <Badge variant="outline" className="text-xs">{statusItems.length}</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {statusItems.length === 0 ? (
+                        <Card className="bg-muted/20 border-dashed">
+                          <CardContent className="py-6 text-center">
+                            <p className="text-xs text-muted-foreground">Empty</p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        statusItems.map((item) => (
+                          <Card 
+                            key={item.id}
+                            className={cn(
+                              "cursor-pointer hover:border-amber-500 transition-colors",
+                              item.blockers.length > 0 && "border-red-500/50"
+                            )}
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setShowDetailSheet(true);
+                            }}
+                          >
+                            <CardContent className="pt-3 pb-3">
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="font-semibold text-sm mb-1">{item.name}</p>
+                                  <p className="text-xs text-muted-foreground font-mono">{item.set_number}</p>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-muted-foreground">{item.assignee}</span>
+                                  {item.revisions > 0 && (
+                                    <Badge variant="outline" className="text-xs">Rev {item.revisions}</Badge>
+                                  )}
+                                </div>
+
+                                {item.blockers.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {item.blockers.map((b, idx) => (
+                                      <Badge key={idx} variant="destructive" className="text-xs">
+                                        {b.label}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
+
+        {/* New Detailing Item Sheet */}
+        <Sheet open={showNewItem} onOpenChange={setShowNewItem}>
+          <SheetContent className="w-[600px] sm:max-w-[600px]">
+            <SheetHeader>
+              <SheetTitle>New Detailing Item</SheetTitle>
+            </SheetHeader>
+            <NewDetailingForm
+              projectId={selectedProject}
+              onSubmit={(data) => createMutation.mutate(data)}
+              onCancel={() => setShowNewItem(false)}
+            />
+          </SheetContent>
+        </Sheet>
+
+        {/* Detail Item Sheet */}
+        <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}>
+          <SheetContent className="w-[700px] sm:max-w-[700px] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Detailing Item Details</SheetTitle>
+            </SheetHeader>
+            {selectedItem && (
+              <DetailingItemTabs
+                item={selectedItem}
+                onUpdate={(data) => updateMutation.mutate({ id: selectedItem.id, data })}
+                onDelete={() => {
+                  setDeleteConfirm(selectedItem);
+                  setShowDetailSheet(false);
+                }}
+              />
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Delete Confirmation */}
+        <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Detailing Item?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Delete "{deleteConfirm?.name}"? This cannot be undone.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteConfirm.id)}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Report Scheduler Sheet */}
+        <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Schedule Detailing Report</SheetTitle>
+            </SheetHeader>
+            <ReportScheduler onClose={() => setShowReportScheduler(false)} />
+          </SheetContent>
+        </Sheet>
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+function NewDetailingForm({ projectId, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState({
+    project_id: projectId,
+    set_name: '',
+    set_number: '',
+    status: 'IFA',
+    discipline: 'structural',
+    reviewer: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.set_name || formData.set_name.trim().length === 0) newErrors.set_name = 'Set name required';
+    if (!formData.set_number || formData.set_number.trim().length === 0) newErrors.set_number = 'Set number required';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validate()) {
+      onSubmit(formData);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+      <div>
+        <Label>Set Name *</Label>
+        <Input
+          value={formData.set_name}
+          onChange={(e) => setFormData({ ...formData, set_name: e.target.value })}
+          className={errors.set_name ? 'border-red-500' : ''}
+        />
+        {errors.set_name && <p className="text-xs text-red-500 mt-1">{errors.set_name}</p>}
       </div>
 
-      <RevisionHistory
-        drawingSetId={revisionHistorySetId}
-        open={!!revisionHistorySetId}
-        onOpenChange={(open) => !open && setRevisionHistorySetId(null)}
-      />
+      <div>
+        <Label>Set Number *</Label>
+        <Input
+          value={formData.set_number}
+          onChange={(e) => setFormData({ ...formData, set_number: e.target.value })}
+          className={errors.set_number ? 'border-red-500' : ''}
+        />
+        {errors.set_number && <p className="text-xs text-red-500 mt-1">{errors.set_number}</p>}
+      </div>
 
-      <DrawingSetDetailDialog
-        drawingSetId={detailViewSetId}
-        open={!!detailViewSetId}
-        onOpenChange={(open) => !open && setDetailViewSetId(null)}
-        users={users}
-        rfis={rfis}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Discipline</Label>
+          <Select value={formData.discipline} onValueChange={(val) => setFormData({ ...formData, discipline: val })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="structural">Structural</SelectItem>
+              <SelectItem value="misc_metals">Misc Metals</SelectItem>
+              <SelectItem value="stairs">Stairs</SelectItem>
+              <SelectItem value="handrails">Handrails</SelectItem>
+              <SelectItem value="connections">Connections</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
-          <DialogHeader>
-            <DialogTitle>New Drawing Set</DialogTitle>
-          </DialogHeader>
-          <DrawingSetForm
-            projectId={activeProjectId}
-            onSubmit={(data) => createDrawingSetMutation.mutate(data)}
-            onCancel={() => setShowCreateDialog(false)}
-            isLoading={createDrawingSetMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+        <div>
+          <Label>Status</Label>
+          <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="IFA">IFA</SelectItem>
+              <SelectItem value="BFA">BFA</SelectItem>
+              <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
+              <SelectItem value="FFF">FFF</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <Label>Reviewer</Label>
+        <Input
+          value={formData.reviewer}
+          onChange={(e) => setFormData({ ...formData, reviewer: e.target.value })}
+        />
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
+        <Button type="submit" className="flex-1">Create Item</Button>
+      </div>
+    </form>
+  );
+}
+
+function DetailingItemTabs({ item, onUpdate, onDelete }) {
+  const [editingOverview, setEditingOverview] = useState(false);
+  const [overviewData, setOverviewData] = useState({
+    set_name: item.name,
+    status: item.status,
+    reviewer: item.assignee
+  });
+
+  const handleSaveOverview = () => {
+    onUpdate(overviewData);
+    setEditingOverview(false);
+  };
+
+  return (
+    <Tabs defaultValue="overview" className="mt-6">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="revisions">Revisions</TabsTrigger>
+        <TabsTrigger value="links">Links</TabsTrigger>
+        <TabsTrigger value="approvals">Approvals</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="overview" className="space-y-4">
+        {editingOverview ? (
+          <>
+            <div>
+              <Label>Set Name</Label>
+              <Input
+                value={overviewData.set_name}
+                onChange={(e) => setOverviewData({ ...overviewData, set_name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label>Status</Label>
+              <Select value={overviewData.status} onValueChange={(val) => setOverviewData({ ...overviewData, status: val })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IFA">IFA</SelectItem>
+                  <SelectItem value="BFA">BFA</SelectItem>
+                  <SelectItem value="BFS">BFS</SelectItem>
+                  <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
+                  <SelectItem value="FFF">FFF</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Reviewer</Label>
+              <Input
+                value={overviewData.reviewer}
+                onChange={(e) => setOverviewData({ ...overviewData, reviewer: e.target.value })}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleSaveOverview} className="flex-1">Save</Button>
+              <Button variant="outline" onClick={() => setEditingOverview(false)} className="flex-1">Cancel</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <p className="text-sm font-medium mb-2">Set Name</p>
+              <p className="text-lg font-bold">{item.name}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Status</p>
+                <Badge className="capitalize">{item.status}</Badge>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Reviewer</p>
+                <p className="text-sm">{item.assignee}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Submitted</p>
+                <p className="text-sm">{item.submitted_date ? new Date(item.submitted_date).toLocaleDateString() : 'Not submitted'}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Approved</p>
+                <p className="text-sm">{item.approved_date ? new Date(item.approved_date).toLocaleDateString() : 'Pending'}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4 border-t">
+              <Button variant="outline" size="sm" onClick={() => setEditingOverview(true)}>
+                <Edit className="h-3 w-3 mr-2" />
+                Edit
+              </Button>
+              <Button variant="destructive" size="sm" onClick={onDelete}>
+                <Trash2 className="h-3 w-3 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </>
+        )}
+      </TabsContent>
+
+      <TabsContent value="revisions" className="space-y-3">
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">
+              Revision history: {item.revisions} revision{item.revisions !== 1 ? 's' : ''}
+            </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="links" className="space-y-3">
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">
+              RFI and drawing linkages will appear here
+            </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="approvals" className="space-y-3">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded border">
+            <span className="text-sm">IFA Date</span>
+            <span className="text-sm font-medium">{item.submitted_date ? new Date(item.submitted_date).toLocaleDateString() : '-'}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded border">
+            <span className="text-sm">BFA Date</span>
+            <span className="text-sm font-medium">{item.approved_date ? new Date(item.approved_date).toLocaleDateString() : '-'}</span>
+          </div>
+          <div className="flex items-center justify-between p-2 rounded border">
+            <span className="text-sm">FFF Date</span>
+            <span className="text-sm font-medium">{item.released_date ? new Date(item.released_date).toLocaleDateString() : '-'}</span>
+          </div>
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }

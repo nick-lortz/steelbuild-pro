@@ -668,22 +668,27 @@ export default function JobStatusReport() {
 
       {/* SOV Table */}
       <Card>
-        <SectionHeader 
-          title="Schedule of Values"
-          right={hasApprovedInvoices ? (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Lock size={10} />
-              Locked post-approval
-            </p>
-          ) : null}
-        />
-        <CardContent className="pt-4">
-          <DataTable
-            columns={sovColumns}
-            data={sovWithCosts}
-            emptyMessage="No SOV lines. Add SOV items in Financials."
-          />
-        </CardContent>
+       <SectionHeader 
+         title="Schedule of Values"
+         subtitle={
+           hasApprovedInvoices
+             ? "Percent complete locked after invoice approval. Adjustments require change orders."
+             : "Edit % complete — saves on blur / Enter."
+         }
+         right={hasApprovedInvoices ? (
+           <div className="flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest px-3 py-2 border border-amber-500/30 bg-amber-500/10 rounded">
+             <Lock size={14} />
+             Locked
+           </div>
+         ) : null}
+       />
+       <CardContent className="pt-4">
+         <DataTable
+           columns={sovColumns}
+           data={sovWithCosts}
+           emptyMessage="No SOV lines. Add SOV items in Financials."
+         />
+       </CardContent>
       </Card>
 
       {/* Invoice History */}

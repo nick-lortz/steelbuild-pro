@@ -502,64 +502,64 @@ export default function ResourceManagement() {
             {/* KPI Cards */}
             {resourceMetrics && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-zinc-400 text-sm font-medium">Total Resources</p>
-                        <p className="text-2xl font-bold text-white mt-1">{resourceMetrics.total}</p>
+                        <p className="text-muted-foreground text-sm font-medium">Total Resources</p>
+                        <p className="text-2xl font-bold mt-1">{resourceMetrics.total}</p>
                       </div>
-                      <div className="p-2.5 bg-zinc-800 rounded-lg">
+                      <div className="p-2.5 bg-muted rounded-lg">
                         <Users size={20} className="text-blue-500" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-zinc-400 text-sm font-medium">Assigned</p>
-                        <p className="text-2xl font-bold text-green-400 mt-1">{resourceMetrics.assigned}</p>
-                        <p className="text-xs text-zinc-500 mt-1">
+                        <p className="text-muted-foreground text-sm font-medium">Assigned</p>
+                        <p className="text-2xl font-bold text-green-600 mt-1">{resourceMetrics.assigned}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {resourceMetrics.total > 0 ?
                             `${Math.round((resourceMetrics.assigned / resourceMetrics.total) * 100)}%` :
                             '0%'} of total
                         </p>
                       </div>
                       <div className="p-2.5 bg-green-500/10 rounded-lg">
-                        <TrendingUp size={20} className="text-green-500" />
+                        <TrendingUp size={20} className="text-green-600" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-zinc-400 text-sm font-medium">Available</p>
-                        <p className="text-2xl font-bold text-blue-400 mt-1">{resourceMetrics.available}</p>
-                        <p className="text-xs text-zinc-500 mt-1">Ready for assignment</p>
+                        <p className="text-muted-foreground text-sm font-medium">Available</p>
+                        <p className="text-2xl font-bold text-blue-600 mt-1">{resourceMetrics.available}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Ready for assignment</p>
                       </div>
                       <div className="p-2.5 bg-blue-500/10 rounded-lg">
-                        <Clock size={20} className="text-blue-500" />
+                        <Clock size={20} className="text-blue-600" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800">
+                <Card>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-zinc-400 text-sm font-medium">Overallocated</p>
-                        <p className="text-2xl font-bold text-red-400 mt-1">{resourceMetrics.overallocated.length}</p>
-                        <p className="text-xs text-zinc-500 mt-1">Requires attention</p>
+                        <p className="text-muted-foreground text-sm font-medium">Overallocated</p>
+                        <p className="text-2xl font-bold text-red-600 mt-1">{resourceMetrics.overallocated.length}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
                       </div>
                       <div className="p-2.5 bg-red-500/10 rounded-lg">
-                        <AlertTriangle size={20} className="text-red-500" />
+                        <AlertTriangle size={20} className="text-red-600" />
                       </div>
                     </div>
                   </CardContent>

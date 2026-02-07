@@ -35,7 +35,7 @@ export default function Dashboard() {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const { page, pageSize, skip, limit, goToPage, changePageSize } = usePagination(1, 25);
 
-  const { data: currentUser } = useQuery({
+ const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: Infinity,
@@ -61,6 +61,22 @@ export default function Dashboard() {
         sort: sortBy
       });
       return response.data;
+
+      // ✅ Normalize Base44 invoke response shapes so dashboardData.metrics/projects/pagination are real
+      const d = response?.data ?? response;
+      const normalized =
+        (d?.metrics || d?.projects || d?.pagination) ? d :
+        (d?.data?.metrics || d?.data?.projects || d?.data?.pagination) ? d.data :
+        (d?.body?.metrics || d?.body?.projects || d?.body?.pagination) ? d.body :
+        (d?.result?.metrics || d?.result?.projects || d?.result?.pagination) ? d.result :
+        d;
+
+      // ✅ Verifiable proof in console (remove later if you want)
+      console.debug('[getDashboardData] raw response:', response);
+      console.debug('[getDashboardData] normalized:', normalized);
+      console.debug('[getDashboardData] metrics keys:', Object.keys(normalized?.metrics || {}));
+
+      return normalized;
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -86,150 +102,7 @@ export default function Dashboard() {
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `dashboard-${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      toast.success('Dashboard PDF generated');
-    } catch (error) {
-      toast.error('Failed to generate PDF');
-    } finally {
-      setGeneratingPDF(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    refetchDashboard();
-    toast.success('Dashboard refreshed');
-  };
-
-  return (
-    <ErrorBoundary>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Project portfolio overview and health metrics</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={projectsFetching}>
-              <RefreshCw className={cn("h-4 w-4", projectsFetching && "animate-spin")} />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}>
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowReportScheduler(true)}>
-              <Mail className="h-4 w-4 mr-2" />
-              Schedule Report
-            </Button>
-          </div>
-        </div>
-
-        {/* Role-Based KPIs */}
-        <RoleBasedKPIs 
-          role={currentUser?.role} 
-          metrics={metrics} 
-          projects={projects} 
-        />
-
-        {/* Portfolio Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalProjects}</div>
-              <p className="text-xs text-muted-foreground">
-                {activeProjects} active
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Contract Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${(totalContractValue / 1000000).toFixed(1)}M
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Portfolio value
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Budget Variance</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className={cn(
-                "text-2xl font-bold",
-                avgBudgetVariance < 0 ? "text-red-500" : "text-green-500"
-              )}>
-                {avgBudgetVariance.toFixed(1)}%
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Average variance
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">At Risk Projects</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-500">
-                {atRiskProjects}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Require attention
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* AI Risk Analysis */}
-        {activeProjectId && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <AIRiskPanel projectId={activeProjectId} />
-            <AIForecastPanel projectId={activeProjectId} />
-          </div>
-        )}
-
-        {/* Filters */}
-        <ProjectFiltersBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          riskFilter={riskFilter}
-          setRiskFilter={setRiskFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-        />
-
-        {/* Project Health Table */}
-        {projectsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <>
-            <ProjectHealthTable
-              projects={projects}
+@@ -229,26 +244,26 @@ export default function Dashboard() {
               onProjectClick={(project) => setActiveProjectId(project.id)}
             />
             
@@ -255,4 +128,5 @@ export default function Dashboard() {
       </div>
     </ErrorBoundary>
   );
+}
 }

@@ -141,9 +141,9 @@ export default function Dashboard() {
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.totalProjects || 0}</div>
+              <div className="text-2xl font-bold">{totalProjects}</div>
               <p className="text-xs text-muted-foreground">
-                {metrics.activeProjects || 0} active
+                {activeProjects} active
               </p>
             </CardContent>
           </Card>

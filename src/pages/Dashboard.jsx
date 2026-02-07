@@ -57,14 +57,11 @@ export default function Dashboard() {
         sort: 'risk'
       });
 
-      // Normalize Base44 invoke response shapes
+      // Unwrap response.data first
       const d = response?.data ?? response;
-      const normalized =
-        (d?.metrics || d?.projects || d?.pagination) ? d :
-        (d?.data?.metrics || d?.data?.projects || d?.data?.pagination) ? d.data :
-        (d?.body?.metrics || d?.body?.projects || d?.body?.pagination) ? d.body :
-        (d?.result?.metrics || d?.result?.projects || d?.result?.pagination) ? d.result :
-        d;
+      
+      // Then unwrap nested data/body/result
+      const normalized = (d?.data || d?.body || d?.result) || d;
 
       console.debug('[getDashboardData] normalized:', normalized);
       console.debug('[getDashboardData] metrics keys:', Object.keys(normalized?.metrics || {}));

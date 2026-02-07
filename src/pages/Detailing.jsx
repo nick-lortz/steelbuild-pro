@@ -246,27 +246,27 @@ export default function Detailing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Detailing</h1>
-              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {metrics.total} SETS • {metrics.released} FFF</p>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Detailing</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {metrics.total} sets • {metrics.released} FFF</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-900/50 border-zinc-700/50 text-white h-9 text-sm rounded-lg">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800/50">
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   {userProjects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={() => setShowCreateDialog(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-xs uppercase rounded-lg shadow-lg shadow-blue-600/30">
+              <Button onClick={() => setShowCreateDialog(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
                 <Plus size={14} className="mr-1" />
-                NEW
+                New Set
               </Button>
             </div>
           </div>
@@ -274,49 +274,49 @@ export default function Detailing() {
       </div>
 
       {/* Metrics */}
-      <div className="bg-black border-b border-zinc-800/50">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="grid grid-cols-6 gap-3">
-            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30 rounded-lg">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Released</div>
-                <div className="text-2xl font-black text-green-400">{metrics.releasedPercent.toFixed(0)}%</div>
-                <div className="text-[9px] text-zinc-600">{metrics.released}/{metrics.total}</div>
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="grid grid-cols-6 gap-4">
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-green-400 uppercase tracking-wider font-semibold mb-1">Released</div>
+                <div className="text-3xl font-bold text-green-400">{metrics.releasedPercent.toFixed(0)}%</div>
+                <div className="text-[10px] text-zinc-600">{metrics.released}/{metrics.total}</div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/30 rounded-lg">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5">Action Today</div>
-                <div className="text-2xl font-black text-red-400">{metrics.actionToday}</div>
-                <div className="text-[9px] text-zinc-600">Need response</div>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-red-400 uppercase tracking-wider font-semibold mb-1">Action Today</div>
+                <div className="text-3xl font-bold text-red-400">{metrics.actionToday}</div>
+                <div className="text-[10px] text-zinc-600">Need response</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900/50 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Open RFIs</div>
-                <div className="text-2xl font-black text-blue-400">{metrics.openRFIs}</div>
-                <div className="text-[9px] text-zinc-600">Impacting</div>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Open RFIs</div>
+                <div className="text-3xl font-bold text-blue-400">{metrics.openRFIs}</div>
+                <div className="text-[10px] text-zinc-600">Impacting</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900/50 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Review</div>
-                <div className="text-2xl font-black text-white">{metrics.avgTurnaround}d</div>
-                <div className="text-[9px] text-zinc-600">Turnaround</div>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Avg Review</div>
+                <div className="text-3xl font-bold text-white">{metrics.avgTurnaround}d</div>
+                <div className="text-[10px] text-zinc-600">Turnaround</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900/50 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Review</div>
-                <div className="text-2xl font-black text-cyan-400">{metrics.byZone.external_review}</div>
-                <div className="text-[9px] text-zinc-600">Out for approval</div>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">In Review</div>
+                <div className="text-3xl font-bold text-cyan-400">{metrics.byZone.external_review}</div>
+                <div className="text-[10px] text-zinc-600">Out for approval</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900/50 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Returned</div>
-                <div className="text-2xl font-black text-red-500">{metrics.byZone.returned}</div>
-                <div className="text-[9px] text-zinc-600">Need revision</div>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Returned</div>
+                <div className="text-3xl font-bold text-red-500">{metrics.byZone.returned}</div>
+                <div className="text-[10px] text-zinc-600">Need revision</div>
               </CardContent>
             </Card>
           </div>
@@ -324,14 +324,14 @@ export default function Detailing() {
       </div>
 
       {/* Zone Filter */}
-      <div className="bg-black border-b border-zinc-800/50">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedZone('all')}
               className={cn(
                 "px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors",
-                selectedZone === 'all' ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "bg-zinc-900/50 text-zinc-400 hover:text-white border border-zinc-700/50"
+                selectedZone === 'all' ? "bg-amber-500 text-black" : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-700"
               )}
             >
               All ({metrics.total})
@@ -358,10 +358,13 @@ export default function Detailing() {
       </div>
 
       {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-sm text-zinc-500">Loading...</p>
+            </div>
           </div>
         ) : filteredSets.length === 0 ? (
           <Card className="bg-zinc-900 border-zinc-800">
@@ -380,13 +383,10 @@ export default function Detailing() {
               return (
                 <Card 
                   key={ds.id} 
-                  className={cn(
-                    "bg-zinc-900/50 border-l-4 border-zinc-700/50 hover:bg-zinc-800/30 transition-all cursor-pointer rounded-lg",
-                    CONTROL_ZONES[ds.zone]?.border
-                  )}
+                  className="bg-zinc-900 border-zinc-800 hover:bg-zinc-800/50 transition-all cursor-pointer rounded-lg"
                   onClick={() => setDetailViewSetId(ds.id)}
                 >
-                  <CardContent className="p-3">
+                  <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       {/* Priority Rank */}
                       {idx < 10 && ds.priorityScore > 100 && (

@@ -397,8 +397,8 @@ export default function Deliveries() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
            <TabsList className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg">
              <TabsTrigger value="lookAhead">

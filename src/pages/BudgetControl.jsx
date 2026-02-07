@@ -110,48 +110,51 @@ export default function BudgetControl() {
 
   if (!activeProjectId) {
     return (
-      <div className="p-6 space-y-6">
-        <PageHeader title="Budget & Cost Control" subtitle="Project cost management" />
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-12 text-center">
-            <DollarSign size={48} className="mx-auto mb-4 text-zinc-600" />
-            <p className="text-zinc-400 mb-4">Select a project to view budget controls</p>
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-[300px] mx-auto bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Select project" />
+      <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <DollarSign size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white mb-4">Select Project</h3>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Choose project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Budget Control</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">{selectedProject?.name}</p>
+            </div>
+            <Select value={activeProjectId} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
                 {projects.map((p) =>
                 <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                 )}
               </SelectContent>
             </Select>
-          </CardContent>
-        </Card>
-      </div>);
+          </div>
+        </div>
+      </div>
 
-  }
-
-  return (
-    <div className="text-slate-50 p-6 space-y-6">
-      <PageHeader
-        title="Budget & Cost Control"
-        subtitle={selectedProject?.name}
-        actions={
-        <Select value={activeProjectId} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-[300px] bg-zinc-900 border-zinc-800">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((p) =>
-            <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-            )}
-            </SelectContent>
-          </Select>
-        } />
-
-
-      <Tabs defaultValue="overview" className="space-y-4">
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="by-package">By Work Package</TabsTrigger>
@@ -237,6 +240,7 @@ export default function BudgetControl() {
 
         </TabsContent>
       </Tabs>
-    </div>);
-
+      </div>
+    </div>
+  );
 }

@@ -391,15 +391,15 @@ ${user?.full_name || 'Project Team'}
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">RFI Management</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">
-                {kpis.total} TOTAL • {kpis.awaitingAction} AWAITING ACTION • {kpis.overdue} OVERDUE
+              <h1 className="text-3xl font-bold text-white tracking-tight">RFI Management</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">
+                {kpis.total} total • {kpis.awaitingAction} awaiting action • {kpis.overdue} overdue
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -435,7 +435,7 @@ ${user?.full_name || 'Project Team'}
       {/* Alert Bar */}
       {kpis.overdue > 0 && (
         <div className="border-b border-red-800 bg-red-950/20">
-          <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="max-w-[1800px] mx-auto px-8 py-3">
             <div className="flex items-center gap-2 text-red-500">
               <AlertTriangle size={16} />
               <span className="text-xs font-bold uppercase tracking-widest">
@@ -446,8 +446,8 @@ ${user?.full_name || 'Project Team'}
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
           <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="inbox">

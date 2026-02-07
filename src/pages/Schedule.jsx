@@ -315,15 +315,15 @@ export default function Schedule() {
 
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-black">
-      {/* Modern Header */}
-      <div className="border-b border-zinc-800 bg-zinc-950">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
         <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Schedule Management</h1>
-              <p className="text-sm text-zinc-400">
-                Enterprise project scheduling with multi-project support, dependencies, and resource management
+              <h1 className="text-3xl font-bold text-white tracking-tight">Schedule</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">
+                multi-project scheduling with dependencies
               </p>
             </div>
             <Button
@@ -335,36 +335,50 @@ export default function Schedule() {
               Add Task
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* KPI Bar */}
+      {/* Metrics */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
           <div className="grid grid-cols-5 gap-4">
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-              <div className="text-xs text-zinc-500 uppercase mb-1">Total Tasks</div>
-              <div className="text-2xl font-bold text-white">{statusCounts.all}</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-              <div className="text-xs text-zinc-500 uppercase mb-1">Not Started</div>
-              <div className="text-2xl font-bold text-zinc-300">{statusCounts.not_started}</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-              <div className="text-xs text-zinc-500 uppercase mb-1">In Progress</div>
-              <div className="text-2xl font-bold text-blue-400">{statusCounts.in_progress}</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-              <div className="text-xs text-zinc-500 uppercase mb-1">Completed</div>
-              <div className="text-2xl font-bold text-green-400">{statusCounts.completed}</div>
-            </div>
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
-              <div className="text-xs text-zinc-500 uppercase mb-1">Overdue</div>
-              <div className="text-2xl font-bold text-red-400">{statusCounts.overdue}</div>
-            </div>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Total Tasks</div>
+                <div className="text-3xl font-bold text-white">{statusCounts.all}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Not Started</div>
+                <div className="text-3xl font-bold text-zinc-300">{statusCounts.not_started}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-blue-400 uppercase tracking-wider font-semibold mb-1">In Progress</div>
+                <div className="text-3xl font-bold text-blue-400">{statusCounts.in_progress}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-green-400 uppercase tracking-wider font-semibold mb-1">Completed</div>
+                <div className="text-3xl font-bold text-green-400">{statusCounts.completed}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-red-400 uppercase tracking-wider font-semibold mb-1">Overdue</div>
+                <div className="text-3xl font-bold text-red-400">{statusCounts.overdue}</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-zinc-950/50">
-        <div className="max-w-[1800px] mx-auto px-8 py-4">
+      {/* Filters */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
           <div className="flex items-center gap-4">
             {/* Project Selector - Multi-select */}
             <div className="w-80">
@@ -558,7 +572,7 @@ export default function Schedule() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Content */}
       <div className="max-w-[1800px] mx-auto px-8 py-6">
         {activeProjectIds.length === 0 ? (
           <div className="flex items-center justify-center py-32">

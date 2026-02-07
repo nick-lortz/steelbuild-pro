@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -18,8 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Hash, Trash2 } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
 import { validateTextLength, validateForm } from '@/components/shared/validation';
@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 const initialFormState = {
   code: '',
@@ -43,12 +44,46 @@ const initialFormState = {
 };
 
 const categoryColors = {
-  labor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  material: "bg-green-500/20 text-green-400 border-green-500/30",
-  equipment: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  subcontract: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  other: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
+  labor: "bg-blue-500/15 text-blue-600 border-blue-500/25",
+  material: "bg-green-500/15 text-green-600 border-green-500/25",
+  equipment: "bg-purple-500/15 text-purple-600 border-purple-500/25",
+  subcontract: "bg-orange-500/15 text-orange-600 border-orange-500/25",
+  other: "bg-muted text-muted-foreground border-border",
 };
+
+function SectionHeader({ title, subtitle, right }) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-3 border-b border-border">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        {subtitle ? <p className="text-xs text-muted-foreground mt-1">{subtitle}</p> : null}
+      </div>
+      {right ? <div className="shrink-0">{right}</div> : null}
+    </div>
+  );
+}
+
+function KPI({ label, value, tone }) {
+  const toneClasses =
+    tone === 'labor' ? "text-blue-600" :
+    tone === 'material' ? "text-green-600" :
+    tone === 'equipment' ? "text-purple-600" :
+    tone === 'subcontract' ? "text-orange-600" :
+    "text-muted-foreground";
+
+  return (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-1">
+          {label}
+        </div>
+        <div className={cn("text-2xl font-bold", toneClasses)}>
+          {value}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function CostCodes() {
   const [showForm, setShowForm] = useState(false);
@@ -96,21 +131,20 @@ export default function CostCodes() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validate
+
     const validation = validateForm({
-      code: validateTextLength(formData.code, 'name'),
+      code: validateTextLength(formData.code, 'code'),
       name: validateTextLength(formData.name, 'name'),
-      unit: validateTextLength(formData.unit, 'name')
+      unit: validateTextLength(formData.unit, 'unit')
     });
-    
+
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       return;
     }
-    
+
     setValidationErrors({});
-    
+
     if (editingCode) {
       updateMutation.mutate({ id: editingCode.id, data: formData });
     } else {
@@ -124,9 +158,9 @@ export default function CostCodes() {
     setShowForm(true);
   };
 
-  const filteredCodes = useMemo(() => 
+  const filteredCodes = useMemo(() =>
     costCodes.filter(c => {
-      const matchesSearch = 
+      const matchesSearch =
         c.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || c.category === categoryFilter;
@@ -135,12 +169,20 @@ export default function CostCodes() {
     [costCodes, searchTerm, categoryFilter]
   );
 
+  const categoryCounts = useMemo(() => ({
+    labor: costCodes.filter(c => c.category === 'labor').length,
+    material: costCodes.filter(c => c.category === 'material').length,
+    equipment: costCodes.filter(c => c.category === 'equipment').length,
+    subcontract: costCodes.filter(c => c.category === 'subcontract').length,
+    other: costCodes.filter(c => c.category === 'other').length,
+  }), [costCodes]);
+
   const columns = [
     {
       header: 'Code',
       accessor: 'code',
       render: (row) => (
-        <span className="font-mono text-amber-500 font-medium">{row.code}</span>
+        <span className="font-mono font-semibold text-amber-600">{row.code}</span>
       ),
     },
     {
@@ -151,24 +193,29 @@ export default function CostCodes() {
       header: 'Category',
       accessor: 'category',
       render: (row) => (
-        <Badge variant="outline" className={`${categoryColors[row.category]} border font-medium`}>
-          {row.category?.replace('_', ' ').toUpperCase()}
+        <Badge variant="outline" className={cn("border font-medium", categoryColors[row.category] || categoryColors.other)}>
+          {row.category?.replace('_', ' ').charAt(0).toUpperCase() + row.category?.replace('_', ' ').slice(1)}
         </Badge>
       ),
     },
     {
       header: 'Unit',
       accessor: 'unit',
-      render: (row) => row.unit || '-',
+      render: (row) => row.unit || '—',
     },
     {
       header: 'Status',
       accessor: 'is_active',
       render: (row) => (
-        <Badge variant="outline" className={row.is_active 
-          ? "bg-green-500/20 text-green-400 border-green-500/30"
-          : "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
-        }>
+        <Badge
+          variant="outline"
+          className={cn(
+            "border",
+            row.is_active
+              ? "bg-green-500/15 text-green-600 border-green-500/25"
+              : "bg-muted text-muted-foreground border-border"
+          )}
+        >
           {row.is_active ? 'Active' : 'Inactive'}
         </Badge>
       ),
@@ -184,93 +231,69 @@ export default function CostCodes() {
             e.stopPropagation();
             setDeleteCode(row);
           }}
-          className="text-zinc-500 hover:text-red-500"
+          className="text-muted-foreground hover:text-red-600"
         >
-          <Trash2 size={16} />
+          <Trash2 className="h-4 w-4" />
         </Button>
       ),
     },
   ];
 
-  const categoryCounts = useMemo(() => ({
-    labor: costCodes.filter(c => c.category === 'labor').length,
-    material: costCodes.filter(c => c.category === 'material').length,
-    equipment: costCodes.filter(c => c.category === 'equipment').length,
-    subcontract: costCodes.filter(c => c.category === 'subcontract').length,
-    other: costCodes.filter(c => c.category === 'other').length,
-  }), [costCodes]);
-
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Cost Code Library</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">{filteredCodes.length} CODES</p>
-            </div>
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setEditingCode(null);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-            >
-              <Plus size={14} className="mr-1" />
-              NEW
-            </Button>
-          </div>
+    <div className="space-y-6 max-w-[1800px] mx-auto">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Cost Code Library</h1>
+          <p className="text-muted-foreground mt-2">
+            {filteredCodes.length} codes • {costCodes.length} total
+          </p>
         </div>
+
+        <Button
+          onClick={() => {
+            setFormData(initialFormState);
+            setEditingCode(null);
+            setShowForm(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          New Cost Code
+        </Button>
       </div>
 
       {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-5 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">LABOR</div>
-              <div className="text-2xl font-bold font-mono text-blue-500">{categoryCounts.labor}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">MATERIAL</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{categoryCounts.material}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">EQUIPMENT</div>
-              <div className="text-2xl font-bold font-mono text-purple-500">{categoryCounts.equipment}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SUBCONTRACT</div>
-              <div className="text-2xl font-bold font-mono text-orange-500">{categoryCounts.subcontract}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">OTHER</div>
-              <div className="text-2xl font-bold font-mono text-zinc-500">{categoryCounts.other}</div>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KPI label="Labor" value={categoryCounts.labor} tone="labor" />
+        <KPI label="Material" value={categoryCounts.material} tone="material" />
+        <KPI label="Equipment" value={categoryCounts.equipment} tone="equipment" />
+        <KPI label="Subcontract" value={categoryCounts.subcontract} tone="subcontract" />
+        <KPI label="Other" value={categoryCounts.other} tone="other" />
       </div>
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+      {/* Search + Filter */}
+      <Card>
+        <SectionHeader
+          title="Search & Filter"
+          subtitle="Search by code or name. Filter by category."
+        />
+        <CardContent className="pt-4">
+          <div className="flex gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="SEARCH CODES..."
+                placeholder="Search codes…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
+                className="pl-9"
               />
             </div>
+
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+              <SelectTrigger className="w-56">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="labor">Labor</SelectItem>
                 <SelectItem value="material">Material</SelectItem>
@@ -280,25 +303,47 @@ export default function CostCodes() {
               </SelectContent>
             </Select>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <DataTable
-          columns={columns}
-          data={filteredCodes}
-          onRowClick={handleEdit}
-          emptyMessage="No cost codes found. Create your first cost code to get started."
+      {/* Table */}
+      <Card>
+        <SectionHeader
+          title="Cost Codes"
+          subtitle={isLoading ? "Loading…" : "Click a row to edit."}
+          right={
+            <Badge variant="outline">
+              {filteredCodes.length} showing
+            </Badge>
+          }
         />
-      </div>
+        <CardContent className="pt-4">
+          <DataTable
+            columns={columns}
+            data={filteredCodes}
+            onRowClick={handleEdit}
+            emptyMessage="No cost codes found. Create your first cost code to get started."
+          />
+        </CardContent>
+      </Card>
 
       {/* Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-white">
+      <Dialog
+        open={showForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) {
+            setEditingCode(null);
+            setFormData(initialFormState);
+            setValidationErrors({});
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editingCode ? 'Edit Cost Code' : 'New Cost Code'}</DialogTitle>
           </DialogHeader>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Code *</Label>
@@ -308,12 +353,13 @@ export default function CostCodes() {
                 placeholder="e.g., 05100"
                 maxLength={50}
                 required
-                className="bg-zinc-800 border-zinc-700 font-mono"
+                className="font-mono"
               />
               {validationErrors.code && (
-                <p className="text-xs text-red-400 mt-1">{validationErrors.code}</p>
+                <p className="text-xs text-red-600">{validationErrors.code}</p>
               )}
             </div>
+
             <div className="space-y-2">
               <Label>Name *</Label>
               <Input
@@ -322,19 +368,19 @@ export default function CostCodes() {
                 placeholder="Cost code description"
                 maxLength={100}
                 required
-                className="bg-zinc-800 border-zinc-700"
               />
               {validationErrors.name && (
-                <p className="text-xs text-red-400 mt-1">{validationErrors.name}</p>
+                <p className="text-xs text-red-600">{validationErrors.name}</p>
               )}
             </div>
+
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select 
-                value={formData.category} 
+              <Select
+                value={formData.category}
                 onValueChange={(v) => setFormData({ ...formData, category: v })}
               >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -346,6 +392,7 @@ export default function CostCodes() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label>Unit of Measure</Label>
               <Input
@@ -353,12 +400,12 @@ export default function CostCodes() {
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 placeholder="e.g., LF, EA, TON, HR"
                 maxLength={20}
-                className="bg-zinc-800 border-zinc-700"
               />
               {validationErrors.unit && (
-                <p className="text-xs text-red-400 mt-1">{validationErrors.unit}</p>
+                <p className="text-xs text-red-600">{validationErrors.unit}</p>
               )}
             </div>
+
             <div className="flex items-center justify-between py-2">
               <Label>Active</Label>
               <Switch
@@ -366,21 +413,13 @@ export default function CostCodes() {
                 onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
               />
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowForm(false)}
-                className="border-zinc-700"
-              >
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save'}
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {createMutation.isPending || updateMutation.isPending ? 'Saving…' : 'Save'}
               </Button>
             </div>
           </form>
@@ -389,21 +428,18 @@ export default function CostCodes() {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteCode} onOpenChange={() => setDeleteCode(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Cost Code?</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete cost code "{deleteCode?.code} - {deleteCode?.name}"? 
-              This action cannot be undone.
+            <AlertDialogTitle>Delete Cost Code?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete "{deleteCode?.code} — {deleteCode?.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteCode.id)}
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-red-600 hover:bg-red-700"
             >
               Delete
             </AlertDialogAction>

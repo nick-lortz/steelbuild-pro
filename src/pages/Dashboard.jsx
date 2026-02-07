@@ -155,7 +155,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${((metrics.totalContractValue || 0) / 1000000).toFixed(1)}M
+                ${(totalContractValue / 1000000).toFixed(1)}M
               </div>
               <p className="text-xs text-muted-foreground">
                 Portfolio value

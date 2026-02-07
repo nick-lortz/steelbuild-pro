@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Package, Trash2, FileText, ArrowRight, Truck, DollarSign, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Package, Trash2, FileText, ArrowRight, Truck, DollarSign, CheckCircle2, Clock, AlertTriangle, Download } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ export default function WorkPackages() {
   const [viewingPackage, setViewingPackage] = useState(null);
   const [deletePackage, setDeletePackage] = useState(null);
   const [phaseFilter, setPhaseFilter] = useState('all');
+  const [generatingPDF, setGeneratingPDF] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -186,6 +187,27 @@ export default function WorkPackages() {
   }, [workPackages]);
 
   const selectedProject = projects.find(p => p.id === activeProjectId);
+
+  const generatePDF = async (packageId) => {
+    try {
+      setGeneratingPDF(packageId);
+      const response = await base44.functions.invoke('generateWorkPackagePDF', { work_package_id: packageId });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `WorkPackage_${packageId.slice(0, 8)}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success('PDF generated');
+    } catch (error) {
+      toast.error('PDF generation failed: ' + (error?.message || 'Unknown error'));
+    } finally {
+      setGeneratingPDF(null);
+    }
+  };
 
   if (!activeProjectId) {
     return (

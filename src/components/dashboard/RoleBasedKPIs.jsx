@@ -46,11 +46,11 @@ export default function RoleBasedKPIs({ role, metrics, projects }) {
       value: `${(metrics.avgBudgetVariance || 0) >= 0 ? '+' : ''}${(metrics.avgBudgetVariance || 0).toFixed(1)}%`,
       icon: DollarSign,
       subtitle: (metrics.totalBudget || 0) > 0 
-        ? `$${((metrics.totalActual || 0) / 1000).toFixed(0)}K / $${((metrics.totalBudget || 0) / 1000).toFixed(0)}K` 
+        ? `$${((metrics.totalActual + metrics.totalCommitted || 0) / 1000).toFixed(0)}K / $${((metrics.totalBudget || 0) / 1000).toFixed(0)}K` 
         : 'No data',
       color: (metrics.avgBudgetVariance || 0) > 10 ? 'bg-red-500' : 
              (metrics.avgBudgetVariance || 0) > 0 ? 'bg-amber-500' : 
-             (metrics.avgBudgetVariance || 0) === 0 ? 'bg-zinc-700' : 'bg-green-500'
+             (metrics.avgBudgetVariance || 0) < 0 ? 'bg-green-500' : 'bg-zinc-700'
     },
     {
       label: 'Schedule Performance',

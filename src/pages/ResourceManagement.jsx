@@ -583,16 +583,16 @@ export default function ResourceManagement() {
                         }
                       />
                     </div>
-                    <CardContent>
+                    <CardContent className="pt-4">
                       <div className="space-y-3">
                         {resourceMetrics.overallocated.slice(0, 5).map((resource) => (
-                          <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
+                          <div key={resource.id} className="p-3 rounded-lg border bg-card">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-white">{resource.name}</p>
-                                <p className="text-sm text-zinc-400 capitalize">{resource.type}</p>
+                                <p className="font-medium">{resource.name}</p>
+                                <p className="text-sm text-muted-foreground capitalize">{resource.type}</p>
                               </div>
-                              <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">
+                              <Badge variant="outline" className="bg-red-500/20 text-red-700 border-red-500/30">
                                 {resource.taskCount} active tasks
                               </Badge>
                             </div>
@@ -605,23 +605,27 @@ export default function ResourceManagement() {
 
                 {/* Underutilized Resources */}
                 {resourceMetrics.underutilized.length > 0 && (
-                  <Card className="bg-amber-500/5 border-amber-500/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Clock className="text-amber-500" size={18} />
-                        Underutilized Resources ({resourceMetrics.underutilized.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <Card>
+                    <div className="px-6 pt-5 pb-3 border-b border-border">
+                      <SectionHeader 
+                        title={
+                          <div className="flex items-center gap-2">
+                            <Clock className="text-amber-600" size={18} />
+                            <span>Underutilized Resources ({resourceMetrics.underutilized.length})</span>
+                          </div>
+                        }
+                      />
+                    </div>
+                    <CardContent className="pt-4">
                       <div className="space-y-3">
                         {resourceMetrics.underutilized.slice(0, 5).map((resource) => (
-                          <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
+                          <div key={resource.id} className="p-3 rounded-lg border bg-card">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-white">{resource.name}</p>
-                                <p className="text-sm text-zinc-400 capitalize">{resource.type}</p>
+                                <p className="font-medium">{resource.name}</p>
+                                <p className="text-sm text-muted-foreground capitalize">{resource.type}</p>
                               </div>
-                              <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                              <Badge variant="outline" className="bg-amber-500/20 text-amber-700 border-amber-500/30">
                                 No assignments
                               </Badge>
                             </div>

@@ -249,46 +249,29 @@ Deno.serve(async (req) => {
     const duration = Date.now() - startTime;
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
 
-    // Debug logging
-    console.warn('METRICS DEBUG:', JSON.stringify({
-      totalContractValue,
-      totalBudget,
-      totalActual,
-      totalCommitted,
-      totalCost,
-      avgBudgetVariance,
-      avgScheduleProgress,
-      criticalIssues,
-      activeProjects,
-      atRiskProjects,
-      projectCount: projectsWithHealth.length
-    }));
 
-    const metricsResponse = {
-      totalProjects: projectsWithHealth.length,
-      activeProjects,
-      atRiskProjects,
-      overdueTasks,
-      upcomingMilestones,
-      totalContractValue,
-      avgBudgetVariance,
-      avgScheduleProgress,
-      criticalIssues,
-      openRFIs,
-      overdueRFIs,
-      pendingApprovals,
-      portfolioGrowth,
-      totalBudget,
-      totalActual,
-      totalCommitted
-    };
-
-    console.warn('FINAL METRICS:', JSON.stringify(metricsResponse));
 
     return Response.json({
       projects: paginated,
       pagination: { page, pageSize, totalFiltered, totalProjects: projectsWithHealth.length },
-      metrics: metricsResponse
+      metrics: {
+        totalProjects: projectsWithHealth.length,
+        activeProjects,
+        atRiskProjects,
+        overdueTasks,
+        upcomingMilestones,
+        totalContractValue,
+        avgBudgetVariance,
+        avgScheduleProgress,
+        criticalIssues,
+        openRFIs,
+        overdueRFIs,
+        pendingApprovals,
+        portfolioGrowth,
+        totalBudget,
+        totalActual,
+        totalCommitted
+      }
     });
 
   } catch (error) {

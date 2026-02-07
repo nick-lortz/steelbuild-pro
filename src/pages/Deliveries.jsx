@@ -358,7 +358,7 @@ export default function Deliveries() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
+      <div className="border-b border-purple-500/30 bg-gradient-to-r from-purple-600/5 via-zinc-950 to-black">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -373,7 +373,7 @@ export default function Deliveries() {
                   setEditingDelivery(null);
                   setShowWizard(true);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-blue-600/30"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-purple-600/30"
               >
                 <Plus size={14} className="mr-1" />
                 NEW DELIVERY

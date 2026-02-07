@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue } from
 "@/components/ui/select";
-import { Building, RefreshCw, Plus, Download, Upload, AlertCircle, Edit, Trash2, Check, X, TrendingUp } from 'lucide-react';
+import { Building, RefreshCw, Plus, Download, Upload, AlertCircle, Edit, Trash2, Check, X, TrendingUp, AlertTriangle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import {
   Dialog,

@@ -231,6 +231,7 @@ function WorkPackages() {
       id, 
       data: {
         ...editData,
+        name: editData.name,
         progress_percent: Number(editData.progress_percent),
         budget_amount: Number(editData.budget_amount)
       }

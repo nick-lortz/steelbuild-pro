@@ -17,7 +17,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ReportScheduler from '@/components/reports/ReportScheduler';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function BudgetControl() {
   const [selectedProject, setSelectedProject] = useState('');
@@ -151,8 +150,7 @@ export default function BudgetControl() {
 
   return (
     <ErrorBoundary>
-      <TooltipProvider>
-        <div className="space-y-6 max-w-[1800px] mx-auto">
+      <div className="space-y-6 max-w-[1800px] mx-auto">
           {/* Header */}
           <div className="flex items-start justify-between">
             <div>
@@ -239,141 +237,99 @@ export default function BudgetControl() {
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Control Snapshot</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Budget Remaining</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className="text-2xl font-bold">
-                                ${((snapshot.budgetRemaining || 0) / 1000).toFixed(0)}K
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {((snapshot.budgetRemaining / (snapshot.currentBudget || 1)) * 100).toFixed(0)}% remaining
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Current budget minus actuals to date</TooltipContent>
-                      </Tooltip>
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Budget Remaining</p>
+                          </div>
+                          <div className="text-2xl font-bold">
+                            ${((snapshot.budgetRemaining || 0) / 1000).toFixed(0)}K
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {((snapshot.budgetRemaining / (snapshot.currentBudget || 1)) * 100).toFixed(0)}% remaining
+                          </p>
+                        </CardContent>
+                      </Card>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Committed Remaining</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className="text-2xl font-bold text-orange-500">
-                                ${((snapshot.committedRemaining || 0) / 1000).toFixed(0)}K
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">Exposure</p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Committed costs not yet invoiced</TooltipContent>
-                      </Tooltip>
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Committed Remaining</p>
+                          </div>
+                          <div className="text-2xl font-bold text-orange-500">
+                            ${((snapshot.committedRemaining || 0) / 1000).toFixed(0)}K
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Exposure</p>
+                        </CardContent>
+                      </Card>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Cost to Date</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className="text-2xl font-bold text-red-500">
-                                ${((snapshot.costToDate || 0) / 1000).toFixed(0)}K
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">Actuals</p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Total expenses invoiced to date</TooltipContent>
-                      </Tooltip>
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Cost to Date</p>
+                          </div>
+                          <div className="text-2xl font-bold text-red-500">
+                            ${((snapshot.costToDate || 0) / 1000).toFixed(0)}K
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Actuals</p>
+                        </CardContent>
+                      </Card>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">ETC</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className="text-2xl font-bold text-blue-500">
-                                ${((snapshot.etc || 0) / 1000).toFixed(0)}K
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">To complete</p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Estimate to Complete - remaining costs</TooltipContent>
-                      </Tooltip>
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">ETC</p>
+                          </div>
+                          <div className="text-2xl font-bold text-blue-500">
+                            ${((snapshot.etc || 0) / 1000).toFixed(0)}K
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">To complete</p>
+                        </CardContent>
+                      </Card>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">EAC</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className="text-2xl font-bold text-purple-500">
-                                ${((snapshot.eac || 0) / 1000).toFixed(0)}K
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">Final forecast</p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Estimate at Completion = Actuals + ETC</TooltipContent>
-                      </Tooltip>
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">EAC</p>
+                          </div>
+                          <div className="text-2xl font-bold text-purple-500">
+                            ${((snapshot.eac || 0) / 1000).toFixed(0)}K
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">Final forecast</p>
+                        </CardContent>
+                      </Card>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card className={cn(
-                            "border-2",
-                            (snapshot.projectedVariance || 0) >= 0 ? "border-green-500/50 bg-green-500/5" : "border-red-500/50 bg-red-500/5"
-                          )}>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Variance</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className={cn("text-2xl font-bold", getVarianceColor(snapshot.projectedVariance || 0))}>
-                                {(snapshot.projectedVariance || 0) >= 0 ? '+' : ''}
-                                ${((snapshot.projectedVariance || 0) / 1000).toFixed(0)}K
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {(snapshot.projectedVariancePct || 0).toFixed(1)}%
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Budget minus EAC</TooltipContent>
-                      </Tooltip>
+                      <Card className={cn(
+                        "border-2",
+                        (snapshot.projectedVariance || 0) >= 0 ? "border-green-500/50 bg-green-500/5" : "border-red-500/50 bg-red-500/5"
+                      )}>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Variance</p>
+                          </div>
+                          <div className={cn("text-2xl font-bold", getVarianceColor(snapshot.projectedVariance || 0))}>
+                            {(snapshot.projectedVariance || 0) >= 0 ? '+' : ''}
+                            ${((snapshot.projectedVariance || 0) / 1000).toFixed(0)}K
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(snapshot.projectedVariancePct || 0).toFixed(1)}%
+                          </p>
+                        </CardContent>
+                      </Card>
 
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Card>
-                            <CardContent className="pt-4">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Burn Rate</p>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </div>
-                              <div className="text-2xl font-bold">
-                                ${((snapshot.spendVelocity30d || 0) / 1000).toFixed(1)}K/d
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                7d: ${((snapshot.spendVelocity7d || 0) / 1000).toFixed(1)}K/d
-                              </p>
-                            </CardContent>
-                          </Card>
-                        </TooltipTrigger>
-                        <TooltipContent>Average daily spend (30-day window)</TooltipContent>
-                      </Tooltip>
+                      <Card>
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Burn Rate</p>
+                          </div>
+                          <div className="text-2xl font-bold">
+                            ${((snapshot.spendVelocity30d || 0) / 1000).toFixed(1)}K/d
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            7d: ${((snapshot.spendVelocity7d || 0) / 1000).toFixed(1)}K/d
+                          </p>
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
 
@@ -790,7 +746,6 @@ export default function BudgetControl() {
             </SheetContent>
           </Sheet>
         </div>
-      </TooltipProvider>
     </ErrorBoundary>
   );
 }

@@ -70,36 +70,36 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black text-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-zinc-800">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-zinc-950 to-zinc-950" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32">
+      <section className="relative overflow-hidden border-b border-zinc-800/50">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-zinc-950 to-black" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-40">
           <div className="text-center space-y-8">
             <div className="flex justify-center">
-              <div className="w-20 h-20 bg-amber-500 rounded-2xl flex items-center justify-center">
-                <Building2 size={40} className="text-black" />
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <Building2 size={40} className="text-white" />
               </div>
             </div>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
-              SteelBuild <span className="text-amber-500">Pro</span>
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tighter">
+              SteelBuild <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Pro</span>
             </h1>
-            <p className="text-xl sm:text-2xl text-zinc-400 max-w-3xl mx-auto">
+            <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto font-light">
               Complete project management platform for structural steel fabricators
             </p>
-            <p className="text-lg text-zinc-500 max-w-2xl mx-auto">
+            <p className="text-base text-zinc-500 max-w-2xl mx-auto">
               Manage drawings, budgets, schedules, and teams from a single unified platform. 
               Powered by AI insights and real-time analytics.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Link to={createPageUrl('Dashboard')}>
-                <Button className="bg-amber-500 hover:bg-amber-600 text-black text-lg px-8 py-6">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
                   Get Started
                   <ArrowRight size={20} className="ml-2" />
                 </Button>
               </Link>
               <Link to={createPageUrl('Projects')}>
-                <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800 text-lg px-8 py-6">
+                <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800/50 text-lg px-10 py-7 font-semibold rounded-lg bg-zinc-800/20">
                   View Projects
                 </Button>
               </Link>
@@ -109,22 +109,22 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Everything You Need</h2>
-          <p className="text-zinc-400 text-lg">Comprehensive tools for structural steel project management</p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
+        <div className="text-center mb-20">
+          <h2 className="text-5xl font-bold mb-4 tracking-tight">Everything You Need</h2>
+          <p className="text-zinc-400 text-lg font-light">Comprehensive tools for structural steel project management</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, idx) => {
             const Icon = feature.icon;
             return (
-              <Card key={idx} className="bg-zinc-900 border-zinc-800 hover:border-amber-500/50 transition-all">
+              <Card key={idx} className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-blue-500/50 transition-all rounded-lg">
                 <CardContent className="p-6 space-y-3">
-                  <div className="w-12 h-12 bg-amber-500/10 rounded-lg flex items-center justify-center">
-                    <Icon size={24} className="text-amber-500" />
+                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                    <Icon size={24} className="text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
-                  <p className="text-sm text-zinc-400">{feature.description}</p>
+                  <h3 className="text-base font-semibold text-white">{feature.title}</h3>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             );
@@ -133,39 +133,39 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="bg-zinc-900/50 border-y border-zinc-800 py-24">
+      <section className="bg-gradient-to-b from-zinc-900/30 to-black border-y border-zinc-800/50 py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-6">Built for Steel Fabricators</h2>
-              <p className="text-zinc-400 text-lg mb-8">
+              <h2 className="text-5xl font-bold mb-6 tracking-tight">Built for Steel Fabricators</h2>
+              <p className="text-zinc-400 text-base mb-10 leading-relaxed font-light">
                 SteelBuild Pro is specifically designed to handle the complexities of structural steel fabrication projects, 
                 from initial detailing through final erection.
               </p>
               <div className="space-y-4">
                 {benefits.map((benefit, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <CheckCircle size={20} className="text-amber-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-zinc-300">{benefit}</p>
+                    <CheckCircle size={20} className="text-emerald-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-zinc-300 text-sm">{benefit}</p>
                   </div>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-zinc-900 border-zinc-800 p-6">
-                <div className="text-3xl font-bold text-amber-500 mb-2">99.9%</div>
+              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
+                <div className="text-3xl font-bold text-blue-400 mb-2">99.9%</div>
                 <p className="text-sm text-zinc-400">System Uptime</p>
               </Card>
-              <Card className="bg-zinc-900 border-zinc-800 p-6">
-                <div className="text-3xl font-bold text-amber-500 mb-2">Real-time</div>
+              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
+                <div className="text-3xl font-bold text-cyan-400 mb-2">Real-time</div>
                 <p className="text-sm text-zinc-400">Data Updates</p>
               </Card>
-              <Card className="bg-zinc-900 border-zinc-800 p-6">
-                <div className="text-3xl font-bold text-amber-500 mb-2">AI-Powered</div>
+              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
+                <div className="text-3xl font-bold text-blue-400 mb-2">AI-Powered</div>
                 <p className="text-sm text-zinc-400">Insights</p>
               </Card>
-              <Card className="bg-zinc-900 border-zinc-800 p-6">
-                <div className="text-3xl font-bold text-amber-500 mb-2">24/7</div>
+              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
+                <div className="text-3xl font-bold text-cyan-400 mb-2">24/7</div>
                 <p className="text-sm text-zinc-400">Access</p>
               </Card>
             </div>
@@ -174,15 +174,15 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <Card className="bg-gradient-to-br from-amber-500/10 to-zinc-900 border-amber-500/20">
-          <CardContent className="p-12 text-center space-y-6">
-            <h2 className="text-4xl font-bold">Ready to Transform Your Projects?</h2>
-            <p className="text-xl text-zinc-400 max-w-2xl mx-auto">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
+        <Card className="bg-gradient-to-br from-blue-600/10 to-black border-blue-500/30 rounded-lg overflow-hidden">
+          <CardContent className="p-16 text-center space-y-6">
+            <h2 className="text-5xl font-bold tracking-tight">Ready to Transform Your Projects?</h2>
+            <p className="text-lg text-zinc-400 max-w-2xl mx-auto font-light">
               Join fabricators who are streamlining their operations with SteelBuild Pro
             </p>
             <Link to={createPageUrl('Dashboard')}>
-              <Button className="bg-amber-500 hover:bg-amber-600 text-black text-lg px-8 py-6">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
                 Start Managing Projects
                 <ArrowRight size={20} className="ml-2" />
               </Button>
@@ -192,12 +192,12 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 py-8">
+      <footer className="border-t border-zinc-800/50 py-8 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-                <Building2 size={16} className="text-black" />
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
+                <Building2 size={16} className="text-white" />
               </div>
               <span className="font-bold">SteelBuild Pro</span>
             </div>

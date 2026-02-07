@@ -249,6 +249,20 @@ Deno.serve(async (req) => {
     const duration = Date.now() - startTime;
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
 
+    // Debug logging
+    console.log('METRICS DEBUG:', {
+      totalContractValue,
+      totalBudget,
+      totalActual,
+      totalCommitted,
+      totalCost,
+      avgBudgetVariance,
+      avgScheduleProgress,
+      criticalIssues,
+      activeProjects,
+      atRiskProjects
+    });
+
     return Response.json({
       projects: paginated,
       pagination: { page, pageSize, totalFiltered, totalProjects: projectsWithHealth.length },

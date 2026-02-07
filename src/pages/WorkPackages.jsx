@@ -26,7 +26,7 @@ import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 /** ---------------------------
  * Helpers: normalization/transform
  * --------------------------- */
-function toApiPayload(formLike: any) {
+function toApiPayload(formLike) {
   return {
     // common fields
     name: formLike.name,
@@ -44,7 +44,7 @@ function toApiPayload(formLike: any) {
   };
 }
 
-function normalizeWorkPackage(p: any) {
+function normalizeWorkPackage(p) {
   const progress_pct = Number(p?.progress_pct ?? p?.progress_percent ?? 0);
   const budget = Number(p?.budget ?? p?.budget_amount ?? 0);
   const actual = Number(p?.actual ?? 0);
@@ -61,7 +61,7 @@ function normalizeWorkPackage(p: any) {
   };
 }
 
-function normalizeTasks(tasks: any[]) {
+function normalizeTasks(tasks) {
   return (tasks ?? []).map((t) => ({
     ...t,
     progress_pct: Number(t?.progress_pct ?? t?.progress_percent ?? 0),
@@ -89,10 +89,10 @@ function WorkPackages() {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [showNewPackage, setShowNewPackage] = useState(false);
   const [showDetailSheet, setShowDetailSheet] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<any>(null);
-  const [editingCardId, setEditingCardId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>({});
-  const [deleteConfirm, setDeleteConfirm] = useState<any>(null);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [editingCardId, setEditingCardId] = useState(null);
+  const [editData, setEditData] = useState({});
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showAI, setShowAI] = useState(true);
 
   const queryClient = useQueryClient();
@@ -112,7 +112,7 @@ function WorkPackages() {
   const projects = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter((p: any) =>
+    return allProjects.filter((p) =>
       p.project_manager === currentUser.email ||
       p.superintendent === currentUser.email ||
       (p.assigned_users && p.assigned_users.includes(currentUser.email))
@@ -189,31 +189,31 @@ function WorkPackages() {
     let filtered = packages;
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter((p: any) => p.status === statusFilter);
+    filtered = filtered.filter((p) => p.status === statusFilter);
     }
 
     if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      filtered = filtered.filter((p: any) => p.name?.toLowerCase().includes(q));
+    const q = searchTerm.toLowerCase();
+    filtered = filtered.filter((p) => p.name?.toLowerCase().includes(q));
     }
 
     if (needsAttentionOnly) {
-      filtered = filtered.filter((p: any) => (p.blockers ?? []).length > 0);
+    filtered = filtered.filter((p) => (p.blockers ?? []).length > 0);
     }
 
     return filtered;
   }, [packages, statusFilter, searchTerm, needsAttentionOnly]);
 
   const packagesByStatus = useMemo(() => {
-    const grouped: Record<string, any[]> = {
+    const grouped = {
       planned: [],
       in_progress: [],
       blocked: [],
       completed: []
     };
 
-    filteredPackages.forEach((p: any) => {
-      const status = (p.status ?? 'planned') as keyof typeof grouped;
+    filteredPackages.forEach((p) => {
+      const status = p.status ?? 'planned';
       (grouped[status] ?? grouped.planned).push(p);
     });
 
@@ -221,20 +221,20 @@ function WorkPackages() {
   }, [filteredPackages]);
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => base44.entities.WorkPackage.create(toApiPayload(data)),
+    mutationFn: (data) => base44.entities.WorkPackage.create(toApiPayload(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
       toast.success('Work package created');
       setShowNewPackage(false);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to create: ${error.message ?? 'Error'}`);
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) => base44.entities.WorkPackage.update(id, toApiPayload(data)),
-    onSuccess: (updatedData: any) => {
+    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, toApiPayload(data)),
+    onSuccess: (updatedData) => {
       const updated = updatedData?.data ?? updatedData;
       queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
       if (selectedPackage?.id === (updated?.id ?? updated?.data?.id)) {
@@ -244,13 +244,13 @@ function WorkPackages() {
       setEditingCardId(null);
       setEditData({});
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to update: ${error.message ?? 'Error'}`);
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id) => {
       const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id: id });
       return response?.data ?? response;
     },
@@ -259,7 +259,7 @@ function WorkPackages() {
       toast.success('Package deleted');
       setDeleteConfirm(null);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(`Failed to delete: ${error.message ?? 'Error'}`);
       setDeleteConfirm(null);
     }
@@ -314,7 +314,7 @@ function WorkPackages() {
     }
   };
 
-  const handleEditCard = (pkg: any) => {
+  const handleEditCard = (pkg) => {
     setEditingCardId(pkg.id);
     setEditData({
       name: pkg.name ?? '',
@@ -326,7 +326,7 @@ function WorkPackages() {
     });
   };
 
-  const handleSaveCard = (id: string) => {
+  const handleSaveCard = (id) => {
     const progress = Number(editData.progress_percent);
     const budget = Number(editData.budget_amount);
 
@@ -387,7 +387,7 @@ function WorkPackages() {
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent>
-                {projects.map((p: any) => (
+                {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
@@ -449,7 +449,7 @@ function WorkPackages() {
                 <div>
                   <p className="text-sm font-medium">Data Incomplete</p>
                   <ul className="text-xs text-muted-foreground mt-1 list-disc ml-4">
-                    {(warnings ?? []).map((w: string, idx: number) => (
+                    {(warnings ?? []).map((w, idx) => (
                       <li key={idx}>{w}</li>
                     ))}
                   </ul>

@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign } from 'lucide-react';
 import PageHeader from '@/components/ui/PageHeader';
 import FinancialKPIs from '@/components/financials/FinancialKPIs';
 import BudgetTab from '@/components/financials/BudgetTab';

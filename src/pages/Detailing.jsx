@@ -267,12 +267,13 @@ export default function Detailing() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="IFA">IFA</SelectItem>
-                <SelectItem value="BFA">BFA</SelectItem>
-                <SelectItem value="Revise & Resubmit">R&R</SelectItem>
-                <SelectItem value="FFF">FFF</SelectItem>
-              </SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="IFA">IFA</SelectItem>
+                  <SelectItem value="BFA">BFA</SelectItem>
+                  <SelectItem value="Revise & Resubmit">R&R</SelectItem>
+                  <SelectItem value="FFF">FFF</SelectItem>
+                </SelectContent>
             </Select>
             <Button 
               variant={dueSoonOnly ? "default" : "outline"} 

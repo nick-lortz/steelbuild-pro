@@ -63,16 +63,16 @@ export default function LookAheadPlanning() {
     queryKey: ['lookAheadData', selectedProject, windowWeeks],
     queryFn: async () => {
       const response = await base44.functions.invoke('getLookAheadData', {
-        projectId: selectedProject,
-        windowWeeks
+        projectId: selectedProject === 'all' ? null : selectedProject,
+        windowWeeks,
+        allProjects: selectedProject === 'all'
       });
 
+      // Unwrap response.data first
       const d = response?.data ?? response;
-      const normalized =
-        (d?.window || d?.tasks || d?.ai) ? d :
-        (d?.data?.window || d?.data?.tasks) ? d.data :
-        (d?.body?.window || d?.body?.tasks) ? d.body :
-        d;
+      
+      // Then unwrap nested data/body/result
+      const normalized = (d?.data || d?.body || d?.result) || d;
 
       console.debug('[getLookAheadData] normalized:', normalized);
       return normalized;
@@ -103,7 +103,7 @@ export default function LookAheadPlanning() {
   const createTaskMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lookAheadData'] });
+      queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
       toast.success('Task created');
       setShowNewTask(false);
     },
@@ -115,7 +115,7 @@ export default function LookAheadPlanning() {
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lookAheadData'] });
+      queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
       toast.success('Task updated');
     },
     onError: (error) => {
@@ -160,7 +160,9 @@ export default function LookAheadPlanning() {
             <h1 className="text-3xl font-bold tracking-tight">Look-Ahead Planning</h1>
             <p className="text-muted-foreground mt-2">Weekly Commitments • Constraints • Readiness</p>
             <div className="flex items-center gap-3 mt-2">
-              <p className="text-sm text-muted-foreground">{project.project_number} • {project.name}</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedProject === 'all' ? `Portfolio (${projects.length} projects)` : `${project.project_number} • ${project.name}`}
+              </p>
               <div className={cn("w-2 h-2 rounded-full", warnings.length === 0 ? "bg-green-500" : "bg-yellow-500")} />
               <span className="text-xs text-muted-foreground">Data {warnings.length === 0 ? 'Complete' : 'Partial'}</span>
               <span className="text-xs text-muted-foreground">• Updated: {lastRefreshed.toLocaleString()}</span>

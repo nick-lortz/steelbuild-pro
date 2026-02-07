@@ -75,12 +75,11 @@ export default function Financials() {
         projectId: selectedProject
       });
 
+      // Unwrap response.data first
       const d = response?.data ?? response;
-      const normalized =
-        (d?.snapshot || d?.breakdown || d?.billing) ? d :
-        (d?.data?.snapshot || d?.data?.breakdown) ? d.data :
-        (d?.body?.snapshot || d?.body?.breakdown) ? d.body :
-        d;
+      
+      // Then unwrap nested data/body/result
+      const normalized = (d?.data || d?.body || d?.result) || d;
 
       console.debug('[getFinancialsDashboardData] normalized:', normalized);
       return normalized;
@@ -124,8 +123,8 @@ export default function Financials() {
   const createSOVMutation = useMutation({
     mutationFn: (data) => base44.entities.SOVItem.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('SOV item created');
       setShowNewSOV(false);
     },
@@ -137,8 +136,8 @@ export default function Financials() {
   const updateSOVMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('SOV updated');
       setEditingSOV(null);
       setEditData({});
@@ -151,8 +150,8 @@ export default function Financials() {
   const deleteSOVMutation = useMutation({
     mutationFn: (id) => base44.entities.SOVItem.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('SOV deleted');
       setDeleteConfirm(null);
     }
@@ -162,8 +161,8 @@ export default function Financials() {
   const createExpenseMutation = useMutation({
     mutationFn: (data) => base44.entities.Expense.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('Expense created');
       setShowNewExpense(false);
     },
@@ -175,8 +174,8 @@ export default function Financials() {
   const updateExpenseMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Expense.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('Expense updated');
       setEditingExpense(null);
       setEditData({});
@@ -189,8 +188,8 @@ export default function Financials() {
   const deleteExpenseMutation = useMutation({
     mutationFn: (id) => base44.entities.Expense.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('Expense deleted');
       setDeleteConfirm(null);
     }
@@ -200,8 +199,8 @@ export default function Financials() {
   const createBudgetMutation = useMutation({
     mutationFn: (data) => base44.entities.Financial.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financials'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['financials', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('Budget line created');
       setShowNewBudget(false);
     },
@@ -213,8 +212,8 @@ export default function Financials() {
   const updateBudgetMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Financial.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financials'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['financials', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('Budget updated');
       setEditingBudget(null);
       setEditData({});
@@ -227,8 +226,8 @@ export default function Financials() {
   const deleteBudgetMutation = useMutation({
     mutationFn: (id) => base44.entities.Financial.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['financials'] });
-      queryClient.invalidateQueries({ queryKey: ['financialsDashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['financials', selectedProject] });
+      queryClient.invalidateQueries({ queryKey: ['financialsDashboard', selectedProject] });
       toast.success('Budget line deleted');
       setDeleteConfirm(null);
     }
@@ -236,9 +235,9 @@ export default function Financials() {
 
   const handleRefresh = () => {
     refetch();
-    queryClient.invalidateQueries({ queryKey: ['sov-items'] });
-    queryClient.invalidateQueries({ queryKey: ['expenses'] });
-    queryClient.invalidateQueries({ queryKey: ['financials'] });
+    queryClient.invalidateQueries({ queryKey: ['sov-items', selectedProject] });
+    queryClient.invalidateQueries({ queryKey: ['expenses', selectedProject] });
+    queryClient.invalidateQueries({ queryKey: ['financials', selectedProject] });
     setLastRefreshed(new Date());
     toast.success('Financial data refreshed');
   };

@@ -74,12 +74,11 @@ export default function WorkPackages() {
         projectId: selectedProject
       });
 
+      // Unwrap response.data first
       const d = response?.data ?? response;
-      const normalized =
-        (d?.snapshot || d?.packages || d?.ai) ? d :
-        (d?.data?.snapshot || d?.data?.packages) ? d.data :
-        (d?.body?.snapshot || d?.body?.packages) ? d.body :
-        d;
+      
+      // Then unwrap nested data/body/result
+      const normalized = (d?.data || d?.body || d?.result) || d;
 
       console.debug('[getWorkPackagesBoardData] normalized:', normalized);
       return normalized;
@@ -141,7 +140,7 @@ export default function WorkPackages() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard'] });
+      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
       toast.success('Work package created');
       setShowNewPackage(false);
     },
@@ -153,7 +152,7 @@ export default function WorkPackages() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard'] });
+      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
       toast.success('Package updated');
       setEditingCardId(null);
       setEditData({});
@@ -169,7 +168,7 @@ export default function WorkPackages() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard'] });
+      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
       toast.success('Package deleted');
       setDeleteConfirm(null);
     },
@@ -621,21 +620,114 @@ export default function WorkPackages() {
                                   </div>
                                 )}
 
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-muted-foreground">Budget: ${(pkg.budget / 1000).toFixed(0)}K</span>
+                                <div className="mt-2 space-y-2">
                                   {editingCardId === pkg.id ? (
-                                    <div className="flex gap-1">
-                                      <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleSaveCard(pkg.id); }}>
-                                        <Check className="h-3 w-3" />
-                                      </Button>
-                                      <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}>
-                                        <X className="h-3 w-3" />
+                                    <>
+                                      {/* Status */}
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                        <Label className="text-[10px] text-muted-foreground">Status</Label>
+                                        <Select
+                                          value={editData.status || "planned"}
+                                          onValueChange={(val) => setEditData((p) => ({ ...p, status: val }))}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="planned">Planned</SelectItem>
+                                            <SelectItem value="in_progress">In Progress</SelectItem>
+                                            <SelectItem value="blocked">Blocked</SelectItem>
+                                            <SelectItem value="completed">Completed</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Progress + Budget */}
+                                      <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Progress %</Label>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            className="h-8"
+                                            value={editData.progress_percent ?? 0}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, progress_percent: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Budget $</Label>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            className="h-8"
+                                            value={editData.budget_amount ?? 0}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, budget_amount: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Target + Lead */}
+                                      <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Target</Label>
+                                          <Input
+                                            type="date"
+                                            className="h-8"
+                                            value={editData.target_date || ""}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, target_date: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Lead</Label>
+                                          <Input
+                                            className="h-8"
+                                            value={editData.assigned_lead || ""}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, assigned_lead: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Save/Cancel */}
+                                      <div className="flex justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleSaveCard(pkg.id)}
+                                          disabled={updateMutation.isPending}
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Save
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                          <X className="h-3 w-3 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">
+                                        Budget: ${((pkg.budget || 0) / 1000).toFixed(0)}K
+                                      </span>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditCard(pkg);
+                                        }}
+                                      >
+                                        <Edit className="h-3 w-3" />
                                       </Button>
                                     </div>
-                                  ) : (
-                                    <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditCard(pkg); }}>
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
                                   )}
                                 </div>
                               </div>
@@ -839,6 +931,25 @@ function NewPackageForm({ projectId, onSubmit, onCancel }) {
 }
 
 function PackageDetailTabs({ package: pkg, tasks, onUpdate, onDelete }) {
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({
+    status: pkg.status,
+    progress_percent: pkg.progress_pct,
+    target_date: pkg.target_date,
+    assigned_lead: pkg.lead,
+    budget_amount: pkg.budget,
+    description: pkg.description
+  });
+
+  const handleSave = () => {
+    onUpdate({
+      ...formData,
+      progress_percent: Number(formData.progress_percent),
+      budget_amount: Number(formData.budget_amount)
+    });
+    setEditMode(false);
+  };
+
   return (
     <Tabs defaultValue="overview" className="mt-6">
       <TabsList className="grid w-full grid-cols-4">
@@ -849,44 +960,142 @@ function PackageDetailTabs({ package: pkg, tasks, onUpdate, onDelete }) {
       </TabsList>
 
       <TabsContent value="overview" className="space-y-4">
-        <div>
-          <p className="text-sm font-medium mb-2">Package Name</p>
-          <p className="text-lg font-bold">{pkg.name}</p>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium mb-2">Description</p>
-          <p className="text-sm text-muted-foreground">{pkg.description || 'No description'}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-medium mb-2">Status</p>
-            <Badge className="capitalize">{pkg.status}</Badge>
-          </div>
-
-          <div>
-            <p className="text-sm font-medium mb-2">Progress</p>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-muted rounded-full h-2">
-                <div className="h-2 rounded-full bg-green-500" style={{ width: `${pkg.progress_pct}%` }} />
-              </div>
-              <span className="text-sm font-bold">{pkg.progress_pct}%</span>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold">{pkg.name}</h3>
+          {!editMode ? (
+            <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+              <Edit className="h-3 w-3 mr-2" />
+              Edit
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave}>
+                <Check className="h-3 w-3 mr-2" />
+                Save
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                setEditMode(false);
+                setFormData({
+                  status: pkg.status,
+                  progress_percent: pkg.progress_pct,
+                  target_date: pkg.target_date,
+                  assigned_lead: pkg.lead,
+                  budget_amount: pkg.budget,
+                  description: pkg.description
+                });
+              }}>
+                <X className="h-3 w-3 mr-2" />
+                Cancel
+              </Button>
             </div>
-          </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-medium mb-2">Lead</p>
-            <p className="text-sm">{pkg.lead}</p>
-          </div>
+        {editMode ? (
+          <>
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+              />
+            </div>
 
-          <div>
-            <p className="text-sm font-medium mb-2">Target Date</p>
-            <p className="text-sm">{pkg.target_date ? new Date(pkg.target_date).toLocaleDateString() : 'Not set'}</p>
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Status</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="planned">Planned</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Progress (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.progress_percent}
+                  onChange={(e) => setFormData({ ...formData, progress_percent: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Budget ($)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.budget_amount}
+                  onChange={(e) => setFormData({ ...formData, budget_amount: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Assigned Lead</Label>
+                <Input
+                  value={formData.assigned_lead || ''}
+                  onChange={(e) => setFormData({ ...formData, assigned_lead: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Target Date</Label>
+              <Input
+                type="date"
+                value={formData.target_date || ''}
+                onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <p className="text-sm font-medium mb-2">Description</p>
+              <p className="text-sm text-muted-foreground">{pkg.description || 'No description'}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Status</p>
+                <Badge className="capitalize">{pkg.status}</Badge>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Progress</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-muted rounded-full h-2">
+                    <div className="h-2 rounded-full bg-green-500" style={{ width: `${pkg.progress_pct}%` }} />
+                  </div>
+                  <span className="text-sm font-bold">{pkg.progress_pct}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium mb-2">Lead</p>
+                <p className="text-sm">{pkg.lead}</p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Target Date</p>
+                <p className="text-sm">{pkg.target_date ? new Date(pkg.target_date).toLocaleDateString() : 'Not set'}</p>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="pt-4 border-t">
           <Button variant="destructive" size="sm" onClick={onDelete}>

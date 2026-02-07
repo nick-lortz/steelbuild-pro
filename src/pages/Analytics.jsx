@@ -33,7 +33,15 @@ import InteractiveDrillDown from '@/components/analytics/InteractiveDrillDown';
 import ProjectAnalyticsInsights from '@/components/analytics/ProjectAnalyticsInsights';
 import { toast } from '@/components/ui/notifications';
 
-export default function Analytics() {
+export default function AnalyticsPage() {
+  return (
+    <RouteGuard pageLabel="Analytics Dashboard" allowAllProjects>
+      <Analytics />
+    </RouteGuard>
+  );
+}
+
+function Analytics() {
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({

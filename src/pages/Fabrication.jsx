@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import RouteGuard from '@/components/shared/RouteGuard';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { 
   RefreshCw, Wrench, AlertCircle, Download, Mail, Plus, Edit, Trash2,
   Check, X, CheckCircle, AlertTriangle, Zap, Clock, Truck, Package,
@@ -22,8 +24,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReportScheduler from '@/components/reports/ReportScheduler';
 
-export default function Fabrication() {
-  const [selectedProject, setSelectedProject] = useState('');
+export default function FabricationPage() {
+  return (
+    <RouteGuard pageLabel="Fabrication Control">
+      <Fabrication />
+    </RouteGuard>
+  );
+}
+
+function Fabrication() {
+  const { activeProjectId: selectedProject } = useActiveProject();
   const [stageFilter, setStageFilter] = useState('all');
   const [onHoldOnly, setOnHoldOnly] = useState(false);
   const [shippingWeekOnly, setShippingWeekOnly] = useState(false);

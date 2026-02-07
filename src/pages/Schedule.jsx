@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import RouteGuard from '@/components/shared/RouteGuard';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { 
   RefreshCw, Calendar, AlertCircle, Download, Mail, Plus, Edit, Trash2,
   Check, X, CheckCircle, AlertTriangle, Zap, Clock, TrendingUp, Target,
@@ -21,8 +23,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReportScheduler from '@/components/reports/ReportScheduler';
 
-export default function Schedule() {
-  const [selectedProject, setSelectedProject] = useState('');
+export default function SchedulePage() {
+  return (
+    <RouteGuard pageLabel="Schedule Management">
+      <Schedule />
+    </RouteGuard>
+  );
+}
+
+function Schedule() {
+  const { activeProjectId: selectedProject } = useActiveProject();
   const [viewMode, setViewMode] = useState('wbs');
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [showReportScheduler, setShowReportScheduler] = useState(false);

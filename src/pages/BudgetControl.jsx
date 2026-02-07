@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import RouteGuard from '@/components/shared/RouteGuard';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { 
   RefreshCw, DollarSign, TrendingUp, TrendingDown, AlertCircle, Download, Mail,
   CheckCircle, AlertTriangle, XCircle, ChevronDown, ChevronUp, Zap, Plus, Edit,
@@ -22,8 +24,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ReportScheduler from '@/components/reports/ReportScheduler';
 
-export default function BudgetControl() {
-  const [selectedProject, setSelectedProject] = useState('');
+export default function BudgetControlPage() {
+  return (
+    <RouteGuard pageLabel="Budget & Cost Control">
+      <BudgetControl />
+    </RouteGuard>
+  );
+}
+
+function BudgetControl() {
+  const { activeProjectId: selectedProject } = useActiveProject();
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [showIntegrity, setShowIntegrity] = useState(false);
   const [showReportScheduler, setShowReportScheduler] = useState(false);

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import RouteGuard from '@/components/shared/RouteGuard';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { 
   RefreshCw, Truck, AlertCircle, Download, Mail, Plus, Edit, Trash2,
   Check, X, CheckCircle, AlertTriangle, Zap, Clock, MapPin,
@@ -22,8 +24,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReportScheduler from '@/components/reports/ReportScheduler';
 
-export default function Deliveries() {
-  const [selectedProject, setSelectedProject] = useState('');
+export default function DeliveriesPage() {
+  return (
+    <RouteGuard pageLabel="Delivery Management">
+      <Deliveries />
+    </RouteGuard>
+  );
+}
+
+function Deliveries() {
+  const { activeProjectId: selectedProject } = useActiveProject();
   const [timeFilter, setTimeFilter] = useState('all');
   const [zoneFilter, setZoneFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');

@@ -342,7 +342,7 @@ function Fabrication() {
                             <div className="flex-1">
                               <p className="font-semibold text-sm">{s.name}</p>
                               <p className="text-xs text-muted-foreground">
-                                Target: {s.ship_target ? new Date(s.ship_target).toLocaleDateString() : 'TBD'}
+                                Target: {formatDateDisplay(s.ship_target) || 'TBD'}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">

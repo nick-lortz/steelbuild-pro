@@ -1029,7 +1029,12 @@ function NewPackageForm({ projectId, onSubmit, onCancel }) {
     </form>
   );
 }
-              <h2 className="text-xl font-semibold mb-4">Execution Snapshot</h2>
+
+/** ---------------------------
+ * PackageDetailTabs
+ * --------------------------- */
+
+function PackageDetailTabs({ package: pkg, tasks, onUpdate, onDelete }) {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                 <Card>
                   <CardContent className="pt-4">

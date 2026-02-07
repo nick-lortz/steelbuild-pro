@@ -439,7 +439,7 @@ function NewDeliveryForm({ projectId, onSubmit, onCancel }) {
     <form onSubmit={handleSubmit} className="space-y-4 mt-6">
       <div><Label>Vendor *</Label><Input value={formData.vendor_name} onChange={(e) => setFormData({ ...formData, vendor_name: e.target.value })} className={errors.vendor_name ? 'border-red-500' : ''} />{errors.vendor_name && <p className="text-xs text-red-500 mt-1">{errors.vendor_name}</p>}</div>
       <div><Label>Load Description</Label><Textarea value={formData.load_description} onChange={(e) => setFormData({ ...formData, load_description: e.target.value })} rows={2} /></div>
-      <div><Label>Scheduled Date *</Label><Input type="date" value={formData.scheduled_date} onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })} className={errors.scheduled_date ? 'border-red-500' : ''} />{errors.scheduled_date && <p className="text-xs text-red-500 mt-1">{errors.scheduled_date}</p>}</div>
+      <div><Label>Scheduled Date *</Label><Input type="date" value={formatDateForInput(formData.scheduled_date)} onChange={(e) => setFormData({ ...formData, scheduled_date: parseInputDate(e.target.value) })} className={errors.scheduled_date ? 'border-red-500' : ''} />{errors.scheduled_date && <p className="text-xs text-red-500 mt-1">{errors.scheduled_date}</p>}</div>
       <div className="grid grid-cols-2 gap-4">
         <div><Label>Time Start</Label><Input type="time" value={formData.time_window_start} onChange={(e) => setFormData({ ...formData, time_window_start: e.target.value })} /></div>
         <div><Label>Time End</Label><Input type="time" value={formData.time_window_end} onChange={(e) => setFormData({ ...formData, time_window_end: e.target.value })} /></div>

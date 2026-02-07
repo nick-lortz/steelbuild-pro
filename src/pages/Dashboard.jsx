@@ -60,7 +60,7 @@ export default function Dashboard() {
         risk: riskFilter,
         sort: sortBy
       });
-      
+
       // Normalize Base44 invoke response shapes
       const d = response?.data ?? response;
       const normalized =
@@ -69,6 +69,10 @@ export default function Dashboard() {
         (d?.body?.metrics || d?.body?.projects || d?.body?.pagination) ? d.body :
         (d?.result?.metrics || d?.result?.projects || d?.result?.pagination) ? d.result :
         d;
+
+      console.debug('[getDashboardData] raw response:', response);
+      console.debug('[getDashboardData] normalized:', normalized);
+      console.debug('[getDashboardData] metrics keys:', Object.keys(normalized?.metrics || {}));
 
       return normalized;
     },
@@ -85,8 +89,8 @@ export default function Dashboard() {
   // Safe metric accessors
   const totalProjects = metrics?.totalProjects || 0;
   const activeProjects = metrics?.activeProjects || 0;
-  const totalContractValue = metrics?.totalContractValue || 0;
-  const avgBudgetVariance = metrics?.avgBudgetVariance || 0;
+  const portfolioValue = metrics?.portfolioValue || 0;
+  const budgetVariancePct = metrics?.budgetVariancePct || 0;
   const atRiskProjects = metrics?.atRiskProjects || 0;
 
   const handleGeneratePDF = async () => {
@@ -169,7 +173,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${(totalContractValue / 1000000).toFixed(1)}M
+                ${(portfolioValue / 1000000).toFixed(1)}M
               </div>
               <p className="text-xs text-muted-foreground">
                 Portfolio value
@@ -185,9 +189,9 @@ export default function Dashboard() {
             <CardContent>
               <div className={cn(
                 "text-2xl font-bold",
-                avgBudgetVariance < 0 ? "text-red-500" : "text-green-500"
+                budgetVariancePct < 0 ? "text-red-500" : "text-green-500"
               )}>
-                {avgBudgetVariance.toFixed(1)}%
+                {budgetVariancePct.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground">
                 Average variance

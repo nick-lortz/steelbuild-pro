@@ -207,6 +207,7 @@ function WorkPackages() {
   const handleEditCard = (pkg) => {
     setEditingCardId(pkg.id);
     setEditData({
+      name: pkg.name,
       status: pkg.status,
       progress_percent: pkg.progress_pct,
       target_date: pkg.target_date,

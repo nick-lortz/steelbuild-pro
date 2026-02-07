@@ -44,8 +44,7 @@ function Schedule() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [showAI, setShowAI] = useState(true);
-  const [editingRow, setEditingRow] = useState(null);
-  const [editData, setEditData] = useState({});
+  const { editingId, editData, startEdit, updateField, cancelEdit, getSaveData } = useInlineEdit();
 
   const queryClient = useQueryClient();
 

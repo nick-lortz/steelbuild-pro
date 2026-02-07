@@ -595,9 +595,9 @@ function NewFabPackageForm({ projectId, onSubmit, onCancel }) {
 function FabPackageDetailTabs({ package: pkg, onUpdate, onDelete }) {
   const [editingOverview, setEditingOverview] = useState(false);
   const [overviewData, setOverviewData] = useState({
-    status: pkg.stage,
-    progress_percent: pkg.progress_pct,
-    ship_target_date: pkg.ship_target,
+    stage: pkg.stage,
+    progress_pct: pkg.progress_pct,
+    ship_target: pkg.ship_target,
     on_hold: pkg.on_hold,
     hold_reason: pkg.hold_reason
   });
@@ -608,10 +608,10 @@ function FabPackageDetailTabs({ package: pkg, onUpdate, onDelete }) {
       <TabsContent value="overview" className="space-y-4">
         {editingOverview ? (
           <>
-            <div><Label>Stage</Label><Select value={overviewData.status} onValueChange={(val) => setOverviewData({ ...overviewData, status: val })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cutting">Cutting</SelectItem><SelectItem value="fit_up">Fit-up</SelectItem><SelectItem value="weld">Weld</SelectItem><SelectItem value="paint">Paint</SelectItem><SelectItem value="qa">QA</SelectItem><SelectItem value="ready_to_ship">Ready</SelectItem><SelectItem value="shipped">Shipped</SelectItem></SelectContent></Select></div>
-            <div><Label>Progress (%)</Label><Input type="number" min="0" max="100" value={overviewData.progress_percent} onChange={(e) => setOverviewData({ ...overviewData, progress_percent: e.target.value })} /></div>
-            <div><Label>Ship Target</Label><Input type="date" value={formatDateForInput(overviewData.ship_target_date) || ''} onChange={(e) => setOverviewData({ ...overviewData, ship_target_date: parseInputDate(e.target.value) })} /></div>
-            <div className="flex gap-2"><Button onClick={() => { onUpdate({ ...overviewData, progress_percent: Number(overviewData.progress_percent) }); setEditingOverview(false); }} disabled={updateMutation.isPending} className="flex-1">Save</Button><Button variant="outline" onClick={() => setEditingOverview(false)} className="flex-1">Cancel</Button></div>
+            <div><Label>Stage</Label><Select value={overviewData.stage} onValueChange={(val) => setOverviewData({ ...overviewData, stage: val })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cutting">Cutting</SelectItem><SelectItem value="fit_up">Fit-up</SelectItem><SelectItem value="weld">Weld</SelectItem><SelectItem value="paint">Paint</SelectItem><SelectItem value="qa">QA</SelectItem><SelectItem value="ready_to_ship">Ready</SelectItem><SelectItem value="shipped">Shipped</SelectItem></SelectContent></Select></div>
+            <div><Label>Progress (%)</Label><Input type="number" min="0" max="100" value={overviewData.progress_pct} onChange={(e) => setOverviewData({ ...overviewData, progress_pct: parseInt(e.target.value) || 0 })} /></div>
+            <div><Label>Ship Target</Label><Input type="date" value={formatDateForInput(overviewData.ship_target) || ''} onChange={(e) => setOverviewData({ ...overviewData, ship_target: parseInputDate(e.target.value) })} /></div>
+            <div className="flex gap-2"><Button onClick={() => { onUpdate({ ...overviewData, progress_pct: Number(overviewData.progress_pct) }); setEditingOverview(false); }} className="flex-1">Save</Button><Button variant="outline" onClick={() => setEditingOverview(false)} className="flex-1">Cancel</Button></div>
           </>
         ) : (
           <>

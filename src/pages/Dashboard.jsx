@@ -1,64 +1,60 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from '@/components/shared/hooks/useDebounce';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
-  RefreshCw, TrendingUp, TrendingDown, DollarSign, Users, 
-  Building, AlertTriangle, Clock, Flag, Activity, Zap, FileText, Mail, Download
+  RefreshCw, AlertTriangle, Clock, TrendingUp, TrendingDown,
+  Mail, Download, ArrowRight, AlertCircle, CheckCircle2,
+  Activity, FileText, DollarSign, Zap, Target, Shield
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { toast } from 'sonner';
 import { Badge } from "@/components/ui/badge";
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import ProjectHealthTable from '@/components/dashboard/ProjectHealthTable';
-import ProjectFiltersBar from '@/components/dashboard/ProjectFiltersBar';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
-import { usePagination } from '@/components/shared/hooks/usePagination';
-import Pagination from '@/components/ui/Pagination';
 import AIRiskPanel from '@/components/dashboard/AIRiskPanel';
-import RoleBasedKPIs from '@/components/dashboard/RoleBasedKPIs';
 import AIForecastPanel from '@/components/dashboard/AIForecastPanel';
 import ReportScheduler from '@/components/reports/ReportScheduler';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function Dashboard() {
-  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const { setActiveProjectId } = useActiveProject();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const [statusFilter, setStatusFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('risk');
-  const [showAIRisk, setShowAIRisk] = useState(false);
+  const [timeWindow, setTimeWindow] = useState('30d'); // 7d, 30d, all
   const [showReportScheduler, setShowReportScheduler] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
-  const { page, pageSize, skip, limit, goToPage, changePageSize } = usePagination(1, 25);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
     staleTime: Infinity,
     gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false
+    refetchOnWindowFocus: false
   });
 
   const { 
     data: dashboardData = { projects: [], metrics: {}, pagination: {} }, 
     isLoading: projectsLoading, 
     isFetching: projectsFetching, 
-    refetch: refetchDashboard 
+    refetch: refetchDashboard,
+    error: dashboardError
   } = useQuery({
-    queryKey: ['dashboard', { page, pageSize, search: debouncedSearch, status: statusFilter, risk: riskFilter, sort: sortBy }],
+    queryKey: ['dashboard', { search: debouncedSearch, risk: riskFilter }],
     queryFn: async () => {
       const response = await base44.functions.invoke('getDashboardData', {
-        page,
-        pageSize,
+        page: 1,
+        pageSize: 100,
         search: debouncedSearch,
-        status: statusFilter,
+        status: 'all',
         risk: riskFilter,
-        sort: sortBy
+        sort: 'risk'
       });
 
       // Normalize Base44 invoke response shapes
@@ -70,7 +66,6 @@ export default function Dashboard() {
         (d?.result?.metrics || d?.result?.projects || d?.result?.pagination) ? d.result :
         d;
 
-      console.debug('[getDashboardData] raw response:', response);
       console.debug('[getDashboardData] normalized:', normalized);
       console.debug('[getDashboardData] metrics keys:', Object.keys(normalized?.metrics || {}));
 
@@ -84,14 +79,85 @@ export default function Dashboard() {
 
   const projects = dashboardData?.projects || [];
   const metrics = dashboardData?.metrics || {};
-  const pagination = dashboardData?.pagination || {};
 
-  // Safe metric accessors
-  const totalProjects = metrics?.totalProjects || 0;
-  const activeProjects = metrics?.activeProjects || 0;
-  const portfolioValue = metrics?.portfolioValue || 0;
-  const budgetVariancePct = metrics?.budgetVariancePct || 0;
-  const atRiskProjects = metrics?.atRiskProjects || 0;
+  // Check for missing critical metrics
+  const missingMetrics = [];
+  const expectedKeys = ['totalProjects', 'activeProjects', 'atRiskProjects', 'portfolioValue'];
+  expectedKeys.forEach(key => {
+    if (!(key in metrics)) missingMetrics.push(key);
+  });
+
+  // Calculate Executive-Level Metrics
+  const executiveMetrics = useMemo(() => {
+    const totalProjects = Number(metrics?.totalProjects) || 0;
+    const activeProjects = Number(metrics?.activeProjects) || 0;
+    const atRiskProjects = Number(metrics?.atRiskProjects) || 0;
+    const overdueTasks = Number(metrics?.overdueTasks) || 0;
+    const pendingApprovals = Number(metrics?.pendingApprovals) || 0;
+    const avgScheduleSlip = Number(metrics?.avgScheduleSlip) || 0;
+    const budgetVariancePct = Number(metrics?.budgetVariancePct) || 0;
+    
+    // Portfolio Health Index (0-100)
+    // Weighted composite: 30% schedule, 30% cost, 20% risk, 20% issues
+    const scheduleScore = Math.max(0, 100 - Math.abs(avgScheduleSlip) * 5);
+    const costScore = Math.max(0, 100 - Math.abs(budgetVariancePct) * 2);
+    const riskScore = activeProjects > 0 ? ((activeProjects - atRiskProjects) / activeProjects) * 100 : 100;
+    const issuesScore = Math.max(0, 100 - (overdueTasks + pendingApprovals) * 2);
+    
+    const healthIndex = Math.round(
+      scheduleScore * 0.3 + costScore * 0.3 + riskScore * 0.2 + issuesScore * 0.2
+    );
+
+    // Top Risks Count
+    const topRisksCount = atRiskProjects + (budgetVariancePct < -10 ? 1 : 0) + (avgScheduleSlip > 5 ? 1 : 0);
+
+    // Change Pressure
+    const openCOs = Number(metrics?.openChangeOrders) || 0;
+    const changePressure = openCOs + pendingApprovals;
+
+    // RFIs Pressure
+    const overdueRFIs = Number(metrics?.overdueRFIs) || 0;
+    const avgRFIAge = Number(metrics?.avgRFIDaysOpen) || 0;
+    const rfisNeedingAttention = overdueRFIs + (avgRFIAge > 10 ? Math.floor(avgRFIAge / 10) : 0);
+
+    // Momentum
+    const tasksCompleted7d = Number(metrics?.tasksCompletedLast7Days) || 0;
+    const laborHours7d = Number(metrics?.laborHoursLast7Days) || 0;
+    const momentum = tasksCompleted7d + Math.floor(laborHours7d / 10);
+
+    // Forecast Confidence (placeholder - would come from AI forecasts)
+    const forecastConfidence = metrics?.forecastConfidence || 'medium';
+
+    return {
+      healthIndex,
+      topRisksCount,
+      changePressure,
+      rfisNeedingAttention,
+      momentum,
+      forecastConfidence,
+      overdueRFIs,
+      overdueTasks,
+      pendingApprovals
+    };
+  }, [metrics]);
+
+  // Identify Top 5 Projects Needing Attention
+  const projectsNeedingAttention = useMemo(() => {
+    return projects
+      .map(p => {
+        const reasons = [];
+        if ((p.overdueRFIs || 0) > 0) reasons.push({ label: 'Overdue RFIs', variant: 'destructive' });
+        if ((p.budgetVariancePct || 0) < -10) reasons.push({ label: 'Over budget', variant: 'destructive' });
+        if ((p.scheduleSlipDays || 0) > 5) reasons.push({ label: 'Schedule slipping', variant: 'destructive' });
+        if ((p.pendingApprovals || 0) > 0) reasons.push({ label: 'Pending approvals', variant: 'default' });
+        if ((p.daysSinceLastActivity || 999) > 14) reasons.push({ label: 'No activity', variant: 'secondary' });
+        
+        return { ...p, reasons, attentionScore: reasons.length };
+      })
+      .filter(p => p.attentionScore > 0)
+      .sort((a, b) => b.attentionScore - a.attentionScore)
+      .slice(0, 5);
+  }, [projects]);
 
   const handleGeneratePDF = async () => {
     setGeneratingPDF(true);
@@ -101,12 +167,12 @@ export default function Dashboard() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `dashboard-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `portfolio-command-center-${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      toast.success('Dashboard PDF generated');
+      toast.success('Portfolio report generated');
     } catch (error) {
       toast.error('Failed to generate PDF');
     } finally {
@@ -116,17 +182,38 @@ export default function Dashboard() {
 
   const handleRefresh = () => {
     refetchDashboard();
+    setLastRefreshed(new Date());
     toast.success('Dashboard refreshed');
+  };
+
+  const getHealthColor = (index) => {
+    if (index >= 80) return 'text-green-500';
+    if (index >= 60) return 'text-yellow-500';
+    if (index >= 40) return 'text-orange-500';
+    return 'text-red-500';
+  };
+
+  const getHealthIcon = (index) => {
+    if (index >= 80) return CheckCircle2;
+    if (index >= 60) return AlertCircle;
+    return AlertTriangle;
   };
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-[1800px] mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Project portfolio overview and health metrics</p>
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+              Portfolio Command Center
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              Executive insights • Risk analysis • Portfolio health • Forecasts
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {lastRefreshed.toLocaleString()}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={projectsFetching}>
@@ -144,118 +231,374 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Role-Based KPIs */}
-        <RoleBasedKPIs 
-          role={currentUser?.role} 
-          metrics={metrics} 
-          projects={projects} 
-        />
+        {/* Missing Data Warning */}
+        {missingMetrics.length > 0 && (
+          <Card className="border-amber-500/50 bg-amber-500/5">
+            <CardContent className="pt-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Data Incomplete</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Missing metrics: {missingMetrics.join(', ')}. Some KPIs may show zero or default values.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Portfolio Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
+        {/* Executive Summary Row */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Portfolio Health
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalProjects}</div>
-              <p className="text-xs text-muted-foreground">
-                {activeProjects} active
-              </p>
+              <div className={cn("text-3xl font-bold", getHealthColor(executiveMetrics.healthIndex))}>
+                {executiveMetrics.healthIndex}
+                <span className="text-sm font-normal text-muted-foreground">/100</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Composite score</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Contract Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-l-4 border-l-red-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Top Risks
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                ${(portfolioValue / 1000000).toFixed(1)}M
+              <div className="text-3xl font-bold text-red-500">
+                {executiveMetrics.topRisksCount}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Portfolio value
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Projects at risk</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Budget Variance</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-l-4 border-l-orange-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Change Pressure
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={cn(
-                "text-2xl font-bold",
-                budgetVariancePct < 0 ? "text-red-500" : "text-green-500"
-              )}>
-                {budgetVariancePct.toFixed(1)}%
+              <div className="text-3xl font-bold text-orange-500">
+                {executiveMetrics.changePressure}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Average variance
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">COs + approvals</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">At Risk Projects</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <Card className="border-l-4 border-l-yellow-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                RFI Pressure
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-500">
-                {atRiskProjects}
+              <div className="text-3xl font-bold text-yellow-500">
+                {executiveMetrics.rfisNeedingAttention}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Require attention
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Overdue + aging</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Momentum
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-500">
+                {executiveMetrics.momentum}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Forecast Confidence
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-500 capitalize">
+                {executiveMetrics.forecastConfidence}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">AI certainty</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* AI Risk Analysis */}
-        {activeProjectId && (
+        {/* What Needs Attention Now */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Top Projects Needing Attention */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Target className="h-5 w-5 text-amber-500" />
+                What Needs Attention Now
+              </h2>
+              <Link to={createPageUrl('Projects')}>
+                <Button variant="ghost" size="sm">
+                  View All Projects
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+
+            {projectsLoading ? (
+              <Card>
+                <CardContent className="py-12 flex items-center justify-center">
+                  <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                </CardContent>
+              </Card>
+            ) : projectsNeedingAttention.length === 0 ? (
+              <Card className="border-green-500/30 bg-green-500/5">
+                <CardContent className="py-8 flex flex-col items-center justify-center">
+                  <CheckCircle2 className="h-12 w-12 text-green-500 mb-3" />
+                  <p className="font-medium text-green-600">All Clear</p>
+                  <p className="text-sm text-muted-foreground mt-1">No projects require immediate attention</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {projectsNeedingAttention.map((project) => (
+                  <Card key={project.id} className="hover:border-amber-500 transition-colors">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold truncate">{project.name}</h3>
+                            <Badge variant={project.risk === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                              {project.risk || 'medium'} risk
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {project.reasons.map((reason, idx) => (
+                              <Badge key={idx} variant={reason.variant} className="text-xs">
+                                {reason.label}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <Link to={createPageUrl('ProjectDashboard') + `?id=${project.id}`}>
+                          <Button
+                            size="sm"
+                            onClick={() => setActiveProjectId(project.id)}
+                          >
+                            Open
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Critical Queue */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Critical Queue
+            </h2>
+
+            <Card className="border-red-500/30">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Overdue RFIs</span>
+                  <Badge variant="destructive">{executiveMetrics.overdueRFIs}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link to={createPageUrl('RFIHub')}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Review RFIs
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="border-orange-500/30">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Overdue Tasks</span>
+                  <Badge variant="destructive">{executiveMetrics.overdueTasks}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link to={createPageUrl('Schedule')}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Review Schedule
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            <Card className="border-yellow-500/30">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Pending Approvals</span>
+                  <Badge variant="secondary">{executiveMetrics.pendingApprovals}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link to={createPageUrl('ChangeOrders')}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Review Approvals
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* AI Insights Area */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Zap className="h-5 w-5 text-purple-500" />
+            AI Operations Layer
+          </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <AIRiskPanel projectId={activeProjectId} />
-            <AIForecastPanel projectId={activeProjectId} />
+            <AIRiskPanel projectId={projects[0]?.id} />
+            <AIForecastPanel projectId={projects[0]?.id} />
           </div>
-        )}
+        </div>
 
-        {/* Filters */}
-        <ProjectFiltersBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          riskFilter={riskFilter}
-          setRiskFilter={setRiskFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-        />
-
-        {/* Project Health Table */}
-        {projectsLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        {/* Trends & Signals */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Activity className="h-5 w-5 text-blue-500" />
+              Trends & Signals
+            </h2>
+            <div className="flex gap-2">
+              {['7d', '30d', 'all'].map((window) => (
+                <Button
+                  key={window}
+                  variant={timeWindow === window ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTimeWindow(window)}
+                >
+                  {window === 'all' ? 'All' : window.toUpperCase()}
+                </Button>
+              ))}
+            </div>
           </div>
-        ) : (
-          <>
-            <ProjectHealthTable
-              projects={projects}
-              onProjectClick={(project) => setActiveProjectId(project.id)}
-            />
-            
-            <Pagination
-              total={pagination.total || 0}
-              page={page}
-              pageSize={pageSize}
-              onPageChange={goToPage}
-              onPageSizeChange={changePageSize}
-            />
-          </>
-        )}
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                  Weekly Spend
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${((metrics?.weeklySpend || 0) / 1000).toFixed(0)}K
+                </div>
+                <div className="flex items-center gap-1 mt-1 text-xs">
+                  {(metrics?.weeklySpendDelta || 0) >= 0 ? (
+                    <>
+                      <TrendingUp className="h-3 w-3 text-red-500" />
+                      <span className="text-red-500">+{metrics?.weeklySpendDelta || 0}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <TrendingDown className="h-3 w-3 text-green-500" />
+                      <span className="text-green-500">{metrics?.weeklySpendDelta || 0}%</span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">vs last week</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                  Tasks Completed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {metrics?.tasksCompletedLast7Days || 0}
+                </div>
+                <div className="flex items-center gap-1 mt-1 text-xs">
+                  {(metrics?.tasksCompletedDelta || 0) >= 0 ? (
+                    <>
+                      <TrendingUp className="h-3 w-3 text-green-500" />
+                      <span className="text-green-500">+{metrics?.tasksCompletedDelta || 0}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <TrendingDown className="h-3 w-3 text-red-500" />
+                      <span className="text-red-500">{metrics?.tasksCompletedDelta || 0}%</span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">vs last week</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                  RFI Aging
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {(metrics?.avgRFIDaysOpen || 0).toFixed(1)}d
+                </div>
+                <div className="flex items-center gap-1 mt-1 text-xs">
+                  {(metrics?.rfiAgingDelta || 0) >= 0 ? (
+                    <>
+                      <TrendingUp className="h-3 w-3 text-red-500" />
+                      <span className="text-red-500">+{metrics?.rfiAgingDelta || 0}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <TrendingDown className="h-3 w-3 text-green-500" />
+                      <span className="text-green-500">{metrics?.rfiAgingDelta || 0}%</span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">avg days open</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase">
+                  Schedule Variance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={cn(
+                  "text-2xl font-bold",
+                  (metrics?.avgScheduleSlip || 0) < -3 ? "text-red-500" : 
+                  (metrics?.avgScheduleSlip || 0) > 3 ? "text-green-500" : "text-yellow-500"
+                )}>
+                  {(metrics?.avgScheduleSlip || 0) > 0 ? '+' : ''}{(metrics?.avgScheduleSlip || 0).toFixed(1)}d
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Avg slip/gain</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {/* Report Scheduler Sheet */}
         <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}>

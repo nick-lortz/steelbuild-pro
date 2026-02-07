@@ -352,12 +352,12 @@ function LayoutContent({ children, currentPageName }) {
               <div key={group.name}>
                 {/* Group Header */}
                 <button
-                  onClick={() => toggleGroup(group.name)} className="text-slate-50 px-3 py-2 font-bold uppercase tracking-widest rounded-lg w-full flex items-center justify-between transition-colors hover:text-main">
-
-
-
-
-
+                  onClick={() => toggleGroup(group.name)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors rounded-lg',
+                    hasActivePage ? 'text-amber-500' : 'text-zinc-400 hover:text-white'
+                  )}
+                >
                   <div className="flex items-center gap-2">
                     <GroupIcon size={12} />
                     <span>{group.name}</span>

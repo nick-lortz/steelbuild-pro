@@ -237,10 +237,10 @@ function WorkPackages() {
       data: {
         name: editData.name,
         status: editData.status,
-        progress_percent: progress,
-        budget_amount: budget,
+        progress_pct: progress,
+        budget: budget,
         target_date: editData.target_date,
-        assigned_lead: editData.assigned_lead
+        lead: editData.assigned_lead
       }
     });
   };

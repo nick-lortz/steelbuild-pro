@@ -264,27 +264,31 @@ Deno.serve(async (req) => {
       projectCount: projectsWithHealth.length
     }));
 
+    const metricsResponse = {
+      totalProjects: projectsWithHealth.length,
+      activeProjects,
+      atRiskProjects,
+      overdueTasks,
+      upcomingMilestones,
+      totalContractValue,
+      avgBudgetVariance,
+      avgScheduleProgress,
+      criticalIssues,
+      openRFIs,
+      overdueRFIs,
+      pendingApprovals,
+      portfolioGrowth,
+      totalBudget,
+      totalActual,
+      totalCommitted
+    };
+
+    console.warn('FINAL METRICS:', JSON.stringify(metricsResponse));
+
     return Response.json({
       projects: paginated,
       pagination: { page, pageSize, totalFiltered, totalProjects: projectsWithHealth.length },
-      metrics: {
-        totalProjects: projectsWithHealth.length,
-        activeProjects,
-        atRiskProjects,
-        overdueTasks,
-        upcomingMilestones,
-        totalContractValue,
-        avgBudgetVariance,
-        avgScheduleProgress,
-        criticalIssues,
-        openRFIs,
-        overdueRFIs,
-        pendingApprovals,
-        portfolioGrowth,
-        totalBudget,
-        totalActual,
-        totalCommitted
-      }
+      metrics: metricsResponse
     });
 
   } catch (error) {

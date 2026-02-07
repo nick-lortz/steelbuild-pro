@@ -352,8 +352,11 @@ export default function JobStatusReport() {
 
   if (!selectedProject) {
     return (
-      <div>
-        <PageHeader title="Job Status Report" subtitle="Project-level financial status" />
+      <div className="space-y-6 max-w-[1800px] mx-auto">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Job Status Report</h1>
+          <p className="text-muted-foreground mt-2">Project-level financial status</p>
+        </div>
         <Card>
           <CardContent className="p-8">
             <div className="max-w-md mx-auto">

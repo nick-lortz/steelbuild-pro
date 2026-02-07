@@ -381,25 +381,25 @@ export default function JobStatusReport() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Job Status Report"
-        subtitle={`${selectedProjectData?.project_number} - ${selectedProjectData?.name}`}
-        actions={
-          <Select value={selectedProject} onValueChange={setSelectedProject}>
-            <SelectTrigger className="w-80">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.project_number} - {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
-      />
+    <div className="space-y-6 max-w-[1800px] mx-auto">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Job Status Report</h1>
+          <p className="text-muted-foreground mt-2">{selectedProjectData?.project_number} - {selectedProjectData?.name}</p>
+        </div>
+        <Select value={selectedProject} onValueChange={setSelectedProject}>
+          <SelectTrigger className="w-80">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map(p => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.project_number} - {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Header Summary KPIs */}
       <div className="grid grid-cols-3 md:grid-cols-5 gap-4">

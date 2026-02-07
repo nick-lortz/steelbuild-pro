@@ -32,20 +32,6 @@ function toNumberSafe(v, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function normalizeWorkPackage(p) {
-  if (!p) return p;
-  return {
-    ...p,
-    // normalize alternate field names
-    progress_pct: toNumberSafe(p.progress_pct ?? p.progress_percent ?? 0),
-    budget: toNumberSafe(p.budget ?? p.budget_amount ?? 0),
-    lead: p.lead ?? p.assigned_lead ?? '',
-    blockers: Array.isArray(p.blockers) ? p.blockers : [],
-    actual: toNumberSafe(p.actual ?? 0),
-    committed: toNumberSafe(p.committed ?? 0),
-  };
-}
-
 function toApiPayload(formLike) {
   // Convert various UI form names to canonical API payload
   return {
@@ -59,6 +45,10 @@ function toApiPayload(formLike) {
     lead: formLike.assigned_lead ?? formLike.lead ?? '',
   };
 }
+
+/** ---------------------------
+ * Root Page
+ * --------------------------- */
 
 /** ---------------------------
  * Root Page
@@ -336,6 +326,18 @@ function WorkPackages() {
     });
   };
 
+  // Normalize tasks per selected package when rendering
+  const normalizedTasksByPackage = useMemo(() => {
+    const out = {};
+    Object.entries(tasksByPackage || {}).forEach(([pkgId, arr]) => {
+      out[pkgId] = (arr || []).map(t => ({
+        ...t,
+        progress_pct: toNumberSafe(t.progress_pct ?? t.progress_percent ?? 0),
+      }));
+    });
+    return out;
+  }, [tasksByPackage]);
+
   const handleCancelEdit = () => {
     setEditingCardId(null);
     setEditData({});
@@ -447,6 +449,456 @@ function WorkPackages() {
           <div className="flex items-center justify-center py-12">
             <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
+        ) : (
+          <>
+            {/* Execution Snapshot */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Execution Snapshot</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">In Progress</p>
+                    <div className="text-2xl font-bold text-blue-500">{snapshot.inProgress || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completed</p>
+                    <div className="text-2xl font-bold text-green-500">{snapshot.completed || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Blocked</p>
+                    <div className="text-2xl font-bold text-red-500">{snapshot.blocked || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">At Risk</p>
+                    <div className="text-2xl font-bold text-orange-500">{snapshot.atRisk || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completed (7d)</p>
+                    <div className="text-2xl font-bold">{snapshot.completed7d || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completed (30d)</p>
+                    <div className="text-2xl font-bold">{snapshot.completed30d || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Labor (7d)</p>
+                    <div className="text-2xl font-bold">{toNumberSafe(snapshot.laborHours7d || 0).toFixed(0)}h</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Labor (30d)</p>
+                    <div className="text-2xl font-bold">{toNumberSafe(snapshot.laborHours30d || 0).toFixed(0)}h</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Needs Attention Now */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Target className="h-5 w-5 text-red-500" />
+                Needs Attention Now
+              </h2>
+              <Card>
+                <CardContent className="pt-4">
+                  {(needsAttention?.length ?? 0) === 0 ? (
+                    <div className="py-8 text-center text-muted-foreground">
+                      <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-500" />
+                      <p>All packages on track</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {needsAttention.map((pkg) => (
+                        <div key={pkg.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold">{pkg.name}</span>
+                              <Badge variant={pkg.status === 'blocked' ? 'destructive' : 'outline'} className="capitalize">
+                                {pkg.status}
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {(pkg.blockers ?? []).map((b, idx) => (
+                                <Badge key={idx} variant="destructive" className="text-xs">
+                                  {b?.label ?? 'Blocker'}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <div className="text-right mr-4">
+                              <div className="text-sm font-bold">{toNumberSafe(pkg.progress_pct).toString()}%</div>
+                              <p className="text-xs text-muted-foreground">{pkg.lead}</p>
+                            </div>
+                            <Button 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPackage(pkg);
+                                setShowDetailSheet(true);
+                              }}
+                            >
+                              Review
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* AI Work Package Analyst */}
+            {ai?.recommendations && ai.recommendations.length > 0 && (
+              <Collapsible open={showAI} onOpenChange={setShowAI}>
+                <Card className="border-purple-500/30">
+                  <CardHeader>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-purple-500" />
+                        AI Work Package Analyst
+                      </CardTitle>
+                    </CollapsibleTrigger>
+                  </CardHeader>
+                  <CollapsibleContent>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium mb-2">Pipeline Analysis</p>
+                          <p className="text-sm text-muted-foreground">{ai.summary ?? '—'}</p>
+                          <Badge variant="outline" className="capitalize mt-2">{ai.confidence ?? 'unknown'} confidence</Badge>
+                        </div>
+
+                        {ai.packageRisks && ai.packageRisks.length > 0 && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Package Risks</p>
+                            <div className="space-y-2">
+                              {ai.packageRisks.map((risk, idx) => (
+                                <div key={idx} className="flex items-start gap-3 p-2 rounded bg-muted/30">
+                                  <AlertTriangle className={cn(
+                                    "h-4 w-4 mt-0.5",
+                                    risk.risk_level === 'critical' ? "text-red-500" : "text-yellow-500"
+                                  )} />
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium">{risk.package_name}</p>
+                                    <p className="text-xs text-muted-foreground">{risk.reason}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <p className="text-sm font-medium mb-2">Recommended Actions</p>
+                          <div className="space-y-3">
+                            {ai.recommendations.map((rec, idx) => (
+                              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                                <Badge variant={(rec.priority === 'critical' || rec.priority === 'high') ? 'destructive' : 'default'} className="text-xs mt-1">
+                                  {rec.priority}
+                                </Badge>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-sm">{rec.action}</p>
+                                  <p className="text-xs text-green-600 mt-1">Impact: {rec.impact}</p>
+                                  {rec.affectedPackages && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Affects: {rec.affectedPackages.slice(0, 3).join(', ')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            )}
+
+            {/* Work Package Board */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Work Package Board</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(packagesByStatus).map(([status, pkgs]) => (
+                  <div key={status}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <h3 className="font-semibold capitalize text-sm">{status.replace('_', ' ')}</h3>
+                      <Badge variant="outline" className="text-xs">{pkgs.length}</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {pkgs.length === 0 ? (
+                        <Card className="bg-muted/20 border-dashed">
+                          <CardContent className="py-8 text-center">
+                            <p className="text-xs text-muted-foreground">No packages</p>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        pkgs.map((pkg) => (
+                          <Card 
+                            key={pkg.id}
+                            className={cn(
+                              "cursor-pointer hover:border-amber-500 transition-colors",
+                              (pkg.blockers ?? []).length > 0 && "border-red-500/50"
+                            )}
+                            onClick={() => {
+                              setSelectedPackage(pkg);
+                              setShowDetailSheet(true);
+                            }}
+                          >
+                            <CardContent className="pt-4">
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="font-semibold text-sm mb-1">{pkg.name}</p>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span>{pkg.lead}</span>
+                                    {pkg.target_date && (
+                                      <>
+                                        <span>•</span>
+                                        <span>Target: {new Date(pkg.target_date).toLocaleDateString()}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-muted-foreground">Progress</span>
+                                    <span className="text-xs font-bold">{toNumberSafe(pkg.progress_pct).toString()}%</span>
+                                  </div>
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div
+                                      className="h-2 rounded-full bg-green-500 transition-all"
+                                      style={{ width: `${toNumberSafe(pkg.progress_pct)}%` }}
+                                    />
+                                  </div>
+                                </div>
+
+                                {(pkg.blockers ?? []).length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {(pkg.blockers ?? []).map((b, idx) => (
+                                      <Badge key={idx} variant="destructive" className="text-xs">
+                                        {b?.label ?? 'Blocker'}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+
+                                <div className="mt-2 space-y-2">
+                                  {editingCardId === pkg.id ? (
+                                    <>
+                                      {/* Name */}
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                        <Label className="text-[10px] text-muted-foreground">Name</Label>
+                                        <Input
+                                          className="h-8"
+                                          value={editData.name ?? ''}
+                                          onChange={(e) =>
+                                            setEditData((p) => ({ ...p, name: e.target.value }))
+                                          }
+                                        />
+                                      </div>
+
+                                      {/* Status */}
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                        <Label className="text-[10px] text-muted-foreground">Status</Label>
+                                        <Select
+                                          value={editData.status ?? 'planned'}
+                                          onValueChange={(val) => setEditData((p) => ({ ...p, status: val }))}
+                                        >
+                                          <SelectTrigger className="h-8">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="planned">Planned</SelectItem>
+                                            <SelectItem value="in_progress">In Progress</SelectItem>
+                                            <SelectItem value="blocked">Blocked</SelectItem>
+                                            <SelectItem value="completed">Completed</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Progress + Budget */}
+                                      <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Progress %</Label>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            className="h-8"
+                                            value={editData.progress_percent ?? ''}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, progress_percent: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Budget $</Label>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            className="h-8"
+                                            value={editData.budget_amount ?? ''}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, budget_amount: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Target + Lead */}
+                                      <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Target</Label>
+                                          <Input
+                                            type="date"
+                                            className="h-8"
+                                            value={editData.target_date ?? ''}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, target_date: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label className="text-[10px] text-muted-foreground">Lead</Label>
+                                          <Input
+                                            className="h-8"
+                                            value={editData.assigned_lead ?? ''}
+                                            onChange={(e) =>
+                                              setEditData((p) => ({ ...p, assigned_lead: e.target.value }))
+                                            }
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Save/Cancel */}
+                                      <div className="flex justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleSaveCard(pkg.id)}
+                                          disabled={updateMutation.isPending}
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Save
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                                          <X className="h-3 w-3 mr-1" />
+                                          Cancel
+                                        </Button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-muted-foreground">
+                                        Budget: ${((toNumberSafe(pkg.budget)) / 1000).toFixed(0)}K
+                                      </span>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditCard(pkg);
+                                        }}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* New Package Sheet */}
+        <Sheet open={showNewPackage} onOpenChange={setShowNewPackage}>
+          <SheetContent className="w-[600px] sm:max-w-[600px]">
+            <SheetHeader>
+              <SheetTitle>New Work Package</SheetTitle>
+            </SheetHeader>
+            <NewPackageForm
+              projectId={selectedProject}
+              onSubmit={(data) => createMutation.mutate(data)}
+              onCancel={() => setShowNewPackage(false)}
+            />
+          </SheetContent>
+        </Sheet>
+
+        {/* Package Detail Sheet */}
+        <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}>
+          <SheetContent className="w-[700px] sm:max-w-[700px] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Package Details</SheetTitle>
+            </SheetHeader>
+            {selectedPackage && (
+              <PackageDetailTabs
+                package={selectedPackage}
+                tasks={normalizedTasksByPackage[selectedPackage.id] || []}
+                onUpdate={(data) => updateMutation.mutate({ id: selectedPackage.id, data })}
+                onDelete={() => {
+                  setDeleteConfirm(selectedPackage);
+                  setShowDetailSheet(false);
+                }}
+              />
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Delete Confirmation */}
+        <Dialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Work Package?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Delete "{deleteConfirm?.name}" and all associated tasks? This cannot be undone.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteConfirm.id)}>Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Report Scheduler Sheet */}
+        <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Schedule Work Package Report</SheetTitle>
+            </SheetHeader>
+            <ReportScheduler onClose={() => setShowReportScheduler(false)} />
+          </SheetContent>
+        </Sheet>
         ) : (
           <>
             {/* Execution Snapshot */}
@@ -1305,4 +1757,4 @@ function PackageDetailTabs({ package: pkg, tasks, onUpdate, onDelete }) {
     </Tabs>
   );
 }
-``
+`

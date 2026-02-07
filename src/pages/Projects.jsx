@@ -313,18 +313,18 @@ export default function Projects() {
   return (
     <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
       {/* Modern Header */}
-      <div className="relative mb-8 overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 p-8">
+      <div className="relative mb-8 overflow-hidden rounded-lg bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black border border-blue-500/30 p-8">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
-              <Building className="w-8 h-8 text-black" />
+            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Building className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-4xl font-bold text-white tracking-tight">Projects</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-zinc-400 font-medium">{projects.length} Active Portfolio</p>
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
               </div>
             </div>
           </div>
@@ -334,7 +334,7 @@ export default function Projects() {
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10 backdrop-blur-xl"
+              className="gap-2 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg"
             >
               <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
               Refresh
@@ -346,7 +346,7 @@ export default function Projects() {
                   setFormData(initialFormState);
                   setShowForm(true);
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/30"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/30 rounded-lg"
               >
                 <Plus size={14} className="mr-1" />
                 New Project
@@ -389,7 +389,7 @@ export default function Projects() {
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground text-sm">Loading projects...</p>
           </div>
         </div>
@@ -406,7 +406,7 @@ export default function Projects() {
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-zinc-800/50 text-white rounded-lg">
           <DialogHeader>
             <DialogTitle>New Project</DialogTitle>
           </DialogHeader>
@@ -422,7 +422,7 @@ export default function Projects() {
 
       {/* Edit Sheet */}
       <Sheet open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
-        <SheetContent className="w-full sm:max-w-xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-xl bg-zinc-950 border-zinc-800/50 text-white overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="text-white">Edit Project</SheetTitle>
           </SheetHeader>
@@ -476,7 +476,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('project_number', e.target.value)}
             placeholder="e.g., 2024-001"
             required
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
         </div>
         <div className="space-y-2">
@@ -486,7 +486,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Project name"
             required
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
         </div>
         <div className="space-y-2">
@@ -495,13 +495,13 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.client}
             onChange={(e) => handleChange('client', e.target.value)}
             placeholder="General contractor or owner"
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
         </div>
         <div className="space-y-2">
           <Label>Status</Label>
           <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+            <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -520,7 +520,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
             placeholder="Project address"
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
         </div>
         <div className="space-y-2">
@@ -530,7 +530,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.contract_value}
             onChange={(e) => handleChange('contract_value', e.target.value)}
             placeholder="0.00"
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
         </div>
         <div className="space-y-2">
           <Label>Start Date</Label>
@@ -538,7 +538,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             type="date"
             value={formData.start_date}
             onChange={(e) => handleChange('start_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
         </div>
         <div className="space-y-2">
           <Label>Target Completion</Label>
@@ -546,7 +546,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             type="date"
             value={formData.target_completion}
             onChange={(e) => handleChange('target_completion', e.target.value)}
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
         </div>
         <div className="space-y-2">
           <Label>Project Manager</Label>
@@ -554,7 +554,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.project_manager}
             onChange={(e) => handleChange('project_manager', e.target.value)}
             placeholder="PM name"
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
         </div>
         <div className="space-y-2">
           <Label>Superintendent</Label>
@@ -562,7 +562,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.superintendent}
             onChange={(e) => handleChange('superintendent', e.target.value)}
             placeholder="Superintendent name"
-            className="bg-zinc-800 border-zinc-700" />
+            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
         </div>
       </div>
 
@@ -576,7 +576,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.structure_anatomy_job_type}
               onChange={(e) => handleChange('structure_anatomy_job_type', e.target.value)}
               placeholder="e.g., MVD Renovation"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Rough Square Footage</Label>
@@ -585,7 +585,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.rough_square_footage}
               onChange={(e) => handleChange('rough_square_footage', e.target.value)}
               placeholder="0"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Rough Price/SqFt</Label>
@@ -595,7 +595,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.rough_price_per_sqft}
               onChange={(e) => handleChange('rough_price_per_sqft', e.target.value)}
               placeholder="0.00"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Overall Shop Hours</Label>
@@ -604,7 +604,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.baseline_shop_hours}
               onChange={(e) => handleChange('baseline_shop_hours', e.target.value)}
               placeholder="0"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Overall Field Hours</Label>
@@ -613,7 +613,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.baseline_field_hours}
               onChange={(e) => handleChange('baseline_field_hours', e.target.value)}
               placeholder="0"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Crane Budget</Label>
@@ -622,7 +622,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.crane_budget}
               onChange={(e) => handleChange('crane_budget', e.target.value)}
               placeholder="0"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Sub Budget</Label>
@@ -631,7 +631,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.sub_budget}
               onChange={(e) => handleChange('sub_budget', e.target.value)}
               placeholder="0"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
           <div className="space-y-2">
             <Label>Rough Lift/Hr Rate</Label>
@@ -641,7 +641,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.rough_lift_hr_rate}
               onChange={(e) => handleChange('rough_lift_hr_rate', e.target.value)}
               placeholder="0.00"
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
           </div>
         </div>
       </div>
@@ -685,7 +685,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             <Input
               value={formData.gc_contact}
               onChange={(e) => handleChange('gc_contact', e.target.value)}
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
           </div>
           <div className="space-y-2">
@@ -694,7 +694,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="email"
               value={formData.gc_email}
               onChange={(e) => handleChange('gc_email', e.target.value)}
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
           </div>
           <div className="space-y-2">
@@ -702,7 +702,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             <Input
               value={formData.gc_phone}
               onChange={(e) => handleChange('gc_phone', e.target.value)}
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
           </div>
         </div>
@@ -718,7 +718,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               onChange={(e) => handleChange('scope_of_work', e.target.value)}
               rows={4}
               placeholder="Detailed description of work to be performed..."
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
           </div>
           <div className="space-y-2">
@@ -728,7 +728,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               onChange={(e) => handleChange('exclusions', e.target.value)}
               rows={3}
               placeholder="Work items excluded from this scope..."
-              className="bg-zinc-800 border-zinc-700" />
+              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
 
           </div>
         </div>
@@ -748,7 +748,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         <Button
           type="submit"
           disabled={isLoading}
-          className="bg-amber-500 hover:bg-amber-600 text-black">
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg shadow-blue-600/30">
 
           {isLoading ? 'Saving...' : isEdit ? 'Update Project' : 'Create Project'}
         </Button>

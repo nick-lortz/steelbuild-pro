@@ -753,11 +753,11 @@ export default function ResourceManagement() {
             </div>
 
             {/* Resource List */}
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-lg">Resource Details ({filteredResources.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card>
+              <div className="px-6 pt-5 pb-3 border-b border-border">
+                <SectionHeader title={`Resource Details (${filteredResources.length})`} />
+              </div>
+              <CardContent className="pt-4">
                 {filteredResources.length === 0 ? (
                   <EmptyState
                     icon={Users}

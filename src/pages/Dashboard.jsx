@@ -44,7 +44,12 @@ export default function Dashboard() {
     refetchOnMount: false
   });
 
-  const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchDashboard } = useQuery({
+  const { 
+    data: dashboardData = { projects: [], metrics: {}, pagination: {} }, 
+    isLoading: projectsLoading, 
+    isFetching: projectsFetching, 
+    refetch: refetchDashboard 
+  } = useQuery({
     queryKey: ['dashboard', { page, pageSize, search: debouncedSearch, status: statusFilter, risk: riskFilter, sort: sortBy }],
     queryFn: async () => {
       const response = await base44.functions.invoke('getDashboardData', {

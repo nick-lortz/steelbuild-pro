@@ -470,7 +470,7 @@ function DeliveryDetailTabs({ delivery, onUpdate, onDelete }) {
       <TabsContent value="overview" className="space-y-4">
         {editingOverview ? (
           <>
-            <div><Label>Date</Label><Input type="date" value={overviewData.scheduled_date || ''} onChange={(e) => setOverviewData({ ...overviewData, scheduled_date: e.target.value })} /></div>
+            <div><Label>Date</Label><Input type="date" value={formatDateForInput(overviewData.scheduled_date) || ''} onChange={(e) => setOverviewData({ ...overviewData, scheduled_date: parseInputDate(e.target.value) })} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Time Start</Label><Input type="time" value={overviewData.time_window_start || ''} onChange={(e) => setOverviewData({ ...overviewData, time_window_start: e.target.value })} /></div>
               <div><Label>Time End</Label><Input type="time" value={overviewData.time_window_end || ''} onChange={(e) => setOverviewData({ ...overviewData, time_window_end: e.target.value })} /></div>

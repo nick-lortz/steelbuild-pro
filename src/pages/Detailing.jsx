@@ -24,7 +24,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import ReportScheduler from '@/components/reports/ReportScheduler';
 
 export default function Detailing() {
-  const [selectedProject, setSelectedProject] = useState('');
+  const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
+  const [projectState, setProjectState] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dueSoonOnly, setDueSoonOnly] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
@@ -159,8 +160,9 @@ export default function Detailing() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.DrawingSet.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedData) => {
       queryClient.invalidateQueries({ queryKey: ['detailingPipeline'] });
+      if (selectedItem?.id === updatedData?.id) setSelectedItem(updatedData);
       toast.success('Item updated');
     },
     onError: (error) => {
@@ -177,6 +179,7 @@ export default function Detailing() {
     },
     onError: (error) => {
       toast.error(`Failed to delete: ${error.message}`);
+      setDeleteConfirm(null);
     }
   });
 

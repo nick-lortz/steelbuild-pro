@@ -34,7 +34,7 @@ export default function SchedulePage() {
 }
 
 function Schedule() {
-  const { activeProjectId: selectedProject } = useActiveProject();
+  const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
   const [viewMode, setViewMode] = useState('wbs');
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [showReportScheduler, setShowReportScheduler] = useState(false);
@@ -119,8 +119,9 @@ function Schedule() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedData) => {
       queryClient.invalidateQueries({ queryKey: ['scheduleWorkspace'] });
+      if (selectedTask?.id === updatedData?.id) setSelectedTask(updatedData);
       toast.success('Task updated');
       cancelEdit();
     },
@@ -134,6 +135,10 @@ function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduleWorkspace'] });
       toast.success('Task deleted');
+      setDeleteConfirm(null);
+    },
+    onError: (error) => {
+      toast.error(`Delete failed: ${error.message}`);
       setDeleteConfirm(null);
     }
   });
@@ -182,6 +187,12 @@ function Schedule() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Select value={selectedProject} onValueChange={setActiveProjectId} className="w-48">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <div className="flex items-center gap-1 border rounded-lg p-1">
               <Button variant={viewMode === 'wbs' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('wbs')}>WBS</Button>
               <Button variant={viewMode === 'gantt' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('gantt')}>Gantt</Button>
@@ -264,7 +275,7 @@ function Schedule() {
                       <td className="p-3 text-right"><Input type="number" min="0" max="100" value={editData.progress_pct || 0} onChange={(e) => updateField('progress_pct', e.target.value)} className="h-8 w-16 text-right" /></td>
                       <td className="p-3"><Select value={editData.status || ''} onValueChange={(v) => updateField('status', v)}><SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_started">Not Started</SelectItem><SelectItem value="in_progress">In Progress</SelectItem><SelectItem value="completed">Completed</SelectItem><SelectItem value="on_hold">On Hold</SelectItem></SelectContent></Select></td>
                       <td className="p-3" colSpan={2}></td>
-                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: task.id, data: { ...getSaveData(), progress_percent: Number(editData.progress_pct) } })}><Check className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={cancelEdit}><X className="h-3 w-3" /></Button></div></td>
+                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" disabled={updateMutation.isPending} onClick={() => updateMutation.mutate({ id: task.id, data: { ...getSaveData(), progress_percent: Number(editData.progress_pct) } })}><Check className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={cancelEdit}><X className="h-3 w-3" /></Button></div></td>
                     </>
                   ) : (
                     <>

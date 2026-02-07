@@ -34,7 +34,7 @@ export default function FabricationPage() {
 }
 
 function Fabrication() {
-  const { activeProjectId: selectedProject } = useActiveProject();
+  const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
   const [stageFilter, setStageFilter] = useState('all');
   const [onHoldOnly, setOnHoldOnly] = useState(false);
   const [shippingWeekOnly, setShippingWeekOnly] = useState(false);
@@ -158,8 +158,9 @@ function Fabrication() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.FabricationPackage.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedData) => {
       queryClient.invalidateQueries({ queryKey: ['fabricationControl'] });
+      if (selectedPackage?.id === updatedData?.id) setSelectedPackage(updatedData);
       toast.success('Package updated');
     },
     onError: (error) => {
@@ -172,6 +173,10 @@ function Fabrication() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabricationControl'] });
       toast.success('Package deleted');
+      setDeleteConfirm(null);
+    },
+    onError: (error) => {
+      toast.error(`Delete failed: ${error.message}`);
       setDeleteConfirm(null);
     }
   });
@@ -244,7 +249,13 @@ function Fabrication() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select value={stageFilter} onValueChange={setStageFilter}>
+            <Select value={selectedProject} onValueChange={setActiveProjectId} className="w-48 mr-auto">
+               <SelectTrigger><SelectValue /></SelectTrigger>
+               <SelectContent>
+                 {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}
+               </SelectContent>
+             </Select>
+           <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -600,7 +611,7 @@ function FabPackageDetailTabs({ package: pkg, onUpdate, onDelete }) {
             <div><Label>Stage</Label><Select value={overviewData.status} onValueChange={(val) => setOverviewData({ ...overviewData, status: val })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cutting">Cutting</SelectItem><SelectItem value="fit_up">Fit-up</SelectItem><SelectItem value="weld">Weld</SelectItem><SelectItem value="paint">Paint</SelectItem><SelectItem value="qa">QA</SelectItem><SelectItem value="ready_to_ship">Ready</SelectItem><SelectItem value="shipped">Shipped</SelectItem></SelectContent></Select></div>
             <div><Label>Progress (%)</Label><Input type="number" min="0" max="100" value={overviewData.progress_percent} onChange={(e) => setOverviewData({ ...overviewData, progress_percent: e.target.value })} /></div>
             <div><Label>Ship Target</Label><Input type="date" value={formatDateForInput(overviewData.ship_target_date) || ''} onChange={(e) => setOverviewData({ ...overviewData, ship_target_date: parseInputDate(e.target.value) })} /></div>
-            <div className="flex gap-2"><Button onClick={() => { onUpdate({ ...overviewData, progress_percent: Number(overviewData.progress_percent) }); setEditingOverview(false); }} className="flex-1">Save</Button><Button variant="outline" onClick={() => setEditingOverview(false)} className="flex-1">Cancel</Button></div>
+            <div className="flex gap-2"><Button onClick={() => { onUpdate({ ...overviewData, progress_percent: Number(overviewData.progress_percent) }); setEditingOverview(false); }} disabled={updateMutation.isPending} className="flex-1">Save</Button><Button variant="outline" onClick={() => setEditingOverview(false)} className="flex-1">Cancel</Button></div>
           </>
         ) : (
           <>

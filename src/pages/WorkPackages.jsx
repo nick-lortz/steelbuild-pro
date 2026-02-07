@@ -33,7 +33,7 @@ export default function WorkPackagesPage() {
 }
 
 function WorkPackages() {
-  const { activeProjectId: selectedProject } = useActiveProject();
+  const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
   const [statusFilter, setStatusFilter] = useState('all');
   const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -161,8 +161,9 @@ function WorkPackages() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedData) => {
       queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
+      if (selectedPackage?.id === updatedData?.id) setSelectedPackage(updatedData);
       toast.success('Package updated');
       setEditingCardId(null);
       setEditData({});
@@ -184,6 +185,7 @@ function WorkPackages() {
     },
     onError: (error) => {
       toast.error(`Failed to delete: ${error.message}`);
+      setDeleteConfirm(null);
     }
   });
 
@@ -264,6 +266,12 @@ function WorkPackages() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <Select value={selectedProject} onValueChange={setActiveProjectId} className="w-48">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Input 
               placeholder="Search packages..." 
               value={searchTerm}

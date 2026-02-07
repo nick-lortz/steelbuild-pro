@@ -32,12 +32,12 @@ export const parseInputDate = (dateStr) => {
   if (!dateStr) return null;
   
   try {
-    // dateStr is YYYY-MM-DD from input[type="date"]
+    // dateStr is YYYY-MM-DD from input[type="date"] (date-only, no time)
+    // Return as-is without timezone conversion to avoid offset drift
     const [year, month, day] = dateStr.split('-').map(Number);
     if (!year || !month || !day) return null;
     
-    const d = new Date(year, month - 1, day);
-    return d.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+    return dateStr; // Store string directly without timezone math
   } catch {
     return null;
   }

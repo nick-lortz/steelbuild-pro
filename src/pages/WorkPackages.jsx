@@ -219,12 +219,15 @@ function WorkPackages() {
   };
 
   const handleSaveCard = (id) => {
-    if (editData.progress_percent < 0 || editData.progress_percent > 100) {
+    const progress = Number(editData.progress_percent);
+    const budget = Number(editData.budget_amount);
+
+    if (progress < 0 || progress > 100) {
       toast.error('Progress must be 0-100');
       return;
     }
 
-    if (editData.budget_amount < 0) {
+    if (budget < 0) {
       toast.error('Budget must be ≥ 0');
       return;
     }
@@ -232,10 +235,12 @@ function WorkPackages() {
     updateMutation.mutate({ 
       id, 
       data: {
-        ...editData,
         name: editData.name,
-        progress_percent: Number(editData.progress_percent),
-        budget_amount: Number(editData.budget_amount)
+        status: editData.status,
+        progress_percent: progress,
+        budget_amount: budget,
+        target_date: editData.target_date,
+        assigned_lead: editData.assigned_lead
       }
     });
   };

@@ -322,17 +322,26 @@ export default function JobStatusReport() {
     {
       header: '% Complete',
       accessor: 'percent_complete',
-      render: (row) => (
-        <Input
-          type="number"
-          min="0"
-          max="100"
-          step="0.1"
-          value={row.percent_complete || 0}
-          onChange={(e) => handleUpdatePercent(row, e.target.value)}
-          className="w-20"
-        />
-      )
+      render: (row) => {
+        const draft = percentDraft[row.id];
+        const value = draft !== undefined ? draft : String(row.percent_complete || 0);
+        return (
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={value}
+            disabled={hasApprovedInvoices}
+            onChange={(e) => setPercentDraft(p => ({ ...p, [row.id]: e.target.value }))}
+            onBlur={() => handleUpdatePercent(row.id, value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            className="w-20"
+          />
+        );
+      }
     },
     {
       header: 'Earned',

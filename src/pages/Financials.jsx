@@ -337,18 +337,6 @@ function Financials() {
                 <TabsTrigger value="budget">Budget</TabsTrigger>
               </TabsList>
             </Tabs>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-64">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}>
               <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
             </Button>

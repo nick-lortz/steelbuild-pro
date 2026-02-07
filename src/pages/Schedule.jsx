@@ -182,7 +182,6 @@ function Schedule() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select>
             <div className="flex items-center gap-1 border rounded-lg p-1">
               <Button variant={viewMode === 'wbs' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('wbs')}>WBS</Button>
               <Button variant={viewMode === 'gantt' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('gantt')}>Gantt</Button>

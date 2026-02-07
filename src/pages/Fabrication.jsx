@@ -243,18 +243,6 @@ function Fabrication() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue />

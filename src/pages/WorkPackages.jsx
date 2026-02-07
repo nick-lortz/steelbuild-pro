@@ -301,7 +301,6 @@ function WorkPackages() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-48"
             />
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>

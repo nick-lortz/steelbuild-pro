@@ -246,7 +246,7 @@ export default function Detailing() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b border-purple-500/30 bg-gradient-to-r from-purple-600/5 via-zinc-950 to-black">
+      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -264,7 +264,7 @@ export default function Detailing() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={() => setShowCreateDialog(true)} className="bg-purple-600 hover:bg-purple-700 text-white font-bold h-9 text-xs uppercase rounded-lg shadow-lg shadow-purple-600/30">
+              <Button onClick={() => setShowCreateDialog(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-9 text-xs uppercase rounded-lg shadow-lg shadow-blue-600/30">
                 <Plus size={14} className="mr-1" />
                 NEW
               </Button>
@@ -331,7 +331,7 @@ export default function Detailing() {
               onClick={() => setSelectedZone('all')}
               className={cn(
                 "px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors",
-                selectedZone === 'all' ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30" : "bg-zinc-900/50 text-zinc-400 hover:text-white border border-zinc-700/50"
+                selectedZone === 'all' ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30" : "bg-zinc-900/50 text-zinc-400 hover:text-white border border-zinc-700/50"
               )}
             >
               All ({metrics.total})

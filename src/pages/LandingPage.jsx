@@ -73,7 +73,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black text-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-zinc-800/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 via-zinc-950 to-black" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-zinc-950 to-black" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-40">
           <div className="text-center space-y-8">
             <div className="flex justify-center">
@@ -93,7 +93,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Link to={createPageUrl('Dashboard')}>
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-purple-600/30">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
                   Get Started
                   <ArrowRight size={20} className="ml-2" />
                 </Button>
@@ -121,7 +121,7 @@ export default function LandingPage() {
               <Card key={idx} className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-blue-500/50 transition-all rounded-lg">
                 <CardContent className="p-6 space-y-3">
                   <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                    <Icon size={24} className="text-purple-400" />
+                    <Icon size={24} className="text-blue-400" />
                   </div>
                   <h3 className="text-base font-semibold text-white">{feature.title}</h3>
                   <p className="text-sm text-zinc-400 leading-relaxed">{feature.description}</p>
@@ -182,7 +182,7 @@ export default function LandingPage() {
               Join fabricators who are streamlining their operations with SteelBuild Pro
             </p>
             <Link to={createPageUrl('Dashboard')}>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-purple-600/30">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
                 Start Managing Projects
                 <ArrowRight size={20} className="ml-2" />
               </Button>
@@ -196,7 +196,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
                 <Building2 size={16} className="text-white" />
               </div>
               <span className="font-bold">SteelBuild Pro</span>

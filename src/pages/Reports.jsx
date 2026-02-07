@@ -448,7 +448,7 @@ export default function Reports() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header Bar */}
-      <div className="border-b border-purple-500/30 bg-gradient-to-r from-purple-600/5 via-zinc-950 to-black">
+      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
         <div className="max-w-[1600px] mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -461,7 +461,7 @@ export default function Reports() {
                 setEditingReport(null);
                 setShowForm(true);
               }}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm uppercase tracking-wider rounded-lg shadow-lg shadow-purple-600/30"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm uppercase tracking-wider rounded-lg shadow-lg shadow-blue-600/30"
             >
               <FileText size={14} className="mr-2" />
               CREATE
@@ -677,7 +677,7 @@ export default function Reports() {
               <Button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg shadow-purple-600/30"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg shadow-blue-600/30"
               >
                 {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Report'}
               </Button>

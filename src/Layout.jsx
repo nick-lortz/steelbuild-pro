@@ -288,7 +288,7 @@ function LayoutContent({ children, currentPageName }) {
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-glow">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-glow">
               <Building size={18} className="text-white" />
             </div>
             <span className="font-bold text-lg tracking-tight text-main">SteelBuild</span>
@@ -336,7 +336,7 @@ function LayoutContent({ children, currentPageName }) {
         )}>
 
         <div className="h-16 flex items-center px-4 border-b border-surface-3 flex-shrink-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-glow">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-glow">
             <Building size={20} className="text-white" />
           </div>
           <span className="font-bold text-lg tracking-tight ml-3 text-main">SteelBuild</span>
@@ -355,7 +355,7 @@ function LayoutContent({ children, currentPageName }) {
                   onClick={() => toggleGroup(group.name)}
                   className={cn(
                     'w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors rounded-lg',
-                    hasActivePage ? 'text-purple-400' : 'text-muted hover:text-main'
+                    hasActivePage ? 'text-blue-400' : 'text-muted hover:text-main'
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -386,7 +386,7 @@ function LayoutContent({ children, currentPageName }) {
                           className={cn(
                             'flex items-center gap-2 px-3 py-2 text-xs font-medium transition-all rounded-lg',
                             isActive
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-glow'
+                              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-glow'
                               : 'text-muted hover:text-main hover:bg-surface-2'
                           )}
                         >
@@ -410,7 +410,7 @@ function LayoutContent({ children, currentPageName }) {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger className="w-full flex items-center gap-2 px-3 py-2 hover:bg-surface-2 rounded-lg transition-colors">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-accent-cyan flex-shrink-0" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-accent-cyan flex-shrink-0" />
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-xs font-bold text-main truncate uppercase tracking-wider">
                     {currentUser.full_name || currentUser.email}

@@ -452,12 +452,12 @@ function BudgetControl() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Over Budget */}
                       <Card className="border-red-500/30">
-                        <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
+                        <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                          <h3 className="text-sm flex items-center gap-2 font-semibold">
                             <TrendingDown className="h-4 w-4 text-red-500" />
                             Over Budget ({(drivers.overBudget || []).length})
-                          </CardTitle>
-                        </CardHeader>
+                          </h3>
+                        </div>
                         <CardContent>
                           {(drivers.overBudget || []).length === 0 ? (
                             <p className="text-xs text-muted-foreground">All cost codes within budget</p>
@@ -479,12 +479,12 @@ function BudgetControl() {
 
                       {/* Trending Up */}
                       <Card className="border-yellow-500/30">
-                        <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
+                        <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                          <h3 className="text-sm flex items-center gap-2 font-semibold">
                             <TrendingUp className="h-4 w-4 text-yellow-500" />
                             Trending Up ({(drivers.trendingUp || []).length})
-                          </CardTitle>
-                        </CardHeader>
+                          </h3>
+                        </div>
                         <CardContent>
                           {(drivers.trendingUp || []).length === 0 ? (
                             <p className="text-xs text-muted-foreground">No forecast increases</p>
@@ -506,12 +506,12 @@ function BudgetControl() {
 
                       {/* Unallocated */}
                       <Card className="border-orange-500/30">
-                        <CardHeader>
-                          <CardTitle className="text-sm flex items-center gap-2">
+                        <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                          <h3 className="text-sm flex items-center gap-2 font-semibold">
                             <AlertCircle className="h-4 w-4 text-orange-500" />
                             Unallocated Spend
-                          </CardTitle>
-                        </CardHeader>
+                          </h3>
+                        </div>
                         <CardContent>
                           <div className="text-3xl font-bold text-orange-500">
                             ${((drivers.unallocated || 0) / 1000).toFixed(0)}K
@@ -533,9 +533,9 @@ function BudgetControl() {
                     <div className="space-y-4">
                       {/* AI Summary */}
                       <Card className="border-purple-500/30">
-                        <CardHeader>
-                          <CardTitle className="text-sm">Cost Control Analysis</CardTitle>
-                        </CardHeader>
+                        <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                          <h3 className="text-sm font-semibold">Cost Control Analysis</h3>
+                        </div>
                         <CardContent>
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
@@ -559,9 +559,9 @@ function BudgetControl() {
                       {/* AI Alerts */}
                       {(ai.alerts || []).length > 0 && (
                         <Card className="border-purple-500/30">
-                          <CardHeader>
-                            <CardTitle className="text-sm">Cost Code Alerts</CardTitle>
-                          </CardHeader>
+                          <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                            <h3 className="text-sm font-semibold">Cost Code Alerts</h3>
+                          </div>
                           <CardContent>
                             <div className="space-y-2">
                               {(ai.alerts || []).map((alert, idx) => (
@@ -584,9 +584,9 @@ function BudgetControl() {
                       {/* AI Recommendations */}
                       {(ai.recommendations || []).length > 0 && (
                         <Card className="border-purple-500/30">
-                          <CardHeader>
-                            <CardTitle className="text-sm">Recommended Actions</CardTitle>
-                          </CardHeader>
+                          <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                            <h3 className="text-sm font-semibold">Recommended Actions</h3>
+                          </div>
                           <CardContent>
                             <div className="space-y-3">
                               {(ai.recommendations || []).map((rec, idx) => (
@@ -702,9 +702,9 @@ function BudgetControl() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* By Category */}
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm">Commitments by Category</CardTitle>
-                      </CardHeader>
+                      <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                        <h3 className="text-sm font-semibold">Commitments by Category</h3>
+                      </div>
                       <CardContent>
                         <div className="space-y-2">
                           {(commitments.byCategory || []).map((cat) => (
@@ -719,9 +719,9 @@ function BudgetControl() {
 
                     {/* Top Commitments */}
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm">Top Commitments</CardTitle>
-                      </CardHeader>
+                      <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                        <h3 className="text-sm font-semibold">Top Commitments</h3>
+                      </div>
                       <CardContent>
                         <div className="space-y-2">
                           {(commitments.topCommitments || []).map((c, idx) => (
@@ -770,9 +770,9 @@ function BudgetControl() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm">Current ETC</CardTitle>
-                      </CardHeader>
+                      <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                        <h3 className="text-sm font-semibold">Current ETC</h3>
+                      </div>
                       <CardContent>
                         <div className="text-3xl font-bold text-blue-500">
                           ${((snapshot.etc || 0) / 1000).toFixed(0)}K
@@ -782,9 +782,9 @@ function BudgetControl() {
                     </Card>
 
                     <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm">Projected EAC</CardTitle>
-                      </CardHeader>
+                      <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                        <h3 className="text-sm font-semibold">Projected EAC</h3>
+                      </div>
                       <CardContent>
                         <div className="text-3xl font-bold text-purple-500">
                           ${((snapshot.eac || 0) / 1000).toFixed(0)}K
@@ -797,9 +797,9 @@ function BudgetControl() {
                       "border-2",
                       (snapshot.projectedVariance || 0) >= 0 ? "border-green-500/50" : "border-red-500/50"
                     )}>
-                      <CardHeader>
-                        <CardTitle className="text-sm">Impact on Variance</CardTitle>
-                      </CardHeader>
+                      <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                        <h3 className="text-sm font-semibold">Impact on Variance</h3>
+                      </div>
                       <CardContent>
                         <div className={cn("text-3xl font-bold", getVarianceColor(snapshot.projectedVariance || 0))}>
                           {(snapshot.projectedVariance || 0) >= 0 ? '+' : ''}${((snapshot.projectedVariance || 0) / 1000).toFixed(0)}K
@@ -813,12 +813,12 @@ function BudgetControl() {
 
                   {(ai.missingDataReasons || []).length > 0 && (
                     <Card className="border-amber-500/30 bg-amber-500/5">
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center gap-2">
+                      <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                        <h3 className="text-sm flex items-center gap-2 font-semibold">
                           <AlertCircle className="h-4 w-4 text-amber-500" />
                           Forecast Confidence Limited
-                        </CardTitle>
-                      </CardHeader>
+                        </h3>
+                      </div>
                       <CardContent>
                         <ul className="text-xs text-muted-foreground list-disc ml-4 space-y-1">
                           {(ai.missingDataReasons || []).map((reason, idx) => (
@@ -835,15 +835,15 @@ function BudgetControl() {
               {integrityWarnings.length > 0 && (
                 <Collapsible open={showIntegrity} onOpenChange={setShowIntegrity}>
                   <Card className="border-red-500/30">
-                    <CardHeader>
+                    <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
                       <CollapsibleTrigger className="flex items-center justify-between w-full">
-                        <CardTitle className="text-sm flex items-center gap-2">
+                        <h3 className="text-sm flex items-center gap-2 font-semibold">
                           <XCircle className="h-4 w-4 text-red-500" />
                           Data Integrity Warnings ({integrityWarnings.length})
-                        </CardTitle>
+                        </h3>
                         {showIntegrity ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </CollapsibleTrigger>
-                    </CardHeader>
+                    </div>
                     <CollapsibleContent>
                       <CardContent>
                         <ul className="text-xs text-muted-foreground space-y-1">

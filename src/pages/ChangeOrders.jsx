@@ -484,15 +484,15 @@ export default function ChangeOrders() {
             {ai.recommendations && ai.recommendations.length > 0 && (
               <Collapsible open={showAI} onOpenChange={setShowAI}>
                 <Card className="border-purple-500/30">
-                  <CardHeader>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-purple-500" />
-                        AI Change Order Analyst
-                      </CardTitle>
+                    <div className="flex items-center justify-between p-6 pb-3 border-b border-border">
+                      <CollapsibleTrigger className="flex items-center justify-between w-full">
+                        <h3 className="text-sm flex items-center gap-2 font-semibold">
+                          <Zap className="h-4 w-4 text-purple-500" />
+                          AI Change Order Analyst
+                        </h3>
                       {showAI ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </CollapsibleTrigger>
-                  </CardHeader>
+                      </CollapsibleTrigger>
+                      </div>
                   <CollapsibleContent>
                     <CardContent>
                       <div className="space-y-4">

@@ -365,40 +365,40 @@ export default function ChangeOrders() {
       {/* Metrics */}
       <div className="border-b border-zinc-800/50 bg-zinc-950/50">
         <div className="max-w-[1800px] mx-auto px-8 py-4">
-
           <div className="grid grid-cols-3 gap-4">
-        <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-zinc-400 text-sm">Approved COs</p>
-              <p className="text-xl font-bold text-green-400">
-                +${(totals.approved || 0).toLocaleString()}
-              </p>
+            <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-400 text-sm">Approved COs</p>
+                  <p className="text-xl font-bold text-green-400">
+                    +${(totals.approved || 0).toLocaleString()}
+                  </p>
+                </div>
+                <DollarSign className="text-green-500" size={24} />
+              </div>
             </div>
-            <DollarSign className="text-green-500" size={24} />
-          </div>
-        </div>
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-zinc-400 text-sm">Pending COs</p>
-              <p className="text-xl font-bold text-amber-400">
-                ${(totals.pending || 0).toLocaleString()}
-              </p>
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-400 text-sm">Pending COs</p>
+                  <p className="text-xl font-bold text-amber-400">
+                    ${(totals.pending || 0).toLocaleString()}
+                  </p>
+                </div>
+                <DollarSign className="text-amber-500" size={24} />
+              </div>
             </div>
-            <DollarSign className="text-amber-500" size={24} />
-          </div>
-        </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-zinc-400 text-sm">Schedule Impact</p>
-              <p className="text-xl font-bold text-white">
-                {(totals.days || 0) > 0 ? '+' : ''}{totals.days || 0} days
-              </p>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-zinc-400 text-sm">Schedule Impact</p>
+                  <p className="text-xl font-bold text-white">
+                    {(totals.days || 0) > 0 ? '+' : ''}{totals.days || 0} days
+                  </p>
+                </div>
+                <Clock className="text-zinc-500" size={24} />
+              </div>
             </div>
-            <Clock className="text-zinc-500" size={24} />
-          </div>
           </div>
         </div>
       </div>
@@ -407,52 +407,53 @@ export default function ChangeOrders() {
       <div className="border-b border-zinc-800/50 bg-zinc-950/30">
         <div className="max-w-[1800px] mx-auto px-8 py-3">
           <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <Input
-            placeholder="Search change orders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-          />
-        </div>
-        <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="void">Void</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={pmFilter} onValueChange={setPmFilter}>
-          <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-            <SelectValue placeholder="Filter by PM" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All PMs</SelectItem>
-            {uniquePMs.map(pm => (
-              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-            ))}
-          </SelectContent>
-          </Select>
-        </div>
-      </div>
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder="Search change orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+              />
+            </div>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="void">Void</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={pmFilter} onValueChange={setPmFilter}>
+              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by PM" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All PMs</SelectItem>
+                {uniquePMs.map(pm => (
+                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            </div>
+            </div>
+            </div>
 
       {/* Content */}
       <div className="max-w-[1800px] mx-auto px-8 py-6">

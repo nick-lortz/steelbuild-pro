@@ -98,14 +98,15 @@ Deno.serve(async (req) => {
       const totalTasks = pTasks.length;
       const overdueTasks = pTasks.filter(t => t.status !== 'completed' && t.end_date && t.end_date < today).length;
 
-      const budget = pFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
+      // Use contract value as budget if no financials
+      const budget = pFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0) || project.contract_value || 0;
       const actual = pFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
       const committed = pFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
       const totalCost = actual + committed;
       
       // Budget variance as percentage: positive = over budget, negative = under budget
-      const budgetVariance = budget > 0 ? ((totalCost - budget) / budget) * 100 : 0;
-      const budgetVsActual = budget > 0 ? (totalCost / budget) * 100 : 0;
+      const budgetVariance = budget > 0 && totalCost > 0 ? ((totalCost - budget) / budget) * 100 : 0;
+      const budgetVsActual = budget > 0 && totalCost > 0 ? (totalCost / budget) * 100 : 0;
       
       // Cost health: use budget variance (positive = over, negative = under)
       const costHealth = budgetVariance;
@@ -190,7 +191,8 @@ Deno.serve(async (req) => {
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
     ).length;
 
-    // Calculate portfolio-wide financial metrics from PROJECT data
+    // Calculate portfolio-wide financial metrics
+    // Use contract values for all projects as baseline
     const totalContractValue = allUserProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
     
     // Calculate from project-level aggregated financials
@@ -201,7 +203,8 @@ Deno.serve(async (req) => {
     
     // Budget variance: (actual + committed - budget) / budget * 100
     // Positive = over budget (bad), negative = under budget (good)
-    const avgBudgetVariance = totalBudget > 0 
+    // Only calculate if we have both budget AND costs
+    const avgBudgetVariance = totalBudget > 0 && totalCost > 0
       ? ((totalCost - totalBudget) / totalBudget) * 100 
       : 0;
 

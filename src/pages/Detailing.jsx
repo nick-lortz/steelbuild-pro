@@ -592,7 +592,7 @@ function NewDetailingForm({ projectId, onSubmit, onCancel }) {
     project_id: projectId,
     set_name: '',
     set_number: '',
-    status: 'IFA',
+    status: 'draft',
     discipline: 'structural',
     reviewer: ''
   });

@@ -171,9 +171,9 @@ export default function Dashboard() {
             <CardContent>
               <div className={cn(
                 "text-2xl font-bold",
-                (metrics.avgBudgetVariance || 0) < 0 ? "text-red-500" : "text-green-500"
+                avgBudgetVariance < 0 ? "text-red-500" : "text-green-500"
               )}>
-                {(metrics.avgBudgetVariance || 0).toFixed(1)}%
+                {avgBudgetVariance.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground">
                 Average variance

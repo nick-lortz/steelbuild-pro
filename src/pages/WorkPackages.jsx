@@ -588,25 +588,37 @@ function WorkPackages() {
 
                                 <div className="mt-2 space-y-2">
                                   {editingCardId === pkg.id ? (
-                                    <>
-                                      {/* Status */}
-                                      <div onClick={(e) => e.stopPropagation()}>
-                                        <Label className="text-[10px] text-muted-foreground">Status</Label>
-                                        <Select
-                                          value={editData.status || "planned"}
-                                          onValueChange={(val) => setEditData((p) => ({ ...p, status: val }))}
-                                        >
-                                          <SelectTrigger className="h-8">
-                                            <SelectValue />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="planned">Planned</SelectItem>
-                                            <SelectItem value="in_progress">In Progress</SelectItem>
-                                            <SelectItem value="blocked">Blocked</SelectItem>
-                                            <SelectItem value="completed">Completed</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
+                                      <>
+                                         {/* Name */}
+                                         <div onClick={(e) => e.stopPropagation()}>
+                                           <Label className="text-[10px] text-muted-foreground">Name</Label>
+                                           <Input
+                                             className="h-8"
+                                             value={editData.name || ""}
+                                             onChange={(e) =>
+                                               setEditData((p) => ({ ...p, name: e.target.value }))
+                                             }
+                                           />
+                                         </div>
+
+                                         {/* Status */}
+                                         <div onClick={(e) => e.stopPropagation()}>
+                                           <Label className="text-[10px] text-muted-foreground">Status</Label>
+                                           <Select
+                                             value={editData.status || "planned"}
+                                             onValueChange={(val) => setEditData((p) => ({ ...p, status: val }))}
+                                           >
+                                             <SelectTrigger className="h-8">
+                                               <SelectValue />
+                                             </SelectTrigger>
+                                             <SelectContent>
+                                               <SelectItem value="planned">Planned</SelectItem>
+                                               <SelectItem value="in_progress">In Progress</SelectItem>
+                                               <SelectItem value="blocked">Blocked</SelectItem>
+                                               <SelectItem value="completed">Completed</SelectItem>
+                                             </SelectContent>
+                                           </Select>
+                                         </div>
 
                                       {/* Progress + Budget */}
                                       <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>

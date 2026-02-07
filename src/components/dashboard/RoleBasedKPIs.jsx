@@ -45,9 +45,11 @@ export default function RoleBasedKPIs({ role, metrics, projects }) {
     {
       label: 'Budget Performance',
       value: `${(metrics.avgBudgetVariance || 0) > 0 ? '+' : ''}${(metrics.avgBudgetVariance || 0).toFixed(1)}%`,
-      icon: TrendingUp,
-      trend: (metrics.avgBudgetVariance || 0) < 0 ? 'up' : 'down',
-      color: Math.abs(metrics.avgBudgetVariance || 0) > 5 ? 'bg-red-500' : 'bg-green-500'
+      icon: DollarSign,
+      trend: (metrics.avgBudgetVariance || 0) <= 0 ? 'up' : 'down',
+      trendValue: `${Math.abs(metrics.avgBudgetVariance || 0).toFixed(1)}%`,
+      color: (metrics.avgBudgetVariance || 0) > 10 ? 'bg-red-500' : 
+             (metrics.avgBudgetVariance || 0) > 0 ? 'bg-amber-500' : 'bg-green-500'
     },
     {
       label: 'Schedule Performance',

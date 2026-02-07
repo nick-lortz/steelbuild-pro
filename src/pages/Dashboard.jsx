@@ -240,14 +240,15 @@ export default function Dashboard() {
                   <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">Project Forecasts</p>
                   {weeklySummary.forecasts.map((f, idx) => (
                     <div key={idx} className="p-2 bg-blue-500/10 border border-blue-500/30 rounded">
-                      <p className="text-[10px] text-white font-bold">{f.project_number}</p>
+                      <p className="text-[10px] text-white font-bold">{f.project_number || 'Unknown'}</p>
+                      <p className="text-[8px] text-zinc-500 truncate">{f.project_name}</p>
                       <div className="grid grid-cols-2 gap-1 mt-1">
                         <div>
                           <p className="text-[8px] text-zinc-600">Completion</p>
                           <p className={cn("text-[9px] font-bold", 
-                            f.forecast?.completion_forecast?.variance_days > 0 ? "text-red-400" : "text-green-400"
+                            (f.forecast?.completion_forecast?.variance_days || 0) > 0 ? "text-red-400" : "text-green-400"
                           )}>
-                            {f.forecast?.completion_forecast?.variance_days > 0 ? '+' : ''}{f.forecast?.completion_forecast?.variance_days} days
+                            {(f.forecast?.completion_forecast?.variance_days || 0) > 0 ? '+' : ''}{f.forecast?.completion_forecast?.variance_days || 0} days
                           </p>
                         </div>
                         <div>

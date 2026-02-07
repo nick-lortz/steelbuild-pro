@@ -95,13 +95,20 @@ Deno.serve(async (req) => {
       const pCOs = cosByProject[project.id] || [];
 
       const completedTasks = pTasks.filter(t => t.status === 'completed').length;
+      const totalTasks = pTasks.length;
       const overdueTasks = pTasks.filter(t => t.status !== 'completed' && t.end_date && t.end_date < today).length;
 
       const budget = pFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = pFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
       const committed = pFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
       const totalCost = actual + committed;
-      const costHealth = budget > 0 ? Math.round((totalCost / budget) * 100) : 0;
+      
+      // Budget variance as percentage: positive = over budget, negative = under budget
+      const budgetVariance = budget > 0 ? ((totalCost - budget) / budget) * 100 : 0;
+      const budgetVsActual = budget > 0 ? (totalCost / budget) * 100 : 0;
+      
+      // Cost health: convert to -100 to +100 scale (negative = under, positive = over)
+      const costHealth = budgetVariance;
 
       // Simple schedule slip (days, not business days for perf)
       let daysSlip = 0;
@@ -113,10 +120,10 @@ Deno.serve(async (req) => {
 
       const openRFIs = pRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
       const pendingCOs = pCOs.filter(c => c.status === 'submitted' || c.status === 'under_review').length;
-      const progress = pTasks.length > 0 ? Math.round((completedTasks / pTasks.length) * 100) : 0;
+      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      // Risk calculation (simple thresholds)
-      const isAtRisk = costHealth > 90 || daysSlip > 5 || overdueTasks > 0;
+      // Risk calculation: over budget by 10%, schedule slip > 5 days, or overdue tasks
+      const isAtRisk = budgetVariance > 10 || daysSlip > 5 || overdueTasks > 0 || openRFIs > 5;
 
       return {
         id: project.id,
@@ -125,14 +132,19 @@ Deno.serve(async (req) => {
         status: project.status,
         phase: project.phase || 'fabrication',
         progress,
-        costHealth: 100 - costHealth, // Invert so lower is worse
+        costHealth,
+        budgetVsActual: Math.round(budgetVsActual),
         daysSlip,
         completedTasks,
+        totalTasks,
         overdueTasks,
         openRFIs,
         pendingCOs,
         isAtRisk,
-        riskScore: (costHealth > 90 ? 3 : 0) + (daysSlip > 5 ? 2 : 0) + (overdueTasks > 0 ? 1 : 0)
+        riskScore: (budgetVariance > 10 ? 3 : 0) + (daysSlip > 5 ? 2 : 0) + (overdueTasks > 0 ? 1 : 0),
+        budget,
+        actual,
+        committed
       };
     });
 
@@ -173,49 +185,50 @@ Deno.serve(async (req) => {
     // === PORTFOLIO METRICS ===
     const activeProjects = projectsWithHealth.filter(p => p.status === 'in_progress' || p.status === 'awarded').length;
     const atRiskProjects = projectsWithHealth.filter(p => p.isAtRisk).length;
-    const overdueTasks = projectsWithHealth.reduce((sum, p) => sum + p.overdueTasks, 0);
+    const overdueTasks = projectsWithHealth.reduce((sum, p) => sum + (p.overdueTasks || 0), 0);
     const upcomingMilestones = tasks.filter(t => 
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
     ).length;
 
-    // Calculate portfolio-wide financial metrics
+    // Calculate portfolio-wide financial metrics from PROJECT data
     const totalContractValue = allUserProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
-    const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
-    const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-    const totalCommitted = financials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
+    
+    // Calculate from project-level aggregated financials
+    const totalBudget = projectsWithHealth.reduce((sum, p) => sum + (p.budget || 0), 0);
+    const totalActual = projectsWithHealth.reduce((sum, p) => sum + (p.actual || 0), 0);
+    const totalCommitted = projectsWithHealth.reduce((sum, p) => sum + (p.committed || 0), 0);
+    const totalCost = totalActual + totalCommitted;
     
     // Budget variance: (actual + committed - budget) / budget * 100
+    // Positive = over budget (bad), negative = under budget (good)
     const avgBudgetVariance = totalBudget > 0 
-      ? ((totalActual + totalCommitted - totalBudget) / totalBudget) * 100 
+      ? ((totalCost - totalBudget) / totalBudget) * 100 
       : 0;
 
-    // Average schedule progress
+    // Average schedule progress across all projects
     const avgScheduleProgress = projectsWithHealth.length > 0
-      ? projectsWithHealth.reduce((sum, p) => sum + p.progress, 0) / projectsWithHealth.length
+      ? Math.round(projectsWithHealth.reduce((sum, p) => sum + (p.progress || 0), 0) / projectsWithHealth.length)
       : 0;
 
-    // Critical issues: overdue tasks + open RFIs with priority high/critical
-    const criticalRFIs = rfis.filter(r => 
-      (r.status === 'submitted' || r.status === 'under_review') && 
-      (r.priority === 'high' || r.priority === 'critical')
-    ).length;
-    const criticalIssues = overdueTasks + criticalRFIs;
-
-    // Open RFIs
-    const openRFIs = rfis.filter(r => 
-      r.status !== 'answered' && r.status !== 'closed'
-    ).length;
-
-    // Overdue RFIs (business days logic simplified)
+    // Critical issues: overdue tasks + overdue RFIs
     const overdueRFIs = rfis.filter(r => 
       (r.status === 'submitted' || r.status === 'under_review') && 
       r.due_date && r.due_date < today
     ).length;
+    const criticalIssues = overdueTasks + overdueRFIs;
 
-    // Pending approvals (COs + drawings)
+    // Open RFIs (all non-closed)
+    const openRFIs = rfis.filter(r => 
+      r.status !== 'answered' && r.status !== 'closed'
+    ).length;
+
+    // Pending approvals (change orders under review)
     const pendingApprovals = changeOrders.filter(c => 
       c.status === 'submitted' || c.status === 'under_review'
     ).length;
+
+    // Portfolio growth (would need historical comparison - set to 0 for now)
+    const portfolioGrowth = 0;
 
     const duration = Date.now() - startTime;
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
@@ -236,7 +249,10 @@ Deno.serve(async (req) => {
         openRFIs,
         overdueRFIs,
         pendingApprovals,
-        portfolioGrowth: 0 // Would need historical data to calculate
+        portfolioGrowth,
+        totalBudget,
+        totalActual,
+        totalCommitted
       }
     });
 

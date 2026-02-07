@@ -106,7 +106,9 @@ export default function AIForecastPanel({ projectId }) {
               <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Completion</p>
             </div>
             <p className="text-lg font-black text-white mb-1">
-              {completionForecast?.projected_date ? format(new Date(completionForecast.projected_date), 'MMM d, yyyy') : 'TBD'}
+              {completionForecast?.projected_date && !isNaN(new Date(completionForecast.projected_date).getTime()) 
+                ? format(new Date(completionForecast.projected_date), 'MMM d, yyyy') 
+                : 'TBD'}
             </p>
             <div className="flex items-center gap-2">
               {isLate ? <TrendingUp size={10} className="text-red-400" /> : <TrendingDown size={10} className="text-green-400" />}
@@ -189,7 +191,7 @@ export default function AIForecastPanel({ projectId }) {
                         {m.status === 'critical' && <AlertTriangle size={12} className="text-red-400" />}
                       </div>
                     </div>
-                    {m.target_date && (
+                    {m.target_date && !isNaN(new Date(m.target_date).getTime()) && (
                       <p className="text-[9px] text-zinc-500 mb-1">Target: {format(new Date(m.target_date), 'MMM d, yyyy')}</p>
                     )}
                     {m.constraints?.length > 0 && (
@@ -270,7 +272,9 @@ export default function AIForecastPanel({ projectId }) {
         {/* Analysis Timestamp */}
         <div className="pt-2 border-t border-zinc-800">
           <p className="text-[9px] text-zinc-600 text-center">
-            Forecast generated {data.analysis_date ? format(new Date(data.analysis_date), 'MMM d, h:mm a') : 'recently'}
+            Forecast generated {data.analysis_date && !isNaN(new Date(data.analysis_date).getTime()) 
+              ? format(new Date(data.analysis_date), 'MMM d, h:mm a') 
+              : 'recently'}
           </p>
         </div>
       </CardContent>

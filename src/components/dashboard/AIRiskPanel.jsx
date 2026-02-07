@@ -234,7 +234,7 @@ export default function AIRiskPanel({ projectId }) {
                       )}>
                         {action.priority}
                       </Badge>
-                      {action.due_by && (
+                      {action.due_by && !isNaN(new Date(action.due_by).getTime()) && (
                         <span className="text-[9px] text-zinc-500 font-mono">
                           Due: {format(new Date(action.due_by), 'MMM d')}
                         </span>
@@ -247,7 +247,7 @@ export default function AIRiskPanel({ projectId }) {
               </div>
             )}
 
-            {riskData?.analyzed_at && (
+            {riskData?.analyzed_at && !isNaN(new Date(riskData.analyzed_at).getTime()) && (
               <p className="text-[9px] text-zinc-600 text-center font-mono pt-2">
                 Last analyzed: {format(new Date(riskData.analyzed_at), 'MMM d, h:mm a')}
               </p>

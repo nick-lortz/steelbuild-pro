@@ -613,10 +613,8 @@ export default function JobStatusReport() {
 
       {/* Invoice History */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Billing History</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SectionHeader title="Billing History" />
+        <CardContent className="pt-4">
           <DataTable
             columns={invoiceColumns}
             data={invoices}

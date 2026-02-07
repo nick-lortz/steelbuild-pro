@@ -405,7 +405,7 @@ export default function Reports() {
               generateReport(row, 'csv');
             }}
             disabled={generatingReport === row.id}
-            className="border-zinc-700"
+            className="border-zinc-700/50 hover:bg-zinc-800/50 rounded-lg"
           >
             <FileSpreadsheet size={14} className="mr-1" />
             CSV
@@ -417,7 +417,7 @@ export default function Reports() {
               generateReport(row, 'pdf');
             }}
             disabled={generatingReport === row.id}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg shadow-blue-600/30"
           >
             {generatingReport === row.id ? (
               <>
@@ -446,14 +446,14 @@ export default function Reports() {
   const { totalReports, activeReports, scheduledReports } = reportStats;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header Bar */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
+        <div className="max-w-[1600px] mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Report Center</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">{totalReports} REPORTS • {activeReports} ACTIVE</p>
+              <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Report Center</h1>
+              <p className="text-xs text-zinc-400 font-mono mt-2">{totalReports} REPORTS • {activeReports} ACTIVE</p>
             </div>
             <Button 
               onClick={() => {
@@ -461,9 +461,9 @@ export default function Reports() {
                 setEditingReport(null);
                 setShowForm(true);
               }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm uppercase tracking-wider rounded-lg shadow-lg shadow-blue-600/30"
             >
-              <FileText size={14} className="mr-1" />
+              <FileText size={14} className="mr-2" />
               CREATE
             </Button>
           </div>
@@ -471,29 +471,29 @@ export default function Reports() {
       </div>
 
       {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL</div>
-              <div className="text-2xl font-bold font-mono text-white">{totalReports}</div>
+      <div className="border-b border-zinc-800/50 bg-gradient-to-r from-black to-zinc-900/30">
+        <div className="max-w-[1600px] mx-auto px-6 py-6">
+          <div className="grid grid-cols-3 gap-8">
+            <div className="border-l border-blue-500/20 pl-6">
+              <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">TOTAL</div>
+              <div className="text-3xl font-bold text-white">{totalReports}</div>
             </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">ACTIVE</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{activeReports}</div>
+            <div className="border-l border-cyan-500/20 pl-6">
+              <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">ACTIVE</div>
+              <div className="text-3xl font-bold text-emerald-400">{activeReports}</div>
             </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SCHEDULED</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">{scheduledReports}</div>
+            <div className="border-l border-blue-500/20 pl-6">
+              <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">SCHEDULED</div>
+              <div className="text-3xl font-bold text-cyan-400">{scheduledReports}</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <div className="max-w-[1600px] mx-auto px-6 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsList className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg">
             <TabsTrigger value="dashboard">
               <LayoutDashboard size={14} className="mr-2" />
               Dashboard
@@ -573,7 +573,7 @@ export default function Reports() {
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl bg-zinc-950 border-zinc-800/50 text-white max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl">
           <DialogHeader>
             <DialogTitle>{editingReport ? 'Edit Report' : 'Create Report'}</DialogTitle>
           </DialogHeader>
@@ -581,12 +581,12 @@ export default function Reports() {
             <div className="space-y-2">
               <Label>Report Name *</Label>
               <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Monthly Financial Summary"
-                required
-                className="bg-zinc-800 border-zinc-700"
-              />
+                 value={formData.name}
+                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                 placeholder="Monthly Financial Summary"
+                 required
+                 className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
+               />
             </div>
 
             <div className="space-y-2">
@@ -595,7 +595,7 @@ export default function Reports() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description of the report"
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
               />
             </div>
 
@@ -606,7 +606,7 @@ export default function Reports() {
                   value={formData.report_type} 
                   onValueChange={(v) => setFormData({ ...formData, report_type: v })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -625,7 +625,7 @@ export default function Reports() {
                   value={formData.schedule} 
                   onValueChange={(v) => setFormData({ ...formData, schedule: v })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -677,7 +677,7 @@ export default function Reports() {
               <Button
                 type="submit"
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg shadow-blue-600/30"
               >
                 {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Report'}
               </Button>

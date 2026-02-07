@@ -241,39 +241,6 @@ function WorkPackages() {
     setEditData({});
   };
 
-  if (!selectedProject) {
-    return (
-      <ErrorBoundary>
-        <div className="space-y-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Work Packages</h1>
-              <p className="text-muted-foreground mt-2">Production Execution Control Center</p>
-            </div>
-          </div>
-          
-          <Card className="max-w-md">
-            <CardContent className="pt-6">
-              <p className="text-sm font-medium mb-4">Select a project to manage packages</p>
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <div className="space-y-6 max-w-[1800px] mx-auto">
@@ -301,17 +268,6 @@ function WorkPackages() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-48"
             />
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue />

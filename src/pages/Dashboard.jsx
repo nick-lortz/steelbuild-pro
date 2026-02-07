@@ -72,6 +72,13 @@ export default function Dashboard() {
   const metrics = dashboardData?.metrics || {};
   const pagination = dashboardData?.pagination || {};
 
+  // Safe metric accessors
+  const totalProjects = metrics?.totalProjects || 0;
+  const activeProjects = metrics?.activeProjects || 0;
+  const totalContractValue = metrics?.totalContractValue || 0;
+  const avgBudgetVariance = metrics?.avgBudgetVariance || 0;
+  const atRiskProjects = metrics?.atRiskProjects || 0;
+
   const handleGeneratePDF = async () => {
     setGeneratingPDF(true);
     try {

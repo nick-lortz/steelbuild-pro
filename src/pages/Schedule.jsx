@@ -122,8 +122,7 @@ function Schedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduleWorkspace'] });
       toast.success('Task updated');
-      setEditingRow(null);
-      setEditData({});
+      cancelEdit();
     },
     onError: (error) => {
       toast.error(`Failed: ${error.message}`);

@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       const budgetVariance = budget > 0 ? ((totalCost - budget) / budget) * 100 : 0;
       const budgetVsActual = budget > 0 ? (totalCost / budget) * 100 : 0;
       
-      // Cost health: convert to -100 to +100 scale (negative = under, positive = over)
+      // Cost health: use budget variance (positive = over, negative = under)
       const costHealth = budgetVariance;
 
       // Simple schedule slip (days, not business days for perf)

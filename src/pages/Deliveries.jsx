@@ -356,9 +356,9 @@ export default function Deliveries() {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
+      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -373,7 +373,7 @@ export default function Deliveries() {
                   setEditingDelivery(null);
                   setShowWizard(true);
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-blue-600/30"
               >
                 <Plus size={14} className="mr-1" />
                 NEW DELIVERY
@@ -400,7 +400,7 @@ export default function Deliveries() {
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
-           <TabsList className="bg-zinc-900 border border-zinc-800">
+           <TabsList className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg">
              <TabsTrigger value="lookAhead">
                <Calendar size={14} className="mr-2" />
                Look-Ahead
@@ -420,10 +420,10 @@ export default function Deliveries() {
           <TabsContent value="lookAhead" className="space-y-4">
             <div className="flex gap-3 mb-4">
               <Select value={filterZone} onValueChange={setFilterZone}>
-                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+                <SelectTrigger className="w-48 bg-zinc-900/50 border-zinc-700/50 rounded-lg">
                   <SelectValue placeholder="All Zones" />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent className="bg-zinc-900 border-zinc-800/50">
                   <SelectItem value="all">All Zones</SelectItem>
                   {[...new Set(filteredDeliveries.map(d => d.gridlines_zone).filter(Boolean))].map(zone => (
                     <SelectItem key={zone} value={zone}>{zone}</SelectItem>
@@ -431,10 +431,10 @@ export default function Deliveries() {
                 </SelectContent>
               </Select>
               <Select value={filterCrane} onValueChange={setFilterCrane}>
-                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-                  <SelectValue placeholder="All Cranes" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+               <SelectTrigger className="w-48 bg-zinc-900/50 border-zinc-700/50 rounded-lg">
+                 <SelectValue placeholder="All Cranes" />
+               </SelectTrigger>
+               <SelectContent className="bg-zinc-900 border-zinc-800/50">
                   <SelectItem value="all">All Cranes</SelectItem>
                   {[...new Set(filteredDeliveries.map(d => d.required_crane).filter(Boolean))].map(crane => (
                     <SelectItem key={crane} value={crane}>{crane}</SelectItem>
@@ -482,10 +482,10 @@ export default function Deliveries() {
                 />
               </div>
               <Select value={projectFilter} onValueChange={setProjectFilter}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800">
+                <SelectTrigger className="w-64 bg-zinc-900/50 border-zinc-700/50 rounded-lg">
                   <SelectValue placeholder="All Projects" />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent className="bg-zinc-900 border-zinc-800/50">
                   <SelectItem value="all">All Projects</SelectItem>
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
@@ -493,10 +493,10 @@ export default function Deliveries() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+               <SelectTrigger className="w-48 bg-zinc-900/50 border-zinc-700/50 rounded-lg">
+                 <SelectValue placeholder="All Statuses" />
+               </SelectTrigger>
+               <SelectContent className="bg-zinc-900 border-zinc-800/50">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="requested">Requested</SelectItem>
@@ -528,7 +528,7 @@ export default function Deliveries() {
 
       {/* Wizard Dialog */}
       <Dialog open={showWizard} onOpenChange={setShowWizard}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-zinc-800/50 text-white rounded-lg">
           <DialogHeader>
             <DialogTitle>{editingDelivery ? 'Edit Delivery' : 'Create New Delivery'}</DialogTitle>
           </DialogHeader>
@@ -553,7 +553,7 @@ export default function Deliveries() {
 
       {/* Detail Panel */}
       <Sheet open={!!selectedDelivery} onOpenChange={(open) => !open && setSelectedDelivery(null)}>
-        <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-2xl bg-zinc-950 border-zinc-800/50 text-white overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="text-white">Delivery Details</SheetTitle>
           </SheetHeader>
@@ -585,7 +585,7 @@ export default function Deliveries() {
 
       {/* Receiving Mode */}
       <Dialog open={!!receivingDelivery} onOpenChange={(open) => !open && setReceivingDelivery(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-zinc-800/50 text-white rounded-lg">
           <DialogHeader>
             <DialogTitle>Receiving: {receivingDelivery?.package_name}</DialogTitle>
           </DialogHeader>
@@ -607,7 +607,7 @@ export default function Deliveries() {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteDelivery} onOpenChange={() => setDeleteDelivery(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent className="bg-zinc-950 border-zinc-800/50 rounded-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Delivery?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">

@@ -315,7 +315,7 @@ export default function Financials() {
                               "h-2 rounded-full transition-all",
                               cat.variance >= 0 ? "bg-green-500" : "bg-red-500"
                             )}
-                            style={{ width: `${Math.min(100, Math.max(0, (cat.actual / cat.budget) * 100))}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, (cat.forecast / (cat.budget || 1)) * 100))}%` }}
                           />
                         </div>
                       </div>
@@ -425,7 +425,7 @@ export default function Financials() {
 
                 <Card className={cn(
                   "border-2",
-                  (billing.underOverBilled || 0) >= 0 ? "border-red-500/50 bg-red-500/5" : "border-green-500/50 bg-green-500/5"
+                  (billing.underOverBilled || 0) < 0 ? "border-red-500/50 bg-red-500/5" : "border-green-500/50 bg-green-500/5"
                 )}>
                   <CardContent className="pt-4">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Under/Overbilled</p>

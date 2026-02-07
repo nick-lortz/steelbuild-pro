@@ -47,17 +47,15 @@ Deno.serve(async (req) => {
     // Calculate burn rate (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const recentExpenses = expenses.filter(e => e.expense_date && new Date(e.expense_date) >= thirtyDaysAgo);
-    const burnRate = recentExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0) / 30;
+    const actualDays = Math.min(30, Math.ceil((Date.now() - thirtyDaysAgo.getTime()) / (24 * 60 * 60 * 1000)));
+    const burnRate = actualDays > 0 ? recentExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0) / actualDays : 0;
 
     // Breakdown by category
     const categories = ['labor', 'material', 'equipment', 'subcontract', 'other'];
     const byCategory = categories.map(cat => {
       const catBudget = budgetLines.filter(b => b.category === cat);
       const catExpenses = expenses.filter(e => e.category === cat);
-      const catETC = estimatedCosts.filter(etc => {
-        const budgetLine = budgetLines.find(b => b.id === etc.financial_id);
-        return budgetLine?.category === cat;
-      });
+      const catETC = estimatedCosts.filter(etc => etc.category === cat);
 
       const budget = catBudget.reduce((sum, b) => sum + (Number(b.current_budget) || 0), 0);
       const actual = catExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);

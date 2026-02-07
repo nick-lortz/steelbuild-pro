@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReportScheduler from '@/components/reports/ReportScheduler';
@@ -29,6 +30,9 @@ export default function LookAheadPlanning() {
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
   const [showAI, setShowAI] = useState(true);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [showEditTask, setShowEditTask] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -77,7 +81,7 @@ export default function LookAheadPlanning() {
       console.debug('[getLookAheadData] normalized:', normalized);
       return normalized;
     },
-    enabled: !!selectedProject,
+    enabled: selectedProject !== '',
     staleTime: 2 * 60 * 1000,
     retry: 2
   });
@@ -117,11 +121,30 @@ export default function LookAheadPlanning() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
       toast.success('Task updated');
+      setShowEditTask(false);
+      setSelectedTask(null);
     },
     onError: (error) => {
       toast.error(`Failed: ${error.message}`);
     }
   });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id) => base44.entities.Task.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
+      toast.success('Task deleted');
+      setDeleteConfirm(null);
+      setShowEditTask(false);
+      setSelectedTask(null);
+    },
+    onError: (error) => toast.error(`Failed: ${error.message}`)
+  });
+
+  const openTask = (task) => {
+    setSelectedTask(task);
+    setShowEditTask(true);
+  };
 
   const handleRefresh = () => {
     refetch();
@@ -238,7 +261,11 @@ export default function LookAheadPlanning() {
                         <Card className="bg-muted/20 border-dashed"><CardContent className="py-6 text-center"><p className="text-xs text-muted-foreground">No tasks</p></CardContent></Card>
                       ) : (
                         weekTasks.map((task) => (
-                          <Card key={task.id} className={cn("cursor-pointer hover:border-amber-500 transition-colors", !task.is_ready && "border-red-500/50")}>
+                          <Card
+                            key={task.id}
+                            className={cn("cursor-pointer hover:border-amber-500 transition-colors", !task.is_ready && "border-red-500/50")}
+                            onClick={() => openTask(task)}
+                          >
                             <CardContent className="pt-3 pb-3">
                               <div className="space-y-2">
                                 <div>
@@ -321,9 +348,171 @@ export default function LookAheadPlanning() {
           <SheetContent className="w-[600px] sm:max-w-[600px]"><SheetHeader><SheetTitle>Add Look-Ahead Task</SheetTitle></SheetHeader><NewTaskForm projectId={selectedProject} windowStart={window.start} onSubmit={(data) => createTaskMutation.mutate(data)} onCancel={() => setShowNewTask(false)} /></SheetContent>
         </Sheet>
 
+        {/* Edit Task Sheet */}
+        <Sheet open={showEditTask} onOpenChange={setShowEditTask}>
+          <SheetContent className="w-[600px] sm:max-w-[600px]">
+            <SheetHeader>
+              <SheetTitle>Edit Task</SheetTitle>
+            </SheetHeader>
+
+            {selectedTask && (
+              <EditTaskForm
+                task={selectedTask}
+                onSave={(data) => updateTaskMutation.mutate({ id: selectedTask.id, data })}
+                onDelete={() => setDeleteConfirm(selectedTask)}
+                onCancel={() => setShowEditTask(false)}
+              />
+            )}
+          </SheetContent>
+        </Sheet>
+
+        {/* Delete Confirm */}
+        <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete task?</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Delete "{deleteConfirm?.name}"? This cannot be undone.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteTaskMutation.mutate(deleteConfirm.id)}
+                disabled={deleteTaskMutation.isPending}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}><SheetContent><SheetHeader><SheetTitle>Schedule Look-Ahead Report</SheetTitle></SheetHeader><ReportScheduler onClose={() => setShowReportScheduler(false)} /></SheetContent></Sheet>
       </div>
     </ErrorBoundary>
+  );
+}
+
+function EditTaskForm({ task, onSave, onDelete, onCancel }) {
+  const [formData, setFormData] = useState({
+    name: task.name || '',
+    start_date: task.start_date || '',
+    end_date: task.end_date || '',
+    phase: task.phase || 'fabrication',
+    status: task.status || 'not_started',
+    owner: task.owner || ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const e = {};
+    if (!formData.name) e.name = 'Name required';
+    if (!formData.start_date) e.start_date = 'Start date required';
+    if (!formData.end_date) e.end_date = 'End date required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const submit = (ev) => {
+    ev.preventDefault();
+    if (!validate()) return;
+
+    onSave({
+      name: formData.name,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      phase: formData.phase,
+      status: formData.status,
+      owner: formData.owner
+    });
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-4 mt-6">
+      <div>
+        <Label>Task Name *</Label>
+        <Input
+          value={formData.name}
+          onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+          className={errors.name ? 'border-red-500' : ''}
+        />
+        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Start Date *</Label>
+          <Input
+            type="date"
+            value={formData.start_date}
+            onChange={(e) => setFormData((p) => ({ ...p, start_date: e.target.value }))}
+            className={errors.start_date ? 'border-red-500' : ''}
+          />
+          {errors.start_date && <p className="text-xs text-red-500 mt-1">{errors.start_date}</p>}
+        </div>
+
+        <div>
+          <Label>End Date *</Label>
+          <Input
+            type="date"
+            value={formData.end_date}
+            onChange={(e) => setFormData((p) => ({ ...p, end_date: e.target.value }))}
+            className={errors.end_date ? 'border-red-500' : ''}
+          />
+          {errors.end_date && <p className="text-xs text-red-500 mt-1">{errors.end_date}</p>}
+        </div>
+      </div>
+
+      <div>
+        <Label>Owner</Label>
+        <Input
+          value={formData.owner}
+          onChange={(e) => setFormData((p) => ({ ...p, owner: e.target.value }))}
+          placeholder="Who owns this commitment"
+        />
+      </div>
+
+      <div>
+        <Label>Phase</Label>
+        <Select value={formData.phase} onValueChange={(v) => setFormData((p) => ({ ...p, phase: v }))}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="detailing">Detailing</SelectItem>
+            <SelectItem value="fabrication">Fabrication</SelectItem>
+            <SelectItem value="delivery">Delivery</SelectItem>
+            <SelectItem value="erection">Erection</SelectItem>
+            <SelectItem value="closeout">Closeout</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label>Status</Label>
+        <Select value={formData.status} onValueChange={(v) => setFormData((p) => ({ ...p, status: v }))}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="not_started">Not Started</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="blocked">Blocked</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+          Cancel
+        </Button>
+        <Button type="button" variant="destructive" onClick={onDelete}>
+          Delete
+        </Button>
+        <Button type="submit" className="flex-1">
+          Save
+        </Button>
+      </div>
+    </form>
   );
 }
 

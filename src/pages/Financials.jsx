@@ -275,39 +275,6 @@ function Financials() {
     return 'bg-red-500';
   };
 
-  if (!selectedProject) {
-    return (
-      <ErrorBoundary>
-        <div className="space-y-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Financials</h1>
-              <p className="text-muted-foreground mt-2">Budget • Actuals • Forecast • Billing</p>
-            </div>
-          </div>
-          
-          <Card className="max-w-md">
-            <CardContent className="pt-6">
-              <p className="text-sm font-medium mb-4">Select a project to view financials</p>
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <div className="space-y-6 max-w-[1800px] mx-auto">

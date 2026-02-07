@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import RouteGuard from '@/components/shared/RouteGuard';
 import { 
   RefreshCw, Package, AlertCircle, Download, Mail, Plus, Edit, Trash2,
   Check, X, CheckCircle, AlertTriangle, Zap, TrendingUp, Clock, Users,
@@ -21,9 +22,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReportScheduler from '@/components/reports/ReportScheduler';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
-export default function WorkPackages() {
-  const [selectedProject, setSelectedProject] = useState('');
+export default function WorkPackagesPage() {
+  return (
+    <RouteGuard pageLabel="Work Packages">
+      <WorkPackages />
+    </RouteGuard>
+  );
+}
+
+function WorkPackages() {
+  const { activeProjectId: selectedProject } = useActiveProject();
   const [statusFilter, setStatusFilter] = useState('all');
   const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

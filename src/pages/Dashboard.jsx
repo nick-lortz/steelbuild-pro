@@ -44,41 +44,21 @@ export default function Dashboard() {
     refetchOnMount: false
   });
 
-  const {
-  data: dashboardData = { projects: [], metrics: {}, pagination: {} },
-  isLoading: projectsLoading,
-  isFetching: projectsFetching,
-  refetch: refetchDashboard
-} = useQuery({
-  queryKey: ['dashboard', { page, pageSize, search: debouncedSearch, status: statusFilter, risk: riskFilter, sort: sortBy }],
-  queryFn: async () => {
-    const response = await base44.functions.invoke('getDashboardData', {
-      page,
-      pageSize,
-      search: debouncedSearch,
-      status: statusFilter,
-      risk: riskFilter,
-      sort: sortBy
-    });
-
-    // ✅ Normalize Base44 invoke response shapes so dashboardData.metrics/projects/pagination are real
-    const d = response?.data ?? response;
-    const normalized =
-      (d?.metrics || d?.projects || d?.pagination) ? d :
-      (d?.data?.metrics || d?.data?.projects || d?.data?.pagination) ? d.data :
-      (d?.body?.metrics || d?.body?.projects || d?.body?.pagination) ? d.body :
-      (d?.result?.metrics || d?.result?.projects || d?.result?.pagination) ? d.result :
-      d;
-
-    // ✅ Verifiable proof in console (remove later if you want)
-    console.debug('[getDashboardData] raw response:', response);
-    console.debug('[getDashboardData] normalized:', normalized);
-    console.debug('[getDashboardData] metrics keys:', Object.keys(normalized?.metrics || {}));
-
-    return normalized;
-  },
-  staleTime: 2 * 60 * 1000,
-  gcTime: 10 * 60 * 1000,
-  retry: 2,
-  retryDelay: 1000
-});
+  const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchDashboard } = useQuery({
+    queryKey: ['dashboard', { page, pageSize, search: debouncedSearch, status: statusFilter, risk: riskFilter, sort: sortBy }],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getDashboardData', {
+        page,
+        pageSize,
+        search: debouncedSearch,
+        status: statusFilter,
+        risk: riskFilter,
+        sort: sortBy
+      });
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
+  });

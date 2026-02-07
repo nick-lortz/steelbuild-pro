@@ -121,6 +121,7 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
           </thead>
           <tbody>
             {sortedProjects.map((project) => {
+              const isAtRisk = project.costHealth > 5 || project.daysSlip > 3 || (project.overdueTasks || 0) > 0;
               const statusConfig = getStatusConfig(project.status);
               
               return (

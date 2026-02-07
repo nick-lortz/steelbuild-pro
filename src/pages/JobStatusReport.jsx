@@ -626,18 +626,16 @@ export default function JobStatusReport() {
       {/* Cost Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Cost by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <SectionHeader title="Cost by Category" />
+          <CardContent className="pt-4">
             <div className="space-y-2">
               {costByCategory.map(cat => (
-                <div key={cat.category} className="flex justify-between items-center p-2 bg-secondary rounded">
+                <div key={cat.category} className="flex justify-between items-center p-2 rounded border bg-card">
                   <span className="text-sm capitalize">{cat.category}</span>
                   <span className="font-semibold">${cat.amount.toLocaleString()}</span>
                 </div>
               ))}
-              <div className="flex justify-between items-center p-2 bg-blue-500/10 border border-blue-500/30 rounded mt-4">
+              <div className="flex justify-between items-center p-2 rounded border border-blue-500/25 bg-blue-500/5 mt-4">
                 <span className="text-sm font-semibold">Total</span>
                 <span className="font-bold">${financialSummary.actualCost.toLocaleString()}</span>
               </div>
@@ -646,12 +644,10 @@ export default function JobStatusReport() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Performance Indicators</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <SectionHeader title="Performance Indicators" />
+          <CardContent className="pt-4">
             <div className="space-y-3">
-              <div className="p-3 bg-secondary rounded">
+              <div className="p-3 rounded border bg-card">
                 <p className="text-xs text-muted-foreground">Cost Performance</p>
                 <p className="text-lg font-bold">
                   {financialSummary.earnedToDate > 0 
@@ -661,7 +657,7 @@ export default function JobStatusReport() {
                 </p>
                 <p className="text-xs text-muted-foreground">Cost to Earned Ratio</p>
               </div>
-              <div className="p-3 bg-secondary rounded">
+              <div className="p-3 rounded border bg-card">
                 <p className="text-xs text-muted-foreground">Billing Performance</p>
                 <p className="text-lg font-bold">
                   {financialSummary.earnedToDate > 0

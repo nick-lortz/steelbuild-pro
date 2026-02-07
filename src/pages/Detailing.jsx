@@ -819,15 +819,15 @@ function DetailingItemTabs({ item, onUpdate, onDelete }) {
         <div className="space-y-2">
           <div className="flex items-center justify-between p-2 rounded border">
             <span className="text-sm">IFA Date</span>
-            <span className="text-sm font-medium">{item.submitted_date ? new Date(item.submitted_date).toLocaleDateString() : '-'}</span>
+            <span className="text-sm font-medium">{formatDateDisplay(item.submitted_date)}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded border">
             <span className="text-sm">BFA Date</span>
-            <span className="text-sm font-medium">{item.approved_date ? new Date(item.approved_date).toLocaleDateString() : '-'}</span>
+            <span className="text-sm font-medium">{formatDateDisplay(item.approved_date)}</span>
           </div>
           <div className="flex items-center justify-between p-2 rounded border">
             <span className="text-sm">FFF Date</span>
-            <span className="text-sm font-medium">{item.released_date ? new Date(item.released_date).toLocaleDateString() : '-'}</span>
+            <span className="text-sm font-medium">{formatDateDisplay(item.released_date)}</span>
           </div>
         </div>
       </TabsContent>

@@ -1,433 +1,669 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import RouteGuard from '@/components/shared/RouteGuard';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { useInlineEdit } from '@/components/shared/hooks/useInlineEdit';
-import { formatDateForInput, parseInputDate, formatDateDisplay } from '@/components/shared/dateUtils';
-import { 
-  RefreshCw, Calendar, AlertCircle, Download, Mail, Plus, Edit, Trash2,
-  Check, X, CheckCircle, AlertTriangle, Zap, Clock, TrendingUp, Target,
-  ChevronDown, ChevronUp, FileUp
-} from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, Calendar, Download, Sliders } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import ReportScheduler from '@/components/reports/ReportScheduler';
+import TaskForm from '@/components/schedule/TaskForm';
+import GanttChart from '@/components/schedule/GanttChart';
+import TaskListView from '@/components/schedule/TaskListView';
+import CalendarView from '@/components/schedule/CalendarView';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { toast } from '@/components/ui/notifications';
+import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 
-export default function SchedulePage() {
-  return (
-    <RouteGuard pageLabel="Schedule Management">
-      <Schedule />
-    </RouteGuard>
-  );
-}
-
-function Schedule() {
-  const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
-  const [viewMode, setViewMode] = useState('wbs');
-  const [lastRefreshed, setLastRefreshed] = useState(new Date());
-  const [showReportScheduler, setShowReportScheduler] = useState(false);
-  const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [showNewTask, setShowNewTask] = useState(false);
-  const [showDetailSheet, setShowDetailSheet] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [showAI, setShowAI] = useState(true);
-  const { editingId, editData, startEdit, updateField, cancelEdit, getSaveData } = useInlineEdit();
+export default function Schedule() {
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [phaseFilter, setPhaseFilter] = useState('all');
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [viewMode, setViewMode] = useState('gantt');
+  const [zoomLevel, setZoomLevel] = useState('week');
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   const queryClient = useQueryClient();
 
+  // Fetch current user
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    staleTime: Infinity
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
+  // Fetch projects for multi-project scheduling
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000
   });
 
-  const projects = React.useMemo(() => {
+  // Filter projects by user access
+  const projects = useMemo(() => {
     if (!currentUser) return [];
-    if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter((p) =>
-      p.project_manager === currentUser.email ||
-      p.superintendent === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
-    );
+    const filtered = currentUser.role === 'admin' 
+      ? allProjects 
+      : allProjects.filter(p => 
+          p.project_manager === currentUser.email || 
+          p.superintendent === currentUser.email ||
+          (p.assigned_users && p.assigned_users.includes(currentUser.email))
+        );
+    return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [currentUser, allProjects]);
 
-  const { 
-    data: scheduleData = {}, 
-    isLoading, 
-    isFetching, 
-    refetch 
-  } = useQuery({
-    queryKey: ['scheduleWorkspace', selectedProject],
+  // Determine which projects to show
+  const activeProjects = useMemo(() => {
+    if (selectedProjects.length > 0) {
+      return projects.filter(p => selectedProjects.includes(p.id));
+    }
+    if (activeProjectId) {
+      return projects.filter(p => p.id === activeProjectId);
+    }
+    return projects;
+  }, [projects, activeProjectId, selectedProjects]);
+
+  const activeProjectIds = useMemo(() => 
+    activeProjects.map(p => p.id), 
+    [activeProjects]
+  );
+
+  // Fetch tasks for selected projects
+  const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
+    queryKey: ['schedule-tasks', activeProjectIds],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getScheduleWorkspaceData', {
-        projectId: selectedProject
-      });
-
-      // Unwrap response.data first
-      const d = response?.data ?? response;
-      
-      // Then unwrap nested data/body/result
-      const normalized = (d?.data || d?.body || d?.result) || d;
-
-      console.debug('[getScheduleWorkspaceData] normalized:', normalized);
-      return normalized;
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.Task.filter({ project_id: projectId }, 'end_date')
+        )
+      );
+      return results.flat();
     },
-    enabled: !!selectedProject,
-    staleTime: 2 * 60 * 1000,
-    retry: 2
+    enabled: activeProjectIds.length > 0,
+    staleTime: 2 * 60 * 1000
   });
 
-  const { 
-    project = {}, 
-    snapshot = {}, 
-    tasks = [],
-    exceptions = {},
-    ai = {}, 
-    warnings = [] 
-  } = scheduleData;
+  // Real-time subscription with delta updates
+  useEntitySubscription('Task', ['schedule-tasks', activeProjectIds], {
+    onEvent: (event) => {
+      // Only process if task belongs to active projects
+      if (!event.data?.project_id || !activeProjectIds.includes(event.data.project_id)) {
+        return;
+      }
+      toast.info(`Task ${event.type}d: ${event.data.name || 'Unknown'}`);
+    }
+  });
+
+  // Fetch resources
+  const { data: resources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: () => base44.entities.Resource.list(),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000
+  });
+
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.RFI.filter({ project_id: projectId })
+        )
+      );
+      return results.flat();
+    },
+    enabled: activeProjectIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['changeOrders', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.ChangeOrder.filter({ project_id: projectId })
+        )
+      );
+      return results.flat();
+    },
+    enabled: activeProjectIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawings', activeProjectIds],
+    queryFn: async () => {
+      if (activeProjectIds.length === 0) return [];
+      const results = await Promise.all(
+        activeProjectIds.map(projectId => 
+          base44.entities.DrawingSet.filter({ project_id: projectId })
+        )
+      );
+      return results.flat();
+    },
+    enabled: activeProjectIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Filter tasks
+  const filteredTasks = useMemo(() => {
+    let filtered = [...allScheduleTasks];
+
+    // Search
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.name?.toLowerCase().includes(search) ||
+        t.wbs_code?.toLowerCase().includes(search)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'overdue') {
+        const today = new Date().toISOString().split('T')[0];
+        filtered = filtered.filter(t => 
+          t.status !== 'completed' && 
+          t.end_date && 
+          t.end_date < today
+        );
+      } else {
+        filtered = filtered.filter(t => t.status === statusFilter);
+      }
+    }
+
+    // Priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(t => t.is_critical === (priorityFilter === 'critical'));
+    }
+
+    // Phase filter
+    if (phaseFilter !== 'all') {
+      filtered = filtered.filter(t => t.phase === phaseFilter);
+    }
+
+    return filtered;
+  }, [allScheduleTasks, searchTerm, statusFilter, priorityFilter, phaseFilter]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: async (data) => {
+      return await base44.entities.Task.create(data);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleWorkspace'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      setShowTaskForm(false);
+      setEditingTask(null);
       toast.success('Task created');
-      setShowNewTask(false);
     },
     onError: (error) => {
-      toast.error(`Failed: ${error.message}`);
+      toast.error(error.response?.data?.error || 'Failed to create task');
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: (updatedData) => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleWorkspace'] });
-      if (selectedTask?.id === updatedData?.id) setSelectedTask(updatedData);
+    mutationFn: async ({ id, data }) => {
+      return await base44.entities.Task.update(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      setShowTaskForm(false);
+      setEditingTask(null);
       toast.success('Task updated');
-      cancelEdit();
     },
     onError: (error) => {
-      toast.error(`Failed: ${error.message}`);
+      toast.error(error.response?.data?.error || 'Failed to update task');
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: async (id) => {
+      return await base44.entities.Task.delete(id);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduleWorkspace'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       toast.success('Task deleted');
-      setDeleteConfirm(null);
     },
     onError: (error) => {
-      toast.error(`Delete failed: ${error.message}`);
-      setDeleteConfirm(null);
+      toast.error(error.response?.data?.error || 'Failed to delete task');
     }
   });
 
-  const handleRefresh = () => {
-    refetch();
-    setLastRefreshed(new Date());
-    toast.success('Schedule refreshed');
-  };
-
-  const handleGeneratePDF = async () => {
-    setGeneratingPDF(true);
-    try {
-      toast.success('Schedule report generated');
-    } catch (error) {
-      toast.error('Failed to generate PDF');
-    } finally {
-      setGeneratingPDF(false);
+  const handleCreateTask = () => {
+    if (activeProjectIds.length === 0) {
+      toast.error('Please select at least one project');
+      return;
     }
+    setEditingTask({
+      project_id: activeProjectIds[0],
+      phase: 'fabrication',
+      status: 'not_started',
+      is_milestone: false
+    });
+    setShowTaskForm(true);
   };
 
-  if (!selectedProject) {
-    return (
-      <ErrorBoundary>
-        <div className="space-y-6">
-          <div><h1 className="text-3xl font-bold tracking-tight">Schedule Management</h1><p className="text-muted-foreground mt-2">WBS • Dependencies • Critical Path • Baselines</p></div>
-          <Card className="max-w-md"><CardContent className="pt-6"><p className="text-sm font-medium mb-4">Select a project</p><Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger><SelectValue placeholder="Select project..." /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select></CardContent></Card>
-        </div>
-      </ErrorBoundary>
-    );
-  }
+  const handleTaskClick = (task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
+  };
+
+  const handleExportICS = () => {
+    // Generate ICS file for calendar export
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Schedule Management//EN',
+      ...filteredTasks.map(task => {
+        return [
+          'BEGIN:VEVENT',
+          `UID:${task.id}@scheduleapp`,
+          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+          `DTSTART:${task.start_date?.replace(/[-]/g, '')}`,
+          `DTEND:${task.end_date?.replace(/[-]/g, '')}`,
+          `SUMMARY:${task.name}`,
+          `DESCRIPTION:${task.notes || ''}`,
+          'END:VEVENT'
+        ].join('\n');
+      }),
+      'END:VCALENDAR'
+    ].join('\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'schedule.ics';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Calendar exported');
+  };
+
+  const statusCounts = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const counts = {
+      all: filteredTasks.length,
+      not_started: 0,
+      in_progress: 0,
+      completed: 0,
+      overdue: 0
+    };
+    
+    filteredTasks.forEach(t => {
+      if (t.status === 'not_started') counts.not_started++;
+      else if (t.status === 'in_progress') counts.in_progress++;
+      else if (t.status === 'completed') counts.completed++;
+      
+      if (t.status !== 'completed' && t.end_date && t.end_date < today) {
+        counts.overdue++;
+      }
+    });
+    
+    return counts;
+  }, [filteredTasks]);
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6 max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Schedule Management</h1>
-            <p className="text-muted-foreground mt-2">WBS • Dependencies • Critical Path</p>
-            <div className="flex items-center gap-3 mt-2">
-              <p className="text-sm text-muted-foreground">{project.project_number} • {project.name}</p>
-              <div className={cn("w-2 h-2 rounded-full", warnings.length === 0 ? "bg-green-500" : "bg-yellow-500")} />
-              <span className="text-xs text-muted-foreground">Data {warnings.length === 0 ? 'Complete' : 'Partial'}</span>
-              <span className="text-xs text-muted-foreground">• Updated: {lastRefreshed.toLocaleString()}</span>
+    <div className="min-h-screen bg-black">
+      {/* Modern Header */}
+      <div className="border-b border-zinc-800 bg-zinc-950">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Schedule Management</h1>
+              <p className="text-sm text-zinc-400">
+                Enterprise project scheduling with multi-project support, dependencies, and resource management
+              </p>
+            </div>
+            <Button
+              onClick={handleCreateTask}
+              disabled={activeProjectIds.length === 0}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6"
+            >
+              <Plus size={18} className="mr-2" />
+              Add Task
+            </Button>
+          </div>
+
+          {/* KPI Bar */}
+          <div className="grid grid-cols-5 gap-4">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Total Tasks</div>
+              <div className="text-2xl font-bold text-white">{statusCounts.all}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Not Started</div>
+              <div className="text-2xl font-bold text-zinc-300">{statusCounts.not_started}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">In Progress</div>
+              <div className="text-2xl font-bold text-blue-400">{statusCounts.in_progress}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Completed</div>
+              <div className="text-2xl font-bold text-green-400">{statusCounts.completed}</div>
+            </div>
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <div className="text-xs text-zinc-500 uppercase mb-1">Overdue</div>
+              <div className="text-2xl font-bold text-red-400">{statusCounts.overdue}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setActiveProjectId} className="w-48">
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-1 border rounded-lg p-1">
-              <Button variant={viewMode === 'wbs' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('wbs')}>WBS</Button>
-              <Button variant={viewMode === 'gantt' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('gantt')}>Gantt</Button>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}><RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} /></Button>
-            <Button variant="outline" size="sm"><FileUp className="h-4 w-4 mr-2" />Import CSV</Button>
-            <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}><Download className="h-4 w-4 mr-2" />Export</Button>
-            <Button variant="outline" size="sm" onClick={() => setShowReportScheduler(true)}><Mail className="h-4 w-4 mr-2" />Schedule</Button>
-            <Button size="sm" onClick={() => setShowNewTask(true)}><Plus className="h-4 w-4 mr-2" />Add Task</Button>
-          </div>
-        </div>
-
-        {warnings.length > 0 && (
-          <Card className="border-amber-500/50 bg-amber-500/5"><CardContent className="pt-4"><div className="flex items-start gap-3"><AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" /><div><p className="text-sm font-medium">Data Incomplete</p><ul className="text-xs text-muted-foreground mt-1 list-disc ml-4">{warnings.map((w, idx) => <li key={idx}>{w}</li>)}</ul></div></div></CardContent></Card>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-        ) : (
-          <>
-            {/* Schedule Snapshot */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Schedule Snapshot</h2>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Total Tasks</p><div className="text-2xl font-bold">{snapshot.totalTasks || 0}</div></CardContent></Card>
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Completed</p><div className="text-2xl font-bold text-green-500">{snapshot.completedTasks || 0}</div></CardContent></Card>
-                <Card className="border-red-500/30"><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Overdue</p><div className="text-2xl font-bold text-red-500">{snapshot.overdueTasks || 0}</div></CardContent></Card>
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Critical Path</p><div className="text-2xl font-bold text-orange-500">{snapshot.criticalTasks || 0}</div></CardContent></Card>
-                <Card className={cn("border-2", (snapshot.avgScheduleVariance || 0) > 0 ? "border-red-500/30 bg-red-500/5" : "border-green-500/30 bg-green-500/5")}><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Schedule Variance</p><div className={cn("text-2xl font-bold", (snapshot.avgScheduleVariance || 0) > 0 ? "text-red-500" : "text-green-500")}>{snapshot.avgScheduleVariance >= 0 ? '+' : ''}{snapshot.avgScheduleVariance || 0}d</div></CardContent></Card>
-              </div>
-            </div>
-
-            {/* Exceptions Panel */}
-            {(exceptions.overdue?.length > 0 || exceptions.invalidDates?.length > 0 || exceptions.criticalAtRisk?.length > 0) && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-red-500" />Exceptions</h2>
-                <Card className="border-red-500/30"><CardContent className="pt-4"><div className="space-y-3">
-                  {exceptions.overdue?.length > 0 && <div><p className="text-sm font-medium mb-2">Overdue Tasks ({exceptions.overdue.length})</p><div className="space-y-1">{exceptions.overdue.slice(0, 5).map((t) => <div key={t.id} className="flex items-center justify-between p-2 rounded border border-red-500/30 bg-red-500/5 text-sm"><span>{t.name}</span><span className="text-xs text-red-500">Due: {new Date(t.end).toLocaleDateString()}</span></div>)}</div></div>}
-                  {exceptions.invalidDates?.length > 0 && <div><p className="text-sm font-medium mb-2">Invalid Dates ({exceptions.invalidDates.length})</p><p className="text-xs text-muted-foreground">Tasks with end before start or missing dates</p></div>}
-                  {exceptions.criticalAtRisk?.length > 0 && <div><p className="text-sm font-medium mb-2">Critical Path At Risk ({exceptions.criticalAtRisk.length})</p><div className="space-y-1">{exceptions.criticalAtRisk.slice(0, 5).map((t) => <div key={t.id} className="flex items-center justify-between p-2 rounded border text-sm"><span>{t.name}</span><Badge variant="destructive" className="text-xs">{t.progress}% • {new Date(t.end).toLocaleDateString()}</Badge></div>)}</div></div>}
-                </div></CardContent></Card>
-              </div>
-            )}
-
-            {/* AI Schedule Analyst */}
-            {ai.recommendations && ai.recommendations.length > 0 && (
-              <Collapsible open={showAI} onOpenChange={setShowAI}>
-                <Card className="border-purple-500/30"><CardHeader><CollapsibleTrigger className="flex items-center justify-between w-full"><CardTitle className="text-sm flex items-center gap-2"><Zap className="h-4 w-4 text-purple-500" />AI Schedule Analyst</CardTitle>{showAI ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</CollapsibleTrigger></CardHeader><CollapsibleContent><CardContent><div className="space-y-4">
-                  <div><p className="text-sm font-medium mb-2">Schedule Analysis</p><p className="text-sm text-muted-foreground">{ai.summary}</p><Badge variant="outline" className="capitalize mt-2">{ai.confidence} confidence</Badge></div>
-                  {ai.flags && ai.flags.length > 0 && <div><p className="text-sm font-medium mb-2">Critical Path Risks</p><div className="space-y-2">{ai.flags.map((flag, idx) => <div key={idx} className="flex items-start gap-3 p-2 rounded bg-muted/30"><AlertTriangle className="h-4 w-4 mt-0.5 text-red-500" /><div className="flex-1"><p className="text-sm font-medium">{flag.task_name}</p><p className="text-xs text-muted-foreground">{flag.reason}</p></div></div>)}</div></div>}
-                  <div><p className="text-sm font-medium mb-2">Recommended Actions</p><div className="space-y-3">{ai.recommendations.map((rec, idx) => <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"><Badge variant={rec.priority === 'critical' || rec.priority === 'high' ? 'destructive' : 'default'} className="text-xs mt-1">{rec.priority}</Badge><div className="flex-1"><p className="font-semibold text-sm">{rec.action}</p><p className="text-xs text-green-600 mt-1">Impact: {rec.impact}</p></div></div>)}</div></div>
-                </div></CardContent></CollapsibleContent></Card>
-              </Collapsible>
-            )}
-
-            {/* Task Workspace */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Task Workspace ({viewMode === 'gantt' ? 'Gantt Chart' : 'WBS Table'})</h2>
-              <Card><CardContent className="p-0">{tasks.length === 0 ? <div className="py-12 text-center text-muted-foreground"><Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" /><p>No tasks in schedule</p></div> : viewMode === 'gantt' ? (
-                <GanttChartView tasks={tasks} />
-              ) : <div className="overflow-x-auto"><table className="w-full text-sm">
-                <thead className="border-b bg-muted/30"><tr className="text-left">
-                  <th className="p-3 font-medium">Task</th>
-                  <th className="p-3 font-medium">Start</th>
-                  <th className="p-3 font-medium">Finish</th>
-                  <th className="p-3 font-medium">Baseline</th>
-                  <th className="p-3 font-medium text-right">%</th>
-                  <th className="p-3 font-medium">Status</th>
-                  <th className="p-3 font-medium">Owner</th>
-                  <th className="p-3 font-medium">Critical</th>
-                  <th className="p-3 font-medium text-right">Actions</th>
-                </tr></thead>
-                <tbody>{tasks.map((task) => <tr key={task.id} className="border-b last:border-0 hover:bg-muted/20">
-                  {editingId === task.id ? (
-                    <>
-                      <td className="p-3">{task.name}</td>
-                      <td className="p-3"><Input type="date" value={editData.start_date || ''} onChange={(e) => updateField('start_date', e.target.value)} className="h-8 w-32" /></td>
-                      <td className="p-3"><Input type="date" value={editData.end_date || ''} onChange={(e) => updateField('end_date', e.target.value)} className="h-8 w-32" /></td>
-                      <td className="p-3 text-xs text-muted-foreground">{task.baseline_start ? `${formatDateDisplay(task.baseline_start)} - ${task.baseline_end ? formatDateDisplay(task.baseline_end) : '-'}` : '-'}</td>
-                      <td className="p-3 text-right"><Input type="number" min="0" max="100" value={editData.progress_pct || 0} onChange={(e) => updateField('progress_pct', e.target.value)} className="h-8 w-16 text-right" /></td>
-                      <td className="p-3"><Select value={editData.status || ''} onValueChange={(v) => updateField('status', v)}><SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_started">Not Started</SelectItem><SelectItem value="in_progress">In Progress</SelectItem><SelectItem value="completed">Completed</SelectItem><SelectItem value="on_hold">On Hold</SelectItem></SelectContent></Select></td>
-                      <td className="p-3" colSpan={2}></td>
-                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" disabled={updateMutation.isPending} onClick={() => updateMutation.mutate({ id: task.id, data: { ...getSaveData(), progress_percent: Number(editData.progress_pct || 0) } })}><Check className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={cancelEdit}><X className="h-3 w-3" /></Button></div></td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="p-3 font-medium">{task.name}</td>
-                      <td className="p-3 text-xs">{formatDateDisplay(task.start)}</td>
-                      <td className="p-3 text-xs">{formatDateDisplay(task.end)}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{task.baseline_start ? `${formatDateDisplay(task.baseline_start)} - ${task.baseline_end ? formatDateDisplay(task.baseline_end) : '-'}` : '-'}</td>
-                      <td className="p-3 text-right font-bold">{task.progress_pct}%</td>
-                      <td className="p-3"><Badge variant={task.status === 'completed' ? 'default' : 'outline'} className="capitalize text-xs">{task.status?.replace('_', ' ')}</Badge></td>
-                      <td className="p-3 text-xs">{task.owner}</td>
-                      <td className="p-3 text-center">{task.isCritical ? <Badge variant="destructive" className="text-xs">CRITICAL</Badge> : '-'}</td>
-                      <td className="p-3 text-right"><div className="flex gap-1 justify-end"><Button size="sm" variant="ghost" onClick={() => startEdit(task.id, { start_date: task.start, end_date: task.end, progress_pct: task.progress_pct || 0, status: task.status })}><Edit className="h-3 w-3" /></Button><Button size="sm" variant="ghost" onClick={() => { setSelectedTask(task); setShowDetailSheet(true); }}>View</Button><Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(task)}><Trash2 className="h-3 w-3" /></Button></div></td>
-                    </>
-                  )}
-                </tr>)}</tbody>
-                </table></div>}</CardContent></Card>
-            </div>
-          </>
-        )}
-
-        {/* New Task Sheet */}
-        <Sheet open={showNewTask} onOpenChange={setShowNewTask}><SheetContent className="w-[600px] sm:max-w-[600px]"><SheetHeader><SheetTitle>New Task</SheetTitle></SheetHeader><NewTaskForm projectId={selectedProject} onSubmit={(data) => createMutation.mutate(data)} onCancel={() => setShowNewTask(false)} /></SheetContent></Sheet>
-
-        {/* Detail Sheet */}
-        <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}><SheetContent className="w-[700px] sm:max-w-[700px] overflow-y-auto"><SheetHeader><SheetTitle>Task Details</SheetTitle></SheetHeader>{selectedTask && <TaskDetailTabs task={selectedTask} onUpdate={(data) => updateMutation.mutate({ id: selectedTask.id, data })} onDelete={() => { setDeleteConfirm(selectedTask); setShowDetailSheet(false); }} />}</SheetContent></Sheet>
-
-        {/* Delete Confirmation */}
-        <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}><DialogContent><DialogHeader><DialogTitle>Delete Task?</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Delete "{deleteConfirm?.name}"? Cannot undo.</p><DialogFooter><Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button><Button variant="destructive" onClick={() => deleteMutation.mutate(deleteConfirm.id)}>Delete</Button></DialogFooter></DialogContent></Dialog>
-
-        <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}><SheetContent><SheetHeader><SheetTitle>Schedule Schedule Report</SheetTitle></SheetHeader><ReportScheduler onClose={() => setShowReportScheduler(false)} /></SheetContent></Sheet>
-      </div>
-    </ErrorBoundary>
-  );
-}
-
-function NewTaskForm({ projectId, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    project_id: projectId,
-    name: '',
-    start_date: '',
-    end_date: '',
-    duration_days: 1,
-    status: 'not_started',
-    phase: 'fabrication',
-    progress_percent: 0,
-    is_critical: false
-  });
-
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.name) newErrors.name = 'Name required';
-    if (!formData.start_date) newErrors.start_date = 'Start date required';
-    if (!formData.end_date) newErrors.end_date = 'End date required';
-    if (formData.end_date && formData.start_date && formData.end_date < formData.start_date) newErrors.end_date = 'End must be after start';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) onSubmit({ ...formData, progress_percent: Number(formData.progress_percent), duration_days: Number(formData.duration_days), baseline_start: formData.start_date, baseline_end: formData.end_date });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-      <div><Label>Task Name *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={errors.name ? 'border-red-500' : ''} />{errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}</div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Start Date *</Label><Input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className={errors.start_date ? 'border-red-500' : ''} />{errors.start_date && <p className="text-xs text-red-500 mt-1">{errors.start_date}</p>}</div>
-        <div><Label>End Date *</Label><Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className={errors.end_date ? 'border-red-500' : ''} />{errors.end_date && <p className="text-xs text-red-500 mt-1">{errors.end_date}</p>}</div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Phase</Label><Select value={formData.phase} onValueChange={(v) => setFormData({ ...formData, phase: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="detailing">Detailing</SelectItem><SelectItem value="fabrication">Fabrication</SelectItem><SelectItem value="delivery">Delivery</SelectItem><SelectItem value="erection">Erection</SelectItem><SelectItem value="closeout">Closeout</SelectItem></SelectContent></Select></div>
-        <div><Label>Status</Label><Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_started">Not Started</SelectItem><SelectItem value="in_progress">In Progress</SelectItem><SelectItem value="completed">Completed</SelectItem><SelectItem value="on_hold">On Hold</SelectItem></SelectContent></Select></div>
-      </div>
-      <div><Label className="flex items-center gap-2"><input type="checkbox" checked={formData.is_critical} onChange={(e) => setFormData({ ...formData, is_critical: e.target.checked })} />Critical Path Task</Label></div>
-      <div className="flex gap-2 pt-4"><Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button><Button type="submit" className="flex-1">Create Task</Button></div>
-    </form>
-  );
-}
-
-function GanttChartView({ tasks }) {
-  if (!tasks || tasks.length === 0) return null;
-  
-  // Calculate date range
-  const dates = tasks.flatMap(t => [t.start, t.end]).filter(Boolean).map(d => new Date(d));
-  const minDate = new Date(Math.min(...dates));
-  const maxDate = new Date(Math.max(...dates));
-  const totalDays = Math.ceil((maxDate - minDate) / (24 * 60 * 60 * 1000)) + 1;
-  
-  const getTaskPosition = (task) => {
-    const start = new Date(task.start);
-    const end = new Date(task.end);
-    const left = Math.floor(((start - minDate) / (24 * 60 * 60 * 1000)) / totalDays * 100);
-    const width = Math.max(1, Math.floor(((end - start) / (24 * 60 * 60 * 1000)) / totalDays * 100));
-    return { left: `${left}%`, width: `${width}%` };
-  };
-  
-  return (
-    <div className="p-4 space-y-1 bg-zinc-950">
-      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-        <div className="w-48">Task</div>
-        <div className="flex-1 flex items-center justify-between px-2">
-          <span>{minDate.toLocaleDateString()}</span>
-          <span>{maxDate.toLocaleDateString()}</span>
         </div>
       </div>
-      {tasks.map((task) => {
-        const pos = getTaskPosition(task);
-        return (
-          <div key={task.id} className="flex items-center gap-2">
-            <div className="w-48 text-sm truncate">{task.name}</div>
-            <div className="flex-1 relative h-8 bg-zinc-900 rounded">
-              <div 
-                className={cn(
-                  "absolute h-6 top-1 rounded flex items-center px-2",
-                  task.isCritical ? "bg-red-500" : "bg-blue-500"
-                )}
-                style={pos}
+
+      {/* Controls Bar */}
+      <div className="border-b border-zinc-800 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="flex items-center gap-4">
+            {/* Project Selector - Multi-select */}
+            <div className="w-80">
+              <Select 
+                value={selectedProjects.length > 0 ? 'multi' : (activeProjectId || '')} 
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setSelectedProjects(projects.map(p => p.id));
+                    setActiveProjectId(null);
+                  } else if (value === 'multi') {
+                    // Keep multi-select active
+                  } else {
+                    setSelectedProjects([]);
+                    setActiveProjectId(value);
+                  }
+                }}
               >
-                <span className="text-xs font-medium text-white truncate">{task.progress_pct}%</span>
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="Select Project(s)">
+                    {selectedProjects.length > 1 
+                      ? `${selectedProjects.length} Projects Selected` 
+                      : selectedProjects.length === 1
+                        ? projects.find(p => p.id === selectedProjects[0])?.name
+                        : activeProjectId
+                          ? projects.find(p => p.id === activeProjectId)?.name
+                          : 'Select Project(s)'}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-96">
+                  <SelectItem value="all" className="text-white font-semibold">
+                    ✓ All Projects ({projects.length})
+                  </SelectItem>
+                  <div className="border-t border-zinc-800 my-1" />
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id} className="text-white">
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder="Search tasks by name or WBS..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+              />
+            </div>
+
+            {/* Filters Toggle */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`border-zinc-800 ${showFilters ? 'bg-zinc-800 text-amber-400' : 'text-white'}`}
+            >
+              <Sliders size={16} className="mr-2" />
+              Filters
+            </Button>
+
+            {/* View Mode */}
+            <div className="flex gap-1 border border-zinc-800 rounded-lg overflow-hidden">
+              {[
+                { value: 'gantt', label: 'Gantt' },
+                { value: 'list', label: 'List' },
+                { value: 'calendar', label: 'Calendar' }
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setViewMode(value)}
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    viewMode === value 
+                      ? 'bg-amber-500 text-black' 
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Zoom Level (for Gantt) */}
+            {viewMode === 'gantt' && (
+              <div className="flex gap-1 border border-zinc-800 rounded-lg overflow-hidden">
+                {[
+                  { value: 'day', label: 'Day' },
+                  { value: 'week', label: 'Week' },
+                  { value: 'month', label: 'Month' }
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => setZoomLevel(value)}
+                    className={`px-3 py-2 text-xs font-medium transition-colors ${
+                      zoomLevel === value 
+                        ? 'bg-zinc-800 text-amber-400' 
+                        : 'text-zinc-500 hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Export Calendar */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportICS}
+              className="border-zinc-800 text-white"
+              disabled={filteredTasks.length === 0}
+            >
+              <Download size={16} className="mr-2" />
+              Export .ics
+            </Button>
+          </div>
+
+          {/* Filters Panel */}
+          {showFilters && (
+            <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-zinc-800">
+              <div>
+                <label className="text-xs text-zinc-500 uppercase mb-2 block">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="not_started">Not Started</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500 uppercase mb-2 block">Priority</label>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="critical">Critical Path Only</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500 uppercase mb-2 block">Phase</label>
+                <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="all">All Phases</SelectItem>
+                    <SelectItem value="detailing">Detailing</SelectItem>
+                    <SelectItem value="fabrication">Fabrication</SelectItem>
+                    <SelectItem value="delivery">Delivery</SelectItem>
+                    <SelectItem value="erection">Erection</SelectItem>
+                    <SelectItem value="closeout">Closeout</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStatusFilter('all');
+                    setPriorityFilter('all');
+                    setPhaseFilter('all');
+                    setSearchTerm('');
+                  }}
+                  className="text-zinc-400 hover:text-white w-full"
+                >
+                  Clear All Filters
+                </Button>
               </div>
             </div>
-            <Badge variant={task.status === 'completed' ? 'default' : 'outline'} className="text-xs w-24">
-              {task.status?.replace('_', ' ')}
-            </Badge>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+          )}
+        </div>
+      </div>
 
-function TaskDetailTabs({ task, onUpdate, onDelete }) {
-  return (
-    <Tabs defaultValue="overview" className="mt-6">
-      <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="dependencies">Dependencies</TabsTrigger><TabsTrigger value="baseline">Baseline</TabsTrigger></TabsList>
-      <TabsContent value="overview" className="space-y-4">
-        <div><p className="text-sm font-medium mb-2">Task</p><p className="text-lg font-bold">{task.name}</p></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><p className="text-sm font-medium mb-2">Start</p><p className="text-sm">{task.start ? new Date(task.start).toLocaleDateString() : '-'}</p></div>
-          <div><p className="text-sm font-medium mb-2">End</p><p className="text-sm">{task.end ? new Date(task.end).toLocaleDateString() : '-'}</p></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><p className="text-sm font-medium mb-2">Status</p><Badge className="capitalize">{task.status?.replace('_', ' ')}</Badge></div>
-          <div><p className="text-sm font-medium mb-2">Progress</p><div className="flex items-center gap-2"><div className="flex-1 bg-muted rounded-full h-2"><div className="h-2 rounded-full bg-green-500" style={{ width: `${task.progress_pct}%` }} /></div><span className="text-sm font-bold">{task.progress_pct}%</span></div></div>
-        </div>
-        <div className="flex gap-2 pt-4 border-t"><Button variant="destructive" size="sm" onClick={onDelete}><Trash2 className="h-3 w-3 mr-2" />Delete Task</Button></div>
-      </TabsContent>
-      <TabsContent value="dependencies"><Card><CardContent className="pt-4"><div className="space-y-2"><div><p className="text-sm font-medium mb-2">Predecessors ({task.predecessors?.length || 0})</p>{task.predecessors?.length > 0 ? <div className="space-y-1">{task.predecessors.map((p) => <div key={p.id} className="p-2 rounded border text-sm"><span>{p.name}</span><Badge variant="outline" className="ml-2 text-xs capitalize">{p.status}</Badge></div>)}</div> : <p className="text-xs text-muted-foreground">No predecessors</p>}</div><div><p className="text-sm font-medium mb-2">Successors ({task.successors?.length || 0})</p>{task.successors?.length > 0 ? <div className="space-y-1">{task.successors.map((s) => <div key={s.id} className="p-2 rounded border text-sm">{s.name}</div>)}</div> : <p className="text-xs text-muted-foreground">No successors</p>}</div></div></CardContent></Card></TabsContent>
-      <TabsContent value="baseline"><Card><CardContent className="pt-4"><div className="space-y-3"><div className="grid grid-cols-2 gap-4"><div><p className="text-sm font-medium mb-2">Baseline Start</p><p className="text-sm">{task.baseline_start ? new Date(task.baseline_start).toLocaleDateString() : 'Not set'}</p></div><div><p className="text-sm font-medium mb-2">Baseline End</p><p className="text-sm">{task.baseline_end ? new Date(task.baseline_end).toLocaleDateString() : 'Not set'}</p></div></div>{task.baseline_end && task.end && <div><p className="text-sm font-medium mb-2">Variance</p><div className={cn("text-lg font-bold", new Date(task.end) > new Date(task.baseline_end) ? "text-red-500" : "text-green-500")}>{Math.round((new Date(task.end) - new Date(task.baseline_end)) / (24 * 60 * 60 * 1000))} days</div></div>}</div></CardContent></Card></TabsContent>
-    </Tabs>
+      {/* Main Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        {activeProjectIds.length === 0 ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center">
+              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
+              <p className="text-sm text-zinc-500 max-w-md">
+                Select one or more projects to view and manage their schedules
+              </p>
+            </div>
+          </div>
+        ) : isLoading ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center">
+              <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-4 rounded-full" />
+              <p className="text-sm text-zinc-500">Loading schedule...</p>
+            </div>
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="text-center py-32">
+            <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Tasks Found</h3>
+            <p className="text-sm text-zinc-500 mb-6 max-w-md mx-auto">
+              {allScheduleTasks.length === 0 
+                ? 'Create your first task to begin scheduling'
+                : 'No tasks match your current filters'}
+            </p>
+            {allScheduleTasks.length === 0 && (
+              <Button
+                onClick={handleCreateTask}
+                className="bg-amber-500 hover:bg-amber-600 text-black"
+              >
+                <Plus size={18} className="mr-2" />
+                Create First Task
+              </Button>
+            )}
+          </div>
+        ) : viewMode === 'gantt' ? (
+          <GanttChart
+            tasks={filteredTasks}
+            projects={activeProjects}
+            viewMode={zoomLevel}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskEdit={handleTaskClick}
+            onTaskDelete={(id) => deleteMutation.mutate(id)}
+            resources={resources}
+            rfis={rfis}
+            changeOrders={changeOrders}
+          />
+        ) : viewMode === 'calendar' ? (
+          <CalendarView
+            tasks={filteredTasks}
+            projects={activeProjects}
+            onTaskClick={handleTaskClick}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+          />
+        ) : (
+          <TaskListView
+            tasks={filteredTasks}
+            projects={activeProjects}
+            resources={resources}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
+            onTaskClick={handleTaskClick}
+            onTaskDelete={(id) => deleteMutation.mutate(id)}
+          />
+        )}
+      </div>
+
+      {/* Task Form Sheet */}
+      <Sheet open={showTaskForm} onOpenChange={(open) => {
+        setShowTaskForm(open);
+        if (!open) setEditingTask(null);
+      }}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-950 border-zinc-800">
+          <SheetHeader>
+            <SheetTitle className="text-white">
+              {editingTask?.id ? 'Edit Task' : 'New Task'}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <TaskForm
+              task={editingTask}
+              projects={projects}
+              tasks={allScheduleTasks}
+              resources={resources}
+              rfis={rfis}
+              changeOrders={changeOrders}
+              drawingSets={drawingSets}
+              onSubmit={(data) => {
+                if (editingTask?.id) {
+                  updateMutation.mutate({ id: editingTask.id, data });
+                } else {
+                  createMutation.mutate(data);
+                }
+              }}
+              onCancel={() => {
+                setShowTaskForm(false);
+                setEditingTask(null);
+              }}
+              isLoading={createMutation.isPending || updateMutation.isPending}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+    </ErrorBoundary>
   );
 }

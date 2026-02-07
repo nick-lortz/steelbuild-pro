@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
-import { format, isValid } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function WorkPackageForm({
   package: pkg,
@@ -279,7 +279,7 @@ export default function WorkPackageForm({
                   onCheckedChange={() => toggleArrayItem('linked_delivery_ids', delivery.id)}
                 />
                 <label className="text-sm text-zinc-200 cursor-pointer">
-                  {delivery.package_name} - {delivery.scheduled_date && isValid(new Date(delivery.scheduled_date)) ? format(new Date(delivery.scheduled_date), 'MMM d, yyyy') : 'No date'}
+                  {delivery.package_name} - {delivery.scheduled_date ? format(new Date(delivery.scheduled_date), 'MMM d, yyyy') : 'No date'}
                 </label>
               </div>
             ))}

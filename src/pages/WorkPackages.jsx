@@ -1,1196 +1,500 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import RouteGuard from '@/components/shared/RouteGuard';
-import { 
-  RefreshCw, Package as PackageIcon, AlertCircle, Download, Mail, Plus, Edit, Trash2,
-  Check, X, CheckCircle, AlertTriangle, Zap, Activity, Target
-} from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import ReportScheduler from '@/components/reports/ReportScheduler';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus, Package, Trash2, FileText, ArrowRight, Truck, DollarSign, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { format, parseISO, isValid } from 'date-fns';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
+import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
 
-/** Helpers */
-function toNumberSafe(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function normalizeWorkPackage(pkg) {
-  return {
-    ...pkg,
-    progress_pct: toNumberSafe(pkg.progress_pct ?? pkg.progress_percent ?? 0),
-    budget: toNumberSafe(pkg.budget ?? pkg.budget_amount ?? 0),
-  };
-}
-
-function toApiPayload(formLike) {
-  return {
-    name: formLike.name,
-    status: formLike.status,
-    description: formLike.description,
-    target_date: formLike.target_date || null,
-    project_id: formLike.project_id,
-    progress_pct: toNumberSafe(formLike.progress_percent ?? formLike.progress_pct ?? 0),
-    budget: toNumberSafe(formLike.budget_amount ?? formLike.budget ?? 0),
-    lead: formLike.assigned_lead ?? formLike.lead ?? '',
-  };
-}
-
-/** Root Page */
-export default function WorkPackagesPage() {
-  return (
-    <RouteGuard pageLabel="Work Packages">
-      <WorkPackages />
-    </RouteGuard>
-  );
-}
-
-/** Main Component */
-function WorkPackages() {
-  const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [lastRefreshed, setLastRefreshed] = useState(new Date());
-  const [showReportScheduler, setShowReportScheduler] = useState(false);
-  const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [showNewPackage, setShowNewPackage] = useState(false);
-  const [showDetailSheet, setShowDetailSheet] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [editingCardId, setEditingCardId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [showAI, setShowAI] = useState(true);
-
+export default function WorkPackages() {
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const [showForm, setShowForm] = useState(false);
+  const [editingPackage, setEditingPackage] = useState(null);
+  const [viewingPackage, setViewingPackage] = useState(null);
+  const [deletePackage, setDeletePackage] = useState(null);
+  const [phaseFilter, setPhaseFilter] = useState('all');
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-    staleTime: Infinity
+    queryFn: () => base44.auth.me()
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 10 * 60 * 1000
+  });
+
+  const projects = currentUser?.role === 'admin' ? allProjects : allProjects.filter(p => p.assigned_users?.includes(currentUser.email));
+
+  const { data: workPackages = [], isLoading } = useQuery({
+    queryKey: ['work-packages', activeProjectId],
+    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
+    enabled: !!activeProjectId,
+    staleTime: 2 * 60 * 1000
+  });
+
+  React.useEffect(() => {
+    if (!activeProjectId) return;
+    const unsub = base44.entities.WorkPackage.subscribe((event) => {
+      if (event.data?.project_id === activeProjectId) {
+        queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      }
+    });
+    return unsub;
+  }, [activeProjectId, queryClient]);
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
-  const projects = useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter((p) =>
-      p.project_manager === currentUser.email ||
-      p.superintendent === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
-    );
-  }, [currentUser, allProjects]);
-
-  useEffect(() => {
-    if (!selectedProject && projects.length > 0) {
-      setActiveProjectId(projects[0].id);
-    }
-  }, [selectedProject, projects, setActiveProjectId]);
-
-  const {
-    data: wpDataRaw = {},
-    isLoading,
-    isFetching,
-    refetch
-  } = useQuery({
-    queryKey: ['workPackagesBoard', selectedProject],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getWorkPackagesBoardData', {
-        projectId: selectedProject
-      });
-      const d = response?.data ?? response;
-      return (d?.data || d?.body || d?.result) || d;
-    },
-    enabled: !!selectedProject,
-    staleTime: 2 * 60 * 1000,
-    retry: 2,
-    select: (raw) => {
-      const {
-        project = {},
-        snapshot = {},
-        packages = [],
-        needsAttention = [],
-        tasksByPackage = {},
-        ai = {},
-        warnings = []
-      } = raw || {};
-      return {
-        project,
-        snapshot,
-        packages: (packages || []).map(normalizeWorkPackage),
-        needsAttention: (needsAttention || []).map(normalizeWorkPackage),
-        tasksByPackage,
-        ai,
-        warnings
-      };
-    }
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', activeProjectId],
+    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
-  const { project = {}, snapshot = {}, packages = [], needsAttention = [], tasksByPackage = {}, ai = {}, warnings = [] } = wpDataRaw;
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 10 * 60 * 1000
+  });
 
-  const filteredPackages = useMemo(() => {
-    let filtered = packages;
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(p => (p.status ?? 'planned') === statusFilter);
-    }
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase();
-      filtered = filtered.filter(p => (p.name || '').toLowerCase().includes(q));
-    }
-    if (needsAttentionOnly) {
-      filtered = filtered.filter(p => (p.blockers ?? []).length > 0);
-    }
-    return filtered;
-  }, [packages, statusFilter, searchTerm, needsAttentionOnly]);
+  const { data: documents = [] } = useQuery({
+    queryKey: ['documents', activeProjectId],
+    queryFn: () => base44.entities.Document.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
 
-  const packagesByStatus = useMemo(() => {
-    const grouped = { planned: [], in_progress: [], blocked: [], completed: [] };
-    filteredPackages.forEach((p) => {
-      const status = p.status ?? 'planned';
-      if (grouped[status]) grouped[status].push(p);
-      else grouped.planned.push(p);
-    });
-    return grouped;
-  }, [filteredPackages]);
+  const { data: drawings = [] } = useQuery({
+    queryKey: ['drawings', activeProjectId],
+    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(toApiPayload(data)),
+    mutationFn: (data) => base44.entities.WorkPackage.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      setShowForm(false);
       toast.success('Work package created');
-      setShowNewPackage(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to create: ${error?.message ?? 'Unknown error'}`);
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, toApiPayload(data)),
-    onSuccess: (updatedData) => {
-      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
-      const updated = updatedData?.data ?? updatedData;
-      const safeUpdated = normalizeWorkPackage(updated?.data ?? updated);
-      if (selectedPackage?.id === safeUpdated?.id) {
-        setSelectedPackage(safeUpdated);
-      }
-      toast.success('Package updated');
-      setEditingCardId(null);
-      setEditData({});
-    },
-    onError: (error) => {
-      toast.error(`Failed to update: ${error?.message ?? 'Unknown error'}`);
+    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      setShowForm(false);
+      setEditingPackage(null);
+      setViewingPackage(null);
+      toast.success('Updated');
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id: id });
-      return response?.data ?? response;
+    mutationFn: async (work_package_id) => {
+      const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
+      return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workPackagesBoard', selectedProject] });
-      toast.success('Package deleted');
-      setDeleteConfirm(null);
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries(['tasks', activeProjectId]);
+      setDeletePackage(null);
+      toast.success('Deleted');
+    }
+  });
+
+  const advancePhaseMutation = useMutation({
+    mutationFn: async ({ work_package_id, target_phase }) => {
+      const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
+      return response.data;
     },
-    onError: (error) => {
-      toast.error(`Failed to delete: ${error?.message ?? 'Unknown error'}`);
-      setDeleteConfirm(null);
+    onSuccess: () => {
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      toast.success('Phase advanced');
     }
   });
 
-  const handleRefresh = async () => {
-    try {
-      const result = await refetch();
-      if (result?.status === 'success') {
-        setLastRefreshed(new Date());
-        toast.success('Work packages refreshed');
-      } else {
-        toast.error('Failed to refresh');
-      }
-    } catch {
-      toast.error('Failed to refresh');
-    }
-  };
+  const filteredPackages = useMemo(() => {
+    return workPackages.filter(wp => phaseFilter === 'all' || wp.phase === phaseFilter);
+  }, [workPackages, phaseFilter]);
 
-  const handleGeneratePDF = async () => {
-    setGeneratingPDF(true);
-    try {
-      toast.success('Work packages report generated');
-    } catch (error) {
-      toast.error('Failed to generate PDF');
-    } finally {
-      setGeneratingPDF(false);
-    }
-  };
+  const stats = useMemo(() => {
+    const total = workPackages.length;
+    const inProgress = workPackages.filter(wp => wp.status === 'in_progress').length;
+    const completed = workPackages.filter(wp => wp.status === 'completed' || wp.status === 'closed').length;
+    const totalBudget = workPackages.reduce((sum, wp) => sum + (wp.budget_at_award || 0), 0);
+    const totalForecast = workPackages.reduce((sum, wp) => sum + (wp.forecast_at_completion || 0), 0);
+    const avgProgress = total > 0 ? workPackages.reduce((sum, wp) => sum + (wp.percent_complete || 0), 0) / total : 0;
+    const variance = totalForecast - totalBudget;
+    return { total, inProgress, completed, totalBudget, totalForecast, avgProgress, variance };
+  }, [workPackages]);
 
-  const handleEditCard = (pkg) => {
-    setEditingCardId(pkg.id);
-    setEditData({
-      name: pkg.name ?? '',
-      status: pkg.status ?? 'planned',
-      progress_percent: String(pkg.progress_pct ?? ''),
-      target_date: pkg.target_date ?? '',
-      assigned_lead: pkg.lead ?? '',
-      budget_amount: String(pkg.budget ?? '')
-    });
-  };
+  const selectedProject = projects.find(p => p.id === activeProjectId);
 
-  const handleSaveCard = (id) => {
-    const progress = toNumberSafe(editData.progress_percent, NaN);
-    const budget = toNumberSafe(editData.budget_amount, NaN);
-
-    if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
-      toast.error('Progress must be 0-100');
-      return;
-    }
-    if (!Number.isFinite(budget) || budget < 0) {
-      toast.error('Budget must be ≥ 0');
-      return;
-    }
-
-    updateMutation.mutate({ 
-      id, 
-      data: {
-        name: editData.name,
-        status: editData.status,
-        progress_percent: progress,
-        budget_amount: budget,
-        target_date: editData.target_date,
-        assigned_lead: editData.assigned_lead
-      }
-    });
-  };
-
-  const normalizedTasksByPackage = useMemo(() => {
-    const out = {};
-    Object.entries(tasksByPackage || {}).forEach(([pkgId, arr]) => {
-      out[pkgId] = (arr || []).map(t => ({
-        ...t,
-        progress_pct: toNumberSafe(t.progress_pct ?? t.progress_percent ?? 0),
-      }));
-    });
-    return out;
-  }, [tasksByPackage]);
-
-  const handleCancelEdit = () => {
-    setEditingCardId(null);
-    setEditData({});
-  };
-
-  return (
-    <ErrorBoundary>
-      <div className="space-y-6 max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Work Packages</h1>
-            <p className="text-muted-foreground mt-2">Production Execution • Dependencies • Blockers</p>
-            <div className="flex items-center gap-3 mt-2">
-              <p className="text-sm text-muted-foreground">{project.project_number} • {project.name}</p>
-              <div className={cn(
-                "w-2 h-2 rounded-full",
-                (warnings?.length ?? 0) === 0 ? "bg-green-500" : "bg-yellow-500"
-              )} />
-              <span className="text-xs text-muted-foreground">
-                Data {(warnings?.length ?? 0) === 0 ? 'Complete' : 'Partial'}
-              </span>
-              <span className="text-xs text-muted-foreground">• Updated: {lastRefreshed.toLocaleString()}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setActiveProjectId} className="w-48">
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Input 
-              placeholder="Search packages..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-48"
-            />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="planned">Planned</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant={needsAttentionOnly ? "default" : "outline"} 
-              size="sm"
-              onClick={() => setNeedsAttentionOnly(!needsAttentionOnly)}
-            >
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Needs Attention
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}>
-              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowReportScheduler(true)}>
-              <Mail className="h-4 w-4 mr-2" />
-              Schedule
-            </Button>
-            <Button size="sm" onClick={() => setShowNewPackage(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Package
-            </Button>
-          </div>
-        </div>
-
-        {/* Warnings */}
-        {(warnings?.length ?? 0) > 0 && (
-          <Card className="border-amber-500/50 bg-amber-500/5">
-            <CardContent className="pt-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">Data Incomplete</p>
-                  <ul className="text-xs text-muted-foreground mt-1 list-disc ml-4">
-                    {warnings.map((w, idx) => (
-                      <li key={idx}>{w}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <>
-            {/* Execution Snapshot */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Execution Snapshot</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">In Progress</p>
-                    <div className="text-2xl font-bold text-blue-500">{snapshot.inProgress || 0}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completed</p>
-                    <div className="text-2xl font-bold text-green-500">{snapshot.completed || 0}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Blocked</p>
-                    <div className="text-2xl font-bold text-red-500">{snapshot.blocked || 0}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">At Risk</p>
-                    <div className="text-2xl font-bold text-orange-500">{snapshot.atRisk || 0}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completed (7d)</p>
-                    <div className="text-2xl font-bold">{snapshot.completed7d || 0}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completed (30d)</p>
-                    <div className="text-2xl font-bold">{snapshot.completed30d || 0}</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Labor (7d)</p>
-                    <div className="text-2xl font-bold">{toNumberSafe(snapshot.laborHours7d || 0).toFixed(0)}h</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Labor (30d)</p>
-                    <div className="text-2xl font-bold">{toNumberSafe(snapshot.laborHours30d || 0).toFixed(0)}h</div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Needs Attention */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Target className="h-5 w-5 text-red-500" />
-                Needs Attention Now
-              </h2>
-              <Card>
-                <CardContent className="pt-4">
-                  {(needsAttention?.length ?? 0) === 0 ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                      <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-500" />
-                      <p>All packages on track</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {needsAttention.map((pkg) => (
-                        <div key={pkg.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold">{pkg.name}</span>
-                              <Badge variant={pkg.status === 'blocked' ? 'destructive' : 'outline'} className="capitalize">
-                                {pkg.status}
-                              </Badge>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {(pkg.blockers ?? []).map((b, idx) => (
-                                <Badge key={idx} variant="destructive" className="text-xs">
-                                  {b?.label ?? 'Blocker'}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <div className="text-right mr-4">
-                              <div className="text-sm font-bold">{toNumberSafe(pkg.progress_pct).toString()}%</div>
-                              <p className="text-xs text-muted-foreground">{pkg.lead}</p>
-                            </div>
-                            <Button 
-                              size="sm"
-                              onClick={() => {
-                                setSelectedPackage(pkg);
-                                setShowDetailSheet(true);
-                              }}
-                            >
-                              Review
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* AI */}
-            {ai?.recommendations && ai.recommendations.length > 0 && (
-              <Collapsible open={showAI} onOpenChange={setShowAI}>
-                <Card className="border-purple-500/30">
-                  <CardHeader>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-purple-500" />
-                        AI Work Package Analyst
-                      </CardTitle>
-                    </CollapsibleTrigger>
-                  </CardHeader>
-                  <CollapsibleContent>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium mb-2">Pipeline Analysis</p>
-                          <p className="text-sm text-muted-foreground">{ai.summary ?? '—'}</p>
-                          <Badge variant="outline" className="capitalize mt-2">{ai.confidence ?? 'unknown'} confidence</Badge>
-                        </div>
-                        {ai.packageRisks && ai.packageRisks.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium mb-2">Package Risks</p>
-                            <div className="space-y-2">
-                              {ai.packageRisks.map((risk, idx) => (
-                                <div key={idx} className="flex items-start gap-3 p-2 rounded bg-muted/30">
-                                  <AlertTriangle className={cn("h-4 w-4 mt-0.5", risk.risk_level === 'critical' ? "text-red-500" : "text-yellow-500")} />
-                                  <div className="flex-1">
-                                    <p className="text-sm font-medium">{risk.package_name}</p>
-                                    <p className="text-xs text-muted-foreground">{risk.reason}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        <div>
-                          <p className="text-sm font-medium mb-2">Recommended Actions</p>
-                          <div className="space-y-3">
-                            {ai.recommendations.map((rec, idx) => (
-                              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                                <Badge variant={(rec.priority === 'critical' || rec.priority === 'high') ? 'destructive' : 'default'} className="text-xs mt-1">
-                                  {rec.priority}
-                                </Badge>
-                                <div className="flex-1">
-                                  <p className="font-semibold text-sm">{rec.action}</p>
-                                  <p className="text-xs text-green-600 mt-1">Impact: {rec.impact}</p>
-                                  {rec.affectedPackages && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Affects: {rec.affectedPackages.slice(0, 3).join(', ')}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            )}
-
-            {/* Board */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Work Package Board</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(packagesByStatus).map(([status, pkgs]) => (
-                  <div key={status}>
-                    <div className="mb-3 flex items-center gap-2">
-                      <h3 className="font-semibold capitalize text-sm">{status.replace('_', ' ')}</h3>
-                      <Badge variant="outline" className="text-xs">{pkgs.length}</Badge>
-                    </div>
-                    <div className="space-y-2">
-                      {pkgs.length === 0 ? (
-                        <Card className="bg-muted/20 border-dashed">
-                          <CardContent className="py-8 text-center">
-                            <p className="text-xs text-muted-foreground">No packages</p>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        pkgs.map((pkg) => (
-                          <PackageCard
-                            key={pkg.id}
-                            pkg={pkg}
-                            isEditing={editingCardId === pkg.id}
-                            editData={editData}
-                            setEditData={setEditData}
-                            onEdit={() => handleEditCard(pkg)}
-                            onSave={() => handleSaveCard(pkg.id)}
-                            onCancel={handleCancelEdit}
-                            onSelect={() => {
-                              setSelectedPackage(pkg);
-                              setShowDetailSheet(true);
-                            }}
-                            isSaving={updateMutation.isPending}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Sheets and Dialogs */}
-        <Sheet open={showNewPackage} onOpenChange={setShowNewPackage}>
-          <SheetContent className="w-[600px] sm:max-w-[600px]">
-            <SheetHeader>
-              <SheetTitle>New Work Package</SheetTitle>
-            </SheetHeader>
-            <NewPackageForm
-              projectId={selectedProject}
-              onSubmit={(data) => createMutation.mutate(data)}
-              onCancel={() => setShowNewPackage(false)}
-            />
-          </SheetContent>
-        </Sheet>
-
-        <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}>
-          <SheetContent className="w-[700px] sm:max-w-[700px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Package Details</SheetTitle>
-            </SheetHeader>
-            {selectedPackage && (
-              <PackageDetailTabs
-                package={selectedPackage}
-                tasks={normalizedTasksByPackage[selectedPackage.id] || []}
-                onUpdate={(data) => updateMutation.mutate({ id: selectedPackage.id, data })}
-                onDelete={() => {
-                  setDeleteConfirm(selectedPackage);
-                  setShowDetailSheet(false);
-                }}
-              />
-            )}
-          </SheetContent>
-        </Sheet>
-
-        <Dialog open={!!deleteConfirm} onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Work Package?</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Delete "{deleteConfirm?.name}" and all associated tasks? This cannot be undone.
-            </p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-              <Button variant="destructive" onClick={() => deleteMutation.mutate(deleteConfirm.id)}>Delete</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Schedule Work Package Report</SheetTitle>
-            </SheetHeader>
-            <ReportScheduler onClose={() => setShowReportScheduler(false)} />
-          </SheetContent>
-        </Sheet>
-      </div>
-    </ErrorBoundary>
-  );
-}
-
-/** Package Card */
-function PackageCard({ pkg, isEditing, editData, setEditData, onEdit, onSave, onCancel, onSelect, isSaving }) {
-  return (
-    <Card 
-      className={cn(
-        "cursor-pointer hover:border-amber-500 transition-colors",
-        (pkg.blockers ?? []).length > 0 && "border-red-500/50"
-      )}
-      onClick={onSelect}
-    >
-      <CardContent className="pt-4">
-        <div className="space-y-2">
-          <div>
-            <p className="font-semibold text-sm mb-1">{pkg.name}</p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{pkg.lead}</span>
-              {pkg.target_date && (
-                <>
-                  <span>•</span>
-                  <span>Target: {new Date(pkg.target_date).toLocaleDateString()}</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-muted-foreground">Progress</span>
-              <span className="text-xs font-bold">{toNumberSafe(pkg.progress_pct).toString()}%</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-2">
-              <div
-                className="h-2 rounded-full bg-green-500 transition-all"
-                style={{ width: `${toNumberSafe(pkg.progress_pct)}%` }}
-              />
-            </div>
-          </div>
-
-          {(pkg.blockers ?? []).length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {(pkg.blockers ?? []).map((b, idx) => (
-                <Badge key={idx} variant="destructive" className="text-xs">
-                  {b?.label ?? 'Blocker'}
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {isEditing ? (
-            <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Name</Label>
-                <Input
-                  className="h-8"
-                  value={editData.name ?? ''}
-                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label className="text-[10px] text-muted-foreground">Status</Label>
-                <Select
-                  value={editData.status ?? 'planned'}
-                  onValueChange={(val) => setEditData({ ...editData, status: val })}
-                >
-                  <SelectTrigger className="h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="planned">Planned</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="blocked">Blocked</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Progress %</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    className="h-8"
-                    value={editData.progress_percent ?? ''}
-                    onChange={(e) => setEditData({ ...editData, progress_percent: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">Budget $</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    className="h-8"
-                    value={editData.budget_amount ?? ''}
-                    onChange={(e) => setEditData({ ...editData, budget_amount: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-1">
-                <Button size="sm" onClick={onSave} disabled={isSaving}>
-                  <Check className="h-3 w-3 mr-1" />
-                  Save
-                </Button>
-                <Button size="sm" variant="outline" onClick={onCancel}>
-                  <X className="h-3 w-3 mr-1" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">
-                Budget: ${((toNumberSafe(pkg.budget)) / 1000).toFixed(0)}K
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Form: New Package */
-function NewPackageForm({ projectId, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    project_id: projectId,
-    name: '',
-    description: '',
-    status: 'planned',
-    progress_percent: '',
-    budget_amount: '',
-    assigned_lead: '',
-    target_date: ''
-  });
-  const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    setFormData((p) => ({ ...p, project_id: projectId }));
-  }, [projectId]);
-
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.name || formData.name.trim().length === 0) newErrors.name = 'Name required';
-    const progress = Number(formData.progress_percent);
-    if (!Number.isFinite(progress) || progress < 0 || progress > 100) newErrors.progress_percent = 'Progress must be 0-100';
-    const budget = Number(formData.budget_amount);
-    if (!Number.isFinite(budget) || budget < 0) newErrors.budget_amount = 'Budget must be ≥ 0';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) {
-      onSubmit({
-        ...formData,
-        progress_percent: Number(formData.progress_percent || 0),
-        budget_amount: Number(formData.budget_amount || 0)
-      });
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-      <div>
-        <Label>Package Name *</Label>
-        <Input
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className={errors.name ? 'border-red-500' : ''}
-        />
-        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
-      </div>
-
-      <div>
-        <Label>Description</Label>
-        <Textarea
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-            <SelectTrigger>
-              <SelectValue />
+  if (!activeProjectId) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <Package size={64} className="mx-auto mb-4 text-zinc-700" />
+          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
+          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Choose project..." />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="planned">Planned</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="blocked">Blocked</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-
-        <div>
-          <Label>Progress (%)</Label>
-          <Input
-            type="number"
-            min="0"
-            max="100"
-            value={formData.progress_percent}
-            onChange={(e) => setFormData({ ...formData, progress_percent: e.target.value })}
-            className={errors.progress_percent ? 'border-red-500' : ''}
-          />
-          {errors.progress_percent && <p className="text-xs text-red-500 mt-1">{errors.progress_percent}</p>}
-        </div>
       </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Budget ($)</Label>
-          <Input
-            type="number"
-            min="0"
-            value={formData.budget_amount}
-            onChange={(e) => setFormData({ ...formData, budget_amount: e.target.value })}
-            className={errors.budget_amount ? 'border-red-500' : ''}
-          />
-          {errors.budget_amount && <p className="text-xs text-red-500 mt-1">{errors.budget_amount}</p>}
-        </div>
-
-        <div>
-          <Label>Assigned Lead</Label>
-          <Input
-            value={formData.assigned_lead}
-            onChange={(e) => setFormData({ ...formData, assigned_lead: e.target.value })}
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label>Target Date</Label>
-        <Input
-          type="date"
-          value={formData.target_date || ''}
-          onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
-        />
-      </div>
-
-      <div className="flex gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
-        <Button type="submit" className="flex-1">Create Package</Button>
-      </div>
-    </form>
-  );
-}
-
-/** Tabs: Package Details */
-function PackageDetailTabs({ package: pkg, tasks, onUpdate, onDelete }) {
-  const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState({
-    status: pkg.status,
-    progress_percent: String(pkg.progress_pct ?? ''),
-    target_date: pkg.target_date,
-    assigned_lead: pkg.lead,
-    budget_amount: String(pkg.budget ?? ''),
-    description: pkg.description
-  });
-
-  useEffect(() => {
-    setFormData({
-      status: pkg.status,
-      progress_percent: String(pkg.progress_pct ?? ''),
-      target_date: pkg.target_date,
-      assigned_lead: pkg.lead,
-      budget_amount: String(pkg.budget ?? ''),
-      description: pkg.description
-    });
-  }, [pkg]);
-
-  const handleSave = () => {
-    const progress = Number(formData.progress_percent);
-    const budget = Number(formData.budget_amount);
-    if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
-      toast.error('Progress must be 0-100');
-      return;
-    }
-    if (!Number.isFinite(budget) || budget < 0) {
-      toast.error('Budget must be ≥ 0');
-      return;
-    }
-    onUpdate({
-      ...formData,
-      progress_percent: progress,
-      budget_amount: budget
-    });
-    setEditMode(false);
-  };
+    );
+  }
 
   return (
-    <Tabs defaultValue="overview" className="mt-6">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
-        <TabsTrigger value="budget">Budget</TabsTrigger>
-        <TabsTrigger value="ai">AI Insights</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="overview" className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold">{pkg.name}</h3>
-          {!editMode ? (
-            <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
-              <Edit className="h-3 w-3 mr-2" />
-              Edit
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave}>
-                <Check className="h-3 w-3 mr-2" />
-                Save
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => {
-                setEditMode(false);
-                setFormData({
-                  status: pkg.status,
-                  progress_percent: String(pkg.progress_pct ?? ''),
-                  target_date: pkg.target_date,
-                  assigned_lead: pkg.lead,
-                  budget_amount: String(pkg.budget ?? ''),
-                  description: pkg.description
-                });
-              }}>
-                <X className="h-3 w-3 mr-2" />
-                Cancel
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Work Packages</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {stats.total} PACKAGES</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
+                <Plus size={14} className="mr-1" />
+                NEW
               </Button>
             </div>
-          )}
-        </div>
-
-        {editMode ? (
-          <>
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="planned">Planned</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="blocked">Blocked</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Progress (%)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.progress_percent}
-                  onChange={(e) => setFormData({ ...formData, progress_percent: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Budget ($)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.budget_amount}
-                  onChange={(e) => setFormData({ ...formData, budget_amount: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label>Assigned Lead</Label>
-                <Input
-                  value={formData.assigned_lead || ''}
-                  onChange={(e) => setFormData({ ...formData, assigned_lead: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>Target Date</Label>
-              <Input
-                type="date"
-                value={formData.target_date || ''}
-                onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <p className="text-sm font-medium mb-2">Description</p>
-              <p className="text-sm text-muted-foreground">{pkg.description || 'No description'}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium mb-2">Status</p>
-                <Badge className="capitalize">{pkg.status}</Badge>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium mb-2">Progress</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-muted rounded-full h-2">
-                    <div className="h-2 rounded-full bg-green-500" style={{ width: `${toNumberSafe(pkg.progress_pct)}%` }} />
-                  </div>
-                  <span className="text-sm font-bold">{toNumberSafe(pkg.progress_pct).toString()}%</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium mb-2">Lead</p>
-                <p className="text-sm">{pkg.lead}</p>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium mb-2">Target Date</p>
-                <p className="text-sm">{pkg.target_date ? new Date(pkg.target_date).toLocaleDateString() : 'Not set'}</p>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="pt-4 border-t">
-          <Button variant="destructive" size="sm" onClick={onDelete}>
-            <Trash2 className="h-3 w-3 mr-2" />
-            Delete Package
-          </Button>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="tasks" className="space-y-3">
-        {tasks.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>No tasks linked to this package</p>
           </div>
-        ) : (
-          tasks.map((task) => (
-            <Card key={task.id}>
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{task.name}</p>
-                    <p className="text-xs text-muted-foreground">{task.status}</p>
-                  </div>
-                  <Badge variant="outline">{toNumberSafe(task.progress_pct).toString()}%</Badge>
-                </div>
+        </div>
+      </div>
+
+      {/* Metrics */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-5 gap-3">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Progress</div>
+                <div className="text-2xl font-black text-blue-400">{stats.inProgress}</div>
               </CardContent>
             </Card>
-          ))
-        )}
-      </TabsContent>
-
-      <TabsContent value="budget" className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground mb-1">Budget</p>
-              <p className="text-xl font-bold">${(toNumberSafe(pkg.budget) / 1000).toFixed(0)}K</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground mb-1">Actual</p>
-              <p className="text-xl font-bold text-red-500">${(toNumberSafe(pkg.actual) / 1000).toFixed(0)}K</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground mb-1">Committed</p>
-              <p className="text-xl font-bold text-orange-500">${(toNumberSafe(pkg.committed) / 1000).toFixed(0)}K</p>
-            </CardContent>
-          </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Completed</div>
+                <div className="text-2xl font-black text-green-400">{stats.completed}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Progress</div>
+                <div className="text-2xl font-black text-amber-500">{stats.avgProgress.toFixed(0)}%</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Budget</div>
+                <div className="text-xl font-black text-white">${(stats.totalBudget / 1000).toFixed(0)}K</div>
+              </CardContent>
+            </Card>
+            <Card className={cn(
+              "border",
+              stats.variance > 0 ? "bg-red-500/10 border-red-500/20" : "bg-zinc-900 border-zinc-800"
+            )}>
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Forecast</div>
+                <div className={cn(
+                  "text-xl font-black",
+                  stats.variance > 0 ? "text-red-400" : "text-white"
+                )}>
+                  ${(stats.totalForecast / 1000).toFixed(0)}K
+                </div>
+                {stats.variance !== 0 && (
+                  <div className={cn("text-[9px]", stats.variance > 0 ? "text-red-400" : "text-green-400")}>
+                    {stats.variance > 0 ? '+' : ''}{(stats.variance / 1000).toFixed(0)}K
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </TabsContent>
+      </div>
 
-      <TabsContent value="ai" className="space-y-3">
-        <Card className="border-purple-500/30">
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">
-              AI insights for this package will appear here based on progress, budget variance, and blockers.
-            </p>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+      {/* Filter */}
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+            <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Phases</SelectItem>
+              <SelectItem value="pre_fab">Pre-Fab</SelectItem>
+              <SelectItem value="shop">Shop</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="erection">Erection</SelectItem>
+              <SelectItem value="punch">Punch</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-6 py-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filteredPackages.length === 0 ? (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-12 text-center">
+              <Package size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-lg font-bold text-white uppercase mb-2">No Work Packages</h3>
+              <p className="text-xs text-zinc-600 mb-4">Create packages to track execution</p>
+              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+                <Plus size={16} className="mr-2" />
+                Create First Package
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {filteredPackages.map(pkg => {
+              const project = projects.find(p => p.id === pkg.project_id);
+              const taskCount = tasks.filter(t => t.work_package_id === pkg.id).length;
+              const budget = pkg.budget_at_award || 0;
+              const forecast = pkg.forecast_at_completion || 0;
+              const variance = forecast - budget;
+              const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
+              
+              const phaseMap = {
+                'pre_fab': { next: 'shop', label: 'To Shop', color: 'bg-blue-500' },
+                'shop': { next: 'delivery', label: 'To Delivery', color: 'bg-purple-500' },
+                'delivery': { next: 'erection', label: 'To Erection', color: 'bg-amber-500' },
+                'erection': { next: 'punch', label: 'To Punch', color: 'bg-green-500' },
+                'punch': { next: 'completed', label: 'Complete', color: 'bg-zinc-500' }
+              };
+              const currentPhase = phaseMap[pkg.phase];
+
+              return (
+                <Card 
+                  key={pkg.id} 
+                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group"
+                  onClick={() => setViewingPackage(pkg)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
+                      {/* Phase Indicator */}
+                      <div className={cn("w-1.5 h-16 rounded-full", currentPhase?.color || 'bg-zinc-700')} />
+
+                      {/* Package Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-white text-sm group-hover:text-amber-400 transition-colors">
+                            {pkg.title}
+                          </h3>
+                          <Badge variant="outline" className="text-[10px] font-mono">
+                            {pkg.wpid || pkg.id.slice(0, 8)}
+                          </Badge>
+                          <Badge className={cn(
+                            "text-[10px] font-bold",
+                            pkg.status === 'completed' && "bg-green-500/20 text-green-400",
+                            pkg.status === 'in_progress' && "bg-blue-500/20 text-blue-400",
+                            pkg.status === 'on_hold' && "bg-amber-500/20 text-amber-400"
+                          )}>
+                            {pkg.status?.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] text-zinc-500 font-mono">
+                          <span className="text-white">{project?.project_number}</span>
+                          <span>•</span>
+                          <span>{pkg.assigned_pm || 'No PM'}</span>
+                          <span>•</span>
+                          <span>{(pkg.linked_drawing_set_ids?.length || 0)} dwgs</span>
+                          <span>•</span>
+                          <span>{(pkg.linked_delivery_ids?.length || 0)} deliveries</span>
+                          <span>•</span>
+                          <span>{taskCount} tasks</span>
+                          {pkg.target_date && (
+                            <>
+                              <span>•</span>
+                              <span className="text-amber-500">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Progress */}
+                      <div className="flex items-center gap-3">
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-xl font-black text-amber-500">{pkg.percent_complete || 0}%</div>
+                          <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
+                            <div className="h-full bg-amber-500 transition-all" style={{ width: `${pkg.percent_complete || 0}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Budget */}
+                        <div className="text-right min-w-[80px]">
+                          <div className="text-sm font-bold text-white">${(budget / 1000).toFixed(0)}K</div>
+                          <div className={cn(
+                            "text-[10px] font-bold",
+                            variance > 0 ? "text-red-400" : variance < 0 ? "text-green-400" : "text-zinc-600"
+                          )}>
+                            {variance !== 0 && (variance > 0 ? '+' : '')}{variancePercent.toFixed(0)}%
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                          {currentPhase && pkg.status !== 'completed' && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: currentPhase.next });
+                              }}
+                              className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+                            >
+                              <ArrowRight size={14} />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletePackage(pkg);
+                            }}
+                            className="h-8 px-2 text-zinc-500 hover:text-red-500"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <Sheet open={showForm} onOpenChange={(open) => {
+        setShowForm(open);
+        if (!open) setEditingPackage(null);
+      }}>
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle className="text-white">{editingPackage ? 'Edit' : 'New'} Work Package</SheetTitle>
+          </SheetHeader>
+          <WorkPackageForm
+            package={editingPackage}
+            projectId={activeProjectId}
+            sovItems={sovItems}
+            costCodes={costCodes}
+            documents={documents}
+            drawings={drawings}
+            deliveries={deliveries}
+            onSubmit={(data) => {
+              if (editingPackage) {
+                updateMutation.mutate({ id: editingPackage.id, data });
+              } else {
+                createMutation.mutate(data);
+              }
+            }}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingPackage(null);
+            }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!viewingPackage} onOpenChange={(open) => {
+        if (!open) setViewingPackage(null);
+      }}>
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-3xl">
+          <SheetHeader>
+            <SheetTitle className="text-white">Package Details</SheetTitle>
+          </SheetHeader>
+          {viewingPackage && (
+            <WorkPackageDetails
+              package={viewingPackage}
+              projectId={activeProjectId}
+              tasks={tasks.filter(t => t.work_package_id === viewingPackage.id)}
+              sovItems={sovItems}
+              costCodes={costCodes}
+              documents={documents}
+              drawings={drawings}
+              deliveries={deliveries}
+              onEdit={() => {
+                setEditingPackage(viewingPackage);
+                setViewingPackage(null);
+                setShowForm(true);
+              }}
+              onAdvancePhase={(pkg, nextPhase) => advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: nextPhase })}
+              onUpdate={(data) => updateMutation.mutate({ id: viewingPackage.id, data })}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Package?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Delete "{deletePackage?.wpid} - {deletePackage?.title}" and {tasks.filter(t => t.work_package_id === deletePackage?.id).length} tasks? Cannot undo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

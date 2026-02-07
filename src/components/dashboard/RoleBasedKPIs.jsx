@@ -22,10 +22,11 @@ export default function RoleBasedKPIs({ role, metrics, projects }) {
   const executiveKPIs = [
     {
       label: 'Portfolio Value',
-      value: `$${((metrics.totalContractValue || 0) / 1000000).toFixed(1)}M`,
-      icon: Package,
-      subtitle: `${metrics.activeProjects || 0} active`,
-      color: 'bg-blue-500'
+      value: `$${(metrics.totalContractValue / 1000000).toFixed(1)}M`,
+      icon: DollarSign,
+      trend: metrics.portfolioGrowth > 0 ? 'up' : 'down',
+      trendValue: `${Math.abs(metrics.portfolioGrowth || 0).toFixed(1)}%`,
+      color: 'bg-green-500'
     },
     {
       label: 'Active Projects',
@@ -38,27 +39,22 @@ export default function RoleBasedKPIs({ role, metrics, projects }) {
       label: 'At Risk',
       value: metrics.atRiskProjects || 0,
       icon: AlertTriangle,
-      subtitle: `${metrics.totalProjects > 0 ? (((metrics.atRiskProjects || 0) / metrics.totalProjects) * 100).toFixed(0) : 0}% of portfolio`,
+      subtitle: `${((metrics.atRiskProjects / metrics.totalProjects) * 100).toFixed(0)}% of portfolio`,
       color: metrics.atRiskProjects > 0 ? 'bg-red-500' : 'bg-green-500'
     },
     {
       label: 'Budget Performance',
-      value: `${(metrics.avgBudgetVariance || 0) >= 0 ? '+' : ''}${(metrics.avgBudgetVariance || 0).toFixed(1)}%`,
-      icon: DollarSign,
-      subtitle: (metrics.totalBudget || 0) > 0 
-        ? `$${((metrics.totalActual + metrics.totalCommitted || 0) / 1000).toFixed(0)}K / $${((metrics.totalBudget || 0) / 1000).toFixed(0)}K` 
-        : 'No data',
-      color: (metrics.avgBudgetVariance || 0) > 10 ? 'bg-red-500' : 
-             (metrics.avgBudgetVariance || 0) > 0 ? 'bg-amber-500' : 
-             (metrics.avgBudgetVariance || 0) < 0 ? 'bg-green-500' : 'bg-zinc-700'
+      value: `${metrics.avgBudgetVariance > 0 ? '+' : ''}${metrics.avgBudgetVariance?.toFixed(1) || 0}%`,
+      icon: TrendingUp,
+      trend: metrics.avgBudgetVariance > 0 ? 'down' : 'up',
+      color: metrics.avgBudgetVariance > 0 ? 'bg-red-500' : 'bg-green-500'
     },
     {
       label: 'Schedule Performance',
-      value: `${Math.round(metrics.avgScheduleProgress || 0)}%`,
+      value: `${metrics.avgScheduleProgress?.toFixed(0) || 0}%`,
       icon: Calendar,
       subtitle: 'Avg completion',
-      color: (metrics.avgScheduleProgress || 0) < 50 ? 'bg-red-500' : 
-             (metrics.avgScheduleProgress || 0) < 80 ? 'bg-amber-500' : 'bg-green-500'
+      color: 'bg-purple-500'
     },
     {
       label: 'Critical Issues',

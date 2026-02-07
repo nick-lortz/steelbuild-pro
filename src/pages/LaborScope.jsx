@@ -21,18 +21,16 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
-const LaborScope = React.memo(function LaborScope() {
+export default function LaborScope() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [expandedSection, setExpandedSection] = useState('breakdown');
   const [editingValues, setEditingValues] = useState({});
   const queryClient = useQueryClient();
 
-  const { data: projects = [], isError: projectsError } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 10 * 60 * 1000,
-    retry: 2,
-    retryDelay: 1000
+    staleTime: 10 * 60 * 1000
   });
 
   const { data: categories = [] } = useQuery({
@@ -41,13 +39,11 @@ const LaborScope = React.memo(function LaborScope() {
     staleTime: 10 * 60 * 1000
   });
 
-  const { data: breakdowns = [], refetch: refetchBreakdowns, isError: breakdownsError } = useQuery({
+  const { data: breakdowns = [], refetch: refetchBreakdowns } = useQuery({
     queryKey: ['labor-breakdowns', activeProjectId],
     queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000,
-    retry: 2,
-    retryDelay: 1000
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: specialtyItems = [] } = useQuery({
@@ -89,8 +85,6 @@ const LaborScope = React.memo(function LaborScope() {
 
   const updateBreakdownMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.LaborBreakdown.update(id, data),
-    retry: 2,
-    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
     }
@@ -173,17 +167,6 @@ const LaborScope = React.memo(function LaborScope() {
     const shop = tasks.reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0), 0);
     const field = tasks.reduce((sum, t) => sum + (Number(t.planned_field_hours) || 0), 0);
     return { shop, field };
-  }, [tasks]);
-
-  // Pre-calculate scheduled hours per category to avoid nested loops
-  const scheduledByCategory = useMemo(() => {
-    const map = {};
-    tasks.forEach(t => {
-      if (!t.labor_category_id) return;
-      if (!map[t.labor_category_id]) map[t.labor_category_id] = 0;
-      map[t.labor_category_id] += (Number(t.planned_shop_hours) || 0) + (Number(t.planned_field_hours) || 0);
-    });
-    return map;
   }, [tasks]);
 
   if (!activeProjectId) {
@@ -371,7 +354,9 @@ const LaborScope = React.memo(function LaborScope() {
                 .map(bd => {
                 const category = categories.find(c => c.id === bd.labor_category_id);
                 const total = (Number(bd.shop_hours) || 0) + (Number(bd.field_hours) || 0);
-                const scheduledForCategory = scheduledByCategory[bd.labor_category_id] || 0;
+                const scheduledForCategory = tasks
+                  .filter(t => t.labor_category_id === bd.labor_category_id)
+                  .reduce((sum, t) => sum + (Number(t.planned_shop_hours) || 0) + (Number(t.planned_field_hours) || 0), 0);
                 const variance = total - scheduledForCategory;
 
                 return (
@@ -400,17 +385,11 @@ const LaborScope = React.memo(function LaborScope() {
                               updateBreakdownMutation.mutate({ 
                                 id: bd.id, 
                                 data: { shop_hours: value }
-                              }, {
-                                onSuccess: () => {
-                                  setEditingValues(prev => {
-                                    const newState = {...prev};
-                                    delete newState[`${bd.id}-shop`];
-                                    return newState;
-                                  });
-                                },
-                                onError: () => {
-                                  toast.error('Failed to update shop hours');
-                                }
+                              });
+                              setEditingValues(prev => {
+                                const newState = {...prev};
+                                delete newState[`${bd.id}-shop`];
+                                return newState;
                               });
                             }}
                             className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
@@ -434,17 +413,11 @@ const LaborScope = React.memo(function LaborScope() {
                               updateBreakdownMutation.mutate({ 
                                 id: bd.id, 
                                 data: { field_hours: value }
-                              }, {
-                                onSuccess: () => {
-                                  setEditingValues(prev => {
-                                    const newState = {...prev};
-                                    delete newState[`${bd.id}-field`];
-                                    return newState;
-                                  });
-                                },
-                                onError: () => {
-                                  toast.error('Failed to update field hours');
-                                }
+                              });
+                              setEditingValues(prev => {
+                                const newState = {...prev};
+                                delete newState[`${bd.id}-field`];
+                                return newState;
                               });
                             }}
                             className="w-20 h-7 bg-zinc-950 border-zinc-700 text-white text-xs text-center font-mono"
@@ -470,10 +443,8 @@ const LaborScope = React.memo(function LaborScope() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={async () => {
-                            const category = categories.find(c => c.id === bd.labor_category_id);
-                            const confirmed = await window.confirm(`Delete ${category?.name || 'this breakdown'}?`);
-                            if (confirmed) {
+                          onClick={() => {
+                            if (confirm('Delete this breakdown?')) {
                               deleteBreakdownMutation.mutate(bd.id);
                             }
                           }}
@@ -544,17 +515,16 @@ const LaborScope = React.memo(function LaborScope() {
                       </Badge>
 
                       <Button
-                       size="sm"
-                       variant="ghost"
-                       onClick={async () => {
-                         const confirmed = await window.confirm(`Delete specialty item: ${item.location_detail}?`);
-                         if (confirmed) {
-                           deleteSpecialtyMutation.mutate(item.id);
-                         }
-                       }}
-                       className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm('Delete specialty item?')) {
+                            deleteSpecialtyMutation.mutate(item.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
                       >
-                       <Trash2 size={12} />
+                        <Trash2 size={12} />
                       </Button>
                     </div>
                   </div>
@@ -647,17 +617,16 @@ const LaborScope = React.memo(function LaborScope() {
                       </Select>
 
                       <Button
-                       size="sm"
-                       variant="ghost"
-                       onClick={async () => {
-                         const confirmed = await window.confirm(`Delete scope gap: ${gap.location_description}?`);
-                         if (confirmed) {
-                           deleteGapMutation.mutate(gap.id);
-                         }
-                       }}
-                       className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (confirm('Delete gap?')) {
+                            deleteGapMutation.mutate(gap.id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 h-7 px-2 text-red-500"
                       >
-                       <Trash2 size={12} />
+                        <Trash2 size={12} />
                       </Button>
                     </div>
                   </div>
@@ -669,6 +638,4 @@ const LaborScope = React.memo(function LaborScope() {
       </div>
     </div>
   );
-});
-
-export default LaborScope;
+}

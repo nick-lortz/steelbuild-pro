@@ -1,556 +1,597 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { 
-  RefreshCw, Calendar, AlertCircle, Download, Mail, Plus, Edit, Trash2,
-  CheckCircle, AlertTriangle, Zap, Clock, Target,
-  ChevronDown, ChevronUp, Package
-} from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import ReportScheduler from '@/components/reports/ReportScheduler';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Calendar, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock, 
+  XCircle,
+  Filter,
+  Layers,
+  Search,
+  ChevronDown,
+  Edit,
+  Plus
+} from 'lucide-react';
+import { format, addWeeks, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, differenceInDays } from 'date-fns';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import TaskForm from '@/components/schedule/TaskForm';
 
 export default function LookAheadPlanning() {
-  const [selectedProject, setSelectedProject] = useState('');
-  const [windowWeeks, setWindowWeeks] = useState(4);
-  const [lastRefreshed, setLastRefreshed] = useState(new Date());
-  const [showReportScheduler, setShowReportScheduler] = useState(false);
-  const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [showNewTask, setShowNewTask] = useState(false);
-  const [showAI, setShowAI] = useState(true);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [showEditTask, setShowEditTask] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
+  const [weeksAhead, setWeeksAhead] = useState(4);
+  const [phaseFilter, setPhaseFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showConstraintsOnly, setShowConstraintsOnly] = useState(false);
+  const [expandedWeeks, setExpandedWeeks] = useState([0]);
+  const [editingTask, setEditingTask] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-    staleTime: Infinity
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+      : base44.entities.Task.list('start_date'),
+    staleTime: 2 * 60 * 1000
   });
 
-  const { data: allProjects = [] } = useQuery({
+  const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 10 * 60 * 1000
+  });
+
+  const { data: workPackages = [] } = useQuery({
+    queryKey: ['work-packages', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
-  const projects = React.useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter((p) =>
-      p.project_manager === currentUser.email ||
-      p.superintendent === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
-    );
-  }, [currentUser, allProjects]);
-
-  const { 
-    data: lookAheadData = {}, 
-    isLoading, 
-    isFetching, 
-    refetch 
-  } = useQuery({
-    queryKey: ['lookAheadData', selectedProject, windowWeeks],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getLookAheadData', {
-        projectId: selectedProject === 'all' ? null : selectedProject,
-        windowWeeks,
-        allProjects: selectedProject === 'all'
-      });
-
-      // Unwrap response.data first
-      const d = response?.data ?? response;
-      
-      // Then unwrap nested data/body/result
-      const normalized = (d?.data || d?.body || d?.result) || d;
-
-      console.debug('[getLookAheadData] normalized:', normalized);
-      return normalized;
-    },
-    enabled: selectedProject !== '',
-    staleTime: 2 * 60 * 1000,
-    retry: 2
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawing-sets', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
-  const { 
-    project = {}, 
-    window = {}, 
-    snapshot = {}, 
-    tasks = [],
-    constraints = [],
-    ai = {}, 
-    warnings = [] 
-  } = lookAheadData;
+  const { data: deliveries = [] } = useQuery({
+    queryKey: ['deliveries', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
+  });
 
-  const tasksByWeek = React.useMemo(() => {
-    const weeks = [];
-    for (let i = 0; i < windowWeeks; i++) {
-      weeks[i] = tasks.filter(t => t.weekIndex === i);
-    }
-    return weeks;
-  }, [tasks, windowWeeks]);
-
-  const createTaskMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
-      toast.success('Task created');
-      setShowNewTask(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed: ${error.message}`);
-    }
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis', activeProjectId],
+    queryFn: () => activeProjectId 
+      ? base44.entities.RFI.filter({ project_id: activeProjectId })
+      : [],
+    enabled: !!activeProjectId,
+    staleTime: 5 * 60 * 1000
   });
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setEditingTask(null);
       toast.success('Task updated');
-      setShowEditTask(false);
-      setSelectedTask(null);
-    },
-    onError: (error) => {
-      toast.error(`Failed: ${error.message}`);
     }
   });
 
-  const deleteTaskMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lookAheadData', selectedProject, windowWeeks] });
-      toast.success('Task deleted');
-      setDeleteConfirm(null);
-      setShowEditTask(false);
-      setSelectedTask(null);
-    },
-    onError: (error) => toast.error(`Failed: ${error.message}`)
-  });
+  const lookAheadWindow = useMemo(() => {
+    const today = new Date();
+    const endDate = addWeeks(today, weeksAhead);
+    return {
+      start: startOfWeek(today, { weekStartsOn: 1 }),
+      end: endOfWeek(endDate, { weekStartsOn: 1 })
+    };
+  }, [weeksAhead]);
 
-  const openTask = (task) => {
-    setSelectedTask(task);
-    setShowEditTask(true);
-  };
-
-  const handleRefresh = () => {
-    refetch();
-    setLastRefreshed(new Date());
-    toast.success('Look-ahead refreshed');
-  };
-
-  const handleGeneratePDF = async () => {
-    setGeneratingPDF(true);
-    try {
-      toast.success('Look-ahead report generated');
-    } catch (error) {
-      toast.error('Failed to generate PDF');
-    } finally {
-      setGeneratingPDF(false);
-    }
-  };
-
-  if (!selectedProject) {
-    return (
-      <ErrorBoundary>
-        <div className="space-y-6">
-          <div><h1 className="text-3xl font-bold tracking-tight">Look-Ahead Planning</h1><p className="text-muted-foreground mt-2">2–6 Week Commitment Window</p></div>
-          <Card className="max-w-md"><CardContent className="pt-6"><p className="text-sm font-medium mb-4">Select a project or view all</p><Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent><SelectItem value="all">✓ All Projects ({projects.length})</SelectItem><div className="border-t my-1" />{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select></CardContent></Card>
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
-  return (
-    <ErrorBoundary>
-      <div className="space-y-6 max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Look-Ahead Planning</h1>
-            <p className="text-muted-foreground mt-2">Weekly Commitments • Constraints • Readiness</p>
-            <div className="flex items-center gap-3 mt-2">
-              <p className="text-sm text-muted-foreground">
-                {selectedProject === 'all' ? `Portfolio (${projects.length} projects)` : `${project.project_number} • ${project.name}`}
-              </p>
-              <div className={cn("w-2 h-2 rounded-full", warnings.length === 0 ? "bg-green-500" : "bg-yellow-500")} />
-              <span className="text-xs text-muted-foreground">Data {warnings.length === 0 ? 'Complete' : 'Partial'}</span>
-              <span className="text-xs text-muted-foreground">• Updated: {lastRefreshed.toLocaleString()}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">✓ All Projects ({projects.length})</SelectItem><div className="border-t my-1" />{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select>
-            <Select value={windowWeeks.toString()} onValueChange={(v) => setWindowWeeks(parseInt(v))}><SelectTrigger className="w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="2">2 Weeks</SelectItem><SelectItem value="4">4 Weeks</SelectItem><SelectItem value="6">6 Weeks</SelectItem></SelectContent></Select>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}><RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} /></Button>
-            <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}><Download className="h-4 w-4 mr-2" />Export</Button>
-            <Button variant="outline" size="sm" onClick={() => setShowReportScheduler(true)}><Mail className="h-4 w-4 mr-2" />Schedule</Button>
-            <Button size="sm" onClick={() => setShowNewTask(true)}><Plus className="h-4 w-4 mr-2" />Add Task</Button>
-          </div>
-        </div>
-
-        {warnings.length > 0 && (
-          <Card className="border-amber-500/50 bg-amber-500/5"><CardContent className="pt-4"><div className="flex items-start gap-3"><AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" /><div><p className="text-sm font-medium">Data Incomplete</p><ul className="text-xs text-muted-foreground mt-1 list-disc ml-4">{warnings.map((w, idx) => <li key={idx}>{w}</li>)}</ul></div></div></CardContent></Card>
-        )}
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12"><RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-        ) : (
-          <>
-            {/* Readiness Snapshot */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Readiness Snapshot</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Ready Tasks</p><div className="text-2xl font-bold text-green-500">{snapshot.readyTasks || 0}</div></CardContent></Card>
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Blocked Tasks</p><div className="text-2xl font-bold text-red-500">{snapshot.blockedTasks || 0}</div></CardContent></Card>
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Critical Constraints</p><div className="text-2xl font-bold text-orange-500">{snapshot.criticalConstraints || 0}</div></CardContent></Card>
-                <Card><CardContent className="pt-4"><p className="text-xs text-muted-foreground uppercase mb-1">Due This Week</p><div className="text-2xl font-bold text-blue-500">{snapshot.tasksDueThisWeek || 0}</div></CardContent></Card>
-              </div>
-            </div>
-
-            {/* AI Look-Ahead Coach */}
-            {ai.recommendations && ai.recommendations.length > 0 && (
-              <Collapsible open={showAI} onOpenChange={setShowAI}>
-                <Card className="border-purple-500/30">
-                  <CardHeader>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full">
-                      <CardTitle className="text-sm flex items-center gap-2"><Zap className="h-4 w-4 text-purple-500" />AI Look-Ahead Coach</CardTitle>
-                      {showAI ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </CollapsibleTrigger>
-                  </CardHeader>
-                  <CollapsibleContent>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div><p className="text-sm font-medium mb-2">Window Analysis</p><p className="text-sm text-muted-foreground">{ai.summary}</p><Badge variant="outline" className="capitalize mt-2">{ai.confidence} confidence</Badge></div>
-                        {ai.predictions && ai.predictions.length > 0 && (
-                          <div><p className="text-sm font-medium mb-2">Predicted Slips</p><div className="space-y-2">{ai.predictions.map((pred, idx) => <div key={idx} className="flex items-start gap-3 p-2 rounded bg-muted/30"><AlertTriangle className="h-4 w-4 mt-0.5 text-red-500" /><div className="flex-1"><p className="text-sm font-medium">{pred.task_name}</p><p className="text-xs text-muted-foreground">{pred.blockers}</p></div></div>)}</div></div>
-                        )}
-                        <div><p className="text-sm font-medium mb-2">Recommended Actions</p><div className="space-y-3">{ai.recommendations.map((rec, idx) => <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"><Badge variant={rec.priority === 'critical' || rec.priority === 'high' ? 'destructive' : 'default'} className="text-xs mt-1">{rec.priority}</Badge><div className="flex-1"><p className="font-semibold text-sm">{rec.action}</p><p className="text-xs text-green-600 mt-1">Impact: {rec.impact}</p></div></div>)}</div></div>
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            )}
-
-            {/* Weekly Buckets Board */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Weekly Commitment Buckets</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {tasksByWeek.map((weekTasks, idx) => (
-                  <div key={idx}>
-                    <div className="mb-3 flex items-center gap-2">
-                      <h3 className="font-semibold text-sm">Week {idx + 1}</h3>
-                      <Badge variant="outline" className="text-xs">{weekTasks.length}</Badge>
-                      {idx === 0 && <Badge className="text-xs bg-amber-500 text-black">This Week</Badge>}
-                    </div>
-                    <div className="space-y-2">
-                      {weekTasks.length === 0 ? (
-                        <Card className="bg-muted/20 border-dashed"><CardContent className="py-6 text-center"><p className="text-xs text-muted-foreground">No tasks</p></CardContent></Card>
-                      ) : (
-                        weekTasks.map((task) => (
-                          <Card
-                            key={task.id}
-                            className={cn("cursor-pointer hover:border-amber-500 transition-colors", !task.is_ready && "border-red-500/50")}
-                            onClick={() => openTask(task)}
-                          >
-                            <CardContent className="pt-3 pb-3">
-                              <div className="space-y-2">
-                                <div>
-                                  {task.project_number && <p className="text-xs text-amber-500 font-bold mb-1">{task.project_number} • {task.project_name}</p>}
-                                  <p className="font-semibold text-sm mb-1">{task.name}</p>
-                                  <p className="text-xs text-muted-foreground">{task.owner}</p>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs">
-                                  <Badge variant={task.is_ready ? 'default' : 'destructive'} className="text-xs">
-                                    {task.is_ready ? 'Ready' : 'Blocked'}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs capitalize">{task.phase}</Badge>
-                                </div>
-                                {task.readinessFlags.length > 0 && (
-                                  <div className="flex flex-wrap gap-1">
-                                    {task.readinessFlags.map((flag, fidx) => (
-                                      <Badge key={fidx} variant="destructive" className="text-xs">{flag.label}</Badge>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Constraints Panel */}
-            {constraints.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Target className="h-5 w-5 text-red-500" />
-                  Constraints ({constraints.length})
-                </h2>
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="border-b">
-                          <tr className="text-left">
-                            <th className="pb-2 font-medium">Type</th>
-                            <th className="pb-2 font-medium">Task</th>
-                            <th className="pb-2 font-medium">Constraint</th>
-                            <th className="pb-2 font-medium">Owner</th>
-                            <th className="pb-2 font-medium">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {constraints.slice(0, 20).map((c) => (
-                            <tr key={c.id} className="border-b last:border-0">
-                              <td className="py-2">
-                                <Badge variant="outline" className="text-xs capitalize">{c.type}</Badge>
-                              </td>
-                              <td className="py-2 font-medium">{c.task_name}</td>
-                              <td className="py-2 text-muted-foreground">{c.label}</td>
-                              <td className="py-2">{c.owner}</td>
-                              <td className="py-2">
-                                <Badge variant={c.status === 'open' ? 'destructive' : 'default'} className="text-xs capitalize">
-                                  {c.status}
-                                </Badge>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* New Task Sheet */}
-        <Sheet open={showNewTask} onOpenChange={setShowNewTask}>
-          <SheetContent className="w-[600px] sm:max-w-[600px]"><SheetHeader><SheetTitle>Add Look-Ahead Task</SheetTitle></SheetHeader><NewTaskForm projectId={selectedProject} windowStart={window.start} onSubmit={(data) => createTaskMutation.mutate(data)} onCancel={() => setShowNewTask(false)} /></SheetContent>
-        </Sheet>
-
-        {/* Edit Task Sheet */}
-        <Sheet open={showEditTask} onOpenChange={setShowEditTask}>
-          <SheetContent className="w-[600px] sm:max-w-[600px]">
-            <SheetHeader>
-              <SheetTitle>Edit Task</SheetTitle>
-            </SheetHeader>
-
-            {selectedTask && (
-              <EditTaskForm
-                task={selectedTask}
-                onSave={(data) => updateTaskMutation.mutate({ id: selectedTask.id, data })}
-                onDelete={() => setDeleteConfirm(selectedTask)}
-                onCancel={() => setShowEditTask(false)}
-              />
-            )}
-          </SheetContent>
-        </Sheet>
-
-        {/* Delete Confirm */}
-        <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete task?</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              Delete "{deleteConfirm?.name}"? This cannot be undone.
-            </p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-              <Button
-                variant="destructive"
-                onClick={() => deleteTaskMutation.mutate(deleteConfirm.id)}
-                disabled={deleteTaskMutation.isPending}
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Sheet open={showReportScheduler} onOpenChange={setShowReportScheduler}><SheetContent><SheetHeader><SheetTitle>Schedule Look-Ahead Report</SheetTitle></SheetHeader><ReportScheduler onClose={() => setShowReportScheduler(false)} /></SheetContent></Sheet>
-      </div>
-    </ErrorBoundary>
-  );
-}
-
-function EditTaskForm({ task, onSave, onDelete, onCancel }) {
-  const [formData, setFormData] = useState({
-    name: task.name || '',
-    start_date: task.start_date || '',
-    end_date: task.end_date || '',
-    phase: task.phase || 'fabrication',
-    status: task.status || 'not_started',
-    owner: task.owner || ''
-  });
-
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    const e = {};
-    if (!formData.name) e.name = 'Name required';
-    if (!formData.start_date) e.start_date = 'Start date required';
-    if (!formData.end_date) e.end_date = 'End date required';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const submit = (ev) => {
-    ev.preventDefault();
-    if (!validate()) return;
-
-    onSave({
-      name: formData.name,
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      phase: formData.phase,
-      status: formData.status,
-      owner: formData.owner
+  const lookAheadTasks = useMemo(() => {
+    return tasks.filter(task => {
+      if (!task.start_date) return false;
+      
+      try {
+        const taskStart = parseISO(task.start_date);
+        const inWindow = isWithinInterval(taskStart, lookAheadWindow);
+        
+        if (!inWindow) return false;
+        if (task.status === 'completed' || task.status === 'cancelled') return false;
+        if (phaseFilter !== 'all' && task.phase !== phaseFilter) return false;
+        if (searchTerm && !task.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+        
+        return true;
+      } catch {
+        return false;
+      }
     });
-  };
+  }, [tasks, lookAheadWindow, phaseFilter, searchTerm]);
+
+  const taskAnalysis = useMemo(() => {
+    return lookAheadTasks.map(task => {
+      const constraints = [];
+      const wp = workPackages.find(w => w.id === task.work_package_id);
+      
+      if (wp?.linked_drawing_set_ids?.length > 0) {
+        const linkedSets = drawingSets.filter(ds => wp.linked_drawing_set_ids.includes(ds.id));
+        const notFFF = linkedSets.filter(ds => ds.status !== 'FFF');
+        if (notFFF.length > 0) {
+          constraints.push({
+            type: 'drawings',
+            severity: 'critical',
+            message: `${notFFF.length} drawing set(s) not FFF`,
+            details: notFFF.map(ds => ds.set_name).join(', ')
+          });
+        }
+      }
+      
+      const linkedRFIs = (task.linked_rfi_ids || []).map(id => rfis.find(r => r.id === id)).filter(Boolean);
+      const openRFIs = linkedRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed');
+      if (openRFIs.length > 0) {
+        const blockerRFIs = openRFIs.filter(r => r.blocker_info?.is_blocker);
+        if (blockerRFIs.length > 0) {
+          constraints.push({
+            type: 'rfi',
+            severity: 'critical',
+            message: `${blockerRFIs.length} blocker RFI(s)`,
+            details: blockerRFIs.map(r => `RFI ${r.rfi_number}: ${r.subject}`).join('; ')
+          });
+        }
+      }
+      
+      const taskDeliveries = deliveries.filter(d => 
+        d.package_name === wp?.package_number || (task.linked_delivery_ids || []).includes(d.id)
+      );
+      const pendingDeliveries = taskDeliveries.filter(d => d.delivery_status !== 'received' && d.delivery_status !== 'closed');
+      if (task.phase === 'erection' && pendingDeliveries.length > 0) {
+        constraints.push({
+          type: 'delivery',
+          severity: 'critical',
+          message: `Material not received`,
+          details: pendingDeliveries.map(d => d.package_name).join(', ')
+        });
+      }
+      
+      if (task.predecessor_ids?.length > 0) {
+        const predecessors = task.predecessor_ids.map(id => tasks.find(t => t.id === id)).filter(Boolean);
+        const incomplete = predecessors.filter(p => p.status !== 'completed');
+        if (incomplete.length > 0) {
+          constraints.push({
+            type: 'dependency',
+            severity: 'warning',
+            message: `${incomplete.length} predecessor(s) incomplete`,
+            details: incomplete.map(t => t.name).join('; ')
+          });
+        }
+      }
+      
+      const readinessScore = constraints.filter(c => c.severity === 'critical').length === 0 ? 
+        (constraints.length === 0 ? 100 : 60) : 0;
+      
+      return {
+        ...task,
+        constraints,
+        readinessScore,
+        isReady: readinessScore === 100,
+        hasIssues: constraints.some(c => c.severity === 'critical'),
+        daysUntilStart: task.start_date ? differenceInDays(parseISO(task.start_date), new Date()) : 999
+      };
+    });
+  }, [lookAheadTasks, workPackages, drawingSets, rfis, deliveries, tasks]);
+
+  const weeklyGroups = useMemo(() => {
+    const weeks = [];
+    let currentWeekStart = lookAheadWindow.start;
+    
+    while (currentWeekStart <= lookAheadWindow.end) {
+      const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+      const weekTasks = taskAnalysis.filter(task => {
+        try {
+          const taskStart = parseISO(task.start_date);
+          return isWithinInterval(taskStart, { start: currentWeekStart, end: weekEnd });
+        } catch {
+          return false;
+        }
+      });
+      
+      weeks.push({
+        start: currentWeekStart,
+        end: weekEnd,
+        label: format(currentWeekStart, 'MMM d') + ' - ' + format(weekEnd, 'MMM d'),
+        tasks: weekTasks,
+        readyCount: weekTasks.filter(t => t.isReady).length,
+        blockedCount: weekTasks.filter(t => t.hasIssues).length
+      });
+      
+      currentWeekStart = addWeeks(currentWeekStart, 1);
+    }
+    
+    return weeks;
+  }, [taskAnalysis, lookAheadWindow]);
+
+  const stats = useMemo(() => {
+    const filteredTasks = showConstraintsOnly ? taskAnalysis.filter(t => t.constraints.length > 0) : taskAnalysis;
+    return {
+      total: taskAnalysis.length,
+      ready: taskAnalysis.filter(t => t.isReady).length,
+      blocked: taskAnalysis.filter(t => t.hasIssues).length,
+      needsAttention: taskAnalysis.filter(t => t.constraints.length > 0 && !t.hasIssues).length,
+      filtered: filteredTasks.length
+    };
+  }, [taskAnalysis, showConstraintsOnly]);
+
+  const displayTasks = showConstraintsOnly ? taskAnalysis.filter(t => t.constraints.length > 0) : taskAnalysis;
 
   return (
-    <form onSubmit={submit} className="space-y-4 mt-6">
-      <div>
-        <Label>Task Name *</Label>
-        <Input
-          value={formData.name}
-          onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-          className={errors.name ? 'border-red-500' : ''}
-        />
-        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b-2 border-amber-500 bg-black">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Look-Ahead Planning</h1>
+              <p className="text-xs text-zinc-500 font-mono mt-1 uppercase tracking-wider">
+                {weeksAhead}-WEEK WINDOW • {stats.total} TASKS • {stats.blocked} BLOCKED
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9">
+                  <SelectValue placeholder="Select project..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value={null}>All Projects</SelectItem>
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={weeksAhead.toString()} onValueChange={(v) => setWeeksAhead(parseInt(v))}>
+                <SelectTrigger className="w-32 bg-zinc-900 border-zinc-800 text-white h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="2">2 Weeks</SelectItem>
+                  <SelectItem value="4">4 Weeks</SelectItem>
+                  <SelectItem value="6">6 Weeks</SelectItem>
+                  <SelectItem value="8">8 Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Start Date *</Label>
-          <Input
-            type="date"
-            value={formData.start_date}
-            onChange={(e) => setFormData((p) => ({ ...p, start_date: e.target.value }))}
-            className={errors.start_date ? 'border-red-500' : ''}
-          />
-          {errors.start_date && <p className="text-xs text-red-500 mt-1">{errors.start_date}</p>}
+      {/* Metrics */}
+      <div className="bg-zinc-950 border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
+          <div className="grid grid-cols-4 gap-3">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <CheckCircle2 size={9} />
+                  READY
+                </div>
+                <div className="text-2xl font-black text-green-400">{stats.ready}</div>
+                <div className="text-[9px] text-zinc-600">{Math.round((stats.ready / stats.total) * 100) || 0}%</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-red-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <XCircle size={9} />
+                  BLOCKED
+                </div>
+                <div className="text-2xl font-black text-red-400">{stats.blocked}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/20">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-amber-400 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <AlertTriangle size={9} />
+                  ATTENTION
+                </div>
+                <div className="text-2xl font-black text-amber-400">{stats.needsAttention}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-3">
+                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5 flex items-center gap-1">
+                  <Layers size={9} />
+                  TOTAL
+                </div>
+                <div className="text-2xl font-black text-white">{stats.total}</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-black border-b border-zinc-800">
+        <div className="max-w-[1800px] mx-auto px-6 py-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-md">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
+              />
+            </div>
+            
+            <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+              <SelectTrigger className="w-36 bg-zinc-900 border-zinc-800 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Phases</SelectItem>
+                <SelectItem value="detailing">Detailing</SelectItem>
+                <SelectItem value="fabrication">Fabrication</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="erection">Erection</SelectItem>
+                <SelectItem value="closeout">Closeout</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant={showConstraintsOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowConstraintsOnly(!showConstraintsOnly)}
+              className={cn(
+                "h-8 text-[10px] uppercase tracking-wider font-bold",
+                showConstraintsOnly ? "bg-red-500 hover:bg-red-600 text-white" : "border-zinc-700 text-zinc-400"
+              )}
+            >
+              <AlertTriangle size={12} className="mr-1" />
+              {showConstraintsOnly ? 'ISSUES ONLY' : 'SHOW ISSUES'}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Weekly Timeline */}
+      <div className="max-w-[1800px] mx-auto px-6 py-4">
+        <div className="space-y-2">
+          {weeklyGroups.map((week, weekIdx) => {
+            const isExpanded = expandedWeeks.includes(weekIdx);
+            const isCurrentWeek = weekIdx === 0;
+            
+            return (
+              <Card 
+                key={weekIdx} 
+                className={cn(
+                  "bg-zinc-900 border-zinc-800",
+                  isCurrentWeek && "border-amber-500 border-l-4"
+                )}
+              >
+                <button
+                  onClick={() => setExpandedWeeks(prev => 
+                    prev.includes(weekIdx) ? prev.filter(w => w !== weekIdx) : [...prev, weekIdx]
+                  )}
+                  className="w-full"
+                >
+                  <CardHeader className="p-3 hover:bg-zinc-800/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <ChevronDown 
+                          size={16} 
+                          className={cn(
+                            "text-zinc-500 transition-transform",
+                            !isExpanded && "-rotate-90"
+                          )}
+                        />
+                        <CardTitle className="text-sm font-black uppercase tracking-wide">
+                          {isCurrentWeek && <span className="text-amber-500 mr-2">►</span>}
+                          WEEK {weekIdx + 1}
+                          <span className="text-zinc-600 font-normal ml-2 text-xs">{week.label}</span>
+                        </CardTitle>
+                        {isCurrentWeek && (
+                          <Badge className="bg-amber-500 text-black font-bold text-[9px] px-2 py-0">
+                            THIS WEEK
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-green-500 rounded-full" />
+                          <span className="text-zinc-400">{week.readyCount}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-red-500 rounded-full" />
+                          <span className="text-zinc-400">{week.blockedCount}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-zinc-500 rounded-full" />
+                          <span className="text-zinc-400">{week.tasks.length}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </button>
+                
+                {isExpanded && (
+                  <CardContent className="p-0 border-t border-zinc-800">
+                    {week.tasks.length === 0 ? (
+                      <div className="p-8 text-center text-zinc-600 text-xs">
+                        No tasks scheduled
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-zinc-800">
+                        {week.tasks.sort((a, b) => a.daysUntilStart - b.daysUntilStart).map(task => {
+                          const wp = workPackages.find(w => w.id === task.work_package_id);
+                          const project = projects.find(p => p.id === task.project_id);
+                          
+                          return (
+                            <div
+                              key={task.id}
+                              className={cn(
+                                "p-3 hover:bg-zinc-800/50 transition-colors group",
+                                task.hasIssues && "bg-red-500/5",
+                                task.isReady && "bg-green-500/5"
+                              )}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Readiness */}
+                                <div className="flex flex-col items-center gap-0.5 pt-0.5">
+                                  <div className={cn(
+                                    "w-10 h-10 rounded flex items-center justify-center font-black text-sm border",
+                                    task.isReady 
+                                      ? "bg-green-500/20 border-green-500 text-green-400" 
+                                      : task.hasIssues
+                                      ? "bg-red-500/20 border-red-500 text-red-400"
+                                      : "bg-amber-500/20 border-amber-500 text-amber-400"
+                                  )}>
+                                    {task.readinessScore}
+                                  </div>
+                                  <span className="text-[8px] text-zinc-600 uppercase tracking-wider font-bold">
+                                    {task.daysUntilStart}d
+                                  </span>
+                                </div>
+
+                                {/* Task Info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-3 mb-1">
+                                    <div className="flex-1">
+                                      <h3 className="font-bold text-white text-sm mb-1 group-hover:text-amber-400 transition-colors">
+                                        {task.name}
+                                      </h3>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <Badge variant="outline" className="text-[9px] font-mono px-1.5 py-0">
+                                          {project?.project_number}
+                                        </Badge>
+                                        {wp && (
+                                          <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                            {wp.package_number}
+                                          </Badge>
+                                        )}
+                                        <Badge className={cn(
+                                          "text-[9px] font-bold uppercase px-1.5 py-0",
+                                          task.phase === 'detailing' && "bg-blue-500/20 text-blue-400",
+                                          task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400",
+                                          task.phase === 'delivery' && "bg-amber-500/20 text-amber-400",
+                                          task.phase === 'erection' && "bg-green-500/20 text-green-400"
+                                        )}>
+                                          {task.phase}
+                                        </Badge>
+                                        <span className="text-[10px] text-zinc-600 font-mono">
+                                          {format(parseISO(task.start_date), 'MMM d')} 
+                                          {task.end_date && ` → ${format(parseISO(task.end_date), 'MMM d')}`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Constraints */}
+                                  {task.constraints.length > 0 && (
+                                    <div className="space-y-1 mt-2">
+                                      {task.constraints.map((constraint, idx) => (
+                                        <div
+                                          key={idx}
+                                          className={cn(
+                                            "flex items-start gap-2 p-2 rounded text-[10px]",
+                                            constraint.severity === 'critical' 
+                                              ? "bg-red-500/10 border border-red-500/30" 
+                                              : "bg-amber-500/10 border border-amber-500/30"
+                                          )}
+                                        >
+                                          {constraint.severity === 'critical' ? (
+                                            <XCircle size={12} className="text-red-400 mt-0.5 flex-shrink-0" />
+                                          ) : (
+                                            <AlertTriangle size={12} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                                          )}
+                                          <div className="flex-1">
+                                            <p className={cn(
+                                              "font-bold uppercase tracking-wider",
+                                              constraint.severity === 'critical' ? "text-red-400" : "text-amber-400"
+                                            )}>
+                                              {constraint.message}
+                                            </p>
+                                            {constraint.details && (
+                                              <p className="text-zinc-500 mt-0.5 text-[9px]">{constraint.details}</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Actions */}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingTask(task)}
+                                  className="opacity-0 group-hover:opacity-100 h-7 px-2 text-xs"
+                                >
+                                  <Edit size={12} className="mr-1" />
+                                  EDIT
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
         </div>
 
-        <div>
-          <Label>End Date *</Label>
-          <Input
-            type="date"
-            value={formData.end_date}
-            onChange={(e) => setFormData((p) => ({ ...p, end_date: e.target.value }))}
-            className={errors.end_date ? 'border-red-500' : ''}
-          />
-          {errors.end_date && <p className="text-xs text-red-500 mt-1">{errors.end_date}</p>}
-        </div>
+        {displayTasks.length === 0 && (
+          <Card className="bg-zinc-900 border-zinc-800 mt-4">
+            <CardContent className="p-12 text-center">
+              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-lg font-bold text-zinc-400 mb-2">No Tasks in Window</h3>
+              <p className="text-xs text-zinc-600">
+                {showConstraintsOnly 
+                  ? 'No tasks with constraints - all clear!' 
+                  : `Add tasks with start dates in the next ${weeksAhead} weeks`}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      <div>
-        <Label>Owner</Label>
-        <Input
-          value={formData.owner}
-          onChange={(e) => setFormData((p) => ({ ...p, owner: e.target.value }))}
-          placeholder="Who owns this commitment"
-        />
-      </div>
-
-      <div>
-        <Label>Phase</Label>
-        <Select value={formData.phase} onValueChange={(v) => setFormData((p) => ({ ...p, phase: v }))}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="detailing">Detailing</SelectItem>
-            <SelectItem value="fabrication">Fabrication</SelectItem>
-            <SelectItem value="delivery">Delivery</SelectItem>
-            <SelectItem value="erection">Erection</SelectItem>
-            <SelectItem value="closeout">Closeout</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <Label>Status</Label>
-        <Select value={formData.status} onValueChange={(v) => setFormData((p) => ({ ...p, status: v }))}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="not_started">Not Started</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="blocked">Blocked</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
-        </Button>
-        <Button type="button" variant="destructive" onClick={onDelete}>
-          Delete
-        </Button>
-        <Button type="submit" className="flex-1">
-          Save
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function NewTaskForm({ projectId, windowStart, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    project_id: projectId,
-    name: '',
-    start_date: windowStart || new Date().toISOString().split('T')[0],
-    end_date: '',
-    phase: 'fabrication',
-    status: 'not_started'
-  });
-
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.name) newErrors.name = 'Name required';
-    if (!formData.start_date) newErrors.start_date = 'Start date required';
-    if (!formData.end_date) newErrors.end_date = 'End date required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) onSubmit(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-      <div><Label>Task Name *</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={errors.name ? 'border-red-500' : ''} />{errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}</div>
-      <div className="grid grid-cols-2 gap-4">
-        <div><Label>Start Date *</Label><Input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className={errors.start_date ? 'border-red-500' : ''} />{errors.start_date && <p className="text-xs text-red-500 mt-1">{errors.start_date}</p>}</div>
-        <div><Label>End Date *</Label><Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className={errors.end_date ? 'border-red-500' : ''} />{errors.end_date && <p className="text-xs text-red-500 mt-1">{errors.end_date}</p>}</div>
-      </div>
-      <div><Label>Phase</Label><Select value={formData.phase} onValueChange={(v) => setFormData({ ...formData, phase: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="detailing">Detailing</SelectItem><SelectItem value="fabrication">Fabrication</SelectItem><SelectItem value="delivery">Delivery</SelectItem><SelectItem value="erection">Erection</SelectItem><SelectItem value="closeout">Closeout</SelectItem></SelectContent></Select></div>
-      <div className="flex gap-2 pt-4"><Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button><Button type="submit" className="flex-1">Add Task</Button></div>
-    </form>
+      {/* Edit Task Sheet */}
+      <Sheet open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
+          <SheetHeader>
+            <SheetTitle className="text-white">Edit Task</SheetTitle>
+          </SheetHeader>
+          {editingTask && (
+            <div className="mt-6">
+              <TaskForm
+                task={editingTask}
+                projectId={activeProjectId}
+                onSubmit={(data) => updateTaskMutation.mutate({ id: editingTask.id, data })}
+                onCancel={() => setEditingTask(null)}
+                isLoading={updateTaskMutation.isPending}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 }

@@ -1,14 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/notifications';
+import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { checkPermission } from '@/components/shared/permissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -16,14 +15,13 @@ import {
   SelectTrigger,
   SelectValue } from
 "@/components/ui/select";
-import { Building, RefreshCw, Plus, Download, Upload, AlertCircle, Edit, Trash2, Check, X, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Building, RefreshCw, Plus } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-  DialogFooter } from
+  DialogTitle } from
 "@/components/ui/dialog";
 import {
   Sheet,
@@ -31,11 +29,12 @@ import {
   SheetHeader,
   SheetTitle } from
 "@/components/ui/sheet";
+import ProjectsTable from '@/components/projects/ProjectsTable';
+import ProjectsKPIBar from '@/components/projects/ProjectsKPIBar';
+import ProjectsFilters from '@/components/projects/ProjectsFilters';
 import DeleteProjectDialog from '@/components/projects/DeleteProjectDialog';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
-import { cn } from '@/lib/utils';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 
 const initialFormState = {
@@ -73,15 +72,12 @@ export default function Projects() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [pmFilter, setPMFilter] = useState('all');
-  const [clientFilter, setClientFilter] = useState('all');
-  const [atRiskOnly, setAtRiskOnly] = useState(false);
   const [sortBy, setSortBy] = useState('updated');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteProject, setDeleteProject] = useState(null);
-  const [editingRow, setEditingRow] = useState(null);
-  const [editData, setEditData] = useState({});
 
   const queryClient = useQueryClient();
+  const { confirm } = useConfirm();
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -95,32 +91,11 @@ export default function Projects() {
     deleteProject: checkPermission(currentUser, 'projects:delete')
   };
 
-  const { data: allProjects = [], isLoading, refetch } = useQuery({
+  const { data: projects = [], isLoading, refetch } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-updated_date'),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
-  });
-
-  const projects = useMemo(() => {
-    if (!currentUser) return [];
-    if (currentUser.role === 'admin') return allProjects;
-    return allProjects.filter(p =>
-      p.project_manager === currentUser.email ||
-      p.superintendent === currentUser.email ||
-      (p.assigned_users && p.assigned_users.includes(currentUser.email))
-    );
-  }, [currentUser, allProjects]);
-
-  const { data: portfolioSummary = {}, isFetching: summaryFetching } = useQuery({
-    queryKey: ['portfolioSummary'],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getProjectsPortfolioSummary', {});
-      const d = response?.data ?? response;
-      return (d?.summary || d?.segments) ? d : (d?.data || d?.body || d);
-    },
-    staleTime: 5 * 60 * 1000,
-    retry: 2
   });
 
   const { data: users = [] } = useQuery({
@@ -144,12 +119,22 @@ export default function Projects() {
     gcTime: 10 * 60 * 1000
   });
 
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['change-orders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
+  });
 
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis'],
+    queryFn: () => base44.entities.RFI.list(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000
+  });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Project.create(data),
-    retry: 2,
-    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowForm(false);
@@ -167,8 +152,6 @@ export default function Projects() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
-    retry: 2,
-    retryDelay: 1000,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProject(null);
@@ -274,15 +257,10 @@ export default function Projects() {
     }));
   }, [projects, tasks]);
 
-  // Get unique PMs and clients
+  // Get unique PMs
   const projectManagers = useMemo(() => {
     const pms = new Set(projects.map(p => p.project_manager).filter(Boolean));
     return Array.from(pms).sort();
-  }, [projects]);
-
-  const clients = useMemo(() => {
-    const cls = new Set(projects.map(p => p.client).filter(Boolean));
-    return Array.from(cls).sort();
   }, [projects]);
 
   const filteredProjects = useMemo(() => {
@@ -293,12 +271,7 @@ export default function Projects() {
         p.client?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
       const matchesPM = pmFilter === 'all' || p.project_manager === pmFilter;
-      const matchesClient = clientFilter === 'all' || p.client === clientFilter;
-      
-      const isAtRisk = !p.project_manager || !p.target_completion || !p.contract_value;
-      const matchesRisk = !atRiskOnly || isAtRisk;
-
-      return matchesSearch && matchesStatus && matchesPM && matchesClient && matchesRisk;
+      return matchesSearch && matchesStatus && matchesPM;
     });
 
     // Sort
@@ -321,14 +294,12 @@ export default function Projects() {
     return filtered;
   }, [projectsWithMetrics, searchTerm, statusFilter, pmFilter, sortBy]);
 
-  const hasActiveFilters = searchTerm || statusFilter !== 'all' || pmFilter !== 'all' || clientFilter !== 'all' || atRiskOnly;
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || pmFilter !== 'all';
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setPMFilter('all');
-    setClientFilter('all');
-    setAtRiskOnly(false);
   };
 
   const handleViewProject = (project) => {
@@ -340,376 +311,144 @@ export default function Projects() {
   };
 
   return (
-    <ErrorBoundary>
-      <div className="space-y-6 max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-            <p className="text-muted-foreground mt-2">Portfolio Operations Hub</p>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="text-sm text-muted-foreground">{projects.length} Projects</span>
-              {portfolioSummary.summary && (
-                <>
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <span className="text-sm text-muted-foreground">
-                    {portfolioSummary.summary.activeProjects} Active
-                  </span>
-                </>
-              )}
+    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      {/* Modern Header */}
+      <div className="relative mb-8 overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 p-8">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
+              <Building className="w-8 h-8 text-black" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white tracking-tight">Projects</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-zinc-400 font-medium">{projects.length} Active Portfolio</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing || summaryFetching}>
-              <RefreshCw className={cn("h-4 w-4 mr-2", (isRefreshing || summaryFetching) && "animate-spin")} />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10 backdrop-blur-xl"
+            >
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
               Refresh
             </Button>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
             {can.createProject && (
-              <>
-                <DemoProjectSeeder />
-                <Button size="sm" onClick={() => { setFormData(initialFormState); setSelectedProject(null); setShowForm(true); }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Project
-                </Button>
-              </>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setFormData(initialFormState);
+                  setShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-lg shadow-amber-500/30"
+              >
+                <Plus size={14} className="mr-1" />
+                New Project
+              </Button>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Portfolio KPIs */}
-        {portfolioSummary.summary && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Active Projects</p>
-                <div className="text-2xl font-bold text-blue-500">{portfolioSummary.summary.activeProjects}</div>
-              </CardContent>
-            </Card>
+      {/* KPI Bar */}
+      <div className="mb-6">
+        <ProjectsKPIBar projects={projectsWithMetrics} tasks={tasks} financials={financials} />
+      </div>
 
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Portfolio Value</p>
-                <div className="text-2xl font-bold text-green-500">
-                  ${((portfolioSummary.summary.totalContractValue || 0) / 1000000).toFixed(1)}M
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Updated (7d)</p>
-                <div className="text-2xl font-bold">{portfolioSummary.summary.updatedRecently || 0}</div>
-              </CardContent>
-            </Card>
-
-            <Card className={cn(
-              "border-2",
-              (portfolioSummary.summary.projectsWithMissingData || 0) > 0 ? "border-red-500/30 bg-red-500/5" : "border-green-500/30 bg-green-500/5"
-            )}>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Missing Setup</p>
-                <div className={cn(
-                  "text-2xl font-bold",
-                  (portfolioSummary.summary.projectsWithMissingData || 0) > 0 ? "text-red-500" : "text-green-500"
-                )}>
-                  {portfolioSummary.summary.projectsWithMissingData || 0}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Completeness</p>
-                <div className="text-2xl font-bold text-purple-500">{portfolioSummary.summary.completenessScore || 0}%</div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Portfolio Anomalies */}
-        {portfolioSummary.anomalies && portfolioSummary.anomalies.length > 0 && (
-          <Card className="border-purple-500/30">
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-purple-500" />
-                Portfolio Anomalies & Missing Setup
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {portfolioSummary.anomalies.map((anomaly, idx) => (
-                  <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                    <Badge variant={anomaly.severity === 'critical' ? 'destructive' : 'default'} className="text-xs mt-1">
-                      {anomaly.severity}
-                    </Badge>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{anomaly.message}</p>
-                      {anomaly.affectedProjects && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Projects: {anomaly.affectedProjects.slice(0, 5).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <Input
-            placeholder="Search projects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-48"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="bidding">Bidding</SelectItem>
-              <SelectItem value="awarded">Awarded</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="on_hold">On Hold</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={pmFilter} onValueChange={setPMFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All PMs</SelectItem>
-              {projectManagers.map(pm => (
-                <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={clientFilter} onValueChange={setClientFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Clients</SelectItem>
-              {clients.map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant={atRiskOnly ? "default" : "outline"} size="sm" onClick={() => setAtRiskOnly(!atRiskOnly)}>
-            <AlertTriangle className="h-4 w-4 mr-2" />
-            At-Risk
-          </Button>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="updated">Recent</SelectItem>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="target">Target</SelectItem>
-              <SelectItem value="value">Value</SelectItem>
-              <SelectItem value="progress">Progress</SelectItem>
-            </SelectContent>
-          </Select>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-              <X className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          )}
-        </div>
-
-        {/* Projects Table */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredProjects.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Building className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No Projects Found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {hasActiveFilters ? 'Try adjusting filters' : 'Create your first project'}
-              </p>
-              {can.createProject && !hasActiveFilters && (
-                <Button onClick={() => { setFormData(initialFormState); setShowForm(true); }}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Project
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="border-b bg-muted/30">
-                    <tr className="text-left">
-                      <th className="p-3 font-medium">Project #</th>
-                      <th className="p-3 font-medium">Name</th>
-                      <th className="p-3 font-medium">Client</th>
-                      <th className="p-3 font-medium">Status</th>
-                      <th className="p-3 font-medium">PM</th>
-                      <th className="p-3 font-medium">Target</th>
-                      <th className="p-3 font-medium text-right">Value</th>
-                      <th className="p-3 font-medium text-right">Progress</th>
-                      <th className="p-3 font-medium">Updated</th>
-                      <th className="p-3 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProjects.map((proj) => (
-                      <tr key={proj.id} className="border-b last:border-0 hover:bg-muted/20">
-                        {editingRow === proj.id ? (
-                          <>
-                            <td className="p-3 font-mono text-xs">{proj.project_number}</td>
-                            <td className="p-3">{proj.name}</td>
-                            <td className="p-3">{proj.client}</td>
-                            <td className="p-3">
-                              <Select value={editData.status} onValueChange={(v) => setEditData({ ...editData, status: v })}>
-                                <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="bidding">Bidding</SelectItem>
-                                  <SelectItem value="awarded">Awarded</SelectItem>
-                                  <SelectItem value="in_progress">In Progress</SelectItem>
-                                  <SelectItem value="on_hold">On Hold</SelectItem>
-                                  <SelectItem value="completed">Completed</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="p-3">
-                              <Input value={editData.project_manager || ''} onChange={(e) => setEditData({ ...editData, project_manager: e.target.value })} className="h-8" />
-                            </td>
-                            <td className="p-3">
-                              <Input type="date" value={editData.target_completion || ''} onChange={(e) => setEditData({ ...editData, target_completion: e.target.value })} className="h-8" />
-                            </td>
-                            <td className="p-3 text-right">
-                              <Input type="number" value={editData.contract_value || 0} onChange={(e) => setEditData({ ...editData, contract_value: e.target.value })} className="h-8 w-32 text-right" />
-                            </td>
-                            <td className="p-3" colSpan={2}></td>
-                            <td className="p-3 text-right">
-                              <div className="flex gap-1 justify-end">
-                                <Button size="sm" variant="ghost" onClick={() => updateMutation.mutate({ id: proj.id, data: { ...editData, contract_value: Number(editData.contract_value) } })}>
-                                  <Check className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => { setEditingRow(null); setEditData({}); }}>
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="p-3 font-mono text-xs">{proj.project_number}</td>
-                            <td className="p-3 font-medium">{proj.name}</td>
-                            <td className="p-3 text-sm">{proj.client || '-'}</td>
-                            <td className="p-3">
-                              <Badge variant={proj.status === 'in_progress' ? 'default' : 'outline'} className="capitalize text-xs">
-                                {proj.status?.replace('_', ' ')}
-                              </Badge>
-                            </td>
-                            <td className="p-3 text-sm">{proj.project_manager || <span className="text-red-500 text-xs">Missing</span>}</td>
-                            <td className="p-3 text-sm">
-                              {proj.target_completion ? new Date(proj.target_completion).toLocaleDateString() : <span className="text-red-500 text-xs">Missing</span>}
-                            </td>
-                            <td className="p-3 text-right font-semibold">
-                              {proj.contract_value ? `$${(proj.contract_value / 1000).toFixed(0)}K` : <span className="text-red-500 text-xs">Missing</span>}
-                            </td>
-                            <td className="p-3 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="w-16 bg-muted rounded-full h-2">
-                                  <div className="h-2 rounded-full bg-green-500" style={{ width: `${proj.progress || 0}%` }} />
-                                </div>
-                                <span className="text-xs font-bold w-8 text-right">{proj.progress || 0}%</span>
-                              </div>
-                            </td>
-                            <td className="p-3 text-xs text-muted-foreground">
-                              {proj.updated_date ? new Date(proj.updated_date).toLocaleDateString() : '-'}
-                            </td>
-                            <td className="p-3 text-right">
-                              <div className="flex gap-1 justify-end">
-                                <Button size="sm" variant="ghost" onClick={() => handleViewProject(proj)}>View</Button>
-                                {can.editProject && (
-                                  <>
-                                    <Button size="sm" variant="ghost" onClick={() => { 
-                                      setEditingRow(proj.id); 
-                                      setEditData({ 
-                                        status: proj.status, 
-                                        project_manager: proj.project_manager, 
-                                        target_completion: proj.target_completion, 
-                                        contract_value: proj.contract_value 
-                                      }); 
-                                    }}>
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => handleEdit(proj)}>Full Edit</Button>
-                                  </>
-                                )}
-                                {can.deleteProject && (
-                                  <Button size="sm" variant="ghost" onClick={() => handleDelete(proj)}>
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Create/Edit Sheet */}
-        <Sheet open={showForm || !!selectedProject} onOpenChange={(open) => {
-          if (!open) {
-            setShowForm(false);
-            setSelectedProject(null);
-          }
-        }}>
-          <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>{selectedProject ? 'Edit Project' : 'New Project'}</SheetTitle>
-            </SheetHeader>
-            <div className="mt-6">
-              <ProjectForm
-                formData={formData}
-                setFormData={setFormData}
-                onSubmit={handleSubmit}
-                isLoading={selectedProject ? updateMutation.isPending : createMutation.isPending}
-                users={users}
-                isEdit={!!selectedProject}
-              />
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Delete Confirmation */}
-        <DeleteProjectDialog
-          project={deleteProject}
-          open={!!deleteProject}
-          onOpenChange={(open) => !open && setDeleteProject(null)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioSummary'] });
-          }}
+      {/* Filters */}
+      <div className="mb-6">
+        <ProjectsFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          pmFilter={pmFilter}
+          onPMChange={setPMFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+          projectManagers={projectManagers}
         />
       </div>
-    </ErrorBoundary>
+
+      {/* Demo Seeder */}
+      {projects.length === 0 && !isLoading && (
+        <div className="mb-6">
+          <DemoProjectSeeder />
+        </div>
+      )}
+
+      {/* Projects Table */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground text-sm">Loading projects...</p>
+          </div>
+        </div>
+      ) : (
+        <ProjectsTable
+          projects={filteredProjects}
+          onView={handleViewProject}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onSettings={handleSettings}
+          canEdit={can.editProject}
+        />
+      )}
+
+      {/* Create Dialog */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle>New Project</DialogTitle>
+          </DialogHeader>
+          <ProjectForm
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            isLoading={createMutation.isPending}
+            users={users} />
+
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sheet */}
+      <Sheet open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
+        <SheetContent className="w-full sm:max-w-xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-white">Edit Project</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <ProjectForm
+              formData={formData}
+              setFormData={setFormData}
+              onSubmit={handleSubmit}
+              isLoading={updateMutation.isPending}
+              users={users}
+              isEdit />
+
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation with Cascade Warning */}
+      <DeleteProjectDialog
+        project={deleteProject}
+        open={!!deleteProject}
+        onOpenChange={(open) => !open && setDeleteProject(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries();
+        }}
+      />
+    </div>
   );
 }
 
@@ -736,7 +475,9 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.project_number}
             onChange={(e) => handleChange('project_number', e.target.value)}
             placeholder="e.g., 2024-001"
-            required />
+            required
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Project Name *</Label>
@@ -744,19 +485,25 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Project name"
-            required />
+            required
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Client / GC</Label>
           <Input
             value={formData.client}
             onChange={(e) => handleChange('client', e.target.value)}
-            placeholder="General contractor or owner" />
+            placeholder="General contractor or owner"
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Status</Label>
           <Select value={formData.status} onValueChange={(v) => handleChange('status', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="bidding">Bidding</SelectItem>
               <SelectItem value="awarded">Awarded</SelectItem>
@@ -772,7 +519,9 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
           <Input
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            placeholder="Project address" />
+            placeholder="Project address"
+            className="bg-zinc-800 border-zinc-700" />
+
         </div>
         <div className="space-y-2">
           <Label>Contract Value</Label>
@@ -780,35 +529,40 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             type="number"
             value={formData.contract_value}
             onChange={(e) => handleChange('contract_value', e.target.value)}
-            placeholder="0.00" />
+            placeholder="0.00"
+            className="bg-zinc-800 border-zinc-700" />
         </div>
         <div className="space-y-2">
           <Label>Start Date</Label>
           <Input
             type="date"
             value={formData.start_date}
-            onChange={(e) => handleChange('start_date', e.target.value)} />
+            onChange={(e) => handleChange('start_date', e.target.value)}
+            className="bg-zinc-800 border-zinc-700" />
         </div>
         <div className="space-y-2">
           <Label>Target Completion</Label>
           <Input
             type="date"
             value={formData.target_completion}
-            onChange={(e) => handleChange('target_completion', e.target.value)} />
+            onChange={(e) => handleChange('target_completion', e.target.value)}
+            className="bg-zinc-800 border-zinc-700" />
         </div>
         <div className="space-y-2">
           <Label>Project Manager</Label>
           <Input
             value={formData.project_manager}
             onChange={(e) => handleChange('project_manager', e.target.value)}
-            placeholder="PM name" />
+            placeholder="PM name"
+            className="bg-zinc-800 border-zinc-700" />
         </div>
         <div className="space-y-2">
           <Label>Superintendent</Label>
           <Input
             value={formData.superintendent}
             onChange={(e) => handleChange('superintendent', e.target.value)}
-            placeholder="Superintendent name" />
+            placeholder="Superintendent name"
+            className="bg-zinc-800 border-zinc-700" />
         </div>
       </div>
 
@@ -821,7 +575,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             <Input
               value={formData.structure_anatomy_job_type}
               onChange={(e) => handleChange('structure_anatomy_job_type', e.target.value)}
-              placeholder="e.g., MVD Renovation" />
+              placeholder="e.g., MVD Renovation"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Rough Square Footage</Label>
@@ -829,7 +584,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="number"
               value={formData.rough_square_footage}
               onChange={(e) => handleChange('rough_square_footage', e.target.value)}
-              placeholder="0" />
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Rough Price/SqFt</Label>
@@ -838,7 +594,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               step="0.01"
               value={formData.rough_price_per_sqft}
               onChange={(e) => handleChange('rough_price_per_sqft', e.target.value)}
-              placeholder="0.00" />
+              placeholder="0.00"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Overall Shop Hours</Label>
@@ -846,7 +603,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="number"
               value={formData.baseline_shop_hours}
               onChange={(e) => handleChange('baseline_shop_hours', e.target.value)}
-              placeholder="0" />
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Overall Field Hours</Label>
@@ -854,7 +612,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="number"
               value={formData.baseline_field_hours}
               onChange={(e) => handleChange('baseline_field_hours', e.target.value)}
-              placeholder="0" />
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Crane Budget</Label>
@@ -862,7 +621,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="number"
               value={formData.crane_budget}
               onChange={(e) => handleChange('crane_budget', e.target.value)}
-              placeholder="0" />
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Sub Budget</Label>
@@ -870,7 +630,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               type="number"
               value={formData.sub_budget}
               onChange={(e) => handleChange('sub_budget', e.target.value)}
-              placeholder="0" />
+              placeholder="0"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
           <div className="space-y-2">
             <Label>Rough Lift/Hr Rate</Label>
@@ -879,7 +640,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               step="0.01"
               value={formData.rough_lift_hr_rate}
               onChange={(e) => handleChange('rough_lift_hr_rate', e.target.value)}
-              placeholder="0.00" />
+              placeholder="0.00"
+              className="bg-zinc-800 border-zinc-700" />
           </div>
         </div>
       </div>
@@ -888,58 +650,66 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         <h4 className="text-sm font-medium text-zinc-400 mb-3">Assigned Users</h4>
         <div className="space-y-2">
           <Label className="text-xs text-zinc-500">Select users who can access this project</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-muted border rounded-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-zinc-950 border border-zinc-800 rounded-lg">
             {users.map((user) =>
             <label
               key={user.id}
-              className="flex items-center gap-2 p-2 rounded hover:bg-accent cursor-pointer transition-colors">
+              className="flex items-center gap-2 p-2 rounded hover:bg-zinc-800 cursor-pointer transition-colors">
+
                 <input
                 type="checkbox"
                 checked={(formData.assigned_users || []).includes(user.email)}
                 onChange={() => toggleUser(user.email)}
-                className="w-4 h-4 rounded" />
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500" />
+
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm truncate">{user.full_name || user.email}</p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-sm text-white truncate">{user.full_name || user.email}</p>
+                  <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                 </div>
               </label>
             )}
           </div>
           {(formData.assigned_users || []).length > 0 &&
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-zinc-500 mt-2">
               {(formData.assigned_users || []).length} user(s) assigned
             </p>
           }
         </div>
       </div>
 
-      <div className="border-t pt-4">
-        <h4 className="text-sm font-medium text-muted-foreground mb-3">GC Contact Info</h4>
+      <div className="border-t border-zinc-800 pt-4">
+        <h4 className="text-sm font-medium text-zinc-400 mb-3">GC Contact Info</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Contact Name</Label>
             <Input
               value={formData.gc_contact}
-              onChange={(e) => handleChange('gc_contact', e.target.value)} />
+              onChange={(e) => handleChange('gc_contact', e.target.value)}
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
             <Input
               type="email"
               value={formData.gc_email}
-              onChange={(e) => handleChange('gc_email', e.target.value)} />
+              onChange={(e) => handleChange('gc_email', e.target.value)}
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
           <div className="space-y-2">
             <Label>Phone</Label>
             <Input
               value={formData.gc_phone}
-              onChange={(e) => handleChange('gc_phone', e.target.value)} />
+              onChange={(e) => handleChange('gc_phone', e.target.value)}
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
         </div>
       </div>
 
-      <div className="border-t pt-4">
-        <h4 className="text-sm font-medium text-muted-foreground mb-3">Scope of Work</h4>
+      <div className="border-t border-zinc-800 pt-4">
+        <h4 className="text-sm font-medium text-zinc-400 mb-3">Scope of Work</h4>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Scope Description</Label>
@@ -947,7 +717,9 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.scope_of_work}
               onChange={(e) => handleChange('scope_of_work', e.target.value)}
               rows={4}
-              placeholder="Detailed description of work to be performed..." />
+              placeholder="Detailed description of work to be performed..."
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
           <div className="space-y-2">
             <Label>Exclusions</Label>
@@ -955,7 +727,9 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.exclusions}
               onChange={(e) => handleChange('exclusions', e.target.value)}
               rows={3}
-              placeholder="Work items excluded from this scope..." />
+              placeholder="Work items excluded from this scope..."
+              className="bg-zinc-800 border-zinc-700" />
+
           </div>
         </div>
       </div>
@@ -965,13 +739,17 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         <Textarea
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
-          rows={3} />
+          rows={3}
+          className="bg-zinc-800 border-zinc-700" />
+
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
         <Button
           type="submit"
-          disabled={isLoading}>
+          disabled={isLoading}
+          className="bg-amber-500 hover:bg-amber-600 text-black">
+
           {isLoading ? 'Saving...' : isEdit ? 'Update Project' : 'Create Project'}
         </Button>
       </div>

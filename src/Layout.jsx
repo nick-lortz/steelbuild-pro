@@ -142,10 +142,9 @@ const navGroups = [
     roles: ['admin', 'user']
   },
   {
-    name: 'Data & Admin',
+    name: 'Insights & Reporting',
     icon: BarChart3,
     items: [
-      { name: 'Data Manager', page: 'DataManager', icon: BarChart3 },
       { name: 'Analytics', page: 'Analytics', icon: BarChart3 },
       { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: TrendingUp },
       { name: 'Reports', page: 'Reports', icon: FileText },
@@ -173,10 +172,10 @@ function LayoutContent({ children, currentPageName }) {
   useRenderCount('LayoutContent');
   useMountLogger('LayoutContent');
 
-  // Sentry disabled - causes console noise in dev
-  // useEffect(() => {
-  //   initSentry();
-  // }, []);
+  // Initialize Sentry on app load
+  useEffect(() => {
+    initSentry();
+  }, []);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {
@@ -246,16 +245,15 @@ function LayoutContent({ children, currentPageName }) {
 
   const visibleNavGroups = React.useMemo(() => {
     if (!currentUser) return navGroups;
-    const userRole = currentUser.role;
     return navGroups.map(group => ({
       ...group,
       items: group.items.filter(item => 
-        !item.roles || item.roles.includes(userRole)
+        !item.roles || item.roles.includes(currentUser.role)
       )
     })).filter(group => 
-      (!group.roles || group.roles.includes(userRole)) && group.items.length > 0
+      (!group.roles || group.roles.includes(currentUser.role)) && group.items.length > 0
     );
-  }, [currentUser?.role]);
+  }, [currentUser]);
 
   // Show loading state while checking auth
   if (userLoading) {

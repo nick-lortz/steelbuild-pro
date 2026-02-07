@@ -1,35 +1,22 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Target, TrendingUp, TrendingDown, DollarSign, Lock, FileText, AlertTriangle, Download } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, DollarSign, Lock, FileText, AlertTriangle } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import { cn } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
 import CostVarianceTable from '@/components/sov/CostVarianceTable';
 import ChangeOrderImpact from '@/components/change-orders/ChangeOrderImpact';
 import CostTrendProjection from '@/components/sov/CostTrendProjection';
 import WeeklyCostNarrative from '@/components/financials/WeeklyCostNarrative';
-
-function SectionHeader({ title, subtitle, right }) {
-  return (
-    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-3 border-b border-border">
-      <div className="min-w-0">
-        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-        {subtitle ? <p className="text-xs text-muted-foreground mt-1">{subtitle}</p> : null}
-      </div>
-      {right ? <div className="shrink-0">{right}</div> : null}
-    </div>
-  );
-}
 
 export default function JobStatusReport() {
   const [selectedProject, setSelectedProject] = useState(null);
@@ -222,80 +209,25 @@ export default function JobStatusReport() {
     }
   ];
 
-  const hasApprovedInvoices = useMemo(() => 
-    invoices.some(inv => inv.status === 'approved' || inv.status === 'paid'),
-    [invoices]
-  );
-
-  const savingRef = useRef(new Set());
-  const [percentDraft, setPercentDraft] = useState({});
-
-  const handleUpdatePercent = async (sovId, value) => {
-    if (hasApprovedInvoices) {
-      toast.error('Percent complete locked after invoice approval');
-      return;
-    }
-
+  const handleUpdatePercent = async (sovItem, value) => {
     const numValue = Number(value) || 0;
     if (numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
 
-    if (savingRef.current.has(sovId)) return;
-    savingRef.current.add(sovId);
-
     try {
       await base44.functions.invoke('updateSOVPercentComplete', {
-        sov_item_id: sovId,
+        sov_item_id: sovItem.id,
         percent_complete: numValue
       });
       toast.success('Percent complete updated');
-      setPercentDraft(p => {
-        const next = { ...p };
-        delete next[sovId];
-        return next;
-      });
     } catch (error) {
       toast.error(error.message || 'Failed to update percent complete');
-    } finally {
-      savingRef.current.delete(sovId);
     }
   };
 
-  const handleExportCSV = () => {
-    const rows = [
-      ['Job Status Report', selectedProjectData?.project_number, selectedProjectData?.name],
-      ['', ''],
-      ['Financial Summary'],
-      ['Original Contract', financialSummary.contractValue],
-      ['Approved COs', financialSummary.signedExtras],
-      ['Total Contract', financialSummary.totalContract],
-      ['Earned to Date', financialSummary.earnedToDate],
-      ['Billed to Date', financialSummary.billedToDate],
-      ['Actual Cost', financialSummary.actualCost],
-      ['Est Cost at Completion', financialSummary.estimatedCostAtCompletion],
-      ['Est Final Margin', financialSummary.projectedProfit],
-      ['Margin %', financialSummary.projectedMargin],
-      ['', ''],
-      ['Schedule of Values'],
-      ['SOV Code', 'Description', 'Scheduled Value', 'Percent Complete', 'Earned', 'Billed', 'Cost', 'Margin']
-    ];
-
-    sovWithCosts.forEach(sov => {
-      const earned = (sov.scheduled_value * (sov.percent_complete || 0)) / 100;
-      rows.push([sov.sov_code, sov.description, sov.scheduled_value, sov.percent_complete, earned, sov.billed_to_date, sov.costToDate, sov.margin]);
-    });
-
-    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `job-status-${selectedProjectData?.project_number}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const hasApprovedInvoices = invoices.some(inv => inv.status === 'approved' || inv.status === 'paid');
 
   const sovColumns = [
     { 
@@ -322,26 +254,17 @@ export default function JobStatusReport() {
     {
       header: '% Complete',
       accessor: 'percent_complete',
-      render: (row) => {
-        const draft = percentDraft[row.id];
-        const value = draft !== undefined ? draft : String(row.percent_complete || 0);
-        return (
-          <Input
-            type="number"
-            min="0"
-            max="100"
-            step="0.1"
-            value={value}
-            disabled={hasApprovedInvoices}
-            onChange={(e) => setPercentDraft(p => ({ ...p, [row.id]: e.target.value }))}
-            onBlur={() => handleUpdatePercent(row.id, value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-            }}
-            className="w-20"
-          />
-        );
-      }
+      render: (row) => (
+        <Input
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          value={row.percent_complete || 0}
+          onChange={(e) => handleUpdatePercent(row, e.target.value)}
+          className="w-20"
+        />
+      )
     },
     {
       header: 'Earned',
@@ -416,11 +339,8 @@ export default function JobStatusReport() {
 
   if (!selectedProject) {
     return (
-      <div className="space-y-6 max-w-[1800px] mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Job Status Report</h1>
-          <p className="text-muted-foreground mt-2">Project-level financial status</p>
-        </div>
+      <div>
+        <PageHeader title="Job Status Report" subtitle="Project-level financial status" />
         <Card>
           <CardContent className="p-8">
             <div className="max-w-md mx-auto">
@@ -445,13 +365,11 @@ export default function JobStatusReport() {
   }
 
   return (
-    <div className="space-y-6 max-w-[1800px] mx-auto">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Job Status Report</h1>
-          <p className="text-muted-foreground mt-2">{selectedProjectData?.project_number} - {selectedProjectData?.name}{hasApprovedInvoices ? ' • LOCKED' : ''}</p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="space-y-6">
+      <PageHeader 
+        title="Job Status Report"
+        subtitle={`${selectedProjectData?.project_number} - ${selectedProjectData?.name}`}
+        actions={
           <Select value={selectedProject} onValueChange={setSelectedProject}>
             <SelectTrigger className="w-80">
               <SelectValue />
@@ -464,17 +382,8 @@ export default function JobStatusReport() {
               ))}
             </SelectContent>
           </Select>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleExportCSV}
-            className="gap-2"
-          >
-            <Download size={14} />
-            Export
-          </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Header Summary KPIs */}
       <div className="grid grid-cols-3 md:grid-cols-5 gap-4">
@@ -620,14 +529,19 @@ export default function JobStatusReport() {
 
       {/* Earned vs Billed vs Cost Chart */}
       <Card>
-        <SectionHeader title="Financial Position" />
-        <CardContent className="pt-4">
+        <CardHeader>
+          <CardTitle className="text-base">Financial Position</CardTitle>
+        </CardHeader>
+        <CardContent>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                formatter={(value) => `$${value.toLocaleString()}`}
+              />
               <Legend />
               <Bar dataKey="Earned to Date" fill="#10B981" />
               <Bar dataKey="Billed to Date" fill="#3B82F6" />
@@ -668,33 +582,30 @@ export default function JobStatusReport() {
 
       {/* SOV Table */}
       <Card>
-       <SectionHeader 
-         title="Schedule of Values"
-         subtitle={
-           hasApprovedInvoices
-             ? "Percent complete locked after invoice approval. Adjustments require change orders."
-             : "Edit % complete — saves on blur / Enter."
-         }
-         right={hasApprovedInvoices ? (
-           <div className="flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase tracking-widest px-3 py-2 border border-amber-500/30 bg-amber-500/10 rounded">
-             <Lock size={14} />
-             Locked
-           </div>
-         ) : null}
-       />
-       <CardContent className="pt-4">
-         <DataTable
-           columns={sovColumns}
-           data={sovWithCosts}
-           emptyMessage="No SOV lines. Add SOV items in Financials."
-         />
-       </CardContent>
+        <CardHeader>
+          <CardTitle className="text-base">Schedule of Values</CardTitle>
+          {hasApprovedInvoices && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <Lock size={10} />
+              Percent complete locked after invoice approval. Adjustments require change orders.
+            </p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={sovColumns}
+            data={sovWithCosts}
+            emptyMessage="No SOV lines. Add SOV items in Financials."
+          />
+        </CardContent>
       </Card>
 
       {/* Invoice History */}
       <Card>
-        <SectionHeader title="Billing History" />
-        <CardContent className="pt-4">
+        <CardHeader>
+          <CardTitle className="text-base">Billing History</CardTitle>
+        </CardHeader>
+        <CardContent>
           <DataTable
             columns={invoiceColumns}
             data={invoices}
@@ -706,16 +617,18 @@ export default function JobStatusReport() {
       {/* Cost Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
-          <SectionHeader title="Cost by Category" />
-          <CardContent className="pt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Cost by Category</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-2">
               {costByCategory.map(cat => (
-                <div key={cat.category} className="flex justify-between items-center p-2 rounded border bg-card">
+                <div key={cat.category} className="flex justify-between items-center p-2 bg-secondary rounded">
                   <span className="text-sm capitalize">{cat.category}</span>
                   <span className="font-semibold">${cat.amount.toLocaleString()}</span>
                 </div>
               ))}
-              <div className="flex justify-between items-center p-2 rounded border border-blue-500/25 bg-blue-500/5 mt-4">
+              <div className="flex justify-between items-center p-2 bg-blue-500/10 border border-blue-500/30 rounded mt-4">
                 <span className="text-sm font-semibold">Total</span>
                 <span className="font-bold">${financialSummary.actualCost.toLocaleString()}</span>
               </div>
@@ -724,10 +637,12 @@ export default function JobStatusReport() {
         </Card>
 
         <Card>
-          <SectionHeader title="Performance Indicators" />
-          <CardContent className="pt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Performance Indicators</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
-              <div className="p-3 rounded border bg-card">
+              <div className="p-3 bg-secondary rounded">
                 <p className="text-xs text-muted-foreground">Cost Performance</p>
                 <p className="text-lg font-bold">
                   {financialSummary.earnedToDate > 0 
@@ -737,7 +652,7 @@ export default function JobStatusReport() {
                 </p>
                 <p className="text-xs text-muted-foreground">Cost to Earned Ratio</p>
               </div>
-              <div className="p-3 rounded border bg-card">
+              <div className="p-3 bg-secondary rounded">
                 <p className="text-xs text-muted-foreground">Billing Performance</p>
                 <p className="text-lg font-bold">
                   {financialSummary.earnedToDate > 0

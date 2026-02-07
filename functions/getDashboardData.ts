@@ -49,37 +49,23 @@ Deno.serve(async (req) => {
     if (allUserProjects.length === 0) {
       return Response.json({ 
         projects: [], 
-        pagination: { page: 1, pageSize, totalFiltered: 0, totalProjects: 0 },
-        metrics: {
-          totalProjects: 0,
-          activeProjects: 0,
-          atRiskProjects: 0,
-          overdueTasks: 0,
-          upcomingMilestones: 0,
-          totalContractValue: 0,
-          avgBudgetVariance: 0,
-          avgScheduleProgress: 0,
-          criticalIssues: 0,
-          openRFIs: 0,
-          overdueRFIs: 0,
-          pendingApprovals: 0,
-          portfolioGrowth: 0,
-          totalBudget: 0,
-          totalActual: 0,
-          totalCommitted: 0
-        }
+        totalProjects: 0,
+        activeProjects: 0,
+        atRiskProjects: 0,
+        overdueTasks: 0,
+        upcomingMilestones: 0,
+        totalFiltered: 0
       });
     }
 
     const projectIds = allUserProjects.map(p => p.id);
 
     // === LOAD ONLY RELEVANT CHILD ENTITIES ===
-    const [tasks, financials, rfis, changeOrders, expenses] = await Promise.all([
+    const [tasks, financials, rfis, changeOrders] = await Promise.all([
       base44.entities.Task.filter({ project_id: { $in: projectIds } }),
       base44.entities.Financial.filter({ project_id: { $in: projectIds } }),
       base44.entities.RFI.filter({ project_id: { $in: projectIds } }),
-      base44.entities.ChangeOrder.filter({ project_id: { $in: projectIds } }),
-      base44.entities.Expense.filter({ project_id: { $in: projectIds } })
+      base44.entities.ChangeOrder.filter({ project_id: { $in: projectIds } })
     ]);
 
     // === INDEX BY PROJECT ID (O(n) instead of O(n²)) ===
@@ -109,22 +95,11 @@ Deno.serve(async (req) => {
       const pCOs = cosByProject[project.id] || [];
 
       const completedTasks = pTasks.filter(t => t.status === 'completed').length;
-      const totalTasks = pTasks.length;
       const overdueTasks = pTasks.filter(t => t.status !== 'completed' && t.end_date && t.end_date < today).length;
 
-      // Use contract value as budget if no financials
-      const budget = pFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0) || project.contract_value || 0;
+      const budget = pFinancials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
       const actual = pFinancials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
-      const committed = pFinancials.reduce((sum, f) => sum + (f.committed_amount || 0), 0);
-      const totalCost = actual + committed;
-      
-      // Budget variance as percentage: positive = over budget, negative = under budget
-      // If no costs yet, show null (not 0 or -100%)
-      const budgetVariance = totalCost > 0 && budget > 0 ? ((totalCost - budget) / budget) * 100 : null;
-      const budgetVsActual = budget > 0 && totalCost > 0 ? (totalCost / budget) * 100 : null;
-      
-      // Cost health: use budget variance (positive = over, negative = under)
-      const costHealth = budgetVariance;
+      const costHealth = budget > 0 ? Math.round((actual / budget) * 100) : 0;
 
       // Simple schedule slip (days, not business days for perf)
       let daysSlip = 0;
@@ -136,10 +111,10 @@ Deno.serve(async (req) => {
 
       const openRFIs = pRFIs.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
       const pendingCOs = pCOs.filter(c => c.status === 'submitted' || c.status === 'under_review').length;
-      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const progress = pTasks.length > 0 ? Math.round((completedTasks / pTasks.length) * 100) : 0;
 
-      // Risk calculation: over budget by 10%, schedule slip > 5 days, or overdue tasks
-      const isAtRisk = (budgetVariance !== null && budgetVariance > 10) || daysSlip > 5 || overdueTasks > 0 || openRFIs > 5;
+      // Risk calculation (simple thresholds)
+      const isAtRisk = costHealth > 90 || daysSlip > 5 || overdueTasks > 0;
 
       return {
         id: project.id,
@@ -148,19 +123,14 @@ Deno.serve(async (req) => {
         status: project.status,
         phase: project.phase || 'fabrication',
         progress,
-        costHealth,
-        budgetVsActual: Math.round(budgetVsActual),
+        costHealth: 100 - costHealth, // Invert so lower is worse
         daysSlip,
         completedTasks,
-        totalTasks,
         overdueTasks,
         openRFIs,
         pendingCOs,
         isAtRisk,
-        riskScore: ((budgetVariance !== null && budgetVariance > 10) ? 3 : 0) + (daysSlip > 5 ? 2 : 0) + (overdueTasks > 0 ? 1 : 0),
-        budget,
-        actual,
-        committed
+        riskScore: (costHealth > 90 ? 3 : 0) + (daysSlip > 5 ? 2 : 0) + (overdueTasks > 0 ? 1 : 0)
       };
     });
 
@@ -201,104 +171,9 @@ Deno.serve(async (req) => {
     // === PORTFOLIO METRICS ===
     const activeProjects = projectsWithHealth.filter(p => p.status === 'in_progress' || p.status === 'awarded').length;
     const atRiskProjects = projectsWithHealth.filter(p => p.isAtRisk).length;
-    const overdueTasks = projectsWithHealth.reduce((sum, p) => sum + (p.overdueTasks || 0), 0);
+    const overdueTasks = projectsWithHealth.reduce((sum, p) => sum + p.overdueTasks, 0);
     const upcomingMilestones = tasks.filter(t => 
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
-    ).length;
-
-    // Calculate portfolio-wide financial metrics
-    // Use contract values for all projects as baseline
-    const totalContractValue = allUserProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
-    
-    // Calculate from project-level aggregated financials
-    const totalBudget = projectsWithHealth.reduce((sum, p) => sum + (p.budget || 0), 0);
-    const totalActual = projectsWithHealth.reduce((sum, p) => sum + (p.actual || 0), 0);
-    const totalCommitted = projectsWithHealth.reduce((sum, p) => sum + (p.committed || 0), 0);
-    const totalCost = totalActual + totalCommitted;
-    
-    // Budget variance: (actual + committed - budget) / budget * 100
-    // Positive = over budget (bad), negative = under budget (good)
-    // Return 0 if no meaningful data (prevents -100% or null confusion in UI)
-    const avgBudgetVariance = totalBudget > 0 && totalCost > 0
-      ? ((totalCost - totalBudget) / totalBudget) * 100 
-      : 0;
-
-    // Average schedule progress across all projects
-    const avgScheduleProgress = projectsWithHealth.length > 0
-      ? Math.round(projectsWithHealth.reduce((sum, p) => sum + (p.progress || 0), 0) / projectsWithHealth.length)
-      : 0;
-
-    // Critical issues: overdue tasks + overdue RFIs
-    const overdueRFIs = rfis.filter(r => 
-      (r.status === 'submitted' || r.status === 'under_review') && 
-      r.due_date && r.due_date < today
-    ).length;
-    const criticalIssues = overdueTasks + overdueRFIs;
-
-    // Open RFIs (all non-closed)
-    const openRFIs = rfis.filter(r => 
-      r.status !== 'answered' && r.status !== 'closed'
-    ).length;
-
-    // Pending approvals (change orders under review)
-    const pendingApprovals = changeOrders.filter(c => 
-      c.status === 'submitted' || c.status === 'under_review'
-    ).length;
-
-    // Portfolio growth (would need historical comparison - set to 0 for now)
-    const portfolioGrowth = 0;
-
-    // === CALCULATE TREND METRICS ===
-    const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-    
-    // Weekly spend (last 7 days vs previous 7 days)
-    const weeklySpend = expenses
-      .filter(e => new Date(e.expense_date) >= sevenDaysAgo)
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    
-    const prevWeekSpend = expenses
-      .filter(e => new Date(e.expense_date) >= fourteenDaysAgo && new Date(e.expense_date) < sevenDaysAgo)
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    
-    const weeklySpendDelta = prevWeekSpend > 0 ? Number(((weeklySpend - prevWeekSpend) / prevWeekSpend * 100).toFixed(1)) : 0;
-
-    // Tasks completed last 7 days vs previous 7 days
-    const tasksCompletedLast7Days = tasks.filter(t => 
-      t.status === 'completed' && 
-      t.updated_date &&
-      new Date(t.updated_date) >= sevenDaysAgo
-    ).length;
-    
-    const prevWeekTasks = tasks.filter(t => 
-      t.status === 'completed' && 
-      t.updated_date &&
-      new Date(t.updated_date) >= fourteenDaysAgo && 
-      new Date(t.updated_date) < sevenDaysAgo
-    ).length;
-    
-    const tasksCompletedDelta = prevWeekTasks > 0 ? Number(((tasksCompletedLast7Days - prevWeekTasks) / prevWeekTasks * 100).toFixed(1)) : 0;
-
-    // RFI aging - average business days open for non-closed RFIs
-    const openRFIsList = rfis.filter(r => r.status !== 'answered' && r.status !== 'closed');
-    const avgRFIDaysOpen = openRFIsList.length > 0 ?
-      openRFIsList.reduce((sum, rfi) => sum + (Number(rfi.business_days_open) || 0), 0) / openRFIsList.length : 0;
-    
-    const rfiAgingDelta = 0; // Would need historical data to calculate trend
-
-    // Schedule variance (average slip/gain across active projects)
-    const projectsWithSchedule = projectsWithHealth.filter(p => 
-      (p.status === 'in_progress' || p.status === 'awarded') && 
-      p.daysSlip !== undefined
-    );
-    
-    const avgScheduleSlip = projectsWithSchedule.length > 0 ?
-      Number((projectsWithSchedule.reduce((sum, p) => sum + (p.daysSlip || 0), 0) / projectsWithSchedule.length).toFixed(1)) : 0;
-
-    // Open change orders count
-    const openChangeOrders = changeOrders.filter(c => 
-      c.status !== 'approved' && c.status !== 'rejected' && c.status !== 'void'
     ).length;
 
     const duration = Date.now() - startTime;
@@ -312,27 +187,7 @@ Deno.serve(async (req) => {
         activeProjects,
         atRiskProjects,
         overdueTasks,
-        upcomingMilestones,
-        totalContractValue,
-        avgBudgetVariance,
-        avgScheduleProgress,
-        criticalIssues,
-        openRFIs,
-        overdueRFIs,
-        pendingApprovals,
-        portfolioGrowth,
-        totalBudget,
-        totalActual,
-        totalCommitted,
-        weeklySpend,
-        weeklySpendDelta,
-        tasksCompletedLast7Days,
-        tasksCompletedDelta,
-        avgRFIDaysOpen,
-        rfiAgingDelta,
-        avgScheduleSlip,
-        openChangeOrders,
-        budgetVariancePct: avgBudgetVariance
+        upcomingMilestones
       }
     });
 

@@ -25,18 +25,6 @@ import SkillGapAnalysis from '@/components/resources/SkillGapAnalysis';
 import ResourceDashboard from '@/components/resources/ResourceDashboard';
 import { toast } from '@/components/ui/notifications';
 
-function SectionHeader({ title, subtitle, right }) {
-  return (
-    <div className="flex items-start justify-between gap-4 flex-wrap">
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {subtitle ? <p className="text-sm text-muted-foreground mt-1">{subtitle}</p> : null}
-      </div>
-      {right ? <div className="shrink-0">{right}</div> : null}
-    </div>
-  );
-}
-
 export default function ResourceManagement() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -428,11 +416,11 @@ export default function ResourceManagement() {
 
           {/* Quick Assign Tab */}
           <TabsContent value="assign" className="space-y-4">
-            <Card>
-              <div className="px-6 pt-5 pb-3 border-b border-border">
-                <SectionHeader title="Unassigned Tasks Needing Resources" />
-              </div>
-              <CardContent className="pt-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-base uppercase tracking-wider">Unassigned Tasks Needing Resources</CardTitle>
+              </CardHeader>
+              <CardContent>
                 {unassignedTasks.length === 0 ? (
                   <EmptyState
                     icon={CheckCircle2}
@@ -502,64 +490,64 @@ export default function ResourceManagement() {
             {/* KPI Cards */}
             {resourceMetrics && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
+                <Card className="bg-zinc-900 border-zinc-800">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-muted-foreground text-sm font-medium">Total Resources</p>
-                        <p className="text-2xl font-bold mt-1">{resourceMetrics.total}</p>
+                        <p className="text-zinc-400 text-sm font-medium">Total Resources</p>
+                        <p className="text-2xl font-bold text-white mt-1">{resourceMetrics.total}</p>
                       </div>
-                      <div className="p-2.5 bg-muted rounded-lg">
+                      <div className="p-2.5 bg-zinc-800 rounded-lg">
                         <Users size={20} className="text-blue-500" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-zinc-900 border-zinc-800">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-muted-foreground text-sm font-medium">Assigned</p>
-                        <p className="text-2xl font-bold text-green-600 mt-1">{resourceMetrics.assigned}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-zinc-400 text-sm font-medium">Assigned</p>
+                        <p className="text-2xl font-bold text-green-400 mt-1">{resourceMetrics.assigned}</p>
+                        <p className="text-xs text-zinc-500 mt-1">
                           {resourceMetrics.total > 0 ?
                             `${Math.round((resourceMetrics.assigned / resourceMetrics.total) * 100)}%` :
                             '0%'} of total
                         </p>
                       </div>
                       <div className="p-2.5 bg-green-500/10 rounded-lg">
-                        <TrendingUp size={20} className="text-green-600" />
+                        <TrendingUp size={20} className="text-green-500" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-zinc-900 border-zinc-800">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-muted-foreground text-sm font-medium">Available</p>
-                        <p className="text-2xl font-bold text-blue-600 mt-1">{resourceMetrics.available}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Ready for assignment</p>
+                        <p className="text-zinc-400 text-sm font-medium">Available</p>
+                        <p className="text-2xl font-bold text-blue-400 mt-1">{resourceMetrics.available}</p>
+                        <p className="text-xs text-zinc-500 mt-1">Ready for assignment</p>
                       </div>
                       <div className="p-2.5 bg-blue-500/10 rounded-lg">
-                        <Clock size={20} className="text-blue-600" />
+                        <Clock size={20} className="text-blue-500" />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="bg-zinc-900 border-zinc-800">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-muted-foreground text-sm font-medium">Overallocated</p>
-                        <p className="text-2xl font-bold text-red-600 mt-1">{resourceMetrics.overallocated.length}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
+                        <p className="text-zinc-400 text-sm font-medium">Overallocated</p>
+                        <p className="text-2xl font-bold text-red-400 mt-1">{resourceMetrics.overallocated.length}</p>
+                        <p className="text-xs text-zinc-500 mt-1">Requires attention</p>
                       </div>
                       <div className="p-2.5 bg-red-500/10 rounded-lg">
-                        <AlertTriangle size={20} className="text-red-600" />
+                        <AlertTriangle size={20} className="text-red-500" />
                       </div>
                     </div>
                   </CardContent>
@@ -572,27 +560,23 @@ export default function ResourceManagement() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Overallocated Resources */}
                 {resourceMetrics.overallocated.length > 0 && (
-                  <Card>
-                    <div className="px-6 pt-5 pb-3 border-b border-border">
-                      <SectionHeader 
-                        title={
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="text-red-600" size={18} />
-                            <span>Overallocated Resources ({resourceMetrics.overallocated.length})</span>
-                          </div>
-                        }
-                      />
-                    </div>
-                    <CardContent className="pt-4">
+                  <Card className="bg-red-500/5 border-red-500/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <AlertTriangle className="text-red-500" size={18} />
+                        Overallocated Resources ({resourceMetrics.overallocated.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       <div className="space-y-3">
                         {resourceMetrics.overallocated.slice(0, 5).map((resource) => (
-                          <div key={resource.id} className="p-3 rounded-lg border bg-card">
+                          <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium">{resource.name}</p>
-                                <p className="text-sm text-muted-foreground capitalize">{resource.type}</p>
+                                <p className="font-medium text-white">{resource.name}</p>
+                                <p className="text-sm text-zinc-400 capitalize">{resource.type}</p>
                               </div>
-                              <Badge variant="outline" className="bg-red-500/20 text-red-700 border-red-500/30">
+                              <Badge variant="outline" className="bg-red-500/20 text-red-400 border-red-500/30">
                                 {resource.taskCount} active tasks
                               </Badge>
                             </div>
@@ -605,27 +589,23 @@ export default function ResourceManagement() {
 
                 {/* Underutilized Resources */}
                 {resourceMetrics.underutilized.length > 0 && (
-                  <Card>
-                    <div className="px-6 pt-5 pb-3 border-b border-border">
-                      <SectionHeader 
-                        title={
-                          <div className="flex items-center gap-2">
-                            <Clock className="text-amber-600" size={18} />
-                            <span>Underutilized Resources ({resourceMetrics.underutilized.length})</span>
-                          </div>
-                        }
-                      />
-                    </div>
-                    <CardContent className="pt-4">
+                  <Card className="bg-amber-500/5 border-amber-500/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Clock className="text-amber-500" size={18} />
+                        Underutilized Resources ({resourceMetrics.underutilized.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       <div className="space-y-3">
                         {resourceMetrics.underutilized.slice(0, 5).map((resource) => (
-                          <div key={resource.id} className="p-3 rounded-lg border bg-card">
+                          <div key={resource.id} className="p-3 bg-zinc-900 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium">{resource.name}</p>
-                                <p className="text-sm text-muted-foreground capitalize">{resource.type}</p>
+                                <p className="font-medium text-white">{resource.name}</p>
+                                <p className="text-sm text-zinc-400 capitalize">{resource.type}</p>
                               </div>
-                              <Badge variant="outline" className="bg-amber-500/20 text-amber-700 border-amber-500/30">
+                              <Badge variant="outline" className="bg-amber-500/20 text-amber-400 border-amber-500/30">
                                 No assignments
                               </Badge>
                             </div>
@@ -641,11 +621,11 @@ export default function ResourceManagement() {
             {/* Charts */}
             {resourceMetrics && resourceMetrics.typeDistribution && resourceMetrics.typeDistribution.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <div className="px-6 pt-5 pb-3 border-b border-border">
-                    <SectionHeader title="Resource Type Distribution" />
-                  </div>
-                  <CardContent className="pt-4">
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Resource Type Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
                       <PieChart>
                         <Pie
@@ -662,23 +642,26 @@ export default function ResourceManagement() {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <div className="px-6 pt-5 pb-3 border-b border-border">
-                    <SectionHeader title="Top 10 Projects by Resource Count" />
-                  </div>
-                  <CardContent className="pt-4">
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Top 10 Projects by Resource Count</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
                       <BarChart data={allocationChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip formatter={(value) => [value, 'Resources']} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+                        <XAxis dataKey="name" stroke="#a1a1aa" angle={-45} textAnchor="end" height={80} />
+                        <YAxis stroke="#a1a1aa" allowDecimals={false} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
+                          formatter={(value) => [value, 'Resources']}
+                        />
                         <Bar dataKey="resources" fill="#f59e0b" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -689,17 +672,18 @@ export default function ResourceManagement() {
 
             {/* Utilization Chart */}
             {resourceMetrics && utilizationChartData.length > 0 && (
-              <Card>
-                <div className="px-6 pt-5 pb-3 border-b border-border">
-                  <SectionHeader title="Resource Utilization (Top 15)" />
-                </div>
-                <CardContent className="pt-4">
+              <Card className="bg-zinc-900 border-zinc-800">
+                <CardHeader>
+                  <CardTitle className="text-lg">Resource Utilization (Top 15)</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={utilizationChartData} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 100]} />
-                      <YAxis type="category" dataKey="name" width={150} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+                      <XAxis type="number" stroke="#a1a1aa" domain={[0, 100]} />
+                      <YAxis type="category" dataKey="name" stroke="#a1a1aa" width={150} />
                       <Tooltip
+                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
                         formatter={(value, name) => {
                           if (name === 'utilization') return [`${value}%`, 'Utilization'];
                           return [value, name];
@@ -753,11 +737,11 @@ export default function ResourceManagement() {
             </div>
 
             {/* Resource List */}
-            <Card>
-              <div className="px-6 pt-5 pb-3 border-b border-border">
-                <SectionHeader title={`Resource Details (${filteredResources.length})`} />
-              </div>
-              <CardContent className="pt-4">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-lg">Resource Details ({filteredResources.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
                 {filteredResources.length === 0 ? (
                   <EmptyState
                     icon={Users}
@@ -769,20 +753,20 @@ export default function ResourceManagement() {
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Name</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Active Tasks</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Utilization</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+                        <tr className="border-b border-zinc-800">
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Name</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Type</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Active Tasks</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Utilization</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-zinc-400">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredResources.map((resource) => (
-                          <tr key={resource.id} className="border-b border-border hover:bg-muted/50">
+                          <tr key={resource.id} className="border-b border-zinc-800 hover:bg-zinc-800/50">
                             <td className="py-3 px-4">
-                             <p className="font-medium">{resource.name}</p>
+                             <p className="font-medium text-white">{resource.name}</p>
                             </td>
                             <td className="py-3 px-4">
                              <Badge variant="outline" className="capitalize">
@@ -793,14 +777,14 @@ export default function ResourceManagement() {
                              <StatusBadge status={resource.status} />
                             </td>
                             <td className="py-3 px-4">
-                             <span className={resource.activeTasks > 3 ? 'text-red-600 font-medium' : ''}>
+                             <span className={resource.activeTasks > 3 ? 'text-red-400 font-medium' : 'text-white'}>
                                {resource.activeTasks}
                              </span>
                             </td>
                             <td className="py-3 px-4">
                              <div className="flex items-center gap-3">
                                <div className="flex-1 max-w-[120px]">
-                                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                 <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
                                    <div
                                      className={`h-full transition-all ${
                                        resource.utilization > 80 ? 'bg-red-500' :
@@ -811,7 +795,7 @@ export default function ResourceManagement() {
                                    />
                                  </div>
                                </div>
-                               <span className="text-sm text-muted-foreground min-w-[45px]">
+                               <span className="text-sm text-zinc-300 min-w-[45px]">
                                  {Math.round(resource.utilization)}%
                                </span>
                              </div>

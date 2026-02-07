@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Plus, Search, Filter, AlertTriangle, Clock, CheckCircle2,
+import { 
+  Plus, Search, Filter, AlertTriangle, Clock, CheckCircle2, 
   TrendingUp, Users, FileText, Calendar, Target
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
@@ -24,19 +24,6 @@ import Pagination from '@/components/ui/Pagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import { groupBy, indexBy } from '@/components/shared/arrayUtils';
 import { getRFIEscalationLevel, getBusinessDaysBetween } from '@/components/shared/businessRules';
-import { cn } from '@/lib/utils';
-
-function SectionHeader({ title, subtitle, right }) {
-  return (
-    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-3 border-b border-border">
-      <div className="min-w-0">
-        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-        {subtitle ? <p className="text-xs text-muted-foreground mt-1">{subtitle}</p> : null}
-      </div>
-      {right ? <div className="shrink-0">{right}</div> : null}
-    </div>
-  );
-}
 
 export default function RFIHub() {
   const queryClient = useQueryClient();
@@ -46,7 +33,7 @@ export default function RFIHub() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingRFI, setEditingRFI] = useState(null);
   const { page, pageSize, skip, limit, goToPage, changePageSize, reset } = usePagination(1, 50);
-
+  
   const [filters, setFilters] = useState({
     status: 'all',
     priority: 'all',
@@ -56,22 +43,21 @@ export default function RFIHub() {
     date_range: 'all'
   });
 
-  const { data: allRFIs = [], isLoading: rfisLoading, isError: rfisError, error: rfisErrorObj } = useQuery({
+  // Fetch all data
+  const { data: allRFIs = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date'),
-    retry: 2,
-    retryDelay: 1000
+    queryFn: () => base44.entities.RFI.list('-created_date')
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
-    retry: 2,
-    retryDelay: 1000
+    queryFn: () => base44.entities.Project.list()
   });
 
+  // Real-time subscription with auto-reconnect
   useEntitySubscription('RFI', ['rfis'], {
     onEvent: (event) => {
+      // Visual notification for new/updated RFIs
       if (event.type === 'create') {
         toast.info(`New RFI #${event.data.rfi_number}: ${event.data.subject}`);
       } else if (event.type === 'update' && event.data.status) {
@@ -80,32 +66,40 @@ export default function RFIHub() {
     }
   });
 
+  // Computed RFIs with enrichment (optimized with pre-indexed projects)
   const enrichedRFIs = useMemo(() => {
+    // Pre-index projects for O(1) lookup instead of O(n²)
     const projectsById = indexBy(projects, 'id');
-
+    
     return allRFIs.map(rfi => {
       const project = projectsById[rfi.project_id];
       const submittedDate = rfi.submitted_date || rfi.created_date;
       const dueDate = rfi.due_date ? parseISO(rfi.due_date) : null;
       const today = new Date();
-
-      const businessDaysOpen = submittedDate
+      
+      // Calculate business days age
+      const businessDaysOpen = submittedDate 
         ? getBusinessDaysBetween(new Date(submittedDate), today)
         : 0;
-
-      const escalationLevel = submittedDate
+      
+      // Escalation level (normal → warning → urgent → overdue)
+      const escalationLevel = submittedDate 
         ? getRFIEscalationLevel(submittedDate, rfi.status)
         : 'normal';
-
+      
+      // Aging bucket based on business days
       let aging_bucket = '0-5 days';
       if (businessDaysOpen > 20) aging_bucket = '20+ days';
       else if (businessDaysOpen > 10) aging_bucket = '11-20 days';
       else if (businessDaysOpen > 5) aging_bucket = '6-10 days';
-
+      
+      // At risk flag
       const isOverdue = dueDate && today > dueDate;
       const isAtRisk = escalationLevel === 'urgent' || escalationLevel === 'overdue';
+      
+      // Days until due
       const daysUntilDue = dueDate ? differenceInDays(dueDate, today) : null;
-
+      
       return {
         ...rfi,
         project_name: project?.name || 'Unknown',
@@ -120,36 +114,44 @@ export default function RFIHub() {
     });
   }, [allRFIs, projects]);
 
+  // Filter RFIs based on view mode and filters
   const filteredRFIs = useMemo(() => {
     let result = enrichedRFIs;
 
+    // View mode filter
     if (viewMode === 'project' && selectedProjectId) {
       result = result.filter(r => r.project_id === selectedProjectId);
     }
 
+    // Status filter
     if (filters.status !== 'all') {
       result = result.filter(r => r.status === filters.status);
     }
 
+    // Priority filter
     if (filters.priority !== 'all') {
       result = result.filter(r => r.priority === filters.priority);
     }
 
+    // Ball in court filter
     if (filters.ball_in_court !== 'all') {
       result = result.filter(r => r.ball_in_court === filters.ball_in_court);
     }
 
+    // RFI type filter
     if (filters.rfi_type !== 'all') {
       result = result.filter(r => r.rfi_type === filters.rfi_type);
     }
 
+    // Aging bucket filter
     if (filters.aging_bucket !== 'all') {
       result = result.filter(r => r.aging_bucket === filters.aging_bucket);
     }
 
+    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(r =>
+      result = result.filter(r => 
         r.subject?.toLowerCase().includes(term) ||
         r.question?.toLowerCase().includes(term) ||
         r.rfi_number?.toString().includes(term) ||
@@ -160,6 +162,7 @@ export default function RFIHub() {
     return result;
   }, [enrichedRFIs, viewMode, selectedProjectId, filters, searchTerm]);
 
+  // Group RFIs by category with pagination
   const { groupedRFIs, paginatedGroups } = useMemo(() => {
     const grouped = {
       active: filteredRFIs.filter(r => ['draft', 'internal_review', 'submitted', 'under_review'].includes(r.status)),
@@ -169,7 +172,7 @@ export default function RFIHub() {
       coordination: filteredRFIs.filter(r => r.category === 'coordination'),
       all: filteredRFIs
     };
-
+    
     const paginated = {
       active: grouped.active.slice(skip, skip + limit),
       awaiting: grouped.awaiting.slice(skip, skip + limit),
@@ -178,10 +181,11 @@ export default function RFIHub() {
       coordination: grouped.coordination.slice(skip, skip + limit),
       all: grouped.all.slice(skip, skip + limit)
     };
-
+    
     return { groupedRFIs: grouped, paginatedGroups: paginated };
   }, [filteredRFIs, skip, limit]);
 
+  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.RFI.delete(id),
     onSuccess: () => {
@@ -209,25 +213,10 @@ export default function RFIHub() {
 
   if (rfisLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading RFI Hub...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (rfisError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center max-w-md">
-          <AlertTriangle size={48} className="mx-auto mb-4 text-red-500" />
-          <h3 className="text-lg font-bold mb-2">Failed to Load RFIs</h3>
-          <p className="text-sm text-muted-foreground mb-4">{rfisErrorObj?.message || 'Network error'}</p>
-          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['rfis'] })}>
-            Retry
-          </Button>
+          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-zinc-400">Loading RFI Hub...</p>
         </div>
       </div>
     );
@@ -235,89 +224,89 @@ export default function RFIHub() {
 
   return (
     <ErrorBoundary>
-      <div className="space-y-6 max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">RFI Hub</h1>
-            <p className="text-muted-foreground mt-2">
-              {filteredRFIs.length} RFIs • {groupedRFIs.active.length} active • {groupedRFIs.closed.length} closed
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center border rounded-lg p-1 bg-muted">
-              <button
-                onClick={() => {
-                  setViewMode('portfolio');
-                  setSelectedProjectId(null);
-                }}
-                className={cn(
-                  "px-3 py-1 rounded text-xs font-semibold transition-colors",
-                  viewMode === 'portfolio'
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Portfolio
-              </button>
-              <button
-                onClick={() => setViewMode('project')}
-                className={cn(
-                  "px-3 py-1 rounded text-xs font-semibold transition-colors",
-                  viewMode === 'project'
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Project
-              </button>
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800 bg-black sticky top-0 z-10">
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-6">
+            <div>
+              <h1 className="text-xl font-bold text-white uppercase tracking-wide">RFI Hub</h1>
+              <p className="text-xs text-zinc-600 font-mono mt-1">
+                {filteredRFIs.length} RFIs • {groupedRFIs.active.length} ACTIVE • {groupedRFIs.closed.length} CLOSED
+              </p>
             </div>
 
-            {viewMode === 'project' && (
-              <Select value={selectedProjectId || ''} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-80">
-                  <SelectValue placeholder="Select Project..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-3">
+              <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+                <button
+                  onClick={() => {
+                    setViewMode('portfolio');
+                    setSelectedProjectId(null);
+                  }}
+                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
+                    viewMode === 'portfolio' 
+                      ? 'bg-amber-500 text-black' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Portfolio
+                </button>
+                <button
+                  onClick={() => setViewMode('project')}
+                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
+                    viewMode === 'project' 
+                      ? 'bg-amber-500 text-black' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Project
+                </button>
+              </div>
 
-            <Button onClick={handleAddNew} className="font-semibold text-xs uppercase tracking-wide">
-              <Plus className="h-4 w-4 mr-1" />
-              Add RFI
-            </Button>
+              {viewMode === 'project' && (
+                <Select value={selectedProjectId || ''} onValueChange={setSelectedProjectId}>
+                  <SelectTrigger className="w-80 bg-zinc-900 border-zinc-800">
+                    <SelectValue placeholder="Select Project..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    {projects.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.project_number} - {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Button
+                onClick={handleAddNew}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+              >
+                <Plus size={14} className="mr-1" />
+                Add RFI
+              </Button>
+            </div>
+          </div>
+
+          {/* Search and Filters Bar */}
+          <div className="flex items-center gap-3 mt-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" size={16} />
+              <Input
+                placeholder="Search RFIs by number, subject, or project..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-zinc-900 border-zinc-800 text-sm"
+              />
+            </div>
+            
+            <RFIHubFilters filters={filters} onFilterChange={setFilters} />
           </div>
         </div>
+      </div>
 
-        {/* Search and Filters */}
-        <Card>
-          <SectionHeader
-            title="Search & Filters"
-            subtitle="Find and filter RFIs by number, subject, status, and more."
-            right={
-              <div className="relative w-80">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search by number, subject, or project..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 text-sm"
-                />
-              </div>
-            }
-          />
-          <CardContent className="pt-4">
-            <RFIHubFilters filters={filters} onFilterChange={setFilters} />
-          </CardContent>
-        </Card>
-
+      <div className="max-w-[1800px] mx-auto px-6 py-6 space-y-6">
         {/* KPIs */}
         <RFIHubKPIs rfis={filteredRFIs} groupedRFIs={groupedRFIs} />
 
@@ -326,25 +315,25 @@ export default function RFIHub() {
 
         {/* RFI Lists by Category */}
         <Tabs defaultValue="active" className="space-y-4">
-          <TabsList className="bg-muted border border-border w-full justify-start overflow-auto">
+          <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="active">
-              <FileText className="h-4 w-4 mr-2" />
+              <FileText size={14} className="mr-2" />
               Active ({groupedRFIs.active.length})
             </TabsTrigger>
             <TabsTrigger value="awaiting">
-              <Clock className="h-4 w-4 mr-2" />
-              Awaiting ({groupedRFIs.awaiting.length})
+              <Clock size={14} className="mr-2" />
+              Awaiting Response ({groupedRFIs.awaiting.length})
             </TabsTrigger>
             <TabsTrigger value="closed">
-              <CheckCircle2 className="h-4 w-4 mr-2" />
+              <CheckCircle2 size={14} className="mr-2" />
               Closed ({groupedRFIs.closed.length})
             </TabsTrigger>
             <TabsTrigger value="highPriority">
-              <AlertTriangle className="h-4 w-4 mr-2" />
+              <AlertTriangle size={14} className="mr-2" />
               High Priority ({groupedRFIs.highPriority.length})
             </TabsTrigger>
             <TabsTrigger value="coordination">
-              <Users className="h-4 w-4 mr-2" />
+              <Users size={14} className="mr-2" />
               Coordination ({groupedRFIs.coordination.length})
             </TabsTrigger>
             <TabsTrigger value="all">
@@ -353,9 +342,9 @@ export default function RFIHub() {
           </TabsList>
 
           <TabsContent value="active">
-            <RFIHubTable
-              rfis={paginatedGroups.active}
-              onEdit={handleEdit}
+            <RFIHubTable 
+              rfis={paginatedGroups.active} 
+              onEdit={handleEdit} 
               onDelete={handleDelete}
               title="Active RFIs"
             />
@@ -373,9 +362,9 @@ export default function RFIHub() {
           </TabsContent>
 
           <TabsContent value="awaiting">
-            <RFIHubTable
-              rfis={paginatedGroups.awaiting}
-              onEdit={handleEdit}
+            <RFIHubTable 
+              rfis={paginatedGroups.awaiting} 
+              onEdit={handleEdit} 
               onDelete={handleDelete}
               title="RFIs Awaiting External Response"
             />
@@ -393,9 +382,9 @@ export default function RFIHub() {
           </TabsContent>
 
           <TabsContent value="closed">
-            <RFIHubTable
-              rfis={paginatedGroups.closed}
-              onEdit={handleEdit}
+            <RFIHubTable 
+              rfis={paginatedGroups.closed} 
+              onEdit={handleEdit} 
               onDelete={handleDelete}
               title="Closed RFIs"
             />
@@ -413,9 +402,9 @@ export default function RFIHub() {
           </TabsContent>
 
           <TabsContent value="highPriority">
-            <RFIHubTable
-              rfis={paginatedGroups.highPriority}
-              onEdit={handleEdit}
+            <RFIHubTable 
+              rfis={paginatedGroups.highPriority} 
+              onEdit={handleEdit} 
               onDelete={handleDelete}
               title="High Priority RFIs"
             />
@@ -433,9 +422,9 @@ export default function RFIHub() {
           </TabsContent>
 
           <TabsContent value="coordination">
-            <RFIHubTable
-              rfis={paginatedGroups.coordination}
-              onEdit={handleEdit}
+            <RFIHubTable 
+              rfis={paginatedGroups.coordination} 
+              onEdit={handleEdit} 
               onDelete={handleDelete}
               title="Coordination RFIs"
             />
@@ -453,9 +442,9 @@ export default function RFIHub() {
           </TabsContent>
 
           <TabsContent value="all">
-            <RFIHubTable
-              rfis={paginatedGroups.all}
-              onEdit={handleEdit}
+            <RFIHubTable 
+              rfis={paginatedGroups.all} 
+              onEdit={handleEdit} 
               onDelete={handleDelete}
               title="All RFIs"
             />
@@ -472,25 +461,26 @@ export default function RFIHub() {
             )}
           </TabsContent>
         </Tabs>
-
-        {/* Add/Edit Form Dialog */}
-        {formOpen && (
-          <RFIHubForm
-            rfi={editingRFI}
-            projects={projects}
-            allRFIs={allRFIs}
-            onClose={() => {
-              setFormOpen(false);
-              setEditingRFI(null);
-            }}
-            onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: ['rfis'] });
-              setFormOpen(false);
-              setEditingRFI(null);
-            }}
-          />
-        )}
       </div>
+
+      {/* Add/Edit Form Dialog */}
+      {formOpen && (
+        <RFIHubForm
+          rfi={editingRFI}
+          projects={projects}
+          allRFIs={allRFIs}
+          onClose={() => {
+            setFormOpen(false);
+            setEditingRFI(null);
+          }}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['rfis'] });
+            setFormOpen(false);
+            setEditingRFI(null);
+          }}
+        />
+      )}
+    </div>
     </ErrorBoundary>
   );
 }

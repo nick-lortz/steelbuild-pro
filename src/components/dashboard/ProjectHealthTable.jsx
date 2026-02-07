@@ -22,11 +22,10 @@ const getStatusConfig = (status) => {
 
 const HealthIndicator = ({ value, type = 'cost' }) => {
   if (value === null || value === undefined) {
-    return <span className="text-xs text-muted-foreground">No data</span>;
+    return <span className="text-xs text-muted-foreground">—</span>;
   }
 
-  // Cost health: positive = over budget (bad), negative = under budget (good)
-  const status = value > 10 ? 'critical' : value > 0 ? 'warning' : value < -5 ? 'excellent' : 'good';
+  const status = value < -10 ? 'critical' : value < -5 ? 'warning' : value < 5 ? 'good' : 'excellent';
   
   const configs = {
     critical: { icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
@@ -74,13 +73,13 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
   const sortedProjects = useMemo(() => {
     // Sort by risk level, then overdue tasks, then name
     return [...projects].sort((a, b) => {
-      // Risk first - over budget (positive costHealth), schedule slip, or overdue tasks
-      const aRisk = (a.costHealth > 5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
-      const bRisk = (b.costHealth > 5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
+      // Risk first
+      const aRisk = (a.costHealth < -5 || a.daysSlip > 3 || a.overdueTasks > 0) ? 1 : 0;
+      const bRisk = (b.costHealth < -5 || b.daysSlip > 3 || b.overdueTasks > 0) ? 1 : 0;
       if (bRisk !== aRisk) return bRisk - aRisk;
 
       // Then overdue
-      if (b.overdueTasks !== a.overdueTasks) return (b.overdueTasks || 0) - (a.overdueTasks || 0);
+      if (b.overdueTasks !== a.overdueTasks) return b.overdueTasks - a.overdueTasks;
 
       // Then alphabetical
       return (a.name || '').localeCompare(b.name || '');
@@ -121,9 +120,9 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
           </thead>
           <tbody>
             {sortedProjects.map((project) => {
-              const isAtRisk = project.costHealth > 5 || project.daysSlip > 3 || (project.overdueTasks || 0) > 0;
+              const isAtRisk = project.costHealth < -5 || project.daysSlip > 3 || project.overdueTasks > 0;
               const statusConfig = getStatusConfig(project.status);
-              
+
               return (
                 <tr 
                   key={project.id} 
@@ -154,9 +153,9 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
                   <td className="px-4 py-3">
                     <div className="w-24">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-semibold text-foreground">{project.progress || 0}%</span>
+                        <span className="text-xs font-semibold text-foreground">{project.progress}%</span>
                       </div>
-                      <Progress value={project.progress || 0} className="h-1.5" />
+                      <Progress value={project.progress} className="h-1.5" />
                     </div>
                   </td>
 
@@ -174,9 +173,9 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
                   <td className="px-4 py-3 text-center">
                     <div className="inline-flex flex-col gap-0.5">
                       <span className="text-xs font-semibold text-foreground">
-                        {project.completedTasks || 0}/{project.totalTasks || 0}
+                        {project.completedTasks}/{project.totalTasks}
                       </span>
-                      {(project.overdueTasks || 0) > 0 && (
+                      {project.overdueTasks > 0 && (
                         <span className="text-[10px] text-red-400 font-bold">
                           {project.overdueTasks} late
                         </span>
@@ -186,22 +185,18 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
 
                   {/* Budget vs Actual */}
                   <td className="px-4 py-3 text-right">
-                    {project.budgetVsActual === null || project.budgetVsActual === undefined ? (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    ) : (
-                      <div className="inline-flex flex-col items-end gap-0.5">
-                        <span className={cn(
-                          "text-xs font-semibold",
-                          project.budgetVsActual > 100 ? "text-red-400" : 
-                          project.budgetVsActual > 95 ? "text-amber-400" : "text-green-400"
-                        )}>
-                          {Math.round(project.budgetVsActual)}%
-                        </span>
-                        {project.budgetVsActual > 100 && (
-                          <span className="text-[10px] text-red-400">over</span>
-                        )}
-                      </div>
-                    )}
+                    <div className="inline-flex flex-col items-end gap-0.5">
+                      <span className={cn(
+                        "text-xs font-semibold",
+                        project.budgetVsActual > 100 ? "text-red-400" : 
+                        project.budgetVsActual > 95 ? "text-amber-400" : "text-green-400"
+                      )}>
+                        {project.budgetVsActual}%
+                      </span>
+                      {project.budgetVsActual > 100 && (
+                        <span className="text-[10px] text-red-400">over</span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Action */}

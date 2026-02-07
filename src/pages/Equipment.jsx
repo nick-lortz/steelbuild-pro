@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Wrench, BarChart3, CheckCircle2, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 import EquipmentLogForm from '@/components/equipment/EquipmentLogForm';
@@ -92,19 +91,19 @@ function EquipmentContent() {
   return (
     <div className="space-y-6">
       {/* Header with Project Selector */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex items-start justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Equipment Management</h1>
-          <p className="text-muted-foreground mt-2">{project?.name || 'No project selected'}</p>
+          <h1 className="text-3xl font-bold">Equipment Management</h1>
+          <p className="text-zinc-400 mt-1">{project?.name || 'No project selected'}</p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-end gap-3">
           <div className="w-80">
-            <label className="text-sm font-medium text-foreground block mb-2">Switch Project</label>
+            <label className="text-sm font-bold text-zinc-300 block mb-2">Switch Project</label>
             <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700">
                 <SelectValue placeholder="Choose a project..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
                 {projects.map(proj => (
                   <SelectItem key={proj.id} value={proj.id}>
                     {proj.name} ({proj.project_number})
@@ -115,6 +114,7 @@ function EquipmentContent() {
           </div>
           <Button
             onClick={() => setShowAddEquipment(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black"
           >
             <Plus size={16} className="mr-2" />
             Add Equipment
@@ -123,9 +123,9 @@ function EquipmentContent() {
       </div>
 
       {!activeProjectId && (
-        <Card className="border-amber-500/50 bg-amber-500/5">
+        <Card className="bg-yellow-900/20 border border-yellow-800">
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Select a project to begin</p>
+            <p className="text-sm text-yellow-600">Select a project to begin</p>
           </CardContent>
         </Card>
       )}
@@ -135,42 +135,42 @@ function EquipmentContent() {
 
       {/* KPI Bar */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Hours</p>
-            <p className="text-2xl font-bold">{kpis.total_hours}</p>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="pt-6">
+            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Total Hours</p>
+            <p className="text-2xl font-bold text-white">{kpis.total_hours}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Utilization</p>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="pt-6">
+            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Utilization</p>
             <p className="text-2xl font-bold text-green-500">{kpis.utilization}%</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Idle Hours</p>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="pt-6">
+            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Idle Hours</p>
             <p className="text-2xl font-bold text-orange-500">{kpis.idle_hours}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Idle Cost</p>
+        <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="pt-6">
+            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Idle Cost</p>
             <p className="text-2xl font-bold text-red-500">${kpis.idle_cost}</p>
           </CardContent>
         </Card>
-        <Card className={cn(kpis.conflicts > 0 && "border-red-500/40 bg-red-500/5")}>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Conflicts</p>
-            <p className={cn("text-2xl font-bold", kpis.conflicts > 0 ? "text-red-500" : "text-green-500")}>
+        <Card className={`bg-zinc-900 border-zinc-800 ${kpis.conflicts > 0 ? 'border-red-800' : ''}`}>
+          <CardContent className="pt-6">
+            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Conflicts</p>
+            <p className={`text-2xl font-bold ${kpis.conflicts > 0 ? 'text-red-500' : 'text-green-500'}`}>
               {kpis.conflicts}
             </p>
           </CardContent>
         </Card>
-        <Card className={cn(kpis.inspections_failed > 0 && "border-yellow-500/40 bg-yellow-500/5")}>
-          <CardContent className="pt-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Failed Inspections</p>
-            <p className={cn("text-2xl font-bold", kpis.inspections_failed > 0 ? "text-yellow-500" : "text-green-500")}>
+        <Card className={`bg-zinc-900 border-zinc-800 ${kpis.inspections_failed > 0 ? 'border-yellow-800' : ''}`}>
+          <CardContent className="pt-6">
+            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Failed Inspections</p>
+            <p className={`text-2xl font-bold ${kpis.inspections_failed > 0 ? 'text-yellow-500' : 'text-green-500'}`}>
               {kpis.inspections_failed}
             </p>
           </CardContent>
@@ -180,10 +180,10 @@ function EquipmentContent() {
       {/* Filters */}
       <div className="flex gap-3">
         <Select value={filterEquipment} onValueChange={setFilterEquipment}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
             <SelectValue placeholder="All Equipment" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
             <SelectItem value="all">All Equipment</SelectItem>
             {equipment.map(eq => (
               <SelectItem key={eq.id} value={eq.id}>
@@ -194,10 +194,10 @@ function EquipmentContent() {
         </Select>
 
         <Select value={filterDateRange} onValueChange={setFilterDateRange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
             <SelectItem value="7d">Last 7 Days</SelectItem>
             <SelectItem value="14d">Last 14 Days</SelectItem>
             <SelectItem value="30d">Last 30 Days</SelectItem>
@@ -207,7 +207,7 @@ function EquipmentContent() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted border border-border">
+        <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="log">
             <BarChart3 size={14} className="mr-2" />
             Daily Log
@@ -237,17 +237,17 @@ function EquipmentContent() {
 
         {/* Inspections */}
         <TabsContent value="inspection" className="space-y-4">
-            {equipment.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Equipment for Inspection</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Select value={selectedEquipmentForInspection} onValueChange={setSelectedEquipmentForInspection}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose equipment..." />
-                    </SelectTrigger>
-                    <SelectContent>
+          {equipment.length > 0 && (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardHeader>
+                <CardTitle>Select Equipment for Inspection</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedEquipmentForInspection} onValueChange={setSelectedEquipmentForInspection}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue placeholder="Choose equipment..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
                     {equipment.map(eq => (
                       <SelectItem key={eq.id} value={eq.id}>
                         {eq.name} ({eq.classification})
@@ -272,22 +272,22 @@ function EquipmentContent() {
 
           {/* Recent Inspections */}
           {inspections.length > 0 && (
-            <Card>
+            <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader>
-                <CardTitle className="text-sm">Recent Inspections</CardTitle>
+                <CardTitle className="text-base">Recent Inspections</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-80 overflow-y-auto">
                   {inspections.slice(-10).reverse().map((insp, idx) => (
-                    <div key={idx} className="p-3 rounded border text-sm flex items-center justify-between bg-muted/40">
+                    <div key={idx} className="p-3 bg-zinc-800 rounded text-sm flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{insp.equipment_id}</p>
-                        <p className="text-xs text-muted-foreground">{insp.inspection_date} • {insp.inspector_name}</p>
+                        <p className="font-bold text-zinc-200">{insp.equipment_id}</p>
+                        <p className="text-xs text-zinc-500">{insp.inspection_date} • {insp.inspector_name}</p>
                       </div>
-                      <Badge variant={
-                        insp.overall_status === 'pass' ? 'default' :
-                        insp.overall_status === 'fail' ? 'destructive' :
-                        'outline'
+                      <Badge className={
+                        insp.overall_status === 'pass' ? 'bg-green-900 text-green-200' :
+                        insp.overall_status === 'fail' ? 'bg-red-900 text-red-200' :
+                        'bg-yellow-900 text-yellow-200'
                       }>
                         {insp.overall_status.toUpperCase()}
                       </Badge>
@@ -304,9 +304,9 @@ function EquipmentContent() {
 
       {/* Add Equipment Sheet */}
       <Sheet open={showAddEquipment} onOpenChange={setShowAddEquipment}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-950 border-zinc-800">
           <SheetHeader>
-            <SheetTitle>Add Equipment</SheetTitle>
+            <SheetTitle className="text-white">Add Equipment</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <ResourceForm
@@ -314,6 +314,8 @@ function EquipmentContent() {
               projects={projects || []}
               onSubmit={async (data) => {
                 await base44.entities.Resource.create(data);
+                queryClient.invalidateQueries({ queryKey: ['equipment'] });
+                setShowAddEquipment(false);
               }}
               onCancel={() => setShowAddEquipment(false)}
             />

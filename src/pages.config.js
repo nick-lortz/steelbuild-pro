@@ -56,7 +56,6 @@ import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
 import Dashboard from './pages/Dashboard';
-import DataManager from './pages/DataManager';
 import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
@@ -117,7 +116,6 @@ export const PAGES = {
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
     "Dashboard": Dashboard,
-    "DataManager": DataManager,
     "Deliveries": Deliveries,
     "Detailing": Detailing,
     "DocumentLinkage": DocumentLinkage,

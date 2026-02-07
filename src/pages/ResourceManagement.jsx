@@ -689,18 +689,17 @@ export default function ResourceManagement() {
 
             {/* Utilization Chart */}
             {resourceMetrics && utilizationChartData.length > 0 && (
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-lg">Resource Utilization (Top 15)</CardTitle>
-                </CardHeader>
-                <CardContent>
+              <Card>
+                <div className="px-6 pt-5 pb-3 border-b border-border">
+                  <SectionHeader title="Resource Utilization (Top 15)" />
+                </div>
+                <CardContent className="pt-4">
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={utilizationChartData} layout="horizontal">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
-                      <XAxis type="number" stroke="#a1a1aa" domain={[0, 100]} />
-                      <YAxis type="category" dataKey="name" stroke="#a1a1aa" width={150} />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" domain={[0, 100]} />
+                      <YAxis type="category" dataKey="name" width={150} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
                         formatter={(value, name) => {
                           if (name === 'utilization') return [`${value}%`, 'Utilization'];
                           return [value, name];

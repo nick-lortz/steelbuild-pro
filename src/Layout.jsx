@@ -258,10 +258,10 @@ function LayoutContent({ children, currentPageName }) {
   // Show loading state while checking auth
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-surface-0 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted">Loading...</p>
         </div>
       </div>
     );
@@ -273,25 +273,25 @@ function LayoutContent({ children, currentPageName }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-surface-0 text-main">
       <SkipToMainContent />
       <OfflineIndicator />
       <Toaster />
       <CommandPalette />
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-surface-1 border-b border-surface-3 flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-zinc-400 hover:text-white">
+            className="p-2 text-muted hover:text-main transition">
 
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-              <Building size={18} className="text-black" />
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-glow">
+              <Building size={18} className="text-white" />
             </div>
-            <span className="font-bold text-lg tracking-tight">SteelBuild Pro</span>
+            <span className="font-bold text-lg tracking-tight text-main">SteelBuild</span>
           </div>
         </div>
 
@@ -301,23 +301,23 @@ function LayoutContent({ children, currentPageName }) {
             <NotificationCenter />
             <DropdownMenu>
               <DropdownMenuTrigger className="p-2">
-                <UserCircle size={24} className="text-zinc-400" />
+                <UserCircle size={24} className="text-muted" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
+              <DropdownMenuContent align="end" className="w-56 bg-surface-1 border-surface-3 text-main">
                 <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-main">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
+                  <p className="text-xs text-muted capitalize">{currentUser.role}</p>
                 </div>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem asChild className="text-white hover:text-white">
+                <DropdownMenuSeparator className="bg-surface-3" />
+                <DropdownMenuItem asChild className="text-main hover:text-main">
                   <Link to={createPageUrl('Settings')}>
                     <Settings size={16} className="mr-2" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
+                <DropdownMenuItem onClick={handleLogout} className="text-rose-400 hover:text-rose-300">
                   <LogOut size={16} className="mr-2" />
                   Logout
                 </DropdownMenuItem>
@@ -330,19 +330,19 @@ function LayoutContent({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-black border-r border-zinc-800 flex flex-col',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-surface-1 border-r border-surface-3 flex flex-col transition-transform duration-300',
           'lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}>
 
-        <div className="h-16 flex items-center px-4 border-b-2 border-zinc-800 flex-shrink-0">
-          <div className="w-8 h-8 bg-amber-500 flex items-center justify-center">
-            <Building size={18} className="text-black" />
+        <div className="h-16 flex items-center px-4 border-b border-surface-3 flex-shrink-0">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-glow">
+            <Building size={20} className="text-white" />
           </div>
-          <span className="font-bold text-lg tracking-tight ml-3 text-white">SteelBuild Pro</span>
+          <span className="font-bold text-lg tracking-tight ml-3 text-main">SteelBuild</span>
         </div>
 
-        <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
+        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {visibleNavGroups.map((group) => {
             const isExpanded = expandedGroups.includes(group.name);
             const GroupIcon = group.icon;
@@ -354,8 +354,8 @@ function LayoutContent({ children, currentPageName }) {
                 <button
                   onClick={() => toggleGroup(group.name)}
                   className={cn(
-                    'w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors',
-                    hasActivePage ? 'text-amber-500' : 'text-zinc-400 hover:text-white'
+                    'w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors rounded-lg',
+                    hasActivePage ? 'text-purple-400' : 'text-muted hover:text-main'
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -384,13 +384,13 @@ function LayoutContent({ children, currentPageName }) {
                           to={createPageUrl(item.page)}
                           onClick={() => setSidebarOpen(false)}
                           className={cn(
-                            'flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors rounded',
+                            'flex items-center gap-2 px-3 py-2 text-xs font-medium transition-all rounded-lg',
                             isActive
-                              ? 'bg-amber-500 text-black'
-                              : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-glow'
+                              : 'text-muted hover:text-main hover:bg-surface-2'
                           )}
                         >
-                          <Icon size={13} />
+                          <Icon size={14} />
                           {item.name}
                         </Link>
                       );
@@ -403,30 +403,30 @@ function LayoutContent({ children, currentPageName }) {
         </nav>
 
         {currentUser &&
-        <div className="border-t-2 border-zinc-800 p-2 flex-shrink-0">
-            <div className="flex items-center justify-between mb-2 px-2">
+        <div className="border-t border-surface-3 p-3 flex-shrink-0">
+            <div className="flex items-center justify-between mb-3 px-2">
               <ThemeToggle />
               <NotificationCenter />
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center gap-2 px-2 py-2 hover:bg-zinc-900 transition-colors">
-                <UserCircle size={14} className="text-amber-500" />
-                <div className="flex-1 text-left">
-                  <p className="text-xs font-bold text-white truncate uppercase tracking-wider">
+              <DropdownMenuTrigger className="w-full flex items-center gap-2 px-3 py-2 hover:bg-surface-2 rounded-lg transition-colors">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-accent-cyan flex-shrink-0" />
+                <div className="flex-1 text-left min-w-0">
+                  <p className="text-xs font-bold text-main truncate uppercase tracking-wider">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest">{currentUser.role}</p>
+                  <p className="text-[10px] text-muted uppercase tracking-widest">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
-                <DropdownMenuItem asChild className="text-white hover:text-white">
+              <DropdownMenuContent align="end" className="w-56 bg-surface-1 border-surface-3 text-main">
+                <DropdownMenuItem asChild className="text-main hover:text-main">
                   <Link to={createPageUrl('Settings')}>
                     <Settings size={16} className="mr-2" />
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
+                <DropdownMenuSeparator className="bg-surface-3" />
+                <DropdownMenuItem onClick={handleLogout} className="text-rose-400 hover:text-rose-300">
                   <LogOut size={16} className="mr-2" />
                   Logout
                 </DropdownMenuItem>
@@ -452,7 +452,7 @@ function LayoutContent({ children, currentPageName }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="text-slate-50 p-4 lg:p-6"
+              className="text-main p-4 lg:p-6"
             >
               {children}
             </motion.div>

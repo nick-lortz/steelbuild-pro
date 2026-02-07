@@ -487,7 +487,7 @@ function DeliveryDetailTabs({ delivery, onUpdate, onDelete }) {
             <div><p className="text-sm font-medium mb-2">Vendor</p><p className="text-lg font-bold">{delivery.vendor}</p></div>
             <div><p className="text-sm font-medium mb-2">Load</p><p className="text-sm text-muted-foreground">{delivery.load_description || 'No description'}</p></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-sm font-medium mb-2">Date</p><p className="text-sm">{delivery.date ? new Date(delivery.date).toLocaleDateString() : 'Not set'}</p></div>
+              <div><p className="text-sm font-medium mb-2">Date</p><p className="text-sm">{formatDateDisplay(delivery.date)}</p></div>
               <div><p className="text-sm font-medium mb-2">Time</p><p className="text-sm">{delivery.time_start || 'TBD'} - {delivery.time_end || 'TBD'}</p></div>
             </div>
             <div className="grid grid-cols-2 gap-4">

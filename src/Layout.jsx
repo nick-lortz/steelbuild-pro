@@ -142,9 +142,10 @@ const navGroups = [
     roles: ['admin', 'user']
   },
   {
-    name: 'Insights & Reporting',
+    name: 'Data & Admin',
     icon: BarChart3,
     items: [
+      { name: 'Data Manager', page: 'DataManager', icon: BarChart3 },
       { name: 'Analytics', page: 'Analytics', icon: BarChart3 },
       { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: TrendingUp },
       { name: 'Reports', page: 'Reports', icon: FileText },

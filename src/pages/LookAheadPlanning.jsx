@@ -145,7 +145,7 @@ export default function LookAheadPlanning() {
       <ErrorBoundary>
         <div className="space-y-6">
           <div><h1 className="text-3xl font-bold tracking-tight">Look-Ahead Planning</h1><p className="text-muted-foreground mt-2">2–6 Week Commitment Window</p></div>
-          <Card className="max-w-md"><CardContent className="pt-6"><p className="text-sm font-medium mb-4">Select a project</p><Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger><SelectValue placeholder="Select project..." /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select></CardContent></Card>
+          <Card className="max-w-md"><CardContent className="pt-6"><p className="text-sm font-medium mb-4">Select a project or view all</p><Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger><SelectContent><SelectItem value="all">✓ All Projects ({projects.length})</SelectItem><div className="border-t my-1" />{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select></CardContent></Card>
         </div>
       </ErrorBoundary>
     );
@@ -167,7 +167,7 @@ export default function LookAheadPlanning() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select>
+            <Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">✓ All Projects ({projects.length})</SelectItem><div className="border-t my-1" />{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select>
             <Select value={windowWeeks.toString()} onValueChange={(v) => setWindowWeeks(parseInt(v))}><SelectTrigger className="w-28"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="2">2 Weeks</SelectItem><SelectItem value="4">4 Weeks</SelectItem><SelectItem value="6">6 Weeks</SelectItem></SelectContent></Select>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}><RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} /></Button>
             <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}><Download className="h-4 w-4 mr-2" />Export</Button>
@@ -240,6 +240,7 @@ export default function LookAheadPlanning() {
                             <CardContent className="pt-3 pb-3">
                               <div className="space-y-2">
                                 <div>
+                                  {task.project_number && <p className="text-xs text-amber-500 font-bold mb-1">{task.project_number} • {task.project_name}</p>}
                                   <p className="font-semibold text-sm mb-1">{task.name}</p>
                                   <p className="text-xs text-muted-foreground">{task.owner}</p>
                                 </div>

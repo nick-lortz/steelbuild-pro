@@ -726,6 +726,7 @@ function DetailingItemTabs({ item, onUpdate, onDelete }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="IFA">IFA</SelectItem>
                   <SelectItem value="BFA">BFA</SelectItem>
                   <SelectItem value="BFS">BFS</SelectItem>

@@ -428,11 +428,11 @@ export default function ResourceManagement() {
 
           {/* Quick Assign Tab */}
           <TabsContent value="assign" className="space-y-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-base uppercase tracking-wider">Unassigned Tasks Needing Resources</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Card>
+              <div className="px-6 pt-5 pb-3 border-b border-border">
+                <SectionHeader title="Unassigned Tasks Needing Resources" />
+              </div>
+              <CardContent className="pt-4">
                 {unassignedTasks.length === 0 ? (
                   <EmptyState
                     icon={CheckCircle2}

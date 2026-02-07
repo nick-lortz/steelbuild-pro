@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Calendar,
+  CheckCircle2,
+  Clock,
   Users,
   Package,
   AlertCircle,
@@ -17,16 +17,15 @@ import {
   ChevronRight,
   Plus,
   Filter,
-  Download,
-  FileText,
-  TrendingUp
+  TrendingUp,
+  FileText
 } from 'lucide-react';
-import { 
-  format, 
-  parseISO, 
-  startOfWeek, 
-  endOfWeek, 
-  eachDayOfInterval, 
+import {
+  format,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
   isSameDay,
   addWeeks,
   isToday,
@@ -38,20 +37,65 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+function SectionHeader({ icon: Icon, title, subtitle, right }) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-3 border-b border-border">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          {Icon ? <Icon className="h-4 w-4 text-amber-500" /> : null}
+          <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        </div>
+        {subtitle ? <p className="text-xs text-muted-foreground mt-1">{subtitle}</p> : null}
+      </div>
+      {right ? <div className="shrink-0">{right}</div> : null}
+    </div>
+  );
+}
+
+function MetricCard({ label, value, tone, icon: Icon }) {
+  const toneClass =
+    tone === 'danger' ? 'border-red-500/30 bg-red-500/5' :
+    tone === 'good' ? 'border-green-500/30 bg-green-500/5' :
+    tone === 'info' ? 'border-blue-500/30 bg-blue-500/5' :
+    tone === 'warn' ? 'border-amber-500/30 bg-amber-500/5' :
+    'border-border bg-card';
+
+  const valueClass =
+    tone === 'danger' ? 'text-red-500' :
+    tone === 'good' ? 'text-green-500' :
+    tone === 'info' ? 'text-blue-500' :
+    tone === 'warn' ? 'text-amber-500' :
+    'text-foreground';
+
+  return (
+    <Card className={cn("border", toneClass)}>
+      <CardContent className="pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+            <p className={cn("text-2xl font-bold", valueClass)}>{value}</p>
+          </div>
+          {Icon && <Icon className="h-4 w-4 opacity-50" />}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function WeeklySchedule() {
   const { activeProjectId } = useActiveProject();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [phaseFilter, setPhaseFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('day'); // 'day' or 'list'
+  const [viewMode, setViewMode] = useState('day');
   const queryClient = useQueryClient();
 
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Monday
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 }); // Sunday
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => activeProjectId
       ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
       : base44.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000
@@ -65,7 +109,7 @@ export default function WeeklySchedule() {
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => activeProjectId
       ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
       : base44.entities.WorkPackage.list(),
     enabled: !!activeProjectId,
@@ -74,25 +118,23 @@ export default function WeeklySchedule() {
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => activeProjectId
       ? base44.entities.Delivery.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
-  // Filter tasks for this week
   const weekTasks = useMemo(() => {
     return tasks.filter(task => {
       if (!task.start_date) return false;
       if (task.status === 'completed' || task.status === 'cancelled') return false;
       if (phaseFilter !== 'all' && task.phase !== phaseFilter) return false;
-      
+
       try {
         const taskStart = parseISO(task.start_date);
         const taskEnd = task.end_date ? parseISO(task.end_date) : taskStart;
-        
-        // Task overlaps with current week
+
         return (taskStart >= weekStart && taskStart <= weekEnd) ||
                (taskEnd >= weekStart && taskEnd <= weekEnd) ||
                (taskStart <= weekStart && taskEnd >= weekEnd);
@@ -102,18 +144,17 @@ export default function WeeklySchedule() {
     });
   }, [tasks, weekStart, weekEnd, phaseFilter]);
 
-  // Group tasks by day
   const tasksByDay = useMemo(() => {
     const grouped = {};
     weekDays.forEach(day => {
       grouped[format(day, 'yyyy-MM-dd')] = [];
     });
-    
+
     weekTasks.forEach(task => {
       try {
         const taskStart = parseISO(task.start_date);
         const taskEnd = task.end_date ? parseISO(task.end_date) : taskStart;
-        
+
         weekDays.forEach(day => {
           if (day >= taskStart && day <= taskEnd) {
             const key = format(day, 'yyyy-MM-dd');
@@ -124,17 +165,16 @@ export default function WeeklySchedule() {
         console.error('Error processing task:', task, e);
       }
     });
-    
+
     return grouped;
   }, [weekTasks, weekDays]);
 
-  // Week stats
   const weekStats = useMemo(() => {
     const completed = weekTasks.filter(t => t.status === 'completed').length;
     const inProgress = weekTasks.filter(t => t.status === 'in_progress').length;
     const notStarted = weekTasks.filter(t => t.status === 'not_started').length;
     const blocked = weekTasks.filter(t => t.status === 'blocked').length;
-    
+
     return {
       total: weekTasks.length,
       completed,
@@ -150,14 +190,15 @@ export default function WeeklySchedule() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task updated');
-    }
+    },
+    onError: (e) => toast.error(e?.message || 'Failed to update task')
   });
 
   const toggleTaskStatus = (task) => {
     const newStatus = task.status === 'completed' ? 'in_progress' : 'completed';
     updateTaskMutation.mutate({
       id: task.id,
-      data: { 
+      data: {
         status: newStatus,
         progress_percent: newStatus === 'completed' ? 100 : task.progress_percent
       }
@@ -169,222 +210,153 @@ export default function WeeklySchedule() {
   const goToThisWeek = () => setCurrentWeek(new Date());
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="space-y-6 max-w-[1800px] mx-auto">
       {/* Header */}
-      <div className="border-b-2 border-amber-500 bg-black">
-        <div className="max-w-[1800px] mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Weekly Schedule</h1>
-              <p className="text-xs text-zinc-500 font-mono mt-1 uppercase tracking-wider">
-                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d, yyyy')}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPreviousWeek}
-                className="border-zinc-700 h-9"
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              <Button
-                variant={isToday(currentWeek) ? 'default' : 'outline'}
-                size="sm"
-                onClick={goToThisWeek}
-                className={cn(
-                  "h-9 text-xs uppercase tracking-wider font-bold",
-                  isToday(currentWeek) 
-                    ? "bg-amber-500 hover:bg-amber-600 text-black" 
-                    : "border-zinc-700"
-                )}
-              >
-                THIS WEEK
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNextWeek}
-                className="border-zinc-700 h-9"
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Weekly Schedule</h1>
+          <p className="text-muted-foreground mt-2">
+            {format(weekStart, 'MMM d')} – {format(weekEnd, 'MMM d, yyyy')}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={isToday(currentWeek) ? "default" : "outline"}
+            onClick={goToThisWeek}
+          >
+            This Week
+          </Button>
+          <Button variant="outline" size="icon" onClick={goToNextWeek}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+
+          <div className="flex items-center gap-1 border rounded-lg p-1 bg-muted">
+            <button
+              onClick={() => setViewMode('day')}
+              className={cn(
+                "px-3 py-1 rounded text-xs font-semibold transition-colors",
+                viewMode === 'day'
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              DAY
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                "px-3 py-1 rounded text-xs font-semibold transition-colors",
+                viewMode === 'list'
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              LIST
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Stats Bar */}
-      <div className="bg-zinc-950 border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-5 gap-4">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Total Tasks</div>
-                <div className="text-2xl font-black text-white">{weekStats.total}</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-green-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                  <CheckCircle2 size={9} />
-                  COMPLETED
-                </div>
-                <div className="text-2xl font-black text-green-400">{weekStats.completed}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-blue-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                  <TrendingUp size={9} />
-                  IN PROGRESS
-                </div>
-                <div className="text-2xl font-black text-blue-400">{weekStats.inProgress}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-red-400 uppercase tracking-widest font-bold mb-1 flex items-center gap-1">
-                  <AlertCircle size={9} />
-                  BLOCKED
-                </div>
-                <div className="text-2xl font-black text-red-400">{weekStats.blocked}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-              <CardContent className="p-3">
-                <div className="text-[10px] text-amber-400 uppercase tracking-widest font-bold mb-1">Completion</div>
-                <div className="text-2xl font-black text-amber-400">{weekStats.completionRate}%</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+      {/* KPI Row */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <MetricCard label="Total Tasks" value={weekStats.total} tone="info" />
+        <MetricCard label="Completed" value={weekStats.completed} tone="good" icon={CheckCircle2} />
+        <MetricCard label="In Progress" value={weekStats.inProgress} tone="info" icon={TrendingUp} />
+        <MetricCard label="Blocked" value={weekStats.blocked} tone={weekStats.blocked > 0 ? "danger" : undefined} icon={AlertCircle} />
+        <MetricCard label="Completion" value={`${weekStats.completionRate}%`} tone="warn" />
       </div>
 
       {/* Filters */}
-      <div className="bg-black border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-                <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value="all">All Phases</SelectItem>
-                  <SelectItem value="detailing">Detailing</SelectItem>
-                  <SelectItem value="fabrication">Fabrication</SelectItem>
-                  <SelectItem value="delivery">Delivery</SelectItem>
-                  <SelectItem value="erection">Erection</SelectItem>
-                  <SelectItem value="closeout">Closeout</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded text-xs">
-                <span className="text-zinc-500 uppercase tracking-wider font-bold">View:</span>
-                <button
-                  onClick={() => setViewMode('day')}
-                  className={cn(
-                    "px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors",
-                    viewMode === 'day' 
-                      ? "bg-amber-500 text-black" 
-                      : "text-zinc-500 hover:text-white"
-                  )}
-                >
-                  BY DAY
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={cn(
-                    "px-2 py-1 rounded font-bold uppercase tracking-wider transition-colors",
-                    viewMode === 'list' 
-                      ? "bg-amber-500 text-black" 
-                      : "text-zinc-500 hover:text-white"
-                  )}
-                >
-                  LIST
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center gap-3">
+        <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Phases</SelectItem>
+            <SelectItem value="detailing">Detailing</SelectItem>
+            <SelectItem value="fabrication">Fabrication</SelectItem>
+            <SelectItem value="delivery">Delivery</SelectItem>
+            <SelectItem value="erection">Erection</SelectItem>
+            <SelectItem value="closeout">Closeout</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
-        {viewMode === 'day' ? (
-          <div className="grid grid-cols-7 gap-3">
-            {weekDays.map((day, dayIdx) => {
-              const dayKey = format(day, 'yyyy-MM-dd');
-              const dayTasks = tasksByDay[dayKey] || [];
-              const isCurrentDay = isToday(day);
-              const dayPassed = isPast(day) && !isToday(day);
-              const completedToday = dayTasks.filter(t => t.status === 'completed').length;
-              const dayProgress = dayTasks.length > 0 ? Math.round((completedToday / dayTasks.length) * 100) : 0;
-              
-              return (
-                <Card
-                  key={dayIdx}
-                  className={cn(
-                    "bg-zinc-900 border-zinc-800 overflow-hidden",
-                    isCurrentDay && "border-2 border-amber-500 shadow-lg shadow-amber-500/20"
-                  )}
-                >
-                  <CardHeader className={cn(
-                    "p-3 border-b border-zinc-800",
-                    isCurrentDay && "bg-gradient-to-b from-amber-500/10 to-transparent"
+      {viewMode === 'day' ? (
+        <div className="grid grid-cols-7 gap-3">
+          {weekDays.map((day, dayIdx) => {
+            const dayKey = format(day, 'yyyy-MM-dd');
+            const dayTasks = tasksByDay[dayKey] || [];
+            const isCurrentDay = isToday(day);
+            const dayPassed = isPast(day) && !isToday(day);
+            const completedToday = dayTasks.filter(t => t.status === 'completed').length;
+            const dayProgress = dayTasks.length > 0 ? Math.round((completedToday / dayTasks.length) * 100) : 0;
+
+            return (
+              <Card
+                key={dayIdx}
+                className={cn(
+                  "bg-card border-border overflow-hidden flex flex-col",
+                  isCurrentDay && "border-2 border-amber-500/60 shadow-md shadow-amber-500/10"
+                )}
+              >
+                <div className={cn(
+                  "p-3 border-b border-border text-center",
+                  isCurrentDay && "bg-amber-500/5"
+                )}>
+                  <div className="text-xs font-semibold text-muted-foreground uppercase">
+                    {format(day, 'EEE')}
+                  </div>
+                  <div className={cn(
+                    "text-2xl font-bold mt-1",
+                    isCurrentDay ? "text-amber-600" : dayPassed ? "text-muted-foreground" : "text-foreground"
                   )}>
-                    <div className="text-center">
-                      <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">
-                        {format(day, 'EEE')}
-                      </div>
-                      <div className={cn(
-                        "text-2xl font-black",
-                        isCurrentDay ? "text-amber-500" : dayPassed ? "text-zinc-600" : "text-white"
-                      )}>
-                        {format(day, 'd')}
-                      </div>
-                      {isCurrentDay && (
-                        <Badge className="bg-amber-500 text-black text-[9px] mt-1 font-bold">
-                          TODAY
-                        </Badge>
-                      )}
+                    {format(day, 'd')}
+                  </div>
+                  {isCurrentDay && (
+                    <Badge className="bg-amber-500 text-black text-[10px] mt-2 font-semibold">
+                      TODAY
+                    </Badge>
+                  )}
+                </div>
+
+                <CardContent className="p-2 min-h-[380px] space-y-1.5 flex-1 flex flex-col">
+                  {dayTasks.length === 0 ? (
+                    <div className="flex items-center justify-center h-32 text-xs text-muted-foreground">
+                      No tasks
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-2 min-h-[400px] space-y-1.5">
-                    {dayTasks.length === 0 ? (
-                      <div className="flex items-center justify-center h-32 text-zinc-700 text-xs">
-                        No tasks
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mb-2 p-2 bg-zinc-800/50 rounded text-center">
-                          <div className="text-xs text-zinc-400 mb-1">Progress</div>
-                          <div className="text-lg font-black text-amber-500">{dayProgress}%</div>
-                          <div className="text-[10px] text-zinc-600">
-                            {completedToday}/{dayTasks.length}
-                          </div>
+                  ) : (
+                    <>
+                      <div className="p-2 bg-muted rounded text-center">
+                        <div className="text-[10px] text-muted-foreground mb-1 uppercase font-semibold">Progress</div>
+                        <div className="text-lg font-bold text-amber-600">{dayProgress}%</div>
+                        <div className="text-[9px] text-muted-foreground">
+                          {completedToday}/{dayTasks.length}
                         </div>
-                        {dayTasks.map((task, idx) => {
+                      </div>
+
+                      <div className="space-y-1 flex-1 overflow-y-auto">
+                        {dayTasks.map((task) => {
                           const wp = workPackages.find(w => w.id === task.work_package_id);
                           const isCompleted = task.status === 'completed';
                           const isBlocked = task.status === 'blocked';
-                          
+
                           return (
                             <div
                               key={task.id}
+                              onClick={() => toggleTaskStatus(task)}
                               className={cn(
                                 "p-2 rounded border group hover:border-amber-500/50 transition-all cursor-pointer",
                                 isCompleted && "bg-green-500/5 border-green-500/20",
                                 isBlocked && "bg-red-500/5 border-red-500/30",
-                                !isCompleted && !isBlocked && "bg-zinc-800/50 border-zinc-700"
+                                !isCompleted && !isBlocked && "bg-card border-border hover:bg-muted/30"
                               )}
-                              onClick={() => toggleTaskStatus(task)}
                             >
                               <div className="flex items-start gap-2">
                                 <Checkbox
@@ -395,37 +367,33 @@ export default function WeeklySchedule() {
                                 />
                                 <div className="flex-1 min-w-0">
                                   <p className={cn(
-                                    "text-xs font-bold leading-tight mb-1",
-                                    isCompleted ? "line-through text-zinc-600" : "text-white group-hover:text-amber-400"
+                                    "text-xs font-bold leading-tight",
+                                    isCompleted ? "line-through text-muted-foreground" : "text-foreground group-hover:text-amber-600"
                                   )}>
                                     {task.name}
                                   </p>
-                                  <div className="flex flex-wrap gap-1">
+                                  <div className="flex flex-wrap gap-1 mt-1">
                                     <Badge className={cn(
-                                      "text-[9px] font-bold px-1 py-0",
-                                      task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
-                                      task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                      task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                      task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
+                                      "text-[8px] font-bold px-1.5 py-0 h-auto",
+                                      task.phase === 'detailing' && "bg-blue-500/20 text-blue-600",
+                                      task.phase === 'fabrication' && "bg-purple-500/20 text-purple-600",
+                                      task.phase === 'delivery' && "bg-amber-500/20 text-amber-600",
+                                      task.phase === 'erection' && "bg-green-500/20 text-green-600"
                                     )}>
-                                      {task.phase.substring(0, 3).toUpperCase()}
+                                      {task.phase?.substring(0, 3).toUpperCase()}
                                     </Badge>
                                     {wp && (
-                                      <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono">
+                                      <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-auto font-mono">
                                         {wp.package_number}
                                       </Badge>
                                     )}
                                   </div>
-                                  {task.estimated_hours > 0 && (
-                                    <p className="text-[10px] text-zinc-600 mt-1">
-                                      {task.estimated_hours}h est.
-                                    </p>
-                                  )}
                                 </div>
                               </div>
+
                               {isBlocked && (
                                 <div className="mt-1 pt-1 border-t border-red-500/20">
-                                  <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider">
+                                  <p className="text-[9px] text-red-500 font-bold uppercase tracking-wide">
                                     ⚠ BLOCKED
                                   </p>
                                 </div>
@@ -433,143 +401,121 @@ export default function WeeklySchedule() {
                             </div>
                           );
                         })}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {weekTasks.length === 0 ? (
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardContent className="p-12 text-center">
-                  <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-                  <h3 className="text-xl font-bold text-zinc-400 mb-2">No Tasks This Week</h3>
-                  <p className="text-zinc-600">Schedule tasks with start dates in this week</p>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
-            ) : (
-              weekTasks
-                .sort((a, b) => {
-                  const dateA = parseISO(a.start_date);
-                  const dateB = parseISO(b.start_date);
-                  return dateA - dateB;
-                })
-                .map(task => {
-                  const wp = workPackages.find(w => w.id === task.work_package_id);
-                  const project = projects.find(p => p.id === task.project_id);
-                  const isCompleted = task.status === 'completed';
-                  const isBlocked = task.status === 'blocked';
-                  
-                  return (
-                    <Card
-                      key={task.id}
-                      className={cn(
-                        "bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group",
-                        isCompleted && "opacity-60",
-                        isBlocked && "border-red-500/30"
-                      )}
-                      onClick={() => toggleTaskStatus(task)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-4">
-                          <Checkbox
-                            checked={isCompleted}
-                            className="mt-1"
-                            onClick={(e) => e.stopPropagation()}
-                            onCheckedChange={() => toggleTaskStatus(task)}
-                          />
-                          
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between gap-4 mb-2">
-                              <div>
-                                <h3 className={cn(
-                                  "text-base font-bold mb-2",
-                                  isCompleted ? "line-through text-zinc-600" : "text-white group-hover:text-amber-400"
-                                )}>
-                                  {task.name}
-                                </h3>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <Badge variant="outline" className="text-[10px] font-mono">
-                                    {project?.project_number}
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {weekTasks.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Calendar size={48} className="mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground mb-1">No Tasks This Week</h3>
+                <p className="text-sm text-muted-foreground">Schedule tasks with start dates in this week</p>
+              </CardContent>
+            </Card>
+          ) : (
+            weekTasks
+              .sort((a, b) => {
+                const dateA = parseISO(a.start_date);
+                const dateB = parseISO(b.start_date);
+                return dateA - dateB;
+              })
+              .map(task => {
+                const wp = workPackages.find(w => w.id === task.work_package_id);
+                const project = projects.find(p => p.id === task.project_id);
+                const isCompleted = task.status === 'completed';
+                const isBlocked = task.status === 'blocked';
+
+                return (
+                  <Card
+                    key={task.id}
+                    className={cn(
+                      "bg-card border-border hover:border-amber-500/40 transition-all cursor-pointer group",
+                      isCompleted && "opacity-60",
+                      isBlocked && "border-red-500/30"
+                    )}
+                    onClick={() => toggleTaskStatus(task)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={isCompleted}
+                          className="mt-1"
+                          onClick={(e) => e.stopPropagation()}
+                          onCheckedChange={() => toggleTaskStatus(task)}
+                        />
+
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className={cn(
+                                "font-bold mb-2",
+                                isCompleted ? "line-through text-muted-foreground" : "text-foreground group-hover:text-amber-600"
+                              )}>
+                                {task.name}
+                              </h3>
+
+                              <div className="flex items-center gap-2 flex-wrap mb-2">
+                                <Badge variant="outline" className="text-[9px] font-mono">
+                                  {project?.project_number}
+                                </Badge>
+                                {wp && (
+                                  <Badge variant="outline" className="text-[9px]">
+                                    <Package size={10} className="mr-1" />
+                                    {wp.package_number}
                                   </Badge>
-                                  {wp && (
-                                    <Badge variant="outline" className="text-[10px]">
-                                      <Package size={8} className="mr-1" />
-                                      {wp.package_number}
-                                    </Badge>
-                                  )}
-                                  <Badge className={cn(
-                                    "text-[10px] font-bold uppercase",
-                                    task.phase === 'detailing' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
-                                    task.phase === 'fabrication' && "bg-purple-500/20 text-purple-400 border-purple-500/30",
-                                    task.phase === 'delivery' && "bg-amber-500/20 text-amber-400 border-amber-500/30",
-                                    task.phase === 'erection' && "bg-green-500/20 text-green-400 border-green-500/30"
-                                  )}>
-                                    {task.phase}
-                                  </Badge>
-                                  <span className="text-xs text-zinc-600 font-mono flex items-center gap-1">
-                                    <Clock size={10} />
-                                    {format(parseISO(task.start_date), 'EEE, MMM d')}
-                                  </span>
-                                  {task.estimated_hours > 0 && (
-                                    <span className="text-xs text-zinc-600">
-                                      {task.estimated_hours}h est.
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                {task.progress_percent > 0 && (
-                                  <div className="text-right">
-                                    <div className="text-lg font-black text-amber-500">
-                                      {task.progress_percent}%
-                                    </div>
-                                    <div className="text-[9px] text-zinc-600 uppercase tracking-wider">
-                                      Progress
-                                    </div>
-                                  </div>
                                 )}
+                                <Badge className={cn(
+                                  "text-[9px] font-bold uppercase",
+                                  task.phase === 'detailing' && "bg-blue-500/20 text-blue-600",
+                                  task.phase === 'fabrication' && "bg-purple-500/20 text-purple-600",
+                                  task.phase === 'delivery' && "bg-amber-500/20 text-amber-600",
+                                  task.phase === 'erection' && "bg-green-500/20 text-green-600"
+                                )}>
+                                  {task.phase}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground font-mono flex items-center gap-1">
+                                  <Clock size={12} />
+                                  {format(parseISO(task.start_date), 'EEE, MMM d')}
+                                </span>
                               </div>
+
+                              {isBlocked && (
+                                <div className="p-2 bg-red-500/10 border border-red-500/30 rounded">
+                                  <p className="text-xs font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">
+                                    <AlertCircle size={12} />
+                                    BLOCKED - CANNOT PROCEED
+                                  </p>
+                                </div>
+                              )}
                             </div>
 
-                            {isBlocked && (
-                              <div className="p-2 bg-red-500/10 border border-red-500/30 rounded">
-                                <p className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
-                                  <AlertCircle size={12} />
-                                  BLOCKED - CANNOT PROCEED
-                                </p>
+                            {task.progress_percent > 0 && (
+                              <div className="text-right">
+                                <div className="text-xl font-bold text-amber-600">
+                                  {task.progress_percent}%
+                                </div>
+                                <div className="text-[9px] text-muted-foreground uppercase tracking-wider font-semibold">
+                                  Progress
+                                </div>
                               </div>
                             )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-            )}
-          </div>
-        )}
-
-        {weekTasks.length === 0 && (
-          <Card className="bg-zinc-900 border-zinc-800 mt-6">
-            <CardContent className="p-12 text-center">
-              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-              <h3 className="text-xl font-bold text-zinc-400 mb-2">No Tasks Scheduled</h3>
-              <p className="text-zinc-600 mb-4">No tasks found for the selected week and filters</p>
-              <Button
-                onClick={goToThisWeek}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
-              >
-                Go to Current Week
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+          )}
+        </div>
+      )}
     </div>
   );
 }

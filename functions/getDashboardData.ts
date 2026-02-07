@@ -118,8 +118,9 @@ Deno.serve(async (req) => {
       const totalCost = actual + committed;
       
       // Budget variance as percentage: positive = over budget, negative = under budget
-      const budgetVariance = budget > 0 && totalCost > 0 ? ((totalCost - budget) / budget) * 100 : 0;
-      const budgetVsActual = budget > 0 && totalCost > 0 ? (totalCost / budget) * 100 : 0;
+      // If no costs yet, show null (not 0 or -100%)
+      const budgetVariance = totalCost > 0 && budget > 0 ? ((totalCost - budget) / budget) * 100 : null;
+      const budgetVsActual = budget > 0 && totalCost > 0 ? (totalCost / budget) * 100 : null;
       
       // Cost health: use budget variance (positive = over, negative = under)
       const costHealth = budgetVariance;
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
       const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       // Risk calculation: over budget by 10%, schedule slip > 5 days, or overdue tasks
-      const isAtRisk = budgetVariance > 10 || daysSlip > 5 || overdueTasks > 0 || openRFIs > 5;
+      const isAtRisk = (budgetVariance !== null && budgetVariance > 10) || daysSlip > 5 || overdueTasks > 0 || openRFIs > 5;
 
       return {
         id: project.id,
@@ -155,7 +156,7 @@ Deno.serve(async (req) => {
         openRFIs,
         pendingCOs,
         isAtRisk,
-        riskScore: (budgetVariance > 10 ? 3 : 0) + (daysSlip > 5 ? 2 : 0) + (overdueTasks > 0 ? 1 : 0),
+        riskScore: ((budgetVariance !== null && budgetVariance > 10) ? 3 : 0) + (daysSlip > 5 ? 2 : 0) + (overdueTasks > 0 ? 1 : 0),
         budget,
         actual,
         committed
@@ -216,7 +217,7 @@ Deno.serve(async (req) => {
     
     // Budget variance: (actual + committed - budget) / budget * 100
     // Positive = over budget (bad), negative = under budget (good)
-    // Only calculate if we have both budget AND costs
+    // Return 0 if no meaningful data (prevents -100% or null confusion in UI)
     const avgBudgetVariance = totalBudget > 0 && totalCost > 0
       ? ((totalCost - totalBudget) / totalBudget) * 100 
       : 0;

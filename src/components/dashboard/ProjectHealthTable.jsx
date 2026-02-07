@@ -22,11 +22,11 @@ const getStatusConfig = (status) => {
 
 const HealthIndicator = ({ value, type = 'cost' }) => {
   if (value === null || value === undefined) {
-    return <span className="text-xs text-muted-foreground">—</span>;
+    return <span className="text-xs text-muted-foreground">No data</span>;
   }
 
   // Cost health: positive = over budget (bad), negative = under budget (good)
-  const status = value > 10 ? 'critical' : value > 5 ? 'warning' : value > -5 ? 'good' : 'excellent';
+  const status = value > 10 ? 'critical' : value > 0 ? 'warning' : value < -5 ? 'excellent' : 'good';
   
   const configs = {
     critical: { icon: AlertCircle, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
@@ -186,18 +186,22 @@ export default function ProjectHealthTable({ projects, onProjectClick }) {
 
                   {/* Budget vs Actual */}
                   <td className="px-4 py-3 text-right">
-                    <div className="inline-flex flex-col items-end gap-0.5">
-                      <span className={cn(
-                        "text-xs font-semibold",
-                        (project.budgetVsActual || 0) > 100 ? "text-red-400" : 
-                        (project.budgetVsActual || 0) > 95 ? "text-amber-400" : "text-green-400"
-                      )}>
-                        {project.budgetVsActual || 0}%
-                      </span>
-                      {(project.budgetVsActual || 0) > 100 && (
-                        <span className="text-[10px] text-red-400">over</span>
-                      )}
-                    </div>
+                    {project.budgetVsActual === null || project.budgetVsActual === undefined ? (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    ) : (
+                      <div className="inline-flex flex-col items-end gap-0.5">
+                        <span className={cn(
+                          "text-xs font-semibold",
+                          project.budgetVsActual > 100 ? "text-red-400" : 
+                          project.budgetVsActual > 95 ? "text-amber-400" : "text-green-400"
+                        )}>
+                          {Math.round(project.budgetVsActual)}%
+                        </span>
+                        {project.budgetVsActual > 100 && (
+                          <span className="text-[10px] text-red-400">over</span>
+                        )}
+                      </div>
+                    )}
                   </td>
 
                   {/* Action */}

@@ -71,12 +71,11 @@ export default function Schedule() {
         projectId: selectedProject
       });
 
+      // Unwrap response.data first
       const d = response?.data ?? response;
-      const normalized =
-        (d?.snapshot || d?.tasks || d?.ai) ? d :
-        (d?.data?.snapshot || d?.data?.tasks) ? d.data :
-        (d?.body?.snapshot || d?.body?.tasks) ? d.body :
-        d;
+      
+      // Then unwrap nested data/body/result
+      const normalized = (d?.data || d?.body || d?.result) || d;
 
       console.debug('[getScheduleWorkspaceData] normalized:', normalized);
       return normalized;
@@ -174,7 +173,10 @@ export default function Schedule() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={selectedProject} onValueChange={setSelectedProject}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>)}</SelectContent></Select>
-            <Tabs value={viewMode} onValueChange={setViewMode}><TabsList><TabsTrigger value="wbs">WBS</TabsTrigger><TabsTrigger value="gantt">Gantt</TabsTrigger></TabsList></Tabs>
+            <div className="flex items-center gap-1 border rounded-lg p-1">
+              <Button variant={viewMode === 'wbs' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('wbs')}>WBS</Button>
+              <Button variant={viewMode === 'gantt' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('gantt')}>Gantt</Button>
+            </div>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isFetching}><RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} /></Button>
             <Button variant="outline" size="sm"><FileUp className="h-4 w-4 mr-2" />Import CSV</Button>
             <Button variant="outline" size="sm" onClick={handleGeneratePDF} disabled={generatingPDF}><Download className="h-4 w-4 mr-2" />Export</Button>
@@ -228,8 +230,10 @@ export default function Schedule() {
 
             {/* Task Workspace */}
             <div>
-              <h2 className="text-xl font-semibold mb-4">Task Workspace (WBS)</h2>
-              <Card><CardContent className="p-0">{tasks.length === 0 ? <div className="py-12 text-center text-muted-foreground"><Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" /><p>No tasks in schedule</p></div> : <div className="overflow-x-auto"><table className="w-full text-sm">
+              <h2 className="text-xl font-semibold mb-4">Task Workspace ({viewMode === 'gantt' ? 'Gantt Chart' : 'WBS Table'})</h2>
+              <Card><CardContent className="p-0">{tasks.length === 0 ? <div className="py-12 text-center text-muted-foreground"><Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" /><p>No tasks in schedule</p></div> : viewMode === 'gantt' ? (
+                <GanttChartView tasks={tasks} />
+              ) : <div className="overflow-x-auto"><table className="w-full text-sm">
                 <thead className="border-b bg-muted/30"><tr className="text-left">
                   <th className="p-3 font-medium">Task</th>
                   <th className="p-3 font-medium">Start</th>
@@ -267,7 +271,7 @@ export default function Schedule() {
                     </>
                   )}
                 </tr>)}</tbody>
-              </table></div>}</CardContent></Card>
+                </table></div>}</CardContent></Card>
             </div>
           </>
         )}
@@ -331,6 +335,58 @@ function NewTaskForm({ projectId, onSubmit, onCancel }) {
       <div><Label className="flex items-center gap-2"><input type="checkbox" checked={formData.is_critical} onChange={(e) => setFormData({ ...formData, is_critical: e.target.checked })} />Critical Path Task</Label></div>
       <div className="flex gap-2 pt-4"><Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button><Button type="submit" className="flex-1">Create Task</Button></div>
     </form>
+  );
+}
+
+function GanttChartView({ tasks }) {
+  if (!tasks || tasks.length === 0) return null;
+  
+  // Calculate date range
+  const dates = tasks.flatMap(t => [t.start, t.end]).filter(Boolean).map(d => new Date(d));
+  const minDate = new Date(Math.min(...dates));
+  const maxDate = new Date(Math.max(...dates));
+  const totalDays = Math.ceil((maxDate - minDate) / (24 * 60 * 60 * 1000)) + 1;
+  
+  const getTaskPosition = (task) => {
+    const start = new Date(task.start);
+    const end = new Date(task.end);
+    const left = Math.floor(((start - minDate) / (24 * 60 * 60 * 1000)) / totalDays * 100);
+    const width = Math.max(1, Math.floor(((end - start) / (24 * 60 * 60 * 1000)) / totalDays * 100));
+    return { left: `${left}%`, width: `${width}%` };
+  };
+  
+  return (
+    <div className="p-4 space-y-1 bg-zinc-950">
+      <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+        <div className="w-48">Task</div>
+        <div className="flex-1 flex items-center justify-between px-2">
+          <span>{minDate.toLocaleDateString()}</span>
+          <span>{maxDate.toLocaleDateString()}</span>
+        </div>
+      </div>
+      {tasks.map((task) => {
+        const pos = getTaskPosition(task);
+        return (
+          <div key={task.id} className="flex items-center gap-2">
+            <div className="w-48 text-sm truncate">{task.name}</div>
+            <div className="flex-1 relative h-8 bg-zinc-900 rounded">
+              <div 
+                className={cn(
+                  "absolute h-6 top-1 rounded flex items-center px-2",
+                  task.isCritical ? "bg-red-500" : "bg-blue-500"
+                )}
+                style={pos}
+              >
+                <span className="text-xs font-medium text-white truncate">{task.progress_pct}%</span>
+              </div>
+            </div>
+            <Badge variant={task.status === 'completed' ? 'default' : 'outline'} className="text-xs w-24">
+              {task.status?.replace('_', ' ')}
+            </Badge>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

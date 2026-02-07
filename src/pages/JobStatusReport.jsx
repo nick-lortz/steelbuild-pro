@@ -593,16 +593,16 @@ export default function JobStatusReport() {
 
       {/* SOV Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Schedule of Values</CardTitle>
-          {hasApprovedInvoices && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+        <SectionHeader 
+          title="Schedule of Values"
+          right={hasApprovedInvoices ? (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Lock size={10} />
-              Percent complete locked after invoice approval. Adjustments require change orders.
+              Locked post-approval
             </p>
-          )}
-        </CardHeader>
-        <CardContent>
+          ) : null}
+        />
+        <CardContent className="pt-4">
           <DataTable
             columns={sovColumns}
             data={sovWithCosts}

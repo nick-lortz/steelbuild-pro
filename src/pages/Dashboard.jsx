@@ -131,7 +131,11 @@ export default function Dashboard() {
         </div>
 
         {/* Role-Based KPIs */}
-        <RoleBasedKPIs dashboardData={dashboardData} currentUser={currentUser} />
+        <RoleBasedKPIs 
+          role={currentUser?.role} 
+          metrics={metrics} 
+          projects={projects} 
+        />
 
         {/* Portfolio Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

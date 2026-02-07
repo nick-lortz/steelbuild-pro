@@ -887,10 +887,148 @@ function WorkPackages() {
             <ReportScheduler onClose={() => setShowReportScheduler(false)} />
           </SheetContent>
         </Sheet>
-        ) : (
-          <>
-            {/* Execution Snapshot */}
-            <div>
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+/** ---------------------------
+ * NewPackageForm
+ * --------------------------- */
+
+function NewPackageForm({ projectId, onSubmit, onCancel }) {
+  const [formData, setFormData] = useState({
+    project_id: projectId,
+    name: '',
+    description: '',
+    status: 'planned',
+    progress_percent: '',    // keep as string for smooth typing
+    budget_amount: '',       // keep as string for smooth typing
+    assigned_lead: '',
+    target_date: ''
+  });
+
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    // keep project in sync if user changes project after opening sheet
+    setFormData((p) => ({ ...p, project_id: projectId }));
+  }, [projectId]);
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name || formData.name.trim().length === 0) newErrors.name = 'Name required';
+
+    const progress = Number(formData.progress_percent);
+    if (!Number.isFinite(progress) || progress < 0 || progress > 100) newErrors.progress_percent = 'Progress must be 0-100';
+
+    const budget = Number(formData.budget_amount);
+    if (!Number.isFinite(budget) || budget < 0) newErrors.budget_amount = 'Budget must be ≥ 0';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validate()) {
+      onSubmit({
+        ...formData,
+        progress_percent: Number(formData.progress_percent || 0),
+        budget_amount: Number(formData.budget_amount || 0)
+      });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+      <div>
+        <Label>Package Name *</Label>
+        <Input
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className={errors.name ? 'border-red-500' : ''}
+        />
+        {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+      </div>
+
+      <div>
+        <Label>Description</Label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Status</Label>
+          <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="planned">Planned</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Progress (%)</Label>
+          <Input
+            type="number"
+            min="0"
+            max="100"
+            value={formData.progress_percent}
+            onChange={(e) => setFormData({ ...formData, progress_percent: e.target.value })}
+            className={errors.progress_percent ? 'border-red-500' : ''}
+          />
+          {errors.progress_percent && <p className="text-xs text-red-500 mt-1">{errors.progress_percent}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Budget ($)</Label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.budget_amount}
+            onChange={(e) => setFormData({ ...formData, budget_amount: e.target.value })}
+            className={errors.budget_amount ? 'border-red-500' : ''}
+          />
+          {errors.budget_amount && <p className="text-xs text-red-500 mt-1">{errors.budget_amount}</p>}
+        </div>
+
+        <div>
+          <Label>Assigned Lead</Label>
+          <Input
+            value={formData.assigned_lead}
+            onChange={(e) => setFormData({ ...formData, assigned_lead: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div>
+        <Label>Target Date</Label>
+        <Input
+          type="date"
+          value={formData.target_date || ''}
+          onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
+        />
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1">Cancel</Button>
+        <Button type="submit" className="flex-1">Create Package</Button>
+      </div>
+    </form>
+  );
+}
               <h2 className="text-xl font-semibold mb-4">Execution Snapshot</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                 <Card>

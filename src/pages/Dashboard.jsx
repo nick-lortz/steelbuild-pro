@@ -90,57 +90,102 @@ export default function Dashboard() {
 
   return (
     <ErrorBoundary>
-    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="relative mb-8 overflow-hidden rounded-lg bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black border border-blue-500/30 p-8">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Building className="w-8 h-8 text-white" />
-            </div>
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50 backdrop-blur-sm">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">Dashboard</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-zinc-400 font-medium">{enhancedMetrics.totalProjects} Projects</p>
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+              <div className="flex items-baseline gap-3">
+                <h1 className="text-3xl font-bold text-white tracking-tight">Dashboard</h1>
+                <p className="text-sm text-zinc-500 font-mono">{enhancedMetrics.totalProjects} Projects</p>
               </div>
+              <p className="text-xs text-zinc-600 mt-2">Portfolio overview and project health</p>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={refetchDashboard}
+              disabled={projectsFetching}
+              className="gap-2 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 rounded-lg"
+            >
+              <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
+              {projectsFetching ? 'Refreshing...' : 'Refresh'}
+            </Button>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={refetchDashboard}
-            disabled={projectsFetching}
-            className="gap-2 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 rounded-lg"
-          >
-            <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
-            {projectsFetching ? 'Refreshing...' : 'Refresh'}
-          </Button>
         </div>
       </div>
 
-      {/* KPI Grid - Role-based */}
-      <div className="mb-6">
-        <RoleBasedKPIs 
-          role={currentUser.role} 
-          metrics={enhancedMetrics} 
-          projects={paginatedProjects}
-        />
+      {/* Metrics */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="grid grid-cols-5 gap-4">
+            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Total Projects</div>
+                <div className="text-3xl font-bold text-blue-400">{enhancedMetrics.totalProjects || 0}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-emerald-500/15 to-zinc-900 border-emerald-500/30 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold mb-1">Healthy</div>
+                <div className="text-3xl font-bold text-emerald-400">{enhancedMetrics.healthyProjects || 0}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-amber-500/15 to-zinc-900 border-amber-500/30 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-amber-400 uppercase tracking-wider font-semibold mb-1">At Risk</div>
+                <div className="text-3xl font-bold text-amber-400">{enhancedMetrics.riskProjects || 0}</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Avg Health</div>
+                <div className="text-3xl font-bold text-white">{enhancedMetrics.avgHealth?.toFixed(0) || 0}%</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Open RFIs</div>
+                <div className="text-3xl font-bold text-cyan-400">{enhancedMetrics.openRFIs || 0}</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
-      {/* AI Forecast + Risk Panel + Weekly Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {activeProjectId && (
-          <AIForecastPanel projectId={activeProjectId} />
-        )}
-        
-        {activeProjectId && (
-          <AIRiskPanel projectId={activeProjectId} />
-        )}
-        
-        {currentUser.role === 'admin' && weeklySummary && (
-          <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/30 rounded-lg">
+      {/* Filter Bar */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
+          <ProjectFiltersBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            riskFilter={riskFilter}
+            onRiskChange={setRiskFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onClearFilters={handleClearFilters}
+            hasActiveFilters={hasActiveFilters}
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        {/* AI Panels + Weekly Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {activeProjectId && (
+            <AIForecastPanel projectId={activeProjectId} />
+          )}
+          
+          {activeProjectId && (
+            <AIRiskPanel projectId={activeProjectId} />
+          )}
+          
+          {currentUser.role === 'admin' && weeklySummary && (
+            <Card className="bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/30 rounded-lg">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base uppercase tracking-wide flex items-center gap-2">
                   <Activity size={16} className="text-blue-400" />
@@ -233,46 +278,31 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Filters */}
-      <div className="my-6">
-        <ProjectFiltersBar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          riskFilter={riskFilter}
-          onRiskChange={setRiskFilter}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          onClearFilters={handleClearFilters}
-          hasActiveFilters={hasActiveFilters}
+        {/* Project Health Table */}
+        <ProjectHealthTable 
+          projects={paginatedProjects}
+          onProjectClick={(projectId) => setActiveProjectId(projectId)}
         />
+
+        {totalFiltered === 0 && (
+          <div className="text-center py-12">
+            <p className="text-sm text-muted-foreground">No projects match your filters</p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalFiltered > 0 && (
+          <div className="mt-6">
+            <Pagination
+              total={totalFiltered}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={goToPage}
+              onPageSizeChange={changePageSize}
+            />
+          </div>
+        )}
       </div>
-
-      {/* Project Health Table */}
-      <ProjectHealthTable 
-        projects={paginatedProjects}
-        onProjectClick={(projectId) => setActiveProjectId(projectId)}
-      />
-
-      {totalFiltered === 0 && (
-        <div className="text-center py-12">
-          <p className="text-sm text-muted-foreground">No projects match your filters</p>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalFiltered > 0 && (
-        <div className="mt-6">
-          <Pagination
-            total={totalFiltered}
-            page={page}
-            pageSize={pageSize}
-            onPageChange={goToPage}
-            onPageSizeChange={changePageSize}
-          />
-        </div>
-      )}
     </div>
     </ErrorBoundary>
   );

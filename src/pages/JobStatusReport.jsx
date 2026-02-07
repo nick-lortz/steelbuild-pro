@@ -222,25 +222,80 @@ export default function JobStatusReport() {
     }
   ];
 
-  const handleUpdatePercent = async (sovItem, value) => {
+  const hasApprovedInvoices = useMemo(() => 
+    invoices.some(inv => inv.status === 'approved' || inv.status === 'paid'),
+    [invoices]
+  );
+
+  const savingRef = useRef(new Set());
+  const [percentDraft, setPercentDraft] = useState({});
+
+  const handleUpdatePercent = async (sovId, value) => {
+    if (hasApprovedInvoices) {
+      toast.error('Percent complete locked after invoice approval');
+      return;
+    }
+
     const numValue = Number(value) || 0;
     if (numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
 
+    if (savingRef.current.has(sovId)) return;
+    savingRef.current.add(sovId);
+
     try {
       await base44.functions.invoke('updateSOVPercentComplete', {
-        sov_item_id: sovItem.id,
+        sov_item_id: sovId,
         percent_complete: numValue
       });
       toast.success('Percent complete updated');
+      setPercentDraft(p => {
+        const next = { ...p };
+        delete next[sovId];
+        return next;
+      });
     } catch (error) {
       toast.error(error.message || 'Failed to update percent complete');
+    } finally {
+      savingRef.current.delete(sovId);
     }
   };
 
-  const hasApprovedInvoices = invoices.some(inv => inv.status === 'approved' || inv.status === 'paid');
+  const handleExportCSV = () => {
+    const rows = [
+      ['Job Status Report', selectedProjectData?.project_number, selectedProjectData?.name],
+      ['', ''],
+      ['Financial Summary'],
+      ['Original Contract', financialSummary.contractValue],
+      ['Approved COs', financialSummary.signedExtras],
+      ['Total Contract', financialSummary.totalContract],
+      ['Earned to Date', financialSummary.earnedToDate],
+      ['Billed to Date', financialSummary.billedToDate],
+      ['Actual Cost', financialSummary.actualCost],
+      ['Est Cost at Completion', financialSummary.estimatedCostAtCompletion],
+      ['Est Final Margin', financialSummary.projectedProfit],
+      ['Margin %', financialSummary.projectedMargin],
+      ['', ''],
+      ['Schedule of Values'],
+      ['SOV Code', 'Description', 'Scheduled Value', 'Percent Complete', 'Earned', 'Billed', 'Cost', 'Margin']
+    ];
+
+    sovWithCosts.forEach(sov => {
+      const earned = (sov.scheduled_value * (sov.percent_complete || 0)) / 100;
+      rows.push([sov.sov_code, sov.description, sov.scheduled_value, sov.percent_complete, earned, sov.billed_to_date, sov.costToDate, sov.margin]);
+    });
+
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `job-status-${selectedProjectData?.project_number}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const sovColumns = [
     { 

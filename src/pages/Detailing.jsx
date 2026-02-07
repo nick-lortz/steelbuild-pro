@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ReportScheduler from '@/components/reports/ReportScheduler';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 
 export default function Detailing() {
   const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();

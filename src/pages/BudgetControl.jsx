@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { 
   RefreshCw, DollarSign, TrendingUp, TrendingDown, AlertCircle, Download, Mail,
   CheckCircle, AlertTriangle, XCircle, ChevronDown, ChevronUp, Zap, Plus, Edit,
-  Info, Activity
+  Info, Activity, Trash2, Check, X
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +16,10 @@ import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import ReportScheduler from '@/components/reports/ReportScheduler';
 
 export default function BudgetControl() {
@@ -25,6 +29,23 @@ export default function BudgetControl() {
   const [showReportScheduler, setShowReportScheduler] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [viewMode, setViewMode] = useState('overview');
+
+  const queryClient = useQueryClient();
+
+  const [showLineSheet, setShowLineSheet] = useState(false);
+  const [editingLine, setEditingLine] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  const [lineForm, setLineForm] = useState({
+    project_id: '',
+    cost_code_id: '',
+    category: 'other',
+    original_budget: 0,
+    approved_changes: 0,
+    current_budget: 0,
+    forecast_amount: 0,
+    notes: ''
+  });
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -48,6 +69,12 @@ export default function BudgetControl() {
     );
   }, [currentUser, allProjects]);
 
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 10 * 60 * 1000
+  });
+
   const { 
     data: controlData = {}, 
     isLoading, 
@@ -60,12 +87,11 @@ export default function BudgetControl() {
         projectId: selectedProject
       });
 
+      // Unwrap response.data first
       const d = response?.data ?? response;
-      const normalized =
-        (d?.snapshot || d?.lines || d?.drivers) ? d :
-        (d?.data?.snapshot || d?.data?.lines) ? d.data :
-        (d?.body?.snapshot || d?.body?.lines) ? d.body :
-        d;
+      
+      // Then unwrap nested data/body/result
+      const normalized = (d?.data || d?.body || d?.result) || d;
 
       console.debug('[getBudgetControlData] normalized:', normalized);
       return normalized;
@@ -85,6 +111,95 @@ export default function BudgetControl() {
     warnings = [], 
     integrityWarnings = [] 
   } = controlData;
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['budgetControl', selectedProject] });
+  };
+
+  const createLineMutation = useMutation({
+    mutationFn: (data) => base44.entities.Financial.create(data),
+    onSuccess: () => {
+      toast.success('Budget line created');
+      setShowLineSheet(false);
+      setEditingLine(null);
+      invalidate();
+    },
+    onError: (e) => toast.error(`Create failed: ${e?.message || 'Unknown error'}`)
+  });
+
+  const updateLineMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Financial.update(id, data),
+    onSuccess: () => {
+      toast.success('Budget line updated');
+      setShowLineSheet(false);
+      setEditingLine(null);
+      invalidate();
+    },
+    onError: (e) => toast.error(`Update failed: ${e?.message || 'Unknown error'}`)
+  });
+
+  const deleteLineMutation = useMutation({
+    mutationFn: (id) => base44.entities.Financial.delete(id),
+    onSuccess: () => {
+      toast.success('Budget line deleted');
+      setDeleteConfirm(null);
+      invalidate();
+    },
+    onError: (e) => toast.error(`Delete failed: ${e?.message || 'Unknown error'}`)
+  });
+
+  const openNewLine = () => {
+    setEditingLine(null);
+    setLineForm({
+      project_id: selectedProject,
+      cost_code_id: '',
+      category: 'other',
+      original_budget: 0,
+      approved_changes: 0,
+      current_budget: 0,
+      forecast_amount: 0,
+      notes: ''
+    });
+    setShowLineSheet(true);
+  };
+
+  const openEditLine = (line) => {
+    setEditingLine(line);
+    setLineForm({
+      project_id: selectedProject,
+      cost_code_id: line.cost_code_id || '',
+      category: line.category || 'other',
+      original_budget: Number(line.original || 0),
+      approved_changes: Number(line.changes || 0),
+      current_budget: Number(line.current || 0),
+      forecast_amount: Number(line.forecast || 0),
+      notes: line.notes || ''
+    });
+    setShowLineSheet(true);
+  };
+
+  const saveLine = () => {
+    const orig = Number(lineForm.original_budget || 0);
+    const changes = Number(lineForm.approved_changes || 0);
+    const payload = {
+      project_id: selectedProject,
+      cost_code_id: lineForm.cost_code_id,
+      category: lineForm.category,
+      original_budget: orig,
+      approved_changes: changes,
+      current_budget: orig + changes,
+      forecast_amount: Number(lineForm.forecast_amount || 0),
+      notes: lineForm.notes || ''
+    };
+
+    if (!payload.cost_code_id) return toast.error('Cost code is required');
+
+    if (editingLine?.id) {
+      updateLineMutation.mutate({ id: editingLine.id, data: payload });
+    } else {
+      createLineMutation.mutate(payload);
+    }
+  };
 
   const handleRefresh = () => {
     refetch();
@@ -500,7 +615,7 @@ export default function BudgetControl() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold">Budget Lines & Allocations</h2>
-                    <Button size="sm">
+                    <Button size="sm" onClick={openNewLine}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Budget Line
                     </Button>
@@ -554,9 +669,22 @@ export default function BudgetControl() {
                                     </div>
                                   </td>
                                   <td className="py-2">
-                                    <Button variant="ghost" size="sm">
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openEditLine(line)}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setDeleteConfirm(line)}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
@@ -745,6 +873,131 @@ export default function BudgetControl() {
               <ReportScheduler onClose={() => setShowReportScheduler(false)} />
             </SheetContent>
           </Sheet>
+
+          {/* Budget Line Sheet */}
+          <Sheet open={showLineSheet} onOpenChange={setShowLineSheet}>
+            <SheetContent className="w-[520px] sm:max-w-[520px]">
+              <SheetHeader>
+                <SheetTitle>{editingLine ? 'Edit Budget Line' : 'New Budget Line'}</SheetTitle>
+              </SheetHeader>
+
+              <div className="space-y-4 mt-6">
+                <div>
+                  <Label>Cost Code *</Label>
+                  <Select
+                    value={lineForm.cost_code_id}
+                    onValueChange={(val) => setLineForm((p) => ({ ...p, cost_code_id: val }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cost code..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {costCodes.map((cc) => (
+                        <SelectItem key={cc.id} value={cc.id}>
+                          {cc.code} - {cc.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Category</Label>
+                  <Select
+                    value={lineForm.category}
+                    onValueChange={(val) => setLineForm((p) => ({ ...p, category: val }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="labor">Labor</SelectItem>
+                      <SelectItem value="material">Material</SelectItem>
+                      <SelectItem value="equipment">Equipment</SelectItem>
+                      <SelectItem value="subcontract">Subcontract</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Original Budget</Label>
+                    <Input
+                      type="number"
+                      value={lineForm.original_budget}
+                      onChange={(e) => setLineForm((p) => ({ ...p, original_budget: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Approved Changes</Label>
+                    <Input
+                      type="number"
+                      value={lineForm.approved_changes}
+                      onChange={(e) => setLineForm((p) => ({ ...p, approved_changes: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Forecast</Label>
+                  <Input
+                    type="number"
+                    value={lineForm.forecast_amount}
+                    onChange={(e) => setLineForm((p) => ({ ...p, forecast_amount: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={lineForm.notes}
+                    onChange={(e) => setLineForm((p) => ({ ...p, notes: e.target.value }))}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowLineSheet(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={saveLine}
+                    disabled={createLineMutation.isPending || updateLineMutation.isPending}
+                  >
+                    {editingLine ? 'Save Changes' : 'Create Line'}
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Delete confirm */}
+          <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete budget line?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                This will permanently delete "{deleteConfirm?.costCode || deleteConfirm?.costCodeName}".
+              </p>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteLineMutation.mutate(deleteConfirm.id)}
+                  disabled={deleteLineMutation.isPending}
+                >
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
     </ErrorBoundary>
   );

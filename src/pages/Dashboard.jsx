@@ -188,7 +188,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-amber-500">
-                {metrics.atRiskProjects || 0}
+                {atRiskProjects}
               </div>
               <p className="text-xs text-muted-foreground">
                 Require attention

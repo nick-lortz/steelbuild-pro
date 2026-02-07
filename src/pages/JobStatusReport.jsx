@@ -449,20 +449,31 @@ export default function JobStatusReport() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Job Status Report</h1>
-          <p className="text-muted-foreground mt-2">{selectedProjectData?.project_number} - {selectedProjectData?.name}</p>
+          <p className="text-muted-foreground mt-2">{selectedProjectData?.project_number} - {selectedProjectData?.name}{hasApprovedInvoices ? ' • LOCKED' : ''}</p>
         </div>
-        <Select value={selectedProject} onValueChange={setSelectedProject}>
-          <SelectTrigger className="w-80">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {projects.map(p => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.project_number} - {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="w-80">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.project_number} - {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportCSV}
+            className="gap-2"
+          >
+            <Download size={14} />
+            Export
+          </Button>
+        </div>
       </div>
 
       {/* Header Summary KPIs */}

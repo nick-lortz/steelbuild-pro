@@ -7,7 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles, LineChart, Activity } from 'lucide-react';
+import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles, LineChart, Activity, Database, Trash2, Pencil, PlusCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
@@ -411,7 +415,11 @@ export default function Analytics() {
               <Sparkles size={16} className="mr-2" />
               AI Insights
             </TabsTrigger>
-          </TabsList>
+            <TabsTrigger value="data-manager" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black text-zinc-200">
+              <Database size={16} className="mr-2" />
+              Data Manager
+            </TabsTrigger>
+            </TabsList>
 
           <TabsContent value="health" className="space-y-6">
             <ProjectHealthTrends
@@ -549,8 +557,508 @@ export default function Analytics() {
           <TabsContent value="insights" className="space-y-6">
             <ProjectAnalyticsInsights />
           </TabsContent>
-        </Tabs>
-      )}
-    </div>
-  );
-}
+
+          <TabsContent value="data-manager" className="space-y-6">
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-white font-semibold">Project Data Manager</p>
+                    <p className="text-xs text-zinc-400">
+                      Add / edit / delete project data that feeds analytics. Changes update dashboards after save.
+                    </p>
+                  </div>
+                  <div className="text-xs text-zinc-400">
+                    Project: <span className="text-white">{selectedProject?.project_number} — {selectedProject?.name}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <EntityManager
+                title="Tasks"
+                entityName="Task"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "name", label: "Name", type: "text", required: true },
+                  { key: "status", label: "Status", type: "text" },
+                  { key: "phase", label: "Phase", type: "text" },
+                  { key: "start_date", label: "Start Date", type: "date" },
+                  { key: "end_date", label: "End Date", type: "date" },
+                  { key: "progress_percent", label: "Progress %", type: "number" },
+                  { key: "owner", label: "Owner", type: "text" },
+                ]}
+                order="-updated_date"
+              />
+
+              <EntityManager
+                title="Expenses"
+                entityName="Expense"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "description", label: "Description", type: "text", required: true },
+                  { key: "amount", label: "Amount", type: "number", required: true },
+                  { key: "expense_date", label: "Date", type: "date" },
+                  { key: "cost_code", label: "Cost Code", type: "text" },
+                  { key: "vendor", label: "Vendor", type: "text" },
+                ]}
+                order="-created_date"
+              />
+
+              <EntityManager
+                title="RFIs"
+                entityName="RFI"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "rfi_number", label: "RFI #", type: "text" },
+                  { key: "subject", label: "Subject", type: "text", required: true },
+                  { key: "status", label: "Status", type: "text" },
+                  { key: "priority", label: "Priority", type: "text" },
+                  { key: "submitted_date", label: "Submitted", type: "date" },
+                  { key: "response_date", label: "Response", type: "date" },
+                ]}
+                order="-created_date"
+              />
+
+              <EntityManager
+                title="Change Orders"
+                entityName="ChangeOrder"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "co_number", label: "CO #", type: "text" },
+                  { key: "title", label: "Title", type: "text", required: true },
+                  { key: "status", label: "Status", type: "text" },
+                  { key: "cost_impact", label: "Amount", type: "number" },
+                  { key: "schedule_impact_days", label: "Sched Impact (days)", type: "number" },
+                  { key: "submitted_date", label: "Submitted", type: "date" },
+                  { key: "approved_date", label: "Approved", type: "date" },
+                ]}
+                order="-created_date"
+              />
+
+              <EntityManager
+                title="Work Packages"
+                entityName="WorkPackage"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "wpid", label: "WPID", type: "text" },
+                  { key: "name", label: "Name", type: "text", required: true },
+                  { key: "status", label: "Status", type: "text" },
+                  { key: "progress_percent", label: "Progress %", type: "number" },
+                  { key: "assigned_lead", label: "Assigned Lead", type: "text" },
+                  { key: "target_date", label: "Target Date", type: "date" },
+                  { key: "budget_amount", label: "Budget", type: "number" },
+                ]}
+                order="-updated_date"
+              />
+
+              <EntityManager
+                title="Deliveries"
+                entityName="Delivery"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "delivery_number", label: "Delivery #", type: "text" },
+                  { key: "status", label: "Status", type: "text" },
+                  { key: "carrier", label: "Carrier", type: "text" },
+                  { key: "eta_date", label: "ETA", type: "date" },
+                  { key: "notes", label: "Notes", type: "textarea" },
+                ]}
+                order="-created_date"
+              />
+
+              <EntityManager
+                title="SOV Items"
+                entityName="SOVItem"
+                projectId={activeProjectId}
+                fields={[
+                  { key: "line_number", label: "Line #", type: "text" },
+                  { key: "description", label: "Description", type: "text", required: true },
+                  { key: "scheduled_value", label: "Scheduled Value", type: "number" },
+                  { key: "percent_complete", label: "% Complete", type: "number" },
+                ]}
+                order="line_number"
+              />
+            </div>
+          </TabsContent>
+          </Tabs>
+          )}
+          </div>
+          );
+          }
+
+          function EntityManager({ title, entityName, projectId, fields, order = "-created_date" }) {
+          const queryClient = useQueryClient();
+
+          const [showCreate, setShowCreate] = useState(false);
+          const [showEdit, setShowEdit] = useState(false);
+          const [deleteConfirm, setDeleteConfirm] = useState(null);
+          const [selectedRow, setSelectedRow] = useState(null);
+
+          const initial = useMemo(() => {
+          const base = { project_id: projectId };
+          fields.forEach(f => {
+          base[f.key] = f.type === "number" ? 0 : "";
+          });
+          return base;
+          }, [fields, projectId]);
+
+          const [createData, setCreateData] = useState(initial);
+          const [editData, setEditData] = useState({});
+
+          useEffect(() => {
+          setCreateData(initial);
+          }, [initial]);
+
+          const entityApi = base44.entities?.[entityName];
+          const canUse = !!entityApi;
+
+          const { data: rows = [], isLoading, isFetching, refetch } = useQuery({
+          queryKey: ["entity-manager", entityName, projectId],
+          queryFn: async () => {
+          if (!canUse || !projectId) return [];
+          const filtered = await entityApi.filter({ project_id: projectId }, order);
+          return Array.isArray(filtered) ? filtered : [];
+          },
+          enabled: !!projectId && canUse,
+          staleTime: 60 * 1000
+          });
+
+          const createMutation = useMutation({
+          mutationFn: async (payload) => {
+          if (!canUse) throw new Error(`Entity not available: ${entityName}`);
+          return entityApi.create(payload);
+          },
+          onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["entity-manager", entityName, projectId] });
+          queryClient.invalidateQueries();
+          setShowCreate(false);
+          setCreateData(initial);
+          toast.success(`${title} created`);
+          },
+          onError: (e) => toast.error(`Create failed: ${e?.message || "Unknown error"}`)
+          });
+
+          const updateMutation = useMutation({
+          mutationFn: async ({ id, payload }) => {
+          if (!canUse) throw new Error(`Entity not available: ${entityName}`);
+          return entityApi.update(id, payload);
+          },
+          onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["entity-manager", entityName, projectId] });
+          queryClient.invalidateQueries();
+          setShowEdit(false);
+          setSelectedRow(null);
+          toast.success(`${title} updated`);
+          },
+          onError: (e) => toast.error(`Update failed: ${e?.message || "Unknown error"}`)
+          });
+
+          const deleteMutation = useMutation({
+          mutationFn: async (id) => {
+          if (!canUse) throw new Error(`Entity not available: ${entityName}`);
+          return entityApi.delete(id);
+          },
+          onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["entity-manager", entityName, projectId] });
+          queryClient.invalidateQueries();
+          setDeleteConfirm(null);
+          setShowEdit(false);
+          setSelectedRow(null);
+          toast.success(`${title} deleted`);
+          },
+          onError: (e) => toast.error(`Delete failed: ${e?.message || "Unknown error"}`)
+          });
+
+          const openEdit = (row) => {
+          setSelectedRow(row);
+          const next = { project_id: projectId };
+          fields.forEach(f => {
+          next[f.key] = row?.[f.key] ?? (f.type === "number" ? 0 : "");
+          });
+          setEditData(next);
+          setShowEdit(true);
+          };
+
+          const validate = (data) => {
+          for (const f of fields) {
+          if (f.required) {
+          const v = data[f.key];
+          if (v === null || v === undefined || `${v}`.trim() === "") {
+          toast.error(`${title}: ${f.label} is required`);
+          return false;
+          }
+          }
+          if (f.type === "number" && data[f.key] !== "" && data[f.key] !== null && data[f.key] !== undefined) {
+          const n = Number(data[f.key]);
+          if (Number.isNaN(n)) {
+          toast.error(`${title}: ${f.label} must be a number`);
+          return false;
+          }
+          }
+          }
+          return true;
+          };
+
+          const normalizePayload = (data) => {
+          const payload = { project_id: projectId };
+          fields.forEach(f => {
+          let v = data[f.key];
+          if (f.type === "number") v = v === "" ? null : Number(v);
+          payload[f.key] = v;
+          });
+          return payload;
+          };
+
+          return (
+          <Card className="bg-zinc-900 border-zinc-800">
+          <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+          <div>
+           <p className="text-white font-semibold">{title}</p>
+           <p className="text-xs text-zinc-400">
+             {isFetching ? "Updating…" : `${rows.length} records`}
+           </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+           <Button
+             variant="outline"
+             size="sm"
+             onClick={() => refetch()}
+             className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
+           >
+             Refresh
+           </Button>
+           <Button
+             size="sm"
+             onClick={() => setShowCreate(true)}
+             className="bg-amber-500 hover:bg-amber-600 text-black"
+           >
+             <PlusCircle className="h-4 w-4 mr-2" />
+             Add
+           </Button>
+          </div>
+          </div>
+
+          {!canUse && (
+          <div className="text-xs text-red-400">
+           Entity not available in Base44 client: base44.entities.{entityName}
+          </div>
+          )}
+
+          {isLoading ? (
+          <div className="text-xs text-zinc-400">Loading…</div>
+          ) : rows.length === 0 ? (
+          <div className="text-xs text-zinc-400 border border-zinc-800 rounded p-3">
+           No records yet. Click <span className="text-white">Add</span> to create one.
+          </div>
+          ) : (
+          <div className="border border-zinc-800 rounded">
+           <div className="max-h-[320px] overflow-auto">
+             <table className="w-full text-sm">
+               <thead className="sticky top-0 bg-zinc-950 border-b border-zinc-800">
+                 <tr className="text-left">
+                   <th className="p-2 text-xs text-zinc-400 font-medium">Main</th>
+                   <th className="p-2 text-xs text-zinc-400 font-medium">Updated</th>
+                   <th className="p-2 text-xs text-zinc-400 font-medium text-right">Actions</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {rows.slice(0, 200).map((r) => {
+                   const mainKey =
+                     fields.find(f => f.key === "name")?.key ||
+                     fields.find(f => f.key === "description")?.key ||
+                     fields[0]?.key;
+
+                   return (
+                     <tr key={r.id} className="border-b border-zinc-800 last:border-0">
+                       <td className="p-2">
+                         <div className="text-white font-medium truncate max-w-[320px]">
+                           {r?.[mainKey] || `${entityName} ${r.id}`}
+                         </div>
+                         <div className="text-xs text-zinc-500 truncate max-w-[320px]">
+                           {fields.slice(1, 3).map(f => `${f.label}: ${r?.[f.key] ?? "-"}`).join(" • ")}
+                         </div>
+                       </td>
+                       <td className="p-2 text-xs text-zinc-500">
+                         {r.updated_date ? new Date(r.updated_date).toLocaleString() : (r.created_date ? new Date(r.created_date).toLocaleString() : "-")}
+                       </td>
+                       <td className="p-2">
+                         <div className="flex justify-end gap-2">
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => openEdit(r)}
+                             className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700"
+                           >
+                             <Pencil className="h-4 w-4 mr-2" />
+                             Edit
+                           </Button>
+                           <Button
+                             variant="destructive"
+                             size="sm"
+                             onClick={() => setDeleteConfirm(r)}
+                           >
+                             <Trash2 className="h-4 w-4 mr-2" />
+                             Delete
+                           </Button>
+                         </div>
+                       </td>
+                     </tr>
+                   );
+                 })}
+               </tbody>
+             </table>
+           </div>
+
+           {rows.length > 200 && (
+             <div className="p-2 text-xs text-zinc-500 border-t border-zinc-800">
+               Showing first 200 records for performance.
+             </div>
+           )}
+          </div>
+          )}
+
+          {/* Create Sheet */}
+          <Sheet open={showCreate} onOpenChange={setShowCreate}>
+          <SheetContent className="w-[640px] sm:max-w-[640px] bg-zinc-950 border-zinc-800 text-white overflow-y-auto">
+           <SheetHeader>
+             <SheetTitle className="text-white">Add {title}</SheetTitle>
+           </SheetHeader>
+
+           <div className="mt-4 space-y-4">
+             {fields.map((f) => (
+               <div key={f.key} className="space-y-2">
+                 <Label className="text-xs text-zinc-400">
+                   {f.label}{f.required ? " *" : ""}
+                 </Label>
+
+                 {f.type === "textarea" ? (
+                   <Textarea
+                     value={createData[f.key] ?? ""}
+                     onChange={(e) => setCreateData((p) => ({ ...p, [f.key]: e.target.value }))}
+                     className="bg-zinc-900 border-zinc-800 text-white"
+                     rows={4}
+                   />
+                 ) : (
+                   <Input
+                     type={f.type === "date" ? "date" : f.type === "number" ? "number" : "text"}
+                     value={createData[f.key] ?? ""}
+                     onChange={(e) => setCreateData((p) => ({ ...p, [f.key]: e.target.value }))}
+                     className="bg-zinc-900 border-zinc-800 text-white"
+                   />
+                 )}
+               </div>
+             ))}
+
+             <div className="flex gap-2 pt-2">
+               <Button
+                 variant="outline"
+                 onClick={() => setShowCreate(false)}
+                 className="flex-1 bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
+               >
+                 Cancel
+               </Button>
+               <Button
+                 className="flex-1 bg-amber-500 hover:bg-amber-600 text-black"
+                 disabled={createMutation.isPending}
+                 onClick={() => {
+                   if (!validate(createData)) return;
+                   createMutation.mutate(normalizePayload(createData));
+                 }}
+               >
+                 {createMutation.isPending ? "Saving…" : "Create"}
+               </Button>
+             </div>
+           </div>
+          </SheetContent>
+          </Sheet>
+
+          {/* Edit Sheet */}
+          <Sheet open={showEdit} onOpenChange={setShowEdit}>
+          <SheetContent className="w-[640px] sm:max-w-[640px] bg-zinc-950 border-zinc-800 text-white overflow-y-auto">
+           <SheetHeader>
+             <SheetTitle className="text-white">Edit {title}</SheetTitle>
+           </SheetHeader>
+
+           <div className="mt-4 space-y-4">
+             {fields.map((f) => (
+               <div key={f.key} className="space-y-2">
+                 <Label className="text-xs text-zinc-400">
+                   {f.label}{f.required ? " *" : ""}
+                 </Label>
+
+                 {f.type === "textarea" ? (
+                   <Textarea
+                     value={editData[f.key] ?? ""}
+                     onChange={(e) => setEditData((p) => ({ ...p, [f.key]: e.target.value }))}
+                     className="bg-zinc-900 border-zinc-800 text-white"
+                     rows={4}
+                   />
+                 ) : (
+                   <Input
+                     type={f.type === "date" ? "date" : f.type === "number" ? "number" : "text"}
+                     value={editData[f.key] ?? ""}
+                     onChange={(e) => setEditData((p) => ({ ...p, [f.key]: e.target.value }))}
+                     className="bg-zinc-900 border-zinc-800 text-white"
+                   />
+                 )}
+               </div>
+             ))}
+
+             <div className="flex gap-2 pt-2">
+               <Button
+                 variant="outline"
+                 onClick={() => setShowEdit(false)}
+                 className="flex-1 bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
+               >
+                 Close
+               </Button>
+               <Button
+                 className="flex-1 bg-amber-500 hover:bg-amber-600 text-black"
+                 disabled={updateMutation.isPending || !selectedRow?.id}
+                 onClick={() => {
+                   if (!selectedRow?.id) return;
+                   if (!validate(editData)) return;
+                   updateMutation.mutate({ id: selectedRow.id, payload: normalizePayload(editData) });
+                 }}
+               >
+                 {updateMutation.isPending ? "Saving…" : "Save"}
+               </Button>
+             </div>
+           </div>
+          </SheetContent>
+          </Sheet>
+
+          {/* Delete Confirm */}
+          <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+          <DialogContent className="bg-zinc-950 border-zinc-800 text-white">
+           <DialogHeader>
+             <DialogTitle>Delete {title}?</DialogTitle>
+           </DialogHeader>
+           <p className="text-sm text-zinc-400">
+             This will permanently delete the record. This cannot be undone.
+           </p>
+           <DialogFooter>
+             <Button
+               variant="outline"
+               onClick={() => setDeleteConfirm(null)}
+               className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800"
+             >
+               Cancel
+             </Button>
+             <Button
+               variant="destructive"
+               disabled={deleteMutation.isPending || !deleteConfirm?.id}
+               onClick={() => deleteMutation.mutate(deleteConfirm.id)}
+             >
+               {deleteMutation.isPending ? "Deleting…" : "Delete"}
+             </Button>
+           </DialogFooter>
+          </DialogContent>
+          </Dialog>
+          </CardContent>
+          </Card>
+          );
+          }

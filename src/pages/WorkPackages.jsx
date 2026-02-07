@@ -638,9 +638,9 @@ function WorkPackages() {
                                             min="0"
                                             max="100"
                                             className="h-8"
-                                            value={editData.progress_percent ?? 0}
+                                            value={editData.progress_percent}
                                             onChange={(e) =>
-                                              setEditData((p) => ({ ...p, progress_percent: e.target.value }))
+                                              setEditData((p) => ({ ...p, progress_percent: parseInt(e.target.value) || 0 }))
                                             }
                                           />
                                         </div>
@@ -650,9 +650,9 @@ function WorkPackages() {
                                             type="number"
                                             min="0"
                                             className="h-8"
-                                            value={editData.budget_amount ?? 0}
+                                            value={editData.budget_amount}
                                             onChange={(e) =>
-                                              setEditData((p) => ({ ...p, budget_amount: e.target.value }))
+                                              setEditData((p) => ({ ...p, budget_amount: parseInt(e.target.value) || 0 }))
                                             }
                                           />
                                         </div>

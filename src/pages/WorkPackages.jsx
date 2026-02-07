@@ -343,18 +343,6 @@ function WorkPackages() {
     setEditData({});
   };
 
-  // Normalize tasks per selected package when rendering
-  const normalizedTasksByPackage = useMemo(() => {
-    const out = {};
-    Object.entries(tasksByPackage || {}).forEach(([pkgId, arr]) => {
-      out[pkgId] = (arr || []).map(t => ({
-        ...t,
-        progress_pct: toNumberSafe(t.progress_pct ?? t.progress_percent ?? 0),
-      }));
-    });
-    return out;
-  }, [tasksByPackage]);
-
   return (
     <ErrorBoundary>
       <div className="space-y-6 max-w-[1800px] mx-auto">
@@ -1757,4 +1745,3 @@ function PackageDetailTabs({ package: pkg, tasks, onUpdate, onDelete }) {
     </Tabs>
   );
 }
-`

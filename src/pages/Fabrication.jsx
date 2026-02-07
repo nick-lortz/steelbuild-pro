@@ -272,18 +272,18 @@ export default function FabricationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Fabrication</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">{selectedProject?.project_number} • {selectedProject?.name}</p>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Fabrication</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {selectedProject?.name}</p>
             </div>
             <div className="flex items-center gap-2">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-[280px] bg-zinc-900 border-zinc-800 text-white">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-700 max-h-60">
@@ -296,18 +296,18 @@ export default function FabricationPage() {
               </Select>
               <Button
                 onClick={() => setShowCreatePackage({})}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider">
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
                 <Plus size={14} className="mr-1" />
-                NEW PACKAGE
+                New Package
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* KPI Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+      {/* Metrics */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
           <div className="grid grid-cols-6 gap-4">
             <Card className="bg-zinc-900 border-zinc-800">
               <CardContent className="p-4">
@@ -375,8 +375,8 @@ export default function FabricationPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         <Tabs value={viewMode} onValueChange={setViewMode}>
           <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="packages">

@@ -311,98 +311,98 @@ export default function Projects() {
   };
 
   return (
-    <div className="min-h-screen pb-8 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-      {/* Modern Header */}
-      <div className="relative mb-8 overflow-hidden rounded-lg bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black border border-blue-500/30 p-8">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-40"></div>
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Building className="w-8 h-8 text-white" />
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50 backdrop-blur-sm">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-white tracking-tight">Projects</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-zinc-400 font-medium">{projects.length} Active Portfolio</p>
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
-              </div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Projects</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">{projects.length} projects</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="gap-2 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg"
-            >
-              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-              Refresh
-            </Button>
-            {can.createProject && (
-              <Button
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
                 size="sm"
-                onClick={() => {
-                  setFormData(initialFormState);
-                  setShowForm(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-600/30 rounded-lg"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="gap-2 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
               >
-                <Plus size={14} className="mr-1" />
-                New Project
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                Refresh
               </Button>
-            )}
+              {can.createProject && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setFormData(initialFormState);
+                    setShowForm(true);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+                >
+                  <Plus size={14} className="mr-1" />
+                  New Project
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* KPI Bar */}
-      <div className="mb-6">
-        <ProjectsKPIBar projects={projectsWithMetrics} tasks={tasks} financials={financials} />
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <ProjectsKPIBar projects={projectsWithMetrics} tasks={tasks} financials={financials} />
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="mb-6">
-        <ProjectsFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          pmFilter={pmFilter}
-          onPMChange={setPMFilter}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          onClearFilters={handleClearFilters}
-          hasActiveFilters={hasActiveFilters}
-          projectManagers={projectManagers}
-        />
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
+            <ProjectsFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            pmFilter={pmFilter}
+            onPMChange={setPMFilter}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            onClearFilters={handleClearFilters}
+            hasActiveFilters={hasActiveFilters}
+            projectManagers={projectManagers}
+          />
+        </div>
       </div>
 
-      {/* Demo Seeder */}
-      {projects.length === 0 && !isLoading && (
-        <div className="mb-6">
-          <DemoProjectSeeder />
-        </div>
-      )}
-
-      {/* Projects Table */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground text-sm">Loading projects...</p>
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        {/* Demo Seeder */}
+        {projects.length === 0 && !isLoading && (
+          <div className="mb-6">
+            <DemoProjectSeeder />
           </div>
-        </div>
-      ) : (
-        <ProjectsTable
-          projects={filteredProjects}
-          onView={handleViewProject}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onSettings={handleSettings}
-          canEdit={can.editProject}
-        />
-      )}
+        )}
+
+          {/* Projects Table */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground text-sm">Loading projects...</p>
+            </div>
+          </div>
+        ) : (
+          <ProjectsTable
+            projects={filteredProjects}
+            onView={handleViewProject}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onSettings={handleSettings}
+            canEdit={can.editProject}
+          />
+        )}
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

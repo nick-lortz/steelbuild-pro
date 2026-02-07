@@ -219,18 +219,18 @@ export default function Calendar() {
   }, [calendarEvents, currentDate]);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b-2 border-amber-500 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Project Calendar</h1>
-              <p className="text-xs text-zinc-500 font-mono mt-1">
-                {format(currentDate, 'MMMM yyyy').toUpperCase()} • {monthStats.total} EVENTS
+              <h1 className="text-3xl font-bold text-white tracking-tight">Calendar</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">
+                {format(currentDate, 'MMMM yyyy')} • {monthStats.total} events
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -264,9 +264,9 @@ export default function Calendar() {
       </div>
 
       {/* Metrics */}
-      <div className="bg-zinc-950 border-b border-zinc-800">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <div className="grid grid-cols-5 gap-3">
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="grid grid-cols-5 gap-4">
             <Card className="bg-zinc-900 border-zinc-800">
               <CardContent className="p-3">
                 <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Tasks</div>
@@ -301,9 +301,9 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="bg-black border-b border-zinc-800">
-        <div className="max-w-[1600px] mx-auto px-6 py-2">
+      {/* Filters */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
           <Select value={phaseFilter} onValueChange={setPhaseFilter}>
             <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-8 text-xs">
               <SelectValue />
@@ -320,8 +320,8 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="max-w-[1600px] mx-auto px-6 py-4">
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-4">
             {/* Weekday Headers */}

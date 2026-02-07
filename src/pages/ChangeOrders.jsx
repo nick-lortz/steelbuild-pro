@@ -329,36 +329,44 @@ export default function ChangeOrders() {
   ];
 
   return (
-    <div>
-      <PageHeader
-        title="Change Orders"
-        subtitle="Track contract modifications"
-        actions={
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => setShowCSVImport(true)}
-              variant="outline"
-              className="border-zinc-700"
-            >
-              <FileSpreadsheet size={18} className="mr-2" />
-              Import CSV
-            </Button>
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
-            >
-              <Plus size={18} className="mr-2" />
-              New Change Order
-            </Button>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">Change Orders</h1>
+              <p className="text-sm text-zinc-500 font-mono mt-1">contract modifications</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowCSVImport(true)}
+                variant="outline"
+                className="border-zinc-700"
+              >
+                <FileSpreadsheet size={16} className="mr-2" />
+                Import CSV
+              </Button>
+              <Button 
+                onClick={() => {
+                  setFormData(initialFormState);
+                  setShowForm(true);
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+              >
+                <Plus size={16} className="mr-2" />
+                New Change Order
+              </Button>
+            </div>
           </div>
-        }
-      />
+        </div>
+      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      {/* Metrics */}
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+
+          <div className="grid grid-cols-3 gap-4">
         <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -391,11 +399,14 @@ export default function ChangeOrders() {
             </div>
             <Clock className="text-zinc-500" size={24} />
           </div>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
+          <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <Input
@@ -439,16 +450,19 @@ export default function ChangeOrders() {
               <SelectItem key={pm} value={pm}>{pm}</SelectItem>
             ))}
           </SelectContent>
-        </Select>
+          </Select>
+        </div>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={filteredCOs}
-        onRowClick={(co) => setViewingCO(co)}
-        emptyMessage="No change orders found. Create your first change order to get started."
-      />
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <DataTable
+          columns={columns}
+          data={filteredCOs}
+          onRowClick={(co) => setViewingCO(co)}
+          emptyMessage="No change orders found. Create your first change order to get started."
+        />
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

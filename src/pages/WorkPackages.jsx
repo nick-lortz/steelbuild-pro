@@ -307,7 +307,7 @@ function WorkPackages() {
         // Fallback with current behavior
         toast.success('Work packages report generated (placeholder)');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error?.message ?? 'Failed to generate PDF');
     } finally {
       setGeneratingPDF(false);

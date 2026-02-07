@@ -217,10 +217,10 @@ export default function RFIHub() {
 
   if (rfisLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading RFI Hub...</p>
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading RFI Hub...</p>
         </div>
       </div>
     );
@@ -228,12 +228,12 @@ export default function RFIHub() {
 
   if (rfisError) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center max-w-md">
           <AlertTriangle size={48} className="mx-auto mb-4 text-red-500" />
-          <h3 className="text-lg font-bold text-white mb-2">Failed to Load RFIs</h3>
-          <p className="text-sm text-zinc-500 mb-4">{rfisErrorObj?.message || 'Network error'}</p>
-          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['rfis'] })} className="bg-amber-500 hover:bg-amber-600 text-black">
+          <h3 className="text-lg font-bold mb-2">Failed to Load RFIs</h3>
+          <p className="text-sm text-muted-foreground mb-4">{rfisErrorObj?.message || 'Network error'}</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['rfis'] })}>
             Retry
           </Button>
         </div>
@@ -243,21 +243,21 @@ export default function RFIHub() {
 
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-zinc-800 bg-black sticky top-0 z-10">
+      <div className="border-b border-border bg-background sticky top-0 z-10">
         <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center justify-between gap-6 flex-wrap">
             <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">RFI Hub</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">
+              <h1 className="text-xl font-bold text-foreground uppercase tracking-wide">RFI Hub</h1>
+              <p className="text-xs text-muted-foreground font-mono mt-1">
                 {filteredRFIs.length} RFIs • {groupedRFIs.active.length} ACTIVE • {groupedRFIs.closed.length} CLOSED
               </p>
             </div>
 
             {/* View Mode Toggle */}
             <div className="flex items-center gap-3">
-              <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+              <div className="flex bg-muted border border-border rounded-lg p-1">
                 <button
                   onClick={() => {
                     setViewMode('portfolio');
@@ -265,8 +265,8 @@ export default function RFIHub() {
                   }}
                   className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
                     viewMode === 'portfolio' 
-                      ? 'bg-amber-500 text-black' 
-                      : 'text-zinc-400 hover:text-white'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   Portfolio
@@ -275,8 +275,8 @@ export default function RFIHub() {
                   onClick={() => setViewMode('project')}
                   className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
                     viewMode === 'project' 
-                      ? 'bg-amber-500 text-black' 
-                      : 'text-zinc-400 hover:text-white'
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   Project
@@ -285,10 +285,10 @@ export default function RFIHub() {
 
               {viewMode === 'project' && (
                 <Select value={selectedProjectId || ''} onValueChange={setSelectedProjectId}>
-                  <SelectTrigger className="w-80 bg-zinc-900 border-zinc-800">
+                  <SelectTrigger className="w-80">
                     <SelectValue placeholder="Select Project..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent>
                     {projects.map(p => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.project_number} - {p.name}
@@ -300,7 +300,7 @@ export default function RFIHub() {
 
               <Button
                 onClick={handleAddNew}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+                className="font-bold text-xs uppercase tracking-wider"
               >
                 <Plus size={14} className="mr-1" />
                 Add RFI
@@ -311,12 +311,12 @@ export default function RFIHub() {
           {/* Search and Filters Bar */}
           <div className="flex items-center gap-3 mt-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" size={16} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
               <Input
                 placeholder="Search RFIs by number, subject, or project..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-sm"
+                className="pl-10 text-sm"
               />
             </div>
             
@@ -333,8 +333,8 @@ export default function RFIHub() {
         <RFIHubTrends rfis={enrichedRFIs} viewMode={viewMode} selectedProjectId={selectedProjectId} />
 
         {/* RFI Lists by Category */}
-        <Tabs defaultValue="active" className="space-y-4">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
+         <Tabs defaultValue="active" className="space-y-4">
+           <TabsList className="bg-muted border border-border">
             <TabsTrigger value="active">
               <FileText size={14} className="mr-2" />
               Active ({groupedRFIs.active.length})

@@ -229,7 +229,7 @@ function Fabrication() {
     <ErrorBoundary>
       <div className="space-y-6 max-w-[1800px] mx-auto">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Fabrication Control</h1>
             <p className="text-muted-foreground mt-2">Shop Production • QA • Shipment Readiness</p>

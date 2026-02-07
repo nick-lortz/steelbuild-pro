@@ -47,40 +47,24 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Analytics from './pages/Analytics';
-import BudgetControl from './pages/BudgetControl';
-import Calendar from './pages/Calendar';
-import ChangeOrders from './pages/ChangeOrders';
-import Contracts from './pages/Contracts';
-import CostCodes from './pages/CostCodes';
+import Performance from './pages/Performance';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
-import Dashboard from './pages/Dashboard';
-import Deliveries from './pages/Deliveries';
-import Detailing from './pages/Detailing';
+import Financials from './pages/Financials';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
-import Equipment from './pages/Equipment';
-import ExecutiveRollUp from './pages/ExecutiveRollUp';
-import Fabrication from './pages/Fabrication';
-import FieldTools from './pages/FieldTools';
+import Contracts from './pages/Contracts';
 import FieldToolsMobile from './pages/FieldToolsMobile';
-import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
-import JobStatusReport from './pages/JobStatusReport';
-import Labor from './pages/Labor';
-import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
 import LoadTesting from './pages/LoadTesting';
-import LookAheadPlanning from './pages/LookAheadPlanning';
 import LookAheadResourcePlanning from './pages/LookAheadResourcePlanning';
 import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
 import MyActionItems from './pages/MyActionItems';
 import NotificationSettings from './pages/NotificationSettings';
-import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
@@ -89,58 +73,58 @@ import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
-import Projects from './pages/Projects';
-import RFIHub from './pages/RFIHub';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
-import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
-import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
 import Submittals from './pages/Submittals';
 import TermsOfService from './pages/TermsOfService';
 import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
+import JobStatusReport from './pages/JobStatusReport';
+import Labor from './pages/Labor';
+import LookAheadPlanning from './pages/LookAheadPlanning';
+import ChangeOrders from './pages/ChangeOrders';
+import CostCodes from './pages/CostCodes';
 import WeeklySchedule from './pages/WeeklySchedule';
+import Deliveries from './pages/Deliveries';
+import LaborScope from './pages/LaborScope';
+import Calendar from './pages/Calendar';
+import Analytics from './pages/Analytics';
+import Detailing from './pages/Detailing';
+import FieldTools from './pages/FieldTools';
+import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import WorkPackages from './pages/WorkPackages';
+import Dashboard from './pages/Dashboard';
+import Schedule from './pages/Schedule';
+import Equipment from './pages/Equipment';
+import Fabrication from './pages/Fabrication';
+import RFIHub from './pages/RFIHub';
+import Projects from './pages/Projects';
+import ResourceManagement from './pages/ResourceManagement';
+import BudgetControl from './pages/BudgetControl';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Analytics": Analytics,
-    "BudgetControl": BudgetControl,
-    "Calendar": Calendar,
-    "ChangeOrders": ChangeOrders,
-    "Contracts": Contracts,
-    "CostCodes": CostCodes,
+    "Performance": Performance,
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
-    "Dashboard": Dashboard,
-    "Deliveries": Deliveries,
-    "Detailing": Detailing,
+    "Financials": Financials,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
     "Drawings": Drawings,
-    "Equipment": Equipment,
-    "ExecutiveRollUp": ExecutiveRollUp,
-    "Fabrication": Fabrication,
-    "FieldTools": FieldTools,
+    "Contracts": Contracts,
     "FieldToolsMobile": FieldToolsMobile,
-    "Financials": Financials,
     "Insights": Insights,
     "Integrations": Integrations,
-    "JobStatusReport": JobStatusReport,
-    "Labor": Labor,
-    "LaborScope": LaborScope,
     "LandingPage": LandingPage,
     "LoadTesting": LoadTesting,
-    "LookAheadPlanning": LookAheadPlanning,
     "LookAheadResourcePlanning": LookAheadResourcePlanning,
     "Meetings": Meetings,
     "Messages": Messages,
     "MyActionItems": MyActionItems,
     "NotificationSettings": NotificationSettings,
-    "Performance": Performance,
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
@@ -149,20 +133,36 @@ export const PAGES = {
     "ProjectDashboard": ProjectDashboard,
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
-    "Projects": Projects,
-    "RFIHub": RFIHub,
     "RFIs": RFIs,
     "Reports": Reports,
-    "ResourceManagement": ResourceManagement,
     "Resources": Resources,
-    "Schedule": Schedule,
     "Settings": Settings,
     "Submittals": Submittals,
     "TermsOfService": TermsOfService,
     "TestSuite": TestSuite,
     "ToDoList": ToDoList,
+    "JobStatusReport": JobStatusReport,
+    "Labor": Labor,
+    "LookAheadPlanning": LookAheadPlanning,
+    "ChangeOrders": ChangeOrders,
+    "CostCodes": CostCodes,
     "WeeklySchedule": WeeklySchedule,
+    "Deliveries": Deliveries,
+    "LaborScope": LaborScope,
+    "Calendar": Calendar,
+    "Analytics": Analytics,
+    "Detailing": Detailing,
+    "FieldTools": FieldTools,
+    "ExecutiveRollUp": ExecutiveRollUp,
     "WorkPackages": WorkPackages,
+    "Dashboard": Dashboard,
+    "Schedule": Schedule,
+    "Equipment": Equipment,
+    "Fabrication": Fabrication,
+    "RFIHub": RFIHub,
+    "Projects": Projects,
+    "ResourceManagement": ResourceManagement,
+    "BudgetControl": BudgetControl,
 }
 
 export const pagesConfig = {

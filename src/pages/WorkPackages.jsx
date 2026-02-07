@@ -178,29 +178,32 @@ export default function WorkPackages() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       {/* Header */}
-      <div className="border-b-2 border-amber-500 bg-black">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50 backdrop-blur-sm">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tight">Work Packages</h1>
-              <p className="text-xs text-zinc-500 font-mono mt-1">{selectedProject?.project_number} • {stats.total} PACKAGES</p>
+              <div className="flex items-baseline gap-3">
+                <h1 className="text-3xl font-bold text-white tracking-tight">Work Packages</h1>
+                <p className="text-sm text-zinc-500 font-mono">{selectedProject?.project_number}</p>
+              </div>
+              <p className="text-xs text-zinc-600 mt-2">{stats.total} packages across all phases</p>
             </div>
             <div className="flex items-center gap-3">
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white h-9 text-sm">
+                <SelectTrigger className="w-72 bg-zinc-900 border-zinc-700/50 text-white h-10 text-sm rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent className="bg-zinc-900 border-zinc-700">
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs uppercase">
-                <Plus size={14} className="mr-1" />
-                NEW
+              <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-6 rounded-lg">
+                <Plus size={16} className="mr-2" />
+                Add Package
               </Button>
             </div>
           </div>
@@ -208,47 +211,47 @@ export default function WorkPackages() {
       </div>
 
       {/* Metrics */}
-      <div className="bg-zinc-950 border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
-          <div className="grid grid-cols-5 gap-3">
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">In Progress</div>
-                <div className="text-2xl font-black text-blue-400">{stats.inProgress}</div>
+      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="grid grid-cols-5 gap-4">
+            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">In Progress</div>
+                <div className="text-3xl font-bold text-blue-400">{stats.inProgress}</div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-green-400 uppercase tracking-widest font-bold mb-0.5">Completed</div>
-                <div className="text-2xl font-black text-green-400">{stats.completed}</div>
+            <Card className="bg-gradient-to-br from-emerald-500/15 to-zinc-900 border-emerald-500/30 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold mb-1">Completed</div>
+                <div className="text-3xl font-bold text-emerald-400">{stats.completed}</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Avg Progress</div>
-                <div className="text-2xl font-black text-amber-500">{stats.avgProgress.toFixed(0)}%</div>
+            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Avg Progress</div>
+                <div className="text-3xl font-bold text-cyan-400">{stats.avgProgress.toFixed(0)}%</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Budget</div>
-                <div className="text-xl font-black text-white">${(stats.totalBudget / 1000).toFixed(0)}K</div>
+            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Budget</div>
+                <div className="text-2xl font-bold text-white">${(stats.totalBudget / 1000).toFixed(0)}K</div>
               </CardContent>
             </Card>
             <Card className={cn(
-              "border",
-              stats.variance > 0 ? "bg-red-500/10 border-red-500/20" : "bg-zinc-900 border-zinc-800"
+              "rounded-lg border",
+              stats.variance > 0 ? "bg-gradient-to-br from-red-500/15 to-zinc-900 border-red-500/30" : "bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50"
             )}>
-              <CardContent className="p-3">
-                <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-0.5">Forecast</div>
+              <CardContent className="p-4">
+                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Forecast</div>
                 <div className={cn(
-                  "text-xl font-black",
+                  "text-2xl font-bold",
                   stats.variance > 0 ? "text-red-400" : "text-white"
                 )}>
                   ${(stats.totalForecast / 1000).toFixed(0)}K
                 </div>
                 {stats.variance !== 0 && (
-                  <div className={cn("text-[9px]", stats.variance > 0 ? "text-red-400" : "text-green-400")}>
+                  <div className={cn("text-[10px] mt-1", stats.variance > 0 ? "text-red-400" : "text-emerald-400")}>
                     {stats.variance > 0 ? '+' : ''}{(stats.variance / 1000).toFixed(0)}K
                   </div>
                 )}
@@ -259,13 +262,13 @@ export default function WorkPackages() {
       </div>
 
       {/* Filter */}
-      <div className="bg-black border-b border-zinc-800">
-        <div className="max-w-[1800px] mx-auto px-6 py-3">
+      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
           <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-            <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 h-9 text-sm">
+            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-700/50 h-10 text-sm rounded-lg">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectContent className="bg-zinc-900 border-zinc-700">
               <SelectItem value="all">All Phases</SelectItem>
               <SelectItem value="pre_fab">Pre-Fab</SelectItem>
               <SelectItem value="shop">Shop</SelectItem>
@@ -278,25 +281,25 @@ export default function WorkPackages() {
       </div>
 
       {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-4">
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filteredPackages.length === 0 ? (
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-12 text-center">
-              <Package size={64} className="mx-auto mb-4 text-zinc-700" />
-              <h3 className="text-lg font-bold text-white uppercase mb-2">No Work Packages</h3>
-              <p className="text-xs text-zinc-600 mb-4">Create packages to track execution</p>
-              <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+          <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
+            <CardContent className="p-16 text-center">
+              <Package size={48} className="mx-auto mb-4 text-zinc-700" />
+              <h3 className="text-lg font-semibold text-white mb-2">No Work Packages</h3>
+              <p className="text-sm text-zinc-500 mb-6">Create packages to track execution</p>
+              <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 rounded-lg">
                 <Plus size={16} className="mr-2" />
                 Create First Package
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {filteredPackages.map(pkg => {
               const project = projects.find(p => p.id === pkg.project_id);
               const taskCount = tasks.filter(t => t.work_package_id === pkg.id).length;
@@ -317,73 +320,73 @@ export default function WorkPackages() {
               return (
                 <Card 
                   key={pkg.id} 
-                  className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 transition-all cursor-pointer group"
+                  className="bg-gradient-to-r from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-zinc-600/50 transition-all cursor-pointer group rounded-lg"
                   onClick={() => setViewingPackage(pkg)}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-3">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
                       {/* Phase Indicator */}
-                      <div className={cn("w-1.5 h-16 rounded-full", currentPhase?.color || 'bg-zinc-700')} />
+                      <div className={cn("w-1 h-20 rounded-full", currentPhase?.color || 'bg-zinc-600')} />
 
                       {/* Package Info */}
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-white text-sm group-hover:text-amber-400 transition-colors">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-white text-base group-hover:text-blue-400 transition-colors">
                             {pkg.title}
                           </h3>
-                          <Badge variant="outline" className="text-[10px] font-mono">
+                          <Badge variant="outline" className="text-[9px] font-mono bg-zinc-800 border-zinc-600/50 text-zinc-300">
                             {pkg.wpid || pkg.id.slice(0, 8)}
                           </Badge>
                           <Badge className={cn(
-                            "text-[10px] font-bold",
-                            pkg.status === 'completed' && "bg-green-500/20 text-green-400",
-                            pkg.status === 'in_progress' && "bg-blue-500/20 text-blue-400",
-                            pkg.status === 'on_hold' && "bg-amber-500/20 text-amber-400"
+                            "text-[9px] font-semibold border",
+                            pkg.status === 'completed' && "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+                            pkg.status === 'in_progress' && "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                            pkg.status === 'on_hold' && "bg-amber-500/20 text-amber-400 border-amber-500/30"
                           )}>
                             {pkg.status?.replace('_', ' ').toUpperCase()}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] text-zinc-500 font-mono">
-                          <span className="text-white">{project?.project_number}</span>
-                          <span>•</span>
-                          <span>{pkg.assigned_pm || 'No PM'}</span>
-                          <span>•</span>
-                          <span>{(pkg.linked_drawing_set_ids?.length || 0)} dwgs</span>
-                          <span>•</span>
+                        <div className="flex items-center gap-4 text-[11px] text-zinc-500 font-mono">
+                          <span className="text-zinc-300 font-semibold">{project?.project_number}</span>
+                          <span className="text-zinc-700">•</span>
+                          <span>{pkg.assigned_pm || 'Unassigned'}</span>
+                          <span className="text-zinc-700">•</span>
+                          <span>{(pkg.linked_drawing_set_ids?.length || 0)} drawings</span>
+                          <span className="text-zinc-700">•</span>
                           <span>{(pkg.linked_delivery_ids?.length || 0)} deliveries</span>
-                          <span>•</span>
+                          <span className="text-zinc-700">•</span>
                           <span>{taskCount} tasks</span>
                           {pkg.target_date && (
                             <>
-                              <span>•</span>
-                              <span className="text-amber-500">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>
+                              <span className="text-zinc-700">•</span>
+                              <span className="text-cyan-400 font-semibold">Target: {format(parseISO(pkg.target_date), 'MMM d')}</span>
                             </>
                           )}
                         </div>
                       </div>
 
-                      {/* Progress */}
-                      <div className="flex items-center gap-3">
-                        <div className="text-right min-w-[60px]">
-                          <div className="text-xl font-black text-amber-500">{pkg.percent_complete || 0}%</div>
-                          <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden mt-1">
-                            <div className="h-full bg-amber-500 transition-all" style={{ width: `${pkg.percent_complete || 0}%` }} />
+                      {/* Progress Bar */}
+                      <div className="flex items-center gap-4">
+                        <div className="text-right min-w-[65px]">
+                          <div className="text-2xl font-bold text-cyan-400">{pkg.percent_complete || 0}%</div>
+                          <div className="w-20 h-1.5 bg-zinc-700 rounded-full overflow-hidden mt-2">
+                            <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all" style={{ width: `${pkg.percent_complete || 0}%` }} />
                           </div>
                         </div>
 
                         {/* Budget */}
-                        <div className="text-right min-w-[80px]">
-                          <div className="text-sm font-bold text-white">${(budget / 1000).toFixed(0)}K</div>
+                        <div className="text-right min-w-[90px]">
+                          <div className="text-sm font-semibold text-white">${(budget / 1000).toFixed(0)}K</div>
                           <div className={cn(
-                            "text-[10px] font-bold",
-                            variance > 0 ? "text-red-400" : variance < 0 ? "text-green-400" : "text-zinc-600"
+                            "text-[10px] font-semibold mt-1",
+                            variance > 0 ? "text-red-400" : variance < 0 ? "text-emerald-400" : "text-zinc-600"
                           )}>
                             {variance !== 0 && (variance > 0 ? '+' : '')}{variancePercent.toFixed(0)}%
                           </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 ml-2">
                           {currentPhase && pkg.status !== 'completed' && (
                             <Button
                               size="sm"
@@ -391,7 +394,7 @@ export default function WorkPackages() {
                                 e.stopPropagation();
                                 advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: currentPhase.next });
                               }}
-                              className="h-8 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-bold"
+                              className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md"
                             >
                               <ArrowRight size={14} />
                             </Button>
@@ -403,7 +406,7 @@ export default function WorkPackages() {
                               e.stopPropagation();
                               setDeletePackage(pkg);
                             }}
-                            className="h-8 px-2 text-zinc-500 hover:text-red-500"
+                            className="h-9 px-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-md"
                           >
                             <Trash2 size={14} />
                           </Button>
@@ -422,9 +425,9 @@ export default function WorkPackages() {
         setShowForm(open);
         if (!open) setEditingPackage(null);
       }}>
-        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-2xl">
+        <SheetContent className="bg-gradient-to-b from-zinc-900 to-zinc-950 border-zinc-700/50 overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle className="text-white">{editingPackage ? 'Edit' : 'New'} Work Package</SheetTitle>
+            <SheetTitle className="text-white font-semibold">{editingPackage ? 'Edit' : 'Create'} Work Package</SheetTitle>
           </SheetHeader>
           <WorkPackageForm
             package={editingPackage}
@@ -453,9 +456,9 @@ export default function WorkPackages() {
       <Sheet open={!!viewingPackage} onOpenChange={(open) => {
         if (!open) setViewingPackage(null);
       }}>
-        <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-3xl">
+        <SheetContent className="bg-gradient-to-b from-zinc-900 to-zinc-950 border-zinc-700/50 overflow-y-auto sm:max-w-3xl">
           <SheetHeader>
-            <SheetTitle className="text-white">Package Details</SheetTitle>
+            <SheetTitle className="text-white font-semibold">Package Details</SheetTitle>
           </SheetHeader>
           {viewingPackage && (
             <WorkPackageDetails
@@ -480,16 +483,16 @@ export default function WorkPackages() {
       </Sheet>
 
       <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent className="bg-gradient-to-b from-zinc-900 to-zinc-950 border-zinc-700/50 rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Package?</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              Delete "{deletePackage?.wpid} - {deletePackage?.title}" and {tasks.filter(t => t.work_package_id === deletePackage?.id).length} tasks? Cannot undo.
+            <AlertDialogTitle className="text-white font-semibold">Delete Package?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-500">
+              Delete "{deletePackage?.wpid} - {deletePackage?.title}" and {tasks.filter(t => t.work_package_id === deletePackage?.id).length} tasks? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-red-500 hover:bg-red-600">
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800 rounded-lg">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteMutation.mutate(deletePackage.id)} className="bg-red-600 hover:bg-red-700 rounded-lg">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

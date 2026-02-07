@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
 
     // Debug logging
-    console.log('METRICS DEBUG:', {
+    console.warn('METRICS DEBUG:', JSON.stringify({
       totalContractValue,
       totalBudget,
       totalActual,
@@ -260,8 +260,9 @@ Deno.serve(async (req) => {
       avgScheduleProgress,
       criticalIssues,
       activeProjects,
-      atRiskProjects
-    });
+      atRiskProjects,
+      projectCount: projectsWithHealth.length
+    }));
 
     return Response.json({
       projects: paginated,

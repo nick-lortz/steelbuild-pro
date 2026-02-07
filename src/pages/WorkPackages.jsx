@@ -426,6 +426,23 @@ export default function WorkPackages() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generatePDF(pkg.id);
+                            }}
+                            disabled={generatingPDF === pkg.id}
+                            className="h-8 px-2 text-blue-400 hover:text-blue-300"
+                            title="Export PDF"
+                          >
+                            {generatingPDF === pkg.id ? (
+                              <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Download size={14} />
+                            )}
+                          </Button>
                           {currentPhase && pkg.status !== 'completed' && (
                             <Button
                               size="sm"
@@ -502,7 +519,19 @@ export default function WorkPackages() {
       }}>
         <SheetContent className="bg-zinc-900 border-zinc-800 overflow-y-auto sm:max-w-3xl">
           <SheetHeader>
-            <SheetTitle className="text-white">Package Details</SheetTitle>
+            <SheetTitle className="text-white flex items-center justify-between">
+              <span>Package Details</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => generatePDF(viewingPackage?.id)}
+                disabled={generatingPDF === viewingPackage?.id}
+                className="border-zinc-700"
+              >
+                <Download size={14} className="mr-2" />
+                Export PDF
+              </Button>
+            </SheetTitle>
           </SheetHeader>
           {viewingPackage && (
             <WorkPackageDetails

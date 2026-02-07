@@ -610,7 +610,7 @@ function FabPackageDetailTabs({ package: pkg, onUpdate, onDelete }) {
               <div><p className="text-sm font-medium mb-2">Progress</p><div className="flex items-center gap-2"><div className="flex-1 bg-muted rounded-full h-2"><div className="h-2 rounded-full bg-green-500" style={{ width: `${pkg.progress_pct}%` }} /></div><span className="text-sm font-bold">{pkg.progress_pct}%</span></div></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-sm font-medium mb-2">Ship Target</p><p className="text-sm">{pkg.ship_target ? new Date(pkg.ship_target).toLocaleDateString() : 'Not set'}</p></div>
+              <div><p className="text-sm font-medium mb-2">Ship Target</p><p className="text-sm">{formatDateDisplay(pkg.ship_target)}</p></div>
               <div><p className="text-sm font-medium mb-2">QA Status</p><Badge variant={pkg.qa_status === 'approved' ? 'default' : 'outline'} className="capitalize">{pkg.qa_status}</Badge></div>
             </div>
             <div className="flex gap-2 pt-4 border-t"><Button variant="outline" size="sm" onClick={() => setEditingOverview(true)}><Edit className="h-3 w-3 mr-2" />Edit</Button><Button variant="destructive" size="sm" onClick={onDelete}><Trash2 className="h-3 w-3 mr-2" />Delete</Button></div>

@@ -641,11 +641,11 @@ export default function ResourceManagement() {
             {/* Charts */}
             {resourceMetrics && resourceMetrics.typeDistribution && resourceMetrics.typeDistribution.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Resource Type Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                <Card>
+                  <div className="px-6 pt-5 pb-3 border-b border-border">
+                    <SectionHeader title="Resource Type Distribution" />
+                  </div>
+                  <CardContent className="pt-4">
                     <ResponsiveContainer width="100%" height={250}>
                       <PieChart>
                         <Pie
@@ -662,26 +662,23 @@ export default function ResourceManagement() {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }} />
+                        <Tooltip />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-900 border-zinc-800">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Top 10 Projects by Resource Count</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                <Card>
+                  <div className="px-6 pt-5 pb-3 border-b border-border">
+                    <SectionHeader title="Top 10 Projects by Resource Count" />
+                  </div>
+                  <CardContent className="pt-4">
                     <ResponsiveContainer width="100%" height={250}>
                       <BarChart data={allocationChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
-                        <XAxis dataKey="name" stroke="#a1a1aa" angle={-45} textAnchor="end" height={80} />
-                        <YAxis stroke="#a1a1aa" allowDecimals={false} />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46' }}
-                          formatter={(value) => [value, 'Resources']}
-                        />
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip formatter={(value) => [value, 'Resources']} />
                         <Bar dataKey="resources" fill="#f59e0b" />
                       </BarChart>
                     </ResponsiveContainer>

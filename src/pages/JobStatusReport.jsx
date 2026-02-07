@@ -545,19 +545,14 @@ export default function JobStatusReport() {
 
       {/* Earned vs Billed vs Cost Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Financial Position</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <SectionHeader title="Financial Position" />
+        <CardContent className="pt-4">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
-                formatter={(value) => `$${value.toLocaleString()}`}
-              />
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
               <Legend />
               <Bar dataKey="Earned to Date" fill="#10B981" />
               <Bar dataKey="Billed to Date" fill="#3B82F6" />

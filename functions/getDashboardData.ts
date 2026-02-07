@@ -74,11 +74,12 @@ Deno.serve(async (req) => {
     const projectIds = allUserProjects.map(p => p.id);
 
     // === LOAD ONLY RELEVANT CHILD ENTITIES ===
-    const [tasks, financials, rfis, changeOrders] = await Promise.all([
+    const [tasks, financials, rfis, changeOrders, expenses] = await Promise.all([
       base44.entities.Task.filter({ project_id: { $in: projectIds } }),
       base44.entities.Financial.filter({ project_id: { $in: projectIds } }),
       base44.entities.RFI.filter({ project_id: { $in: projectIds } }),
-      base44.entities.ChangeOrder.filter({ project_id: { $in: projectIds } })
+      base44.entities.ChangeOrder.filter({ project_id: { $in: projectIds } }),
+      base44.entities.Expense.filter({ project_id: { $in: projectIds } })
     ]);
 
     // === INDEX BY PROJECT ID (O(n) instead of O(n²)) ===
@@ -247,6 +248,59 @@ Deno.serve(async (req) => {
     // Portfolio growth (would need historical comparison - set to 0 for now)
     const portfolioGrowth = 0;
 
+    // === CALCULATE TREND METRICS ===
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    
+    // Weekly spend (last 7 days vs previous 7 days)
+    const weeklySpend = expenses
+      .filter(e => new Date(e.expense_date) >= sevenDaysAgo)
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    
+    const prevWeekSpend = expenses
+      .filter(e => new Date(e.expense_date) >= fourteenDaysAgo && new Date(e.expense_date) < sevenDaysAgo)
+      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    
+    const weeklySpendDelta = prevWeekSpend > 0 ? Number(((weeklySpend - prevWeekSpend) / prevWeekSpend * 100).toFixed(1)) : 0;
+
+    // Tasks completed last 7 days vs previous 7 days
+    const tasksCompletedLast7Days = tasks.filter(t => 
+      t.status === 'completed' && 
+      t.updated_date &&
+      new Date(t.updated_date) >= sevenDaysAgo
+    ).length;
+    
+    const prevWeekTasks = tasks.filter(t => 
+      t.status === 'completed' && 
+      t.updated_date &&
+      new Date(t.updated_date) >= fourteenDaysAgo && 
+      new Date(t.updated_date) < sevenDaysAgo
+    ).length;
+    
+    const tasksCompletedDelta = prevWeekTasks > 0 ? Number(((tasksCompletedLast7Days - prevWeekTasks) / prevWeekTasks * 100).toFixed(1)) : 0;
+
+    // RFI aging - average business days open for non-closed RFIs
+    const openRFIsList = rfis.filter(r => r.status !== 'answered' && r.status !== 'closed');
+    const avgRFIDaysOpen = openRFIsList.length > 0 ?
+      openRFIsList.reduce((sum, rfi) => sum + (Number(rfi.business_days_open) || 0), 0) / openRFIsList.length : 0;
+    
+    const rfiAgingDelta = 0; // Would need historical data to calculate trend
+
+    // Schedule variance (average slip/gain across active projects)
+    const projectsWithSchedule = projectsWithHealth.filter(p => 
+      (p.status === 'in_progress' || p.status === 'awarded') && 
+      p.daysSlip !== undefined
+    );
+    
+    const avgScheduleSlip = projectsWithSchedule.length > 0 ?
+      Number((projectsWithSchedule.reduce((sum, p) => sum + (p.daysSlip || 0), 0) / projectsWithSchedule.length).toFixed(1)) : 0;
+
+    // Open change orders count
+    const openChangeOrders = changeOrders.filter(c => 
+      c.status !== 'approved' && c.status !== 'rejected' && c.status !== 'void'
+    ).length;
+
     const duration = Date.now() - startTime;
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));
 
@@ -269,7 +323,16 @@ Deno.serve(async (req) => {
         portfolioGrowth,
         totalBudget,
         totalActual,
-        totalCommitted
+        totalCommitted,
+        weeklySpend,
+        weeklySpendDelta,
+        tasksCompletedLast7Days,
+        tasksCompletedDelta,
+        avgRFIDaysOpen,
+        rfiAgingDelta,
+        avgScheduleSlip,
+        openChangeOrders,
+        budgetVariancePct: avgBudgetVariance
       }
     });
 

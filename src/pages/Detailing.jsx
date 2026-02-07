@@ -25,7 +25,6 @@ import ReportScheduler from '@/components/reports/ReportScheduler';
 
 export default function Detailing() {
   const { activeProjectId: selectedProject, setActiveProjectId } = useActiveProject();
-  const [projectState, setProjectState] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dueSoonOnly, setDueSoonOnly] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
@@ -254,7 +253,7 @@ export default function Detailing() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <Select value={selectedProject} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>

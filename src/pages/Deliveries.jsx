@@ -361,7 +361,7 @@ function Deliveries() {
                               <span>{c.deliveryB.name} ({c.deliveryB.time})</span>
                             </div>
                           </div>
-                          <Button size="sm" variant="outline">Resolve</Button>
+                          <Button size="sm" variant="outline" onClick={() => toast.info('Conflict resolution workflow coming soon')}>Resolve</Button>
                         </div>
                       ))}
                     </div>

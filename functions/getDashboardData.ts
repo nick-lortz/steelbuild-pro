@@ -49,12 +49,25 @@ Deno.serve(async (req) => {
     if (allUserProjects.length === 0) {
       return Response.json({ 
         projects: [], 
-        totalProjects: 0,
-        activeProjects: 0,
-        atRiskProjects: 0,
-        overdueTasks: 0,
-        upcomingMilestones: 0,
-        totalFiltered: 0
+        pagination: { page: 1, pageSize, totalFiltered: 0, totalProjects: 0 },
+        metrics: {
+          totalProjects: 0,
+          activeProjects: 0,
+          atRiskProjects: 0,
+          overdueTasks: 0,
+          upcomingMilestones: 0,
+          totalContractValue: 0,
+          avgBudgetVariance: 0,
+          avgScheduleProgress: 0,
+          criticalIssues: 0,
+          openRFIs: 0,
+          overdueRFIs: 0,
+          pendingApprovals: 0,
+          portfolioGrowth: 0,
+          totalBudget: 0,
+          totalActual: 0,
+          totalCommitted: 0
+        }
       });
     }
 

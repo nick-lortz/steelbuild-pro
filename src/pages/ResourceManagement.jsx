@@ -572,13 +572,17 @@ export default function ResourceManagement() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Overallocated Resources */}
                 {resourceMetrics.overallocated.length > 0 && (
-                  <Card className="bg-red-500/5 border-red-500/20">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <AlertTriangle className="text-red-500" size={18} />
-                        Overallocated Resources ({resourceMetrics.overallocated.length})
-                      </CardTitle>
-                    </CardHeader>
+                  <Card>
+                    <div className="px-6 pt-5 pb-3 border-b border-border">
+                      <SectionHeader 
+                        title={
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="text-red-600" size={18} />
+                            <span>Overallocated Resources ({resourceMetrics.overallocated.length})</span>
+                          </div>
+                        }
+                      />
+                    </div>
                     <CardContent>
                       <div className="space-y-3">
                         {resourceMetrics.overallocated.slice(0, 5).map((resource) => (

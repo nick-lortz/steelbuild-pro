@@ -74,11 +74,14 @@ export function calculateVariance(budget, actual) {
  * Validates cost code references across all entities
  */
 export function validateCostCodeUsage(costCodeId, financials, expenses, laborHours) {
+  const inFinancials = financials.filter(f => f.cost_code_id === costCodeId).length;
+  const inExpenses = expenses.filter(e => e.cost_code_id === costCodeId).length;
+  const inLaborHours = laborHours.filter(l => l.cost_code_id === costCodeId).length;
   return {
-    inFinancials: financials.filter(f => f.cost_code_id === costCodeId).length,
-    inExpenses: expenses.filter(e => e.cost_code_id === costCodeId).length,
-    inLaborHours: laborHours.filter(l => l.cost_code_id === costCodeId).length,
-    total: 0
+    inFinancials,
+    inExpenses,
+    inLaborHours,
+    total: inFinancials + inExpenses + inLaborHours
   };
 }
 

@@ -8,7 +8,7 @@ export function calculateProjectProgress(projectId, tasks) {
   if (projectTasks.length === 0) return 0;
   
   // Calculate weighted average based on task hours
-  const totalHours = projectTasks.reduce((sum, t) => sum + (Number(t.estimated_hours) || 1), 0);
+  const totalHours = projectTasks.reduce((sum, t) => sum + (Number(t.estimated_hours) || 0), 0);
   
   if (totalHours === 0) {
     // Fall back to simple average if no hours defined
@@ -17,7 +17,7 @@ export function calculateProjectProgress(projectId, tasks) {
   }
   
   const weightedProgress = projectTasks.reduce((sum, t) => {
-    const weight = (Number(t.estimated_hours) || 1) / totalHours;
+    const weight = (Number(t.estimated_hours) || 0) / totalHours;
     return sum + ((Number(t.progress_percent) || 0) * weight);
   }, 0);
   

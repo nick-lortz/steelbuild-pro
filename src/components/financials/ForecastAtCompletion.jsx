@@ -34,6 +34,7 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
     const variance = revisedBudget - forecastAtCompletion;
     const variancePercent = revisedBudget > 0 ? variance / revisedBudget * 100 : 0;
     const costPerformanceIndex = forecastAtCompletion > 0 ? revisedBudget / forecastAtCompletion : 1;
+    const spentPercent = revisedBudget > 0 ? (actual / revisedBudget) * 100 : (actual > 0 ? 100 : 0);
 
     return {
       project,
@@ -45,6 +46,7 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
       variance,
       variancePercent,
       costPerformanceIndex,
+      spentPercent,
       status: variance >= 0 ? 'on_track' : variancePercent > -10 ? 'at_risk' : 'over_budget'
     };
   }).filter((f) => f.budget > 0 || f.actual > 0);
@@ -128,11 +130,11 @@ export default function ForecastAtCompletion({ financials, projects, changeOrder
                     forecast.status === 'on_track' ? 'bg-green-500' :
                     forecast.status === 'at_risk' ? 'bg-amber-500' : 'bg-red-500'}`
                     }
-                    style={{ width: `${Math.min(forecast.actual / forecast.revisedBudget * 100, 100)}%` }} />
+                    style={{ width: `${Math.min(forecast.spentPercent, 100)}%` }} />
 
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    {(forecast.actual / forecast.revisedBudget * 100).toFixed(1)}% spent • CPI: {forecast.costPerformanceIndex.toFixed(2)}
+                    {forecast.spentPercent.toFixed(1)}% spent • CPI: {forecast.costPerformanceIndex.toFixed(2)}
                   </p>
                 </div>
               </div>

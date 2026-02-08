@@ -21,6 +21,7 @@ export default function ProjectHealthScorecard({ financials, tasks, projects, rf
       // Budget Health (30%) - Using CPI for performance-based scoring
       const budget = projectFinancials.reduce((sum, f) => sum + (Number(f.budget_amount) || 0), 0);
       const actual = projectFinancials.reduce((sum, f) => sum + (Number(f.actual_amount) || 0), 0);
+      const totalTasks = projectTasks.length;
       const avgProgress = totalTasks > 0 
         ? projectTasks.reduce((sum, t) => sum + (Number(t.progress_percent) || 0), 0) / totalTasks
         : 0;
@@ -30,7 +31,6 @@ export default function ProjectHealthScorecard({ financials, tasks, projects, rf
       const budgetUtilization = budget > 0 ? (actual / budget) * 100 : 0;
 
       // Schedule Health (25%)
-      const totalTasks = projectTasks.length;
       const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
       const now = new Date();
       now.setHours(23, 59, 59, 999); // End of day comparison

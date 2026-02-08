@@ -200,10 +200,17 @@ function calculateProjectCriticalPath(tasks) {
     }
   });
 
+  const rootStartCandidates = roots
+    .map((task) => taskMap.get(task.id)?.earlyStart)
+    .filter((d) => d instanceof Date && !isNaN(d.getTime()));
+  const minRootStart = rootStartCandidates.length
+    ? new Date(Math.min(...rootStartCandidates.map((d) => d.getTime())))
+    : null;
+
   return {
     criticalTasks,
-    longestPath: projectEnd && roots[0]?.earlyStart 
-      ? Math.round((projectEnd - new Date(roots[0].start_date)) / (1000 * 60 * 60 * 24)) 
+    longestPath: projectEnd && minRootStart
+      ? Math.round((projectEnd - minRootStart) / (1000 * 60 * 60 * 24))
       : 0,
     taskData: Object.fromEntries(taskMap),
   };

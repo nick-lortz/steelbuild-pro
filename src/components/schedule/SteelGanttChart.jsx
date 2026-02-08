@@ -55,18 +55,19 @@ export default function SteelGanttChart({ projectId }) {
           const otherPhaseIdx = phaseSequence.indexOf(otherTask.phase);
           if (taskPhaseIdx > otherPhaseIdx) {
             const otherEnd = new Date(otherTask.end_date);
-            if (isAfter(taskStart, otherEnd)) continue; // OK, other task finished first
-            if (
-              isWithinInterval(otherTask.start_date, { start: task.start_date, end: addDays(task.start_date, 180) }) ||
-              isWithinInterval(taskStart, { start: otherTask.start_date, end: otherTask.end_date })
-            ) {
-              if (otherTask.status !== 'completed') {
-                blockReasons.push({
-                  type: 'phase_sequence',
-                  taskId: otherTask.id,
-                  taskName: otherTask.name,
-                  reason: `${otherTask.phase} must complete before ${task.phase}`
-                });
+            if (!isAfter(taskStart, otherEnd)) {
+              if (
+                isWithinInterval(otherTask.start_date, { start: task.start_date, end: addDays(task.start_date, 180) }) ||
+                isWithinInterval(taskStart, { start: otherTask.start_date, end: otherTask.end_date })
+              ) {
+                if (otherTask.status !== 'completed') {
+                  blockReasons.push({
+                    type: 'phase_sequence',
+                    taskId: otherTask.id,
+                    taskName: otherTask.name,
+                    reason: `${otherTask.phase} must complete before ${task.phase}`
+                  });
+                }
               }
             }
           }

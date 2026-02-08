@@ -32,6 +32,7 @@ import DrawingHeatMap from './DrawingHeatMap';
 import DrawingRevisionWarnings from './DrawingRevisionWarnings';
 import AIAnalysisPanel from './AIAnalysisPanel';
 import DrawingComparisonPanel from './DrawingComparisonPanel';
+import SmartLinkagePanel from './SmartLinkagePanel';
 
 const safeFormatISO = (value, pattern = 'MMM d, yyyy') => {
   if (!value) return '—';
@@ -417,6 +418,12 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
               <DrawingComparisonPanel 
                 currentDrawingSet={drawingSet}
                 projectId={drawingSet.project_id}
+              />
+              <SmartLinkagePanel 
+                drawingSet={drawingSet}
+                onLinksUpdated={() => {
+                  queryClient.invalidateQueries({ queryKey: ['drawing-set', drawingSetId] });
+                }}
               />
             </div>
           </TabsContent>

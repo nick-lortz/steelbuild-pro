@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, isAfter, parseISO } from 'date-fns';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import EmptyState from '@/components/layout/EmptyState';
+import LoadingState from '@/components/layout/LoadingState';
 import StatusBadge from '@/components/ui/StatusBadge';
-import EmptyState from '@/components/ui/EmptyState';
 import ResourceCapacityPlanner from '@/components/resources/ResourceCapacityPlanner';
 import SkillMatrixView from '@/components/resources/SkillMatrixView';
 import ResourceLevelingPanel from '@/components/resources/ResourceLevelingPanel';
@@ -23,6 +24,9 @@ import ResourceForm from '@/components/resources/ResourceForm';
 import ResourceForecasting from '@/components/resources/ResourceForecasting';
 import SkillGapAnalysis from '@/components/resources/SkillGapAnalysis';
 import ResourceDashboard from '@/components/resources/ResourceDashboard';
+import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { format, isAfter, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {
@@ -318,18 +322,15 @@ export default function ResourceManagement() {
 
   if (resourcesLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading resources...</p>
-        </div>
-      </div>
+      <PageShell>
+        <LoadingState message="Loading resources..." />
+      </PageShell>
     );
   }
 
   if (!resourceMetrics && resources.length === 0) {
     return (
-      <div className="min-h-screen bg-black p-6">
+      <PageShell>
         <EmptyState
           icon={Users}
           title="No Resources Available"
@@ -337,37 +338,30 @@ export default function ResourceManagement() {
           actionLabel="Manage Resources"
           actionPage="Resources"
         />
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Resource Management</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">
-                {resources.length} RESOURCES • {resourceMetrics?.assigned || 0} ASSIGNED
-              </p>
-            </div>
-            <Button
-              onClick={() => {
-                setEditingResource(null);
-                setCreateDialogOpen(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-            >
-              <UserPlus size={14} className="mr-1" />
-              Add Resource
-            </Button>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Resource Management"
+        subtitle={`${resources.length} resources • ${resourceMetrics?.assigned || 0} assigned`}
+        actions={
+          <Button
+            onClick={() => {
+              setEditingResource(null);
+              setCreateDialogOpen(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+          >
+            <UserPlus size={16} className="mr-2" />
+            Add Resource
+          </Button>
+        }
+      />
 
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <ContentSection>
         <Tabs defaultValue="portfolio" className="space-y-6">
           <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="portfolio">
@@ -982,7 +976,7 @@ export default function ResourceManagement() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

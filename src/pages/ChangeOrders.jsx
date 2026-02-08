@@ -3,45 +3,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Plus, Search, DollarSign, Clock, TrendingUp, TrendingDown, FileSpreadsheet, Trash2 } from 'lucide-react';
-import CSVUpload from '@/components/shared/CSVUpload';
-import PageHeader from '@/components/ui/PageHeader';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import CSVUpload from '@/components/shared/CSVUpload';
 import ChangeOrderForm from '@/components/change-orders/ChangeOrderForm';
 import ChangeOrderDetail from '@/components/change-orders/ChangeOrderDetail';
+import { Plus, Search, TrendingUp, TrendingDown, FileSpreadsheet, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -329,141 +307,99 @@ export default function ChangeOrders() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
-      {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
-        <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Change Orders</h1>
-              <p className="text-sm text-zinc-500 font-mono mt-1">contract modifications</p>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => setShowCSVImport(true)}
-                variant="outline"
-                className="border-zinc-700"
-              >
-                <FileSpreadsheet size={16} className="mr-2" />
-                Import CSV
-              </Button>
-              <Button 
-                onClick={() => {
-                  setFormData(initialFormState);
-                  setShowForm(true);
-                }}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
-              >
-                <Plus size={16} className="mr-2" />
-                New Change Order
-              </Button>
-            </div>
-          </div>
+    <PageShell>
+      <PageHeader
+        title="Change Orders"
+        subtitle={`${filteredCOs.length} change orders`}
+        actions={
+          <>
+            <Button 
+              onClick={() => setShowCSVImport(true)}
+              variant="outline"
+              className="border-zinc-700 text-white hover:bg-zinc-800"
+            >
+              <FileSpreadsheet size={16} className="mr-2" />
+              Import CSV
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData(initialFormState);
+                setShowForm(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            >
+              <Plus size={16} className="mr-2" />
+              New Change Order
+            </Button>
+          </>
+        }
+      />
+
+      <MetricsBar
+        metrics={[
+          { label: 'Approved COs', value: `+$${(totals.approved || 0).toLocaleString()}`, color: 'text-green-400' },
+          { label: 'Pending COs', value: `$${(totals.pending || 0).toLocaleString()}`, color: 'text-amber-400' },
+          { label: 'Schedule Impact', value: `${(totals.days || 0) > 0 ? '+' : ''}${totals.days || 0} days` }
+        ]}
+      />
+
+      <FilterBar>
+        <div className="relative flex-1 max-w-md">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Input
+            placeholder="Search change orders..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+          />
         </div>
-      </div>
+        <Select value={projectFilter} onValueChange={setProjectFilter}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by project" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value="all">All Projects</SelectItem>
+            {projects.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="void">Void</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={pmFilter} onValueChange={setPmFilter}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="Filter by PM" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value="all">All PMs</SelectItem>
+            {uniquePMs.map(pm => (
+              <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterBar>
 
-      {/* Metrics */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
-        <div className="max-w-[1800px] mx-auto px-8 py-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-zinc-400 text-sm">Approved COs</p>
-                  <p className="text-xl font-bold text-green-400">
-                    +${(totals.approved || 0).toLocaleString()}
-                  </p>
-                </div>
-                <DollarSign className="text-green-500" size={24} />
-              </div>
-            </div>
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-zinc-400 text-sm">Pending COs</p>
-                  <p className="text-xl font-bold text-amber-400">
-                    ${(totals.pending || 0).toLocaleString()}
-                  </p>
-                </div>
-                <DollarSign className="text-amber-500" size={24} />
-              </div>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-zinc-400 text-sm">Schedule Impact</p>
-                  <p className="text-xl font-bold text-white">
-                    {(totals.days || 0) > 0 ? '+' : ''}{totals.days || 0} days
-                  </p>
-                </div>
-                <Clock className="text-zinc-500" size={24} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
-        <div className="max-w-[1800px] mx-auto px-8 py-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-              <Input
-                placeholder="Search change orders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-              />
-            </div>
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="submitted">Submitted</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="void">Void</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={pmFilter} onValueChange={setPmFilter}>
-              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by PM" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All PMs</SelectItem>
-                {uniquePMs.map(pm => (
-                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            </div>
-            </div>
-            </div>
-
-      {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
+      <ContentSection>
+        <SectionCard>
           <DataTable
-          columns={columns}
-          data={filteredCOs}
-          onRowClick={(co) => setViewingCO(co)}
-          emptyMessage="No change orders found. Create your first change order to get started."
-        />
-      </div>
+            columns={columns}
+            data={filteredCOs}
+            onRowClick={(co) => setViewingCO(co)}
+            emptyMessage="No change orders found. Create your first change order to get started."
+          />
+        </SectionCard>
+      </ContentSection>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -553,6 +489,6 @@ export default function ChangeOrders() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   );
 }

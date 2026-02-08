@@ -4,35 +4,20 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Hash, Trash2 } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
 import { Badge } from "@/components/ui/badge";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
+import DataTable from '@/components/ui/DataTable';
 import { validateTextLength, validateForm } from '@/components/shared/validation';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Plus, Search, Hash, Trash2 } from 'lucide-react';
 
 const initialFormState = {
   code: '',
@@ -201,97 +186,70 @@ export default function CostCodes() {
   }), [costCodes]);
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 via-zinc-900/50 to-amber-600/5">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Cost Code Library</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">{filteredCodes.length} CODES</p>
-            </div>
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setEditingCode(null);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-            >
-              <Plus size={14} className="mr-1" />
-              NEW
-            </Button>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Cost Code Library"
+        subtitle={`${filteredCodes.length} codes`}
+        actions={
+          <Button 
+            onClick={() => {
+              setFormData(initialFormState);
+              setEditingCode(null);
+              setShowForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+          >
+            <Plus size={16} className="mr-2" />
+            New Code
+          </Button>
+        }
+      />
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-5 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">LABOR</div>
-              <div className="text-2xl font-bold font-mono text-blue-500">{categoryCounts.labor}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">MATERIAL</div>
-              <div className="text-2xl font-bold font-mono text-green-500">{categoryCounts.material}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">EQUIPMENT</div>
-              <div className="text-2xl font-bold font-mono text-purple-500">{categoryCounts.equipment}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SUBCONTRACT</div>
-              <div className="text-2xl font-bold font-mono text-orange-500">{categoryCounts.subcontract}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">OTHER</div>
-              <div className="text-2xl font-bold font-mono text-zinc-500">{categoryCounts.other}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MetricsBar
+        metrics={[
+          { label: 'Labor', value: categoryCounts.labor, color: 'text-blue-400' },
+          { label: 'Material', value: categoryCounts.material, color: 'text-green-400' },
+          { label: 'Equipment', value: categoryCounts.equipment, color: 'text-purple-400' },
+          { label: 'Subcontract', value: categoryCounts.subcontract, color: 'text-orange-400' },
+          { label: 'Other', value: categoryCounts.other, color: 'text-zinc-400' }
+        ]}
+      />
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-              <Input
-                placeholder="SEARCH CODES..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 placeholder:uppercase placeholder:text-xs h-9"
-              />
-            </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="labor">Labor</SelectItem>
-                <SelectItem value="material">Material</SelectItem>
-                <SelectItem value="equipment">Equipment</SelectItem>
-                <SelectItem value="subcontract">Subcontract</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <FilterBar>
+        <div className="relative flex-1 max-w-md">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Input
+            placeholder="Search codes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 bg-zinc-900 border-zinc-800 text-white"
+          />
         </div>
-      </div>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="labor">Labor</SelectItem>
+            <SelectItem value="material">Material</SelectItem>
+            <SelectItem value="equipment">Equipment</SelectItem>
+            <SelectItem value="subcontract">Subcontract</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterBar>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <DataTable
-          columns={columns}
-          data={filteredCodes}
-          onRowClick={handleEdit}
-          emptyMessage="No cost codes found. Create your first cost code to get started."
-        />
-      </div>
+      <ContentSection>
+        <SectionCard>
+          <DataTable
+            columns={columns}
+            data={filteredCodes}
+            onRowClick={handleEdit}
+            emptyMessage="No cost codes found. Create your first cost code to get started."
+          />
+        </SectionCard>
+      </ContentSection>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -410,6 +368,6 @@ export default function CostCodes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   );
 }

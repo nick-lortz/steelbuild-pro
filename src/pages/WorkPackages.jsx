@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tantml:react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -380,9 +380,8 @@ export default function WorkPackages() {
           </div>
         )}
       </ContentSection>
-    </PageShell>
-  );
-}
+
+      <Sheet open={showForm} onOpenChange={(open) => {
         setShowForm(open);
         if (!open) setEditingPackage(null);
       }}>
@@ -459,6 +458,6 @@ export default function WorkPackages() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   );
 }

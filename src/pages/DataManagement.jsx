@@ -12,6 +12,7 @@ import DataTable from '@/components/ui/DataTable';
 import DataEditDialog from '@/components/data-management/DataEditDialog';
 import CreateRecordDialog from '@/components/data-management/CreateRecordDialog';
 import BulkEditDialog from '@/components/data-management/BulkEditDialog';
+import BulkAddDialog from '@/components/data-management/BulkAddDialog';
 import BulkActionsBar from '@/components/data-management/BulkActionsBar';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -61,6 +62,7 @@ export default function DataManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingRecord, setEditingRecord] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showBulkAddDialog, setShowBulkAddDialog] = useState(false);
   const [selectedRecords, setSelectedRecords] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const queryClient = useQueryClient();
@@ -367,6 +369,15 @@ export default function DataManagement() {
                   </Button>
                   <Button
                     size="sm"
+                    variant="outline"
+                    onClick={() => setShowBulkAddDialog(true)}
+                    className="border-zinc-700 text-zinc-400 hover:text-white"
+                  >
+                    <Plus size={14} className="mr-2" />
+                    Bulk Add
+                  </Button>
+                  <Button
+                    size="sm"
                     onClick={() => setShowCreateDialog(true)}
                     className="bg-amber-500 hover:bg-amber-600 text-black"
                   >
@@ -474,6 +485,18 @@ export default function DataManagement() {
           onSave={() => {
             queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
             setShowCreateDialog(false);
+          }}
+        />
+      )}
+
+      {showBulkAddDialog && (
+        <BulkAddDialog
+          entityName={selectedEntity}
+          projectId={selectedProject}
+          onClose={() => setShowBulkAddDialog(false)}
+          onSave={() => {
+            queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
+            setShowBulkAddDialog(false);
           }}
         />
       )}

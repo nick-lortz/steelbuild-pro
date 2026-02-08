@@ -69,10 +69,10 @@ export default function Settings() {
         department: currentUser.department || ''
       });
       if (currentUser.display_preferences) {
-        setDisplayPrefs(prev => ({ ...prev, ...currentUser.display_preferences }));
+        setDisplayPrefs((prev) => ({ ...prev, ...currentUser.display_preferences }));
       }
       if (currentUser.workflow_preferences) {
-        setWorkflowPrefs(prev => ({ ...prev, ...currentUser.workflow_preferences }));
+        setWorkflowPrefs((prev) => ({ ...prev, ...currentUser.workflow_preferences }));
       }
     }
   }, [currentUser]);
@@ -134,10 +134,10 @@ export default function Settings() {
   const isAdmin = currentUser?.role === 'admin';
 
   const userColumns = [
-    {
-      header: 'User',
-      render: (row) => (
-        <div className="flex items-center gap-2">
+  {
+    header: 'User',
+    render: (row) =>
+    <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
             <UserCircle size={16} className="text-amber-500" />
           </div>
@@ -146,32 +146,32 @@ export default function Settings() {
             <p className="text-[10px] text-zinc-500">{row.email}</p>
           </div>
         </div>
-      )
-    },
-    {
-      header: 'Role',
-      render: (row) => (
-        <Badge className={cn(
-          "text-[10px] font-bold",
-          row.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
-        )}>
+
+  },
+  {
+    header: 'Role',
+    render: (row) =>
+    <Badge className={cn(
+      "text-[10px] font-bold",
+      row.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'
+    )}>
           <Shield size={9} className="mr-1" />
           {row.role.toUpperCase()}
         </Badge>
-      )
-    },
-    {
-      header: 'Joined',
-      render: (row) => safeFormat(row.created_date, 'MMM d, yyyy', '-')
-    }
-  ];
+
+  },
+  {
+    header: 'Joined',
+    render: (row) => safeFormat(row.created_date, 'MMM d, yyyy', '-')
+  }];
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+    <div className="bg-gradient-to-b text-slate-50 min-h-screen from-zinc-950 to-black">
       <PageHeader
         title="Settings"
-        subtitle="Profile • Preferences • Customization"
-      />
+        subtitle="Profile • Preferences • Customization" />
+
 
       <ContentSection>
         <Tabs defaultValue="profile" className="space-y-4">
@@ -235,8 +235,8 @@ export default function Settings() {
           </TabsContent>
 
           {/* Users */}
-          {isAdmin && (
-            <TabsContent value="users">
+          {isAdmin &&
+          <TabsContent value="users">
               <Card className="bg-zinc-900 border-zinc-800">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -252,14 +252,14 @@ export default function Settings() {
                 </CardContent>
               </Card>
             </TabsContent>
-          )}
+          }
 
           {/* Permissions */}
-          {isAdmin && (
-            <TabsContent value="permissions">
+          {isAdmin &&
+          <TabsContent value="permissions">
               <PermissionManager />
             </TabsContent>
-          )}
+          }
 
           {/* Display Preferences */}
           <TabsContent value="display">
@@ -440,11 +440,11 @@ export default function Settings() {
           </TabsContent>
 
           {/* Permissions */}
-          {isAdmin && (
-            <TabsContent value="permissions">
+          {isAdmin &&
+          <TabsContent value="permissions">
               <PermissionManager />
             </TabsContent>
-          )}
+          }
 
           {/* Notifications */}
           <TabsContent value="notifications">
@@ -462,7 +462,7 @@ export default function Settings() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={(e) => { e.preventDefault(); submitFeedbackMutation.mutate(feedbackForm); }} className="space-y-4">
+                  <form onSubmit={(e) => {e.preventDefault();submitFeedbackMutation.mutate(feedbackForm);}} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Type</Label>
@@ -517,19 +517,19 @@ export default function Settings() {
                   <CardTitle className="text-base uppercase tracking-wide">History</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {myFeedback.length === 0 ? (
-                    <p className="text-center text-zinc-600 py-6 text-sm">No feedback yet</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {myFeedback.map(item => (
-                        <div key={item.id} className="p-3 bg-zinc-800/50 rounded border border-zinc-800">
+                  {myFeedback.length === 0 ?
+                  <p className="text-center text-zinc-600 py-6 text-sm">No feedback yet</p> :
+
+                  <div className="space-y-2">
+                      {myFeedback.map((item) =>
+                    <div key={item.id} className="p-3 bg-zinc-800/50 rounded border border-zinc-800">
                           <div className="flex items-start justify-between mb-1">
                             <h4 className="font-bold text-white text-sm">{item.title}</h4>
                             <Badge className={cn(
-                              "text-[9px] font-bold",
-                              item.status === 'completed' && "bg-green-500/20 text-green-400",
-                              item.status === 'in_progress' && "bg-blue-500/20 text-blue-400"
-                            )}>
+                          "text-[9px] font-bold",
+                          item.status === 'completed' && "bg-green-500/20 text-green-400",
+                          item.status === 'in_progress' && "bg-blue-500/20 text-blue-400"
+                        )}>
                               {item.status?.replace('_', ' ').toUpperCase()}
                             </Badge>
                           </div>
@@ -538,9 +538,9 @@ export default function Settings() {
                             {safeFormat(item.created_date, 'MMM d, yyyy', '')}
                           </p>
                         </div>
-                      ))}
+                    )}
                     </div>
-                  )}
+                  }
                 </CardContent>
               </Card>
             </div>
@@ -553,7 +553,7 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle>Invite User</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); inviteMutation.mutate({ email: inviteEmail, role: inviteRole }); }} className="space-y-4">
+          <form onSubmit={(e) => {e.preventDefault();inviteMutation.mutate({ email: inviteEmail, role: inviteRole });}} className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Email</Label>
               <Input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required className="bg-zinc-800 border-zinc-700 h-9" />
@@ -582,6 +582,6 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
       </ContentSection>
-    </div>
-  );
+    </div>);
+
 }

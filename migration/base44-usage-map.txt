@@ -1,0 +1,990 @@
+src/Layout.jsx:4:import { base44 } from '@/api/base44Client';
+src/Layout.jsx:209:        return await base44.auth.me();
+src/Layout.jsx:213:          base44.auth.redirectToLogin(window.location.pathname);
+src/Layout.jsx:232:      return await base44.entities.Project.filter({ id: activeProjectId });
+src/Layout.jsx:243:      base44.auth.logout();
+src/components/settings/PermissionManager.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/settings/PermissionManager.jsx:53:    queryFn: () => base44.entities.User.list('-created_date'),
+src/components/settings/PermissionManager.jsx:59:    queryFn: () => base44.entities.Project.list('name'),
+src/components/settings/PermissionManager.jsx:65:    queryFn: () => base44.entities.UserPermissionOverride.filter({
+src/components/settings/PermissionManager.jsx:74:      const response = await base44.functions.invoke('updateUserProfile', {
+src/components/settings/PermissionManager.jsx:88:    mutationFn: (data) => base44.entities.UserPermissionOverride.create(data),
+src/components/settings/PermissionManager.jsx:98:    mutationFn: (id) => base44.entities.UserPermissionOverride.delete(id),
+src/components/settings/NotificationPreferences.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/settings/NotificationPreferences.jsx:17:    queryFn: () => base44.auth.me(),
+src/components/settings/NotificationPreferences.jsx:40:      base44.auth.updateMe({ notification_preferences: newPreferences }),
+src/components/schedule/AITaskHelper.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/schedule/AITaskHelper.jsx:28:      const result = await base44.integrations.Core.InvokeLLM({
+src/components/schedule/TaskTemplateManager.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/schedule/TaskTemplateManager.jsx:22:    queryFn: () => base44.entities.TaskTemplate.list('name'),
+src/components/schedule/TaskTemplateManager.jsx:27:    mutationFn: (data) => base44.entities.TaskTemplate.create(data),
+src/components/schedule/TaskTemplateManager.jsx:37:    mutationFn: ({ id, data }) => base44.entities.TaskTemplate.update(id, data),
+src/components/schedule/TaskTemplateManager.jsx:47:    mutationFn: (id) => base44.entities.TaskTemplate.delete(id),
+src/components/schedule/DependencyEditor.jsx:10:import { base44 } from '@/api/base44Client';
+src/components/schedule/DependencyEditor.jsx:21:    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+src/components/schedule/TaskForm.jsx:11:import { base44 } from '@/api/base44Client';
+src/components/schedule/TaskForm.jsx:41:    queryFn: () => base44.entities.WorkPackage.list(),
+src/components/schedule/TaskForm.jsx:46:    queryFn: () => base44.auth.me()
+src/components/schedule/TaskForm.jsx:51:    queryFn: () => task?.id ? base44.entities.Task.filter({ parent_task_id: task.id }) : [],
+src/components/schedule/TaskForm.jsx:56:    mutationFn: (data) => base44.entities.Task.create(data),
+src/components/schedule/TaskForm.jsx:79:    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+src/components/schedule/TaskForm.jsx:101:    mutationFn: (id) => base44.entities.Task.delete(id),
+src/components/schedule/TaskForm.jsx:270:      await base44.entities.TaskTemplate.create({
+src/components/schedule/TaskForm.jsx:288:      const currentUser = await base44.auth.me();
+src/components/schedule/QuickAddSubtask.jsx:8:import { base44 } from '@/api/base44Client';
+src/components/schedule/QuickAddSubtask.jsx:19:    mutationFn: (data) => base44.entities.Task.bulkCreate(data),
+src/components/schedule/ScheduleAIAssistant.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/schedule/ScheduleAIAssistant.jsx:58:      const response = await base44.integrations.Core.InvokeLLM({
+src/components/schedule/ScheduleAIAssistant.jsx:147:      const response = await base44.integrations.Core.InvokeLLM({
+src/components/schedule/ProjectScheduleWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/schedule/ProjectScheduleWidget.jsx:14:      const response = await base44.functions.invoke('calculateProjectScheduleHealth', {
+src/components/schedule/TaskList.jsx:11:import { base44 } from '@/api/base44Client';
+src/components/schedule/TaskList.jsx:33:    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+src/components/financials/ETCManager.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/financials/ETCManager.jsx:30:    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: projectId }),
+src/components/financials/ETCManager.jsx:90:    const user = await base44.auth.me();
+src/components/financials/CostRiskIndicator.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/financials/CostRiskIndicator.jsx:21:        const response = await base44.functions.invoke('getCostRiskSignal', { project_id: projectId });
+src/components/financials/AIForecastETC.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/financials/AIForecastETC.jsx:16:      const response = await base44.functions.invoke('forecastETC', {
+src/components/financials/ExpensesManagement.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/financials/ExpensesManagement.jsx:60:    queryFn: () => base44.entities.Project.list('name')
+src/components/financials/ExpensesManagement.jsx:65:    queryFn: () => base44.entities.CostCode.list('code')
+src/components/financials/ExpensesManagement.jsx:70:    queryFn: () => base44.entities.Expense.list('-expense_date')
+src/components/financials/ExpensesManagement.jsx:74:    mutationFn: (data) => base44.functions.invoke('expenseOperations', { operation: 'create', data }),
+src/components/financials/ExpensesManagement.jsx:96:    mutationFn: ({ id, data }) => base44.functions.invoke('expenseOperations', { operation: 'update', data: { id, updates: data } }),
+src/components/financials/ExpensesManagement.jsx:118:    mutationFn: (id) => base44.functions.invoke('expenseOperations', { operation: 'delete', data: { id } }),
+src/components/financials/ExpensesManagement.jsx:131:      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/financials/DataIntegrityCheck.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/financials/DataIntegrityCheck.jsx:12:    queryFn: () => base44.entities.CostCode.list(),
+src/components/financials/DataIntegrityCheck.jsx:17:    queryFn: () => base44.entities.Financial.list(),
+src/components/financials/DataIntegrityCheck.jsx:22:    queryFn: () => base44.entities.Expense.list(),
+src/components/financials/DataIntegrityCheck.jsx:27:    queryFn: () => base44.entities.LaborHours.list(),
+src/components/financials/AdvancedForecastingDashboard.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/financials/AdvancedForecastingDashboard.jsx:19:    queryFn: () => base44.entities.Project.filter({ id: projectId }).then(p => p[0]),
+src/components/financials/AdvancedForecastingDashboard.jsx:26:      const response = await base44.functions.invoke('advancedFinancialForecasting', {
+src/components/financials/ECCAutoCalculator.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/financials/ECCAutoCalculator.jsx:11:        const response = await base44.functions.invoke('autoCalculateECC', { project_id: projectId });
+src/components/financials/CostCodeManager.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/financials/CostCodeManager.jsx:42:    queryFn: () => base44.entities.CostCode.list('code')
+src/components/financials/CostCodeManager.jsx:54:      return await base44.entities.CostCode.bulkCreate(toCreate);
+src/components/financials/InvoiceTracking.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/sov/InvoiceManager.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/sov/InvoiceManager.jsx:36:    queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }, '-period_end'),
+src/components/sov/InvoiceManager.jsx:42:    queryFn: () => base44.entities.InvoiceLine.filter({ invoice_id: selectedInvoiceId }),
+src/components/sov/InvoiceManager.jsx:48:    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+src/components/sov/InvoiceManager.jsx:53:    mutationFn: (data) => base44.functions.invoke('generateInvoice', data),
+src/components/sov/InvoiceManager.jsx:66:    mutationFn: (invoice_id) => base44.functions.invoke('approveInvoice', { invoice_id }),
+src/components/sov/InvoiceManager.jsx:75:    mutationFn: ({ id, status }) => base44.entities.Invoice.update(id, { status }),
+src/components/sov/InvoiceManager.jsx:82:    mutationFn: (id) => base44.functions.invoke('deleteInvoice', { invoice_id: id }),
+src/components/sov/InvoiceLineDocuments.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/sov/InvoiceLineDocuments.jsx:18:    mutationFn: (data) => base44.entities.InvoiceLine.update(invoiceLine.id, data),
+src/components/sov/SOVManager.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/sov/SOVManager.jsx:48:    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+src/components/sov/SOVManager.jsx:70:    queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }),
+src/components/sov/SOVManager.jsx:79:      const lines = await base44.entities.InvoiceLine.list();
+src/components/sov/SOVManager.jsx:91:    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
+src/components/sov/SOVManager.jsx:103:      return base44.entities.SOVItem.bulkCreate(
+src/components/sov/SOVManager.jsx:119:        const validation = await base44.functions.invoke('validateSOVBudget', {
+src/components/sov/SOVManager.jsx:134:      return base44.entities.SOVItem.update(id, data);
+src/components/sov/SOVManager.jsx:148:    mutationFn: (id) => base44.entities.SOVItem.delete(id),
+src/components/activity/ActivityFeed.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/activity/ActivityFeed.jsx:17:    queryFn: () => base44.entities.Project.list('-updated_date'),
+src/components/activity/ActivityFeed.jsx:24:      ? base44.entities.Task.filter({ project_id: projectId }, '-updated_date', 50)
+src/components/activity/ActivityFeed.jsx:25:      : base44.entities.Task.list('-updated_date', 50)
+src/components/activity/ActivityFeed.jsx:31:      ? base44.entities.RFI.filter({ project_id: projectId }, '-created_date', 50)
+src/components/activity/ActivityFeed.jsx:32:      : base44.entities.RFI.list('-created_date', 50)
+src/components/activity/ActivityFeed.jsx:38:      ? base44.entities.ChangeOrder.filter({ project_id: projectId }, '-created_date', 50)
+src/components/activity/ActivityFeed.jsx:39:      : base44.entities.ChangeOrder.list('-created_date', 50)
+src/components/activity/ActivityFeed.jsx:45:      ? base44.entities.DrawingSet.filter({ project_id: projectId }, '-updated_date', 50)
+src/components/activity/ActivityFeed.jsx:46:      : base44.entities.DrawingSet.list('-updated_date', 50)
+src/components/activity/ActivityFeed.jsx:52:      ? base44.entities.Message.filter({ project_id: projectId }, '-created_date', 50)
+src/components/activity/ActivityFeed.jsx:53:      : base44.entities.Message.list('-created_date', 50)
+src/components/drawings/DrawingSetForm.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/drawings/DrawingSetForm.jsx:76:      const response = await base44.integrations.Core.InvokeLLM({
+src/components/drawings/DrawingSetForm.jsx:82:      const sheets = await base44.entities.DrawingSheet.filter({ 
+src/components/drawings/DrawingSetForm.jsx:88:        await base44.entities.DrawingSheet.update(sheets[0].id, {
+src/components/drawings/DrawingSetDetailDialog.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/drawings/DrawingSetDetailDialog.jsx:68:      const sets = await base44.entities.DrawingSet.filter({ id: drawingSetId });
+src/components/drawings/DrawingSetDetailDialog.jsx:79:    queryFn: () => base44.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }),
+src/components/drawings/DrawingSetDetailDialog.jsx:85:    queryFn: () => base44.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
+src/components/drawings/DrawingSetDetailDialog.jsx:92:    mutationFn: (data) => base44.entities.DrawingSet.update(drawingSetId, data),
+src/components/drawings/DrawingComparisonPanel.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/drawings/DrawingComparisonPanel.jsx:19:      return await base44.entities.DrawingSet.filter({ 
+src/components/drawings/DrawingComparisonPanel.jsx:39:      const response = await base44.functions.invoke('compareDrawingVersions', {
+src/components/drawings/DrawingAnnotations.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/drawings/DrawingAnnotations.jsx:19:    queryFn: () => base44.auth.me()
+src/components/drawings/DrawingAnnotations.jsx:24:    queryFn: () => base44.entities.DrawingAnnotation.filter({ drawing_set_id: drawingSetId }),
+src/components/drawings/DrawingAnnotations.jsx:29:    mutationFn: (data) => base44.entities.DrawingAnnotation.create(data),
+src/components/drawings/DrawingAnnotations.jsx:40:    mutationFn: ({ id }) => base44.entities.DrawingAnnotation.update(id, {
+src/components/drawings/DrawingSetDetails.jsx:22:import { base44 } from '@/api/base44Client';
+src/components/drawings/DrawingSetDetails.jsx:42:    queryFn: () => base44.entities.RFI.list(),
+src/components/drawings/DrawingSetDetails.jsx:71:        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/drawings/DrawingSetDetails.jsx:74:        await base44.entities.DrawingSheet.create({
+src/components/drawings/DrawingUploadEnhanced.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/drawings/DrawingUploadEnhanced.jsx:39:        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/drawings/DrawingUploadEnhanced.jsx:42:        const sheet = await base44.entities.DrawingSheet.create({
+src/components/drawings/DrawingUploadEnhanced.jsx:57:        const { metadata } = await base44.functions.invoke('extractDrawingMetadata', {
+src/components/drawings/DrawingUploadEnhanced.jsx:64:          await base44.entities.DrawingSheet.update(sheet.id, {
+src/components/drawings/AIDrawingAnalysis.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/drawings/AIDrawingAnalysis.jsx:17:      const response = await base44.integrations.Core.InvokeLLM({
+src/components/drawings/AIAnalysisPanel.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/drawings/AIAnalysisPanel.jsx:16:      return await base44.entities.DrawingSheet.filter({ 
+src/components/drawings/AIAnalysisPanel.jsx:84:      const response = await base44.functions.invoke('analyzeDrawingSet', {
+src/components/drawings/SmartLinkagePanel.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/drawings/SmartLinkagePanel.jsx:17:      const response = await base44.functions.invoke('suggestDocumentLinks', {
+src/components/drawings/SmartLinkagePanel.jsx:48:      await base44.entities.DrawingSet.update(drawingSet.id, updates);
+src/components/drawings/RevisionHistory.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/drawings/RevisionHistory.jsx:22:    queryFn: () => base44.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }, '-revision_date'),
+src/components/drawings/RevisionHistory.jsx:28:    queryFn: () => base44.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
+src/components/drawings/QuickAddDrawingSet.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/drawings/QuickAddDrawingSet.jsx:23:      await base44.entities.DrawingSet.create({
+src/components/drawings/AIDrawingProcessor.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/drawings/AIDrawingProcessor.jsx:123:      const response = await base44.integrations.Core.InvokeLLM({
+src/components/drawings/BulkEditDrawings.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/drawings/BulkEditDrawings.jsx:35:        updates.map(({ id, data }) => base44.entities.DrawingSet.update(id, data))
+src/components/data-management/CreateRecordDialog.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/data-management/CreateRecordDialog.jsx:72:      await base44.entities[entityName].create(formData);
+src/components/data-management/BulkAddDialog.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/data-management/BulkAddDialog.jsx:185:      await base44.entities[entityName].bulkCreate(records);
+src/components/data-management/DataEditDialog.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/data-management/DataEditDialog.jsx:18:      await base44.entities[entityName].update(record.id, editData);
+src/components/layout/MobileNav.jsx:14:import { base44 } from '@/api/base44Client';
+src/components/layout/MobileNav.jsx:47:    queryFn: () => base44.auth.me(),
+src/components/projects/ProjectPhaseUpdater.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/projects/ProjectPhaseUpdater.jsx:20:    mutationFn: (/** @type {string} */ phase) => base44.entities.Project.update(project.id, { phase }),
+src/components/projects/QuickStatusUpdate.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/projects/QuickStatusUpdate.jsx:28:      base44.entities.Project.update(payload.id, { status: payload.status }),
+src/components/projects/DeleteProjectDialog.jsx:15:import { base44 } from '@/api/base44Client';
+src/components/projects/DeleteProjectDialog.jsx:32:      const response = await base44.functions.invoke('deleteProject', {
+src/components/projects/DemoDataSeeder.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/projects/DemoDataSeeder.jsx:16:    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+src/components/projects/DemoDataSeeder.jsx:21:      base44.functions.invoke('seedDemoData', { project_id: projectId }),
+src/components/projects/DemoProjectSeeder.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/projects/DemoProjectSeeder.jsx:74:        const result = await base44.entities.Project.create(project);
+src/components/resources/ResourceLevelingPanel.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/resources/ResourceLevelingPanel.jsx:16:      const response = await base44.functions.invoke('levelResources', {
+src/components/resources/ResourceUtilization.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/resources/ResourceUtilization.jsx:12:    queryFn: () => base44.entities.Resource.list('name'),
+src/components/resources/ResourceUtilization.jsx:17:    queryFn: () => base44.entities.ResourceAllocation.list(),
+src/components/resources/ResourceUtilization.jsx:22:    queryFn: () => base44.entities.LaborHours.list(),
+src/components/resources/ConflictResolutionWizard.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/resources/ConflictResolutionWizard.jsx:23:      return await base44.entities.Task.update(taskId, updates);
+src/components/resources/ResourceCapacityPlanner.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/resources/ResourceAllocation.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/resources/ResourceAllocation.jsx:44:    queryFn: () => base44.entities.Resource.list('name'),
+src/components/resources/ResourceAllocation.jsx:49:    queryFn: () => base44.entities.Project.list('name'),
+src/components/resources/ResourceAllocation.jsx:54:    queryFn: () => base44.entities.ResourceAllocation.list('-start_date'),
+src/components/resources/ResourceAllocation.jsx:59:    queryFn: () => base44.entities.WorkPackage.list(),
+src/components/resources/ResourceAllocation.jsx:64:    queryFn: () => base44.entities.Task.list(),
+src/components/resources/ResourceAllocation.jsx:68:    mutationFn: (data) => base44.entities.ResourceAllocation.create(data),
+src/components/resources/ResourceAllocation.jsx:77:    mutationFn: ({ id, data }) => base44.entities.ResourceAllocation.update(id, data),
+src/components/resources/ResourceAllocation.jsx:86:    mutationFn: (id) => base44.entities.ResourceAllocation.delete(id),
+src/components/resources/SOVResourceAssignment.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/resources/SOVResourceAssignment.jsx:19:    queryFn: () => base44.entities.Resource.list('name'),
+src/components/resources/SOVResourceAssignment.jsx:24:    mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
+src/components/resources/ResourceLeveling.jsx:9:import { base44 } from '@/api/base44Client';
+src/components/resources/ResourceLeveling.jsx:20:    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+src/components/detailing/DetailingReadinessPanel.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/detailing/DetailingReadinessPanel.jsx:102:      await base44.entities.Project.update(project.id, {
+src/components/rfis/RFIAssumptionTracker.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/rfis/RFIAssumptionTracker.jsx:19:      return base44.entities.RFI.update(rfi.id, {
+src/components/rfis/BulkRFICreator.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/rfis/BulkRFICreator.jsx:35:    queryFn: () => base44.entities.RFI.list()
+src/components/rfis/BulkRFICreator.jsx:40:      return Promise.all(rfisData.map((rfi) => base44.entities.RFI.create(rfi)));
+src/components/rfis/RFIWordingAssistant.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/rfis/RFIWordingAssistant.jsx:18:      const res = await base44.functions.invoke('improveRFIWording', {
+src/components/rfis/RFIDetailPanel.jsx:16:import { base44 } from '@/api/base44Client';
+src/components/rfis/RFIDetailPanel.jsx:34:    mutationFn: (data) => base44.entities.RFI.update(rfi.id, data),
+src/components/rfis/RFIDetailPanel.jsx:235:                  const response = await base44.functions.invoke('exportRFItoPDF', { rfi_id: rfi.id });
+src/components/rfis/RFIWizardEnhanced.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/rfis/RFIWizardEnhanced.jsx:46:    queryFn: () => base44.entities.Task.filter({ project_id: projectId })
+src/components/rfis/RFIWizardEnhanced.jsx:51:    queryFn: () => base44.entities.Project.filter({ id: projectId }),
+src/components/rfis/RFIWizardEnhanced.jsx:57:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId })
+src/components/rfis/RFIWizardEnhanced.jsx:63:      base44.functions.invoke('calculateRFIDueDate', {
+src/components/rfis/RFIWizardEnhanced.jsx:75:      base44.functions.invoke('autoRouteRFI', {
+src/components/rfis/RFIWizardEnhanced.jsx:88:      base44.functions.invoke('detectRFIImpacts', {
+src/components/rfis/RFIWizardEnhanced.jsx:101:      const rfiNumber = (await base44.entities.RFI.filter({ project_id: projectId })).length + 1;
+src/components/rfis/RFIWizardEnhanced.jsx:102:      return base44.entities.RFI.create({
+src/components/rfis/RFISmartInsights.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/rfis/RFISmartInsights.jsx:21:      const res = await base44.functions.invoke('predictRFIRisk', {
+src/components/rfis/RFISmartInsights.jsx:37:      const res = await base44.functions.invoke('generateRFIMeetingSummary', {
+src/components/rfis/RFISmartInsights.jsx:51:      const res = await base44.functions.invoke('clusterRFIsByProblem', {
+src/components/shared/WEBSOCKET_DIAGNOSIS.md.jsx:5:**Issue:** Repeated WebSocket connection failures to `wss://preview-sandbox--*.base44.app/`
+src/components/shared/PLATFORM_AUDIT_SPEC.md.jsx:1439:await base44.entities.Task.create({
+src/components/shared/PLATFORM_AUDIT_SPEC.md.jsx:2056:await base44.entities.Task.create({
+src/components/shared/securityHeaders.jsx:14:    "connect-src 'self' https://*.sentry.io https://*.base44.io",
+src/components/shared/CSVUpload.jsx:5:import { base44 } from '@/api/base44Client';
+src/components/shared/CSVUpload.jsx:87:          await base44.entities[entityName].create(data);
+src/components/shared/fileUpload.jsx:145:    const result = await base44.integrations.Core.UploadFile({ file });
+src/components/shared/NavigationTracker.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/shared/NavigationTracker.jsx:25:    base44.analytics.track({
+src/components/shared/CI_CD_PIPELINE.md.jsx:50:**URL:** `https://dev-steelbuild.base44.app`  
+src/components/shared/CI_CD_PIPELINE.md.jsx:55:**URL:** `https://staging-steelbuild.base44.app`  
+src/components/shared/usePermissions.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/shared/usePermissions.jsx:132:    queryFn: () => base44.auth.me(),
+src/components/shared/usePermissions.jsx:138:    queryFn: () => base44.entities.UserPermissionOverride.filter({ 
+src/components/shared/CommandPalette.jsx:4:import { base44 } from '@/api/base44Client';
+src/components/shared/CommandPalette.jsx:15:    queryFn: () => base44.entities.Project.list('-updated_date'),
+src/components/shared/CommandPalette.jsx:21:    queryFn: () => base44.entities.Task.list('-updated_date', 10),
+src/components/shared/queryConfig.jsx:41: *   queryFn: () => base44.entities.CostCode.list(),
+src/components/shared/queryConfig.jsx:48: *   queryFn: () => base44.entities.Project.list(),
+src/components/shared/queryConfig.jsx:62: *   queryFn: () => base44.auth.me(),
+src/components/shared/hooks/useTasks.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/shared/hooks/useTasks.jsx:8:    queryFn: () => base44.entities.Task.list(sortBy),
+src/components/shared/hooks/useTasks.jsx:18:    queryFn: () => base44.entities.Task.filter({ project_id: projectId }, sortBy),
+src/components/shared/hooks/useTasks.jsx:29:      const tasks = await base44.entities.Task.filter({ id: taskId });
+src/components/shared/hooks/useTasks.jsx:42:    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Task.create(data),
+src/components/shared/hooks/useTasks.jsx:58:      base44.entities.Task.update(payload.id, payload.data),
+src/components/shared/hooks/useTasks.jsx:74:    mutationFn: (/** @type {string} */ id) => base44.entities.Task.delete(id),
+src/components/shared/hooks/useFinancials.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/shared/hooks/useFinancials.jsx:8:    queryFn: () => base44.entities.Financial.list(),
+src/components/shared/hooks/useFinancials.jsx:18:    queryFn: () => base44.entities.Financial.filter({ project_id: projectId }),
+src/components/shared/hooks/useFinancials.jsx:29:      const response = await base44.functions.invoke('getPortfolioMetrics', {});
+src/components/shared/hooks/useFinancials.jsx:41:    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Financial.create(data),
+src/components/shared/hooks/useFinancials.jsx:58:      base44.entities.Financial.update(payload.id, payload.data),
+src/components/shared/hooks/useFinancials.jsx:74:      ? base44.entities.Expense.filter({ project_id: projectId })
+src/components/shared/hooks/useFinancials.jsx:75:      : base44.entities.Expense.list(),
+src/components/shared/hooks/useProjects.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/shared/hooks/useProjects.jsx:8:    queryFn: () => base44.entities.Project.list(sortBy),
+src/components/shared/hooks/useProjects.jsx:19:      const projects = await base44.entities.Project.filter({ id: projectId });
+src/components/shared/hooks/useProjects.jsx:32:    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Project.create(data),
+src/components/shared/hooks/useProjects.jsx:48:      base44.entities.Project.update(payload.id, payload.data),
+src/components/shared/hooks/useProjects.jsx:64:    mutationFn: (/** @type {string} */ id) => base44.entities.Project.delete(id),
+src/components/shared/hooks/useSubscription.jsx:13:import { base44 } from '@/api/base44Client';
+src/components/shared/hooks/useSubscription.jsx:39:        const unsubscribe = base44.entities[entityName].subscribe((event) => {
+src/components/shared/DISASTER_RECOVERY.md.jsx:126:**External:** Base44 Support (support@base44.com)
+src/components/rfi-hub/RFIHubForm.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/rfi-hub/RFIHubForm.jsx:60:        await base44.entities.RFI.update(rfi.id, formData);
+src/components/rfi-hub/RFIHubForm.jsx:63:        await base44.entities.RFI.create(formData);
+src/components/change-orders/DocumentManager.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/change-orders/DocumentManager.jsx:26:      const { data } = await base44.integrations.Core.UploadFile({ file });
+src/components/change-orders/DocumentManager.jsx:33:        uploaded_by: (await base44.auth.me()).email,
+src/components/change-orders/DocumentManager.jsx:40:      await base44.entities.ChangeOrder.update(changeOrder.id, {
+src/components/change-orders/DocumentManager.jsx:57:    await base44.entities.ChangeOrder.update(changeOrder.id, {
+src/components/change-orders/DocumentManager.jsx:70:    await base44.entities.ChangeOrder.update(changeOrder.id, {
+src/components/change-orders/ApprovalWorkflow.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/change-orders/ApprovalWorkflow.jsx:20:      return await base44.functions.invoke('applyCOApproval', { change_order_id });
+src/components/change-orders/ApprovalWorkflow.jsx:54:      const response = await base44.functions.invoke('routeChangeOrderApproval', {
+src/components/change-orders/LinkagePanel.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/change-orders/LinkagePanel.jsx:17:    queryFn: () => base44.entities.RFI.filter({ project_id: changeOrder.project_id }),
+src/components/change-orders/LinkagePanel.jsx:23:    queryFn: () => base44.entities.Task.filter({ project_id: changeOrder.project_id }),
+src/components/change-orders/LinkagePanel.jsx:29:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: changeOrder.project_id }),
+src/components/change-orders/LinkagePanel.jsx:34:    await base44.entities.ChangeOrder.update(changeOrder.id, {
+src/components/change-orders/AIImpactAnalysis.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/change-orders/AIImpactAnalysis.jsx:17:      const response = await base44.functions.invoke('analyzeChangeOrderImpact', {
+src/components/change-orders/ChangeOrderForm.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/change-orders/ChangeOrderForm.jsx:21:    queryFn: () => base44.entities.SOVItem.filter({ project_id: formData.project_id }),
+src/components/change-orders/ChangeOrderForm.jsx:58:    queryFn: () => base44.auth.me(),
+src/components/change-orders/CommentsThread.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/change-orders/CommentsThread.jsx:17:    queryFn: () => base44.auth.me(),
+src/components/change-orders/CommentsThread.jsx:33:      await base44.entities.ChangeOrder.update(changeOrder.id, {
+src/components/change-orders/CommentsThread.jsx:38:      await base44.functions.invoke('notifyStatusChange', {
+src/components/dashboard/AIRiskPanel.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/dashboard/AIRiskPanel.jsx:17:      const response = await base44.functions.invoke('aiRiskAssessment', { project_id: projectId });
+src/components/dashboard/UpcomingDeadlinesWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/dashboard/UpcomingDeadlinesWidget.jsx:13:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }),
+src/components/dashboard/UpcomingDeadlinesWidget.jsx:19:    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+src/components/dashboard/UpcomingDeadlinesWidget.jsx:25:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+src/components/dashboard/DashboardNotificationCenter.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/dashboard/DashboardNotificationCenter.jsx:17:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }, '-updated_date'),
+src/components/dashboard/DashboardNotificationCenter.jsx:23:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }, '-updated_date'),
+src/components/dashboard/DashboardNotificationCenter.jsx:29:    queryFn: () => base44.entities.Task.filter({ project_id: projectId }, '-updated_date'),
+src/components/dashboard/DashboardNotificationCenter.jsx:35:    queryFn: () => base44.auth.me()
+src/components/dashboard/AIForecastPanel.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/dashboard/AIForecastPanel.jsx:20:      const response = await base44.functions.invoke('aiProjectForecast', { project_id: projectId });
+src/components/dashboard/ProjectHealthWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/dashboard/ProjectHealthWidget.jsx:14:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }),
+src/components/dashboard/ProjectHealthWidget.jsx:22:      const sets = await base44.entities.DrawingSet.filter({ project_id: projectId });
+src/components/dashboard/ProjectHealthWidget.jsx:24:        sets.map(set => base44.entities.DrawingRevision.filter({ drawing_set_id: set.id }))
+src/components/dashboard/ProjectHealthWidget.jsx:33:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+src/components/dashboard/QuickMetricsWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/dashboard/QuickMetricsWidget.jsx:11:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }),
+src/components/dashboard/QuickMetricsWidget.jsx:17:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+src/components/dashboard/QuickMetricsWidget.jsx:23:    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+src/components/dashboard/QuickMetricsWidget.jsx:29:    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+src/components/integrations/WeatherWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/integrations/WeatherWidget.jsx:13:      const { data } = await base44.functions.invoke('getWeatherForecast', { project_id: projectId });
+src/components/mobile/PhotoCapture.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/mobile/PhotoCapture.jsx:22:      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/mobile/PhotoCapture.jsx:26:        await base44.entities.Document.create({
+src/components/ai/AIInsightsPanel.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/ai/AIInsightsPanel.jsx:21:      const { data } = await base44.functions.invoke('calculateProjectRiskScore', { project_id: projectId });
+src/components/ai/AIInsightsPanel.jsx:34:      const { data } = await base44.functions.invoke('detectAnomalies', { project_id: projectId });
+src/components/ai/AIInsightsPanel.jsx:47:      const { data } = await base44.functions.invoke('predictScheduleDelays', { project_id: projectId });
+src/components/ai/AIInsightsPanel.jsx:63:      const { data } = await base44.functions.invoke('nlQueryProjects', { query: nlQuery });
+src/components/ai/AIProgressReport.jsx:5:import { base44 } from '@/api/base44Client';
+src/components/ai/AIProgressReport.jsx:17:      const { data } = await base44.functions.invoke('aiProgressSummary', { 
+src/components/ai/ProjectAssistant.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/ai/ProjectAssistant.jsx:256:      const response = await base44.integrations.Core.InvokeLLM({
+src/components/ai/AITaskPrioritization.jsx:5:import { base44 } from '@/api/base44Client';
+src/components/ai/AITaskPrioritization.jsx:17:      const { data } = await base44.functions.invoke('aiTaskPrioritization', { project_id: projectId });
+src/components/ai/AIRiskDashboard.jsx:5:import { base44 } from '@/api/base44Client';
+src/components/ai/AIRiskDashboard.jsx:17:      const { data } = await base44.functions.invoke('aiRiskAssessment', { project_id: projectId });
+src/components/production/AISummaryPanel.jsx:8:import { base44 } from '@/api/base44Client';
+src/components/production/AISummaryPanel.jsx:25:      const result = await base44.functions.invoke('summarizeWeeklyNotes', {
+src/components/production/AISummaryPanel.jsx:55:      await base44.functions.invoke('postToTeams', {
+src/components/production/WeeklySummaryPanel.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/production/WeeklySummaryPanel.jsx:17:      const response = await base44.functions.invoke('generateWeeklySummary', {
+src/components/documents/ApprovalWorkflowPanel.jsx:9:import { base44 } from '@/api/base44Client';
+src/components/documents/ApprovalWorkflowPanel.jsx:40:      await base44.functions.invoke('routeDocumentApproval', {
+src/components/documents/DocumentCard.jsx:7:import { base44 } from '@/api/base44Client';
+src/components/documents/DocumentCard.jsx:75:                    const { data } = await base44.functions.invoke('validateFileAccess', {
+src/components/documents/DocumentCard.jsx:100:                    const { data } = await base44.functions.invoke('validateFileAccess', {
+src/components/documents/AISearchPanel.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/documents/AISearchPanel.jsx:25:      const response = await base44.functions.invoke('searchDocumentsAI', {
+src/components/documents/DocumentLinkageCenter.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/documents/DocumentLinkageCenter.jsx:20:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+src/components/documents/DocumentLinkageCenter.jsx:26:    queryFn: () => base44.entities.InvoiceLine.filter({ project_id: projectId }),
+src/components/documents/DocumentLinkageCenter.jsx:32:    queryFn: () => base44.entities.Submittal.filter({ project_id: projectId }),
+src/components/documents/DocumentPreview.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/documents/DocumentPreview.jsx:48:          const { data: projects } = await base44.functions.invoke('listProjects', {});
+src/components/documents/DocumentUploader.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/documents/DocumentUploader.jsx:35:        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/work-packages/WorkPackageDetails.jsx:10:import { base44 } from '@/api/base44Client';
+src/components/work-packages/WorkPackageDetails.jsx:28:    queryFn: () => base44.entities.LaborHours.filter({ project_id: projectId }),
+src/components/work-packages/WorkPackageDetails.jsx:35:    queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: projectId }),
+src/components/work-packages/WorkPackageDetails.jsx:42:    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+src/components/messaging/ChatPanel.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/messaging/ChatPanel.jsx:23:    queryFn: () => base44.auth.me()
+src/components/messaging/ChatPanel.jsx:29:      const project = await base44.entities.Project.list().then(p => p.find(pr => pr.id === projectId));
+src/components/messaging/ChatPanel.jsx:30:      const allUsers = await base44.entities.User.list();
+src/components/messaging/ChatPanel.jsx:47:      return base44.entities.Message.filter(query, '-created_date');
+src/components/messaging/ChatPanel.jsx:53:    mutationFn: (data) => base44.entities.Message.create(data),
+src/components/messaging/ChatPanel.jsx:105:        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/components/equipment/EquipmentLogForm.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/equipment/EquipmentLogForm.jsx:61:    queryFn: () => base44.entities.Resource.filter({
+src/components/equipment/EquipmentLogForm.jsx:71:    queryFn: () => base44.entities.Crew.filter({ project_id: projectId, status: 'active' }),
+src/components/equipment/EquipmentLogForm.jsx:77:    queryFn: () => base44.entities.Task.filter({ project_id: projectId, status: 'in_progress' }),
+src/components/equipment/EquipmentLogForm.jsx:83:    queryFn: () => base44.entities.EquipmentLog.filter({
+src/components/equipment/EquipmentLogForm.jsx:142:      const log = await base44.entities.EquipmentLog.create({
+src/components/equipment/EquipmentCalendar.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/equipment/EquipmentCalendar.jsx:18:    queryFn: () => base44.entities.EquipmentBooking.list(),
+src/components/equipment/EquipmentCalendar.jsx:23:    queryFn: () => base44.entities.Project.list('name'),
+src/components/equipment/InspectionForm.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/equipment/InspectionForm.jsx:78:      const inspection = await base44.entities.InspectionChecklist.create({
+src/components/notifications/NotificationCenter.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/notifications/NotificationCenter.jsx:17:    queryFn: () => base44.auth.me()
+src/components/notifications/NotificationCenter.jsx:24:      return base44.entities.Notification.filter(
+src/components/notifications/NotificationCenter.jsx:38:      base44.entities.Notification.update(notificationId, {
+src/components/notifications/NotificationCenter.jsx:49:      base44.entities.Notification.delete(notificationId),
+src/components/notifications/NotificationCenter.jsx:60:          base44.entities.Notification.update(n.id, {
+src/components/notifications/NotificationPanel.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/notifications/NotificationPanel.jsx:40:    queryFn: () => base44.auth.me(),
+src/components/notifications/NotificationPanel.jsx:45:    queryFn: () => base44.entities.Notification.filter({ 
+src/components/notifications/NotificationPanel.jsx:53:    mutationFn: (id) => base44.entities.Notification.update(id, { 
+src/components/notifications/NotificationPanel.jsx:63:    mutationFn: (id) => base44.entities.Notification.delete(id),
+src/components/notifications/NotificationPanel.jsx:73:        unread.map(n => base44.entities.Notification.update(n.id, { 
+src/components/project-dashboard/ProgressWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ProgressWidget.jsx:10:    queryFn: () => base44.entities.Task.filter({ project_id: projectId })
+src/components/project-dashboard/DrawingWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/DrawingWidget.jsx:10:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId })
+src/components/project-dashboard/RFIWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/RFIWidget.jsx:10:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId })
+src/components/project-dashboard/ResourceAllocationChart.jsx:8:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ResourceAllocationChart.jsx:17:    queryFn: () => base44.entities.Resource.list(),
+src/components/project-dashboard/ResourceAllocationChart.jsx:23:    queryFn: () => base44.entities.Project.list(),
+src/components/project-dashboard/ProjectAlerts.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ProjectAlerts.jsx:47:        const user = await base44.auth.me();
+src/components/project-dashboard/ProjectAlerts.jsx:64:      await base44.auth.updateMe({
+src/components/project-dashboard/WorkPackageWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/WorkPackageWidget.jsx:10:    queryFn: () => base44.entities.WorkPackage.filter({ project_id: projectId })
+src/components/project-dashboard/RiskAssessmentModule.jsx:12:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/RiskAssessmentModule.jsx:22:    queryFn: () => base44.entities.ProjectRisk.filter({ project_id: projectId }),
+src/components/project-dashboard/RiskAssessmentModule.jsx:27:    mutationFn: (data) => base44.entities.ProjectRisk.create(data),
+src/components/project-dashboard/RiskAssessmentModule.jsx:37:    mutationFn: ({ id, data }) => base44.entities.ProjectRisk.update(id, data),
+src/components/project-dashboard/CommunicationLog.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/CommunicationLog.jsx:11:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId })
+src/components/project-dashboard/CommunicationLog.jsx:16:    queryFn: () => base44.entities.Meeting.filter({ project_id: projectId })
+src/components/project-dashboard/CommunicationLog.jsx:21:    queryFn: () => base44.entities.Document.filter({ project_id: projectId })
+src/components/project-dashboard/ProjectNotifications.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ProjectNotifications.jsx:26:    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectNotifications.jsx:32:    queryFn: () => base44.entities.Delivery.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectNotifications.jsx:38:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectNotifications.jsx:44:    queryFn: () => base44.entities.Fabrication.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectNotifications.jsx:50:    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectNotifications.jsx:56:    queryFn: () => base44.auth.me()
+src/components/project-dashboard/ChangeOrderWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ChangeOrderWidget.jsx:10:    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId })
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:31:    queryFn: () => base44.entities.Project.filter({ id: projectId }),
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:39:    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:46:    queryFn: () => base44.entities.ProjectRisk.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:53:    queryFn: () => base44.entities.Resource.list(),
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:59:    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:66:    queryFn: () => base44.entities.Financial.filter({ project_id: projectId }),
+src/components/project-dashboard/ProjectDetailedDashboard.jsx:73:    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId }),
+src/components/project-dashboard/BudgetWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/BudgetWidget.jsx:9:    queryFn: () => base44.entities.Financial.filter({ project_id: projectId })
+src/components/project-dashboard/BudgetWidget.jsx:14:    queryFn: () => base44.entities.Expense.filter({ project_id: projectId })
+src/components/project-dashboard/DeliveryWidget.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/DeliveryWidget.jsx:10:    queryFn: () => base44.entities.Delivery.filter({ project_id: projectId })
+src/components/project-dashboard/ResourceAllocationView.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/project-dashboard/ResourceAllocationView.jsx:12:    queryFn: () => base44.entities.Task.filter({ project_id: projectId })
+src/components/project-dashboard/ResourceAllocationView.jsx:17:    queryFn: () => base44.entities.Resource.list()
+src/components/services/backend.jsx:1:import { base44 } from '@/api/base44Client';
+src/components/services/backend.jsx:5:  base44.functions.invoke('sovOperations', { operation: 'create', data });
+src/components/services/backend.jsx:8:  base44.functions.invoke('sovOperations', { operation: 'update', data: { id, updates } });
+src/components/services/backend.jsx:11:  base44.functions.invoke('sovOperations', { operation: 'delete', data: { id } });
+src/components/services/backend.jsx:15:  base44.functions.invoke('expenseOperations', { operation: 'create', data });
+src/components/services/backend.jsx:18:  base44.functions.invoke('expenseOperations', { operation: 'update', data: { id, updates } });
+src/components/services/backend.jsx:21:  base44.functions.invoke('expenseOperations', { operation: 'delete', data: { id } });
+src/components/services/backend.jsx:25:  base44.functions.invoke('budgetOperations', { operation: 'create', data });
+src/components/services/backend.jsx:28:  base44.functions.invoke('budgetOperations', { operation: 'update', data: { id, updates } });
+src/components/services/backend.jsx:31:  base44.functions.invoke('budgetOperations', { operation: 'delete', data: { id } });
+src/components/services/backend.jsx:35:  base44.functions.invoke('invoiceOperations', { operation: 'create', data });
+src/components/services/backend.jsx:38:  base44.functions.invoke('invoiceOperations', { operation: 'update', data: { id, updates } });
+src/components/services/backend.jsx:41:  base44.functions.invoke('invoiceOperations', { operation: 'delete', data: { id } });
+src/components/services/backend.jsx:45:  base44.functions.invoke('etcOperations', { operation: 'create', data });
+src/components/services/backend.jsx:48:  base44.functions.invoke('etcOperations', { operation: 'update', data: { id, updates } });
+src/components/services/backend.jsx:51:  base44.functions.invoke('etcOperations', { operation: 'delete', data: { id } });
+src/components/services/backend.jsx:55:  base44.functions.invoke('generateInvoice', { projectId, periodStart, periodEnd });
+src/components/services/backend.jsx:58:  base44.functions.invoke('approveInvoice', { invoiceId });
+src/components/services/backend.jsx:61:  base44.functions.invoke('deleteInvoice', { invoiceId });
+src/components/services/backend.jsx:65:  base44.functions.invoke('mapCostCodeToSOV', { sovItemId, costCodeId, allocationPercent });
+src/components/services/backend.jsx:68:  base44.functions.invoke('unmapCostCodeFromSOV', { mappingId });
+src/components/services/backend.jsx:71:  base44.functions.invoke('updateSOVCostCodeAllocation', { mappingId, allocationPercent });
+src/components/services/backend.jsx:75:  base44.functions.invoke('createCostCode', data);
+src/components/services/backend.jsx:79:  base44.functions.invoke('getSOVCostSummary', { projectId });
+src/components/services/backend.jsx:82:  base44.functions.invoke('getProjectFinancialSummary', { projectId });
+src/components/services/backend.jsx:85:  base44.functions.invoke('getCostRiskSignal', { projectId });
+src/components/services/backend.jsx:89:  base44.functions.invoke('updateSOVPercentComplete', { sovItemId, percentComplete });
+src/components/services/backend.jsx:92:  base44.functions.invoke('createSOVItem', { projectId, sovCode, description, scheduledValue, category });
+src/components/services/backend.jsx:96:  base44.functions.invoke('changeOrderOperations', { operation: 'approve', data: { changeOrderId } });
+src/components/services/backend.jsx:100:  base44.functions.invoke('dataIntegrityCheck', { projectId });
+src/components/services/backend.jsx:104:  base44.functions.invoke('drawingOperations', { operation: 'supersede', data: { oldSetId, newRevision, status, ifa_date, sheet_count } });
+src/components/services/backend.jsx:107:  base44.functions.invoke('drawingOperations', { operation: 'release_for_fab', data: { setId } });
+src/components/services/backend.jsx:111:  base44.functions.invoke('validateSchemaChange', { entity_name, proposed_changes, justification });
+src/components/services/base44Safe.jsx:1:import { base44 } from '@/api/base44Client';
+src/components/services/base44Safe.jsx:34:        return base44.entities.Task.list(sortBy, limit);
+src/components/services/base44Safe.jsx:39:        return base44.entities.Task.filter(sanitized, sortBy, limit);
+src/components/analytics/PortfolioOverview.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/analytics/PortfolioOverview.jsx:15:      const response = await base44.functions.invoke('getPortfolioMetrics', { 
+src/components/analytics/ProjectAnalyticsInsights.jsx:2:import { base44 } from '@/api/base44Client';
+src/components/analytics/ProjectAnalyticsInsights.jsx:21:      const response = await base44.functions.invoke('getProjectAnalytics', {});
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:68:    queryFn: () => base44.entities.Project.list('name'),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:114:          base44.entities.Project.filter({ id: pid }).then(p => p[0]),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:115:          base44.entities.WorkPackage.filter({ project_id: pid }),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:116:          base44.entities.Task.filter({ project_id: pid }),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:117:          base44.entities.Financial.filter({ project_id: pid }),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:118:          base44.entities.Delivery.filter({ project_id: pid }),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:119:          base44.entities.DrawingSet.filter({ project_id: pid }),
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:120:          base44.entities.Expense.filter({ project_id: pid })
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:162:      const cos = await base44.entities.ChangeOrder.filter({
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:177:      const { data } = await base44.functions.invoke('predictProjectRisks', {
+src/components/analytics/UnifiedAnalyticsDashboard.jsx:192:      const { data } = await base44.functions.invoke('generateExecutiveReport', {
+src/components/reports/AutoReportGenerator.jsx:6:import { base44 } from '@/api/base44Client';
+src/components/reports/AutoReportGenerator.jsx:17:      const response = await base44.functions.invoke('generateExecutiveSummary', {
+src/components/labor/LaborEntryForm.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/labor/LaborEntryForm.jsx:47:    queryFn: () => base44.entities.Crew.filter({ project_id: projectId, status: 'active' }),
+src/components/labor/LaborEntryForm.jsx:53:    queryFn: () => base44.entities.Task.filter({ 
+src/components/labor/LaborEntryForm.jsx:62:    queryFn: () => base44.entities.Resource.filter({
+src/components/labor/LaborEntryForm.jsx:94:      const entry = await base44.entities.LaborEntry.create({
+src/components/labor/MyUnapprovedHours.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/labor/MyUnapprovedHours.jsx:23:    queryFn: () => base44.auth.me()
+src/components/labor/MyUnapprovedHours.jsx:31:      const entries = await base44.entities.LaborHours.filter({ crew_employee: currentUser.email });
+src/components/labor/MyUnapprovedHours.jsx:40:    queryFn: () => base44.entities.Project.list()
+src/components/labor/MyUnapprovedHours.jsx:45:    queryFn: () => base44.entities.WorkPackage.list()
+src/components/labor/MyUnapprovedHours.jsx:50:    queryFn: () => base44.entities.CostCode.list()
+src/components/labor/MyUnapprovedHours.jsx:54:    mutationFn: ({ id, data }) => base44.entities.LaborHours.update(id, data),
+src/components/labor/MyUnapprovedHours.jsx:64:    mutationFn: (id) => base44.entities.LaborHours.delete(id),
+src/components/labor/MyUnapprovedHours.jsx:72:    mutationFn: (id) => base44.entities.LaborHours.update(id, {
+src/components/labor/MyUnapprovedHours.jsx:244:                base44.entities.LaborHours.create(data).then(() => {
+src/components/labor/CrewsAssignments.jsx:3:import { base44 } from '@/api/base44Client';
+src/components/labor/CrewsAssignments.jsx:22:    queryFn: () => base44.entities.Crew.filter({ project_id: projectId }),
+src/components/labor/CrewsAssignments.jsx:28:    queryFn: () => base44.entities.Resource.filter({ type: 'labor' })
+src/components/labor/CrewsAssignments.jsx:32:    mutationFn: ({ id, data }) => base44.entities.Crew.update(id, data),
+src/components/labor/CrewsAssignments.jsx:233:      await base44.entities.Crew.create(formData);
+src/components/deliveries/LocationTracker.jsx:8:import { base44 } from '@/api/base44Client';
+src/components/deliveries/LocationTracker.jsx:52:      const response = await base44.functions.invoke('updateDeliveryLocation', {
+src/lib/AuthContext.jsx:2:import { base44 } from '@/api/base44Client';
+src/lib/AuthContext.jsx:94:      const currentUser = await base44.auth.me();
+src/lib/AuthContext.jsx:119:      base44.auth.logout(window.location.href);
+src/lib/AuthContext.jsx:122:      base44.auth.logout();
+src/lib/AuthContext.jsx:128:    base44.auth.redirectToLogin(window.location.href);
+src/lib/NavigationTracker.jsx:4:import { base44 } from '@/api/base44Client';
+src/lib/NavigationTracker.jsx:35:            base44.appLogs.logUserInApp(pageName).catch(() => {
+src/lib/PageNotFound.jsx:2:import { base44 } from '@/api/base44Client';
+src/lib/PageNotFound.jsx:14:                const user = await base44.auth.me();
+src/pages/DailyLogs.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/DailyLogs.jsx:58:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/DailyLogs.jsx:64:    queryFn: () => base44.entities.DailyLog.list('-log_date'),
+src/pages/DailyLogs.jsx:69:    mutationFn: (data) => base44.entities.DailyLog.create(data),
+src/pages/DailyLogs.jsx:78:    mutationFn: ({ id, data }) => base44.entities.DailyLog.update(id, data),
+src/pages/DailyLogs.jsx:87:    mutationFn: (id) => base44.entities.DailyLog.delete(id),
+src/pages/Insights.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Insights.jsx:22:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Insights.jsx:28:    queryFn: () => base44.entities.Financial.list(),
+src/pages/Insights.jsx:34:    queryFn: () => base44.entities.Expense.list(),
+src/pages/Insights.jsx:40:    queryFn: () => base44.entities.RFI.list(),
+src/pages/Insights.jsx:46:    queryFn: () => base44.entities.ChangeOrder.list(),
+src/pages/Insights.jsx:52:    queryFn: () => base44.entities.Task.list(),
+src/pages/Insights.jsx:58:    queryFn: () => base44.entities.DrawingSet.list(),
+src/pages/Documents.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Documents.jsx:109:    queryFn: () => base44.auth.me(),
+src/pages/Documents.jsx:115:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Documents.jsx:121:    queryFn: () => base44.entities.Document.list('-created_date'),
+src/pages/Documents.jsx:127:    queryFn: () => base44.entities.WorkPackage.list(),
+src/pages/Documents.jsx:133:    queryFn: () => base44.entities.Expense.list('-expense_date', 500),
+src/pages/Documents.jsx:139:    queryFn: () => base44.entities.SOVItem.list(),
+src/pages/Documents.jsx:145:    queryFn: () => base44.entities.DailyLog.list(),
+src/pages/Documents.jsx:151:    queryFn: () => base44.entities.Task.list(),
+src/pages/Documents.jsx:156:    mutationFn: (data) => base44.entities.Document.create(data),
+src/pages/Documents.jsx:165:    mutationFn: ({ id, data }) => base44.entities.Document.update(id, data),
+src/pages/Documents.jsx:174:    mutationFn: (id) => base44.entities.Document.delete(id),
+src/pages/Documents.jsx:187:      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/pages/Documents.jsx:211:          base44.functions.invoke('autoProcessDocument', {
+src/pages/Documents.jsx:244:        base44.functions.invoke('autoProcessDocument', {
+src/pages/Documents.jsx:308:      await base44.functions.invoke('processDocumentOCR', { documentId: docId });
+src/pages/Documents.jsx:322:      const { data } = await base44.functions.invoke('autoProcessDocument', {
+src/pages/Documents.jsx:371:      const { data } = await base44.functions.invoke('bulkUpdateDocuments', {
+src/pages/Profile.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Profile.jsx:39:    queryFn: () => base44.auth.me()
+src/pages/Profile.jsx:43:    mutationFn: (data) => base44.auth.updateMe(data),
+src/pages/Profile.jsx:60:    base44.auth.logout();
+src/pages/Profile.jsx:66:      return await base44.functions.invoke('deleteUserAccount', {});
+src/pages/Profile.jsx:71:        base44.auth.logout();
+src/pages/Resources.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Resources.jsx:39:    queryFn: () => base44.entities.Resource.list('name'),
+src/pages/Resources.jsx:45:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Resources.jsx:51:    queryFn: () => base44.entities.Task.list(),
+src/pages/Resources.jsx:57:    queryFn: () => base44.entities.SOVItem.list(),
+src/pages/Resources.jsx:63:    queryFn: () => base44.entities.ResourceAllocation.list(),
+src/pages/Resources.jsx:69:    const unsub = base44.entities.Resource.subscribe(() => {
+src/pages/Resources.jsx:76:    mutationFn: (data) => base44.entities.Resource.create(data),
+src/pages/Resources.jsx:85:    mutationFn: ({ id, data }) => base44.entities.Resource.update(id, data),
+src/pages/Resources.jsx:95:    mutationFn: (id) => base44.entities.Resource.delete(id),
+src/pages/Analytics.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Analytics.jsx:37:    queryFn: () => base44.auth.me(),
+src/pages/Analytics.jsx:44:    queryFn: () => base44.entities.Project.list(),
+src/pages/Analytics.jsx:82:    const unsubscribeDrawings = base44.entities.DrawingSet.subscribe((event) => {
+src/pages/Analytics.jsx:88:    const unsubscribeTasks = base44.entities.Task.subscribe((event) => {
+src/pages/Analytics.jsx:94:    const unsubscribeRFIs = base44.entities.RFI.subscribe((event) => {
+src/pages/Analytics.jsx:109:      await base44.auth.updateMe({ dashboard_config: config });
+src/pages/Analytics.jsx:123:      const response = await base44.functions.invoke('getPortfolioMetricsOptimized', {
+src/pages/Analytics.jsx:135:      ? base44.entities.Project.filter({ id: activeProjectId })
+src/pages/Analytics.jsx:146:        ? base44.entities.Financial.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:147:        : base44.entities.Financial.list();
+src/pages/Analytics.jsx:157:        ? await base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
+src/pages/Analytics.jsx:158:        : await base44.entities.Task.list();
+src/pages/Analytics.jsx:167:      ? base44.entities.Expense.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:168:      : base44.entities.Expense.list(),
+src/pages/Analytics.jsx:175:      ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:176:      : base44.entities.EstimatedCostToComplete.list(),
+src/pages/Analytics.jsx:182:    queryFn: () => base44.entities.Resource.list(),
+src/pages/Analytics.jsx:191:      ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:202:        ? await base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
+src/pages/Analytics.jsx:203:        : await base44.entities.RFI.list('-created_date');
+src/pages/Analytics.jsx:213:        ? await base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
+src/pages/Analytics.jsx:214:        : await base44.entities.ChangeOrder.list('-created_date');
+src/pages/Analytics.jsx:223:      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:224:      : base44.entities.DrawingSet.list(),
+src/pages/Analytics.jsx:231:      ? base44.entities.ScopeGap.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:232:      : base44.entities.ScopeGap.list(),
+src/pages/Analytics.jsx:239:      ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:240:      : base44.entities.LaborBreakdown.list(),
+src/pages/Analytics.jsx:247:      ? base44.entities.LaborHours.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:248:      : base44.entities.LaborHours.list(),
+src/pages/Analytics.jsx:255:      ? base44.entities.SOVItem.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:256:      : base44.entities.SOVItem.list(),
+src/pages/Analytics.jsx:262:    queryFn: () => base44.entities.CostCode.list('code'),
+src/pages/Analytics.jsx:269:      ? base44.entities.Invoice.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:270:      : base44.entities.Invoice.list(),
+src/pages/Analytics.jsx:277:      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:278:      : base44.entities.Delivery.list(),
+src/pages/Analytics.jsx:285:      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+src/pages/Analytics.jsx:286:      : base44.entities.WorkPackage.list(),
+src/pages/Calendar.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Calendar.jsx:63:      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+src/pages/Calendar.jsx:64:      : base44.entities.Task.list('start_date'),
+src/pages/Calendar.jsx:70:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Calendar.jsx:77:      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+src/pages/Calendar.jsx:78:      : base44.entities.Delivery.list(),
+src/pages/Calendar.jsx:85:      ? base44.entities.Meeting.filter({ project_id: activeProjectId })
+src/pages/Calendar.jsx:86:      : base44.entities.Meeting.list(),
+src/pages/Calendar.jsx:91:    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+src/pages/Calendar.jsx:100:    mutationFn: (id) => base44.entities.Task.delete(id),
+src/pages/Schedule.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Schedule.jsx:37:    queryFn: () => base44.auth.me(),
+src/pages/Schedule.jsx:47:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Schedule.jsx:88:          base44.entities.Task.filter({ project_id: projectId }, 'end_date')
+src/pages/Schedule.jsx:111:    queryFn: () => base44.entities.Resource.list(),
+src/pages/Schedule.jsx:122:          base44.entities.RFI.filter({ project_id: projectId })
+src/pages/Schedule.jsx:137:          base44.entities.ChangeOrder.filter({ project_id: projectId })
+src/pages/Schedule.jsx:152:          base44.entities.DrawingSet.filter({ project_id: projectId })
+src/pages/Schedule.jsx:203:      return await base44.entities.Task.create(data);
+src/pages/Schedule.jsx:218:      return await base44.entities.Task.update(id, data);
+src/pages/Schedule.jsx:233:      return await base44.entities.Task.delete(id);
+src/pages/ProductionMeetings.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ProductionMeetings.jsx:28:    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+src/pages/ProductionMeetings.jsx:33:    queryFn: () => base44.entities.ProductionNote.filter({ week_id: weekInfo.week_id })
+src/pages/ProductionMeetings.jsx:54:    mutationFn: (data) => base44.entities.ProductionNote.create(data),
+src/pages/ProductionMeetings.jsx:62:    mutationFn: ({ id, data }) => base44.entities.ProductionNote.update(id, data),
+src/pages/ProductionMeetings.jsx:70:    mutationFn: (id) => base44.entities.ProductionNote.delete(id),
+src/pages/DocumentLinkage.jsx:4:import { base44 } from '@/api/base44Client';
+src/pages/DocumentLinkage.jsx:13:    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+src/pages/Meetings.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Meetings.jsx:50:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Meetings.jsx:56:    queryFn: () => base44.entities.Meeting.list('-meeting_date'),
+src/pages/Meetings.jsx:61:    mutationFn: (data) => base44.entities.Meeting.create(data),
+src/pages/Meetings.jsx:70:    mutationFn: ({ id, data }) => base44.entities.Meeting.update(id, data),
+src/pages/Meetings.jsx:78:    mutationFn: (id) => base44.entities.Meeting.delete(id),
+src/pages/Meetings.jsx:99:              await base44.functions.invoke('generateRecurringMeetings', {
+src/pages/ToDoList.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ToDoList.jsx:29:    queryFn: () => base44.auth.me()
+src/pages/ToDoList.jsx:36:        return base44.entities.TodoItem.filter({ project_id: activeProjectId });
+src/pages/ToDoList.jsx:38:      return base44.entities.TodoItem.list();
+src/pages/ToDoList.jsx:43:    mutationFn: (data) => base44.entities.TodoItem.create(data),
+src/pages/ToDoList.jsx:52:    mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
+src/pages/Integrations.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Integrations.jsx:26:    queryFn: () => base44.auth.me()
+src/pages/Integrations.jsx:32:      const response = await base44.functions.invoke('getIntegrationStatus', {});
+src/pages/Integrations.jsx:40:      const response = await base44.functions.invoke('sendSlackNotification', {
+src/pages/Integrations.jsx:53:      const response = await base44.functions.invoke('sendTeamsNotification', {
+src/pages/Integrations.jsx:67:      const response = await base44.functions.invoke('syncGoogleDrive', { folder_id: folderId });
+src/pages/Performance.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Performance.jsx:19:    queryFn: () => base44.entities.Project.list(),
+src/pages/Performance.jsx:25:    queryFn: () => base44.entities.Financial.list(),
+src/pages/Performance.jsx:31:    queryFn: () => base44.entities.ChangeOrder.list(),
+src/pages/Performance.jsx:37:    queryFn: () => base44.entities.DailyLog.list(),
+src/pages/Performance.jsx:43:    queryFn: () => base44.entities.Task.list(),
+src/pages/Performance.jsx:49:    queryFn: () => base44.entities.RFI.list(),
+src/pages/Performance.jsx:248:      const response = await base44.integrations.Core.InvokeLLM({
+src/pages/ExecutiveRollUp.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ExecutiveRollUp.jsx:17:    queryFn: () => base44.auth.me()
+src/pages/ExecutiveRollUp.jsx:22:    queryFn: () => base44.entities.Project.filter({ 
+src/pages/ExecutiveRollUp.jsx:29:    queryFn: () => base44.entities.SOVItem.list()
+src/pages/ExecutiveRollUp.jsx:34:    queryFn: () => base44.entities.Expense.filter({
+src/pages/ExecutiveRollUp.jsx:41:    queryFn: () => base44.entities.ChangeOrder.list()
+src/pages/ExecutiveRollUp.jsx:46:    queryFn: () => base44.entities.EstimatedCostToComplete.list()
+src/pages/ExecutiveRollUp.jsx:51:    queryFn: () => base44.entities.SOVCostCodeMap.list()
+src/pages/ChangeOrders.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ChangeOrders.jsx:53:    const unsubscribe = base44.entities.ChangeOrder.subscribe((event) => {
+src/pages/ChangeOrders.jsx:62:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/ChangeOrders.jsx:74:    queryFn: () => base44.entities.ChangeOrder.list('co_number'),
+src/pages/ChangeOrders.jsx:80:    mutationFn: (data) => base44.entities.ChangeOrder.create(data),
+src/pages/ChangeOrders.jsx:101:        changed_by: (await base44.auth.me()).email,
+src/pages/ChangeOrders.jsx:114:      await base44.functions.invoke('notifyStatusChange', {
+src/pages/ChangeOrders.jsx:121:      return base44.entities.ChangeOrder.update(id, updateData);
+src/pages/ChangeOrders.jsx:134:    mutationFn: (id) => base44.entities.ChangeOrder.delete(id),
+src/pages/Labor.jsx:2:import { base44 } from '@/api/base44Client';
+src/pages/Labor.jsx:28:    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+src/pages/Labor.jsx:33:    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+src/pages/Labor.jsx:40:    queryFn: () => base44.entities.Crew.filter({ project_id: activeProjectId, status: 'active' }),
+src/pages/Labor.jsx:47:      const allEntries = await base44.entities.LaborEntry.filter({ project_id: activeProjectId });
+src/pages/Detailing.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Detailing.jsx:62:    queryFn: () => base44.entities.Project.list(),
+src/pages/Detailing.jsx:68:    queryFn: () => base44.auth.me()
+src/pages/Detailing.jsx:78:    const unsubscribe = base44.entities.DrawingSet.subscribe((event) => {
+src/pages/Detailing.jsx:88:    queryFn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') : [],
+src/pages/Detailing.jsx:95:    queryFn: () => base44.entities.User.list(),
+src/pages/Detailing.jsx:101:    queryFn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }) : [],
+src/pages/Detailing.jsx:107:    mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, {
+src/pages/Detailing.jsx:118:    mutationFn: ({ id, reviewer }) => base44.entities.DrawingSet.update(id, { reviewer }),
+src/pages/Detailing.jsx:127:      const createdSet = await base44.entities.DrawingSet.create(data);
+src/pages/Detailing.jsx:128:      await base44.entities.DrawingRevision.create({
+src/pages/Detailing.jsx:145:    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+src/pages/ResourceManagement.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ResourceManagement.jsx:44:    const unsubscribeTasks = base44.entities.Task.subscribe((event) => {
+src/pages/ResourceManagement.jsx:48:    const unsubscribeResources = base44.entities.Resource.subscribe((event) => {
+src/pages/ResourceManagement.jsx:61:    queryFn: () => base44.entities.Resource.list(),
+src/pages/ResourceManagement.jsx:67:    queryFn: () => base44.entities.Project.list(),
+src/pages/ResourceManagement.jsx:73:    queryFn: () => base44.entities.Task.list(),
+src/pages/ResourceManagement.jsx:79:    queryFn: () => base44.entities.ResourceAllocation.list(),
+src/pages/ResourceManagement.jsx:85:    mutationFn: (data) => base44.entities.Resource.create(data),
+src/pages/ResourceManagement.jsx:98:      return await base44.entities.Resource.update(id, data);
+src/pages/ResourceManagement.jsx:127:      const validation = await base44.functions.invoke('validateTaskResourceAssignment', {
+src/pages/ResourceManagement.jsx:144:      return await base44.entities.Task.update(taskId, {
+src/pages/ResourceManagement.jsx:162:      const response = await base44.functions.invoke('getResourceUtilizationMetrics', {
+src/pages/LaborScope.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/LaborScope.jsx:32:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/LaborScope.jsx:38:    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+src/pages/LaborScope.jsx:44:    queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: activeProjectId }),
+src/pages/LaborScope.jsx:51:    queryFn: () => base44.entities.SpecialtyDiscussionItem.filter({ project_id: activeProjectId }),
+src/pages/LaborScope.jsx:58:    queryFn: () => base44.entities.ScopeGap.filter({ project_id: activeProjectId }),
+src/pages/LaborScope.jsx:65:    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+src/pages/LaborScope.jsx:71:    mutationFn: (projectId) => base44.functions.invoke('initializeLaborBreakdown', { project_id: projectId }),
+src/pages/LaborScope.jsx:79:    mutationFn: (projectId) => base44.functions.invoke('allocateLaborToSchedule', { project_id: projectId }),
+src/pages/LaborScope.jsx:87:    mutationFn: ({ id, data }) => base44.entities.LaborBreakdown.update(id, data),
+src/pages/LaborScope.jsx:94:    mutationFn: (id) => base44.entities.LaborBreakdown.delete(id),
+src/pages/LaborScope.jsx:102:    mutationFn: (data) => base44.entities.SpecialtyDiscussionItem.create(data),
+src/pages/LaborScope.jsx:110:    mutationFn: ({ id, data }) => base44.entities.SpecialtyDiscussionItem.update(id, data),
+src/pages/LaborScope.jsx:115:    mutationFn: (id) => base44.entities.SpecialtyDiscussionItem.delete(id),
+src/pages/LaborScope.jsx:123:    mutationFn: (data) => base44.entities.ScopeGap.create(data),
+src/pages/LaborScope.jsx:131:    mutationFn: ({ id, data }) => base44.entities.ScopeGap.update(id, data),
+src/pages/LaborScope.jsx:136:    mutationFn: (id) => base44.entities.ScopeGap.delete(id),
+src/pages/Contracts.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Contracts.jsx:44:    queryFn: () => base44.entities.Project.list(),
+src/pages/Contracts.jsx:50:    queryFn: () => base44.entities.ChangeOrder.filter(
+src/pages/Contracts.jsx:61:    mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+src/pages/Contracts.jsx:74:    mutationFn: (data) => base44.entities.Project.create(data),
+src/pages/Contracts.jsx:124:      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/pages/Contracts.jsx:125:      const user = await base44.auth.me();
+src/pages/Messages.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Messages.jsx:21:    queryFn: () => base44.auth.me()
+src/pages/Messages.jsx:26:    queryFn: () => base44.entities.User.list()
+src/pages/Messages.jsx:31:    queryFn: () => base44.entities.Project.list('-updated_date')
+src/pages/Messages.jsx:36:    queryFn: () => base44.entities.Message.list('-created_date', 100)
+src/pages/WorkPackages.jsx:2:import { base44 } from '@/api/base44Client';
+src/pages/WorkPackages.jsx:36:    queryFn: () => base44.auth.me()
+src/pages/WorkPackages.jsx:41:    queryFn: () => base44.entities.Project.list(),
+src/pages/WorkPackages.jsx:49:    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
+src/pages/WorkPackages.jsx:56:    const unsub = base44.entities.WorkPackage.subscribe((event) => {
+src/pages/WorkPackages.jsx:66:    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+src/pages/WorkPackages.jsx:73:    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+src/pages/WorkPackages.jsx:80:    queryFn: () => base44.entities.CostCode.list('code'),
+src/pages/WorkPackages.jsx:86:    queryFn: () => base44.entities.Document.filter({ project_id: activeProjectId }),
+src/pages/WorkPackages.jsx:93:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+src/pages/WorkPackages.jsx:100:    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+src/pages/WorkPackages.jsx:106:    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+src/pages/WorkPackages.jsx:115:    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+src/pages/WorkPackages.jsx:127:      const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
+src/pages/WorkPackages.jsx:140:      const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
+src/pages/DailyLogsExport.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/DailyLogsExport.jsx:21:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/DailyLogsExport.jsx:33:      const response = await base44.functions.invoke('exportDailyLogsPDF', {
+src/pages/Dashboard.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Dashboard.jsx:32:    queryFn: () => base44.auth.me(),
+src/pages/Dashboard.jsx:42:      const response = await base44.functions.invoke('getDashboardData', {
+src/pages/Dashboard.jsx:72:      const response = await base44.functions.invoke('generateWeeklyExecutiveSummary', {});
+src/pages/MyActionItems.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/MyActionItems.jsx:23:    queryFn: () => base44.auth.me()
+src/pages/MyActionItems.jsx:28:    queryFn: () => base44.entities.ProductionNote.filter({ 
+src/pages/MyActionItems.jsx:37:    queryFn: () => base44.entities.Project.list()
+src/pages/MyActionItems.jsx:41:    mutationFn: ({ id, data }) => base44.entities.ProductionNote.update(id, data),
+src/pages/WeeklySchedule.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/WeeklySchedule.jsx:55:      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+src/pages/WeeklySchedule.jsx:56:      : base44.entities.Task.list('start_date'),
+src/pages/WeeklySchedule.jsx:62:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/WeeklySchedule.jsx:69:      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+src/pages/WeeklySchedule.jsx:70:      : base44.entities.WorkPackage.list(),
+src/pages/WeeklySchedule.jsx:78:      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+src/pages/WeeklySchedule.jsx:149:    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+src/pages/NotificationSettings.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/NotificationSettings.jsx:23:    queryFn: () => base44.auth.me()
+src/pages/NotificationSettings.jsx:37:      const prefs = await base44.entities.NotificationPreference.filter(
+src/pages/NotificationSettings.jsx:74:        return base44.entities.NotificationPreference.update(preferences.id, formData);
+src/pages/NotificationSettings.jsx:76:        return base44.entities.NotificationPreference.create({
+src/pages/NotificationSettings.jsx:138:          await base44.entities.NotificationPreference.update(preferences.id, newFormData);
+src/pages/NotificationSettings.jsx:140:          await base44.entities.NotificationPreference.create({
+src/pages/CostCodes.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/CostCodes.jsx:51:    queryFn: () => base44.entities.CostCode.list('code'),
+src/pages/CostCodes.jsx:56:    mutationFn: (data) => base44.entities.CostCode.create(data),
+src/pages/CostCodes.jsx:65:    mutationFn: ({ id, data }) => base44.entities.CostCode.update(id, data),
+src/pages/CostCodes.jsx:75:    mutationFn: (id) => base44.entities.CostCode.delete(id),
+src/pages/ProjectSettings.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ProjectSettings.jsx:24:      const projects = await base44.entities.Project.filter({ id: projectId });
+src/pages/ProjectSettings.jsx:61:      return await base44.entities.Project.update(projectId, {
+src/pages/Fabrication.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Fabrication.jsx:45:    queryFn: () => base44.entities.Project.list()
+src/pages/Fabrication.jsx:50:    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }),
+src/pages/Fabrication.jsx:56:    queryFn: () => base44.entities.FabricationPackage.filter({ project_id: activeProjectId }),
+src/pages/Fabrication.jsx:62:    queryFn: () => base44.entities.Fabrication.filter({ project_id: activeProjectId }),
+src/pages/Fabrication.jsx:68:    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+src/pages/Fabrication.jsx:74:    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+src/pages/Fabrication.jsx:80:    queryFn: () => base44.entities.RFI.filter({ project_id: activeProjectId }),
+src/pages/Fabrication.jsx:88:    const unsubFabPkg = base44.entities.FabricationPackage.subscribe((event) => {
+src/pages/Fabrication.jsx:94:    const unsubFab = base44.entities.Fabrication.subscribe((event) => {
+src/pages/Fabrication.jsx:101:    const unsubDrawing = base44.entities.DrawingSet.subscribe((event) => {
+src/pages/Fabrication.jsx:108:    const unsubWP = base44.entities.WorkPackage.subscribe((event) => {
+src/pages/Fabrication.jsx:115:    const unsubDelivery = base44.entities.Delivery.subscribe((event) => {
+src/pages/Fabrication.jsx:201:    mutationFn: ({ id, data }) => base44.entities.FabricationPackage.update(id, data),
+src/pages/Fabrication.jsx:211:    mutationFn: ({ id, data }) => base44.entities.Fabrication.update(id, data),
+src/pages/Fabrication.jsx:221:      const delivery = await base44.entities.Delivery.create({
+src/pages/Fabrication.jsx:230:      await base44.entities.FabricationPackage.update(packageData.id, {
+src/pages/Fabrication.jsx:968:              await base44.entities.FabricationPackage.create(data);
+src/pages/Financials.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Financials.jsx:28:    queryFn: () => base44.auth.me(),
+src/pages/Financials.jsx:36:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Financials.jsx:54:    queryFn: () => base44.entities.Financial.filter({ project_id: selectedProject }),
+src/pages/Financials.jsx:62:    queryFn: () => base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date'),
+src/pages/Financials.jsx:70:    queryFn: () => base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end'),
+src/pages/Financials.jsx:78:    queryFn: () => base44.entities.SOVItem.filter({ project_id: selectedProject }),
+src/pages/Financials.jsx:86:    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: selectedProject }),
+src/pages/Financials.jsx:94:    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
+src/pages/Financials.jsx:102:    queryFn: () => base44.entities.CostCode.list('code'),
+src/pages/Financials.jsx:116:        const unsubFinancials = base44.entities.Financial.subscribe((event) => {
+src/pages/Financials.jsx:130:        const unsubExpenses = base44.entities.Expense.subscribe((event) => {
+src/pages/Financials.jsx:144:        const unsubSOV = base44.entities.SOVItem.subscribe((event) => {
+src/pages/RFIHub.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/RFIHub.jsx:47:    queryFn: () => base44.entities.RFI.list('-created_date')
+src/pages/RFIHub.jsx:52:    queryFn: () => base44.entities.Project.list()
+src/pages/RFIHub.jsx:188:    mutationFn: (id) => base44.entities.RFI.delete(id),
+src/pages/Reports.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Reports.jsx:46:    queryFn: () => base44.entities.Report.list('-created_date'),
+src/pages/Reports.jsx:52:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Reports.jsx:58:    queryFn: () => base44.entities.Financial.list(),
+src/pages/Reports.jsx:64:    queryFn: () => base44.entities.Expense.list(),
+src/pages/Reports.jsx:70:    queryFn: () => base44.entities.RFI.list(),
+src/pages/Reports.jsx:76:    queryFn: () => base44.entities.ChangeOrder.list(),
+src/pages/Reports.jsx:82:    queryFn: () => base44.entities.DrawingSet.list(),
+src/pages/Reports.jsx:88:    queryFn: () => base44.entities.Task.list(),
+src/pages/Reports.jsx:94:    queryFn: () => base44.entities.Resource.list(),
+src/pages/Reports.jsx:99:    mutationFn: (data) => base44.entities.Report.create(data),
+src/pages/Reports.jsx:108:    mutationFn: ({ id, data }) => base44.entities.Report.update(id, data),
+src/pages/Reports.jsx:162:        const response = await base44.functions.invoke('generateReport', {
+src/pages/TestSuite.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/TestSuite.jsx:19:    queryFn: () => base44.auth.me()
+src/pages/TestSuite.jsx:24:      const response = await base44.functions.invoke('testRunner', { test_suite: suite });
+src/pages/Submittals.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Submittals.jsx:38:    queryFn: () => base44.entities.Submittal.filter({ project_id: activeProjectId }, '-submitted_date'),
+src/pages/Submittals.jsx:44:    queryFn: () => base44.entities.RFI.filter({ project_id: activeProjectId }),
+src/pages/Submittals.jsx:50:    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+src/pages/Submittals.jsx:55:    mutationFn: (data) => base44.entities.Submittal.create(data),
+src/pages/Submittals.jsx:67:    mutationFn: ({ id, data }) => base44.entities.Submittal.update(id, data),
+src/pages/Submittals.jsx:78:    mutationFn: (id) => base44.entities.Submittal.delete(id),
+src/pages/LookAheadResourcePlanning.jsx:2:import { base44 } from '@/api/base44Client';
+src/pages/LookAheadResourcePlanning.jsx:23:    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+src/pages/LookAheadResourcePlanning.jsx:28:    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+src/pages/LookAheadResourcePlanning.jsx:35:    queryFn: () => base44.entities.Crew.filter({ project_id: activeProjectId }),
+src/pages/LookAheadResourcePlanning.jsx:41:    queryFn: () => base44.entities.LaborEntry.filter({ project_id: activeProjectId }),
+src/pages/LookAheadResourcePlanning.jsx:47:    queryFn: () => base44.entities.EquipmentLog.filter({ project_id: activeProjectId }),
+src/pages/LookAheadResourcePlanning.jsx:53:    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+src/pages/LookAheadResourcePlanning.jsx:59:    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+src/pages/LookAheadPlanning.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/LookAheadPlanning.jsx:42:      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+src/pages/LookAheadPlanning.jsx:43:      : base44.entities.Task.list('start_date'),
+src/pages/LookAheadPlanning.jsx:49:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/LookAheadPlanning.jsx:56:      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+src/pages/LookAheadPlanning.jsx:65:      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+src/pages/LookAheadPlanning.jsx:74:      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+src/pages/LookAheadPlanning.jsx:83:      ? base44.entities.RFI.filter({ project_id: activeProjectId })
+src/pages/LookAheadPlanning.jsx:90:    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+src/pages/FieldTools.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/FieldTools.jsx:32:      return await base44.entities.Document.filter({
+src/pages/FieldTools.jsx:42:    queryFn: () => activeProjectId ? base44.entities.FieldInstall.filter({ project_id: activeProjectId }) : [],
+src/pages/FieldTools.jsx:48:    queryFn: () => activeProjectId ? base44.entities.PunchItem.filter({ project_id: activeProjectId }) : [],
+src/pages/FieldTools.jsx:53:    mutationFn: ({ id, data }) => base44.entities.FieldInstall.update(id, data),
+src/pages/FieldTools.jsx:61:    mutationFn: (data) => base44.entities.FieldInstall.create(data),
+src/pages/FieldTools.jsx:70:    mutationFn: (data) => base44.entities.PunchItem.create(data),
+src/pages/FieldTools.jsx:84:        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/pages/FieldTools.jsx:86:        await base44.entities.Document.create({
+src/pages/Projects.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Projects.jsx:81:    queryFn: () => base44.auth.me(),
+src/pages/Projects.jsx:93:    queryFn: () => base44.entities.Project.list('-updated_date'),
+src/pages/Projects.jsx:100:    queryFn: () => base44.entities.User.list('full_name'),
+src/pages/Projects.jsx:107:    queryFn: () => base44.entities.Task.list('start_date'),
+src/pages/Projects.jsx:114:    queryFn: () => base44.entities.Financial.list(),
+src/pages/Projects.jsx:121:    queryFn: () => base44.entities.ChangeOrder.list(),
+src/pages/Projects.jsx:128:    queryFn: () => base44.entities.RFI.list(),
+src/pages/Projects.jsx:134:    mutationFn: (/** @type {any} */ data) => base44.entities.Project.create(data),
+src/pages/Projects.jsx:151:    mutationFn: (/** @type {{id: any, data: any}} */ { id, data }) => base44.entities.Project.update(id, data),
+src/pages/Projects.jsx:168:    mutationFn: (/** @type {any} */ id) => base44.entities.Project.delete(id),
+src/pages/Settings.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Settings.jsx:59:    queryFn: () => base44.auth.me(),
+src/pages/Settings.jsx:82:    queryFn: () => base44.entities.User.list('-created_date'),
+src/pages/Settings.jsx:87:    mutationFn: ({ email, role }) => base44.users.inviteUser(email, role),
+src/pages/Settings.jsx:98:      const response = await base44.functions.invoke('updateUserProfile', data);
+src/pages/Settings.jsx:116:    mutationFn: (data) => base44.entities.Feedback.create({
+src/pages/Settings.jsx:130:    queryFn: () => base44.entities.Feedback.filter({ user_email: currentUser?.email }, '-created_date'),
+src/pages/JobStatusReport.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/JobStatusReport.jsx:28:    queryFn: () => base44.entities.Project.list('name')
+src/pages/JobStatusReport.jsx:33:    queryFn: () => base44.entities.SOVItem.filter({ project_id: selectedProject }),
+src/pages/JobStatusReport.jsx:39:    queryFn: () => base44.entities.Invoice.filter({ project_id: selectedProject }),
+src/pages/JobStatusReport.jsx:45:    queryFn: () => base44.entities.Expense.filter({ project_id: selectedProject }),
+src/pages/JobStatusReport.jsx:51:    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: selectedProject }),
+src/pages/JobStatusReport.jsx:57:    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
+src/pages/JobStatusReport.jsx:63:    queryFn: () => base44.entities.CostCode.list('code')
+src/pages/JobStatusReport.jsx:68:    queryFn: () => base44.entities.SOVCostCodeMap.filter({ project_id: selectedProject }),
+src/pages/JobStatusReport.jsx:74:    queryFn: () => base44.entities.InvoiceLine.filter({ invoice_id: selectedInvoice.id }),
+src/pages/JobStatusReport.jsx:220:      await base44.functions.invoke('updateSOVPercentComplete', {
+src/pages/RFIs.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/RFIs.jsx:56:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/RFIs.jsx:62:    queryFn: () => base44.entities.RFI.list('-created_date'),
+src/pages/RFIs.jsx:68:    queryFn: () => base44.entities.DrawingSet.list(),
+src/pages/RFIs.jsx:74:    queryFn: () => base44.entities.ChangeOrder.list(),
+src/pages/RFIs.jsx:80:    queryFn: () => base44.entities.Submittal.list(),
+src/pages/RFIs.jsx:86:    queryFn: () => base44.entities.Delivery.list(),
+src/pages/RFIs.jsx:92:    queryFn: () => base44.auth.me()
+src/pages/RFIs.jsx:116:      return base44.entities.RFI.create({
+src/pages/RFIs.jsx:149:      return base44.entities.RFI.update(id, { ...data, activity_log: activityLog });
+src/pages/RFIs.jsx:165:    mutationFn: (id) => base44.entities.RFI.delete(id),
+src/pages/ProjectPhotos.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ProjectPhotos.jsx:43:      return await base44.entities.Document.filter({
+src/pages/ProjectPhotos.jsx:52:    mutationFn: (docId) => base44.entities.Document.delete(docId),
+src/pages/ProjectPhotos.jsx:61:      base44.entities.Document.update(id, { 
+src/pages/ProjectPhotos.jsx:79:        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/pages/ProjectPhotos.jsx:81:        await base44.entities.Document.create({
+src/pages/ProjectBudget.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ProjectBudget.jsx:32:    queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
+src/pages/ProjectBudget.jsx:38:    queryFn: () => base44.entities.Budget.filter({ project_id: projectId }, '-created_date'),
+src/pages/ProjectBudget.jsx:44:    queryFn: () => base44.entities.BudgetLineItem.filter({ budget_id: selectedBudget.id }),
+src/pages/ProjectBudget.jsx:50:    queryFn: () => base44.entities.CostCode.filter({ is_active: true }, 'code')
+src/pages/ProjectBudget.jsx:55:    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+src/pages/ProjectBudget.jsx:61:    queryFn: () => base44.entities.Resource.list()
+src/pages/ProjectBudget.jsx:66:    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+src/pages/ProjectBudget.jsx:81:    mutationFn: (data) => base44.entities.Budget.create(data),
+src/pages/ProjectBudget.jsx:91:    mutationFn: (data) => base44.entities.BudgetLineItem.create(data),
+src/pages/ProjectBudget.jsx:102:    mutationFn: ({ id, data }) => base44.entities.BudgetLineItem.update(id, data),
+src/pages/ProjectBudget.jsx:113:    mutationFn: (id) => base44.entities.BudgetLineItem.delete(id),
+src/pages/Drawings.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Drawings.jsx:37:    queryFn: () => base44.auth.me()
+src/pages/Drawings.jsx:42:    queryFn: () => base44.entities.Project.list(),
+src/pages/Drawings.jsx:56:      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, '-updated_date')
+src/pages/Drawings.jsx:68:      const allSheets = await base44.entities.DrawingSheet.list();
+src/pages/Drawings.jsx:81:      const allRevisions = await base44.entities.DrawingRevision.list();
+src/pages/Drawings.jsx:91:      ? base44.entities.RFI.filter({ project_id: activeProjectId })
+src/pages/Drawings.jsx:99:    queryFn: () => base44.entities.User.list(),
+src/pages/Drawings.jsx:105:      const createdSet = await base44.entities.DrawingSet.create(data);
+src/pages/Drawings.jsx:106:      await base44.entities.DrawingRevision.create({
+src/pages/Drawings.jsx:124:    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+src/pages/FieldToolsMobile.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/FieldToolsMobile.jsx:29:      return await base44.entities.Document.filter({
+src/pages/FieldToolsMobile.jsx:39:    queryFn: () => activeProjectId ? base44.entities.PunchItem.filter({ project_id: activeProjectId }) : [],
+src/pages/FieldToolsMobile.jsx:45:    queryFn: () => activeProjectId ? base44.entities.FieldInstall.filter({ project_id: activeProjectId }) : [],
+src/pages/FieldToolsMobile.jsx:50:    mutationFn: (data) => base44.entities.PunchItem.create(data),
+src/pages/FieldToolsMobile.jsx:59:    mutationFn: (data) => base44.entities.FieldInstall.create(data),
+src/pages/FieldToolsMobile.jsx:74:          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/pages/FieldToolsMobile.jsx:75:          await base44.entities.Document.create({
+src/pages/FieldToolsMobile.jsx:118:          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+src/pages/FieldToolsMobile.jsx:119:          await base44.entities.Document.create({
+src/pages/BudgetControl.jsx:2:import { base44 } from '@/api/base44Client';
+src/pages/BudgetControl.jsx:26:    queryFn: () => base44.auth.me()
+src/pages/BudgetControl.jsx:31:    queryFn: () => base44.entities.Project.list()
+src/pages/BudgetControl.jsx:42:    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:49:    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:56:    queryFn: () => base44.entities.LaborHours.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:63:    queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:70:    queryFn: () => base44.entities.Expense.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:77:    queryFn: () => base44.entities.CostCode.list(),
+src/pages/BudgetControl.jsx:82:    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+src/pages/BudgetControl.jsx:93:    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:99:    queryFn: () => base44.entities.Financial.filter({ project_id: activeProjectId }),
+src/pages/BudgetControl.jsx:106:    queryFn: () => base44.entities.ClientInvoice.filter({ project_id: activeProjectId }),
+src/pages/ProjectAnalyticsDashboard.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ProjectAnalyticsDashboard.jsx:24:    queryFn: () => base44.entities.Project.list(),
+src/pages/ProjectAnalyticsDashboard.jsx:31:      const response = await base44.functions.invoke('getAdvancedProjectAnalytics', {
+src/pages/ProjectAnalyticsDashboard.jsx:49:    const response = await base44.functions.invoke('exportAnalyticsReport', exportData);
+src/pages/Equipment.jsx:2:import { base44 } from '@/api/base44Client';
+src/pages/Equipment.jsx:33:    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+src/pages/Equipment.jsx:38:    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+src/pages/Equipment.jsx:45:    queryFn: () => base44.entities.Resource.filter({
+src/pages/Equipment.jsx:55:      const allLogs = await base44.entities.EquipmentLog.filter({ project_id: activeProjectId });
+src/pages/Equipment.jsx:68:    queryFn: () => base44.entities.InspectionChecklist.filter({ project_id: activeProjectId }),
+src/pages/Equipment.jsx:296:                await base44.entities.Resource.create(data);
+src/pages/ProjectDashboard.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/ProjectDashboard.jsx:46:      const projects = await base44.entities.Project.filter({ id: activeProjectId });
+src/pages/DataManagement.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/DataManagement.jsx:72:    queryFn: () => base44.entities.Project.list('-updated_date', 100)
+src/pages/DataManagement.jsx:83:        return await base44.entities[selectedEntity].filter({ 
+src/pages/DataManagement.jsx:88:      return await base44.entities[selectedEntity].list('-updated_date', 200);
+src/pages/DataManagement.jsx:95:      await base44.entities[selectedEntity].delete(id);
+src/pages/DataManagement.jsx:109:      await Promise.all(ids.map(id => base44.entities[selectedEntity].update(id, updates)));
+src/pages/DataManagement.jsx:123:      await Promise.all(ids.map(id => base44.entities[selectedEntity].delete(id)));
+src/pages/DataManagement.jsx:157:        return base44.entities[selectedEntity].create(data);
+src/pages/Deliveries.jsx:3:import { base44 } from '@/api/base44Client';
+src/pages/Deliveries.jsx:55:    queryFn: () => base44.entities.Project.list('name'),
+src/pages/Deliveries.jsx:61:    queryFn: () => base44.entities.Delivery.list('-confirmed_date'),
+src/pages/Deliveries.jsx:67:    queryFn: () => base44.auth.me()
+src/pages/Deliveries.jsx:124:      return base44.entities.Delivery.create(cleanData);
+src/pages/Deliveries.jsx:166:      return base44.entities.Delivery.update(id, { ...data, activity_log: updatedActivityLog });
+src/pages/Deliveries.jsx:183:    mutationFn: (id) => base44.entities.Delivery.delete(id),
+src/pages/LoadTesting.jsx:2:import { base44 } from '@/api/base44Client';
+src/pages/LoadTesting.jsx:30:      const { data } = await base44.functions.invoke('seedLoadTestData', config);
+src/pages/LoadTesting.jsx:57:      const { data } = await base44.functions.invoke('cleanupLoadTestData', {});
+src/pages/LoadTesting.jsx:75:        base44.entities.Project.list(),
+src/pages/LoadTesting.jsx:76:        base44.entities.Task.list('-created_date', 1000),
+src/pages/LoadTesting.jsx:77:        base44.entities.RFI.list('-created_date', 1000),
+src/pages/LoadTesting.jsx:78:        base44.entities.Financial.list()
+src/pages/LoadTesting.jsx:111:      const rfis = await base44.entities.RFI.list('-created_date', 5000);

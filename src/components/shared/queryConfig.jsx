@@ -59,7 +59,7 @@ export const QUERY_CONFIG = {
  * // For user session
  * useQuery({
  *   queryKey: ['currentUser'],
- *   queryFn: () => base44.auth.me(),
+ *   queryFn: () => apiClient.auth.me(),
  *   ...QUERY_CONFIG.SESSION
  * })
  */

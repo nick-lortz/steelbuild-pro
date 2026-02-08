@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -36,11 +37,11 @@ export default function Profile() {
 
   const { data: currentUser, isLoading } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => apiClient.auth.me()
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: (data) => apiClient.auth.updateMe(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['currentUser']);
       toast.success('Preferences saved');
@@ -57,7 +58,7 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    base44.auth.logout();
+    apiClient.auth.logout();
   };
 
   const deleteAccountMutation = useMutation({
@@ -68,7 +69,7 @@ export default function Profile() {
     onSuccess: () => {
       toast.success('Account deleted successfully');
       setTimeout(() => {
-        base44.auth.logout();
+        apiClient.auth.logout();
       }, 1500);
     },
     onError: (error) => {

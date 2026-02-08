@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -98,7 +99,7 @@ export default function ChangeOrders() {
       
       versionHistory.push({
         version: current.version || 1,
-        changed_by: (await base44.auth.me()).email,
+        changed_by: (await apiClient.auth.me()).email,
         changed_at: new Date().toISOString(),
         changes_summary: data.changes_summary || 'Updated change order',
         snapshot: { ...current }

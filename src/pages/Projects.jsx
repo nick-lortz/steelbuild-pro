@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { checkPermission } from '@/components/shared/permissions';
 import { Button } from "@/components/ui/button";
@@ -78,7 +79,7 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => apiClient.auth.me(),
     staleTime: Infinity
   });
 

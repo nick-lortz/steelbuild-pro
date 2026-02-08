@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ export default function Analytics() {
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => apiClient.auth.me(),
     retry: false,
     staleTime: 15 * 60 * 1000,
   });
@@ -106,7 +107,7 @@ export default function Analytics() {
 
   const saveDashboardMutation = useMutation({
     mutationFn: async (config) => {
-      await base44.auth.updateMe({ dashboard_config: config });
+      await apiClient.auth.updateMe({ dashboard_config: config });
       return config;
     },
     onSuccess: () => {

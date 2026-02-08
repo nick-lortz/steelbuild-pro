@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Settings, Save, User, Copy } from 'lucide-react';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AITaskHelper from './AITaskHelper';
 import DependencyConfigurator from './DependencyConfigurator';
@@ -43,7 +44,7 @@ export default function TaskForm({
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => apiClient.auth.me()
   });
 
   const { data: subtasks = [] } = useQuery({
@@ -285,7 +286,7 @@ export default function TaskForm({
 
   const handleAssignToMe = async () => {
     try {
-      const currentUser = await base44.auth.me();
+      const currentUser = await apiClient.auth.me();
       // Assuming we need to find or create a resource for this user
       const userResources = resources.filter((r) =>
       r.contact_email === currentUser.email || r.name === currentUser.full_name

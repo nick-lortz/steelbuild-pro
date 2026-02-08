@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, Download, Trash2, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -30,7 +31,7 @@ export default function DocumentManager({ changeOrder, onUpdate }) {
         file_name: file.name,
         file_type: file.type,
         version: changeOrder.version,
-        uploaded_by: (await base44.auth.me()).email,
+        uploaded_by: (await apiClient.auth.me()).email,
         uploaded_at: new Date().toISOString(),
         is_signed: false
       };

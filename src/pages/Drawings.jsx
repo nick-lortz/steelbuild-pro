@@ -22,7 +22,7 @@ import { FileText, Plus, Upload, Search } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function Drawings() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

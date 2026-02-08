@@ -8,6 +8,8 @@
   "include": [
     "src/lib/**/*.ts",
     "src/lib/**/*.tsx",
+    "src/api/**/*.ts",
+    "src/api/**/*.tsx",
     "src/utils/**/*.ts",
     "src/utils/**/*.tsx"
   ],

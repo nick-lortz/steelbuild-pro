@@ -4,11 +4,12 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, Play, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Play, XCircle, FileText, Loader } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function SteelQAPanel({ drawingSet }) {
   const [running, setRunning] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const queryClient = useQueryClient();
 
   const runQAMutation = useMutation({
@@ -31,6 +32,35 @@ export default function SteelQAPanel({ drawingSet }) {
     onError: () => {
       setRunning(false);
       toast.error('QA check failed');
+    }
+  });
+
+  const generateReportMutation = useMutation({
+    mutationFn: async () => {
+      setGeneratingReport(true);
+      const result = await base44.functions.invoke('generateSteelQAReport', {
+        drawing_set_id: drawingSet.id
+      });
+      return result.data;
+    },
+    onSuccess: (data) => {
+      setGeneratingReport(false);
+      queryClient.invalidateQueries(['documents']);
+      toast.success('QA report generated');
+      // Download report
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SteelQA_${drawingSet.set_name}_${drawingSet.current_revision}.html`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    },
+    onError: () => {
+      setGeneratingReport(false);
+      toast.error('Report generation failed');
     }
   });
 
@@ -101,7 +131,25 @@ export default function SteelQAPanel({ drawingSet }) {
           </div>
         )}
 
-        <div className="pt-4 border-t">
+        <div className="pt-4 border-t space-y-2">
+          <Button
+            onClick={() => generateReportMutation.mutate()}
+            disabled={generatingReport || drawingSet.qa_status === 'not_run'}
+            variant="outline"
+            className="w-full"
+          >
+            {generatingReport ? (
+              <>
+                <Loader size={14} className="mr-1 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <FileText size={14} className="mr-1" />
+                Download QA Report
+              </>
+            )}
+          </Button>
           <Button
             variant={canReleaseFab ? 'default' : 'outline'}
             disabled={!canReleaseFab}

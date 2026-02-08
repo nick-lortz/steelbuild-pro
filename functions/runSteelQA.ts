@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     });
 
     const blockers = [];
+    const aiAnalysisResults = [];
 
     // QA Rule: Open RFIs tied to drawing
     if (rfis.length > 0) {
@@ -39,14 +40,78 @@ Deno.serve(async (req) => {
       });
     }
 
-    // QA Rule: Check for steel-specific issues in AI metadata
+    // AI-driven analysis of sheets
+    for (const sheet of sheets) {
+      try {
+        // Build prompt for AI analysis
+        const analysisPrompt = `Analyze this structural steel drawing for fabrication readiness. Check for:
+- Missing bolt sizes or grades (A325, A490, etc.)
+- Undefined connection types (welded, bolted, combination)
+- HSS member wall thicknesses not specified
+- Finish/coating specification conflicts (galvanized vs prime vs paint)
+- Member size/grade callouts that are unclear
+- Missing edge prep requirements for welds
+
+Sheet: ${sheet.sheet_number}
+File: ${sheet.file_name}
+${sheet.ai_metadata ? `Metadata: ${sheet.ai_metadata}` : ''}
+
+Return findings as JSON with severity (P0=must fix, P1=warning) and location.`;
+
+        const aiResult = await base44.integrations.Core.InvokeLLM({
+          prompt: analysisPrompt,
+          file_urls: sheet.file_url,
+          response_json_schema: {
+            type: 'object',
+            properties: {
+              issues: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    severity: { type: 'string', enum: ['P0', 'P1'] },
+                    rule: { type: 'string' },
+                    message: { type: 'string' },
+                    location: { type: 'string' }
+                  }
+                }
+              },
+              summary: { type: 'string' }
+            }
+          }
+        });
+
+        if (aiResult?.data?.issues) {
+          aiResult.data.issues.forEach(issue => {
+            blockers.push({
+              ...issue,
+              sheet_number: sheet.sheet_number,
+              detail_number: issue.location
+            });
+          });
+          aiAnalysisResults.push({
+            sheet: sheet.sheet_number,
+            summary: aiResult.data.summary,
+            issueCount: aiResult.data.issues.length
+          });
+        }
+      } catch (err) {
+        console.error(`AI analysis failed for sheet ${sheet.sheet_number}:`, err);
+        blockers.push({
+          severity: 'P1',
+          rule: 'AI_ANALYSIS_FAILED',
+          message: 'Could not complete AI analysis',
+          sheet_number: sheet.sheet_number
+        });
+      }
+    }
+
+    // Parse existing metadata for legacy checks
     for (const sheet of sheets) {
       if (!sheet.ai_metadata) continue;
-
       try {
         const metadata = JSON.parse(sheet.ai_metadata);
         
-        // Check for missing bolt info
         if (metadata.missing_bolt_size) {
           blockers.push({
             severity: 'P0',
@@ -55,8 +120,6 @@ Deno.serve(async (req) => {
             sheet_number: sheet.sheet_number
           });
         }
-
-        // Check for undefined connection types
         if (metadata.undefined_connection_type) {
           blockers.push({
             severity: 'P0',
@@ -65,8 +128,6 @@ Deno.serve(async (req) => {
             sheet_number: sheet.sheet_number
           });
         }
-
-        // Check for HSS wall thickness
         if (metadata.hss_wall_missing) {
           blockers.push({
             severity: 'P0',
@@ -75,8 +136,6 @@ Deno.serve(async (req) => {
             sheet_number: sheet.sheet_number
           });
         }
-
-        // Check for finish conflicts
         if (metadata.finish_conflict) {
           blockers.push({
             severity: 'P1',
@@ -90,18 +149,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    const qa_status = blockers.filter(b => b.severity === 'P0').length > 0 ? 'fail' : 'pass';
+    // Deduplicate blockers
+    const uniqueBlockers = [];
+    const seen = new Set();
+    blockers.forEach(blocker => {
+      const key = `${blocker.rule}:${blocker.sheet_number}`;
+      if (!seen.has(key)) {
+        uniqueBlockers.push(blocker);
+        seen.add(key);
+      }
+    });
+
+    const qa_status = uniqueBlockers.filter(b => b.severity === 'P0').length > 0 ? 'fail' : 'pass';
+    const reportDate = new Date().toISOString();
 
     await base44.asServiceRole.entities.DrawingSet.update(drawing_set_id, {
       qa_status,
-      qa_blockers: blockers
+      qa_blockers: uniqueBlockers,
+      ai_summary: `Steel QA completed ${new Date().toLocaleDateString()}. ${uniqueBlockers.length} issues found.`
     });
 
     return Response.json({
       qa_status,
-      qa_blockers: blockers,
-      p0_count: blockers.filter(b => b.severity === 'P0').length,
-      p1_count: blockers.filter(b => b.severity === 'P1').length
+      qa_blockers: uniqueBlockers,
+      ai_analysis: aiAnalysisResults,
+      p0_count: uniqueBlockers.filter(b => b.severity === 'P0').length,
+      p1_count: uniqueBlockers.filter(b => b.severity === 'P1').length,
+      report_date: reportDate,
+      sheet_count: sheets.length
     });
   } catch (error) {
     console.error('Steel QA error:', error);

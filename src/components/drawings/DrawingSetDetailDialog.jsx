@@ -33,6 +33,8 @@ import DrawingRevisionWarnings from './DrawingRevisionWarnings';
 import AIAnalysisPanel from './AIAnalysisPanel';
 import DrawingComparisonPanel from './DrawingComparisonPanel';
 import SmartLinkagePanel from './SmartLinkagePanel';
+import DrawingDetailExtraction from './DrawingDetailExtraction';
+import MembersConnectionsTable from './MembersConnectionsTable';
 
 const safeFormatISO = (value, pattern = 'MMM d, yyyy') => {
   if (!value) return '—';
@@ -154,6 +156,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
           <TabsList className="bg-zinc-800 border-zinc-700">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="ai">AI Analysis</TabsTrigger>
+            <TabsTrigger value="steel_details">Steel Details</TabsTrigger>
             <TabsTrigger value="sheets">
               Sheets ({sheets.length})
             </TabsTrigger>
@@ -426,6 +429,29 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                 }}
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="steel_details" className="space-y-4 mt-4">
+            {sheets.length > 0 ? (
+              sheets.map(sheet => (
+                <div key={sheet.id} className="space-y-3">
+                  <DrawingDetailExtraction 
+                    sheet={sheet}
+                    onExtracted={(extracted) => {
+                      queryClient.invalidateQueries({ queryKey: ['drawing-sheets'] });
+                    }}
+                  />
+                  <MembersConnectionsTable extracted={
+                    sheet.ai_metadata ? JSON.parse(sheet.ai_metadata) : null
+                  } />
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-12 text-zinc-500">
+                <FileText size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="text-sm">Upload sheets to extract steel details</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="sheets" className="space-y-4 mt-4">

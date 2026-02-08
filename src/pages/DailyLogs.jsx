@@ -6,42 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Plus, Calendar, Users, AlertTriangle, Camera, Trash2, Clock, Zap } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
+import DataTable from '@/components/ui/DataTable';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
+import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -266,83 +246,57 @@ export default function DailyLogs() {
   }, [filteredLogs]);
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Daily Field Logs</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{filteredLogs.length} LOGS</p>
-            </div>
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-            >
-              <Plus size={14} className="mr-1" />
-              NEW LOG
-            </Button>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Daily Field Logs"
+        subtitle={`${filteredLogs.length} logs`}
+        actions={
+          <Button 
+            onClick={() => {
+              setFormData(initialFormState);
+              setShowForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+          >
+            <Plus size={16} className="mr-2" />
+            New Log
+          </Button>
+        }
+      />
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-4 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">AVG CREW</div>
-              <div className="text-2xl font-bold font-mono text-white">{logStats.avgCrew}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TOTAL HOURS</div>
-              <div className="text-2xl font-bold font-mono text-blue-500">{logStats.totalHours.toFixed(1)}h</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">SAFETY INCIDENTS</div>
-              <div className={`text-2xl font-bold font-mono ${logStats.safetyIncidents > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {logStats.safetyIncidents}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">DELAYS</div>
-              <div className={`text-2xl font-bold font-mono ${logStats.delays > 0 ? 'text-amber-500' : 'text-green-500'}`}>
-                {logStats.delays}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MetricsBar
+        metrics={[
+          { label: 'Avg Crew', value: logStats.avgCrew },
+          { label: 'Total Hours', value: `${logStats.totalHours.toFixed(1)}h`, color: 'text-blue-400' },
+          { label: 'Safety Incidents', value: logStats.safetyIncidents, color: logStats.safetyIncidents > 0 ? 'text-red-400' : 'text-green-400' },
+          { label: 'Delays', value: logStats.delays, color: logStats.delays > 0 ? 'text-amber-400' : 'text-green-400' }
+        ]}
+      />
 
-      {/* Controls Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-3">
-          <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <FilterBar>
+        <Select value={projectFilter} onValueChange={setProjectFilter}>
+          <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue placeholder="All Projects" />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value="all">All Projects</SelectItem>
+            {projects.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterBar>
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <DataTable
-          columns={columns}
-          data={filteredLogs}
-          onRowClick={handleEdit}
-          emptyMessage="No daily logs found. Create your first log to track field activities."
-        />
-      </div>
+      <ContentSection>
+        <SectionCard>
+          <DataTable
+            columns={columns}
+            data={filteredLogs}
+            onRowClick={handleEdit}
+            emptyMessage="No daily logs found. Create your first log to track field activities."
+          />
+        </SectionCard>
+      </ContentSection>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -443,7 +397,7 @@ export default function DailyLogs() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   );
 }
 

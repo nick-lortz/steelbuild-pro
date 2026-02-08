@@ -1,20 +1,24 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Wrench, BarChart3, CheckCircle2, Plus } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-
+import { Badge } from "@/components/ui/badge";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import EmptyState from '@/components/layout/EmptyState';
 import EquipmentLogForm from '@/components/equipment/EquipmentLogForm';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import InspectionForm from '@/components/equipment/InspectionForm';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import ResourceForm from '@/components/resources/ResourceForm';
+import { Wrench, BarChart3, CheckCircle2, Plus } from 'lucide-react';
 
 function EquipmentContent() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -88,20 +92,46 @@ function EquipmentContent() {
     };
   }, [filteredLogs, inspections]);
 
-  return (
-    <div className="space-y-6">
-      {/* Header with Project Selector */}
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold">Equipment Management</h1>
-          <p className="text-zinc-400 mt-1">{project?.name || 'No project selected'}</p>
-        </div>
-        <div className="flex items-end gap-3">
-          <div className="w-80">
-            <label className="text-sm font-bold text-zinc-300 block mb-2">Switch Project</label>
+  const queryClient = useQueryClient();
+
+  if (!activeProjectId) {
+    return (
+      <PageShell>
+        <ContentSection>
+          <EmptyState
+            icon={Wrench}
+            title="Select Project"
+            description="Choose a project to manage equipment"
+            actionLabel="Select Project"
+            onAction={() => {}}
+          />
+          <div className="max-w-md mx-auto mt-6">
             <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                <SelectValue placeholder="Choose a project..." />
+              <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Choose project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </ContentSection>
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="Equipment Management"
+        subtitle={`${project?.project_number} • ${equipment.length} equipment`}
+        actions={
+          <>
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
                 {projects.map(proj => (
@@ -111,90 +141,42 @@ function EquipmentContent() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <Button
-            onClick={() => setShowAddEquipment(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={16} className="mr-2" />
-            Add Equipment
-          </Button>
-        </div>
-      </div>
+            <Button
+              onClick={() => setShowAddEquipment(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            >
+              <Plus size={16} className="mr-2" />
+              Add Equipment
+            </Button>
+          </>
+        }
+      />
 
-      {!activeProjectId && (
-        <Card className="bg-yellow-900/20 border border-yellow-800">
-          <CardContent className="pt-6">
-            <p className="text-sm text-yellow-600">Select a project to begin</p>
-          </CardContent>
-        </Card>
-      )}
+      <MetricsBar
+        metrics={[
+          { label: 'Total Hours', value: kpis.total_hours },
+          { label: 'Utilization', value: `${kpis.utilization}%`, color: 'text-green-400' },
+          { label: 'Idle Hours', value: kpis.idle_hours, color: 'text-orange-400' },
+          { label: 'Idle Cost', value: `$${kpis.idle_cost}`, color: 'text-red-400' },
+          { label: 'Conflicts', value: kpis.conflicts, color: kpis.conflicts > 0 ? 'text-red-400' : 'text-green-400' },
+          { label: 'Failed Inspections', value: kpis.inspections_failed, color: kpis.inspections_failed > 0 ? 'text-yellow-400' : 'text-green-400' }
+        ]}
+      />
 
-      {activeProjectId && (
-      <>
-
-      {/* KPI Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="pt-6">
-            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Total Hours</p>
-            <p className="text-2xl font-bold text-white">{kpis.total_hours}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="pt-6">
-            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Utilization</p>
-            <p className="text-2xl font-bold text-green-500">{kpis.utilization}%</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="pt-6">
-            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Idle Hours</p>
-            <p className="text-2xl font-bold text-orange-500">{kpis.idle_hours}</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="pt-6">
-            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Idle Cost</p>
-            <p className="text-2xl font-bold text-red-500">${kpis.idle_cost}</p>
-          </CardContent>
-        </Card>
-        <Card className={`bg-zinc-900 border-zinc-800 ${kpis.conflicts > 0 ? 'border-red-800' : ''}`}>
-          <CardContent className="pt-6">
-            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Conflicts</p>
-            <p className={`text-2xl font-bold ${kpis.conflicts > 0 ? 'text-red-500' : 'text-green-500'}`}>
-              {kpis.conflicts}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className={`bg-zinc-900 border-zinc-800 ${kpis.inspections_failed > 0 ? 'border-yellow-800' : ''}`}>
-          <CardContent className="pt-6">
-            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Failed Inspections</p>
-            <p className={`text-2xl font-bold ${kpis.inspections_failed > 0 ? 'text-yellow-500' : 'text-green-500'}`}>
-              {kpis.inspections_failed}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-3">
+      <FilterBar>
         <Select value={filterEquipment} onValueChange={setFilterEquipment}>
-          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800">
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
             <SelectValue placeholder="All Equipment" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-800">
             <SelectItem value="all">All Equipment</SelectItem>
             {equipment.map(eq => (
-              <SelectItem key={eq.id} value={eq.id}>
-                {eq.name}
-              </SelectItem>
+              <SelectItem key={eq.id} value={eq.id}>{eq.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-
         <Select value={filterDateRange} onValueChange={setFilterDateRange}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800">
+          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -203,9 +185,9 @@ function EquipmentContent() {
             <SelectItem value="30d">Last 30 Days</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </FilterBar>
 
-      {/* Tabs */}
+      <ContentSection>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="log">
@@ -299,14 +281,12 @@ function EquipmentContent() {
           )}
         </TabsContent>
       </Tabs>
-      </>
-      )}
+      </ContentSection>
 
-      {/* Add Equipment Sheet */}
       <Sheet open={showAddEquipment} onOpenChange={setShowAddEquipment}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-950 border-zinc-800">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-gradient-to-b from-zinc-900 to-zinc-950 border-zinc-700/50">
           <SheetHeader>
-            <SheetTitle className="text-white">Add Equipment</SheetTitle>
+            <SheetTitle className="text-white font-semibold">Add Equipment</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <ResourceForm
@@ -322,7 +302,7 @@ function EquipmentContent() {
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+    </PageShell>
   );
 }
 

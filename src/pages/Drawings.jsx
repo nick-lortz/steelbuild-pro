@@ -2,35 +2,24 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  FileText,
-  Plus,
-  Upload,
-  Search,
-  Filter,
-  Sparkles,
-  Download,
-  Eye,
-  Edit3,
-  Trash2,
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
-  Clock
-} from 'lucide-react';
-import { toast } from '@/components/ui/notifications';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import EmptyState from '@/components/layout/EmptyState';
+import LoadingState from '@/components/layout/LoadingState';
 import DrawingSetTable from '@/components/drawings/DrawingSetTable';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
-import AIDrawingProcessor from '@/components/drawings/AIDrawingProcessor';
 import DrawingUploadEnhanced from '@/components/drawings/DrawingUploadEnhanced';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText, Plus, Upload, Search } from 'lucide-react';
+import { toast } from '@/components/ui/notifications';
 
 export default function Drawings() {
   const { activeProjectId } = useActiveProject();
@@ -183,181 +172,113 @@ export default function Drawings() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Drawings</h1>
-          {selectedProject && (
-            <p className="text-sm text-zinc-500 mt-1">
-              {selectedProject.project_number} • {selectedProject.name}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() => setShowUploadDialog(true)}
-            disabled={!activeProjectId}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Upload size={16} className="mr-2" />
-            Upload Drawings
-          </Button>
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-            disabled={!activeProjectId}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
-          >
-            <Plus size={16} className="mr-2" />
-            New Set
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Drawings"
+        subtitle={selectedProject ? `${selectedProject.project_number} • ${metrics.total} sets` : 'Select project'}
+        actions={
+          <>
+            <Button
+              onClick={() => setShowUploadDialog(true)}
+              disabled={!activeProjectId}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Upload size={16} className="mr-2" />
+              Upload Drawings
+            </Button>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              disabled={!activeProjectId}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            >
+              <Plus size={16} className="mr-2" />
+              New Set
+            </Button>
+          </>
+        }
+      />
 
       {!activeProjectId ? (
-        <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-12 text-center">
-            <FileText size={48} className="mx-auto mb-4 text-zinc-600" />
-            <h3 className="text-lg font-semibold text-white mb-2">No Project Selected</h3>
-            <p className="text-zinc-500">Select a project to view and manage drawings</p>
-          </CardContent>
-        </Card>
+        <ContentSection>
+          <EmptyState
+            icon={FileText}
+            title="No Project Selected"
+            description="Select a project to view and manage drawings"
+          />
+        </ContentSection>
       ) : (
         <>
-          {/* Metrics Dashboard */}
-          <div className="grid grid-cols-5 gap-4">
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total Sets</div>
-                <div className="text-3xl font-bold text-white">{metrics.total}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <CheckCircle2 size={12} />
-                  Released
-                </div>
-                <div className="text-3xl font-bold text-green-500">{metrics.released}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <Eye size={12} />
-                  Needs Review
-                </div>
-                <div className="text-3xl font-bold text-blue-500">{metrics.needsReview}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <AlertTriangle size={12} />
-                  Needs Revision
-                </div>
-                <div className="text-3xl font-bold text-amber-500">{metrics.needsRevision}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <Sparkles size={12} />
-                  AI Reviewed
-                </div>
-                <div className="text-3xl font-bold text-purple-500">{metrics.aiReviewed}</div>
-              </CardContent>
-            </Card>
-          </div>
+          <MetricsBar
+            metrics={[
+              { label: 'Total Sets', value: metrics.total },
+              { label: 'Released', value: metrics.released, color: 'text-green-400' },
+              { label: 'Needs Review', value: metrics.needsReview, color: 'text-blue-400' },
+              { label: 'Needs Revision', value: metrics.needsRevision, color: 'text-amber-400' },
+              { label: 'AI Reviewed', value: metrics.aiReviewed, color: 'text-purple-400' }
+            ]}
+          />
 
-          {/* Search and Filters */}
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 relative">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  <Input
-                    placeholder="Search by set name, number, or revision..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-zinc-800 border-zinc-700"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48 bg-zinc-800 border-zinc-700">
-                    <SelectValue placeholder="Filter by Status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="IFA">IFA</SelectItem>
-                    <SelectItem value="BFA">BFA</SelectItem>
-                    <SelectItem value="BFS">BFS</SelectItem>
-                    <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
-                    <SelectItem value="FFF">FFF</SelectItem>
-                    <SelectItem value="As-Built">As-Built</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
-                  <SelectTrigger className="w-48 bg-zinc-800 border-zinc-700">
-                    <SelectValue placeholder="Filter by Discipline" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Disciplines</SelectItem>
-                    <SelectItem value="structural">Structural</SelectItem>
-                    <SelectItem value="misc_metals">Misc Metals</SelectItem>
-                    <SelectItem value="stairs">Stairs</SelectItem>
-                    <SelectItem value="handrails">Handrails</SelectItem>
-                    <SelectItem value="connections">Connections</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+          <FilterBar>
+            <div className="flex-1 relative max-w-md">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder="Search by set name, number, or revision..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="IFA">IFA</SelectItem>
+                <SelectItem value="BFA">BFA</SelectItem>
+                <SelectItem value="BFS">BFS</SelectItem>
+                <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
+                <SelectItem value="FFF">FFF</SelectItem>
+                <SelectItem value="As-Built">As-Built</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by Discipline" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Disciplines</SelectItem>
+                <SelectItem value="structural">Structural</SelectItem>
+                <SelectItem value="misc_metals">Misc Metals</SelectItem>
+                <SelectItem value="stairs">Stairs</SelectItem>
+                <SelectItem value="handrails">Handrails</SelectItem>
+                <SelectItem value="connections">Connections</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </FilterBar>
 
-          {/* Drawing Sets Table */}
-          {isLoading ? (
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-12 text-center">
-                <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-zinc-500">Loading drawings...</p>
-              </CardContent>
-            </Card>
-          ) : filteredSets.length === 0 ? (
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-12 text-center">
-                <FileText size={48} className="mx-auto mb-4 text-zinc-600" />
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  {drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
-                </h3>
-                <p className="text-zinc-500 mb-4">
-                  {drawingSets.length === 0
-                    ? 'Create your first drawing set or upload drawings to get started'
-                    : 'Try adjusting your search or filters'}
-                </p>
-                {drawingSets.length === 0 && (
-                  <div className="flex items-center gap-3 justify-center">
-                    <Button onClick={() => setShowCreateDialog(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
-                      <Plus size={16} className="mr-2" />
-                      Create Drawing Set
-                    </Button>
-                    <Button onClick={() => setShowUploadDialog(true)} className="bg-blue-600 hover:bg-blue-700">
-                      <Upload size={16} className="mr-2" />
-                      Upload Drawings
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <DrawingSetTable
-              sets={filteredSets}
-              sheets={sheets}
-              revisions={revisions}
-              projects={userProjects}
-              onSelectSet={handleSelectSet}
-            />
-          )}
+          <ContentSection>
+            {isLoading ? (
+              <LoadingState message="Loading drawings..." />
+            ) : filteredSets.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title={drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
+                description={drawingSets.length === 0 ? 'Create your first drawing set or upload drawings to get started' : 'Try adjusting your search or filters'}
+                actionLabel={drawingSets.length === 0 ? 'Create Drawing Set' : null}
+                onAction={drawingSets.length === 0 ? () => setShowCreateDialog(true) : null}
+              />
+            ) : (
+              <DrawingSetTable
+                sets={filteredSets}
+                sheets={sheets}
+                revisions={revisions}
+                projects={userProjects}
+                onSelectSet={handleSelectSet}
+              />
+            )}
+          </ContentSection>
         </>
       )}
 
@@ -406,6 +327,6 @@ export default function Drawings() {
         users={users}
         rfis={rfis}
       />
-    </div>
+    </PageShell>
   );
 }

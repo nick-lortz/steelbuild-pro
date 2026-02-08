@@ -439,7 +439,6 @@ export default function RFIHub() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Add/Edit Form Dialog */}
       {formOpen && (
@@ -458,7 +457,8 @@ export default function RFIHub() {
           }}
         />
       )}
-    </div>
+      </ContentSection>
+    </PageShell>
     </ErrorBoundary>
   );
 }

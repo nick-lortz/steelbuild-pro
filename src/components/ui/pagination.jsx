@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as React from "react"
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
@@ -17,7 +16,7 @@ const Pagination = ({
 )
 Pagination.displayName = "Pagination"
 
-const PaginationContent = React.forwardRef(({ className, ...props }, ref) => (
+const PaginationContent = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <ul
     ref={ref}
     className={cn("flex flex-row items-center gap-1", className)}
@@ -25,14 +24,14 @@ const PaginationContent = React.forwardRef(({ className, ...props }, ref) => (
 ))
 PaginationContent.displayName = "PaginationContent"
 
-const PaginationItem = React.forwardRef(({ className, ...props }, ref) => (
+const PaginationItem = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <li ref={ref} className={cn("", className)} {...props} />
 ))
 PaginationItem.displayName = "PaginationItem"
 
 const PaginationLink = ({
   className,
-  isActive,
+  isActive = false,
   size = "icon",
   ...props
 }) => (
@@ -40,7 +39,7 @@ const PaginationLink = ({
     aria-current={isActive ? "page" : undefined}
     className={cn(buttonVariants({
       variant: isActive ? "outline" : "ghost",
-      size,
+      size: /** @type {any} */ (size),
     }), className)}
     {...props} />
 )
@@ -105,9 +104,9 @@ export default function PaginationCompat({
   total = 0,
   page = 1,
   pageSize = 25,
-  onPageChange,
-  onPageSizeChange,
-  className,
+  onPageChange = undefined,
+  onPageSizeChange = undefined,
+  className = "",
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const startIndex = total === 0 ? 0 : (page - 1) * pageSize + 1

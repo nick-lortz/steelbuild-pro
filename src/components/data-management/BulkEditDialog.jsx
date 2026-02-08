@@ -42,26 +42,35 @@ export default function BulkEditDialog({ records, entityName, fields, onClose, o
         <div className="space-y-3 mt-4">
           <p className="text-xs text-zinc-500">Select fields to update across all selected records</p>
           
-          {fields.map(field => (
-            <div key={field} className="flex items-center gap-3 p-3 rounded bg-zinc-800/50">
-              <Checkbox
-                checked={enabledFields.has(field)}
-                onCheckedChange={() => toggleField(field)}
-              />
-              <div className="flex-1">
-                <label className="text-xs text-zinc-400 font-medium block mb-1">
-                  {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </label>
-                <Input
-                  disabled={!enabledFields.has(field)}
-                  value={updates[field] || ''}
-                  onChange={(e) => setUpdates({ ...updates, [field]: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                  placeholder="New value"
+          {fields.map(field => {
+            const isNumber = field.includes('number') || field.includes('count') || field.includes('amount') || field.includes('cost') || field.includes('tonnage');
+            const isDate = field.includes('date') && !field.includes('_date');
+            
+            return (
+              <div key={field} className="flex items-center gap-3 p-3 rounded bg-zinc-800/50">
+                <Checkbox
+                  checked={enabledFields.has(field)}
+                  onCheckedChange={() => toggleField(field)}
                 />
+                <div className="flex-1">
+                  <label className="text-xs text-zinc-400 font-medium block mb-1">
+                    {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </label>
+                  <Input
+                    type={isNumber ? 'number' : isDate ? 'date' : 'text'}
+                    disabled={!enabledFields.has(field)}
+                    value={updates[field] || ''}
+                    onChange={(e) => {
+                      const val = isNumber ? (parseFloat(e.target.value) || 0) : e.target.value;
+                      setUpdates({ ...updates, [field]: val });
+                    }}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                    placeholder="New value"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800 mt-4">

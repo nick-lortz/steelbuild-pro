@@ -29,6 +29,21 @@ export default function DataEditDialog({ record, entityName, onClose, onSave }) 
     if (key === 'id' || key === 'created_date' || key === 'updated_date' || key === 'created_by') {
       return null;
     }
+    
+    // Allow editing rfi_number
+    if (key === 'rfi_number') {
+      return (
+        <div key={key} className="space-y-1">
+          <label className="text-xs text-zinc-400 font-medium">RFI Number</label>
+          <Input
+            type="number"
+            value={editData[key] || 0}
+            onChange={(e) => setEditData({ ...editData, [key]: parseInt(e.target.value) || 0 })}
+            className="bg-zinc-800 border-zinc-700 text-white"
+          />
+        </div>
+      );
+    }
 
     if (typeof value === 'boolean') {
       return (

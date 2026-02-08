@@ -82,19 +82,19 @@ export default function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-40">
           <div className="text-center space-y-8">
             <div className="flex justify-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Building2 size={40} className="text-white" />
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <Flame size={40} className="text-white" />
               </div>
             </div>
             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tighter">
-              SteelBuild <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Pro</span>
+              SteelBuild <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Pro</span>
             </h1>
             <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto font-light">
-              Complete project management platform for structural steel fabricators
+              End-to-end steel erection and fabrication project management
             </p>
             <p className="text-base text-zinc-500 max-w-2xl mx-auto">
-              Manage drawings, budgets, schedules, and teams from a single unified platform. 
-              Powered by AI insights and real-time analytics.
+              From detailing through erection closeout. Coordinate fabrication, track field issues, 
+              manage RFIs and change orders, and control budgets—all in one platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Link to={createPageUrl('Dashboard')}>

@@ -2,25 +2,23 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Plus, Search, Filter, AlertTriangle, Clock, CheckCircle2, 
-  TrendingUp, Users, FileText, Calendar, Target
-} from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
 import RFIHubKPIs from '@/components/rfi-hub/RFIHubKPIs';
 import RFIHubFilters from '@/components/rfi-hub/RFIHubFilters';
 import RFIHubTable from '@/components/rfi-hub/RFIHubTable';
 import RFIHubForm from '@/components/rfi-hub/RFIHubForm';
 import RFIHubTrends from '@/components/rfi-hub/RFIHubTrends';
+import Pagination from '@/components/ui/Pagination';
+import { Plus, Search, Clock, CheckCircle2, Users, FileText, AlertTriangle } from 'lucide-react';
+import { format, differenceInDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { usePagination } from '@/components/shared/hooks/usePagination';
-import Pagination from '@/components/ui/Pagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import { groupBy, indexBy } from '@/components/shared/arrayUtils';
 import { getRFIEscalationLevel, getBusinessDaysBetween } from '@/components/shared/businessRules';
@@ -211,102 +209,82 @@ export default function RFIHub() {
     setFormOpen(true);
   };
 
-  if (rfisLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading RFI Hub...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="border-b border-zinc-800 bg-black sticky top-0 z-10">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-6">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">RFI Hub</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">
-                {filteredRFIs.length} RFIs • {groupedRFIs.active.length} ACTIVE • {groupedRFIs.closed.length} CLOSED
-              </p>
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-3">
-              <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1">
-                <button
-                  onClick={() => {
-                    setViewMode('portfolio');
-                    setSelectedProjectId(null);
-                  }}
-                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
-                    viewMode === 'portfolio' 
-                      ? 'bg-amber-500 text-black' 
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  Portfolio
-                </button>
-                <button
-                  onClick={() => setViewMode('project')}
-                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
-                    viewMode === 'project' 
-                      ? 'bg-amber-500 text-black' 
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  Project
-                </button>
-              </div>
-
-              {viewMode === 'project' && (
-                <Select value={selectedProjectId || ''} onValueChange={setSelectedProjectId}>
-                  <SelectTrigger className="w-80 bg-zinc-900 border-zinc-800">
-                    <SelectValue placeholder="Select Project..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
-                    {projects.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.project_number} - {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              <Button
-                onClick={handleAddNew}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
+    <PageShell>
+      <PageHeader
+        title="RFI Hub"
+        subtitle={`${filteredRFIs.length} RFIs • ${groupedRFIs.active.length} active • ${groupedRFIs.closed.length} closed`}
+        actions={
+          <>
+            <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+              <button
+                onClick={() => {
+                  setViewMode('portfolio');
+                  setSelectedProjectId(null);
+                }}
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
+                  viewMode === 'portfolio' 
+                    ? 'bg-amber-500 text-black' 
+                    : 'text-zinc-400 hover:text-white'
+                }`}
               >
-                <Plus size={14} className="mr-1" />
-                Add RFI
-              </Button>
+                Portfolio
+              </button>
+              <button
+                onClick={() => setViewMode('project')}
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
+                  viewMode === 'project' 
+                    ? 'bg-amber-500 text-black' 
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Project
+              </button>
             </div>
-          </div>
 
-          {/* Search and Filters Bar */}
-          <div className="flex items-center gap-3 mt-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" size={16} />
-              <Input
-                placeholder="Search RFIs by number, subject, or project..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-sm"
-              />
-            </div>
-            
-            <RFIHubFilters filters={filters} onFilterChange={setFilters} />
+            {viewMode === 'project' && (
+              <Select value={selectedProjectId || ''} onValueChange={setSelectedProjectId}>
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="Select Project..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {projects.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Button
+              onClick={handleAddNew}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            >
+              <Plus size={16} className="mr-2" />
+              Add RFI
+            </Button>
+          </>
+        }
+      />
+
+      <div className="bg-zinc-900/50 border-b border-zinc-800 py-3">
+        <div className="flex items-center gap-3 px-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" size={16} />
+            <Input
+              placeholder="Search RFIs by number, subject, or project..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+            />
           </div>
+          <RFIHubFilters filters={filters} onFilterChange={setFilters} />
         </div>
       </div>
 
-      <div className="max-w-[1800px] mx-auto px-6 py-6 space-y-6">
+      <ContentSection>
         {/* KPIs */}
         <RFIHubKPIs rfis={filteredRFIs} groupedRFIs={groupedRFIs} />
 

@@ -1,19 +1,20 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import PageHeader from '@/components/ui/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Users, TrendingUp, AlertTriangle, Truck, LayoutDashboard, Sparkles, LineChart, Activity } from 'lucide-react';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import EmptyState from '@/components/layout/EmptyState';
 import PortfolioOverview from '@/components/analytics/PortfolioOverview';
 import ResourceHeatmap from '@/components/analytics/ResourceHeatmap';
 import RiskTrendAnalysis from '@/components/analytics/RiskTrendAnalysis';
 import ProjectRiskDashboard from '@/components/analytics/ProjectRiskDashboard';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';
-import EmptyState from '@/components/ui/EmptyState';
 import FabricationFieldDrift from '@/components/analytics/FabricationFieldDrift';
 import ProjectHealthTrends from '@/components/analytics/ProjectHealthTrends';
 import ResourceAllocationHeatmap from '@/components/analytics/ResourceAllocationHeatmap';
@@ -24,9 +25,8 @@ import AutoReportGenerator from '@/components/reports/AutoReportGenerator';
 import AIForecastETC from '@/components/financials/AIForecastETC';
 import TrendForecast from '@/components/analytics/TrendForecast';
 import ProjectComparison from '@/components/analytics/ProjectComparison';
-import KPIDashboard from '@/components/analytics/KPIDashboard';
-import InteractiveDrillDown from '@/components/analytics/InteractiveDrillDown';
 import ProjectAnalyticsInsights from '@/components/analytics/ProjectAnalyticsInsights';
+import { BarChart3, Users, TrendingUp, AlertTriangle, Sparkles, LineChart, Activity } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function Analytics() {
@@ -297,30 +297,31 @@ export default function Analytics() {
   const hasProject = !!activeProjectId;
 
   return (
-    <div>
+    <PageShell>
       <PageHeader
         title="Analytics Dashboard"
         subtitle={hasProject ? "Portfolio insights, resource utilization, and risk trends" : "Select a project to view analytics"}
-        showBackButton={false}
         actions={
-          <div className="flex items-center gap-3">
+          <>
             {userProjects.length > 0 && (
               <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-800 border-zinc-700 text-white">
+                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
                   <SelectValue placeholder="Select Project" />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectContent className="bg-zinc-900 border-zinc-800">
                   {userProjects.map(project => (
-                    <SelectItem key={project.id} value={project.id} className="text-white focus:bg-zinc-800 focus:text-white">
+                    <SelectItem key={project.id} value={project.id}>
                       {project.project_number} - {project.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
-          </div>
+          </>
         }
       />
+
+      <ContentSection>
 
       {/* Global Filters */}
       {hasProject && (
@@ -550,7 +551,7 @@ export default function Analytics() {
             <ProjectAnalyticsInsights />
           </TabsContent>
         </Tabs>
-      )}
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

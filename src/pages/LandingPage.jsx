@@ -142,10 +142,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-5xl font-bold mb-6 tracking-tight">Built for Steel Fabricators</h2>
+              <h2 className="text-5xl font-bold mb-6 tracking-tight">Built for Field Realities</h2>
               <p className="text-zinc-400 text-base mb-10 leading-relaxed font-light">
-                SteelBuild Pro is specifically designed to handle the complexities of structural steel fabrication projects, 
-                from initial detailing through final erection.
+                SteelBuild Pro is purpose-built for structural steel erection and fabrication. 
+                Tracks real-world field issues, learns from repetitive mistakes, manages fabrication to erection coordination, 
+                and controls costs and schedules under pressure.
               </p>
               <div className="space-y-4">
                 {benefits.map((benefit, idx) => (

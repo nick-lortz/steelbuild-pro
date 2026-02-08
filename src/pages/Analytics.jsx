@@ -551,6 +551,7 @@ export default function Analytics() {
             <ProjectAnalyticsInsights />
           </TabsContent>
         </Tabs>
+      )}
       </ContentSection>
     </PageShell>
   );

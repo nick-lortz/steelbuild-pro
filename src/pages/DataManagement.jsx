@@ -5,12 +5,16 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Trash2, Edit, Search, Download, Database, Filter, RefreshCw } from 'lucide-react';
+import { Trash2, Edit, Search, Download, Database, Filter, RefreshCw, Plus } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import DataEditDialog from '@/components/data-management/DataEditDialog';
+import CreateRecordDialog from '@/components/data-management/CreateRecordDialog';
+import BulkEditDialog from '@/components/data-management/BulkEditDialog';
+import BulkActionsBar from '@/components/data-management/BulkActionsBar';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const ENTITY_GROUPS = [
   {
@@ -56,6 +60,9 @@ export default function DataManagement() {
   const [selectedEntity, setSelectedEntity] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingRecord, setEditingRecord] = useState(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedRecords, setSelectedRecords] = useState(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: projects = [] } = useQuery({
@@ -87,6 +94,7 @@ export default function DataManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
+      setSelectedRecords(new Set());
       toast.success('Record deleted');
     },
     onError: (error) => {
@@ -94,10 +102,81 @@ export default function DataManagement() {
     }
   });
 
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async ({ ids, updates }) => {
+      await Promise.all(ids.map(id => base44.entities[selectedEntity].update(id, updates)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
+      setSelectedRecords(new Set());
+      toast.success('Bulk update completed');
+    },
+    onError: (error) => {
+      toast.error('Bulk update failed: ' + error.message);
+    }
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids) => {
+      await Promise.all(ids.map(id => base44.entities[selectedEntity].delete(id)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
+      setSelectedRecords(new Set());
+      toast.success('Bulk delete completed');
+    },
+    onError: (error) => {
+      toast.error('Bulk delete failed: ' + error.message);
+    }
+  });
+
   const handleDelete = async (record) => {
     const identifier = record.name || record.title || record.subject || record.rfi_number || record.id;
     if (window.confirm(`Delete "${identifier}"? This cannot be undone.`)) {
       deleteMutation.mutate(record.id);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (window.confirm(`Delete ${selectedRecords.size} records? This cannot be undone.`)) {
+      bulkDeleteMutation.mutate(Array.from(selectedRecords));
+    }
+  };
+
+  const handleBulkEdit = () => {
+    setShowBulkEdit(true);
+  };
+
+  const handleBulkDuplicate = async () => {
+    const recordsToDuplicate = filteredRecords.filter(r => selectedRecords.has(r.id));
+    try {
+      await Promise.all(recordsToDuplicate.map(record => {
+        const { id, created_date, updated_date, created_by, ...data } = record;
+        return base44.entities[selectedEntity].create(data);
+      }));
+      queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
+      setSelectedRecords(new Set());
+      toast.success(`${recordsToDuplicate.length} records duplicated`);
+    } catch (error) {
+      toast.error('Duplicate failed: ' + error.message);
+    }
+  };
+
+  const toggleRecord = (id) => {
+    const newSelected = new Set(selectedRecords);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRecords(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRecords.size === filteredRecords.length) {
+      setSelectedRecords(new Set());
+    } else {
+      setSelectedRecords(new Set(filteredRecords.map(r => r.id)));
     }
   };
 
@@ -286,6 +365,14 @@ export default function DataManagement() {
                     <Download size={14} className="mr-2" />
                     Export
                   </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowCreateDialog(true)}
+                    className="bg-amber-500 hover:bg-amber-600 text-black"
+                  >
+                    <Plus size={14} className="mr-2" />
+                    Create New
+                  </Button>
                 </div>
               </div>
 
@@ -306,6 +393,12 @@ export default function DataManagement() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-zinc-800">
+                        <th className="w-12 p-3">
+                          <Checkbox
+                            checked={selectedRecords.size === filteredRecords.length}
+                            onCheckedChange={toggleSelectAll}
+                          />
+                        </th>
                         {columns.map(col => (
                           <th key={col.key} className="text-left p-3 text-xs font-semibold text-zinc-400 uppercase">
                             {col.label}
@@ -319,6 +412,12 @@ export default function DataManagement() {
                     <tbody>
                       {filteredRecords.map(record => (
                         <tr key={record.id} className="border-b border-zinc-800 hover:bg-zinc-800/30">
+                          <td className="p-3">
+                            <Checkbox
+                              checked={selectedRecords.has(record.id)}
+                              onCheckedChange={() => toggleRecord(record.id)}
+                            />
+                          </td>
                           {columns.map(col => (
                             <td key={col.key} className="p-3 text-sm text-white">
                               {col.render(record)}
@@ -366,6 +465,40 @@ export default function DataManagement() {
           }}
         />
       )}
+
+      {showCreateDialog && (
+        <CreateRecordDialog
+          entityName={selectedEntity}
+          projectId={selectedProject}
+          onClose={() => setShowCreateDialog(false)}
+          onSave={() => {
+            queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
+            setShowCreateDialog(false);
+          }}
+        />
+      )}
+
+      {showBulkEdit && (
+        <BulkEditDialog
+          records={filteredRecords.filter(r => selectedRecords.has(r.id))}
+          entityName={selectedEntity}
+          fields={columns.map(c => c.key).filter(k => k !== 'id' && k !== 'created_date')}
+          onClose={() => setShowBulkEdit(false)}
+          onSave={async (updates) => {
+            await bulkUpdateMutation.mutateAsync({ 
+              ids: Array.from(selectedRecords), 
+              updates 
+            });
+          }}
+        />
+      )}
+
+      <BulkActionsBar
+        selectedCount={selectedRecords.size}
+        onBulkEdit={handleBulkEdit}
+        onBulkDelete={handleBulkDelete}
+        onBulkDuplicate={handleBulkDuplicate}
+      />
     </div>
   );
 }

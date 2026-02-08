@@ -137,6 +137,13 @@ Return as JSON with four sections:
       }
     }
 
+    const p0Flags = (extractedData.flags || []).filter(f => f.severity === 'P0');
+    const p1Flags = (extractedData.flags || []).filter(f => f.severity === 'P1');
+
+    // Categorize flags by type for summary
+    const p0Categories = [...new Set(p0Flags.map(f => f.category))];
+    const p1Categories = [...new Set(p1Flags.map(f => f.category))];
+
     return Response.json({
       success: true,
       members: extractedData.members || [],
@@ -145,8 +152,12 @@ Return as JSON with four sections:
       member_count: (extractedData.members || []).length,
       connection_count: (extractedData.connections || []).length,
       flag_count: (extractedData.flags || []).length,
-      p0_count: (extractedData.flags || []).filter(f => f.severity === 'P0').length,
-      p1_count: (extractedData.flags || []).filter(f => f.severity === 'P1').length
+      p0_count: p0Flags.length,
+      p1_count: p1Flags.length,
+      flag_summary: {
+        p0_categories: p0Categories,
+        p1_categories: p1Categories
+      }
     });
   } catch (error) {
     console.error('Drawing detail analysis error:', error);

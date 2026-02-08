@@ -10,7 +10,7 @@ const LOG_LEVELS = {
   error: 3
 };
 
-const currentLevel = LOG_LEVELS[import.meta.env.VITE_LOG_LEVEL || 'info'];
+const currentLevel = LOG_LEVELS[(/** @type {any} */ (import.meta).env?.VITE_LOG_LEVEL) || 'info'];
 
 function shouldLog(level) {
   return LOG_LEVELS[level] >= currentLevel;

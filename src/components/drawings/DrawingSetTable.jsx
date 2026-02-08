@@ -254,7 +254,7 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
                                       <span className="font-mono text-amber-500">{rev.revision_number}</span>
                                       <span className="text-zinc-400">{rev.description}</span>
                                     </div>
-                                    <span className="text-zinc-500">{format(new Date(rev.revision_date), 'MMM d, yyyy')}</span>
+                                    <span className="text-zinc-500">{safeFormat(rev.revision_date, 'MMM d, yyyy')}</span>
                                   </div>
                                 ))}
                                 {setRevisions.length > 3 && (

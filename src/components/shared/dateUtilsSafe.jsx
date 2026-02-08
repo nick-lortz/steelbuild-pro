@@ -1,4 +1,4 @@
-import { format, isValid } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 
 /**
  * Converts input to a valid Date object or returns null
@@ -19,12 +19,33 @@ export function safeISO(input) {
 
 /**
  * Safely formats a date with date-fns
+ * Handles multiple input formats: Date objects, ISO strings, timestamps, "YYYY-MM-DD HH:mm:ss"
  * Returns fallback string if date is invalid
  */
 export function safeFormat(input, pattern = "yyyy-MM-dd", fallback = "—") {
   if (!input) return fallback;
-  const d = input instanceof Date ? input : new Date(input);
-  return isValid(d) ? format(d, pattern) : fallback;
+
+  // If it's already a Date
+  if (input instanceof Date) return isValid(input) ? format(input, pattern) : fallback;
+
+  // If it is a number-like timestamp (seconds or ms), handle it
+  if (typeof input === 'number' || /^\d+$/.test(String(input))) {
+    const n = Number(input);
+    const ms = n < 1e12 ? n * 1000 : n;
+    const d = new Date(ms);
+    return isValid(d) ? format(d, pattern) : fallback;
+  }
+
+  // Normalize common "almost ISO" like "YYYY-MM-DD HH:mm:ss"
+  const s = String(input).trim();
+  const isoish = s.includes(' ') && !s.includes('T') ? s.replace(' ', 'T') : s;
+
+  const d = parseISO(isoish);
+  if (!isValid(d)) {
+    console.warn('[dateUtilsSafe] Invalid date value:', input);
+    return fallback;
+  }
+  return format(d, pattern);
 }
 
 /**

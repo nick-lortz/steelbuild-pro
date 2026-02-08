@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tantml:react-query';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,10 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Package, Trash2, FileText, ArrowRight, Truck, DollarSign, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
-import { format, parseISO, isValid } from 'date-fns';
+import { Plus, Package, Trash2, ArrowRight } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import EmptyState from '@/components/layout/EmptyState';
+import LoadingState from '@/components/layout/LoadingState';
 import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
 import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
 
@@ -158,146 +165,99 @@ export default function WorkPackages() {
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <Package size={64} className="mx-auto mb-4 text-zinc-700" />
-          <h3 className="text-xl font-bold text-white uppercase mb-4">Select Project</h3>
-          <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="Choose project..." />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <PageShell>
+        <ContentSection>
+          <EmptyState
+            icon={Package}
+            title="Select Project"
+            description="Choose a project to view and manage work packages"
+            actionLabel="Select Project"
+            onAction={() => {}}
+          />
+          <div className="max-w-md mx-auto mt-6">
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Choose project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </ContentSection>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
-      {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50 backdrop-blur-sm">
-        <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-baseline gap-3">
-                <h1 className="text-3xl font-bold text-white tracking-tight">Work Packages</h1>
-                <p className="text-sm text-zinc-500 font-mono">{selectedProject?.project_number}</p>
-              </div>
-              <p className="text-xs text-zinc-600 mt-2">{stats.total} packages across all phases</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
-                <SelectTrigger className="w-72 bg-zinc-900 border-zinc-700/50 text-white h-10 text-sm rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700">
-                  {projects.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 px-6 rounded-lg">
-                <Plus size={16} className="mr-2" />
-                Add Package
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Work Packages"
+        subtitle={`${selectedProject?.project_number} • ${stats.total} packages`}
+        actions={
+          <>
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
+              <Plus size={16} className="mr-2" />
+              Add Package
+            </Button>
+          </>
+        }
+      />
 
-      {/* Metrics */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
-        <div className="max-w-[1800px] mx-auto px-8 py-4">
-          <div className="grid grid-cols-5 gap-4">
-            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-4">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">In Progress</div>
-                <div className="text-3xl font-bold text-blue-400">{stats.inProgress}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-emerald-500/15 to-zinc-900 border-emerald-500/30 rounded-lg">
-              <CardContent className="p-4">
-                <div className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold mb-1">Completed</div>
-                <div className="text-3xl font-bold text-emerald-400">{stats.completed}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-4">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Avg Progress</div>
-                <div className="text-3xl font-bold text-cyan-400">{stats.avgProgress.toFixed(0)}%</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
-              <CardContent className="p-4">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Budget</div>
-                <div className="text-2xl font-bold text-white">${(stats.totalBudget / 1000).toFixed(0)}K</div>
-              </CardContent>
-            </Card>
-            <Card className={cn(
-              "rounded-lg border",
-              stats.variance > 0 ? "bg-gradient-to-br from-red-500/15 to-zinc-900 border-red-500/30" : "bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50"
-            )}>
-              <CardContent className="p-4">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Forecast</div>
-                <div className={cn(
-                  "text-2xl font-bold",
-                  stats.variance > 0 ? "text-red-400" : "text-white"
-                )}>
-                  ${(stats.totalForecast / 1000).toFixed(0)}K
-                </div>
-                {stats.variance !== 0 && (
-                  <div className={cn("text-[10px] mt-1", stats.variance > 0 ? "text-red-400" : "text-emerald-400")}>
-                    {stats.variance > 0 ? '+' : ''}{(stats.variance / 1000).toFixed(0)}K
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      <MetricsBar
+        metrics={[
+          { label: 'In Progress', value: stats.inProgress, color: 'text-blue-400' },
+          { label: 'Completed', value: stats.completed, color: 'text-green-400' },
+          { label: 'Avg Progress', value: `${stats.avgProgress.toFixed(0)}%`, color: 'text-cyan-400' },
+          { label: 'Budget', value: `$${(stats.totalBudget / 1000).toFixed(0)}K`, color: 'text-white' },
+          { 
+            label: 'Forecast', 
+            value: `$${(stats.totalForecast / 1000).toFixed(0)}K`, 
+            color: stats.variance > 0 ? 'text-red-400' : 'text-white',
+            subtext: stats.variance !== 0 ? `${stats.variance > 0 ? '+' : ''}${(stats.variance / 1000).toFixed(0)}K` : null
+          }
+        ]}
+      />
 
-      {/* Filter */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
-        <div className="max-w-[1800px] mx-auto px-8 py-3">
-          <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-700/50 h-10 text-sm rounded-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
-              <SelectItem value="all">All Phases</SelectItem>
-              <SelectItem value="pre_fab">Pre-Fab</SelectItem>
-              <SelectItem value="shop">Shop</SelectItem>
-              <SelectItem value="delivery">Delivery</SelectItem>
-              <SelectItem value="erection">Erection</SelectItem>
-              <SelectItem value="punch">Punch</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <FilterBar>
+        <Select value={phaseFilter} onValueChange={setPhaseFilter}>
+          <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectItem value="all">All Phases</SelectItem>
+            <SelectItem value="pre_fab">Pre-Fab</SelectItem>
+            <SelectItem value="shop">Shop</SelectItem>
+            <SelectItem value="delivery">Delivery</SelectItem>
+            <SelectItem value="erection">Erection</SelectItem>
+            <SelectItem value="punch">Punch</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterBar>
 
-      {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
+      <ContentSection>
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-12 h-12 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <LoadingState message="Loading work packages..." />
         ) : filteredPackages.length === 0 ? (
-          <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 rounded-lg">
-            <CardContent className="p-16 text-center">
-              <Package size={48} className="mx-auto mb-4 text-zinc-700" />
-              <h3 className="text-lg font-semibold text-white mb-2">No Work Packages</h3>
-              <p className="text-sm text-zinc-500 mb-6">Create packages to track execution</p>
-              <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 rounded-lg">
-                <Plus size={16} className="mr-2" />
-                Create First Package
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Package}
+            title="No Work Packages"
+            description="Create packages to track execution across phases"
+            actionLabel="Create First Package"
+            onAction={() => setShowForm(true)}
+          />
         ) : (
           <div className="space-y-3">
             {filteredPackages.map(pkg => {
@@ -419,9 +379,10 @@ export default function WorkPackages() {
             })}
           </div>
         )}
-      </div>
-
-      <Sheet open={showForm} onOpenChange={(open) => {
+      </ContentSection>
+    </PageShell>
+  );
+}
         setShowForm(open);
         if (!open) setEditingPackage(null);
       }}>

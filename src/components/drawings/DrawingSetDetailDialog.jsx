@@ -31,6 +31,7 @@ import DrawingUploadEnhanced from './DrawingUploadEnhanced';
 import DrawingHeatMap from './DrawingHeatMap';
 import DrawingRevisionWarnings from './DrawingRevisionWarnings';
 import AIAnalysisPanel from './AIAnalysisPanel';
+import DrawingComparisonPanel from './DrawingComparisonPanel';
 
 const safeFormatISO = (value, pattern = 'MMM d, yyyy') => {
   if (!value) return '—';
@@ -406,12 +407,18 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
           </TabsContent>
 
           <TabsContent value="ai" className="mt-4">
-            <AIAnalysisPanel 
-              drawingSet={drawingSet}
-              onAnalysisComplete={() => {
-                queryClient.invalidateQueries({ queryKey: ['drawing-set', drawingSetId] });
-              }}
-            />
+            <div className="space-y-4">
+              <AIAnalysisPanel 
+                drawingSet={drawingSet}
+                onAnalysisComplete={() => {
+                  queryClient.invalidateQueries({ queryKey: ['drawing-set', drawingSetId] });
+                }}
+              />
+              <DrawingComparisonPanel 
+                currentDrawingSet={drawingSet}
+                projectId={drawingSet.project_id}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="sheets" className="space-y-4 mt-4">

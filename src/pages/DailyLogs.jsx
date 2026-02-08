@@ -570,7 +570,7 @@ function DailyLogForm({ formData, setFormData, projects, onSubmit, isLoading, is
           <Checkbox
             id="safety"
             checked={formData.safety_incidents}
-            onCheckedChange={(checked) => handleChange('safety_incidents', checked)}
+            onCheckedChange={(checked) => handleChange('safety_incidents', checked === true)}
           />
           <Label htmlFor="safety" className="text-red-400 font-medium">
             Safety Incident Occurred
@@ -594,7 +594,7 @@ function DailyLogForm({ formData, setFormData, projects, onSubmit, isLoading, is
           <Checkbox
             id="delays"
             checked={formData.delays}
-            onCheckedChange={(checked) => handleChange('delays', checked)}
+            onCheckedChange={(checked) => handleChange('delays', checked === true)}
           />
           <Label htmlFor="delays" className="text-amber-400 font-medium">
             Delays Occurred

@@ -582,12 +582,12 @@ export default function Contracts() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs uppercase font-bold text-zinc-400">Contract Value</Label>
-                  <Input
-                    type="number"
-                    value={editingProject.contract_value || 0}
-                    onChange={(e) => setEditingProject({...editingProject, contract_value: parseFloat(e.target.value)})}
-                    className="bg-zinc-800 border-zinc-700"
-                  />
+                <Input
+                  type="number"
+                  value={editingProject.contract_value || 0}
+                  onChange={(e) => setEditingProject({...editingProject, contract_value: parseFloat(e.target.value) || 0})}
+                  className="bg-zinc-800 border-zinc-700"
+                />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs uppercase font-bold text-zinc-400">Project Manager</Label>

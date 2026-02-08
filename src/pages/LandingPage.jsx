@@ -159,20 +159,20 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-blue-400 mb-2">99.9%</div>
-                <p className="text-sm text-zinc-400">System Uptime</p>
+                <div className="text-3xl font-bold text-amber-400 mb-2">Detailing</div>
+                <p className="text-sm text-zinc-400">to Erection</p>
               </Card>
               <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-cyan-400 mb-2">Real-time</div>
-                <p className="text-sm text-zinc-400">Data Updates</p>
+                <div className="text-3xl font-bold text-amber-400 mb-2">Detail</div>
+                <p className="text-sm text-zinc-400">Library Learning</p>
               </Card>
               <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-blue-400 mb-2">AI-Powered</div>
-                <p className="text-sm text-zinc-400">Insights</p>
+                <div className="text-3xl font-bold text-amber-400 mb-2">Field</div>
+                <p className="text-sm text-zinc-400">Issue Tracking</p>
               </Card>
               <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-cyan-400 mb-2">24/7</div>
-                <p className="text-sm text-zinc-400">Access</p>
+                <div className="text-3xl font-bold text-amber-400 mb-2">Cost</div>
+                <p className="text-sm text-zinc-400">Control</p>
               </Card>
             </div>
           </div>

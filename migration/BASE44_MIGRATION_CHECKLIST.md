@@ -37,17 +37,17 @@ Decision gate:
 Goal: keep UI stable while replacing Base44 under one boundary.
 
 - [ ] Create `src/api/client/` abstraction with modules:
-  - [ ] `authClient`
-  - [ ] `entityClient`
-  - [ ] `functionsClient`
-  - [ ] `filesClient`
-  - [ ] `realtimeClient`
+  - [x] `authClient` (via `apiClient.auth`)
+  - [x] `entityClient` (via `apiClient.entities`)
+  - [x] `functionsClient` (via `apiClient.functions`)
+  - [x] `filesClient` (via `apiClient.integrations.Core.UploadFile`)
+  - [ ] `realtimeClient` (subscribe currently no-op in owned adapter)
 - [ ] Introduce feature flag/env switch:
-  - [ ] `VITE_BACKEND_PROVIDER=base44|owned`
-- [ ] Replace direct imports of `@/api/base44Client` with abstraction modules incrementally
+  - [x] `VITE_BACKEND_PROVIDER=base44|owned`
+- [x] Replace direct imports of `@/api/base44Client` with abstraction modules incrementally
 
 Definition of done:
-- [ ] No page/component imports `@/api/base44Client` directly
+- [x] No page/component imports `@/api/base44Client` directly
 
 ## 3) Data Model and Migrations
 
@@ -63,10 +63,10 @@ Definition of done:
 ## 4) Auth and User Context
 
 - [ ] Implement auth replacement for:
-  - [ ] `auth.me`
-  - [ ] `auth.updateMe`
-  - [ ] `auth.logout`
-  - [ ] login redirect flow
+  - [x] `auth.me`
+  - [x] `auth.updateMe`
+  - [x] `auth.logout`
+  - [x] login redirect flow
 - [ ] Port role/permission checks to owned backend tables
 - [ ] Verify `Layout.jsx`, `AuthContext`, `usePermissions` behavior unchanged
 

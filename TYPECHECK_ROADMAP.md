@@ -21,6 +21,7 @@ Second burn-down complete: removed `@ts-nocheck` from `drawer`, `select`, and `E
 Third burn-down complete: removed `@ts-nocheck` from dashboard files (`Dashboard`, `AIForecastPanel`, `AIRiskPanel`, `ProjectFiltersBar`, `ProjectHealthTable`).
 Expanded strict scope: added `src/components/activity/**/*.jsx` and fixed `ScrollArea` primitive typing.
 Expanded strict scope: added targeted `projects` components (`ProjectPhaseUpdater`, `QuickStatusUpdate`, `DemoDataSeeder`) with typed mutation payload fixes.
+Expanded strict scope: added `ProjectsFilters`, `ProjectsKPIBar`, and `ProjectsTable`; fixed `sanitization` return typing for `TrustedHTML`.
 
 ## Common fix patterns
 - Add JSDoc typedefs for component props and function params.

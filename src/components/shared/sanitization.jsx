@@ -44,7 +44,7 @@ const STRICT_CONFIG = {
  */
 export function sanitizeHTML(dirty, config = DEFAULT_CONFIG) {
   if (!dirty) return '';
-  return DOMPurify.sanitize(dirty, config);
+  return String(DOMPurify.sanitize(dirty, config));
 }
 
 /**
@@ -52,7 +52,7 @@ export function sanitizeHTML(dirty, config = DEFAULT_CONFIG) {
  */
 export function sanitizePlainText(dirty) {
   if (!dirty) return '';
-  return DOMPurify.sanitize(dirty, STRICT_CONFIG);
+  return String(DOMPurify.sanitize(dirty, STRICT_CONFIG));
 }
 
 /**
@@ -72,7 +72,7 @@ export function sanitizeMarkdown(dirty) {
     ALLOWED_ATTR: [...DEFAULT_CONFIG.ALLOWED_ATTR, 'src', 'alt', 'title']
   };
   
-  return DOMPurify.sanitize(dirty, markdownConfig);
+  return String(DOMPurify.sanitize(dirty, markdownConfig));
 }
 
 /**

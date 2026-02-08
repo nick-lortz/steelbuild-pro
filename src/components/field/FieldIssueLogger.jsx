@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Camera, X, Check } from 'lucide-react';
+import { AlertCircle, Camera, X, Check, Lightbulb } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ISSUE_TYPES = [

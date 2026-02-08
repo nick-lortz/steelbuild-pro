@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import StatusBadge from '@/components/ui/StatusBadge';
 import { ChevronDown, ChevronRight, FileText, AlertCircle, Clock, FolderOpen } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { differenceInDays } from 'date-fns';
+import { safeFormat } from '@/components/shared/dateUtilsSafe';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 

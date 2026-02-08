@@ -1,9 +1,12 @@
-// @ts-nocheck
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+/** @type {{ env?: Record<string, any> }} */
+const importMetaWithEnv = /** @type {any} */ (import.meta);
+
 class ErrorBoundary extends React.Component {
+  /** @param {any} props */
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
@@ -43,7 +46,7 @@ class ErrorBoundary extends React.Component {
               The application encountered an unexpected error. Our team has been notified.
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {importMetaWithEnv.env?.MODE === 'development' && this.state.error && (
               <details className="text-left mb-6 bg-muted p-4 rounded-md text-xs">
                 <summary className="cursor-pointer font-medium mb-2">
                   Error Details (Dev Only)

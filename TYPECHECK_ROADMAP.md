@@ -17,6 +17,7 @@
 4. `src/pages/Dashboard.jsx` (Completed with legacy dependency `@ts-nocheck` boundary)
 5. Remaining pages/components by domain (In Progress)
 First burn-down complete: removed `@ts-nocheck` from `button`, `badge`, `card`, `input`, `progress`, and `Pagination` UI primitives.
+Second burn-down complete: removed `@ts-nocheck` from `drawer`, `select`, and `ErrorBoundary` UI files.
 
 ## Common fix patterns
 - Add JSDoc typedefs for component props and function params.

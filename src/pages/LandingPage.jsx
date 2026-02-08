@@ -24,44 +24,44 @@ import {
 export default function LandingPage() {
   const features = [
     {
-      icon: Building2,
-      title: "Project Management",
-      description: "Centralized hub for all your structural steel projects with real-time status tracking"
-    },
-    {
-      icon: DollarSign,
-      title: "Financial Control",
-      description: "Comprehensive budget tracking, expense management, and forecast analytics"
-    },
-    {
       icon: FileText,
-      title: "Drawing Management",
-      description: "Track drawing submissions, revisions, and approvals with automated workflows"
+      title: "Detailing Coordination",
+      description: "Track drawings, revisions, approvals, and flag field-ready releases with QA gates"
+    },
+    {
+      icon: Wrench,
+      title: "Fabrication Tracking",
+      description: "Monitor shop progress, work packages, and fabrication deliverables in real-time"
+    },
+    {
+      icon: Truck,
+      title: "Delivery Logistics",
+      description: "Plan shipping, track deliveries, confirm field receipts, and manage bundles"
+    },
+    {
+      icon: AlertCircle,
+      title: "Field Issue Logging",
+      description: "Capture fit-up, tolerance, and detail issues on-site with photos and crew context"
     },
     {
       icon: MessageSquareWarning,
-      title: "RFI Tracking",
-      description: "Streamline Request for Information processes with priority-based management"
+      title: "RFI Management",
+      description: "Streamline clarifications with cost/schedule impact tracking and auto-escalation"
     },
     {
-      icon: FileCheck,
-      title: "Change Orders",
-      description: "Monitor change order impacts on budget and schedule in real-time"
+      icon: DollarSign,
+      title: "Cost & Budget Control",
+      description: "Real-time budget tracking, change order analysis, and earned value metrics"
     },
     {
       icon: Calendar,
-      title: "Schedule Management",
-      description: "Gantt charts, critical path analysis, and resource allocation tools"
-    },
-    {
-      icon: BarChart3,
-      title: "Performance Analytics",
-      description: "Data-driven insights on project performance, costs, and timelines"
+      title: "Schedule Planning",
+      description: "Critical path, look-ahead planning, and erection sequencing with resource leveling"
     },
     {
       icon: Sparkles,
-      title: "AI Project Manager",
-      description: "Intelligent analysis and recommendations based on your actual project data"
+      title: "AI Risk Detection",
+      description: "Predict delays, identify cost risks, and suggest detail library improvements"
     }
   ];
 

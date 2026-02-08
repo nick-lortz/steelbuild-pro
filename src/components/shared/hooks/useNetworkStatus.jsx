@@ -5,21 +5,24 @@ export function useNetworkStatus() {
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
-  const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => {
-      setIsOnline(true);
-      if (wasOffline) {
-        toast.success('Connection restored');
-        setWasOffline(false);
-      }
+      setIsOnline((prev) => {
+        if (!prev) {
+          toast.success('Connection restored');
+        }
+        return true;
+      });
     };
 
     const handleOffline = () => {
-      setIsOnline(false);
-      setWasOffline(true);
-      toast.warning('You are offline. Some features may be unavailable.');
+      setIsOnline((prev) => {
+        if (prev) {
+          toast.warning('You are offline. Some features may be unavailable.');
+        }
+        return false;
+      });
     };
 
     window.addEventListener('online', handleOnline);
@@ -29,7 +32,7 @@ export function useNetworkStatus() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [wasOffline]);
+  }, []);
 
   return { isOnline, isOffline: !isOnline };
 }

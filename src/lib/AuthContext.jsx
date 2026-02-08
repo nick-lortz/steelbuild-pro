@@ -15,19 +15,25 @@ export const AuthProvider = ({ children }) => {
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
 
   useEffect(() => {
-    checkAppState();
+    let active = true;
+    checkAppState(() => active);
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const checkAppState = async () => {
+  const checkAppState = async (isActive = () => true) => {
     try {
       const provider = getBackendProvider();
+      if (!isActive()) return;
       setIsLoadingPublicSettings(true);
       setAuthError(null);
 
       if (provider === 'owned') {
         try {
-          await checkUserAuth();
+          await checkUserAuth(isActive);
         } finally {
+          if (!isActive()) return;
           setIsLoadingPublicSettings(false);
         }
         return;
@@ -46,18 +52,22 @@ export const AuthProvider = ({ children }) => {
       
       try {
         const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
+        if (!isActive()) return;
         setAppPublicSettings(publicSettings);
         
         // If we got the app public settings successfully, check if user is authenticated
         if (appParams.token) {
-          await checkUserAuth();
+          await checkUserAuth(isActive);
         } else {
+          if (!isActive()) return;
           setIsLoadingAuth(false);
           setIsAuthenticated(false);
         }
+        if (!isActive()) return;
         setIsLoadingPublicSettings(false);
       } catch (appError) {
         console.error('App state check failed:', appError);
+        if (!isActive()) return;
         
         // Handle app-level errors
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
@@ -89,6 +99,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Unexpected error:', error);
+      if (!isActive()) return;
       setAuthError({
         type: 'unknown',
         message: error.message || 'An unexpected error occurred'
@@ -98,16 +109,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const checkUserAuth = async () => {
+  const checkUserAuth = async (isActive = () => true) => {
     try {
       // Now check if the user is authenticated
+      if (!isActive()) return;
       setIsLoadingAuth(true);
       const currentUser = await apiClient.auth.me();
+      if (!isActive()) return;
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
     } catch (error) {
       console.error('User auth check failed:', error);
+      if (!isActive()) return;
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       

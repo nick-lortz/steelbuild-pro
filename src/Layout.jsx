@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { apiClient } from '@/api/client';
@@ -44,7 +44,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger } from
 '@/components/ui/dropdown-menu';
-import { Toaster } from '@/components/ui/toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
@@ -182,8 +181,14 @@ function LayoutContent({ children, currentPageName }) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {
-    const saved = localStorage.getItem('nav_expanded_groups');
-    return saved ? JSON.parse(saved) : ['Overview', 'Project Execution'];
+    if (typeof window === 'undefined') return ['Overview', 'Project Execution'];
+    try {
+      const saved = window.localStorage.getItem('nav_expanded_groups');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : ['Overview', 'Project Execution'];
+    } catch (_error) {
+      return ['Overview', 'Project Execution'];
+    }
   });
   const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
@@ -197,7 +202,9 @@ function LayoutContent({ children, currentPageName }) {
       const newExpanded = prev.includes(groupName) ?
       prev.filter((g) => g !== groupName) :
       [...prev, groupName];
-      localStorage.setItem('nav_expanded_groups', JSON.stringify(newExpanded));
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('nav_expanded_groups', JSON.stringify(newExpanded));
+      }
       return newExpanded;
     });
   };
@@ -279,7 +286,6 @@ function LayoutContent({ children, currentPageName }) {
     <div className="min-h-screen bg-background text-foreground">
       <SkipToMainContent />
       <OfflineIndicator />
-      <Toaster />
       <CommandPalette />
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4">

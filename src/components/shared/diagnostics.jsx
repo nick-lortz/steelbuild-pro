@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
 
+const IS_DEV = Boolean(import.meta.env?.DEV);
+
 /**
  * Hook to track component renders
  * Usage: useRenderCount('ComponentName');
  */
 export function useRenderCount(componentName) {
+  if (!IS_DEV) return;
   const renderCount = useRef(0);
   renderCount.current += 1;
   
@@ -18,6 +21,7 @@ export function useRenderCount(componentName) {
  * Usage: useEffectLogger('ComponentName', 'effectDescription', deps);
  */
 export function useEffectLogger(componentName, effectName, deps = []) {
+  if (!IS_DEV) return;
   useEffect(() => {
     console.log(`[EFFECT] ${componentName} - ${effectName} FIRED`, {
       timestamp: new Date().toISOString(),
@@ -37,6 +41,7 @@ export function useEffectLogger(componentName, effectName, deps = []) {
  * Usage: useMountLogger('ComponentName');
  */
 export function useMountLogger(componentName) {
+  if (!IS_DEV) return;
   useEffect(() => {
     console.log(`[MOUNT] ${componentName} MOUNTED`, {
       timestamp: new Date().toISOString()
@@ -56,6 +61,7 @@ export function useMountLogger(componentName) {
  * if (import.meta.env.DEV) enableGlobalDiagnostics();
  */
 export function enableGlobalDiagnostics() {
+  if (!IS_DEV || typeof window === 'undefined') return;
   const originalUseEffect = useEffect;
   const effectCounts = new Map();
   

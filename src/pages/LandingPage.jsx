@@ -116,8 +116,8 @@ export default function LandingPage() {
       {/* Features Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
         <div className="text-center mb-20">
-          <h2 className="text-5xl font-bold mb-4 tracking-tight">Everything You Need</h2>
-          <p className="text-zinc-400 text-lg font-light">Comprehensive tools for structural steel project management</p>
+          <h2 className="text-5xl font-bold mb-4 tracking-tight">Steel-Specific Capabilities</h2>
+          <p className="text-zinc-400 text-lg font-light">Purpose-built tools for detailing, fabrication, delivery, and erection</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, idx) => {

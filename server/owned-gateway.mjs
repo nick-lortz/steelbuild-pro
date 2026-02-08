@@ -200,12 +200,130 @@ function normalizeEntityRow(row) {
   if (normalized.updated_at && !normalized.updated_date) {
     normalized.updated_date = normalized.updated_at;
   }
+  if (normalized.current_budget !== undefined && normalized.budget_amount === undefined) {
+    normalized.budget_amount = normalized.current_budget;
+  }
+  if (normalized.project_id && !normalized.projectId) {
+    normalized.projectId = normalized.project_id;
+  }
   return normalized;
 }
 
 function normalizeEntityRows(rows) {
   if (!Array.isArray(rows)) return [];
   return rows.map(normalizeEntityRow);
+}
+
+const KEY_ALIASES = {
+  projectId: 'project_id',
+  costCodeId: 'cost_code_id',
+  invoiceId: 'invoice_id',
+  sovItemId: 'sov_item_id',
+  changeOrderId: 'change_order_id',
+  periodStart: 'period_start',
+  periodEnd: 'period_end',
+  created_date: 'created_at',
+  updated_date: 'updated_at',
+  budget_amount: 'current_budget',
+  assignedUsers: 'assigned_users',
+  projectNumber: 'project_number'
+};
+
+const TABLE_EXTRA_COLUMNS = {
+  projects: new Set([
+    'project_number',
+    'name',
+    'client',
+    'status',
+    'phase',
+    'project_manager',
+    'superintendent',
+    'assigned_users',
+    'location',
+    'contract_value',
+    'start_date',
+    'target_completion',
+    'archived',
+    'metadata'
+  ]),
+  profiles: new Set([
+    'email',
+    'full_name',
+    'role',
+    'custom_role',
+    'phone',
+    'title',
+    'department',
+    'notification_preferences',
+    'display_preferences',
+    'workflow_preferences'
+  ]),
+  financials: new Set(['current_budget', 'actual_amount', 'category']),
+  expenses: new Set(['amount', 'expense_date', 'description', 'vendor', 'payment_status', 'invoice_number', 'cost_code_id']),
+  invoices: new Set(['period_start', 'period_end', 'status']),
+  invoice_lines: new Set(['invoice_id', 'status']),
+  sov_items: new Set(['sov_code', 'scheduled_value', 'status', 'description']),
+  cost_codes: new Set(['code', 'status', 'name']),
+  tasks: new Set(['start_date', 'end_date', 'assignee', 'name', 'phase', 'parent_task_id']),
+  documents: new Set(['title', 'status', 'category', 'file_url', 'file_name'])
+};
+
+function normalizePayloadKeys(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+  const normalized = {};
+  Object.entries(input).forEach(([key, value]) => {
+    const mappedKey = KEY_ALIASES[key] || key;
+    normalized[mappedKey] = value;
+  });
+  return normalized;
+}
+
+function getTableEnvelopeColumn(table) {
+  if (table === 'projects') return 'metadata';
+  if (table === 'profiles') return null;
+  return 'data';
+}
+
+function getWritableColumnsForTable(table) {
+  const base = new Set([
+    'id',
+    'project_id',
+    'status',
+    'category',
+    'created_at',
+    'updated_at'
+  ]);
+  getFilterableColumns(table).forEach((column) => base.add(column));
+  (TABLE_EXTRA_COLUMNS[table] || new Set()).forEach((column) => base.add(column));
+  const envelope = getTableEnvelopeColumn(table);
+  if (envelope) base.add(envelope);
+  return base;
+}
+
+function sanitizeWriteRow(table, rawRow) {
+  const row = normalizePayloadKeys(rawRow || {});
+  const envelope = getTableEnvelopeColumn(table);
+  const allowed = getWritableColumnsForTable(table);
+  const sanitized = {};
+  const extras = {};
+
+  Object.entries(row).forEach(([key, value]) => {
+    if (allowed.has(key)) {
+      sanitized[key] = value;
+    } else {
+      extras[key] = value;
+    }
+  });
+
+  if (envelope && Object.keys(extras).length > 0) {
+    const existingEnvelope = sanitized[envelope];
+    sanitized[envelope] = {
+      ...(existingEnvelope && typeof existingEnvelope === 'object' ? existingEnvelope : {}),
+      ...extras
+    };
+  }
+
+  return sanitized;
 }
 
 function createDevLlmResponse(payload) {
@@ -267,8 +385,9 @@ function getIdFromPayload(payload) {
 }
 
 async function insertRow(table, row) {
+  const writeRow = sanitizeWriteRow(table, row);
   if (!hasSupabase()) {
-    return normalizeEntityRow({ id: crypto.randomUUID(), ...row });
+    return normalizeEntityRow({ id: crypto.randomUUID(), ...writeRow });
   }
   const insertUrl = `${SUPABASE_URL}/rest/v1/${table}`;
   const rows = await fetchJson(insertUrl, {
@@ -277,15 +396,16 @@ async function insertRow(table, row) {
       'Content-Type': 'application/json',
       Prefer: 'return=representation'
     }),
-    body: JSON.stringify([row || {}])
+    body: JSON.stringify([writeRow || {}])
   });
   return normalizeEntityRow(rows?.[0] || null);
 }
 
 async function updateRowById(table, id, updates) {
   if (!id) throw new Error(`Missing id for ${table} update`);
+  const writeRow = sanitizeWriteRow(table, updates);
   if (!hasSupabase()) {
-    return normalizeEntityRow({ id, ...(updates || {}) });
+    return normalizeEntityRow({ id, ...(writeRow || {}) });
   }
   const url = buildSelectUrl(table);
   url.searchParams.set('id', `eq.${id}`);
@@ -295,7 +415,7 @@ async function updateRowById(table, id, updates) {
       'Content-Type': 'application/json',
       Prefer: 'return=representation'
     }),
-    body: JSON.stringify(updates || {})
+    body: JSON.stringify(writeRow || {})
   });
   return normalizeEntityRow(rows?.[0] || null);
 }
@@ -492,7 +612,8 @@ async function handleEntitiesFilterOrCreate(req, res, entity, table) {
     const policy = getEntityPolicy(entity);
     if (!hasSupabase()) {
       if (body?.data) {
-        json(res, 200, normalizeEntityRow({ id: crypto.randomUUID(), ...body.data, ...policy.enforcedData }));
+        const writeRow = sanitizeWriteRow(table, { ...body.data, ...policy.enforcedData });
+        json(res, 200, normalizeEntityRow({ id: crypto.randomUUID(), ...writeRow }));
       } else {
         json(res, 200, []);
       }
@@ -500,6 +621,7 @@ async function handleEntitiesFilterOrCreate(req, res, entity, table) {
     }
 
     if (body && Object.prototype.hasOwnProperty.call(body, 'data')) {
+      const writeRow = sanitizeWriteRow(table, { ...(body.data || {}), ...policy.enforcedData });
       const insertUrl = `${SUPABASE_URL}/rest/v1/${table}`;
       const rows = await fetchJson(insertUrl, {
         method: 'POST',
@@ -507,13 +629,13 @@ async function handleEntitiesFilterOrCreate(req, res, entity, table) {
           'Content-Type': 'application/json',
           Prefer: 'return=representation'
         }),
-        body: JSON.stringify([{ ...(body.data || {}), ...policy.enforcedData }])
+        body: JSON.stringify([writeRow])
       });
       json(res, 200, normalizeEntityRow(rows?.[0] || null));
       return;
     }
 
-    const filters = { ...(body?.filters || {}), ...policy.enforcedFilters };
+    const filters = { ...normalizePayloadKeys(body?.filters || {}), ...policy.enforcedFilters };
     const sortBy = body?.sortBy;
     const limit = body?.limit;
     const parsed = parseSort(sortBy);
@@ -546,8 +668,9 @@ async function handleEntitiesBulkCreate(req, res, entity, table) {
     const body = await readBody(req);
     const records = Array.isArray(body?.records) ? body.records : [];
     const policy = getEntityPolicy(entity);
+    const normalizedRecords = records.map((r) => sanitizeWriteRow(table, { ...(r || {}), ...policy.enforcedData }));
     if (!hasSupabase()) {
-      json(res, 200, records.map((r) => normalizeEntityRow({ id: crypto.randomUUID(), ...(r || {}), ...policy.enforcedData })));
+      json(res, 200, normalizedRecords.map((r) => normalizeEntityRow({ id: crypto.randomUUID(), ...r })));
       return;
     }
     const insertUrl = `${SUPABASE_URL}/rest/v1/${table}`;
@@ -557,7 +680,7 @@ async function handleEntitiesBulkCreate(req, res, entity, table) {
         'Content-Type': 'application/json',
         Prefer: 'return=representation'
       }),
-      body: JSON.stringify(records.map((r) => ({ ...(r || {}), ...policy.enforcedData })))
+      body: JSON.stringify(normalizedRecords)
     });
     json(res, 200, normalizeEntityRows(rows || []));
   } catch (error) {
@@ -569,7 +692,7 @@ async function handleEntityUpdate(req, res, entity, table, id) {
   try {
     const body = await readBody(req);
     const policy = getEntityPolicy(entity);
-    const data = { ...(body?.data || {}), ...policy.enforcedData };
+    const data = sanitizeWriteRow(table, { ...(body?.data || {}), ...policy.enforcedData });
     if (!hasSupabase()) {
       json(res, 200, normalizeEntityRow({ id, ...data }));
       return;

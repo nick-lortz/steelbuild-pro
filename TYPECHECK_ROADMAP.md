@@ -11,12 +11,11 @@
 4. Repeat.
 
 ## Recommended order
-1. `src/lib/**/*.ts`
-2. `src/utils/**/*.ts`
-3. `src/api/**/*.ts`
-4. `src/components/shared/hooks/**/*.js`
-5. `src/pages/Dashboard.jsx`
-6. Remaining pages/components by domain
+1. `src/lib/**/*.ts` and `src/utils/**/*.ts` (Completed)
+2. `src/api/**/*.ts`
+3. `src/components/shared/hooks/**/*.js`
+4. `src/pages/Dashboard.jsx`
+5. Remaining pages/components by domain
 
 ## Common fix patterns
 - Add JSDoc typedefs for component props and function params.

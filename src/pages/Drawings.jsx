@@ -178,10 +178,7 @@ export default function Drawings() {
         subtitle={selectedProject ? `${selectedProject.project_number} • ${metrics.total} sets` : 'Select project'}
         actions={
           <>
-            <Select value={activeProjectId || ''} onValueChange={(val) => {
-              const { setActiveProjectId } = require('@/components/shared/hooks/useActiveProject').useActiveProject();
-              setActiveProjectId(val || null);
-            }}>
+            <Select value={activeProjectId || ''} onValueChange={(val) => setActiveProjectId(val || null)}>
               <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
                 <SelectValue placeholder="Select Project" />
               </SelectTrigger>

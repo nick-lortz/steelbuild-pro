@@ -1,142 +1,100 @@
-/**
- * Pagination Component
- * 
- * Displays pagination controls for data tables
- */
+import * as React from "react"
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button";
 
-export default function Pagination({ 
-  total, 
-  page, 
-  pageSize, 
-  onPageChange, 
-  onPageSizeChange,
-  className = ''
-}) {
-  const totalPages = Math.ceil(total / pageSize);
-  const startIndex = (page - 1) * pageSize + 1;
-  const endIndex = Math.min(page * pageSize, total);
+const Pagination = ({
+  className,
+  ...props
+}) => (
+  <nav
+    role="navigation"
+    aria-label="pagination"
+    className={cn("mx-auto flex w-full justify-center", className)}
+    {...props} />
+)
+Pagination.displayName = "Pagination"
 
-  const canGoPrev = page > 1;
-  const canGoNext = page < totalPages;
+const PaginationContent = React.forwardRef(({ className, ...props }, ref) => (
+  <ul
+    ref={ref}
+    className={cn("flex flex-row items-center gap-1", className)}
+    {...props} />
+))
+PaginationContent.displayName = "PaginationContent"
 
-  // Generate page numbers to show
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisible = 5;
-    
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (page <= 3) {
-        pages.push(1, 2, 3, 4, '...', totalPages);
-      } else if (page >= totalPages - 2) {
-        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-      } else {
-        pages.push(1, '...', page - 1, page, page + 1, '...', totalPages);
-      }
-    }
-    
-    return pages;
-  };
+const PaginationItem = React.forwardRef(({ className, ...props }, ref) => (
+  <li ref={ref} className={cn("", className)} {...props} />
+))
+PaginationItem.displayName = "PaginationItem"
 
-  if (total === 0) return null;
+const PaginationLink = ({
+  className,
+  isActive,
+  size = "icon",
+  ...props
+}) => (
+  <a
+    aria-current={isActive ? "page" : undefined}
+    className={cn(buttonVariants({
+      variant: isActive ? "outline" : "ghost",
+      size,
+    }), className)}
+    {...props} />
+)
+PaginationLink.displayName = "PaginationLink"
 
-  return (
-    <div className={cn('flex items-center justify-between gap-4', className)}>
-      {/* Results info */}
-      <div className="text-sm text-muted-foreground">
-        Showing <span className="font-medium">{startIndex}</span> to{' '}
-        <span className="font-medium">{endIndex}</span> of{' '}
-        <span className="font-medium">{total}</span> results
-      </div>
+const PaginationPrevious = ({
+  className,
+  ...props
+}) => (
+  <PaginationLink
+    aria-label="Go to previous page"
+    size="default"
+    className={cn("gap-1 pl-2.5", className)}
+    {...props}>
+    <ChevronLeft className="h-4 w-4" />
+    <span>Previous</span>
+  </PaginationLink>
+)
+PaginationPrevious.displayName = "PaginationPrevious"
 
-      <div className="flex items-center gap-2">
-        {/* Page size selector */}
-        <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
-          <SelectTrigger className="w-20 h-8 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="25">25</SelectItem>
-            <SelectItem value="50">50</SelectItem>
-            <SelectItem value="100">100</SelectItem>
-            <SelectItem value="200">200</SelectItem>
-          </SelectContent>
-        </Select>
+const PaginationNext = ({
+  className,
+  ...props
+}) => (
+  <PaginationLink
+    aria-label="Go to next page"
+    size="default"
+    className={cn("gap-1 pr-2.5", className)}
+    {...props}>
+    <span>Next</span>
+    <ChevronRight className="h-4 w-4" />
+  </PaginationLink>
+)
+PaginationNext.displayName = "PaginationNext"
 
-        {/* First page */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => onPageChange(1)}
-          disabled={!canGoPrev}
-        >
-          <ChevronsLeft size={14} />
-        </Button>
+const PaginationEllipsis = ({
+  className,
+  ...props
+}) => (
+  <span
+    aria-hidden
+    className={cn("flex h-9 w-9 items-center justify-center", className)}
+    {...props}>
+    <MoreHorizontal className="h-4 w-4" />
+    <span className="sr-only">More pages</span>
+  </span>
+)
+PaginationEllipsis.displayName = "PaginationEllipsis"
 
-        {/* Previous page */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => onPageChange(page - 1)}
-          disabled={!canGoPrev}
-        >
-          <ChevronLeft size={14} />
-        </Button>
-
-        {/* Page numbers */}
-        <div className="flex items-center gap-1">
-          {getPageNumbers().map((pageNum, idx) => (
-            pageNum === '...' ? (
-              <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
-                ...
-              </span>
-            ) : (
-              <Button
-                key={pageNum}
-                variant={page === pageNum ? 'default' : 'outline'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onPageChange(pageNum)}
-              >
-                {pageNum}
-              </Button>
-            )
-          ))}
-        </div>
-
-        {/* Next page */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => onPageChange(page + 1)}
-          disabled={!canGoNext}
-        >
-          <ChevronRight size={14} />
-        </Button>
-
-        {/* Last page */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => onPageChange(totalPages)}
-          disabled={!canGoNext}
-        >
-          <ChevronsRight size={14} />
-        </Button>
-      </div>
-    </div>
-  );
+export {
+  Pagination,
+  PaginationContent,
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
 }

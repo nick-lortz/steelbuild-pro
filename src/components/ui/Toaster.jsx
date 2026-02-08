@@ -1,20 +1,3 @@
-import { Toaster as SonnerToaster } from 'sonner';
-
-export function Toaster() {
-  return (
-    <SonnerToaster
-      position="top-right"
-      expand={true}
-      richColors
-      closeButton
-      toastOptions={{
-        style: {
-          background: '#18181b',
-          border: '1px solid #3f3f46',
-          color: '#fff',
-        },
-        className: 'sonner-toast',
-      }}
-    />
-  );
-}
+// This file exports the Toaster component from Toaster.jsx
+// Created to avoid case-sensitivity issues
+export { Toaster } from './Toaster';

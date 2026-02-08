@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ui/notifications';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import {
   FileText,
   Calendar,
@@ -31,6 +31,29 @@ import DrawingUploadEnhanced from './DrawingUploadEnhanced';
 import DrawingHeatMap from './DrawingHeatMap';
 import DrawingRevisionWarnings from './DrawingRevisionWarnings';
 import AIAnalysisPanel from './AIAnalysisPanel';
+
+const safeFormatISO = (value, pattern = 'MMM d, yyyy') => {
+  if (!value) return '—';
+
+  // Already a Date
+  if (value instanceof Date) return isValid(value) ? format(value, pattern) : '—';
+
+  const s = String(value).trim();
+
+  // Numeric timestamps (seconds or ms), including numeric strings
+  if (/^\d+$/.test(s)) {
+    const n = Number(s);
+    const ms = n < 1e12 ? n * 1000 : n;
+    const d = new Date(ms);
+    return isValid(d) ? format(d, pattern) : '—';
+  }
+
+  // Handle "YYYY-MM-DD HH:mm:ss" by making it ISO-ish
+  const isoish = s.includes(' ') && !s.includes('T') ? s.replace(' ', 'T') : s;
+
+  const d = parseISO(isoish);
+  return isValid(d) ? format(d, pattern) : '—';
+};
 
 export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChange, users, rfis }) {
   const queryClient = useQueryClient();
@@ -296,7 +319,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                       />
                     ) : (
                       <div className="text-white mt-1">
-                        {drawingSet.due_date ? format(parseISO(drawingSet.due_date), 'MMM d, yyyy') : '—'}
+                        {safeFormatISO(drawingSet.due_date)}
                       </div>
                     )}
                   </div>
@@ -334,7 +357,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                       IFA Date
                     </label>
                     <div className="text-zinc-300 text-sm mt-1 font-mono">
-                      {drawingSet.ifa_date ? format(parseISO(drawingSet.ifa_date), 'MMM d, yyyy') : '—'}
+                      {safeFormatISO(drawingSet.ifa_date)}
                     </div>
                   </div>
                   <div>
@@ -343,7 +366,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                       BFA Date
                     </label>
                     <div className="text-zinc-300 text-sm mt-1 font-mono">
-                      {drawingSet.bfa_date ? format(parseISO(drawingSet.bfa_date), 'MMM d, yyyy') : '—'}
+                      {safeFormatISO(drawingSet.bfa_date)}
                     </div>
                   </div>
                   <div>
@@ -352,7 +375,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                       FFF Date
                     </label>
                     <div className="text-zinc-300 text-sm mt-1 font-mono">
-                      {drawingSet.fff_date ? format(parseISO(drawingSet.fff_date), 'MMM d, yyyy') : '—'}
+                      {safeFormatISO(drawingSet.fff_date)}
                     </div>
                   </div>
                 </div>
@@ -438,7 +461,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                               <div className="text-xs text-zinc-400 truncate">{sheet.sheet_name}</div>
                               {metadata?.issue_date && (
                                 <div className="text-xs text-zinc-500 mt-1">
-                                  Issued: {format(parseISO(metadata.issue_date), 'MMM d, yyyy')}
+                                  Issued: {safeFormatISO(metadata.issue_date)}
                                 </div>
                               )}
                             </div>
@@ -502,7 +525,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                         <p className="text-sm text-zinc-300">{rev.description || 'No description'}</p>
                       </div>
                       <div className="text-right text-xs text-zinc-500">
-                        {rev.revision_date ? format(parseISO(rev.revision_date), 'MMM d, yyyy') : '—'}
+                        {safeFormatISO(rev.revision_date)}
                       </div>
                     </div>
                   </CardContent>
@@ -534,7 +557,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                         <p className="text-sm text-zinc-300">{rfi.subject}</p>
                       </div>
                       <div className="text-right text-xs text-zinc-500">
-                        {rfi.submitted_date ? format(parseISO(rfi.submitted_date), 'MMM d, yyyy') : '—'}
+                        {safeFormatISO(rfi.submitted_date)}
                       </div>
                     </div>
                   </CardContent>

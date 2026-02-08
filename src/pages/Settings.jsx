@@ -19,7 +19,7 @@ import PermissionManager from '@/components/settings/PermissionManager';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
 import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap } from 'lucide-react';
 import { toast } from "sonner";
-import { format } from 'date-fns';
+import { safeFormat } from '@/components/shared/dateUtilsSafe';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
@@ -163,7 +163,7 @@ export default function Settings() {
     },
     {
       header: 'Joined',
-      render: (row) => row.created_date ? format(new Date(row.created_date), 'MMM d, yyyy') : '-'
+      render: (row) => safeFormat(row.created_date, 'MMM d, yyyy', '-')
     }
   ];
 
@@ -536,7 +536,7 @@ export default function Settings() {
                           </div>
                           <p className="text-xs text-zinc-400">{item.description}</p>
                           <p className="text-[10px] text-zinc-600 mt-2 font-mono">
-                            {item.created_date ? format(new Date(item.created_date), 'MMM d, yyyy') : ''}
+                            {safeFormat(item.created_date, 'MMM d, yyyy', '')}
                           </p>
                         </div>
                       ))}

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Repeat, Calendar, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormat } from '@/components/shared/dateUtilsSafe';
 
 export default function RecurringTaskConfig({ task, onChange }) {
   const [config, setConfig] = useState({
@@ -123,7 +123,7 @@ export default function RecurringTaskConfig({ task, onChange }) {
                 <div className="flex items-center gap-2 text-xs">
                   <Calendar size={12} className="text-blue-400" />
                   <span className="text-blue-400 font-medium">Next occurrence:</span>
-                  <span className="text-white">{format(nextOccurrence, 'MMM d, yyyy')}</span>
+                  <span className="text-white">{safeFormat(nextOccurrence, 'MMM d, yyyy')}</span>
                 </div>
               </div>
             )}

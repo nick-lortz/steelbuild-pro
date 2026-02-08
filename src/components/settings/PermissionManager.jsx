@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Shield, Edit, Plus, X, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { safeFormat } from '@/components/shared/dateUtilsSafe';
 
 const MODULES = [
   'projects', 'schedule', 'financials', 'rfis', 'change_orders', 

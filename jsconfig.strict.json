@@ -31,6 +31,8 @@
     "src/components/shared/structuredLogging.jsx",
     "src/components/shared/validation.jsx",
     "src/pages/Dashboard.jsx",
+    "src/pages/DocumentLinkage.jsx",
+    "src/pages/Insights.jsx",
     "src/pages/LandingPage.jsx",
     "src/pages/PrivacyPolicy.jsx",
     "src/pages/Projects.jsx",

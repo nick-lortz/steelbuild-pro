@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-export default function DataTable({ columns, data, onRowClick, emptyMessage = "No data found" }) {
+export default function DataTable({ columns, data, onRowClick = null, emptyMessage = "No data found" }) {
   return (
     <>
       {/* Mobile Card View */}

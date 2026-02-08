@@ -163,7 +163,7 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
                     <td className="p-3 text-sm" onClick={() => onSelectSet(set)}>
                       {set.due_date ? (
                         <span className={isOverdue ? 'text-red-400 font-medium' : 'text-zinc-300'}>
-                          {format(new Date(set.due_date), 'MMM d, yyyy')}
+                          {safeFormat(set.due_date, 'MMM d, yyyy')}
                         </span>
                       ) : '-'}
                     </td>

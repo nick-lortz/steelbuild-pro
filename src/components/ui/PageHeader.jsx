@@ -5,7 +5,7 @@ import { ArrowLeft, RefreshCw, Building } from 'lucide-react';
 
 const rootPages = ['Dashboard', 'Projects', 'Schedule', 'Financials', 'ResourceManagement', 'Resources', 'Profile', 'RFIHub', 'Analytics'];
 
-const PageHeader = React.memo(function PageHeader({ title, subtitle, actions, showBackButton, onRefresh, isRefreshing = false }) {
+const PageHeader = React.memo(function PageHeader(/** @type {any} */ { title, subtitle, actions, showBackButton, onRefresh, isRefreshing = false }) {
   const navigate = useNavigate();
   const location = useLocation();
 

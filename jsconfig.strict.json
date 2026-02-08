@@ -31,7 +31,10 @@
     "src/components/shared/structuredLogging.jsx",
     "src/components/shared/validation.jsx",
     "src/pages/Dashboard.jsx",
+    "src/pages/LandingPage.jsx",
+    "src/pages/PrivacyPolicy.jsx",
     "src/pages/Projects.jsx",
+    "src/pages/TermsOfService.jsx",
     "src/utils/**/*.ts",
     "src/utils/**/*.tsx"
   ],

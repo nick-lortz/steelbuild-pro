@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-export default function ScreenContainer({ children, className, noPadding = false }) {
+export default function ScreenContainer({ children, className = "", noPadding = false }) {
   return (
     <div 
       className={cn(

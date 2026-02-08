@@ -165,14 +165,23 @@ export default function DrawingDetailExtraction({ sheet, onExtracted }) {
                 <div className="space-y-2">
                   <div className="font-medium text-red-500 text-sm flex items-center gap-1">
                     <AlertCircle size={14} />
-                    Critical Issues
+                    Critical Issues ({p0Flags.length})
                   </div>
                   {p0Flags.map((flag, idx) => (
-                    <div key={idx} className="p-3 bg-red-950/20 border border-red-800 rounded text-sm">
-                      <div className="text-red-400 font-medium">{flag.category}</div>
-                      <div className="text-red-300 text-xs mt-1">{flag.message}</div>
+                    <div key={idx} className="p-3 bg-red-950/20 border border-red-800 rounded text-sm space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-medium text-red-400">{flag.category}</div>
+                        <span className="text-xs bg-red-900 text-red-200 px-2 py-0.5 rounded whitespace-nowrap">P0</span>
+                      </div>
+                      <div className="text-red-300 text-xs">{flag.message}</div>
                       {flag.location && (
-                        <div className="text-red-300/70 text-xs mt-1">Location: {flag.location}</div>
+                        <div className="text-red-300/70 text-xs">📍 {flag.location}</div>
+                      )}
+                      {flag.resolution_suggestion && (
+                        <div className="bg-red-900/30 border-l-2 border-red-600 pl-2 py-1">
+                          <div className="text-xs text-red-200 font-semibold">Fix:</div>
+                          <div className="text-xs text-red-200/90">{flag.resolution_suggestion}</div>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -183,14 +192,23 @@ export default function DrawingDetailExtraction({ sheet, onExtracted }) {
                 <div className="space-y-2">
                   <div className="font-medium text-yellow-500 text-sm flex items-center gap-1">
                     <AlertCircle size={14} />
-                    Warnings
+                    Warnings ({p1Flags.length})
                   </div>
                   {p1Flags.map((flag, idx) => (
-                    <div key={idx} className="p-3 bg-yellow-950/20 border border-yellow-800 rounded text-sm">
-                      <div className="text-yellow-400 font-medium">{flag.category}</div>
-                      <div className="text-yellow-300 text-xs mt-1">{flag.message}</div>
+                    <div key={idx} className="p-3 bg-yellow-950/20 border border-yellow-800 rounded text-sm space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-medium text-yellow-400">{flag.category}</div>
+                        <span className="text-xs bg-yellow-900 text-yellow-200 px-2 py-0.5 rounded whitespace-nowrap">P1</span>
+                      </div>
+                      <div className="text-yellow-300 text-xs">{flag.message}</div>
                       {flag.location && (
-                        <div className="text-yellow-300/70 text-xs mt-1">Location: {flag.location}</div>
+                        <div className="text-yellow-300/70 text-xs">📍 {flag.location}</div>
+                      )}
+                      {flag.resolution_suggestion && (
+                        <div className="bg-yellow-900/30 border-l-2 border-yellow-600 pl-2 py-1">
+                          <div className="text-xs text-yellow-200 font-semibold">Suggestion:</div>
+                          <div className="text-xs text-yellow-200/90">{flag.resolution_suggestion}</div>
+                        </div>
                       )}
                     </div>
                   ))}

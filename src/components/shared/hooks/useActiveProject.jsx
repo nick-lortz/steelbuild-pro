@@ -1,8 +1,10 @@
 import React, { useState, useEffect, createContext, useContext, useMemo } from 'react';
 
-const ActiveProjectContext = createContext();
+const ActiveProjectContext = createContext(null);
 
-export const ActiveProjectProvider = React.memo(function ActiveProjectProvider({ children }) {
+export const ActiveProjectProvider = React.memo(
+/** @param {{ children: React.ReactNode }} props */
+function ActiveProjectProvider({ children }) {
   const [activeProjectId, setActiveProjectId] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('activeProjectId') || null;

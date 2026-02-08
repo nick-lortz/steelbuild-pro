@@ -39,12 +39,12 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Task.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task created');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to create task');
     },
   });
@@ -54,13 +54,14 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(['tasks']);
-      queryClient.invalidateQueries(['task', variables.id]);
+    mutationFn: (/** @type {{id: string, data: Record<string, any>}} */ payload) =>
+      base44.entities.Task.update(payload.id, payload.data),
+    onSuccess: (_, /** @type {{id: string}} */ variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
       toast.success('Task updated');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to update task');
     },
   });
@@ -70,12 +71,12 @@ export function useDeleteTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: (/** @type {string} */ id) => base44.entities.Task.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task deleted');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to delete task');
     },
   });

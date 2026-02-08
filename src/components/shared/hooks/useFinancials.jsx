@@ -26,7 +26,7 @@ export function usePortfolioMetrics() {
   return useQuery({
     queryKey: ['portfolio-metrics'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getPortfolioMetrics');
+      const response = await base44.functions.invoke('getPortfolioMetrics', {});
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -38,13 +38,13 @@ export function useCreateFinancial() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data) => base44.entities.Financial.create(data),
+    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Financial.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['financials']);
-      queryClient.invalidateQueries(['portfolio-metrics']);
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      queryClient.invalidateQueries({ queryKey: ['portfolio-metrics'] });
       toast.success('Financial record created');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to create financial record');
     },
   });
@@ -54,13 +54,14 @@ export function useUpdateFinancial() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Financial.update(id, data),
+    mutationFn: (/** @type {{id: string, data: Record<string, any>}} */ payload) =>
+      base44.entities.Financial.update(payload.id, payload.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['financials']);
-      queryClient.invalidateQueries(['portfolio-metrics']);
+      queryClient.invalidateQueries({ queryKey: ['financials'] });
+      queryClient.invalidateQueries({ queryKey: ['portfolio-metrics'] });
       toast.success('Financial record updated');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to update financial record');
     },
   });

@@ -29,12 +29,12 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data) => base44.entities.Project.create(data),
+    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Project.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project created');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to create project');
     },
   });
@@ -44,13 +44,14 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries(['projects']);
-      queryClient.invalidateQueries(['project', variables.id]);
+    mutationFn: (/** @type {{id: string, data: Record<string, any>}} */ payload) =>
+      base44.entities.Project.update(payload.id, payload.data),
+    onSuccess: (_, /** @type {{id: string}} */ variables) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
       toast.success('Project updated');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to update project');
     },
   });
@@ -60,12 +61,12 @@ export function useDeleteProject() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id) => base44.entities.Project.delete(id),
+    mutationFn: (/** @type {string} */ id) => base44.entities.Project.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project deleted');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error(error.message || 'Failed to delete project');
     },
   });

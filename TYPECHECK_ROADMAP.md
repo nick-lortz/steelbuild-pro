@@ -13,7 +13,7 @@
 ## Recommended order
 1. `src/lib/**/*.ts` and `src/utils/**/*.ts` (Completed)
 2. `src/api/**/*.ts` (Completed)
-3. `src/components/shared/hooks/**/*.js`
+3. `src/components/shared/hooks/**/*.jsx` (Completed)
 4. `src/pages/Dashboard.jsx`
 5. Remaining pages/components by domain
 

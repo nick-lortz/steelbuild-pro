@@ -4,7 +4,10 @@ import { createPageUrl } from '../utils';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
-  Building2, 
+  Building2,
+  Truck,
+  Wrench,
+  Zap,
   DollarSign, 
   FileText, 
   MessageSquareWarning, 
@@ -13,7 +16,9 @@ import {
   BarChart3,
   Sparkles,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Flame,
+  AlertCircle
 } from 'lucide-react';
 
 export default function LandingPage() {

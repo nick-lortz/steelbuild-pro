@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, DollarSign, FileText, MessageSquareWarning, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Building2, FileText, MessageSquareWarning, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function DashboardKPIs({ projects = [], financials = [], drawings = [], rfis = [], tasks = [], expenses = [], laborHours = [], resources = [] }) {
   const activeProjects = (projects || []).filter(p => 

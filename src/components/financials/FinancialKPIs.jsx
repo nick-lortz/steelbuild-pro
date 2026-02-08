@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, TrendingUp, TrendingDown, Target } from 'lucide-react';
-import { calculateSOVMetrics, calculateCostHealth, calculateBudgetVsActual } from '@/components/shared/financialUtils';
+import { calculateSOVMetrics, calculateBudgetVsActual } from '@/components/shared/financialUtils';
 
 export default function FinancialKPIs({ budgetLines = [], expenses = [], invoices = [], sovItems = [], useSOV = false }) {
   let kpis = [];

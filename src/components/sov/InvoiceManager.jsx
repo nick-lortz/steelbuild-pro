@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import DataTable from '@/components/ui/DataTable';
-import { Plus, CheckCircle, FileText, Eye, Trash2 } from 'lucide-react';
+import { Plus, CheckCircle, Eye, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { format } from 'date-fns';
 import { Badge } from "@/components/ui/badge";

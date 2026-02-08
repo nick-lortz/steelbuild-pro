@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Lock, AlertCircle, TrendingDown, Clock, DollarSign, Users, FileText } from 'lucide-react';
+import { AlertTriangle, Lock, AlertCircle, Clock, DollarSign, Users, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 

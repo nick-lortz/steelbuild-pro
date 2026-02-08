@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar, Filter, Search, Image as ImageIcon, Trash2, Download, Edit } from 'lucide-react';
+import { Calendar, Search, Image as ImageIcon, Trash2, Download, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import {
@@ -21,7 +19,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import DocumentUploadZone from '@/components/documents/DocumentUploadZone';
 import FolderBreadcrumb from '@/components/documents/FolderBreadcrumb';
-import PhotoGallery from '@/components/photos/PhotoGallery';
 import DrawingMarkup from '@/components/drawings/DrawingMarkup';
 
 export default function ProjectPhotos() {

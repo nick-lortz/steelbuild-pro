@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { format, differenceInDays, startOfToday, addDays, parseISO, isToday } from 'date-fns';
+import { format, startOfToday, addDays, parseISO } from 'date-fns';
 import { Truck, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

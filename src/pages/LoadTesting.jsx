@@ -3,7 +3,6 @@ import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Zap, Database, RefreshCw, Trash2, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
-import { MessageSquareWarning, AlertTriangle, Clock } from 'lucide-react';
+import { MessageSquareWarning, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function RFIWidget({ projectId }) {

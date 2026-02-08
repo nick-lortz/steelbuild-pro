@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Eye, Pencil, Trash2, AlertCircle, TrendingUp, Clock, Settings } from 'lucide-react';
+import { Eye, Pencil, Trash2, AlertCircle, Clock, Settings } from 'lucide-react';
 import { SafeText } from '@/components/shared/sanitization';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';

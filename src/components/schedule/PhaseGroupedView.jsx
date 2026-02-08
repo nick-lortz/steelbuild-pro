@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, AlertTriangle, Clock, User } from 'lucide-react';
+import { ChevronRight, AlertTriangle, Clock, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInDays } from 'date-fns';
 

@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, TrendingUp, TrendingDown, Calendar, BarChart3, Users } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, isWithinInterval, parseISO, differenceInDays } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
 
 export default function CrossProjectResourceDashboard({ resources, projects, tasks, allocations }) {
   const [timeRange, setTimeRange] = useState('4-weeks');

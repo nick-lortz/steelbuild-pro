@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { createPageUrl } from '@/utils';
-import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Building2, Calendar, FileText, MessageSquareWarning, FileCheck, Plus, Search } from 'lucide-react';
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Building2, Calendar, FileText, MessageSquareWarning, FileCheck, Plus } from 'lucide-react';
 
 export default function CommandPalette() {
   const [open, setOpen] = useState(false);

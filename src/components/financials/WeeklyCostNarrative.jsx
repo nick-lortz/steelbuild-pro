@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FileDown, Copy, Edit2, Check } from 'lucide-react';
-import { cn } from "@/lib/utils";
 import { toast } from '@/components/ui/notifications';
 
 export default function WeeklyCostNarrative({ 

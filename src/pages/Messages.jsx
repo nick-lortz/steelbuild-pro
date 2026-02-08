@@ -7,10 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import ContentSection from '@/components/layout/ContentSection';
-import SectionCard from '@/components/layout/SectionCard';
 import ChatPanel from '@/components/messaging/ChatPanel';
 import ActivityFeed from '@/components/activity/ActivityFeed';
-import { Search, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 export default function Messages() {
   const [searchTerm, setSearchTerm] = useState('');

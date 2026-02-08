@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
-import { FileCheck, DollarSign, TrendingUp } from 'lucide-react';
+import { FileCheck, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function ChangeOrderWidget({ projectId }) {

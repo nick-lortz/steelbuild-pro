@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, ChevronRight, CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function SubtaskManager({ parentTask, subtasks = [], onAddSubtask, onUpdateSubtask, onDeleteSubtask }) {
   const [showForm, setShowForm] = useState(false);

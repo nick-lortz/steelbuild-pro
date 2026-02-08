@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, AlertTriangle, CheckCircle2, Calendar } from 'lucide-react';
-import { format, addMonths, parseISO } from 'date-fns';
+import { TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { addMonths, parseISO } from 'date-fns';
 
 export default function ResourceForecasting({ projects, resources, allocations, tasks }) {
   const forecast = useMemo(() => {

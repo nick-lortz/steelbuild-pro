@@ -10,12 +10,11 @@ import {
   Clock, 
   CheckCircle2, 
   Truck,
-  FileText,
   MessageSquare,
   DollarSign,
   ChevronRight
 } from 'lucide-react';
-import { format, parseISO, isPast, isToday, isTomorrow, differenceInDays, addDays } from 'date-fns';
+import { format, isPast, isToday, isTomorrow, differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';

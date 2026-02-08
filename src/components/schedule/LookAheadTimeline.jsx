@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertCircle } from 'lucide-react';
-import { format, eachWeekOfInterval, parseISO, differenceInDays, startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { format, eachWeekOfInterval, parseISO, differenceInDays, startOfWeek, endOfWeek } from 'date-fns';
 
 export default function LookAheadTimeline({ activities, dateFrom, dateTo, onActivityClick }) {
   const weeks = useMemo(() => {

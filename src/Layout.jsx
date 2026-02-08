@@ -15,7 +15,6 @@ import {
   Users,
   Menu,
   X,
-  ChevronRight,
   ChevronDown,
   Hash,
   Sparkles,
@@ -48,15 +47,12 @@ import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { SkipToMainContent } from '@/components/shared/accessibility';
-import NotificationPanel from '@/components/notifications/NotificationPanel';
-import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { SECURITY_HEADERS } from '@/components/shared/securityHeaders';
 import PullToRefresh from '@/components/shared/PullToRefresh';
 
 const navGroups = [
@@ -186,7 +182,7 @@ function LayoutContent({ children, currentPageName }) {
       const saved = window.localStorage.getItem('nav_expanded_groups');
       const parsed = saved ? JSON.parse(saved) : null;
       return Array.isArray(parsed) ? parsed : ['Overview', 'Project Execution'];
-    } catch (_error) {
+    } catch (_ignoredError) {
       return ['Overview', 'Project Execution'];
     }
   });
@@ -209,7 +205,7 @@ function LayoutContent({ children, currentPageName }) {
     });
   };
 
-  const { data: currentUser, isLoading: userLoading, error: userError } = useQuery({
+  const { data: currentUser, isLoading: userLoading, error: _userError } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
       try {
@@ -251,7 +247,7 @@ function LayoutContent({ children, currentPageName }) {
     }
   };
 
-  const projectPhase = activeProject?.phase || 'fabrication';
+  const _projectPhase = activeProject?.phase || 'fabrication';
 
   const visibleNavGroups = React.useMemo(() => {
     if (!currentUser) return navGroups;

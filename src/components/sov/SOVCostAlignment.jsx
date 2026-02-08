@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import DataTable from '@/components/ui/DataTable';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 

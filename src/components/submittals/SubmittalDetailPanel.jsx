@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { 
-  FileText, Clock, CheckCircle2, AlertTriangle, Download, X, Upload, Mail
+  FileText, CheckCircle2, AlertTriangle, Download, X, Upload
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';

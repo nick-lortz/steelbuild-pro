@@ -2,23 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Calendar, 
   CheckCircle2, 
-  Clock, 
-  Users,
+  Clock,
   Package,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Filter,
-  Download,
-  FileText,
   TrendingUp
 } from 'lucide-react';
 import { 
@@ -26,11 +20,9 @@ import {
   parseISO, 
   startOfWeek, 
   endOfWeek, 
-  eachDayOfInterval, 
-  isSameDay,
+  eachDayOfInterval,
   addWeeks,
   isToday,
-  isFuture,
   isPast
 } from 'date-fns';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';

@@ -17,7 +17,7 @@ import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import DataTable from '@/components/ui/DataTable';
 import { validateTextLength, validateForm } from '@/components/shared/validation';
-import { Plus, Search, Hash, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 
 const initialFormState = {
   code: '',

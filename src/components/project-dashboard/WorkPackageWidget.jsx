@@ -1,8 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
-import { Package, CheckCircle2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Package } from 'lucide-react';
 
 export default function WorkPackageWidget({ projectId }) {
   const { data: workPackages = [] } = useQuery({

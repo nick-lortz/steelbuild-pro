@@ -4,10 +4,9 @@ import { apiClient } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Calendar, Users, AlertTriangle, ArrowRight } from 'lucide-react';
 import { format, addDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 

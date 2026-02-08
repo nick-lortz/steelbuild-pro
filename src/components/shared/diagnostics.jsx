@@ -7,8 +7,8 @@ const IS_DEV = Boolean(import.meta.env?.DEV);
  * Usage: useRenderCount('ComponentName');
  */
 export function useRenderCount(componentName) {
-  if (!IS_DEV) return;
   const renderCount = useRef(0);
+  if (!IS_DEV) return;
   renderCount.current += 1;
   
   console.log(`[RENDER] ${componentName} - Render #${renderCount.current}`, {
@@ -21,8 +21,8 @@ export function useRenderCount(componentName) {
  * Usage: useEffectLogger('ComponentName', 'effectDescription', deps);
  */
 export function useEffectLogger(componentName, effectName, deps = []) {
-  if (!IS_DEV) return;
   useEffect(() => {
+    if (!IS_DEV) return undefined;
     console.log(`[EFFECT] ${componentName} - ${effectName} FIRED`, {
       timestamp: new Date().toISOString(),
       deps
@@ -41,8 +41,8 @@ export function useEffectLogger(componentName, effectName, deps = []) {
  * Usage: useMountLogger('ComponentName');
  */
 export function useMountLogger(componentName) {
-  if (!IS_DEV) return;
   useEffect(() => {
+    if (!IS_DEV) return undefined;
     console.log(`[MOUNT] ${componentName} MOUNTED`, {
       timestamp: new Date().toISOString()
     });

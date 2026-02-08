@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Target, DollarSign, Clock, AlertTriangle, CheckCircle, XCircle, Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Target, DollarSign, Clock, AlertTriangle, CheckCircle, XCircle, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
 

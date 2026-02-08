@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Clock, User, Calendar } from 'lucide-react';
+import { AlertTriangle, User, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { differenceInDays, format, parseISO, isValid } from 'date-fns';
+import { differenceInDays, format, parseISO } from 'date-fns';
 
 const getStatusColor = (status) => {
   const colors = {

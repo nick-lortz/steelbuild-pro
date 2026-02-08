@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { AlertTriangle, AlertCircle, Truck } from 'lucide-react';
+import { AlertTriangle, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 

@@ -10,10 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Cloud, MessageSquare, DollarSign, CheckCircle2, AlertCircle, 
-  Send, FileText, Zap, Settings, Users, RefreshCw
+  Send, Zap, Settings, Users, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 export default function Integrations() {
   const queryClient = useQueryClient();

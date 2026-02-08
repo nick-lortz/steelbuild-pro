@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Navigation, Save, RefreshCw } from 'lucide-react';
+import { MapPin, Navigation, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/api/client';
 

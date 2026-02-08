@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { ChevronDown, ChevronUp, CheckCircle2, AlertTriangle, Package, Truck, Wrench } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertTriangle, Package, Truck, Wrench } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";

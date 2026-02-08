@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { 
-  Pencil, Square, Circle, Type, Eraser, Download, 
+  Pencil, Square, Circle, Eraser, Download, 
   X, Pin, MessageSquare, Undo, Redo, Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';

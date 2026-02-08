@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, AlertCircle, TrendingUp, DollarSign } from 'lucide-react';
+import { AlertTriangle, AlertCircle, DollarSign } from 'lucide-react';
 
 export default function BudgetAlerts({ 
   workPackages = [], 

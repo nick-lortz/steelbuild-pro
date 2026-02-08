@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Users, X } from 'lucide-react';
+import { Users } from 'lucide-react';
 import QuickResourceAssign from './QuickResourceAssign';
 
 export default function BulkResourceAssign({ 

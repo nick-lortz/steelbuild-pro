@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { apiClient } from '@/api/client';
-import { Search, Sparkles, File, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { Search, File, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 

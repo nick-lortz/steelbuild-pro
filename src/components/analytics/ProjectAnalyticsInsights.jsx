@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Sparkles, TrendingDown, TrendingUp, AlertTriangle, Target, 
-  Zap, TrendingUpIcon, BarChart3, Clock, DollarSign, Users 
+  Sparkles, AlertTriangle, 
+  Zap, BarChart3, Clock, DollarSign, Users 
 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 

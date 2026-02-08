@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { 
-  Plus, Search, MessageSquareWarning, Mail, Copy, FileSpreadsheet, 
-  Trash2, BarChart3, Clock, AlertTriangle 
+  Plus, Search, MessageSquareWarning, Copy, FileSpreadsheet, 
+  Trash2, BarChart3, AlertTriangle 
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ import {
 import RFIWizard from '@/components/rfis/RFIWizard';
 import RFIDetailPanel from '@/components/rfis/RFIDetailPanel';
 import RFIInbox from '@/components/rfis/RFIInbox';
-import RFITemplateSelector, { RFI_TEMPLATES } from '@/components/rfis/RFITemplateSelector';
+import RFITemplateSelector from '@/components/rfis/RFITemplateSelector';
 import RFIKPIDashboard from '@/components/rfis/RFIKPIDashboard';
 import RFIAgingDashboard from '@/components/rfis/RFIAgingDashboard';
 import BulkRFICreator from '@/components/rfis/BulkRFICreator';

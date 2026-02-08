@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import ContentSection from '@/components/layout/ContentSection';
-import EmptyState from '@/components/layout/EmptyState';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { CheckCircle2, Circle, Plus, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';

@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { User, Wrench, Users, Phone, Mail, Calendar, DollarSign } from 'lucide-react';
+import { User, Wrench, Users, Phone, Mail, DollarSign } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 export default function ResourceDetailView({ resource, project, allocation, tasks }) {

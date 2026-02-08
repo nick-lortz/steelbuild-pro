@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Area } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, AlertTriangle } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { differenceInDays, parseISO, format } from 'date-fns';
+import { Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { differenceInDays, parseISO } from 'date-fns';
 
 export default function ProjectHealthTrends({ projects, expenses, tasks, dateRange }) {
   const trendData = useMemo(() => {

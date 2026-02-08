@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { apiClient } from '@/api/client';
-import { Sparkles, AlertTriangle, TrendingUp, FileText, Loader2, Copy, ChevronDown, ChevronRight } from 'lucide-react';
+import { Sparkles, AlertTriangle, TrendingUp, FileText, Loader2, Copy, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/notifications';
 

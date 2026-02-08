@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import PageHeader from '@/components/ui/PageHeader';
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Target, TrendingUp, TrendingDown, DollarSign, Lock, FileText, AlertTriangle } from 'lucide-react';
+import { Target, TrendingUp, TrendingDown, DollarSign, Lock, AlertTriangle } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CostRiskIndicator from '@/components/financials/CostRiskIndicator';

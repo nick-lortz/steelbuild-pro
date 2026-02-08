@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, TrendingDown, Search } from 'lucide-react';
 
 export default function SkillGapAnalysis({ projects, resources, tasks }) {

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Lock, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Lock, AlertTriangle } from 'lucide-react';
 
 export default function FabricationReadinessPanel({ rfis = [], drawingSets = [], fabricationTasks = [] }) {
   const readinessAnalysis = useMemo(() => {

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { Pencil, ArrowRight, FileText, Link as LinkIcon, CheckCircle2, Package as PackageIcon } from 'lucide-react';
+import { Pencil, ArrowRight, FileText, Link as LinkIcon, Package as PackageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';

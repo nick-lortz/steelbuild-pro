@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, FileSpreadsheet, FileText } from 'lucide-react';
+import { Download, FileSpreadsheet } from 'lucide-react';
 import { exportToCSV, exportColumns } from './exportUtils';
 import { toast } from '@/components/ui/notifications';
 

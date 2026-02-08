@@ -28,16 +28,11 @@ import {
 } from "@/components/ui/sheet";
 import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import DocumentPreview from '@/components/documents/DocumentPreview';
 import CSVUpload from '@/components/shared/CSVUpload';
-import FacetedSearchPanel from '@/components/documents/FacetedSearchPanel';
-import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
-import DocumentTreeView from '@/components/documents/DocumentTreeView';
 import DocumentFolderTree from '@/components/documents/DocumentFolderTree';
-import AISearchPanel from '@/components/documents/AISearchPanel';
 import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel';
 import DocumentLinkSuggestions from '@/components/documents/DocumentLinkSuggestions';
 import { format } from 'date-fns';

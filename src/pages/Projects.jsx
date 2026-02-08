@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue } from
 "@/components/ui/select";
-import { Building, RefreshCw, Plus } from 'lucide-react';
+import { RefreshCw, Plus } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import {
   Dialog,

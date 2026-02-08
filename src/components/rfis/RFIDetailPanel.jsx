@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  MessageSquareWarning, Calendar, AlertTriangle, CheckCircle2, 
-  FileText, MessageSquare, Activity, Edit, Trash2, Mail,
+  MessageSquareWarning, AlertTriangle, CheckCircle2, 
+  FileText, Activity, Edit, Trash2, Mail,
   Clock, DollarSign, Link as LinkIcon, Upload, Download, X
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';

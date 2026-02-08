@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Save, Zap } from 'lucide-react';
-import { format } from 'date-fns';
 
 export default function BulkTaskEditor({ tasks, resources = [], onSave, onCancel }) {
   const [updates, setUpdates] = useState({

@@ -12,9 +12,7 @@ import {
   Users, 
   Plus,
   TrendingUp,
-  DollarSign,
   Trash2,
-  Edit,
   CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';

@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Image as ImageIcon, Calendar, MapPin, User, Tag, 
-  Search, Filter, Download, Edit, Trash2, Grid3x3, List
+  Search, Download, Edit, Trash2, Grid3x3, List
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';

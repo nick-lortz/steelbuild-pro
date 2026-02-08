@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card } from "@/components/ui/card";
-import { Building2, CheckCircle2, Clock, AlertTriangle, DollarSign } from 'lucide-react';
+import { Building2, CheckCircle2, AlertTriangle, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function ProjectsKPIBar({ projects, tasks, financials }) {

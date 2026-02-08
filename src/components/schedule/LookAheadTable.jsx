@@ -7,9 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import StatusBadge from '@/components/ui/StatusBadge';
-import { FileText, MessageSquareWarning, Wrench, AlertCircle, Users, X } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { FileText, MessageSquareWarning, AlertCircle, Users } from 'lucide-react';
 
 export default function LookAheadTable({ activities, resources, users, drawingSets, rfis, onActivityClick, onUpdateActivity }) {
   const [editingResourcesFor, setEditingResourcesFor] = useState(null);

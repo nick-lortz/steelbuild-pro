@@ -11,16 +11,13 @@ import {
   Calendar, 
   AlertTriangle, 
   CheckCircle2, 
-  Clock, 
   XCircle,
-  Filter,
   Layers,
   Search,
   ChevronDown,
-  Edit,
-  Plus
+  Edit
 } from 'lucide-react';
-import { format, addWeeks, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, differenceInDays } from 'date-fns';
+import { format, addWeeks, parseISO, startOfWeek, endOfWeek, isWithinInterval, differenceInDays } from 'date-fns';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';

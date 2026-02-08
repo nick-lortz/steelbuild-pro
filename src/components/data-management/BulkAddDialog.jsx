@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
-import { Loader2, Plus, Trash2, Download, Upload, Table2, FileText, X } from 'lucide-react';
+import { Loader2, Plus, Download, Upload, Table2, FileText, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 

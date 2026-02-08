@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Target, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 export default function ForecastAtCompletion({ financials, projects, changeOrders, expenses = [] }) {
   const projectForecasts = projects.map((project) => {

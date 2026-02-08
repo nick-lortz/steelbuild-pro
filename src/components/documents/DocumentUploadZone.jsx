@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, File, Loader2, Sparkles } from 'lucide-react';
-import { toast } from '@/components/ui/notifications';
+import { Upload, Loader2, Sparkles } from 'lucide-react';
 
 export default function DocumentUploadZone({ onUpload, isLoading, multiple = true, autoProcessAI = false }) {
   const [dragActive, setDragActive] = useState(false);

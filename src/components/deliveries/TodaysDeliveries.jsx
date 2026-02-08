@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Truck, MapPin, Clock, CheckCircle2, Phone, AlertTriangle } from 'lucide-react';
-import { format, parseISO, isToday, isPast } from 'date-fns';
+import { Truck, MapPin, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { parseISO, isToday } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function TodaysDeliveries({ deliveries, onReceive, onMarkArrived, onViewDetails }) {

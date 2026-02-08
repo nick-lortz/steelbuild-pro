@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, differenceInDays, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
+import { format, differenceInDays, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { Calendar, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

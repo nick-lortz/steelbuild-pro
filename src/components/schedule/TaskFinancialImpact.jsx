@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, TrendingUp, TrendingDown, DollarSign, Clock } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 
 export default function TaskFinancialImpact({ tasks, changeOrders }) {
   // Calculate financial impacts from tasks with memoization

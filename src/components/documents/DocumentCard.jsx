@@ -1,5 +1,5 @@
 import React from 'react';
-import { File, Download, Trash2, Eye, History, FileImage } from 'lucide-react';
+import { File, Download, Trash2, Eye, History } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

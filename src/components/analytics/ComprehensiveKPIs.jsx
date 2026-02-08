@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Clock, MessageSquare, FileEdit, DollarSign, Activity } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, Clock, MessageSquare, FileEdit, DollarSign, Activity } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 export default function ComprehensiveKPIs({ projects, rfis, changeOrders, expenses, tasks, laborHours, dateRange }) {

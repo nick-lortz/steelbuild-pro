@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Plus } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function SOVResourceAssignment({ sovItems, projectId }) {

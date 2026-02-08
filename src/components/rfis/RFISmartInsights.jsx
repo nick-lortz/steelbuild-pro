@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from '@/api/client';
 import { useMutation } from '@tanstack/react-query';
-import { Lightbulb, TrendingUp, Zap, AlertTriangle, Loader2 } from 'lucide-react';
+import { Lightbulb, TrendingUp, Zap, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RFISmartInsights({ projectId, rfis = [] }) {

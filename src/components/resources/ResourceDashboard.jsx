@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Users, AlertTriangle, TrendingUp, Clock, Wrench, Package } from 'lucide-react';
-import { format, parseISO, isAfter } from 'date-fns';
+import { parseISO, isAfter } from 'date-fns';
 
 export default function ResourceDashboard({ resources, tasks, projects }) {
   const metrics = useMemo(() => {

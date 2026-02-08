@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showErrorToast, showSuccessToast, ErrorMessages } from '@/components/shared/errorHandling';
-import { SafeHTML } from '@/components/shared/sanitization';
 
 export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess }) {
   const [formData, setFormData] = useState({

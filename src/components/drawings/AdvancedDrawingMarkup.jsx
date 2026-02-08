@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { 
   Pencil, Square, Circle, Type, Pin, Ruler, ArrowRight,
-  Download, X, Undo, Redo, Save, Eye, EyeOff, Layers,
+  Download, X, Undo, Redo, Save, Layers,
   Link as LinkIcon, Trash2, Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';

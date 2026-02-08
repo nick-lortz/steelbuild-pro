@@ -1,9 +1,7 @@
 import React, { useMemo } from 'react';
-import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { AlertTriangle, TrendingDown, Clock } from 'lucide-react';
 
 const STATUS_COLORS = {
   idle: '#f97316',

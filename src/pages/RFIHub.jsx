@@ -16,11 +16,11 @@ import RFIHubForm from '@/components/rfi-hub/RFIHubForm';
 import RFIHubTrends from '@/components/rfi-hub/RFIHubTrends';
 import Pagination from '@/components/ui/Pagination';
 import { Plus, Search, Clock, CheckCircle2, Users, FileText, AlertTriangle } from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
-import { groupBy, indexBy } from '@/components/shared/arrayUtils';
+import { indexBy } from '@/components/shared/arrayUtils';
 import { getRFIEscalationLevel, getBusinessDaysBetween } from '@/components/shared/businessRules';
 
 export default function RFIHub() {

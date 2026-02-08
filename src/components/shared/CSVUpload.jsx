@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, Download, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
 import { apiClient } from '@/api/client';
-import { Badge } from "@/components/ui/badge";
 
 export default function CSVUpload({ 
   entityName, 

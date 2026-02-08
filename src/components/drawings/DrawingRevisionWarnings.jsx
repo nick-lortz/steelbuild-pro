@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, FileText, Calendar } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { AlertTriangle } from 'lucide-react';
+import { parseISO, differenceInDays } from 'date-fns';
 
 export default function DrawingRevisionWarnings({ drawingSet, sheets = [] }) {
   const warnings = useMemo(() => {

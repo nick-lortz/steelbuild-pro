@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, AlertCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 export default function DailyResourceCell({ date, crews, equipment, deliveries, tasks, conflicts }) {

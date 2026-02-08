@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Paperclip } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function NoteComposer({ projectId, weekId, noteType = 'note', onSubmit, onCancel }) {
   const [formData, setFormData] = useState({

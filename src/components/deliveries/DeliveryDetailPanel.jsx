@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Package, Calendar, Truck, MapPin, Phone, Mail, Clock, 
-  AlertTriangle, CheckCircle2, FileText, MessageSquare, 
-  Activity, Edit, Trash2, Upload, Camera, Navigation 
+  Package, Calendar, Truck, MapPin, Phone, Mail, 
+  AlertTriangle, CheckCircle2, 
+  Activity, Edit, Trash2, Navigation 
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';

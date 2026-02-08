@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, X } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 

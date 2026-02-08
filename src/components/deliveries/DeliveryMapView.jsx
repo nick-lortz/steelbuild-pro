@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Truck, Navigation, Clock, AlertTriangle } from 'lucide-react';
+import { MapPin, Truck, Clock } from 'lucide-react';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
-import StatusBadge from '@/components/ui/StatusBadge';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 

@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DataTable from '@/components/ui/DataTable';
 import ResourceForm from '@/components/resources/ResourceForm';
-import { Plus, Search, Users, AlertTriangle, Calendar, Trash2, Edit, MapPin, TrendingUp } from 'lucide-react';
+import { Plus, Search, Users, AlertTriangle, Trash2, Edit, TrendingUp } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import { format, parseISO, isWithinInterval } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,

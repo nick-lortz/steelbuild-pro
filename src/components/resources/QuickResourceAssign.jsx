@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Users, X, Check } from 'lucide-react';
+import { Users, X } from 'lucide-react';
 
 export default function QuickResourceAssign({ 
   selectedResourceIds = [], 

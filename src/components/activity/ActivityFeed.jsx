@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, MessageSquareWarning, FileCheck, Calendar, Truck, File, AlertTriangle, Filter } from 'lucide-react';
+import { FileText, MessageSquareWarning, FileCheck, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ActivityFeed({ projectId }) {

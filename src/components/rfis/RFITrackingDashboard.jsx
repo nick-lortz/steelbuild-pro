@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Clock, DollarSign, CheckCircle2, AlertCircle } from 'lucide-react';
-import { differenceInDays, parseISO, isAfter, isBefore } from 'date-fns';
+import { AlertTriangle, Clock, DollarSign } from 'lucide-react';
+import { parseISO, isAfter } from 'date-fns';
 
 export default function RFITrackingDashboard({ rfis, projects }) {
   const metrics = useMemo(() => {

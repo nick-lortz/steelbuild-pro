@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, CheckCircle, Clock, TrendingUp, Calendar } from 'lucide-react';
-import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function ProjectScheduleWidget({ projectId }) {
   const { data: healthData, isLoading } = useQuery({

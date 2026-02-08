@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, Mail, Calendar } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 

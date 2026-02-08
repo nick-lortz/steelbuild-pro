@@ -4,7 +4,7 @@ import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { differenceInDays, parseISO, isPast } from 'date-fns';
 import { cn } from '@/lib/utils';
 

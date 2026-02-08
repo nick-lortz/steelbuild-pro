@@ -19,15 +19,13 @@ import {
   Truck,
   FileText,
   Plus,
-  ArrowRight,
   Lock,
   Unlock,
-  Settings,
   TrendingUp,
   XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, parseISO, isValid } from 'date-fns';
+import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { checkPrerequisites, PrerequisitesBadge } from '@/components/fabrication/PrerequisitesEngine';
 

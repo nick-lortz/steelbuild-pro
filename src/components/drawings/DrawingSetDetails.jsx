@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DrawingSetForm from './DrawingSetForm';
 import AIDrawingProcessor from './AIDrawingProcessor';
-import { FileText, History, Brain, ExternalLink, Download, Sparkles, Trash2, Upload, Loader2, X, MessageSquareWarning } from 'lucide-react';
+import { FileText, History, Brain, ExternalLink, Sparkles, Trash2, Upload, Loader2, X, MessageSquareWarning } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';

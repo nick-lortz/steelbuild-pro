@@ -14,17 +14,11 @@ import { format, parseISO, isValid } from 'date-fns';
 import {
   FileText,
   Calendar,
-  User,
-  AlertTriangle,
   CheckCircle2,
-  Clock,
-  MessageSquare,
   History,
   Edit3,
   Save,
   X,
-  Upload,
-  TrendingUp,
   Download
 } from 'lucide-react';
 import DrawingUploadEnhanced from './DrawingUploadEnhanced';

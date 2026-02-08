@@ -1,6 +1,5 @@
 import React from 'react';
 import { CheckCircle2, Circle, AlertTriangle } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 
 export default function DeliveryPrerequisiteChecklist({ delivery, onUpdate }) {
   const checks = [

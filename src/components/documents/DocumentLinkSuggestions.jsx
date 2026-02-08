@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Link2, CheckCircle, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { toast } from '@/components/ui/notifications';
+import { Sparkles, Link2, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function DocumentLinkSuggestions({ document, suggestions, onLink, onDismiss }) {
   const [expanded, setExpanded] = useState(true);

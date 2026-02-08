@@ -7,11 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  AlertTriangle,
-  Clock,
   CheckCircle2,
   FileText,
-  MessageSquare,
   Plus,
   History,
   Inbox,
@@ -19,10 +16,7 @@ import {
   Send,
   RefreshCw,
   Rocket,
-  Activity,
-  Trash2,
-  TrendingUp,
-  User
+  Trash2
 } from 'lucide-react';
 import { format, differenceInCalendarDays, isPast, parseISO, isValid } from 'date-fns';
 import { toast } from '@/components/ui/notifications';

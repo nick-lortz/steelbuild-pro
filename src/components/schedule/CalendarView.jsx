@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths, parseISO, addDays, differenceInDays } from 'date-fns';
-import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function CalendarView({ tasks, projects, onTaskClick, onTaskUpdate }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());

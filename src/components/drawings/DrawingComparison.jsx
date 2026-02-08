@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeftRight, Maximize2 } from 'lucide-react';
+import { ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function DrawingComparison({ 

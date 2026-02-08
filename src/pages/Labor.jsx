@@ -2,12 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Users, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, Clock } from 'lucide-react';
 
 import LaborEntryForm from '@/components/labor/LaborEntryForm';
 import CrewDashboard from '@/components/labor/CrewDashboard';

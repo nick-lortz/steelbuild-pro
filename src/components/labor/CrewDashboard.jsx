@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { format, parseISO, startOfDay, endOfDay, subDays } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 export default function CrewDashboard({ laborEntries, crews }) {
   const crewMetrics = useMemo(() => {

@@ -1,11 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Bell, AlertTriangle, Clock, CheckCircle, Calendar } from 'lucide-react';
-import { differenceInDays, format, addDays, isAfter } from 'date-fns';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { differenceInDays, format, isAfter } from 'date-fns';
 
 export default function DrawingNotifications({ drawingSets, projects }) {
   const today = new Date();

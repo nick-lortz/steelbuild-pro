@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,7 @@ import SectionCard from '@/components/layout/SectionCard';
 import MetricsBar from '@/components/layout/MetricsBar';
 import DataTable from '@/components/ui/DataTable';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { FileText, TrendingUp, Clock, DollarSign, Plus, Edit, Users, Upload, Download, Trash2, File } from 'lucide-react';
+import { FileText, TrendingUp, Clock, DollarSign, Edit, Users, Upload, Download, Trash2, File } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 

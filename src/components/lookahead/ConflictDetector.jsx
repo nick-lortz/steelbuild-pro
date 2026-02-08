@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 
 export default function ConflictDetector({ crews, equipment, deliveries, tasks, laborEntries, equipmentLogs }) {
   const conflicts = useMemo(() => {

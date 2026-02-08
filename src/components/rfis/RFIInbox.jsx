@@ -1,9 +1,8 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, MessageSquare, TrendingUp } from 'lucide-react';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { parseISO, differenceInDays } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function RFIInbox({ rfis, onSelectRFI, onQuickAction }) {

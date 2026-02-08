@@ -3,7 +3,6 @@ import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Upload, MapPin, X, Check } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';

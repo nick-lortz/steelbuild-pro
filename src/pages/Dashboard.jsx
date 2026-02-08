@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { usePagination } from '@/components/shared/hooks/usePagination';
 import Pagination from '@/components/ui/Pagination';
 import AIRiskPanel from '@/components/dashboard/AIRiskPanel';
-import RoleBasedKPIs from '@/components/dashboard/RoleBasedKPIs';
 import AIForecastPanel from '@/components/dashboard/AIForecastPanel';
 
 export default function Dashboard() {

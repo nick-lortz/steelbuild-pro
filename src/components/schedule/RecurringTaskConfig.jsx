@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Repeat, Calendar, AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function RecurringTaskConfig({ task, onChange }) {
   const [config, setConfig] = useState({

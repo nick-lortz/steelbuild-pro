@@ -44,7 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger } from
 '@/components/ui/dropdown-menu';
-import { Toaster } from '@/components/ui/Toaster';
+import { Toaster } from '@/components/ui/toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';

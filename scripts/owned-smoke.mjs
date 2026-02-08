@@ -67,6 +67,31 @@ async function run() {
         assert(payload?.metrics, 'dashboard payload missing metrics');
         assert(Array.isArray(payload?.projects), 'dashboard payload missing projects array');
       }
+    },
+    {
+      name: 'entity_create_delete',
+      run: async () => {
+        const createPayload = {
+          data: {
+            name: `smoke-task-${Date.now()}`,
+            status: 'open'
+          }
+        };
+        const { response: createResponse, body: created } = await request('/entities/Task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(createPayload)
+        });
+        assert(createResponse.ok, `entities/Task create failed with status ${createResponse.status}`);
+        const id = created?.id;
+        assert(id, 'entities/Task create missing id');
+
+        const { response: deleteResponse } = await request(`/entities/Task/${id}`, { method: 'DELETE' });
+        assert(
+          deleteResponse.status === 204,
+          `entities/Task delete expected 204, got ${deleteResponse.status}`
+        );
+      }
     }
   ];
 

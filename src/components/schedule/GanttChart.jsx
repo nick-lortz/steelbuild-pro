@@ -172,6 +172,7 @@ export default function GanttChart({
   }, [completedTasks]);
 
   const phases = ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'];
+  const phaseOrder = { detailing: 1, fabrication: 2, delivery: 3, erection: 4, closeout: 5, unassigned: 99 };
   const phaseLabels = {
     detailing: 'Detailing',
     fabrication: 'Fabrication',
@@ -552,7 +553,12 @@ export default function GanttChart({
                   </div>
 
                   {/* Phase/WBS Groups */}
-                  {!isProjectCollapsed && Object.entries(phaseGroups).map(([groupKey, groupTasks]) => {
+                  {!isProjectCollapsed && Object.entries(phaseGroups)
+                    .sort(([keyA], [keyB]) => {
+                      if (groupByWBS) return keyA.localeCompare(keyB);
+                      return (phaseOrder[keyA] || 99) - (phaseOrder[keyB] || 99);
+                    })
+                    .map(([groupKey, groupTasks]) => {
                     if (groupTasks.length === 0) return null;
 
                     const groupId = `${projectId}-${groupKey}`;

@@ -547,7 +547,6 @@ export default function Settings() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>

@@ -123,7 +123,7 @@ export default function LandingPage() {
           {features.map((feature, idx) => {
             const Icon = feature.icon;
             return (
-              <Card key={idx} className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-blue-500/50 transition-all rounded-lg">
+              <Card key={idx} className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-amber-500/50 transition-all rounded-lg">
                 <CardContent className="p-6 space-y-3">
                   <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center border border-amber-500/30">
                     <Icon size={24} className="text-amber-400" />

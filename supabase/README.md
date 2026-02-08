@@ -26,5 +26,5 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
 
 - Add additional entity tables required by app pages (`tasks`, `financials`, `rfis`, `change_orders`, etc.).
 - Tighten project RLS from broad authenticated access to role/project-based access.
-- Add `/api/users/invite`, `/api/files/upload`, and `/api/ai/invoke` implementations in `server/owned-gateway.mjs`.
+- Expand `ENTITY_TABLE_MAP` and corresponding SQL migrations for every remaining entity used by the UI.
 - Implement `/api/auth/me` and `/api/entities/*` gateway endpoints using Supabase service + session context.

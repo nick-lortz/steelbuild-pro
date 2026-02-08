@@ -542,7 +542,6 @@ export default function Reports() {
             <AutomatedReportScheduler />
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

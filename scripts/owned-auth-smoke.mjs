@@ -15,7 +15,15 @@ function withTimeout(promise, ms, label) {
 
 async function request(path, options = {}) {
   const url = `${BASE_URL}${path}`;
-  const response = await withTimeout(fetch(url, options), TIMEOUT_MS, `${options.method || 'GET'} ${path}`);
+  let response;
+  try {
+    response = await withTimeout(fetch(url, options), TIMEOUT_MS, `${options.method || 'GET'} ${path}`);
+  } catch (error) {
+    if (error?.message?.includes('fetch failed') || error?.cause?.code === 'ECONNREFUSED') {
+      throw new Error(`Cannot reach owned gateway at ${BASE_URL}. Start it with: npm run owned:gateway`);
+    }
+    throw error;
+  }
   const contentType = response.headers.get('content-type') || '';
   let body = null;
   if (contentType.includes('application/json')) {
@@ -30,11 +38,21 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function bodyMessage(body) {
+  if (!body) return '';
+  if (typeof body === 'string') return body;
+  return body?.message || body?.error_description || body?.msg || JSON.stringify(body);
+}
+
 async function run() {
   if (!TEST_EMAIL || !TEST_PASSWORD) {
     console.log('SKIP owned-auth-smoke: set OWNED_AUTH_TEST_EMAIL and OWNED_AUTH_TEST_PASSWORD to run auth flow checks');
     return;
   }
+
+  const health = await request('/health');
+  assert(health.response.ok, `health failed with status ${health.response.status}`);
+  console.log('PASS gateway_health');
 
   const noTokenSession = await request('/auth/session');
   assert(noTokenSession.response.ok, `auth/session (no token) failed with status ${noTokenSession.response.status}`);
@@ -55,7 +73,10 @@ async function run() {
     return;
   }
 
-  assert(login.response.ok, `auth/login failed with status ${login.response.status}`);
+  assert(
+    login.response.ok,
+    `auth/login failed with status ${login.response.status}${bodyMessage(login.body) ? `: ${bodyMessage(login.body)}` : ''}`
+  );
   const token = login.body?.data?.access_token;
   assert(token, 'auth/login missing access_token');
   console.log('PASS login_password');

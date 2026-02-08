@@ -650,9 +650,17 @@ async function handleAuthLogin(req, res) {
       },
       body: JSON.stringify({ email, password })
     });
-    const payload = await response.json().catch(() => ({}));
+    const raw = await response.text();
+    let payload = {};
+    try {
+      payload = raw ? JSON.parse(raw) : {};
+    } catch (_err) {
+      payload = { raw };
+    }
     if (!response.ok) {
-      json(res, response.status, { message: payload?.error_description || payload?.msg || 'Login failed' });
+      json(res, response.status, {
+        message: payload?.error_description || payload?.msg || payload?.error || payload?.raw || 'Login failed'
+      });
       return;
     }
     json(res, 200, {

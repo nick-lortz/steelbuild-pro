@@ -128,6 +128,18 @@ export default function FieldIssueLogger({ projectId, onSuccess }) {
     setIsSubmitting(false);
   };
 
+  const handleProposeImprovement = async (issueId) => {
+    try {
+      const response = await base44.functions.invoke('suggestDetailImprovement', {
+        field_issue_id: issueId,
+        project_id: projectId
+      });
+      alert(`Detail improvement suggested: ${response.detail_improvement_id}\nApproval path: ${response.approval_threshold}`);
+    } catch (error) {
+      alert('Failed to suggest improvement: ' + error.message);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="bg-zinc-800 border-zinc-700">

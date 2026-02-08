@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { Loader2, Plus, Trash2, Download, Upload, Table2, FileText, X } from 'lucide-react';

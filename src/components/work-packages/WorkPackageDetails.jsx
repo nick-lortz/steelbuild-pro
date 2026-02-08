@@ -7,7 +7,6 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { Pencil, ArrowRight, FileText, Link as LinkIcon, CheckCircle2, Package as PackageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import BudgetManager from '@/components/budget/BudgetManager';
 

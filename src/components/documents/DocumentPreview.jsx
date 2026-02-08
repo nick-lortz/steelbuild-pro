@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Eye, X, Loader2, Lock, AlertCircle } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { toast } from '@/components/ui/notifications';

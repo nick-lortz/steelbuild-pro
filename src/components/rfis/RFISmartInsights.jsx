@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { useMutation } from '@tanstack/react-query';
 import { Lightbulb, TrendingUp, Zap, AlertTriangle, Loader2 } from 'lucide-react';

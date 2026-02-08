@@ -13,7 +13,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useMutation } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import DocumentUploader from '@/components/documents/DocumentUploader';

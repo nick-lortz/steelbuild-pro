@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertTriangle, TrendingUp, Calendar, Clock, CheckCircle, Shuffle, Users2 } from 'lucide-react';
 import { format, addDays, differenceInDays, parseISO, isAfter, isBefore } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { toast } from 'sonner';
 

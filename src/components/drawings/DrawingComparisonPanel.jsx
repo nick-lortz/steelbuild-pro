@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GitCompare, AlertTriangle, AlertCircle, ArrowRight, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { useQuery } from '@tanstack/react-query';

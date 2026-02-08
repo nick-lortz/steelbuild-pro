@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { FileText, TrendingUp, Loader2, Download, Copy } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';

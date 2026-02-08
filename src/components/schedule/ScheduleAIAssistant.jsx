@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { Sparkles, AlertTriangle, TrendingUp, FileText, Loader2, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';

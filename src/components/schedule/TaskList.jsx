@@ -8,7 +8,6 @@ import { format } from 'date-fns';
 import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 import QuickAddSubtask from './QuickAddSubtask';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import {
   AlertDialog,

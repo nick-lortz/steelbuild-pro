@@ -10,7 +10,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 
 export function useEntitySubscription(entityName, queryKey, options = {}) {

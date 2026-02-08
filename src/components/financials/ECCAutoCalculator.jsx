@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { TrendingUp, Calendar } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';

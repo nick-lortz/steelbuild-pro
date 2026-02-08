@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link2, FileText, MessageSquareWarning, Users, File, Loader2, Check, X, Sparkles } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 

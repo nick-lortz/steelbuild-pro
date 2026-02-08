@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 
 export default function NavigationTracker() {

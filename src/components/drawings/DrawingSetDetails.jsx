@@ -19,7 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 
 export default function DrawingSetDetails({ 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { apiClient } from '@/api/client';
 import PageHeader from '@/components/ui/PageHeader';
 import DocumentLinkageCenter from '@/components/documents/DocumentLinkageCenter';

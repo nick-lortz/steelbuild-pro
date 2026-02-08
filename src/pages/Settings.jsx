@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import PageShell from '@/components/layout/PageShell';
 import PageHeader from '@/components/layout/PageHeader';
 import ContentSection from '@/components/layout/ContentSection';
 import DataTable from '@/components/ui/DataTable';
@@ -168,7 +167,7 @@ export default function Settings() {
   ];
 
   return (
-    <PageShell>
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
       <PageHeader
         title="Settings"
         subtitle="Profile • Preferences • Customization"
@@ -583,6 +582,6 @@ export default function Settings() {
         </DialogContent>
       </Dialog>
       </ContentSection>
-    </PageShell>
+    </div>
   );
 }

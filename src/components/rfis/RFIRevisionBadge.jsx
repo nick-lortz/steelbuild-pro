@@ -1,27 +1,25 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export default function RFIRevisionBadge({ rfi, currentDrawingHash }) {
-  if (!rfi.origin_drawing_id || !rfi.revision_hash) {
-    return null;
-  }
+export default function RFIRevisionBadge({ rfi, currentRevisionHash }) {
+  if (!rfi.revision_hash) return null;
 
   const isSuperseded = rfi.requires_revalidation || 
-    (currentDrawingHash && rfi.revision_hash !== currentDrawingHash);
+                       (currentRevisionHash && rfi.revision_hash !== currentRevisionHash);
 
   if (isSuperseded) {
     return (
-      <Badge variant="destructive" className="gap-1">
-        <AlertCircle size={14} />
+      <Badge className="bg-red-600 text-white text-xs flex items-center gap-1 w-fit">
+        <AlertCircle size={12} />
         Superseded
       </Badge>
     );
   }
 
   return (
-    <Badge variant="default" className="bg-green-600 gap-1">
-      <CheckCircle size={14} />
+    <Badge className="bg-green-600 text-white text-xs flex items-center gap-1 w-fit">
+      <CheckCircle2 size={12} />
       Current
     </Badge>
   );

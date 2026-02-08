@@ -19,6 +19,7 @@
 First burn-down complete: removed `@ts-nocheck` from `button`, `badge`, `card`, `input`, `progress`, and `Pagination` UI primitives.
 Second burn-down complete: removed `@ts-nocheck` from `drawer`, `select`, and `ErrorBoundary` UI files.
 Third burn-down complete: removed `@ts-nocheck` from dashboard files (`Dashboard`, `AIForecastPanel`, `AIRiskPanel`, `ProjectFiltersBar`, `ProjectHealthTable`).
+Expanded strict scope: added `src/components/activity/**/*.jsx` and fixed `ScrollArea` primitive typing.
 
 ## Common fix patterns
 - Add JSDoc typedefs for component props and function params.

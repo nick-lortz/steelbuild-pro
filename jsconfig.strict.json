@@ -10,6 +10,7 @@
     "src/lib/**/*.tsx",
     "src/api/**/*.ts",
     "src/api/**/*.tsx",
+    "src/components/activity/**/*.jsx",
     "src/components/shared/hooks/**/*.jsx",
     "src/pages/Dashboard.jsx",
     "src/utils/**/*.ts",

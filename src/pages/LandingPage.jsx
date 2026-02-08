@@ -202,8 +202,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
-                <Building2 size={16} className="text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-amber-600 rounded flex items-center justify-center">
+                <Flame size={16} className="text-white" />
               </div>
               <span className="font-bold">SteelBuild Pro</span>
             </div>

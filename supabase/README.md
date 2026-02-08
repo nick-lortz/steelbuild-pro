@@ -21,6 +21,8 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
    - `supabase functions serve getDashboardData --no-verify-jwt`
 5. Start frontend in owned mode:
    - `VITE_BACKEND_PROVIDER=owned npm run dev`
+   - or run both gateway + owned frontend together:
+     - `npm run owned:dev`
 
 ## Next steps
 

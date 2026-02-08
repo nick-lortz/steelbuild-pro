@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "owned:gateway": "node server/owned-gateway.mjs",
+    "owned:dev": "sh -c 'npm run owned:gateway & VITE_BACKEND_PROVIDER=owned vite'",
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",

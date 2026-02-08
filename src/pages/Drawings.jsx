@@ -178,6 +178,21 @@ export default function Drawings() {
         subtitle={selectedProject ? `${selectedProject.project_number} • ${metrics.total} sets` : 'Select project'}
         actions={
           <>
+            <Select value={activeProjectId || ''} onValueChange={(val) => {
+              const { setActiveProjectId } = require('@/components/shared/hooks/useActiveProject').useActiveProject();
+              setActiveProjectId(val || null);
+            }}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Select Project" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                {userProjects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} • {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               onClick={() => setShowUploadDialog(true)}
               disabled={!activeProjectId}

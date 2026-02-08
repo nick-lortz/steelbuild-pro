@@ -31,7 +31,7 @@ import ReceivingMode from '@/components/deliveries/ReceivingMode';
 import DeliveryLookAhead from '@/components/deliveries/DeliveryLookAhead';
 import DeliveryConflictPanel from '@/components/deliveries/DeliveryConflictPanel';
 import DeliveryMetricsPanel from '@/components/deliveries/DeliveryMetricsPanel';
-import { Plus, Search, Calendar, Edit, Trash2, AlertTriangle, Truck } from 'lucide-react';
+import { Plus, Search, Calendar, Edit, Trash2, AlertTriangle, Truck, Download } from 'lucide-react';
 import { format, parseISO, differenceInDays, isToday } from 'date-fns';
 import { toast } from 'sonner';
 

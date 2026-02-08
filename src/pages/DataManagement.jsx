@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Trash2, Edit, Search, Download, Database, Filter, RefreshCw } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import PageHeader from '@/components/ui/PageHeader';
-import { DataTable } from '@/components/ui/DataTable';
+import DataTable from '@/components/ui/DataTable';
 import DataEditDialog from '@/components/data-management/DataEditDialog';
 import { Badge } from '@/components/ui/badge';
 

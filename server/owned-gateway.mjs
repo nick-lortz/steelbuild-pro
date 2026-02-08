@@ -6,6 +6,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const DEV_USER_EMAIL = process.env.OWNED_DEV_USER_EMAIL || 'owner@steelbuilder.local';
 const DEV_USER_ROLE = process.env.OWNED_DEV_USER_ROLE || 'admin';
+const OWNED_REQUIRE_AUTH = String(process.env.OWNED_REQUIRE_AUTH || '').toLowerCase() === 'true';
 const STORAGE_BUCKET = process.env.OWNED_STORAGE_BUCKET || 'uploads';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -368,6 +369,48 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
+function extractBearerToken(req) {
+  const raw = String(req?.headers?.authorization || '');
+  if (!raw.toLowerCase().startsWith('bearer ')) return '';
+  return raw.slice(7).trim();
+}
+
+async function getAuthUserFromBearerToken(accessToken) {
+  if (!hasSupabase() || !accessToken) return null;
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+async function upsertProfileFromAuthUser(authUser) {
+  if (!hasSupabase() || !authUser?.id) return null;
+  const row = {
+    id: authUser.id,
+    email: authUser.email || null,
+    full_name:
+      authUser.user_metadata?.full_name ||
+      authUser.user_metadata?.name ||
+      authUser.email ||
+      'User',
+    role: authUser.user_metadata?.role || authUser.app_metadata?.role || 'user'
+  };
+
+  const rows = await fetchJson(`${SUPABASE_URL}/rest/v1/profiles`, {
+    method: 'POST',
+    headers: supabaseHeaders({
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=representation'
+    }),
+    body: JSON.stringify([row])
+  });
+  return rows?.[0] || row;
+}
+
 function getIdFromPayload(payload) {
   return (
     payload?.id ||
@@ -514,43 +557,38 @@ async function handleCrudFunction(table, payload, overrides = {}) {
 }
 
 async function getOrCreateDevProfile() {
-  if (!hasSupabase()) {
-    return {
-      id: 'dev-user',
-      email: DEV_USER_EMAIL,
-      full_name: 'Owned Dev User',
-      role: DEV_USER_ROLE
-    };
+  return {
+    id: 'dev-user',
+    email: DEV_USER_EMAIL,
+    full_name: 'Owned Dev User',
+    role: DEV_USER_ROLE
+  };
+}
+
+async function getCurrentProfile(req) {
+  const token = extractBearerToken(req);
+  if (hasSupabase() && token) {
+    const authUser = await getAuthUserFromBearerToken(token);
+    if (authUser?.id) {
+      const profile = await upsertProfileFromAuthUser(authUser);
+      return normalizeEntityRow(profile || authUser);
+    }
   }
 
-  const findUrl = buildSelectUrl('profiles');
-  findUrl.searchParams.set('email', `eq.${DEV_USER_EMAIL}`);
-  findUrl.searchParams.set('limit', '1');
-  const rows = await fetchJson(findUrl, { headers: supabaseHeaders() });
-  if (rows?.[0]) return rows[0];
+  if (hasSupabase() && OWNED_REQUIRE_AUTH) {
+    return null;
+  }
 
-  const insertUrl = `${SUPABASE_URL}/rest/v1/profiles`;
-  const inserted = await fetchJson(insertUrl, {
-    method: 'POST',
-    headers: supabaseHeaders({
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation'
-    }),
-    body: JSON.stringify([
-      {
-        id: crypto.randomUUID(),
-        email: DEV_USER_EMAIL,
-        full_name: 'Owned Dev User',
-        role: DEV_USER_ROLE
-      }
-    ])
-  });
-  return inserted?.[0];
+  return getOrCreateDevProfile();
 }
 
 async function handleAuthMe(req, res) {
   try {
-    const profile = await getOrCreateDevProfile();
+    const profile = await getCurrentProfile(req);
+    if (!profile) {
+      json(res, 401, { message: 'Unauthorized' });
+      return;
+    }
     json(res, 200, profile);
   } catch (error) {
     json(res, 500, { message: error.message || 'Failed to load user' });
@@ -560,7 +598,11 @@ async function handleAuthMe(req, res) {
 async function handleAuthUpdateMe(req, res) {
   try {
     const payload = await readBody(req);
-    const profile = await getOrCreateDevProfile();
+    const profile = await getCurrentProfile(req);
+    if (!profile) {
+      json(res, 401, { message: 'Unauthorized' });
+      return;
+    }
 
     if (!hasSupabase()) {
       json(res, 200, { ...profile, ...payload });
@@ -568,7 +610,7 @@ async function handleAuthUpdateMe(req, res) {
     }
 
     const url = buildSelectUrl('profiles');
-    url.searchParams.set('email', `eq.${DEV_USER_EMAIL}`);
+    url.searchParams.set('id', `eq.${profile.id}`);
     const rows = await fetchJson(url, {
       method: 'PATCH',
       headers: supabaseHeaders({
@@ -727,7 +769,7 @@ async function handleEntityDelete(res, entity, table, id) {
   }
 }
 
-async function invokeLocalFunction(name, payload) {
+async function invokeLocalFunction(name, payload, req) {
   if (name === 'getDashboardData') {
     const page = Math.max(1, Number(payload?.page || 1));
     const pageSize = Math.max(1, Math.min(Number(payload?.pageSize || 20), 100));
@@ -799,7 +841,10 @@ async function invokeLocalFunction(name, payload) {
   }
 
   if (name === 'updateUserProfile') {
-    const profile = await getOrCreateDevProfile();
+    const profile = await getCurrentProfile(req);
+    if (!profile) {
+      return { error: 'Unauthorized' };
+    }
     const updates = payload || {};
     if (!hasSupabase()) {
       return { success: true, profile: { ...profile, ...updates } };
@@ -1021,7 +1066,7 @@ async function invokeLocalFunction(name, payload) {
 async function handleFunctionInvoke(req, res, name) {
   try {
     const payload = await readBody(req);
-    const localResult = await invokeLocalFunction(name, payload);
+    const localResult = await invokeLocalFunction(name, payload, req);
     if (localResult !== null && localResult !== undefined) {
       json(res, 200, { data: localResult });
       return;

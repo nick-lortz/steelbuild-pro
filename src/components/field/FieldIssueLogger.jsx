@@ -337,15 +337,17 @@ export default function FieldIssueLogger({ projectId, onSuccess }) {
             />
           </div>
 
-          {/* Submit */}
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !formData.description.trim()}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold"
-          >
-            <Check size={16} className="mr-2" />
-            {isSubmitting ? 'Submitting...' : 'Submit Issue'}
-          </Button>
+          {/* Submit & Propose */}
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !formData.description.trim()}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold"
+            >
+              <Check size={16} className="mr-2" />
+              {isSubmitting ? 'Submitting...' : 'Submit Issue'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

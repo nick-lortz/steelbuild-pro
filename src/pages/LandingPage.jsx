@@ -98,7 +98,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Link to={createPageUrl('Dashboard')}>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
+                <Button className="bg-amber-600 hover:bg-amber-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-amber-600/30">
                   Get Started
                   <ArrowRight size={20} className="ml-2" />
                 </Button>

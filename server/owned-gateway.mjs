@@ -420,13 +420,17 @@ async function updateRowById(table, id, updates) {
   return normalizeEntityRow(rows?.[0] || null);
 }
 
-async function deleteRowById(table, id) {
+async function deleteRowById(table, id, filters = {}) {
   if (!id) throw new Error(`Missing id for ${table} delete`);
   if (!hasSupabase()) {
     return { success: true, id };
   }
   const url = buildSelectUrl(table);
   url.searchParams.set('id', `eq.${id}`);
+  Object.entries(filters || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    url.searchParams.set(key, `eq.${value}`);
+  });
   await fetchJson(url, {
     method: 'DELETE',
     headers: supabaseHeaders({
@@ -713,8 +717,14 @@ async function handleEntityUpdate(req, res, entity, table, id) {
   }
 }
 
-async function handleEntityDelete(res) {
-  noContent(res);
+async function handleEntityDelete(res, entity, table, id) {
+  try {
+    const policy = getEntityPolicy(entity);
+    await deleteRowById(table, id, policy.enforcedFilters);
+    noContent(res);
+  } catch (error) {
+    json(res, 500, { message: error.message || 'Delete failed' });
+  }
 }
 
 async function invokeLocalFunction(name, payload) {
@@ -1308,7 +1318,7 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       if (method === 'DELETE') {
-        await handleEntityDelete(res);
+        await handleEntityDelete(res, entity, table, id);
         return;
       }
     }

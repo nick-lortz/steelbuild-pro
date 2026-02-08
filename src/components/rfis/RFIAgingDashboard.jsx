@@ -40,15 +40,15 @@ export default function RFIAgingDashboard({ rfis = [], projects = [] }) {
       {/* Aging Summary */}
       <div className="grid grid-cols-4 gap-4">
         <div className="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
-          <p className="text-xs text-zinc-500">Critical (>30d)</p>
+          <p className="text-xs text-zinc-500">Critical (&gt;30d)</p>
           <p className="text-2xl font-bold text-red-400">{agingStats.critical}</p>
         </div>
         <div className="p-3 bg-orange-500/5 border border-orange-500/20 rounded-lg">
-          <p className="text-xs text-zinc-500">Warning (>14d)</p>
+          <p className="text-xs text-zinc-500">Warning (&gt;14d)</p>
           <p className="text-2xl font-bold text-orange-400">{agingStats.warning}</p>
         </div>
         <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-          <p className="text-xs text-zinc-500">Watch (>7d)</p>
+          <p className="text-xs text-zinc-500">Watch (&gt;7d)</p>
           <p className="text-2xl font-bold text-amber-400">{agingStats.watch}</p>
         </div>
         <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg">

@@ -137,6 +137,7 @@ const navGroups = [
   icon: File,
   items: [
   { name: 'Documents', page: 'Documents', icon: File },
+  { name: 'Drawings', page: 'Drawings', icon: FileText },
   { name: 'Photos', page: 'ProjectPhotos', icon: Camera }],
 
   roles: ['admin', 'user']

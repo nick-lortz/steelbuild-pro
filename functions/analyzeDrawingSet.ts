@@ -70,6 +70,16 @@ Extract and analyze:
 4. Any clashes, inconsistencies, or issues
 5. Changes from previous revision (if applicable)
 
+QUALITY CHECKS - Identify these common issues:
+- Missing dimensions (overall, detail, or critical measurements)
+- Unclear or illegible annotations
+- Incorrect or inconsistent material callouts (wrong grade, conflicting specs)
+- Non-standard symbols or missing symbol legends
+- Incomplete or missing connection details
+- Missing or unclear weld symbols
+- Scale inconsistencies or missing scale notations
+- Missing detail references or callouts
+
 Provide a concise, actionable summary focused on fabrication and erection requirements.`;
 
     const analysisSchema = {
@@ -89,6 +99,34 @@ Provide a concise, actionable summary focused on fabrication and erection requir
           properties: {
             revision_date: { type: "string" },
             revision_notes: { type: "array", items: { type: "string" } }
+          }
+        },
+        quality_checks: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              category: {
+                type: "string",
+                enum: [
+                  "missing_dimensions",
+                  "unclear_annotations",
+                  "material_callout_error",
+                  "non_standard_symbol",
+                  "missing_detail",
+                  "weld_symbol_issue",
+                  "scale_issue",
+                  "missing_reference"
+                ]
+              },
+              description: { type: "string" },
+              severity: {
+                type: "string",
+                enum: ["low", "medium", "high", "critical"]
+              },
+              location: { type: "string" },
+              recommendation: { type: "string" }
+            }
           }
         },
         issues: {
@@ -141,6 +179,21 @@ Provide a concise, actionable summary focused on fabrication and erection requir
       ``
     ];
 
+    if (analysis.quality_checks && analysis.quality_checks.length > 0) {
+      const criticalQC = analysis.quality_checks.filter(q => q.severity === 'critical' || q.severity === 'high');
+      if (criticalQC.length > 0) {
+        summaryParts.push(`🔍 **Quality Issues Detected (${criticalQC.length} critical/high)**`);
+        criticalQC.slice(0, 3).forEach(qc => {
+          const categoryLabel = qc.category.replace(/_/g, ' ').toUpperCase();
+          summaryParts.push(`• [${qc.severity.toUpperCase()}] ${categoryLabel}: ${qc.description} ${qc.location ? `@ ${qc.location}` : ''}`);
+        });
+        if (criticalQC.length > 3) {
+          summaryParts.push(`• +${criticalQC.length - 3} more quality issues`);
+        }
+        summaryParts.push('');
+      }
+    }
+
     if (analysis.issues && analysis.issues.length > 0) {
       summaryParts.push(`⚠️ **Issues Detected (${analysis.issues.length})**`);
       const criticalIssues = analysis.issues.filter(i => i.severity === 'critical' || i.severity === 'high');
@@ -178,6 +231,9 @@ Provide a concise, actionable summary focused on fabrication and erection requir
         ai_reviewed: true,
         ai_findings: JSON.stringify({
           key_info: analysis.key_info,
+          quality_checks: analysis.quality_checks?.filter(q => 
+            q.location && q.location.includes(sheet.sheet_number)
+          ) || [],
           issues: analysis.issues?.filter(i => 
             i.location && i.location.includes(sheet.sheet_number)
           ) || []

@@ -28,6 +28,8 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
    - `curl http://localhost:8787/api/health`
 7. Run owned smoke checks (gateway required):
    - `npm run owned:smoke`
+8. Run owned auth smoke checks (requires test credentials):
+   - `OWNED_AUTH_TEST_EMAIL=you@company.com OWNED_AUTH_TEST_PASSWORD=... npm run owned:auth-smoke`
 
 ## Next steps
 

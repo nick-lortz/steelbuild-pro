@@ -30,6 +30,7 @@ import {
 import DrawingUploadEnhanced from './DrawingUploadEnhanced';
 import DrawingHeatMap from './DrawingHeatMap';
 import DrawingRevisionWarnings from './DrawingRevisionWarnings';
+import AIAnalysisPanel from './AIAnalysisPanel';
 
 export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChange, users, rfis }) {
   const queryClient = useQueryClient();
@@ -127,6 +128,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
         <Tabs defaultValue="details" className="mt-4">
           <TabsList className="bg-zinc-800 border-zinc-700">
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="ai">AI Analysis</TabsTrigger>
             <TabsTrigger value="sheets">
               Sheets ({sheets.length})
             </TabsTrigger>
@@ -378,6 +380,15 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-4">
+            <AIAnalysisPanel 
+              drawingSet={drawingSet}
+              onAnalysisComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['drawing-set', drawingSetId] });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="sheets" className="space-y-4 mt-4">

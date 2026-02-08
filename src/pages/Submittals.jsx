@@ -2,25 +2,26 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import PageHeader from '@/components/ui/PageHeader';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DataTable from '@/components/ui/DataTable';
 import StatusBadge from '@/components/ui/StatusBadge';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import FilterBar from '@/components/layout/FilterBar';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
 import SubmittalDetailPanel from '@/components/submittals/SubmittalDetailPanel';
 import SubmittalForm from '@/components/submittals/SubmittalForm';
 import { Plus, Search, Eye, Trash2, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 
 export default function Submittals() {
   const { activeProjectId } = useActiveProject();
@@ -172,14 +173,14 @@ export default function Submittals() {
   ];
 
   return (
-    <div className="space-y-4">
+    <PageShell>
       <PageHeader
         title="Submittals"
-        subtitle="Manage project submittals and approvals"
+        subtitle={`${submittals.length} submittals`}
         actions={
           <Button 
             onClick={() => setShowCreateDialog(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black"
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
           >
             <Plus size={16} className="mr-2" />
             New Submittal
@@ -187,62 +188,55 @@ export default function Submittals() {
         }
       />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-5 gap-3">
-        {[
-          { label: 'Total', value: stats.total, key: 'all' },
+      <MetricsBar
+        metrics={[
+          { label: 'Total', value: stats.total },
           { label: 'Draft', value: stats.draft, color: 'text-zinc-400' },
           { label: 'Pending', value: stats.pending, color: 'text-amber-400' },
           { label: 'Approved', value: stats.approved, color: 'text-green-400' },
           { label: 'Rejected', value: stats.rejected, color: 'text-red-400' }
-        ].map((stat) => (
-          <Card key={stat.label} className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-3">
-              <div className="text-xs text-zinc-500 uppercase mb-1">{stat.label}</div>
-              <div className={`text-2xl font-bold ${stat.color || 'text-white'}`}>{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        ]}
+      />
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-          <Input
-            placeholder="Search submittals..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 bg-zinc-800 border-zinc-700"
-          />
+      <FilterBar>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Input
+              placeholder="Search submittals..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-zinc-900 border-zinc-800 text-white"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="approved_with_changes">Approved w/ Changes</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="voided">Voided</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded text-sm text-white"
-        >
-          <option value="all">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="submitted">Submitted</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="approved_with_changes">Approved w/ Changes</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="voided">Voided</option>
-        </select>
-      </div>
+      </FilterBar>
 
-      {/* Table */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardContent className="p-0">
+      <ContentSection>
+        <SectionCard>
           <DataTable
             columns={columns}
             data={filtered}
             onRowClick={setSelectedSubmittal}
             emptyMessage="No submittals. Create your first submittal."
           />
-        </CardContent>
-      </Card>
+        </SectionCard>
+      </ContentSection>
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -318,6 +312,6 @@ export default function Submittals() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </PageShell>
   );
 }

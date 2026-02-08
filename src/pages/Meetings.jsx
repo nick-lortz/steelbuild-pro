@@ -5,42 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Plus, Calendar, CheckCircle, Clock, Users, Bell, Repeat, Trash2 } from 'lucide-react';
-import PageHeader from '@/components/ui/PageHeader';
-import DataTable from '@/components/ui/DataTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import MetricsBar from '@/components/layout/MetricsBar';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
+import DataTable from '@/components/ui/DataTable';
+import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
 import { format, isPast, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const initialFormState = {
   project_id: '',
@@ -289,53 +269,33 @@ export default function Meetings() {
   }, [meetings]);
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Meetings</h1>
-              <p className="text-xs text-zinc-600 font-mono mt-1">{meetings.length} TOTAL • {pendingActions.length} ACTIONS</p>
-            </div>
-            <Button 
-              onClick={() => {
-                setFormData(initialFormState);
-                setShowForm(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase tracking-wider"
-            >
-              <Plus size={14} className="mr-1" />
-              NEW
-            </Button>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Meetings"
+        subtitle={`${meetings.length} meetings • ${pendingActions.length} actions`}
+        actions={
+          <Button 
+            onClick={() => {
+              setFormData(initialFormState);
+              setShowForm(true);
+            }}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+          >
+            <Plus size={16} className="mr-2" />
+            New Meeting
+          </Button>
+        }
+      />
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">TODAY</div>
-              <div className="text-2xl font-bold font-mono text-amber-500">{meetingStats.today}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">UPCOMING</div>
-              <div className="text-2xl font-bold font-mono text-white">{meetingStats.upcoming}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">PENDING ACTIONS</div>
-              <div className={`text-2xl font-bold font-mono ${pendingActions.length > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {pendingActions.length}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MetricsBar
+        metrics={[
+          { label: 'Today', value: meetingStats.today, color: 'text-amber-400' },
+          { label: 'Upcoming', value: meetingStats.upcoming },
+          { label: 'Pending Actions', value: pendingActions.length, color: pendingActions.length > 0 ? 'text-red-400' : 'text-green-400' }
+        ]}
+      />
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <ContentSection>
         {/* Action Items Alert */}
         {pendingActions.length > 0 && (
           <div className="mb-6 p-4 bg-amber-950/20 border border-amber-500/30 rounded">
@@ -362,13 +322,15 @@ export default function Meetings() {
         )}
 
         {/* Table */}
-        <DataTable
-          columns={columns}
-          data={meetings}
-          onRowClick={handleEdit}
-          emptyMessage="No meetings found. Schedule your first meeting to get started."
-        />
-      </div>
+        <SectionCard>
+          <DataTable
+            columns={columns}
+            data={meetings}
+            onRowClick={handleEdit}
+            emptyMessage="No meetings found. Schedule your first meeting to get started."
+          />
+        </SectionCard>
+      </ContentSection>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
@@ -435,7 +397,7 @@ export default function Meetings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   );
 }
 

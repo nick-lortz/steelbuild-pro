@@ -9,11 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import PageHeader from '@/components/ui/PageHeader';
-import { CheckCircle2, Circle, Plus, Calendar as CalendarIcon, LayoutGrid, List } from 'lucide-react';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import EmptyState from '@/components/layout/EmptyState';
+import StatusBadge from '@/components/ui/StatusBadge';
+import { CheckCircle2, Circle, Plus, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function ToDoListPage() {
   const { activeProjectId } = useActiveProject();
@@ -83,17 +86,19 @@ export default function ToDoListPage() {
   }, [tasks, myTasks, viewMode]);
 
   return (
-    <div className="p-6 space-y-6">
+    <PageShell>
       <PageHeader 
         title="To-Do List"
-        subtitle="Universal Task System"
+        subtitle={`${tasks.length} tasks`}
         actions={
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black">
+          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
             <Plus size={16} className="mr-2" />
             Add Task
           </Button>
         }
       />
+
+      <ContentSection>
 
       <Tabs value={viewMode} onValueChange={setViewMode}>
         <TabsList className="bg-zinc-900 border border-zinc-800">
@@ -179,7 +184,8 @@ export default function ToDoListPage() {
           onCancel={() => setShowForm(false)}
         />
       )}
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }
 

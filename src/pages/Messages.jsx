@@ -3,12 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MessageSquare } from 'lucide-react';
-import ScreenContainer from '@/components/layout/ScreenContainer';
-import PageHeader from '@/components/ui/PageHeader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
 import ChatPanel from '@/components/messaging/ChatPanel';
 import ActivityFeed from '@/components/activity/ActivityFeed';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, MessageSquare } from 'lucide-react';
 
 export default function Messages() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,19 +70,13 @@ export default function Messages() {
   );
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header Bar */}
-      <div className="border-b border-zinc-800 bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-4">
-          <div>
-            <h1 className="text-xl font-bold text-white uppercase tracking-wide">Communications</h1>
-            <p className="text-xs text-zinc-600 font-mono mt-1">MESSAGES & ACTIVITY</p>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Communications"
+        subtitle="messages & activity"
+      />
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <ContentSection>
         <Tabs defaultValue="messages" className="space-y-6">
           <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="messages">
@@ -153,7 +149,7 @@ export default function Messages() {
             <ActivityFeed />
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

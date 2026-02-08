@@ -69,6 +69,29 @@ export default function LandingPage() {
     "Ensure compliance with comprehensive audit trails"
   ];
 
+  const workflowSteps = [
+    {
+      title: "Detailing & BOM",
+      description: "Automated bills of material, connection tracking, and revision control."
+    },
+    {
+      title: "Shop Fabrication",
+      description: "Cut lists, weld maps, and QA checkpoints aligned to your shop floor."
+    },
+    {
+      title: "Paint & Galvanize",
+      description: "Coating schedules, cure times, and release tracking in one view."
+    },
+    {
+      title: "Ship & Receive",
+      description: "Load planning, delivery sequencing, and site check-in confirmations."
+    },
+    {
+      title: "Field Erection",
+      description: "Crane picks, bolt-up progress, and punch-list closeout visibility."
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black text-white">
       {/* Hero Section */}
@@ -85,11 +108,11 @@ export default function LandingPage() {
               SteelBuild <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Pro</span>
             </h1>
             <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto font-light">
-              Complete project management platform for structural steel fabricators
+              Complete project management platform for steel fabrication and erection teams
             </p>
             <p className="text-base text-zinc-500 max-w-2xl mx-auto">
-              Manage drawings, budgets, schedules, and teams from a single unified platform. 
-              Powered by AI insights and real-time analytics.
+              Coordinate detailing, shop production, and field erection from one crisp, unified workspace. 
+              Powered by AI insights and real-time analytics built for steel.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Link to={createPageUrl('Dashboard')}>
@@ -129,6 +152,46 @@ export default function LandingPage() {
               </Card>
             );
           })}
+        </div>
+      </section>
+
+      {/* Workflow Section */}
+      <section className="bg-gradient-to-b from-black via-zinc-950 to-black border-y border-zinc-800/50 py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-8 mb-16">
+            <div className="max-w-2xl">
+              <h2 className="text-5xl font-bold mb-4 tracking-tight">From Shop to Site</h2>
+              <p className="text-zinc-400 text-lg font-light">
+                A single workflow that connects fabrication, shipping, and erection with full traceability.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-zinc-400">
+              <span className="px-3 py-1 rounded-full border border-blue-500/40 bg-blue-500/10 text-blue-300">
+                Steel-ready operations
+              </span>
+              <span className="px-3 py-1 rounded-full border border-zinc-700/60 bg-zinc-900/60">
+                Real-time status
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {workflowSteps.map((step, idx) => (
+              <Card key={step.title} className="bg-gradient-to-br from-zinc-900 to-zinc-950 border-zinc-700/50 rounded-lg">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs uppercase tracking-[0.25em] text-zinc-500">
+                      Step {idx + 1}
+                    </div>
+                    <div className="w-10 h-10 rounded-full border border-blue-500/30 bg-blue-500/10 flex items-center justify-center text-blue-300 text-sm font-semibold">
+                      {idx + 1}
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{step.title}</h3>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{step.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 

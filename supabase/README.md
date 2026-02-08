@@ -11,16 +11,20 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
 ## Local usage
 
 1. Install Supabase CLI and login.
+2. Start owned gateway in a separate terminal:
+   - `npm run owned:gateway`
 2. Start local stack:
    - `supabase start`
 3. Apply migration:
    - `supabase db reset`
 4. Serve edge functions:
    - `supabase functions serve getDashboardData --no-verify-jwt`
+5. Start frontend in owned mode:
+   - `VITE_BACKEND_PROVIDER=owned npm run dev`
 
 ## Next steps
 
 - Add additional entity tables required by app pages (`tasks`, `financials`, `rfis`, `change_orders`, etc.).
 - Tighten project RLS from broad authenticated access to role/project-based access.
-- Add adapter/BFF routing so `/api/functions/<name>` routes to the corresponding Supabase edge function.
+- Add `/api/users/invite`, `/api/files/upload`, and `/api/ai/invoke` implementations in `server/owned-gateway.mjs`.
 - Implement `/api/auth/me` and `/api/entities/*` gateway endpoints using Supabase service + session context.

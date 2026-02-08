@@ -2,9 +2,19 @@ import base44 from "@base44/vite-plugin"
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+const isOwnedBackend = process.env.VITE_BACKEND_PROVIDER === 'owned';
+
 // https://vite.dev/config/
 export default defineConfig({
   logLevel: 'error', // Suppress warnings, only show errors
+  server: isOwnedBackend ? {
+    proxy: {
+      '/api': {
+        target: `http://localhost:${process.env.OWNED_GATEWAY_PORT || 8787}`,
+        changeOrigin: true
+      }
+    }
+  } : undefined,
   plugins: [
     base44({
       // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.

@@ -15,168 +15,169 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'drawing_set_id required' }, { status: 400 });
     }
 
-    const [drawingSet] = await base44.entities.DrawingSet.filter({ id: drawing_set_id });
-    if (!drawingSet) {
+    // Fetch drawing set and its sheets
+    const drawingSets = await base44.asServiceRole.entities.DrawingSet.filter(
+      { id: drawing_set_id }
+    );
+    if (!drawingSets.length) {
       return Response.json({ error: 'Drawing set not found' }, { status: 404 });
     }
 
-    const sheets = await base44.entities.DrawingSheet.filter({ drawing_set_id });
-    const rfis = await base44.entities.RFI.filter({
-      project_id: drawingSet.project_id,
-      linked_drawing_set_ids: drawing_set_id,
-      status: { $in: ['submitted', 'under_review', 'internal_review'] }
+    const drawingSet = drawingSets[0];
+
+    // Fetch all sheets in this set
+    const sheets = await base44.asServiceRole.entities.DrawingSheet.filter(
+      { drawing_set_id }
+    );
+
+    // Fetch all open RFIs linked to this drawing set
+    const openRFIs = await base44.asServiceRole.entities.RFI.filter(
+      {
+        linked_drawing_set_ids: { $in: [drawing_set_id] },
+        status: { $nin: ['closed'] }
+      }
+    );
+
+    const qa_blockers = [];
+
+    // STEEL QA RULE 1: Missing bolt size/grade
+    sheets.forEach((sheet) => {
+      if (sheet.ai_metadata) {
+        try {
+          const metadata = typeof sheet.ai_metadata === 'string' 
+            ? JSON.parse(sheet.ai_metadata) 
+            : sheet.ai_metadata;
+
+          if (metadata.connections) {
+            metadata.connections.forEach((conn) => {
+              if ((conn.type === 'bolted' || conn.type === 'snug-tight') && !conn.bolt_spec) {
+                qa_blockers.push({
+                  severity: 'P0',
+                  rule: 'missing_bolt_spec',
+                  message: 'Bolt size/grade not specified',
+                  sheet_number: sheet.sheet_number,
+                  detail_number: conn.location
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.log('Error parsing sheet metadata:', e);
+        }
+      }
     });
 
-    const blockers = [];
-    const aiAnalysisResults = [];
+    // STEEL QA RULE 2: Connection type undefined
+    sheets.forEach((sheet) => {
+      if (sheet.ai_metadata) {
+        try {
+          const metadata = typeof sheet.ai_metadata === 'string' 
+            ? JSON.parse(sheet.ai_metadata) 
+            : sheet.ai_metadata;
 
-    // QA Rule: Open RFIs tied to drawing
-    if (rfis.length > 0) {
-      blockers.push({
-        severity: 'P0',
-        rule: 'OPEN_RFI',
-        message: `${rfis.length} open RFI(s) tied to this drawing set`,
-        sheet_number: 'N/A'
+          if (metadata.connections) {
+            metadata.connections.forEach((conn) => {
+              if (!conn.type || conn.type === 'undefined' || conn.type === '') {
+                qa_blockers.push({
+                  severity: 'P0',
+                  rule: 'undefined_connection',
+                  message: 'Connection type not specified',
+                  sheet_number: sheet.sheet_number,
+                  detail_number: conn.location
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.log('Error parsing sheet metadata:', e);
+        }
+      }
+    });
+
+    // STEEL QA RULE 3: HSS wall thickness missing
+    sheets.forEach((sheet) => {
+      if (sheet.ai_metadata) {
+        try {
+          const metadata = typeof sheet.ai_metadata === 'string' 
+            ? JSON.parse(sheet.ai_metadata) 
+            : sheet.ai_metadata;
+
+          if (metadata.members) {
+            metadata.members.forEach((member) => {
+              if ((member.type === 'HSS' || member.type?.includes('Tube')) && !member.wall_thickness) {
+                qa_blockers.push({
+                  severity: 'P0',
+                  rule: 'missing_hss_wall_thickness',
+                  message: 'HSS wall thickness not specified',
+                  sheet_number: sheet.sheet_number,
+                  detail_number: member.designation
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.log('Error parsing sheet metadata:', e);
+        }
+      }
+    });
+
+    // STEEL QA RULE 4: Finish conflicts
+    sheets.forEach((sheet) => {
+      if (sheet.ai_metadata) {
+        try {
+          const metadata = typeof sheet.ai_metadata === 'string' 
+            ? JSON.parse(sheet.ai_metadata) 
+            : sheet.ai_metadata;
+
+          if (metadata.finish_specs) {
+            const finishes = new Set(
+              (metadata.finish_specs || []).map(f => f.type || 'unknown')
+            );
+            if (finishes.size > 1 && finishes.has('galvanized') && finishes.has('primer')) {
+              qa_blockers.push({
+                severity: 'P0',
+                rule: 'finish_conflict',
+                message: 'Finish conflict: mixing galvanized and primer on same connection',
+                sheet_number: sheet.sheet_number,
+                detail_number: null
+              });
+            }
+          }
+        } catch (e) {
+          console.log('Error parsing sheet metadata:', e);
+        }
+      }
+    });
+
+    // STEEL QA RULE 5: Open RFIs tied to drawing
+    if (openRFIs.length > 0) {
+      openRFIs.forEach((rfi) => {
+        qa_blockers.push({
+          severity: 'P1',
+          rule: 'open_rfi',
+          message: `Open RFI #${rfi.rfi_number}: ${rfi.subject}`,
+          sheet_number: null,
+          detail_number: rfi.id
+        });
       });
     }
 
-    // AI-driven analysis of sheets
-    for (const sheet of sheets) {
-      try {
-        // Build prompt for AI analysis
-        const analysisPrompt = `Analyze this structural steel drawing for fabrication readiness. Check for:
-- Missing bolt sizes or grades (A325, A490, etc.)
-- Undefined connection types (welded, bolted, combination)
-- HSS member wall thicknesses not specified
-- Finish/coating specification conflicts (galvanized vs prime vs paint)
-- Member size/grade callouts that are unclear
-- Missing edge prep requirements for welds
+    // Determine pass/fail
+    const p0Count = qa_blockers.filter(b => b.severity === 'P0').length;
+    const qa_status = p0Count > 0 ? 'fail' : 'pass';
 
-Sheet: ${sheet.sheet_number}
-File: ${sheet.file_name}
-${sheet.ai_metadata ? `Metadata: ${sheet.ai_metadata}` : ''}
-
-Return findings as JSON with severity (P0=must fix, P1=warning) and location.`;
-
-        const aiResult = await base44.integrations.Core.InvokeLLM({
-          prompt: analysisPrompt,
-          file_urls: sheet.file_url,
-          response_json_schema: {
-            type: 'object',
-            properties: {
-              issues: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    severity: { type: 'string', enum: ['P0', 'P1'] },
-                    rule: { type: 'string' },
-                    message: { type: 'string' },
-                    location: { type: 'string' }
-                  }
-                }
-              },
-              summary: { type: 'string' }
-            }
-          }
-        });
-
-        if (aiResult?.data?.issues) {
-          aiResult.data.issues.forEach(issue => {
-            blockers.push({
-              ...issue,
-              sheet_number: sheet.sheet_number,
-              detail_number: issue.location
-            });
-          });
-          aiAnalysisResults.push({
-            sheet: sheet.sheet_number,
-            summary: aiResult.data.summary,
-            issueCount: aiResult.data.issues.length
-          });
-        }
-      } catch (err) {
-        console.error(`AI analysis failed for sheet ${sheet.sheet_number}:`, err);
-        blockers.push({
-          severity: 'P1',
-          rule: 'AI_ANALYSIS_FAILED',
-          message: 'Could not complete AI analysis',
-          sheet_number: sheet.sheet_number
-        });
-      }
-    }
-
-    // Parse existing metadata for legacy checks
-    for (const sheet of sheets) {
-      if (!sheet.ai_metadata) continue;
-      try {
-        const metadata = JSON.parse(sheet.ai_metadata);
-        
-        if (metadata.missing_bolt_size) {
-          blockers.push({
-            severity: 'P0',
-            rule: 'BOLT_SIZE_MISSING',
-            message: 'Bolt size/grade not specified',
-            sheet_number: sheet.sheet_number
-          });
-        }
-        if (metadata.undefined_connection_type) {
-          blockers.push({
-            severity: 'P0',
-            rule: 'CONNECTION_TYPE',
-            message: 'Connection type undefined',
-            sheet_number: sheet.sheet_number
-          });
-        }
-        if (metadata.hss_wall_missing) {
-          blockers.push({
-            severity: 'P0',
-            rule: 'HSS_WALL_THICKNESS',
-            message: 'HSS wall thickness missing',
-            sheet_number: sheet.sheet_number
-          });
-        }
-        if (metadata.finish_conflict) {
-          blockers.push({
-            severity: 'P1',
-            rule: 'FINISH_CONFLICT',
-            message: 'Finish spec conflict (galv vs primer)',
-            sheet_number: sheet.sheet_number
-          });
-        }
-      } catch (err) {
-        console.error('Failed to parse sheet metadata:', err);
-      }
-    }
-
-    // Deduplicate blockers
-    const uniqueBlockers = [];
-    const seen = new Set();
-    blockers.forEach(blocker => {
-      const key = `${blocker.rule}:${blocker.sheet_number}`;
-      if (!seen.has(key)) {
-        uniqueBlockers.push(blocker);
-        seen.add(key);
-      }
-    });
-
-    const qa_status = uniqueBlockers.filter(b => b.severity === 'P0').length > 0 ? 'fail' : 'pass';
-    const reportDate = new Date().toISOString();
-
+    // Update drawing set
     await base44.asServiceRole.entities.DrawingSet.update(drawing_set_id, {
       qa_status,
-      qa_blockers: uniqueBlockers,
-      ai_summary: `Steel QA completed ${new Date().toLocaleDateString()}. ${uniqueBlockers.length} issues found.`
+      qa_blockers
     });
 
     return Response.json({
+      success: true,
       qa_status,
-      qa_blockers: uniqueBlockers,
-      ai_analysis: aiAnalysisResults,
-      p0_count: uniqueBlockers.filter(b => b.severity === 'P0').length,
-      p1_count: uniqueBlockers.filter(b => b.severity === 'P1').length,
-      report_date: reportDate,
-      sheet_count: sheets.length
+      qa_blockers,
+      p0_count: qa_blockers.filter(b => b.severity === 'P0').length,
+      p1_count: qa_blockers.filter(b => b.severity === 'P1').length
     });
   } catch (error) {
     console.error('Steel QA error:', error);

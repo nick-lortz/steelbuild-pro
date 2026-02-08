@@ -14,10 +14,11 @@
 1. `src/lib/**/*.ts` and `src/utils/**/*.ts` (Completed)
 2. `src/api/**/*.ts` (Completed)
 3. `src/components/shared/hooks/**/*.jsx` (Completed)
-4. `src/pages/Dashboard.jsx` (Completed with legacy dependency `@ts-nocheck` boundary)
+4. `src/pages/Dashboard.jsx` (Completed)
 5. Remaining pages/components by domain (In Progress)
 First burn-down complete: removed `@ts-nocheck` from `button`, `badge`, `card`, `input`, `progress`, and `Pagination` UI primitives.
 Second burn-down complete: removed `@ts-nocheck` from `drawer`, `select`, and `ErrorBoundary` UI files.
+Third burn-down complete: removed `@ts-nocheck` from dashboard files (`Dashboard`, `AIForecastPanel`, `AIRiskPanel`, `ProjectFiltersBar`, `ProjectHealthTable`).
 
 ## Common fix patterns
 - Add JSDoc typedefs for component props and function params.

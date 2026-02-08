@@ -198,25 +198,25 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
                                 {set.ifa_date && (
                                   <div>
                                     <p className="text-zinc-500">IFA</p>
-                                    <p className="text-zinc-300">{format(new Date(set.ifa_date), 'MMM d, yyyy')}</p>
+                                    <p className="text-zinc-300">{safeFormat(set.ifa_date, 'MMM d, yyyy')}</p>
                                   </div>
                                 )}
                                 {set.bfa_date && (
                                   <div>
                                     <p className="text-zinc-500">BFA</p>
-                                    <p className="text-zinc-300">{format(new Date(set.bfa_date), 'MMM d, yyyy')}</p>
+                                    <p className="text-zinc-300">{safeFormat(set.bfa_date, 'MMM d, yyyy')}</p>
                                   </div>
                                 )}
                                 {set.bfs_date && (
                                   <div>
                                     <p className="text-zinc-500">BFS</p>
-                                    <p className="text-zinc-300">{format(new Date(set.bfs_date), 'MMM d, yyyy')}</p>
+                                    <p className="text-zinc-300">{safeFormat(set.bfs_date, 'MMM d, yyyy')}</p>
                                   </div>
                                 )}
                                 {set.released_for_fab_date && (
                                   <div>
                                     <p className="text-zinc-500">Released</p>
-                                    <p className="text-zinc-300">{format(new Date(set.released_for_fab_date), 'MMM d, yyyy')}</p>
+                                    <p className="text-zinc-300">{safeFormat(set.released_for_fab_date, 'MMM d, yyyy')}</p>
                                   </div>
                                 )}
                               </div>

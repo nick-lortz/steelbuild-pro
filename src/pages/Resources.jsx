@@ -24,6 +24,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const toValidDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatShortDate = (value) => {
+  const date = toValidDate(value);
+  return date ? format(date, 'MMM d') : '—';
+};
+
 export default function Resources() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -122,11 +133,13 @@ export default function Resources() {
 
       // Allocation-based data
       const currentAllocations = allocations.filter(a => 
-        a.resource_id === resource.id &&
-        isWithinInterval(new Date(), {
-          start: new Date(a.start_date),
-          end: new Date(a.end_date)
-        })
+        {
+          if (a.resource_id !== resource.id) return false;
+          const start = toValidDate(a.start_date);
+          const end = toValidDate(a.end_date);
+          if (!start || !end) return false;
+          return isWithinInterval(new Date(), { start, end });
+        }
       );
 
       const totalAllocationPercent = currentAllocations.reduce((sum, a) => 
@@ -141,24 +154,27 @@ export default function Resources() {
           const t2 = activeTasks[j];
           
           if (t1.start_date && t1.end_date && t2.start_date && t2.end_date) {
-            try {
-              const overlap = isWithinInterval(new Date(t1.start_date), {
-                start: new Date(t2.start_date),
-                end: new Date(t2.end_date)
-              }) || isWithinInterval(new Date(t2.start_date), {
-                start: new Date(t1.start_date),
-                end: new Date(t1.end_date)
-              });
+            const t1Start = toValidDate(t1.start_date);
+            const t1End = toValidDate(t1.end_date);
+            const t2Start = toValidDate(t2.start_date);
+            const t2End = toValidDate(t2.end_date);
+            if (!t1Start || !t1End || !t2Start || !t2End) {
+              continue;
+            }
+            const overlap = isWithinInterval(t1Start, {
+              start: t2Start,
+              end: t2End
+            }) || isWithinInterval(t2Start, {
+              start: t1Start,
+              end: t1End
+            });
 
-              if (overlap) {
-                conflicts.push({
-                  task1: t1,
-                  task2: t2,
-                  type: t1.project_id !== t2.project_id ? 'cross-project' : 'same-project'
-                });
-              }
-            } catch (e) {
-              // Invalid date
+            if (overlap) {
+              conflicts.push({
+                task1: t1,
+                task2: t2,
+                type: t1.project_id !== t2.project_id ? 'cross-project' : 'same-project'
+              });
             }
           }
         }
@@ -474,14 +490,14 @@ export default function Resources() {
                                   <div className="font-semibold text-white mb-1">{conflict.task1.name}</div>
                                   <div className="text-zinc-500">{project1?.project_number}</div>
                                   <div className="text-zinc-500">
-                                    {format(new Date(conflict.task1.start_date), 'MMM d')} - {format(new Date(conflict.task1.end_date), 'MMM d')}
+                                    {formatShortDate(conflict.task1.start_date)} - {formatShortDate(conflict.task1.end_date)}
                                   </div>
                                 </div>
                                 <div className="p-2 bg-zinc-800/50 rounded">
                                   <div className="font-semibold text-white mb-1">{conflict.task2.name}</div>
                                   <div className="text-zinc-500">{project2?.project_number}</div>
                                   <div className="text-zinc-500">
-                                    {format(new Date(conflict.task2.start_date), 'MMM d')} - {format(new Date(conflict.task2.end_date), 'MMM d')}
+                                    {formatShortDate(conflict.task2.start_date)} - {formatShortDate(conflict.task2.end_date)}
                                   </div>
                                 </div>
                               </div>
@@ -538,7 +554,7 @@ export default function Resources() {
                                 <div className="flex-1">
                                   <div className="text-sm font-medium text-white">{task.name}</div>
                                   <div className="text-xs text-zinc-500">
-                                    {project?.project_number} • {task.start_date && format(new Date(task.start_date), 'MMM d')} - {task.end_date && format(new Date(task.end_date), 'MMM d')}
+                                    {project?.project_number} • {task.start_date && formatShortDate(task.start_date)} - {task.end_date && formatShortDate(task.end_date)}
                                   </div>
                                 </div>
                                 <Badge className={

@@ -17,6 +17,17 @@ import { CheckCircle2, Circle, Plus, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
+const toValidDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatShortDate = (value) => {
+  const date = toValidDate(value);
+  return date ? format(date, 'MMM d') : '—';
+};
+
 export default function ToDoListPage() {
   const { activeProjectId } = useActiveProject();
   const queryClient = useQueryClient();
@@ -162,7 +173,7 @@ export default function ToDoListPage() {
                         <div className="font-medium mb-1">{task.title}</div>
                         {task.due_date && (
                           <div className="text-xs text-zinc-500">
-                            Due: {format(new Date(task.due_date), 'MMM d')}
+                            Due: {formatShortDate(task.due_date)}
                           </div>
                         )}
                       </div>
@@ -189,7 +200,8 @@ export default function ToDoListPage() {
 }
 
 function TaskCard({ task, onToggle, onUpdate }) {
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+  const dueDate = toValidDate(task.due_date);
+  const isOverdue = Boolean(dueDate && dueDate < new Date() && task.status !== 'done');
 
   return (
     <Card className={`bg-zinc-900 border-zinc-800 ${isOverdue ? 'ring-2 ring-red-500/50' : ''}`}>
@@ -225,7 +237,7 @@ function TaskCard({ task, onToggle, onUpdate }) {
               )}
               {task.due_date && (
                 <span className={isOverdue ? 'text-red-500 font-medium' : ''}>
-                  Due: {format(new Date(task.due_date), 'MMM d')}
+                  Due: {formatShortDate(task.due_date)}
                 </span>
               )}
               {task.owner && <span>Owner: {task.owner.split('@')[0]}</span>}

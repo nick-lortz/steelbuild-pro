@@ -17,7 +17,7 @@ import MetricsBar from '@/components/layout/MetricsBar';
 import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import DataTable from '@/components/ui/DataTable';
-import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Trash2, Bell, Repeat } from 'lucide-react';
 import { format, isPast, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -33,6 +33,17 @@ const initialFormState = {
   is_recurring: false,
   recurrence_pattern: '',
   recurrence_end_date: '',
+};
+
+const toValidDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatDateLabel = (value, fmt = 'MMM d, yyyy h:mm a') => {
+  const date = toValidDate(value);
+  return date ? format(date, fmt) : '—';
 };
 
 export default function Meetings() {
@@ -130,7 +141,8 @@ export default function Meetings() {
     const checkUpcoming = () => {
       const now = new Date();
       meetings.forEach(meeting => {
-        const meetingDate = new Date(meeting.meeting_date);
+        const meetingDate = toValidDate(meeting.meeting_date);
+        if (!meetingDate) return;
         const minutesUntil = differenceInMinutes(meetingDate, now);
         
         if (minutesUntil > 0 && minutesUntil <= 15 && !meeting.reminder_sent) {
@@ -167,8 +179,9 @@ export default function Meetings() {
       accessor: 'title',
       render: (row) => {
         const project = projects.find(p => p.id === row.project_id);
-        const isUpcoming = !isPast(new Date(row.meeting_date));
-        const minutesUntil = differenceInMinutes(new Date(row.meeting_date), new Date());
+        const meetingDate = toValidDate(row.meeting_date);
+        const isUpcoming = meetingDate ? !isPast(meetingDate) : false;
+        const minutesUntil = meetingDate ? differenceInMinutes(meetingDate, new Date()) : Number.NEGATIVE_INFINITY;
         return (
           <div className="flex items-center gap-2">
             <div className="flex-1">
@@ -191,7 +204,7 @@ export default function Meetings() {
       render: (row) => (
         <div className="flex items-center gap-2">
           <Calendar size={14} className="text-zinc-500" />
-          <span>{format(new Date(row.meeting_date), 'MMM d, yyyy h:mm a')}</span>
+          <span>{formatDateLabel(row.meeting_date)}</span>
         </div>
       ),
     },
@@ -258,9 +271,13 @@ export default function Meetings() {
   }, [meetings]);
 
   const meetingStats = useMemo(() => {
-    const upcoming = meetings.filter(m => !isPast(new Date(m.meeting_date))).length;
+    const upcoming = meetings.filter((m) => {
+      const meetingDate = toValidDate(m.meeting_date);
+      return meetingDate ? !isPast(meetingDate) : false;
+    }).length;
     const today = meetings.filter(m => {
-      const mDate = new Date(m.meeting_date);
+      const mDate = toValidDate(m.meeting_date);
+      if (!mDate) return false;
       const now = new Date();
       return mDate.toDateString() === now.toDateString();
     }).length;
@@ -311,7 +328,7 @@ export default function Meetings() {
                   </div>
                   {action.due_date && (
                     <span className="text-amber-400 font-mono text-[10px]">
-                      {format(new Date(action.due_date), 'MMM d')}
+                      {formatDateLabel(action.due_date, 'MMM d')}
                     </span>
                   )}
                 </div>
@@ -488,7 +505,7 @@ function MeetingForm({ formData, setFormData, projects, onSubmit, isLoading, isE
           <div className="flex items-center gap-2">
             <Checkbox
               checked={formData.is_recurring}
-              onCheckedChange={(checked) => handleChange('is_recurring', checked)}
+              onCheckedChange={(checked) => handleChange('is_recurring', checked === true)}
             />
             <Label className="text-sm">Make this a recurring meeting</Label>
           </div>
@@ -549,7 +566,7 @@ function MeetingForm({ formData, setFormData, projects, onSubmit, isLoading, isE
                 <p className={`text-sm ${action.status === 'completed' ? 'line-through text-zinc-500' : 'text-white'}`}>
                   {action.item}
                 </p>
-                <p className="text-xs text-zinc-500">{action.assignee} • {action.due_date && format(new Date(action.due_date), 'MMM d')}</p>
+                <p className="text-xs text-zinc-500">{action.assignee} • {action.due_date && formatDateLabel(action.due_date, 'MMM d')}</p>
               </div>
             </div>
           ))}

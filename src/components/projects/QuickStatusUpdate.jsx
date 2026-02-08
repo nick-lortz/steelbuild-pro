@@ -24,18 +24,19 @@ export default function QuickStatusUpdate({ project, compact = false }) {
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.Project.update(id, { status }),
-    onSuccess: (_, variables) => {
+    mutationFn: (/** @type {{ id: string, status: keyof typeof statusConfig }} */ payload) =>
+      base44.entities.Project.update(payload.id, { status: payload.status }),
+    onSuccess: (_, /** @type {{ id: string, status: keyof typeof statusConfig }} */ variables) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(`Status updated to ${statusConfig[variables.status].label}`);
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error('Failed to update status');
       console.error(error);
     }
   });
 
-  const handleStatusChange = (newStatus) => {
+  const handleStatusChange = (/** @type {keyof typeof statusConfig} */ newStatus) => {
     if (newStatus === project.status) return;
     updateMutation.mutate({ id: project.id, status: newStatus });
   };

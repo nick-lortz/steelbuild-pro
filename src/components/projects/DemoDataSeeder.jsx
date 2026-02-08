@@ -17,7 +17,7 @@ export default function DemoDataSeeder() {
   });
 
   const seedMutation = useMutation({
-    mutationFn: (projectId) =>
+    mutationFn: (/** @type {string} */ projectId) =>
       base44.functions.invoke('seedDemoData', { project_id: projectId }),
     onSuccess: (res) => {
       const data = res.data;
@@ -30,7 +30,7 @@ export default function DemoDataSeeder() {
         toast.info(data.message);
       }
     },
-    onError: (err) => toast.error(err.message)
+    onError: (/** @type {any} */ err) => toast.error(err.message)
   });
 
   const handleSeed = () => {

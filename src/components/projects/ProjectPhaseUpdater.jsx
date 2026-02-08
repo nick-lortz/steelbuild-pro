@@ -17,7 +17,7 @@ export default function ProjectPhaseUpdater({ project, compact = false }) {
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: (phase) => base44.entities.Project.update(project.id, { phase }),
+    mutationFn: (/** @type {string} */ phase) => base44.entities.Project.update(project.id, { phase }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });

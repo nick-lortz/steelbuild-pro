@@ -1,4 +1,5 @@
 import { ownedRequest } from '@/api/client/ownedHttp';
+import { clearOwnedSession } from '@/api/client/ownedAuth';
 
 function createEntityClient(entityName) {
   const entity = String(entityName);
@@ -27,7 +28,12 @@ export const ownedAdapter = {
     me: () => ownedRequest('/auth/me'),
     updateMe: (data) => ownedRequest('/auth/me', { method: 'PATCH', body: data }),
     logout: async (redirectTo) => {
-      await ownedRequest('/auth/logout', { method: 'POST' });
+      try {
+        await ownedRequest('/auth/logout', { method: 'POST' });
+      } catch (_err) {
+        // ignore logout transport failures; local session clear still proceeds
+      }
+      clearOwnedSession();
       if (redirectTo) {
         window.location.assign(redirectTo);
       }

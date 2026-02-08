@@ -1,3 +1,5 @@
+import { getOwnedAccessToken } from '@/api/client/ownedAuth';
+
 function getBaseUrl() {
   const env = /** @type {any} */ (import.meta).env || {};
   return env.VITE_OWNED_API_BASE_URL || '/api';
@@ -12,6 +14,8 @@ function tryParseJson(value) {
 }
 
 function getSupabaseAccessToken() {
+  const ownedToken = getOwnedAccessToken();
+  if (ownedToken) return ownedToken;
   if (typeof window === 'undefined' || !window.localStorage) return '';
   const storage = window.localStorage;
   const keys = Object.keys(storage);

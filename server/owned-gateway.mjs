@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 const PORT = Number(process.env.OWNED_GATEWAY_PORT || 8787);
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const DEV_USER_EMAIL = process.env.OWNED_DEV_USER_EMAIL || 'owner@steelbuilder.local';
 const DEV_USER_ROLE = process.env.OWNED_DEV_USER_ROLE || 'admin';
 const OWNED_REQUIRE_AUTH = String(process.env.OWNED_REQUIRE_AUTH || '').toLowerCase() === 'true';
@@ -622,6 +623,86 @@ async function handleAuthUpdateMe(req, res) {
     json(res, 200, rows?.[0] || { ...profile, ...payload });
   } catch (error) {
     json(res, 500, { message: error.message || 'Failed to update user' });
+  }
+}
+
+async function handleAuthLogin(req, res) {
+  try {
+    const body = await readBody(req);
+    const email = String(body?.email || '').trim();
+    const password = String(body?.password || '');
+
+    if (!email || !password) {
+      json(res, 400, { message: 'Email and password are required' });
+      return;
+    }
+
+    if (!hasSupabase() || !SUPABASE_ANON_KEY) {
+      json(res, 501, { message: 'Supabase auth is not configured' });
+      return;
+    }
+
+    const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      json(res, response.status, { message: payload?.error_description || payload?.msg || 'Login failed' });
+      return;
+    }
+    json(res, 200, {
+      data: {
+        access_token: payload.access_token,
+        refresh_token: payload.refresh_token,
+        expires_in: payload.expires_in,
+        expires_at: payload.expires_at,
+        token_type: payload.token_type
+      }
+    });
+  } catch (error) {
+    json(res, 500, { message: error.message || 'Login failed' });
+  }
+}
+
+async function handleAuthSession(req, res) {
+  try {
+    const token = extractBearerToken(req);
+    if (!token) {
+      json(res, 200, { data: { authenticated: false } });
+      return;
+    }
+    const authUser = await getAuthUserFromBearerToken(token);
+    if (!authUser?.id) {
+      json(res, 200, { data: { authenticated: false } });
+      return;
+    }
+    const profile = await upsertProfileFromAuthUser(authUser);
+    json(res, 200, { data: { authenticated: true, user: normalizeEntityRow(profile || authUser) } });
+  } catch (error) {
+    json(res, 500, { message: error.message || 'Session check failed' });
+  }
+}
+
+async function handleAuthLogout(req, res) {
+  try {
+    const token = extractBearerToken(req);
+    if (hasSupabase() && token && SUPABASE_ANON_KEY) {
+      await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+    noContent(res);
+  } catch (_error) {
+    noContent(res);
   }
 }
 
@@ -1314,8 +1395,16 @@ const server = http.createServer(async (req, res) => {
       await handleAuthUpdateMe(req, res);
       return;
     }
+    if (url.pathname === '/api/auth/login' && method === 'POST') {
+      await handleAuthLogin(req, res);
+      return;
+    }
+    if (url.pathname === '/api/auth/session' && method === 'GET') {
+      await handleAuthSession(req, res);
+      return;
+    }
     if (url.pathname === '/api/auth/logout' && method === 'POST') {
-      noContent(res);
+      await handleAuthLogout(req, res);
       return;
     }
 

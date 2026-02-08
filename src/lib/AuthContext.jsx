@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { apiClient } from '@/api/client';
+import { getBackendProvider } from '@/api/client/provider';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 
@@ -19,8 +20,18 @@ export const AuthProvider = ({ children }) => {
 
   const checkAppState = async () => {
     try {
+      const provider = getBackendProvider();
       setIsLoadingPublicSettings(true);
       setAuthError(null);
+
+      if (provider === 'owned') {
+        try {
+          await checkUserAuth();
+        } finally {
+          setIsLoadingPublicSettings(false);
+        }
+        return;
+      }
       
       // First, check app public settings (with token if available)
       // This will tell us if auth is required, user not registered, etc.
@@ -101,7 +112,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       
       // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
+      if (error.status === 401 || error.status === 403 || error?.response?.status === 401 || error?.response?.status === 403) {
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'

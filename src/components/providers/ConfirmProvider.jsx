@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const ConfirmContext = createContext();
+const ConfirmContext = createContext(null);
 
 export function ConfirmProvider({ children }) {
   const [confirmState, setConfirmState] = useState({
@@ -18,6 +18,7 @@ export function ConfirmProvider({ children }) {
     title: '',
     description: '',
     onConfirm: () => {},
+    onCancel: () => {},
     confirmText: 'Confirm',
     cancelText: 'Cancel',
     variant: 'destructive',

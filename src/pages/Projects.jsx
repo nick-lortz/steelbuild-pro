@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
-import { useConfirm } from '@/components/providers/ConfirmProvider';
 import { checkPermission } from '@/components/shared/permissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,8 +76,6 @@ export default function Projects() {
   const [deleteProject, setDeleteProject] = useState(null);
 
   const queryClient = useQueryClient();
-  const { confirm } = useConfirm();
-
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -134,14 +131,14 @@ export default function Projects() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Project.create(data),
+    mutationFn: (/** @type {any} */ data) => base44.entities.Project.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowForm(false);
       setFormData(initialFormState);
       toast.success('Project created successfully');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       if (error?.response?.status === 409 || error?.status === 409) {
         toast.error('Project number already exists. Please choose a different project number.');
       } else {
@@ -151,14 +148,14 @@ export default function Projects() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+    mutationFn: (/** @type {{id: any, data: any}} */ { id, data }) => base44.entities.Project.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProject(null);
       setFormData(initialFormState);
       toast.success('Project updated successfully');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       if (error?.response?.status === 409 || error?.status === 409) {
         toast.error('Project number already exists. Please choose a different project number.');
       } else {
@@ -168,12 +165,12 @@ export default function Projects() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Project.delete(id),
+    mutationFn: (/** @type {any} */ id) => base44.entities.Project.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project deleted successfully');
     },
-    onError: (error) => {
+    onError: (/** @type {any} */ error) => {
       toast.error('Failed to delete project: ' + error.message);
     }
   });
@@ -415,6 +412,7 @@ export default function Projects() {
             setFormData={setFormData}
             onSubmit={handleSubmit}
             isLoading={createMutation.isPending}
+            isEdit={false}
             users={users} />
 
         </DialogContent>

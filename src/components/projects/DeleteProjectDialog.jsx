@@ -40,7 +40,7 @@ export default function DeleteProjectDialog({ project, open, onOpenChange, onSuc
       } else {
         throw new Error(response.data.error || 'Delete failed');
       }
-    } catch (error) {
+    } catch (/** @type {any} */ error) {
       console.error('Delete error:', error);
       toast.error('Failed to delete project: ' + error.message);
     } finally {

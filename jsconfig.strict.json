@@ -12,6 +12,7 @@
     "src/api/**/*.tsx",
     "src/components/activity/**/*.jsx",
     "src/components/projects/**/*.jsx",
+    "src/components/providers/**/*.jsx",
     "src/components/shared/hooks/**/*.jsx",
     "src/pages/Dashboard.jsx",
     "src/pages/Projects.jsx",

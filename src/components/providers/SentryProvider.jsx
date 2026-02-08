@@ -6,24 +6,25 @@ export function initSentry() {
     return;
   }
 
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const env = /** @type {any} */ (import.meta).env || {};
+  const dsn = env.VITE_SENTRY_DSN;
   if (!dsn) {
     console.warn('Sentry DSN not configured');
     return;
   }
 
   // Lazy load Sentry
-  import('@sentry/react').then(Sentry => {
+  import('@sentry/react').then((Sentry) => {
+    const sentryAny = /** @type {any} */ (Sentry);
     Sentry.init({
       dsn,
-      environment: import.meta.env.VITE_APP_ENV || 'production',
+      environment: env.VITE_APP_ENV || 'production',
       tracesSampleRate: 0.1, // 10% transaction sampling
       replaysSessionSampleRate: 0.05, // 5% session replay
       replaysOnErrorSampleRate: 1.0, // 100% replay on error
       
       integrations: [
-        new Sentry.Replay({ maskAllText: true, blockAllMedia: true }),
-        new Sentry.CaptureConsole({ levels: ['error', 'warn'] }),
+        new sentryAny.Replay({ maskAllText: true, blockAllMedia: true }),
       ],
 
       // Filter out noise

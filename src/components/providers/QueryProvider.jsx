@@ -1,5 +1,5 @@
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { showErrorToast } from '@/components/shared/errorHandling';
 
 // Create QueryClient exactly once
@@ -16,14 +16,14 @@ const queryClient = new QueryClient({
     },
   },
   // Global error handling
-  queryCache: {
+  queryCache: new QueryCache({
     onError: (error) => {
       // Only show toast for actual errors, not cancellations
       if (error?.message !== 'canceled') {
         showErrorToast(error);
       }
     },
-  },
+  }),
 });
 
 /**

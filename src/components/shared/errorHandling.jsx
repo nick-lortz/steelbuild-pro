@@ -81,7 +81,7 @@ export function showErrorToast(error, customMessage = null) {
   const message = customMessage || getErrorMessage(error);
   
   // Log full error for debugging (only in dev)
-  if (process.env.NODE_ENV === 'development') {
+  if ((/** @type {any} */ (import.meta).env?.DEV)) {
     console.error('Error details:', error);
   }
   

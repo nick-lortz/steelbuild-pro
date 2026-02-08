@@ -1,11 +1,60 @@
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { base44 } from '@/api/base44Client';
 import { toast } from '@/components/ui/notifications';
-import { Loader2, Info, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, Plus, Trash2, Download, Upload, Table2, FileText, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const getEntityFields = (entityName) => {
+  const fieldConfigs = {
+    RFI: [
+      { key: 'rfi_number', label: 'RFI #', type: 'number', required: false },
+      { key: 'subject', label: 'Subject', type: 'text', required: true },
+      { key: 'rfi_type', label: 'Type', type: 'select', options: ['connection_detail', 'member_size_length', 'embed_anchor', 'tolerance_fitup', 'coating_finish', 'erection_sequence', 'other'], required: false },
+      { key: 'question', label: 'Question', type: 'textarea', required: true },
+      { key: 'location_area', label: 'Location', type: 'text', required: false },
+      { key: 'priority', label: 'Priority', type: 'select', options: ['low', 'medium', 'high', 'critical'], required: false },
+      { key: 'ball_in_court', label: 'Ball in Court', type: 'select', options: ['internal', 'external', 'gc', 'architect', 'engineer', 'vendor'], required: false },
+    ],
+    Task: [
+      { key: 'name', label: 'Task Name', type: 'text', required: true },
+      { key: 'phase', label: 'Phase', type: 'select', options: ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'], required: false },
+      { key: 'start_date', label: 'Start Date', type: 'date', required: true },
+      { key: 'end_date', label: 'End Date', type: 'date', required: true },
+      { key: 'estimated_hours', label: 'Est. Hours', type: 'number', required: false },
+    ],
+    WorkPackage: [
+      { key: 'name', label: 'Package Name', type: 'text', required: true },
+      { key: 'phase', label: 'Phase', type: 'select', options: ['detailing', 'fabrication', 'delivery', 'erection', 'closeout'], required: false },
+      { key: 'tonnage', label: 'Tonnage', type: 'number', required: false },
+      { key: 'piece_count', label: 'Piece Count', type: 'number', required: false },
+      { key: 'target_fab_date', label: 'Target Fab Date', type: 'date', required: false },
+    ],
+    Delivery: [
+      { key: 'description', label: 'Description', type: 'text', required: true },
+      { key: 'scheduled_date', label: 'Scheduled Date', type: 'date', required: true },
+      { key: 'tonnage', label: 'Tonnage', type: 'number', required: false },
+      { key: 'piece_count', label: 'Piece Count', type: 'number', required: false },
+      { key: 'location', label: 'Location', type: 'text', required: false },
+    ],
+    ChangeOrder: [
+      { key: 'co_number', label: 'CO #', type: 'number', required: false },
+      { key: 'title', label: 'Title', type: 'text', required: true },
+      { key: 'description', label: 'Description', type: 'textarea', required: false },
+      { key: 'cost_impact', label: 'Cost Impact', type: 'number', required: false },
+      { key: 'schedule_impact_days', label: 'Schedule Impact (days)', type: 'number', required: false },
+    ],
+  };
+  
+  return fieldConfigs[entityName] || [
+    { key: 'name', label: 'Name', type: 'text', required: true },
+    { key: 'description', label: 'Description', type: 'text', required: false },
+  ];
+};
 
 const parseCSV = (text) => {
   const lines = text.trim().split('\n');
@@ -35,223 +84,258 @@ const parseCSV = (text) => {
 };
 
 export default function BulkAddDialog({ entityName, projectId, onClose, onSave }) {
-  const [csvData, setCsvData] = useState('');
+  const fields = getEntityFields(entityName);
+  const [mode, setMode] = useState('manual');
+  const [rows, setRows] = useState([{}]);
+  const [csvText, setCsvText] = useState('');
   const [saving, setSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
 
-  const getTemplate = () => {
-    switch (entityName) {
-      case 'RFI':
-        return 'subject,rfi_type,question,location_area,priority,ball_in_court\n"Missing connection detail",connection_detail,"What is the connection detail at grid A-5?",Grid A-5,high,architect\n"Member size clarification",member_size_length,"Confirm beam size for level 2",Level 2,medium,engineer';
-      case 'Task':
-        return 'name,phase,start_date,end_date,estimated_hours\n"Fabricate columns",fabrication,2026-02-10,2026-02-20,120\n"Deliver steel - Phase 1",delivery,2026-02-25,2026-02-25,8';
-      case 'WorkPackage':
-        return 'name,phase,tonnage,piece_count,target_fab_date\n"Level 1 Columns",fabrication,45,24,2026-03-01\n"Level 2 Beams",fabrication,67,38,2026-03-15';
-      case 'Delivery':
-        return 'description,scheduled_date,tonnage,piece_count,location\n"Level 1 Steel",2026-03-05,45,24,North Yard\n"Level 2 Steel",2026-03-20,67,38,South Yard';
-      case 'ChangeOrder':
-        return 'title,description,cost_impact,schedule_impact_days,status\n"Additional bracing","Add seismic bracing to grid lines 1-5",15000,7,draft\n"Revised connections","Update connection details per RFI-023",8000,3,submitted';
-      default:
-        return 'name,description,notes\n"Record 1","Description 1","Notes 1"\n"Record 2","Description 2","Notes 2"';
+  const addRow = () => {
+    setRows([...rows, {}]);
+  };
+
+  const removeRow = (index) => {
+    setRows(rows.filter((_, i) => i !== index));
+  };
+
+  const updateCell = (rowIndex, fieldKey, value) => {
+    const newRows = [...rows];
+    newRows[rowIndex] = { ...newRows[rowIndex], [fieldKey]: value };
+    setRows(newRows);
+  };
+
+  const parseCSVData = () => {
+    try {
+      const parsed = parseCSV(csvText);
+      if (parsed.length < 2) {
+        toast.error('Need header row + data rows');
+        return;
+      }
+
+      const headers = parsed[0].map(h => h.replace(/"/g, '').trim());
+      const newRows = [];
+
+      for (let i = 1; i < parsed.length; i++) {
+        const row = {};
+        headers.forEach((header, idx) => {
+          const value = parsed[i][idx]?.replace(/^"|"$/g, '').trim();
+          if (value) {
+            const field = fields.find(f => f.key === header || f.label.toLowerCase() === header.toLowerCase());
+            if (field) {
+              if (field.type === 'number') {
+                row[field.key] = parseFloat(value) || 0;
+              } else {
+                row[field.key] = value;
+              }
+            }
+          }
+        });
+        if (Object.keys(row).length > 0) {
+          newRows.push(row);
+        }
+      }
+
+      setRows(newRows);
+      setMode('manual');
+      toast.success(`Loaded ${newRows.length} rows from CSV`);
+    } catch (err) {
+      toast.error('CSV parse failed: ' + err.message);
     }
   };
 
   const downloadTemplate = () => {
-    const blob = new Blob([getTemplate()], { type: 'text/csv' });
+    const headers = fields.map(f => f.key).join(',');
+    const sampleRow = fields.map(f => {
+      if (f.type === 'select') return f.options[0];
+      if (f.type === 'number') return '0';
+      if (f.type === 'date') return '2026-03-01';
+      return 'Sample';
+    }).join(',');
+    
+    const csv = `${headers}\n${sampleRow}`;
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${entityName}_bulk_template.csv`;
-    document.body.appendChild(a);
+    a.download = `${entityName}_template.csv`;
     a.click();
-    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
 
-  const { parsedData, errors } = useMemo(() => {
-    if (!csvData.trim()) return { parsedData: [], errors: [] };
-    
-    try {
-      const rows = parseCSV(csvData);
-      if (rows.length < 2) {
-        return { parsedData: [], errors: ['Need at least header + 1 data row'] };
-      }
-
-      const headers = rows[0].map(h => h.replace(/"/g, ''));
-      const records = [];
-      const errs = [];
-
-      rows.slice(1).forEach((row, idx) => {
-        if (row.length !== headers.length) {
-          errs.push(`Row ${idx + 2}: Column count mismatch (expected ${headers.length}, got ${row.length})`);
-          return;
-        }
-
-        const record = { project_id: projectId };
-        headers.forEach((header, i) => {
-          const value = row[i].replace(/^"|"$/g, '');
-          if (value) {
-            // Type coercion
-            if (header.includes('number') || header.includes('count') || header.includes('hours') || header.includes('tonnage')) {
-              record[header] = parseFloat(value) || 0;
-            } else if (header.includes('impact') && header.includes('cost')) {
-              record[header] = parseFloat(value) || 0;
-            } else {
-              record[header] = value;
-            }
-          }
-        });
-
-        if (entityName === 'RFI') {
-          if (!record.rfi_number) {
-            record.rfi_number = 1000 + idx;
-          }
-          record.status = record.status || 'draft';
-          
-          if (!record.subject) {
-            errs.push(`Row ${idx + 2}: Missing required field 'subject'`);
-          }
-        }
-
-        records.push(record);
-      });
-
-      return { parsedData: records, errors: errs };
-    } catch (err) {
-      return { parsedData: [], errors: [err.message] };
-    }
-  }, [csvData, entityName, projectId]);
+  const validRows = useMemo(() => {
+    return rows.filter(row => {
+      const requiredFields = fields.filter(f => f.required);
+      return requiredFields.every(f => row[f.key] && String(row[f.key]).trim());
+    });
+  }, [rows, fields]);
 
   const handleSave = async () => {
-    if (errors.length > 0) {
-      toast.error('Fix validation errors before saving');
+    if (validRows.length === 0) {
+      toast.error('No valid rows to save');
       return;
     }
 
     setSaving(true);
     try {
-      await base44.entities[entityName].bulkCreate(parsedData);
-      toast.success(`${parsedData.length} records created`);
+      const records = validRows.map(row => ({
+        project_id: projectId,
+        ...row,
+      }));
+
+      await base44.entities[entityName].bulkCreate(records);
+      toast.success(`Created ${records.length} ${entityName}${records.length > 1 ? 's' : ''}`);
       onSave();
     } catch (error) {
-      toast.error('Bulk add failed: ' + error.message);
+      toast.error('Save failed: ' + error.message);
     } finally {
       setSaving(false);
     }
   };
 
+  const renderCell = (field, rowIndex, value) => {
+    if (field.type === 'select') {
+      return (
+        <Select value={value || ''} onValueChange={(v) => updateCell(rowIndex, field.key, v)}>
+          <SelectTrigger className="h-8 bg-zinc-800 border-zinc-700 text-white text-xs">
+            <SelectValue placeholder="Select..." />
+          </SelectTrigger>
+          <SelectContent>
+            {field.options.map(opt => (
+              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    if (field.type === 'textarea') {
+      return (
+        <Textarea
+          value={value || ''}
+          onChange={(e) => updateCell(rowIndex, field.key, e.target.value)}
+          className="bg-zinc-800 border-zinc-700 text-white text-xs min-h-[60px]"
+          placeholder={field.label}
+        />
+      );
+    }
+
+    return (
+      <Input
+        type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+        value={value || ''}
+        onChange={(e) => {
+          const val = field.type === 'number' ? (parseFloat(e.target.value) || 0) : e.target.value;
+          updateCell(rowIndex, field.key, val);
+        }}
+        className="h-8 bg-zinc-800 border-zinc-700 text-white text-xs"
+        placeholder={field.label}
+      />
+    );
+  };
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] bg-zinc-900 border-zinc-800 text-white max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Bulk Add {entityName}s</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded p-3 flex gap-2">
-            <Info size={16} className="text-amber-500 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-zinc-400">
-              <p className="mb-1">Paste CSV data with headers. Use quotes for values with commas.</p>
-              <p>Format: header1,header2,header3 (first row) then data rows</p>
-            </div>
-          </div>
+        <Tabs value={mode} onValueChange={setMode} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="bg-zinc-800 mb-4">
+            <TabsTrigger value="manual" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
+              <Table2 size={14} className="mr-2" />
+              Manual Entry
+            </TabsTrigger>
+            <TabsTrigger value="csv" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
+              <FileText size={14} className="mr-2" />
+              CSV Import
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={downloadTemplate}
-              className="border-zinc-700 text-zinc-400 hover:text-white"
-            >
-              <Download size={14} className="mr-2" />
-              Download Template
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setCsvData(getTemplate())}
-              className="border-zinc-700 text-zinc-400 hover:text-white"
-            >
-              Load Sample Data
-            </Button>
-            {parsedData.length > 0 && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowPreview(!showPreview)}
-                className="border-amber-700 text-amber-400 hover:text-amber-300"
-              >
-                {showPreview ? 'Hide' : 'Show'} Preview ({parsedData.length} records)
-              </Button>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs text-zinc-400 font-medium">CSV Data</label>
-            <Textarea
-              value={csvData}
-              onChange={(e) => setCsvData(e.target.value)}
-              placeholder="Paste your CSV data here..."
-              className="bg-zinc-800 border-zinc-700 text-white font-mono text-xs"
-              rows={10}
-            />
-          </div>
-
-          {errors.length > 0 && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle size={16} className="text-red-500" />
-                <span className="text-sm font-semibold text-red-500">Validation Errors</span>
+          <TabsContent value="manual" className="flex-1 overflow-hidden flex flex-col mt-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400">
+                  {validRows.length} of {rows.length} rows valid
+                </span>
               </div>
-              <ul className="space-y-1">
-                {errors.map((err, i) => (
-                  <li key={i} className="text-xs text-red-400">• {err}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {showPreview && parsedData.length > 0 && (
-            <div className="border border-zinc-700 rounded">
-              <div className="bg-zinc-800 px-4 py-2 border-b border-zinc-700 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-green-500" />
-                <span className="text-sm font-semibold text-white">Preview ({parsedData.length} records)</span>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={addRow} className="bg-amber-500 hover:bg-amber-600 text-black">
+                  <Plus size={14} className="mr-1" />
+                  Add Row
+                </Button>
               </div>
-              <div className="max-h-[300px] overflow-auto">
-                <table className="w-full text-xs">
-                  <thead className="bg-zinc-800/50 sticky top-0">
-                    <tr>
-                      {parsedData[0] && Object.keys(parsedData[0]).map(key => (
-                        <th key={key} className="text-left p-2 text-zinc-400 font-medium">
-                          {key.replace(/_/g, ' ')}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsedData.map((record, i) => (
-                      <tr key={i} className="border-t border-zinc-800 hover:bg-zinc-800/30">
-                        {Object.entries(record).map(([key, val]) => (
-                          <td key={key} className="p-2 text-white">
-                            {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+            </div>
+
+            <div className="flex-1 overflow-auto border border-zinc-800 rounded">
+              <table className="w-full text-xs">
+                <thead className="bg-zinc-800 sticky top-0 z-10">
+                  <tr>
+                    <th className="w-10 p-2"></th>
+                    {fields.map(field => (
+                      <th key={field.key} className="text-left p-2 text-zinc-400 font-medium min-w-[150px]">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, rowIndex) => {
+                    const isValid = fields.filter(f => f.required).every(f => row[f.key] && String(row[f.key]).trim());
+                    return (
+                      <tr key={rowIndex} className={`border-t border-zinc-800 ${!isValid ? 'bg-red-500/5' : ''}`}>
+                        <td className="p-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeRow(rowIndex)}
+                            className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <X size={12} />
+                          </Button>
+                        </td>
+                        {fields.map(field => (
+                          <td key={field.key} className="p-2">
+                            {renderCell(field, rowIndex, row[field.key])}
                           </td>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+          </TabsContent>
 
-        <div className="flex justify-between items-center pt-4 border-t border-zinc-800">
-          <div className="flex items-center gap-2">
-            {parsedData.length > 0 && errors.length === 0 && (
-              <Badge variant="outline" className="text-green-500 border-green-500">
-                <CheckCircle2 size={12} className="mr-1" />
-                {parsedData.length} records ready
-              </Badge>
+          <TabsContent value="csv" className="flex-1 flex flex-col mt-0 space-y-3">
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={downloadTemplate} className="border-zinc-700">
+                <Download size={14} className="mr-2" />
+                Download Template
+              </Button>
+              <Button size="sm" variant="outline" onClick={parseCSVData} className="border-amber-700 text-amber-400 hover:text-amber-300">
+                <Upload size={14} className="mr-2" />
+                Import CSV to Table
+              </Button>
+            </div>
+
+            <Textarea
+              value={csvText}
+              onChange={(e) => setCsvText(e.target.value)}
+              placeholder="Paste CSV data here (headers in first row)..."
+              className="flex-1 bg-zinc-800 border-zinc-700 text-white font-mono text-xs"
+              rows={15}
+            />
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-between items-center pt-4 border-t border-zinc-800 mt-4">
+          <div className="text-xs text-zinc-400">
+            {validRows.length > 0 ? (
+              <span className="text-green-500">✓ {validRows.length} records ready to create</span>
+            ) : (
+              <span>Fill required fields (*) to enable save</span>
             )}
           </div>
           <div className="flex gap-3">
@@ -260,10 +344,17 @@ export default function BulkAddDialog({ entityName, projectId, onClose, onSave }
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={saving || !csvData.trim() || parsedData.length === 0 || errors.length > 0} 
+              disabled={saving || validRows.length === 0} 
               className="bg-amber-500 hover:bg-amber-600 text-black"
             >
-              {saving ? <><Loader2 size={14} className="animate-spin mr-2" />Creating...</> : `Create ${parsedData.length} Records`}
+              {saving ? (
+                <>
+                  <Loader2 size={14} className="animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                `Create ${validRows.length} Record${validRows.length !== 1 ? 's' : ''}`
+              )}
             </Button>
           </div>
         </div>

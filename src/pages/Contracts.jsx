@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, TrendingUp, AlertCircle, CheckCircle, Clock, DollarSign, Plus, Edit, Users, Upload, Download, Trash2, File } from 'lucide-react';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import SectionCard from '@/components/layout/SectionCard';
+import MetricsBar from '@/components/layout/MetricsBar';
 import DataTable from '@/components/ui/DataTable';
+import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { FileText, TrendingUp, Clock, DollarSign, Plus, Edit, Users, Upload, Download, Trash2, File } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -170,6 +175,13 @@ export default function Contracts() {
   const underReview = filteredProjects.filter(p => p.contract_status === 'under_review').length;
   const internalBall = filteredProjects.filter(p => p.ball_in_court === 'internal').length;
 
+  const metrics = [
+    { label: 'Contract Value', value: `$${(totalContractValue / 1000000).toFixed(2)}M`, color: 'text-white', icon: DollarSign },
+    { label: 'Current Value', value: `$${(revisedContractValue / 1000000).toFixed(2)}M`, color: 'text-green-400', icon: TrendingUp },
+    { label: 'Awaiting Action', value: awaitingSignature + underReview, color: 'text-amber-400', icon: Clock },
+    { label: 'Our Responsibility', value: internalBall, color: 'text-blue-400', icon: Users }
+  ];
+
   const contractColumns = [
     {
       accessor: 'project_number',
@@ -313,103 +325,40 @@ export default function Contracts() {
     }
   ];
 
+  const { totalReports, activeReports, scheduledReports } = reportStats;
+
   return (
-    <div className="min-h-screen pb-8">
-      {/* Header */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600/10 via-zinc-900/50 to-blue-600/5 border border-blue-500/20 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center shadow-2xl shadow-blue-500/30">
-              <FileText className="w-7 h-7 text-black" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Contract Management</h1>
-              <p className="text-zinc-400 font-medium mt-1">Track contracts, execution status, and responsibility chain</p>
-            </div>
-          </div>
-          <Button
-            onClick={() => setShowAddDialog(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-black font-bold"
+    <PageShell>
+      <PageHeader
+        title="Report Center"
+        subtitle={`${totalReports} reports • ${activeReports} active`}
+        actions={
+          <Button 
+            onClick={() => {
+              resetForm();
+              setEditingReport(null);
+              setShowForm(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
           >
-            <Plus size={18} className="mr-2" />
-            New Contract
+            <FileText size={16} className="mr-2" />
+            Create
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Total Contract Value</p>
-                <p className="text-2xl font-bold text-white mt-1">${(totalContractValue / 1000000).toFixed(2)}M</p>
-                <p className="text-xs text-zinc-500 mt-1">{filteredProjects.length} contracts</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
+      <MetricsBar metrics={metrics} />
 
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Current Value</p>
-                <p className="text-2xl font-bold text-green-500 mt-1">${(revisedContractValue / 1000000).toFixed(2)}M</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  +${((revisedContractValue - totalContractValue) / 1000).toFixed(0)}k from COs
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Awaiting Action</p>
-                <p className="text-2xl font-bold text-amber-500 mt-1">{awaitingSignature + underReview}</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {awaitingSignature} signature, {underReview} review
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-amber-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Internal Responsibility</p>
-                <p className="text-2xl font-bold text-blue-500 mt-1">{internalBall}</p>
-                <p className="text-xs text-zinc-500 mt-1">Ball in our court</p>
-              </div>
-              <Users className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+      <ContentSection>
       {/* Contract Table */}
-      <Card className="bg-zinc-900 border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-sm uppercase tracking-wide">Contract Registry</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <SectionCard title="Contract Registry">
           <DataTable
             columns={contractColumns}
             data={filteredProjects}
             onRowClick={handleEdit}
             emptyMessage="No contracts found. Add a new contract to get started."
           />
-        </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* Add Contract Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
@@ -848,6 +797,7 @@ export default function Contracts() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

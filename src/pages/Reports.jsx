@@ -4,29 +4,20 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CustomReportBuilder from '@/components/reports/CustomReportBuilder';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import PageHeader from '@/components/ui/PageHeader';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import MetricsBar from '@/components/layout/MetricsBar';
+import DataTable from '@/components/ui/DataTable';
+import CustomReportBuilder from '@/components/reports/CustomReportBuilder';
 import AutomatedReportScheduler from '@/components/reports/AutomatedReportScheduler';
 import InteractiveDashboard from '@/components/reports/InteractiveDashboard';
 import ReportTypeKPIs from '@/components/reports/ReportTypeKPIs';
-import DataTable from '@/components/ui/DataTable';
-import { FileText, Download, Play, Calendar, TrendingUp, DollarSign, AlertTriangle, FileSpreadsheet, Loader2, LayoutDashboard, Sparkles } from 'lucide-react';
+import { FileText, FileSpreadsheet, Loader2, LayoutDashboard, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 
@@ -445,53 +436,35 @@ export default function Reports() {
   
   const { totalReports, activeReports, scheduledReports } = reportStats;
 
+  const metrics = [
+    { label: 'Total', value: totalReports, color: 'text-white', icon: FileText },
+    { label: 'Active', value: activeReports, color: 'text-green-400', icon: null },
+    { label: 'Scheduled', value: scheduledReports, color: 'text-cyan-400', icon: null }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
-      {/* Header Bar */}
-      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Report Center</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-2">{totalReports} REPORTS • {activeReports} ACTIVE</p>
-            </div>
-            <Button 
-              onClick={() => {
-                resetForm();
-                setEditingReport(null);
-                setShowForm(true);
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm uppercase tracking-wider rounded-lg shadow-lg shadow-blue-600/30"
-            >
-              <FileText size={14} className="mr-2" />
-              CREATE
-            </Button>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Report Center"
+        subtitle={`${totalReports} reports • ${activeReports} active`}
+        actions={
+          <Button 
+            onClick={() => {
+              resetForm();
+              setEditingReport(null);
+              setShowForm(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+          >
+            <FileText size={16} className="mr-2" />
+            Create
+          </Button>
+        }
+      />
 
-      {/* KPI Strip */}
-      <div className="border-b border-zinc-800/50 bg-gradient-to-r from-black to-zinc-900/30">
-        <div className="max-w-[1600px] mx-auto px-6 py-6">
-          <div className="grid grid-cols-3 gap-8">
-            <div className="border-l border-blue-500/20 pl-6">
-              <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">TOTAL</div>
-              <div className="text-3xl font-bold text-white">{totalReports}</div>
-            </div>
-            <div className="border-l border-cyan-500/20 pl-6">
-              <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">ACTIVE</div>
-              <div className="text-3xl font-bold text-emerald-400">{activeReports}</div>
-            </div>
-            <div className="border-l border-blue-500/20 pl-6">
-              <div className="text-[11px] text-zinc-500 uppercase tracking-widest font-semibold mb-2">SCHEDULED</div>
-              <div className="text-3xl font-bold text-cyan-400">{scheduledReports}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MetricsBar metrics={metrics} />
 
-      {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-6 py-8">
+      <ContentSection>
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg">
             <TabsTrigger value="dashboard">
@@ -685,6 +658,7 @@ export default function Reports() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

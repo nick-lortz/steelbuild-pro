@@ -6,14 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { 
-  Plus, Search, Truck, Calendar, MapPin, Package, 
-  Filter, Download, Edit, Trash2, CheckCircle2, AlertTriangle 
-} from 'lucide-react';
-import { format, parseISO, differenceInDays, isWithinInterval, startOfWeek, endOfWeek, isToday } from 'date-fns';
-import { toast } from 'sonner';
-import DataTable from '@/components/ui/DataTable';
-import StatusBadge from '@/components/ui/StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,16 +18,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import MetricsBar from '@/components/layout/MetricsBar';
+import DataTable from '@/components/ui/DataTable';
+import StatusBadge from '@/components/ui/StatusBadge';
 import DeliveryWizard from '@/components/deliveries/DeliveryWizard';
 import DeliveryDetailPanel from '@/components/deliveries/DeliveryDetailPanel';
 import TodaysDeliveries from '@/components/deliveries/TodaysDeliveries';
 import ReceivingMode from '@/components/deliveries/ReceivingMode';
-import DeliveryMapView from '@/components/deliveries/DeliveryMapView';
-import LocationTracker from '@/components/deliveries/LocationTracker';
 import DeliveryLookAhead from '@/components/deliveries/DeliveryLookAhead';
-import DeliveryCard from '@/components/deliveries/DeliveryCard';
 import DeliveryConflictPanel from '@/components/deliveries/DeliveryConflictPanel';
 import DeliveryMetricsPanel from '@/components/deliveries/DeliveryMetricsPanel';
+import { Plus, Search, Calendar, Edit, Trash2, AlertTriangle, Truck } from 'lucide-react';
+import { format, parseISO, differenceInDays, isToday } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function Deliveries() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -355,50 +353,35 @@ export default function Deliveries() {
     }
   ];
 
+  const metrics = [
+    { label: 'Total', value: kpis.total, color: 'text-white', icon: Truck },
+    { label: 'Today', value: kpis.today, color: 'text-blue-400', icon: Calendar },
+    { label: 'On-Time', value: `${kpis.onTimePercent.toFixed(0)}%`, color: 'text-green-400', icon: null },
+    { label: 'Exceptions', value: kpis.exceptions, color: kpis.exceptions > 0 ? 'text-red-400' : 'text-zinc-400', icon: AlertTriangle }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
-      {/* Header */}
-      <div className="border-b border-blue-500/30 bg-gradient-to-r from-blue-600/5 via-zinc-950 to-black">
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white uppercase tracking-wide">Delivery Management</h1>
-              <p className="text-xs text-zinc-400 font-mono mt-1">
-                {kpis.total} TOTAL • {kpis.today} TODAY • {kpis.onTimePercent.toFixed(0)}% ON-TIME
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => {
-                  setEditingDelivery(null);
-                  setShowWizard(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg shadow-blue-600/30"
-              >
-                <Plus size={14} className="mr-1" />
-                NEW DELIVERY
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Delivery Management"
+        subtitle={`${kpis.total} deliveries tracked`}
+        actions={
+          <Button
+            onClick={() => {
+              setEditingDelivery(null);
+              setShowWizard(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
+          >
+            <Plus size={16} className="mr-2" />
+            New Delivery
+          </Button>
+        }
+      />
 
-      {/* KPI Bar */}
-      {kpis.exceptions > 0 && (
-        <div className="border-b border-red-800 bg-red-950/20">
-          <div className="max-w-[1800px] mx-auto px-6 py-3">
-            <div className="flex items-center gap-2 text-red-500">
-              <AlertTriangle size={16} />
-              <span className="text-xs font-bold uppercase tracking-widest">
-                {kpis.exceptions} DELIVERIES WITH UNRESOLVED EXCEPTIONS
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+      <MetricsBar metrics={metrics} />
 
-      {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
+      <ContentSection>
         <Tabs value={activeView} onValueChange={setActiveView} className="space-y-6">
            <TabsList className="bg-zinc-900/50 border border-zinc-800/50 rounded-lg">
              <TabsTrigger value="lookAhead">
@@ -524,7 +507,6 @@ export default function Deliveries() {
             <DeliveryMetricsPanel deliveries={filteredDeliveries} />
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Wizard Dialog */}
       <Dialog open={showWizard} onOpenChange={setShowWizard}>
@@ -627,6 +609,7 @@ export default function Deliveries() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

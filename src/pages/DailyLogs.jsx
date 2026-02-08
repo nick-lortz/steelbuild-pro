@@ -19,7 +19,7 @@ import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import DataTable from '@/components/ui/DataTable';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
-import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Trash2, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 
@@ -41,6 +41,13 @@ const initialFormState = {
   visitors: '',
   notes: '',
   photos: [],
+};
+
+const formatDateLabel = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return format(date, 'MMM d, yyyy');
 };
 
 export default function DailyLogs() {
@@ -162,7 +169,7 @@ export default function DailyLogs() {
       render: (row) => (
         <div className="flex items-center gap-2">
           <Calendar size={16} className="text-zinc-500" />
-          <span className="font-medium">{format(new Date(row.log_date), 'MMM d, yyyy')}</span>
+          <span className="font-medium">{formatDateLabel(row.log_date)}</span>
         </div>
       ),
     },
@@ -319,7 +326,7 @@ export default function DailyLogs() {
         <SheetContent className="w-full sm:max-w-3xl bg-zinc-900 border-zinc-800 text-white overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="text-white">
-              Edit Daily Log - {selectedLog && format(new Date(selectedLog.log_date), 'MMM d, yyyy')}
+              Edit Daily Log - {formatDateLabel(selectedLog?.log_date)}
             </SheetTitle>
           </SheetHeader>
           <div className="mt-6 space-y-6">
@@ -381,7 +388,7 @@ export default function DailyLogs() {
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Daily Log?</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete the log from {deleteLog && format(new Date(deleteLog.log_date), 'MMM d, yyyy')}? This action cannot be undone.
+              Are you sure you want to delete the log from {formatDateLabel(deleteLog?.log_date)}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

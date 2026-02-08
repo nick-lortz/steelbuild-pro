@@ -37,6 +37,12 @@ export default function Contracts() {
     contract_status: 'received',
     status: 'bidding'
   });
+  const formatDateLabel = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return format(date, 'MMM d, yyyy');
+  };
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -208,7 +214,7 @@ export default function Contracts() {
       header: 'Received',
       render: (row) => (
         <div className="text-sm text-zinc-400">
-          {row.contract_received_date ? format(new Date(row.contract_received_date), 'MMM d, yyyy') : '—'}
+          {formatDateLabel(row.contract_received_date)}
         </div>
       )
     },
@@ -218,6 +224,7 @@ export default function Contracts() {
       render: (row) => {
         if (!row.contract_due_date) return <span className="text-zinc-600">—</span>;
         const dueDate = new Date(row.contract_due_date);
+        if (Number.isNaN(dueDate.getTime())) return <span className="text-zinc-600">—</span>;
         const today = new Date();
         const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
         const isOverdue = daysUntil < 0;
@@ -225,7 +232,7 @@ export default function Contracts() {
         
         return (
           <div className={`text-sm font-medium ${isOverdue ? 'text-red-500' : isUrgent ? 'text-amber-500' : 'text-zinc-400'}`}>
-            {format(dueDate, 'MMM d, yyyy')}
+            {formatDateLabel(dueDate)}
             {isOverdue && <span className="text-xs ml-1">({Math.abs(daysUntil)}d late)</span>}
             {isUrgent && !isOverdue && <span className="text-xs ml-1">({daysUntil}d)</span>}
           </div>
@@ -324,24 +331,18 @@ export default function Contracts() {
     }
   ];
 
-  const { totalReports, activeReports, scheduledReports } = reportStats;
-
   return (
     <PageShell>
       <PageHeader
-        title="Report Center"
-        subtitle={`${totalReports} reports • ${activeReports} active`}
+        title="Contracts"
+        subtitle={`${filteredProjects.length} contracts • ${pendingCOs} pending COs`}
         actions={
           <Button 
-            onClick={() => {
-              resetForm();
-              setEditingReport(null);
-              setShowForm(true);
-            }}
+            onClick={() => setShowAddDialog(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
           >
             <FileText size={16} className="mr-2" />
-            Create
+            Add Contract
           </Button>
         }
       />
@@ -747,7 +748,7 @@ export default function Contracts() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-white truncate">{doc.file_name}</p>
                             <p className="text-xs text-zinc-500">
-                              {doc.uploaded_date && format(new Date(doc.uploaded_date), 'MMM d, yyyy')} · {doc.uploaded_by}
+                              {formatDateLabel(doc.uploaded_date)} · {doc.uploaded_by}
                             </p>
                           </div>
                         </div>

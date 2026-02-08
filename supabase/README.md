@@ -6,6 +6,7 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
 
 - `config.toml`: local Supabase config for development.
 - `migrations/20260208_0001_core.sql`: initial schema (`profiles`, `projects`, RLS, indexes).
+- `migrations/20260208_0002_core_entities.sql`: scaffold entity tables used by adapter mapping.
 - `functions/getDashboardData/index.ts`: first edge function aligned with `apiClient.functions.invoke('getDashboardData', ...)`.
 
 ## Local usage
@@ -23,6 +24,8 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
    - `VITE_BACKEND_PROVIDER=owned npm run dev`
    - or run both gateway + owned frontend together:
      - `npm run owned:dev`
+6. Health-check gateway:
+   - `curl http://localhost:8787/api/health`
 
 ## Next steps
 

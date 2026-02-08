@@ -50,6 +50,46 @@ const ENTITY_TABLE_MAP = {
   FabricationPackage: 'fabrication_packages'
 };
 
+const TABLE_FILTERABLE_COLUMNS = {
+  profiles: new Set(['id', 'email', 'role', 'custom_role', 'full_name']),
+  projects: new Set(['id', 'project_number', 'name', 'status', 'phase', 'project_manager', 'superintendent']),
+  tasks: new Set(['id', 'project_id', 'name', 'status', 'phase', 'assignee', 'parent_task_id']),
+  work_packages: new Set(['id', 'project_id', 'name', 'status', 'phase']),
+  financials: new Set(['id', 'project_id', 'status', 'category']),
+  expenses: new Set(['id', 'project_id', 'status', 'category', 'payment_status']),
+  rfis: new Set(['id', 'project_id', 'status', 'priority', 'subject']),
+  change_orders: new Set(['id', 'project_id', 'status', 'title']),
+  documents: new Set(['id', 'project_id', 'status', 'title', 'category']),
+  drawing_sets: new Set(['id', 'project_id', 'status', 'discipline', 'set_name', 'set_number']),
+  drawing_sheets: new Set(['id', 'project_id', 'drawing_set_id', 'status', 'sheet_number', 'file_name']),
+  drawing_revisions: new Set(['id', 'project_id', 'drawing_set_id', 'status', 'revision_number']),
+  drawing_annotations: new Set(['id', 'project_id', 'drawing_set_id', 'status', 'type']),
+  notifications: new Set(['id', 'project_id', 'user_email', 'read', 'type']),
+  notification_preferences: new Set(['id', 'user_email']),
+  messages: new Set(['id', 'project_id', 'sender_email']),
+  meetings: new Set(['id', 'project_id', 'status', 'meeting_date']),
+  deliveries: new Set(['id', 'project_id', 'status']),
+  resources: new Set(['id', 'project_id', 'status', 'resource_type', 'name']),
+  resource_allocations: new Set(['id', 'project_id', 'resource_id', 'task_id', 'status']),
+  cost_codes: new Set(['id', 'project_id', 'code', 'status']),
+  sov_items: new Set(['id', 'project_id', 'status', 'sov_code']),
+  sov_cost_code_maps: new Set(['id', 'project_id', 'sov_item_id', 'cost_code_id']),
+  invoices: new Set(['id', 'project_id', 'status']),
+  invoice_lines: new Set(['id', 'project_id', 'invoice_id', 'status']),
+  labor_hours: new Set(['id', 'project_id', 'task_id', 'user_email']),
+  labor_categories: new Set(['id', 'name']),
+  labor_entries: new Set(['id', 'project_id', 'task_id', 'user_email']),
+  crews: new Set(['id', 'project_id', 'status', 'name']),
+  equipment_logs: new Set(['id', 'project_id', 'status']),
+  daily_logs: new Set(['id', 'project_id', 'status', 'log_date']),
+  submittals: new Set(['id', 'project_id', 'status', 'title']),
+  feedback: new Set(['id', 'project_id', 'user_email', 'type', 'status']),
+  user_permission_overrides: new Set(['id', 'project_id', 'user_email', 'module', 'permission_type']),
+  project_risks: new Set(['id', 'project_id', 'status', 'severity']),
+  fabrications: new Set(['id', 'project_id', 'status']),
+  fabrication_packages: new Set(['id', 'project_id', 'status', 'package_number'])
+};
+
 function json(res, status, body) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(body));
@@ -109,6 +149,19 @@ function resolveEntityTable(entityName) {
   const table = ENTITY_TABLE_MAP[String(entityName)];
   if (!table) return null;
   return table;
+}
+
+function getFilterableColumns(table) {
+  return TABLE_FILTERABLE_COLUMNS[table] || new Set(['id', 'project_id', 'status', 'name']);
+}
+
+function getSortFieldForTable(table, requestedField) {
+  const columns = getFilterableColumns(table);
+  if (columns.has(requestedField)) return requestedField;
+  if (columns.has('updated_at')) return 'updated_at';
+  if (columns.has('created_at')) return 'created_at';
+  if (columns.has('name')) return 'name';
+  return 'id';
 }
 
 function createDevLlmResponse(payload) {
@@ -232,9 +285,10 @@ async function handleEntitiesList(req, res, table, url) {
     const sortBy = url.searchParams.get('sortBy');
     const limit = url.searchParams.get('limit');
     const parsed = parseSort(sortBy);
+    const sortField = getSortFieldForTable(table, parsed.field);
 
     const queryUrl = buildSelectUrl(table);
-    queryUrl.searchParams.set('order', `${parsed.field}.${parsed.ascending ? 'asc' : 'desc'}`);
+    queryUrl.searchParams.set('order', `${sortField}.${parsed.ascending ? 'asc' : 'desc'}`);
     if (limit) queryUrl.searchParams.set('limit', String(limit));
 
     const rows = await fetchJson(queryUrl, { headers: supabaseHeaders() });
@@ -274,13 +328,16 @@ async function handleEntitiesFilterOrCreate(req, res, table) {
     const sortBy = body?.sortBy;
     const limit = body?.limit;
     const parsed = parseSort(sortBy);
+    const sortField = getSortFieldForTable(table, parsed.field);
+    const filterableColumns = getFilterableColumns(table);
 
     const queryUrl = buildSelectUrl(table);
-    queryUrl.searchParams.set('order', `${parsed.field}.${parsed.ascending ? 'asc' : 'desc'}`);
+    queryUrl.searchParams.set('order', `${sortField}.${parsed.ascending ? 'asc' : 'desc'}`);
     if (limit) queryUrl.searchParams.set('limit', String(limit));
 
     Object.entries(filters).forEach(([key, value]) => {
       if (value === undefined || value === null || value === '') return;
+      if (!filterableColumns.has(key)) return;
       if (typeof value === 'object' && value && Array.isArray(value.$in)) {
         queryUrl.searchParams.set(key, `in.(${value.$in.join(',')})`);
       } else {
@@ -583,6 +640,14 @@ const server = http.createServer(async (req, res) => {
 
     if (method === 'OPTIONS') {
       noContent(res);
+      return;
+    }
+    if (url.pathname === '/api/health' && method === 'GET') {
+      json(res, 200, {
+        ok: true,
+        mode: hasSupabase() ? 'supabase' : 'stub',
+        port: PORT
+      });
       return;
     }
 

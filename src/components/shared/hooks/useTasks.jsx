@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export function useTasks(sortBy = '-updated_date') {
   return useQuery({
     queryKey: ['tasks', sortBy],
-    queryFn: () => base44.entities.Task.list(sortBy),
+    queryFn: () => apiClient.entities.Task.list(sortBy),
     staleTime: 2 * 60 * 1000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -15,7 +16,7 @@ export function useTasks(sortBy = '-updated_date') {
 export function useProjectTasks(projectId, sortBy = '-updated_date') {
   return useQuery({
     queryKey: ['tasks', 'project', projectId, sortBy],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId }, sortBy),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId }, sortBy),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000,
     retry: 2,
@@ -26,7 +27,7 @@ export function useTask(taskId) {
   return useQuery({
     queryKey: ['task', taskId],
     queryFn: async () => {
-      const tasks = await base44.entities.Task.filter({ id: taskId });
+      const tasks = await apiClient.entities.Task.filter({ id: taskId });
       return tasks[0] || null;
     },
     enabled: !!taskId,
@@ -39,7 +40,7 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (/** @type {Record<string, any>} */ data) => base44.entities.Task.create(data),
+    mutationFn: (/** @type {Record<string, any>} */ data) => apiClient.entities.Task.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task created');
@@ -55,7 +56,7 @@ export function useUpdateTask() {
   
   return useMutation({
     mutationFn: (/** @type {{id: string, data: Record<string, any>}} */ payload) =>
-      base44.entities.Task.update(payload.id, payload.data),
+      apiClient.entities.Task.update(payload.id, payload.data),
     onSuccess: (_, /** @type {{id: string}} */ variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
@@ -71,7 +72,7 @@ export function useDeleteTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (/** @type {string} */ id) => base44.entities.Task.delete(id),
+    mutationFn: (/** @type {string} */ id) => apiClient.entities.Task.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task deleted');

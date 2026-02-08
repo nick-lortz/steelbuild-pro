@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings, GripVertical } from 'lucide-react';
@@ -43,7 +44,7 @@ export default function ProjectDashboard() {
     queryKey: ['project', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return null;
-      const projects = await base44.entities.Project.filter({ id: activeProjectId });
+      const projects = await apiClient.entities.Project.filter({ id: activeProjectId });
       return projects[0];
     },
     enabled: !!activeProjectId

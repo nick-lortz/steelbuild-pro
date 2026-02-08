@@ -1,13 +1,14 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Truck, Calendar, Package } from 'lucide-react';
 import { format, isWithinInterval, addDays } from 'date-fns';
 
 export default function DeliveryWidget({ projectId }) {
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', projectId],
-    queryFn: () => base44.entities.Delivery.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Delivery.filter({ project_id: projectId })
   });
 
   const now = new Date();

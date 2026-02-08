@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -17,7 +18,7 @@ export default function ProjectPhaseUpdater({ project, compact = false }) {
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: (/** @type {string} */ phase) => base44.entities.Project.update(project.id, { phase }),
+    mutationFn: (/** @type {string} */ phase) => apiClient.entities.Project.update(project.id, { phase }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
 
   const { data: cranes = [] } = useQuery({
     queryKey: ['equipment', projectId, 'cranes'],
-    queryFn: () => base44.entities.Resource.filter({
+    queryFn: () => apiClient.entities.Resource.filter({
       type: 'equipment',
       current_project_id: projectId,
       classification: 'Crane'
@@ -68,19 +69,19 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
 
   const { data: crews = [] } = useQuery({
     queryKey: ['crews', projectId],
-    queryFn: () => base44.entities.Crew.filter({ project_id: projectId, status: 'active' }),
+    queryFn: () => apiClient.entities.Crew.filter({ project_id: projectId, status: 'active' }),
     select: (data) => data || []
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId, status: 'in_progress' }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId, status: 'in_progress' }),
     select: (data) => data || []
   });
 
   const { data: existingLogs = [] } = useQuery({
     queryKey: ['equipmentLogs', projectId, formData.log_date],
-    queryFn: () => base44.entities.EquipmentLog.filter({
+    queryFn: () => apiClient.entities.EquipmentLog.filter({
       project_id: projectId,
       log_date: formData.log_date
     }),
@@ -139,7 +140,7 @@ export default function EquipmentLogForm({ projectId, onSuccess }) {
 
   const createLog = useMutation({
     mutationFn: async () => {
-      const log = await base44.entities.EquipmentLog.create({
+      const log = await apiClient.entities.EquipmentLog.create({
         project_id: projectId,
         equipment_id: formData.equipment_id,
         equipment_type: formData.equipment_type,

@@ -34,14 +34,14 @@ export default function ToDoListPage() {
     queryKey: ['todo-items', activeProjectId],
     queryFn: async () => {
       if (activeProjectId) {
-        return base44.entities.TodoItem.filter({ project_id: activeProjectId });
+        return apiClient.entities.TodoItem.filter({ project_id: activeProjectId });
       }
-      return base44.entities.TodoItem.list();
+      return apiClient.entities.TodoItem.list();
     }
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.TodoItem.create(data),
+    mutationFn: (data) => apiClient.entities.TodoItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todo-items'] });
       toast.success('Task created');
@@ -50,7 +50,7 @@ export default function ToDoListPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.TodoItem.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todo-items'] });
       toast.success('Updated');

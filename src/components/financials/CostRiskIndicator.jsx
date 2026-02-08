@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,7 @@ export default function CostRiskIndicator({
     queryFn: async () => {
       if (!projectId) return null;
       try {
-        const response = await base44.functions.invoke('getCostRiskSignal', { project_id: projectId });
+        const response = await apiClient.functions.invoke('getCostRiskSignal', { project_id: projectId });
         return response.data;
       } catch (err) {
         console.error('Cost risk signal error:', err);

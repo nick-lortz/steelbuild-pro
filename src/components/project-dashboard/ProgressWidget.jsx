@@ -1,13 +1,14 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { TrendingUp, Calendar } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 export default function ProgressWidget({ projectId }) {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId })
   });
 
   const completedTasks = tasks.filter(t => t.status === 'completed').length;

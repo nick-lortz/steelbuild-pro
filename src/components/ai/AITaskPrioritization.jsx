@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Sparkles, AlertTriangle, TrendingUp, Calendar, Loader2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/notifications';
@@ -14,7 +15,7 @@ export default function AITaskPrioritization({ projectId, onTaskClick }) {
   const analyzeTasks = async () => {
     setLoading(true);
     try {
-      const { data } = await base44.functions.invoke('aiTaskPrioritization', { project_id: projectId });
+      const { data } = await apiClient.functions.invoke('aiTaskPrioritization', { project_id: projectId });
       if (data.success) {
         setAnalysis(data.analysis);
         toast.success('Task prioritization complete');

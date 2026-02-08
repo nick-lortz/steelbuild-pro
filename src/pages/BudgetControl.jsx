@@ -29,7 +29,7 @@ export default function BudgetControl() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => apiClient.entities.Project.list()
   });
 
   const projects = currentUser?.role === 'admin' ?
@@ -40,47 +40,47 @@ export default function BudgetControl() {
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
-    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.WorkPackage.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['labor-hours', activeProjectId],
-    queryFn: () => base44.entities.LaborHours.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.LaborHours.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: equipmentUsage = [] } = useQuery({
     queryKey: ['equipment-usage', activeProjectId],
-    queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.EquipmentUsage.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', activeProjectId],
-    queryFn: () => base44.entities.Expense.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Expense.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list(),
+    queryFn: () => apiClient.entities.CostCode.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const updateWPMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.WorkPackage.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-packages'] });
       toast.success('Budget updated');
@@ -91,20 +91,20 @@ export default function BudgetControl() {
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials', activeProjectId],
-    queryFn: () => base44.entities.Financial.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Financial.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', activeProjectId],
-    queryFn: () => base44.entities.ClientInvoice.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.ClientInvoice.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });

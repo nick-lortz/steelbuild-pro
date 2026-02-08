@@ -29,7 +29,7 @@ export default function MyUnapprovedHours() {
     queryKey: ['unapprovedHours', currentUser?.email],
     queryFn: async () => {
       if (!currentUser?.email) return [];
-      const entries = await base44.entities.LaborHours.filter({ crew_employee: currentUser.email });
+      const entries = await apiClient.entities.LaborHours.filter({ crew_employee: currentUser.email });
       return entries.filter(e => ['draft', 'pending', 'unapproved'].includes(e.status) || !e.approved)
         .sort((a, b) => new Date(b.work_date) - new Date(a.work_date));
     },
@@ -38,21 +38,21 @@ export default function MyUnapprovedHours() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => apiClient.entities.Project.list()
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['workPackages'],
-    queryFn: () => base44.entities.WorkPackage.list()
+    queryFn: () => apiClient.entities.WorkPackage.list()
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
-    queryFn: () => base44.entities.CostCode.list()
+    queryFn: () => apiClient.entities.CostCode.list()
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.LaborHours.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.LaborHours.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unapprovedHours'] });
       toast.success('Hours updated');
@@ -62,7 +62,7 @@ export default function MyUnapprovedHours() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.LaborHours.delete(id),
+    mutationFn: (id) => apiClient.entities.LaborHours.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['unapprovedHours'] });
       toast.success('Entry deleted');
@@ -70,7 +70,7 @@ export default function MyUnapprovedHours() {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id) => base44.entities.LaborHours.update(id, {
+    mutationFn: (id) => apiClient.entities.LaborHours.update(id, {
       status: 'approved',
       approved: true,
       approved_by: currentUser?.email,
@@ -242,7 +242,7 @@ export default function MyUnapprovedHours() {
               if (editingEntry) {
                 updateMutation.mutate({ id: editingEntry.id, data });
               } else {
-                base44.entities.LaborHours.create(data).then(() => {
+                apiClient.entities.LaborHours.create(data).then(() => {
                   queryClient.invalidateQueries({ queryKey: ['unapprovedHours'] });
                   toast.success('Hours added');
                   setFormOpen(false);

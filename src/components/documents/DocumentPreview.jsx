@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Eye, X, Loader2, Lock, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { toast } from '@/components/ui/notifications';
 
@@ -45,7 +46,7 @@ export default function DocumentPreview({ document, open, onClose, currentUser }
       // Check if user is assigned to the document's project
       if (document.project_id) {
         try {
-          const { data: projects } = await base44.functions.invoke('listProjects', {});
+          const { data: projects } = await apiClient.functions.invoke('listProjects', {});
           const project = projects?.find(p => p.id === document.project_id);
           
           if (project && Array.isArray(project.assigned_users)) {

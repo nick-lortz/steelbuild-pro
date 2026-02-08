@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,11 +42,11 @@ export default function ResourceManagement() {
 
   // Real-time subscriptions
   useEffect(() => {
-    const unsubscribeTasks = base44.entities.Task.subscribe((event) => {
+    const unsubscribeTasks = apiClient.entities.Task.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     });
 
-    const unsubscribeResources = base44.entities.Resource.subscribe((event) => {
+    const unsubscribeResources = apiClient.entities.Resource.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
     });
 
@@ -58,31 +59,31 @@ export default function ResourceManagement() {
   // Fetch data
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => apiClient.entities.Resource.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => apiClient.entities.Task.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: allocations = [] } = useQuery({
     queryKey: ['resourceAllocations'],
-    queryFn: () => base44.entities.ResourceAllocation.list(),
+    queryFn: () => apiClient.entities.ResourceAllocation.list(),
     staleTime: 5 * 60 * 1000
   });
 
   // Create/Update resource mutations
   const createResourceMutation = useMutation({
-    mutationFn: (data) => base44.entities.Resource.create(data),
+    mutationFn: (data) => apiClient.entities.Resource.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setCreateDialogOpen(false);
@@ -95,7 +96,7 @@ export default function ResourceManagement() {
   const updateResourceMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       console.log('Updating resource:', id, 'with data:', data);
-      return await base44.entities.Resource.update(id, data);
+      return await apiClient.entities.Resource.update(id, data);
     },
     onSuccess: (result) => {
       console.log('Update successful:', result);
@@ -124,7 +125,7 @@ export default function ResourceManagement() {
       const task = tasks.find(t => t.id === taskId);
       
       // Validate resource assignment
-      const validation = await base44.functions.invoke('validateTaskResourceAssignment', {
+      const validation = await apiClient.functions.invoke('validateTaskResourceAssignment', {
         task_id: taskId,
         resource_ids: resourceIds || [],
         equipment_ids: equipmentIds || [],
@@ -141,7 +142,7 @@ export default function ResourceManagement() {
         toast.warning(validation.data.warnings.join('; '));
       }
 
-      return await base44.entities.Task.update(taskId, {
+      return await apiClient.entities.Task.update(taskId, {
         assigned_resources: resourceIds || [],
         assigned_equipment: equipmentIds || []
       });
@@ -159,7 +160,7 @@ export default function ResourceManagement() {
   const { data: backendMetrics } = useQuery({
     queryKey: ['resource-utilization-metrics'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getResourceUtilizationMetrics', {
+      const response = await apiClient.functions.invoke('getResourceUtilizationMetrics', {
         include_unavailable: statusFilter === 'unavailable'
       });
       return response.data.metrics;

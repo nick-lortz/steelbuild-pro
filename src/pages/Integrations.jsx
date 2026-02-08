@@ -30,7 +30,7 @@ export default function Integrations() {
   const { data: integrationStatus, isLoading } = useQuery({
     queryKey: ['integration-status'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getIntegrationStatus', {});
+      const response = await apiClient.functions.invoke('getIntegrationStatus', {});
       return response.data;
     },
     staleTime: 5 * 60 * 1000
@@ -38,7 +38,7 @@ export default function Integrations() {
 
   const testSlackMutation = useMutation({
     mutationFn: async (channel) => {
-      const response = await base44.functions.invoke('sendSlackNotification', {
+      const response = await apiClient.functions.invoke('sendSlackNotification', {
         channel,
         message: 'Test message from SteelBuild-Pro',
         type: 'test'
@@ -51,7 +51,7 @@ export default function Integrations() {
 
   const testTeamsMutation = useMutation({
     mutationFn: async (webhook) => {
-      const response = await base44.functions.invoke('sendTeamsNotification', {
+      const response = await apiClient.functions.invoke('sendTeamsNotification', {
         webhook_url: webhook,
         title: 'Test Message',
         message: 'SteelBuild-Pro is connected',
@@ -65,7 +65,7 @@ export default function Integrations() {
 
   const syncDriveMutation = useMutation({
     mutationFn: async (folderId) => {
-      const response = await base44.functions.invoke('syncGoogleDrive', { folder_id: folderId });
+      const response = await apiClient.functions.invoke('syncGoogleDrive', { folder_id: folderId });
       return response.data;
     },
     onSuccess: (data) => {

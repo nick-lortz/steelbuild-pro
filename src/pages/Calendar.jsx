@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,35 +61,35 @@ export default function Calendar() {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
-      : base44.entities.Task.list('start_date'),
+      ? apiClient.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+      : apiClient.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
-      : base44.entities.Delivery.list(),
+      ? apiClient.entities.Delivery.filter({ project_id: activeProjectId })
+      : apiClient.entities.Delivery.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ['meetings', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.Meeting.filter({ project_id: activeProjectId })
-      : base44.entities.Meeting.list(),
+      ? apiClient.entities.Meeting.filter({ project_id: activeProjectId })
+      : apiClient.entities.Meeting.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Task.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setEditingTask(null);
@@ -97,7 +98,7 @@ export default function Calendar() {
   });
 
   const deleteTaskMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: (id) => apiClient.entities.Task.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Task deleted');

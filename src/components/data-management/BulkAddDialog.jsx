@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { Loader2, Plus, Trash2, Download, Upload, Table2, FileText, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -182,7 +183,7 @@ export default function BulkAddDialog({ entityName, projectId, onClose, onSave }
         ...row,
       }));
 
-      await base44.entities[entityName].bulkCreate(records);
+      await apiClient.entities[entityName].bulkCreate(records);
       toast.success(`Created ${records.length} ${entityName}${records.length > 1 ? 's' : ''}`);
       onSave();
     } catch (error) {

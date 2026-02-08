@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -21,14 +22,14 @@ export default function ProjectAnalyticsDashboard() {
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     initialData: []
   });
 
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ['project-analytics', selectedProjectId, dateFrom, dateTo],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getAdvancedProjectAnalytics', {
+      const response = await apiClient.functions.invoke('getAdvancedProjectAnalytics', {
         project_id: selectedProjectId === 'all' ? null : selectedProjectId,
         date_from: dateFrom,
         date_to: dateTo
@@ -46,7 +47,7 @@ export default function ProjectAnalyticsDashboard() {
       format: 'pdf'
     };
     
-    const response = await base44.functions.invoke('exportAnalyticsReport', exportData);
+    const response = await apiClient.functions.invoke('exportAnalyticsReport', exportData);
     const blob = new Blob([response.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');

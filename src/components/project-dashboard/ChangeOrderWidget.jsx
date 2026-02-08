@@ -1,13 +1,14 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { FileCheck, DollarSign, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function ChangeOrderWidget({ projectId }) {
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', projectId],
-    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.ChangeOrder.filter({ project_id: projectId })
   });
 
   const pending = changeOrders.filter(co => co.status === 'submitted' || co.status === 'under_review');

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { createPageUrl } from '@/utils';
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Building2, Calendar, FileText, MessageSquareWarning, FileCheck, Plus, Search } from 'lucide-react';
@@ -12,13 +13,13 @@ export default function CommandPalette() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date'),
+    queryFn: () => apiClient.entities.Project.list('-updated_date'),
     enabled: open
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['recent-tasks'],
-    queryFn: () => base44.entities.Task.list('-updated_date', 10),
+    queryFn: () => apiClient.entities.Task.list('-updated_date', 10),
     enabled: open
   });
 

@@ -53,13 +53,13 @@ export default function Deliveries() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 30 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list('-confirmed_date'),
+    queryFn: () => apiClient.entities.Delivery.list('-confirmed_date'),
     staleTime: 2 * 60 * 1000
   });
 
@@ -122,7 +122,7 @@ export default function Deliveries() {
         activity_log: [activityLog]
       };
       
-      return base44.entities.Delivery.create(cleanData);
+      return apiClient.entities.Delivery.create(cleanData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
@@ -164,7 +164,7 @@ export default function Deliveries() {
         activityLogEntry
       ];
       
-      return base44.entities.Delivery.update(id, { ...data, activity_log: updatedActivityLog });
+      return apiClient.entities.Delivery.update(id, { ...data, activity_log: updatedActivityLog });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
@@ -181,7 +181,7 @@ export default function Deliveries() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Delivery.delete(id),
+    mutationFn: (id) => apiClient.entities.Delivery.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setDeleteDelivery(null);

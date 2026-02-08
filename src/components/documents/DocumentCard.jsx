@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from 'sonner';
 
 export default function DocumentCard({ doc, onDelete, onViewVersions, onPreview }) {
@@ -72,7 +73,7 @@ export default function DocumentCard({ doc, onDelete, onViewVersions, onPreview 
                 onClick={async (e) => {
                   e.stopPropagation();
                   try {
-                    const { data } = await base44.functions.invoke('validateFileAccess', {
+                    const { data } = await apiClient.functions.invoke('validateFileAccess', {
                       document_id: doc.id
                     });
                     if (data.allowed) {
@@ -97,7 +98,7 @@ export default function DocumentCard({ doc, onDelete, onViewVersions, onPreview 
                 onClick={async (e) => {
                   e.stopPropagation();
                   try {
-                    const { data } = await base44.functions.invoke('validateFileAccess', {
+                    const { data } = await apiClient.functions.invoke('validateFileAccess', {
                       document_id: doc.id
                     });
                     if (data.allowed) {

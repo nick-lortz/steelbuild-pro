@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Link as LinkIcon } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 
@@ -18,7 +19,7 @@ export default function DependencyEditor({ task, tasks, open, onOpenChange }) {
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Task.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Dependencies updated');

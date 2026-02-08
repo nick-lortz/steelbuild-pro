@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -11,7 +12,7 @@ export default function ProjectScheduleWidget({ projectId }) {
   const { data: healthData, isLoading } = useQuery({
     queryKey: ['project-schedule-health', projectId],
     queryFn: async () => {
-      const response = await base44.functions.invoke('calculateProjectScheduleHealth', {
+      const response = await apiClient.functions.invoke('calculateProjectScheduleHealth', {
         project_id: projectId
       });
       return response.data;

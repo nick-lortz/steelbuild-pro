@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,24 +44,24 @@ export default function RFIWizardEnhanced({ projectId, onSubmit, onCancel }) {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId })
   });
 
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
-    queryFn: () => base44.entities.Project.filter({ id: projectId }),
+    queryFn: () => apiClient.entities.Project.filter({ id: projectId }),
     select: (data) => data?.[0]
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawingSets', projectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: projectId })
   });
 
   // Auto-calculate due date when tasks selected
   useEffect(() => {
     if (formData.linked_task_ids.length > 0) {
-      base44.functions.invoke('calculateRFIDueDate', {
+      apiClient.functions.invoke('calculateRFIDueDate', {
         project_id: projectId,
         linked_task_ids: formData.linked_task_ids
       }).then(res => {
@@ -72,7 +73,7 @@ export default function RFIWizardEnhanced({ projectId, onSubmit, onCancel }) {
   // Auto-route when type selected
   useEffect(() => {
     if (formData.rfi_type) {
-      base44.functions.invoke('autoRouteRFI', {
+      apiClient.functions.invoke('autoRouteRFI', {
         project_id: projectId,
         rfi_type: formData.rfi_type,
         is_internal: formData.blocked_work !== 'none'
@@ -85,7 +86,7 @@ export default function RFIWizardEnhanced({ projectId, onSubmit, onCancel }) {
   // Detect impacts when tasks/deliveries linked
   useEffect(() => {
     if (formData.linked_task_ids.length > 0 || formData.blocked_work !== 'none') {
-      base44.functions.invoke('detectRFIImpacts', {
+      apiClient.functions.invoke('detectRFIImpacts', {
         project_id: projectId,
         linked_task_ids: formData.linked_task_ids,
         linked_piece_marks: formData.linked_piece_marks,
@@ -98,8 +99,8 @@ export default function RFIWizardEnhanced({ projectId, onSubmit, onCancel }) {
 
   const createRFIMutation = useMutation({
     mutationFn: async (data) => {
-      const rfiNumber = (await base44.entities.RFI.filter({ project_id: projectId })).length + 1;
-      return base44.entities.RFI.create({
+      const rfiNumber = (await apiClient.entities.RFI.filter({ project_id: projectId })).length + 1;
+      return apiClient.entities.RFI.create({
         project_id: projectId,
         rfi_number: rfiNumber,
         status: 'internal_review',

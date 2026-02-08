@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,24 +36,24 @@ export default function Submittals() {
 
   const { data: submittals = [] } = useQuery({
     queryKey: ['submittals', activeProjectId],
-    queryFn: () => base44.entities.Submittal.filter({ project_id: activeProjectId }, '-submitted_date'),
+    queryFn: () => apiClient.entities.Submittal.filter({ project_id: activeProjectId }, '-submitted_date'),
     enabled: !!activeProjectId
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Submittal.create(data),
+    mutationFn: (data) => apiClient.entities.Submittal.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['submittals'] });
       setShowCreateDialog(false);
@@ -64,7 +65,7 @@ export default function Submittals() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Submittal.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Submittal.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['submittals'] });
       toast.success('Submittal updated');
@@ -75,7 +76,7 @@ export default function Submittals() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Submittal.delete(id),
+    mutationFn: (id) => apiClient.entities.Submittal.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['submittals'] });
       setDeleteSubmittal(null);

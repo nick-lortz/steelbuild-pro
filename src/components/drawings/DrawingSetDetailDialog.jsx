@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
   const { data: drawingSet, isLoading } = useQuery({
     queryKey: ['drawing-set', drawingSetId],
     queryFn: async () => {
-      const sets = await base44.entities.DrawingSet.filter({ id: drawingSetId });
+      const sets = await apiClient.entities.DrawingSet.filter({ id: drawingSetId });
       return sets[0];
     },
     enabled: !!drawingSetId && open,
@@ -76,20 +77,20 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
 
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawing-revisions', drawingSetId],
-    queryFn: () => base44.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }),
+    queryFn: () => apiClient.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }),
     enabled: !!drawingSetId && open
   });
 
   const { data: sheets = [] } = useQuery({
     queryKey: ['drawing-sheets', drawingSetId],
-    queryFn: () => base44.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
+    queryFn: () => apiClient.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
     enabled: !!drawingSetId && open
   });
 
   const linkedRFIs = rfis?.filter(r => r.linked_drawing_set_id === drawingSetId) || [];
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.DrawingSet.update(drawingSetId, data),
+    mutationFn: (data) => apiClient.entities.DrawingSet.update(drawingSetId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       queryClient.invalidateQueries({ queryKey: ['drawing-set', drawingSetId] });

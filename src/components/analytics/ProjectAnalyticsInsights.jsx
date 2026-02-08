@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ export default function ProjectAnalyticsInsights() {
   const { data: analytics, isLoading, error, refetch } = useQuery({
     queryKey: ['projectAnalytics'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getProjectAnalytics', {});
+      const response = await apiClient.functions.invoke('getProjectAnalytics', {});
       return response.data;
     },
     staleTime: 60 * 60 * 1000, // 1 hour

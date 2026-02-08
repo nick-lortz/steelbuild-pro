@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,37 +17,37 @@ export default function Performance() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list(),
+    queryFn: () => apiClient.entities.Financial.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
+    queryFn: () => apiClient.entities.ChangeOrder.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
-    queryFn: () => base44.entities.DailyLog.list(),
+    queryFn: () => apiClient.entities.DailyLog.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => apiClient.entities.Task.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
+    queryFn: () => apiClient.entities.RFI.list(),
     staleTime: 10 * 60 * 1000,
   });
 
@@ -245,7 +246,7 @@ export default function Performance() {
       const projectCOs = changeOrders.filter(co => co.project_id === issue.project.id);
       const projectRFIs = rfis.filter(r => r.project_id === issue.project.id);
       
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await apiClient.integrations.Core.InvokeLLM({
         prompt: `You are analyzing a construction project performance issue. Provide a concise, actionable analysis.
 
 Project: ${issue.project.name} (${issue.project.project_number})

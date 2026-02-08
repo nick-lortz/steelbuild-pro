@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Users, Package } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
@@ -14,13 +15,13 @@ export default function ResourceAllocationChart() {
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => apiClient.entities.Resource.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 5 * 60 * 1000
   });
 

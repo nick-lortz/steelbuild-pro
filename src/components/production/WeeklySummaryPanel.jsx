@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,7 @@ export default function WeeklySummaryPanel({ weekId, projectIds = [] }) {
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['weekly-summary', weekId, projectIds],
     queryFn: async () => {
-      const response = await base44.functions.invoke('generateWeeklySummary', {
+      const response = await apiClient.functions.invoke('generateWeeklySummary', {
         week_id: weekId,
         project_ids: projectIds
       });

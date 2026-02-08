@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ export default function BulkEditDrawings({ drawingSets, projects, open, onOpenCh
   const bulkUpdateMutation = useMutation({
     mutationFn: async (updates) => {
       return Promise.all(
-        updates.map(({ id, data }) => base44.entities.DrawingSet.update(id, data))
+        updates.map(({ id, data }) => apiClient.entities.DrawingSet.update(id, data))
       );
     },
     onSuccess: () => {

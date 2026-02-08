@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Plus, X, ExternalLink, MessageSquareWarning, Calendar, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,24 +15,24 @@ export default function LinkagePanel({ changeOrder, onUpdate }) {
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', changeOrder.project_id],
-    queryFn: () => base44.entities.RFI.filter({ project_id: changeOrder.project_id }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: changeOrder.project_id }),
     enabled: !!changeOrder.project_id
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', changeOrder.project_id],
-    queryFn: () => base44.entities.Task.filter({ project_id: changeOrder.project_id }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: changeOrder.project_id }),
     enabled: !!changeOrder.project_id
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', changeOrder.project_id],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: changeOrder.project_id }),
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: changeOrder.project_id }),
     enabled: !!changeOrder.project_id
   });
 
   const updateLinks = async (field, value) => {
-    await base44.entities.ChangeOrder.update(changeOrder.id, {
+    await apiClient.entities.ChangeOrder.update(changeOrder.id, {
       [field]: value
     });
     queryClient.invalidateQueries({ queryKey: ['changeOrders'] });

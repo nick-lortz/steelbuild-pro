@@ -24,17 +24,17 @@ export default function Messages() {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: () => apiClient.entities.User.list()
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date')
+    queryFn: () => apiClient.entities.Project.list('-updated_date')
   });
 
   const { data: recentMessages = [] } = useQuery({
     queryKey: ['recentMessages'],
-    queryFn: () => base44.entities.Message.list('-created_date', 100)
+    queryFn: () => apiClient.entities.Message.list('-created_date', 100)
   });
 
   const conversations = React.useMemo(() => {

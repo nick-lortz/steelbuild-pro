@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Send, Copy, Check, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 
@@ -22,7 +23,7 @@ export default function AISummaryPanel({ weekInfo, filteredProjectIds }) {
   const generateSummary = async () => {
     setLoading(true);
     try {
-      const result = await base44.functions.invoke('summarizeWeeklyNotes', {
+      const result = await apiClient.functions.invoke('summarizeWeeklyNotes', {
         week_id: weekInfo.week_id,
         project_ids: filteredProjectIds
       });
@@ -52,7 +53,7 @@ export default function AISummaryPanel({ weekInfo, filteredProjectIds }) {
         <p><em>Posted from Production Notes</em></p>
       `;
 
-      await base44.functions.invoke('postToTeams', {
+      await apiClient.functions.invoke('postToTeams', {
         team_id: teamId,
         channel_id: channelId,
         message: htmlMessage

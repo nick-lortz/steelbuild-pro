@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ export default function AIDrawingAnalysis({ drawing, drawingUrl }) {
     try {
       const currentDate = new Date().toISOString().split('T')[0];
       
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await apiClient.integrations.Core.InvokeLLM({
         prompt: `You are a structural steel engineering expert. Analyze this construction drawing and provide detailed insights.
 
 **IMPORTANT: Current date is ${currentDate}. Use this date to validate all date references in the drawing.**

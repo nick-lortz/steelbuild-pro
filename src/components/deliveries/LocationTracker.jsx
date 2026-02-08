@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Navigation, Save, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 export default function LocationTracker({ delivery, onLocationUpdate }) {
   const [coords, setCoords] = useState({
@@ -49,7 +50,7 @@ export default function LocationTracker({ delivery, onLocationUpdate }) {
 
     setIsUpdating(true);
     try {
-      const response = await base44.functions.invoke('updateDeliveryLocation', {
+      const response = await apiClient.functions.invoke('updateDeliveryLocation', {
         delivery_id: delivery.id,
         lat: parseFloat(coords.lat),
         lng: parseFloat(coords.lng),

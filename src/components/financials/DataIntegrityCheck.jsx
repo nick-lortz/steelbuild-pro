@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Shield } from 'lucide-react';
@@ -9,22 +10,22 @@ import { checkCostCodeIntegrity } from '@/components/shared/dataValidation';
 export default function DataIntegrityCheck() {
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
-    queryFn: () => base44.entities.CostCode.list(),
+    queryFn: () => apiClient.entities.CostCode.list(),
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list(),
+    queryFn: () => apiClient.entities.Financial.list(),
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list(),
+    queryFn: () => apiClient.entities.Expense.list(),
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['laborHours'],
-    queryFn: () => base44.entities.LaborHours.list(),
+    queryFn: () => apiClient.entities.LaborHours.list(),
   });
 
   const issues = checkCostCodeIntegrity(

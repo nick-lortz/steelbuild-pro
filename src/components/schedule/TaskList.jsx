@@ -9,6 +9,7 @@ import { AlertTriangle, FileText, Trash2, Edit, ChevronDown, ChevronRight, Plus,
 import QuickAddSubtask from './QuickAddSubtask';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +31,7 @@ export default function TaskList({ tasks, projects, resources, drawingSets, onTa
 
   const { data: categories = [] } = useQuery({
     queryKey: ['labor-categories'],
-    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+    queryFn: () => apiClient.entities.LaborCategory.list('sequence_order'),
   });
 
   const getCategoryName = (categoryId) => {

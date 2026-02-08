@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,43 +15,43 @@ export default function ActivityFeed({ projectId }) {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date'),
+    queryFn: () => apiClient.entities.Project.list('-updated_date'),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['activityTasks', projectId],
     queryFn: () => projectId 
-      ? base44.entities.Task.filter({ project_id: projectId }, '-updated_date', 50)
-      : base44.entities.Task.list('-updated_date', 50)
+      ? apiClient.entities.Task.filter({ project_id: projectId }, '-updated_date', 50)
+      : apiClient.entities.Task.list('-updated_date', 50)
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['activityRFIs', projectId],
     queryFn: () => projectId
-      ? base44.entities.RFI.filter({ project_id: projectId }, '-created_date', 50)
-      : base44.entities.RFI.list('-created_date', 50)
+      ? apiClient.entities.RFI.filter({ project_id: projectId }, '-created_date', 50)
+      : apiClient.entities.RFI.list('-created_date', 50)
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['activityCOs', projectId],
     queryFn: () => projectId
-      ? base44.entities.ChangeOrder.filter({ project_id: projectId }, '-created_date', 50)
-      : base44.entities.ChangeOrder.list('-created_date', 50)
+      ? apiClient.entities.ChangeOrder.filter({ project_id: projectId }, '-created_date', 50)
+      : apiClient.entities.ChangeOrder.list('-created_date', 50)
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['activityDrawings', projectId],
     queryFn: () => projectId
-      ? base44.entities.DrawingSet.filter({ project_id: projectId }, '-updated_date', 50)
-      : base44.entities.DrawingSet.list('-updated_date', 50)
+      ? apiClient.entities.DrawingSet.filter({ project_id: projectId }, '-updated_date', 50)
+      : apiClient.entities.DrawingSet.list('-updated_date', 50)
   });
 
   const { data: messages = [] } = useQuery({
     queryKey: ['activityMessages', projectId],
     queryFn: () => projectId
-      ? base44.entities.Message.filter({ project_id: projectId }, '-created_date', 50)
-      : base44.entities.Message.list('-created_date', 50)
+      ? apiClient.entities.Message.filter({ project_id: projectId }, '-created_date', 50)
+      : apiClient.entities.Message.list('-created_date', 50)
   });
 
   const activityItems = useMemo(() => {

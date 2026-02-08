@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,44 +37,44 @@ export default function Resources() {
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list('name'),
+    queryFn: () => apiClient.entities.Resource.list('name'),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => apiClient.entities.Task.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items'],
-    queryFn: () => base44.entities.SOVItem.list(),
+    queryFn: () => apiClient.entities.SOVItem.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: allocations = [] } = useQuery({
     queryKey: ['resourceAllocations'],
-    queryFn: () => base44.entities.ResourceAllocation.list(),
+    queryFn: () => apiClient.entities.ResourceAllocation.list(),
     staleTime: 2 * 60 * 1000
   });
 
   // Real-time subscriptions
   useEffect(() => {
-    const unsub = base44.entities.Resource.subscribe(() => {
+    const unsub = apiClient.entities.Resource.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
     });
     return unsub;
   }, [queryClient]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Resource.create(data),
+    mutationFn: (data) => apiClient.entities.Resource.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setShowForm(false);
@@ -82,7 +83,7 @@ export default function Resources() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Resource.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Resource.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setShowForm(false);
@@ -92,7 +93,7 @@ export default function Resources() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Resource.delete(id),
+    mutationFn: (id) => apiClient.entities.Resource.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       setDeleteResource(null);

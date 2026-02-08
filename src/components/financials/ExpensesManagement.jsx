@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,21 +58,21 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name')
+    queryFn: () => apiClient.entities.Project.list('name')
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['costCodes'],
-    queryFn: () => base44.entities.CostCode.list('code')
+    queryFn: () => apiClient.entities.CostCode.list('code')
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list('-expense_date')
+    queryFn: () => apiClient.entities.Expense.list('-expense_date')
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('expenseOperations', { operation: 'create', data }),
+    mutationFn: (data) => apiClient.functions.invoke('expenseOperations', { operation: 'create', data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -93,7 +94,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('expenseOperations', { operation: 'update', data: { id, updates: data } }),
+    mutationFn: ({ id, data }) => apiClient.functions.invoke('expenseOperations', { operation: 'update', data: { id, updates: data } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -115,7 +116,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('expenseOperations', { operation: 'delete', data: { id } }),
+    mutationFn: (id) => apiClient.functions.invoke('expenseOperations', { operation: 'delete', data: { id } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['financials'] });
@@ -128,7 +129,7 @@ export default function ExpensesManagement({ projectFilter = 'all' }) {
 
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
       setFormData((prev) => ({ ...prev, receipt_url: file_url }));
     } catch (error) {
       console.error('Upload failed:', error);

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Sparkles, AlertTriangle, TrendingUp, FileText, Loader2, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/notifications';
@@ -55,7 +56,7 @@ export default function ScheduleAIAssistant({ tasks, workPackages, project, reso
         resource_availability: resources.filter(r => r.status === 'available').length
       };
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await apiClient.integrations.Core.InvokeLLM({
         prompt: `You are a construction scheduling expert analyzing a structural steel project schedule.
 
 PROJECT: ${scheduleData.project_name} (${scheduleData.project_number})
@@ -144,7 +145,7 @@ Focus on constructible, field-practical insights for a structural steel PM.`,
         return daysOut > 0 && daysOut <= 7;
       });
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await apiClient.integrations.Core.InvokeLLM({
         prompt: `Generate a concise schedule status update for project stakeholders.
 
 PROJECT: ${project.name} (${project.project_number})

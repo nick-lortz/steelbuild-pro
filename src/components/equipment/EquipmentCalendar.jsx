@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +16,12 @@ export default function EquipmentCalendar({ equipmentId, equipmentName }) {
 
   const { data: bookings = [] } = useQuery({
     queryKey: ['equipmentBookings', equipmentId],
-    queryFn: () => base44.entities.EquipmentBooking.list(),
+    queryFn: () => apiClient.entities.EquipmentBooking.list(),
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
   });
 
   const monthStart = startOfMonth(currentMonth);

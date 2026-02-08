@@ -142,7 +142,7 @@ export async function uploadFileSecure(file, category = 'documents', onProgress)
   try {
     if (onProgress) onProgress(0);
     
-    const result = await base44.integrations.Core.UploadFile({ file });
+    const result = await apiClient.integrations.Core.UploadFile({ file });
     
     if (onProgress) onProgress(100);
     

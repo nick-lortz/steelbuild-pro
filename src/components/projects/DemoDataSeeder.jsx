@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,13 @@ export default function DemoDataSeeder() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+    queryFn: () => apiClient.entities.Project.filter({ status: 'in_progress' })
   });
 
   const seedMutation = useMutation({
     mutationFn: (/** @type {string} */ projectId) =>
-      base44.functions.invoke('seedDemoData', { project_id: projectId }),
-    onSuccess: (res) => {
+      apiClient.functions.invoke('seedDemoData', { project_id: projectId }),
+    onSuccess: (/** @type {any} */ res) => {
       const data = res.data;
       if (data.success) {
         toast.success(`Seeded: ${data.created.crews} crews, ${data.created.labor_entries} labor entries, ${data.created.equipment_logs} equipment logs`);

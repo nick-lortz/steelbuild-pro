@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,7 @@ export default function FieldToolsMobile() {
     queryKey: ['daily-photos', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return [];
-      return await base44.entities.Document.filter({
+      return await apiClient.entities.Document.filter({
         project_id: activeProjectId,
         category: 'photo'
       }, '-created_date');
@@ -36,18 +37,18 @@ export default function FieldToolsMobile() {
 
   const { data: punchItems = [] } = useQuery({
     queryKey: ['punch-items', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.PunchItem.filter({ project_id: activeProjectId }) : [],
+    queryFn: () => activeProjectId ? apiClient.entities.PunchItem.filter({ project_id: activeProjectId }) : [],
     enabled: !!activeProjectId && isOnline
   });
 
   const { data: installs = [] } = useQuery({
     queryKey: ['field-installs', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.FieldInstall.filter({ project_id: activeProjectId }) : [],
+    queryFn: () => activeProjectId ? apiClient.entities.FieldInstall.filter({ project_id: activeProjectId }) : [],
     enabled: !!activeProjectId && isOnline
   });
 
   const createPunchMutation = useMutation({
-    mutationFn: (data) => base44.entities.PunchItem.create(data),
+    mutationFn: (data) => apiClient.entities.PunchItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['punch-items'] });
       toast.success('Punch logged');
@@ -56,7 +57,7 @@ export default function FieldToolsMobile() {
   });
 
   const createInstallMutation = useMutation({
-    mutationFn: (data) => base44.entities.FieldInstall.create(data),
+    mutationFn: (data) => apiClient.entities.FieldInstall.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['field-installs'] });
       toast.success('Install logged');
@@ -71,8 +72,8 @@ export default function FieldToolsMobile() {
       // Upload immediately
       try {
         for (const file of files) {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          await base44.entities.Document.create({
+          const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
+          await apiClient.entities.Document.create({
             project_id: activeProjectId,
             title: file.name.replace(/\.[^/.]+$/, ''),
             file_url,
@@ -115,8 +116,8 @@ export default function FieldToolsMobile() {
         const file = new File([blob], photo.fileName, { type: 'image/jpeg' });
         
         try {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          await base44.entities.Document.create({
+          const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
+          await apiClient.entities.Document.create({
             project_id: activeProjectId,
             title: photo.fileName.replace(/\.[^/.]+$/, ''),
             file_url,

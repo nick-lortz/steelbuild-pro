@@ -20,36 +20,36 @@ export default function ExecutiveRollUp() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ 
+    queryFn: () => apiClient.entities.Project.filter({ 
       status: ['awarded', 'in_progress'] 
     })
   });
 
   const { data: allSOVItems = [] } = useQuery({
     queryKey: ['all-sov-items'],
-    queryFn: () => base44.entities.SOVItem.list()
+    queryFn: () => apiClient.entities.SOVItem.list()
   });
 
   const { data: allExpenses = [] } = useQuery({
     queryKey: ['all-expenses'],
-    queryFn: () => base44.entities.Expense.filter({
+    queryFn: () => apiClient.entities.Expense.filter({
       payment_status: ['paid', 'approved']
     })
   });
 
   const { data: allChangeOrders = [] } = useQuery({
     queryKey: ['all-change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list()
+    queryFn: () => apiClient.entities.ChangeOrder.list()
   });
 
   const { data: allEstimatedCosts = [] } = useQuery({
     queryKey: ['all-etc'],
-    queryFn: () => base44.entities.EstimatedCostToComplete.list()
+    queryFn: () => apiClient.entities.EstimatedCostToComplete.list()
   });
 
   const { data: allMappings = [] } = useQuery({
     queryKey: ['all-mappings'],
-    queryFn: () => base44.entities.SOVCostCodeMap.list()
+    queryFn: () => apiClient.entities.SOVCostCodeMap.list()
   });
 
   // Calculate project-level financials and risk

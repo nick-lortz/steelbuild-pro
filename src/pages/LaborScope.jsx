@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,46 +30,46 @@ export default function LaborScope() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['labor-categories'],
-    queryFn: () => base44.entities.LaborCategory.list('sequence_order'),
+    queryFn: () => apiClient.entities.LaborCategory.list('sequence_order'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: breakdowns = [], refetch: refetchBreakdowns } = useQuery({
     queryKey: ['labor-breakdowns', activeProjectId],
-    queryFn: () => base44.entities.LaborBreakdown.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.LaborBreakdown.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: specialtyItems = [] } = useQuery({
     queryKey: ['specialty-items', activeProjectId],
-    queryFn: () => base44.entities.SpecialtyDiscussionItem.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.SpecialtyDiscussionItem.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: scopeGaps = [] } = useQuery({
     queryKey: ['scope-gaps', activeProjectId],
-    queryFn: () => base44.entities.ScopeGap.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.ScopeGap.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const initializeMutation = useMutation({
-    mutationFn: (projectId) => base44.functions.invoke('initializeLaborBreakdown', { project_id: projectId }),
+    mutationFn: (projectId) => apiClient.functions.invoke('initializeLaborBreakdown', { project_id: projectId }),
     onSuccess: () => {
       refetchBreakdowns();
       toast.success('Initialized');
@@ -76,7 +77,7 @@ export default function LaborScope() {
   });
 
   const allocateMutation = useMutation({
-    mutationFn: (projectId) => base44.functions.invoke('allocateLaborToSchedule', { project_id: projectId }),
+    mutationFn: (projectId) => apiClient.functions.invoke('allocateLaborToSchedule', { project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Labor allocated to schedule');
@@ -84,14 +85,14 @@ export default function LaborScope() {
   });
 
   const updateBreakdownMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.LaborBreakdown.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.LaborBreakdown.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
     }
   });
 
   const deleteBreakdownMutation = useMutation({
-    mutationFn: (id) => base44.entities.LaborBreakdown.delete(id),
+    mutationFn: (id) => apiClient.entities.LaborBreakdown.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['labor-breakdowns'] });
       toast.success('Deleted');
@@ -99,7 +100,7 @@ export default function LaborScope() {
   });
 
   const createSpecialtyMutation = useMutation({
-    mutationFn: (data) => base44.entities.SpecialtyDiscussionItem.create(data),
+    mutationFn: (data) => apiClient.entities.SpecialtyDiscussionItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
       toast.success('Added');
@@ -107,12 +108,12 @@ export default function LaborScope() {
   });
 
   const updateSpecialtyMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SpecialtyDiscussionItem.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.SpecialtyDiscussionItem.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['specialty-items'] })
   });
 
   const deleteSpecialtyMutation = useMutation({
-    mutationFn: (id) => base44.entities.SpecialtyDiscussionItem.delete(id),
+    mutationFn: (id) => apiClient.entities.SpecialtyDiscussionItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specialty-items'] });
       toast.success('Deleted');
@@ -120,7 +121,7 @@ export default function LaborScope() {
   });
 
   const createGapMutation = useMutation({
-    mutationFn: (data) => base44.entities.ScopeGap.create(data),
+    mutationFn: (data) => apiClient.entities.ScopeGap.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
       toast.success('Gap added');
@@ -128,12 +129,12 @@ export default function LaborScope() {
   });
 
   const updateGapMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ScopeGap.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.ScopeGap.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['scope-gaps'] })
   });
 
   const deleteGapMutation = useMutation({
-    mutationFn: (id) => base44.entities.ScopeGap.delete(id),
+    mutationFn: (id) => apiClient.entities.ScopeGap.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scope-gaps'] });
       toast.success('Deleted');

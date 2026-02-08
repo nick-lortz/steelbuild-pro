@@ -31,12 +31,12 @@ export default function CommentsThread({ changeOrder, onUpdate }) {
         }
       ];
 
-      await base44.entities.ChangeOrder.update(changeOrder.id, {
+      await apiClient.entities.ChangeOrder.update(changeOrder.id, {
         comments: updatedComments
       });
 
       // Send notifications
-      await base44.functions.invoke('notifyStatusChange', {
+      await apiClient.functions.invoke('notifyStatusChange', {
         entity_type: 'ChangeOrder',
         entity_id: changeOrder.id,
         event_type: 'comment_added',

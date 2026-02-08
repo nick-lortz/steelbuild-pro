@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Mail, Calendar } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export default function AutoReportGenerator({ projectId }) {
@@ -14,7 +15,7 @@ export default function AutoReportGenerator({ projectId }) {
   const generateReport = async () => {
     setGenerating(true);
     try {
-      const response = await base44.functions.invoke('generateExecutiveSummary', {
+      const response = await apiClient.functions.invoke('generateExecutiveSummary', {
         project_id: projectId,
         report_type: reportType
       });

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,17 +20,17 @@ export default function CrewsAssignments({ projectId }) {
 
   const { data: crews = [], isLoading } = useQuery({
     queryKey: ['crews', projectId],
-    queryFn: () => base44.entities.Crew.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Crew.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.filter({ type: 'labor' })
+    queryFn: () => apiClient.entities.Resource.filter({ type: 'labor' })
   });
 
   const updateCrewMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Crew.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Crew.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crews'] });
       toast.success('Crew updated');
@@ -230,7 +231,7 @@ function CreateCrewForm({ projectId, onClose, onSuccess }) {
     }
 
     try {
-      await base44.entities.Crew.create(formData);
+      await apiClient.entities.Crew.create(formData);
       toast.success('Crew created');
       onSuccess();
     } catch (error) {

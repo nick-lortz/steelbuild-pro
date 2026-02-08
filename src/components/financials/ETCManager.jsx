@@ -28,7 +28,7 @@ export default function ETCManager({ projectId, expenses = [] }) {
 
   const { data: etcRecords = [] } = useQuery({
     queryKey: ['etc', projectId],
-    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.EstimatedCostToComplete.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 

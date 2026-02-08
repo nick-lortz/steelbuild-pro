@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,42 +43,42 @@ export default function FabricationPage() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => apiClient.entities.Project.list()
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
-    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.WorkPackage.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: fabricationPackages = [] } = useQuery({
     queryKey: ['fabrication-packages', activeProjectId],
-    queryFn: () => base44.entities.FabricationPackage.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.FabricationPackage.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: fabricationItems = [] } = useQuery({
     queryKey: ['fabrication', activeProjectId],
-    queryFn: () => base44.entities.Fabrication.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Fabrication.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
-    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Delivery.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
@@ -85,34 +86,34 @@ export default function FabricationPage() {
   React.useEffect(() => {
     if (!activeProjectId) return;
 
-    const unsubFabPkg = base44.entities.FabricationPackage.subscribe((event) => {
+    const unsubFabPkg = apiClient.entities.FabricationPackage.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['fabrication-packages', activeProjectId] });
       }
     });
 
-    const unsubFab = base44.entities.Fabrication.subscribe((event) => {
+    const unsubFab = apiClient.entities.Fabrication.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['fabrication', activeProjectId] });
         queryClient.invalidateQueries({ queryKey: ['fabrication-packages', activeProjectId] });
       }
     });
 
-    const unsubDrawing = base44.entities.DrawingSet.subscribe((event) => {
+    const unsubDrawing = apiClient.entities.DrawingSet.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['drawings', activeProjectId] });
         queryClient.invalidateQueries({ queryKey: ['fabrication-packages', activeProjectId] });
       }
     });
 
-    const unsubWP = base44.entities.WorkPackage.subscribe((event) => {
+    const unsubWP = apiClient.entities.WorkPackage.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
         queryClient.invalidateQueries({ queryKey: ['fabrication-packages', activeProjectId] });
       }
     });
 
-    const unsubDelivery = base44.entities.Delivery.subscribe((event) => {
+    const unsubDelivery = apiClient.entities.Delivery.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['deliveries', activeProjectId] });
         queryClient.invalidateQueries({ queryKey: ['fabrication-packages', activeProjectId] });
@@ -198,7 +199,7 @@ export default function FabricationPage() {
   }, [fabricationPackages]);
 
   const updatePackageMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.FabricationPackage.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.FabricationPackage.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrication-packages'] });
       queryClient.invalidateQueries({ queryKey: ['work-packages'] });
@@ -208,7 +209,7 @@ export default function FabricationPage() {
   });
 
   const updatePieceMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Fabrication.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Fabrication.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fabrication'] });
       queryClient.invalidateQueries({ queryKey: ['fabrication-packages'] });
@@ -218,7 +219,7 @@ export default function FabricationPage() {
 
   const createDeliveryMutation = useMutation({
     mutationFn: async (packageData) => {
-      const delivery = await base44.entities.Delivery.create({
+      const delivery = await apiClient.entities.Delivery.create({
         project_id: activeProjectId,
         package_name: packageData.package_name,
         delivery_number: `DEL-${Date.now()}`,
@@ -227,7 +228,7 @@ export default function FabricationPage() {
         weight_tons: packageData.total_weight_tons
       });
       
-      await base44.entities.FabricationPackage.update(packageData.id, {
+      await apiClient.entities.FabricationPackage.update(packageData.id, {
         linked_delivery_id: delivery.id,
         status: 'shipped'
       });
@@ -965,7 +966,7 @@ export default function FabricationPage() {
             drawings={drawings}
             prefillData={typeof showCreatePackage === 'object' ? showCreatePackage : {}}
             onSubmit={async (data) => {
-              await base44.entities.FabricationPackage.create(data);
+              await apiClient.entities.FabricationPackage.create(data);
               queryClient.invalidateQueries({ queryKey: ['fabrication-packages'] });
               queryClient.invalidateQueries({ queryKey: ['work-packages'] });
               setShowCreatePackage(false);

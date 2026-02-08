@@ -39,7 +39,7 @@ export default function WorkPackages() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 10 * 60 * 1000
   });
 
@@ -47,14 +47,14 @@ export default function WorkPackages() {
 
   const { data: workPackages = [], isLoading } = useQuery({
     queryKey: ['work-packages', activeProjectId],
-    queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
+    queryFn: () => apiClient.entities.WorkPackage.filter({ project_id: activeProjectId }, '-created_date'),
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   React.useEffect(() => {
     if (!activeProjectId) return;
-    const unsub = base44.entities.WorkPackage.subscribe((event) => {
+    const unsub = apiClient.entities.WorkPackage.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
       }
@@ -64,47 +64,47 @@ export default function WorkPackages() {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+    queryFn: () => apiClient.entities.CostCode.list('code'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents', activeProjectId],
-    queryFn: () => base44.entities.Document.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Document.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
-    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Delivery.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+    mutationFn: (data) => apiClient.entities.WorkPackage.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
@@ -113,7 +113,7 @@ export default function WorkPackages() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.WorkPackage.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       setShowForm(false);
@@ -125,7 +125,7 @@ export default function WorkPackages() {
 
   const deleteMutation = useMutation({
     mutationFn: async (work_package_id) => {
-      const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
+      const response = await apiClient.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
       return response.data;
     },
     onSuccess: () => {
@@ -138,7 +138,7 @@ export default function WorkPackages() {
 
   const advancePhaseMutation = useMutation({
     mutationFn: async ({ work_package_id, target_phase }) => {
-      const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
+      const response = await apiClient.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
       return response.data;
     },
     onSuccess: () => {

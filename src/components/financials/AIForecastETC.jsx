@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export default function AIForecastETC({ projectId }) {
@@ -13,7 +14,7 @@ export default function AIForecastETC({ projectId }) {
   const runForecast = async () => {
     setForecasting(true);
     try {
-      const response = await base44.functions.invoke('forecastETC', {
+      const response = await apiClient.functions.invoke('forecastETC', {
         project_id: projectId
       });
 

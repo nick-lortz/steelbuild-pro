@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 function sanitizeTaskParams(params = {}) {
   const out = { ...params };
@@ -31,12 +32,12 @@ export const base44Safe = {
     Task: {
       list: (sortBy, limit) => {
         // Original signature compatibility
-        return base44.entities.Task.list(sortBy, limit);
+        return apiClient.entities.Task.list(sortBy, limit);
       },
       filter: (params, sortBy, limit) => {
         const sanitized = sanitizeTaskParams(params);
         logIfHasQ(sanitized, 'filter', 'Task.filter');
-        return base44.entities.Task.filter(sanitized, sortBy, limit);
+        return apiClient.entities.Task.filter(sanitized, sortBy, limit);
       }
     }
   }

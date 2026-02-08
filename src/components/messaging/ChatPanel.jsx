@@ -27,8 +27,8 @@ export default function ChatPanel({ projectId, recipientEmail, relatedEntityType
   const { data: projectUsers = [] } = useQuery({
     queryKey: ['projectUsers', projectId],
     queryFn: async () => {
-      const project = await base44.entities.Project.list().then(p => p.find(pr => pr.id === projectId));
-      const allUsers = await base44.entities.User.list();
+      const project = await apiClient.entities.Project.list().then(p => p.find(pr => pr.id === projectId));
+      const allUsers = await apiClient.entities.User.list();
       return allUsers.filter(u => 
         u.email === project?.project_manager || 
         u.email === project?.superintendent ||
@@ -45,13 +45,13 @@ export default function ChatPanel({ projectId, recipientEmail, relatedEntityType
       if (recipientEmail) {
         query.recipient_email = recipientEmail;
       }
-      return base44.entities.Message.filter(query, '-created_date');
+      return apiClient.entities.Message.filter(query, '-created_date');
     },
     refetchInterval: 3000 // Poll every 3s
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (data) => base44.entities.Message.create(data),
+    mutationFn: (data) => apiClient.entities.Message.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['messages']);
       setMessage('');
@@ -103,7 +103,7 @@ export default function ChatPanel({ projectId, recipientEmail, relatedEntityType
         const blob = new Blob(chunks, { type: 'audio/webm' });
         const file = new File([blob], 'voice-note.webm', { type: 'audio/webm' });
         
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
         
         sendMessageMutation.mutate({
           project_id: projectId,

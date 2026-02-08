@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, X, File, Loader2 } from 'lucide-react';
@@ -32,7 +33,7 @@ export default function DocumentUploader({ onDocumentsAdded, maxFiles = 5, accep
     try {
       const uploadedDocs = [];
       for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
         uploadedDocs.push({
           file_url,
           file_name: file.name,

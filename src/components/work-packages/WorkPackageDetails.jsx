@@ -8,6 +8,7 @@ import { Pencil, ArrowRight, FileText, Link as LinkIcon, CheckCircle2, Package a
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import BudgetManager from '@/components/budget/BudgetManager';
 
 export default function WorkPackageDetails({
@@ -25,21 +26,21 @@ export default function WorkPackageDetails({
 }) {
   const { data: laborHours = [] } = useQuery({
     queryKey: ['labor-hours', projectId],
-    queryFn: () => base44.entities.LaborHours.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.LaborHours.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: equipmentUsage = [] } = useQuery({
     queryKey: ['equipment-usage', projectId],
-    queryFn: () => base44.entities.EquipmentUsage.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.EquipmentUsage.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', projectId],
-    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Expense.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000
   });

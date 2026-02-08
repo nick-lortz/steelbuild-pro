@@ -22,7 +22,7 @@ export default function NotificationCenter() {
     queryKey: ['notifications', currentUser?.email],
     queryFn: () => {
       if (!currentUser?.email) return [];
-      return base44.entities.Notification.filter(
+      return apiClient.entities.Notification.filter(
         { user_id: currentUser.email },
         '-created_date',
         20
@@ -36,7 +36,7 @@ export default function NotificationCenter() {
 
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId) =>
-      base44.entities.Notification.update(notificationId, {
+      apiClient.entities.Notification.update(notificationId, {
         read: true,
         read_at: new Date().toISOString()
       }),
@@ -47,7 +47,7 @@ export default function NotificationCenter() {
 
   const deleteNotificationMutation = useMutation({
     mutationFn: (notificationId) =>
-      base44.entities.Notification.delete(notificationId),
+      apiClient.entities.Notification.delete(notificationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     }
@@ -58,7 +58,7 @@ export default function NotificationCenter() {
       const unread = notifications.filter(n => !n.read);
       await Promise.all(
         unread.map(n =>
-          base44.entities.Notification.update(n.id, {
+          apiClient.entities.Notification.update(n.id, {
             read: true,
             read_at: new Date().toISOString()
           })

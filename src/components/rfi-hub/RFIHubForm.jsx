@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,10 +58,10 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
     try {
       if (rfi) {
-        await base44.entities.RFI.update(rfi.id, formData);
+        await apiClient.entities.RFI.update(rfi.id, formData);
         showSuccessToast('RFI updated successfully');
       } else {
-        await base44.entities.RFI.create(formData);
+        await apiClient.entities.RFI.create(formData);
         showSuccessToast('RFI created successfully');
       }
       onSuccess();

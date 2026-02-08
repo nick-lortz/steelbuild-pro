@@ -38,14 +38,14 @@ export const QUERY_CONFIG = {
  * // For static data (cost codes, resources)
  * useQuery({
  *   queryKey: ['cost-codes'],
- *   queryFn: () => base44.entities.CostCode.list(),
+ *   queryFn: () => apiClient.entities.CostCode.list(),
  *   ...QUERY_CONFIG.STATIC
  * })
  * 
  * // For dynamic data (projects, tasks, RFIs)
  * useQuery({
  *   queryKey: ['projects'],
- *   queryFn: () => base44.entities.Project.list(),
+ *   queryFn: () => apiClient.entities.Project.list(),
  *   ...QUERY_CONFIG.DYNAMIC
  * })
  * 

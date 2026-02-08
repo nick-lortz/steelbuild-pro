@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export default function ECCAutoCalculator({ projectId, trigger }) {
@@ -8,7 +9,7 @@ export default function ECCAutoCalculator({ projectId, trigger }) {
 
     const calculateECC = async () => {
       try {
-        const response = await base44.functions.invoke('autoCalculateECC', { project_id: projectId });
+        const response = await apiClient.functions.invoke('autoCalculateECC', { project_id: projectId });
         if (response.data?.updates_count > 0) {
           toast.success(`Updated ECC for ${response.data.updates_count} financial records`);
         }

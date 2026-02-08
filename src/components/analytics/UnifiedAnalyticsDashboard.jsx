@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -65,7 +66,7 @@ export default function UnifiedAnalyticsDashboard({
 
   const { data: fetchedProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000,
     enabled: !passedProjects
   });
@@ -111,13 +112,13 @@ export default function UnifiedAnalyticsDashboard({
       // Fetch data
       const data = await Promise.all(targetProjectIds.map(async (pid) => {
         const [project, workPackages, tasks, financials, deliveries, drawingSets, expenses] = await Promise.all([
-          base44.entities.Project.filter({ id: pid }).then(p => p[0]),
-          base44.entities.WorkPackage.filter({ project_id: pid }),
-          base44.entities.Task.filter({ project_id: pid }),
-          base44.entities.Financial.filter({ project_id: pid }),
-          base44.entities.Delivery.filter({ project_id: pid }),
-          base44.entities.DrawingSet.filter({ project_id: pid }),
-          base44.entities.Expense.filter({ project_id: pid })
+          apiClient.entities.Project.filter({ id: pid }).then(p => p[0]),
+          apiClient.entities.WorkPackage.filter({ project_id: pid }),
+          apiClient.entities.Task.filter({ project_id: pid }),
+          apiClient.entities.Financial.filter({ project_id: pid }),
+          apiClient.entities.Delivery.filter({ project_id: pid }),
+          apiClient.entities.DrawingSet.filter({ project_id: pid }),
+          apiClient.entities.Expense.filter({ project_id: pid })
         ]);
 
         const today = new Date().toISOString().split('T')[0];
@@ -159,7 +160,7 @@ export default function UnifiedAnalyticsDashboard({
   const { data: fetchedChangeOrders = [] } = useQuery({
     queryKey: ['change-orders', targetProjectIds],
     queryFn: async () => {
-      const cos = await base44.entities.ChangeOrder.filter({
+      const cos = await apiClient.entities.ChangeOrder.filter({
         project_id: { $in: targetProjectIds }
       });
       return cos;
@@ -174,7 +175,7 @@ export default function UnifiedAnalyticsDashboard({
     
     setPredictingRisks(true);
     try {
-      const { data } = await base44.functions.invoke('predictProjectRisks', {
+      const { data } = await apiClient.functions.invoke('predictProjectRisks', {
         project_id: targetProjectIds[0]
       });
       setRiskPrediction(data);
@@ -189,7 +190,7 @@ export default function UnifiedAnalyticsDashboard({
   const handleGenerateReport = async () => {
     setGeneratingReport(true);
     try {
-      const { data } = await base44.functions.invoke('generateExecutiveReport', {
+      const { data } = await apiClient.functions.invoke('generateExecutiveReport', {
         project_ids: targetProjectIds,
         report_type: 'executive_summary',
         date_range: 'current_month'

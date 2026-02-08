@@ -1,13 +1,14 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { MessageSquareWarning, AlertTriangle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function RFIWidget({ projectId }) {
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId })
   });
 
   const openRFIs = rfis.filter(r => !['answered', 'closed'].includes(r.status));

@@ -43,7 +43,7 @@ export default function NotificationPanel() {
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => base44.entities.Notification.filter({ 
+    queryFn: () => apiClient.entities.Notification.filter({ 
       user_email: user?.email 
     }, '-created_date'),
     enabled: !!user,
@@ -51,7 +51,7 @@ export default function NotificationPanel() {
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.update(id, { 
+    mutationFn: (id) => apiClient.entities.Notification.update(id, { 
       is_read: true,
       read_date: new Date().toISOString()
     }),
@@ -61,7 +61,7 @@ export default function NotificationPanel() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.delete(id),
+    mutationFn: (id) => apiClient.entities.Notification.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -71,7 +71,7 @@ export default function NotificationPanel() {
     mutationFn: async () => {
       const unread = notifications.filter(n => !n.is_read);
       await Promise.all(
-        unread.map(n => base44.entities.Notification.update(n.id, { 
+        unread.map(n => apiClient.entities.Notification.update(n.id, { 
           is_read: true,
           read_date: new Date().toISOString()
         }))

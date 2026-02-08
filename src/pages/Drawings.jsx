@@ -40,7 +40,7 @@ export default function Drawings() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 5 * 60 * 1000
   });
 
@@ -54,7 +54,7 @@ export default function Drawings() {
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, '-updated_date')
+      ? apiClient.entities.DrawingSet.filter({ project_id: activeProjectId }, '-updated_date')
       : [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
@@ -66,7 +66,7 @@ export default function Drawings() {
       if (!activeProjectId) return [];
       const setIds = drawingSets.map(s => s.id);
       if (setIds.length === 0) return [];
-      const allSheets = await base44.entities.DrawingSheet.list();
+      const allSheets = await apiClient.entities.DrawingSheet.list();
       return allSheets.filter(sheet => setIds.includes(sheet.drawing_set_id));
     },
     enabled: !!activeProjectId && drawingSets.length > 0,
@@ -79,7 +79,7 @@ export default function Drawings() {
       if (!activeProjectId) return [];
       const setIds = drawingSets.map(s => s.id);
       if (setIds.length === 0) return [];
-      const allRevisions = await base44.entities.DrawingRevision.list();
+      const allRevisions = await apiClient.entities.DrawingRevision.list();
       return allRevisions.filter(rev => setIds.includes(rev.drawing_set_id));
     },
     enabled: !!activeProjectId && drawingSets.length > 0,
@@ -89,7 +89,7 @@ export default function Drawings() {
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.RFI.filter({ project_id: activeProjectId })
+      ? apiClient.entities.RFI.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
@@ -97,14 +97,14 @@ export default function Drawings() {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => apiClient.entities.User.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const createDrawingSetMutation = useMutation({
     mutationFn: async (data) => {
-      const createdSet = await base44.entities.DrawingSet.create(data);
-      await base44.entities.DrawingRevision.create({
+      const createdSet = await apiClient.entities.DrawingSet.create(data);
+      await apiClient.entities.DrawingRevision.create({
         drawing_set_id: createdSet.id,
         revision_number: data.current_revision || 'Rev 0',
         revision_date: new Date().toISOString().split('T')[0],
@@ -122,7 +122,7 @@ export default function Drawings() {
   });
 
   const deleteDrawingSetMutation = useMutation({
-    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+    mutationFn: (id) => apiClient.entities.DrawingSet.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       toast.success('Drawing set deleted');

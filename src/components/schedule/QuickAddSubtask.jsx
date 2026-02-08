@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, X } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -16,7 +17,7 @@ export default function QuickAddSubtask({ parentTask, open, onOpenChange }) {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.bulkCreate(data),
+    mutationFn: (data) => apiClient.entities.Task.bulkCreate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success('Subtasks created successfully');

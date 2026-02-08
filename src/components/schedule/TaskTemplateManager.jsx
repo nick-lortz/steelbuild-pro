@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +20,12 @@ export default function TaskTemplateManager({ open, onOpenChange, onSelectTempla
 
   const { data: templates = [] } = useQuery({
     queryKey: ['taskTemplates'],
-    queryFn: () => base44.entities.TaskTemplate.list('name'),
+    queryFn: () => apiClient.entities.TaskTemplate.list('name'),
     enabled: open
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.TaskTemplate.create(data),
+    mutationFn: (data) => apiClient.entities.TaskTemplate.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taskTemplates'] });
       setShowForm(false);
@@ -34,7 +35,7 @@ export default function TaskTemplateManager({ open, onOpenChange, onSelectTempla
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.TaskTemplate.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.TaskTemplate.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taskTemplates'] });
       setShowForm(false);
@@ -44,7 +45,7 @@ export default function TaskTemplateManager({ open, onOpenChange, onSelectTempla
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.TaskTemplate.delete(id),
+    mutationFn: (id) => apiClient.entities.TaskTemplate.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['taskTemplates'] });
       toast.success('Template deleted');

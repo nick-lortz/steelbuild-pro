@@ -80,12 +80,12 @@ export default function Settings() {
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('-created_date'),
+    queryFn: () => apiClient.entities.User.list('-created_date'),
     enabled: currentUser?.role === 'admin'
   });
 
   const inviteMutation = useMutation({
-    mutationFn: ({ email, role }) => base44.users.inviteUser(email, role),
+    mutationFn: ({ email, role }) => apiClient.users.inviteUser(email, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowInviteDialog(false);
@@ -96,7 +96,7 @@ export default function Settings() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await base44.functions.invoke('updateUserProfile', data);
+      const response = await apiClient.functions.invoke('updateUserProfile', data);
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
@@ -114,7 +114,7 @@ export default function Settings() {
   });
 
   const submitFeedbackMutation = useMutation({
-    mutationFn: (data) => base44.entities.Feedback.create({
+    mutationFn: (data) => apiClient.entities.Feedback.create({
       ...data,
       user_email: currentUser?.email,
       user_name: currentUser?.full_name || currentUser?.email
@@ -128,7 +128,7 @@ export default function Settings() {
 
   const { data: myFeedback = [] } = useQuery({
     queryKey: ['feedback'],
-    queryFn: () => base44.entities.Feedback.filter({ user_email: currentUser?.email }, '-created_date'),
+    queryFn: () => apiClient.entities.Feedback.filter({ user_email: currentUser?.email }, '-created_date'),
     enabled: !!currentUser?.email
   });
 

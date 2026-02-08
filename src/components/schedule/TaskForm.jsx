@@ -39,7 +39,7 @@ export default function TaskForm({
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryFn: () => apiClient.entities.WorkPackage.list(),
   });
 
   const { data: currentUser } = useQuery({
@@ -49,12 +49,12 @@ export default function TaskForm({
 
   const { data: subtasks = [] } = useQuery({
     queryKey: ['subtasks', task?.id],
-    queryFn: () => task?.id ? base44.entities.Task.filter({ parent_task_id: task.id }) : [],
+    queryFn: () => task?.id ? apiClient.entities.Task.filter({ parent_task_id: task.id }) : [],
     enabled: !!task?.id
   });
 
   const createSubtaskMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: (data) => apiClient.entities.Task.create(data),
     onMutate: async (newSubtask) => {
       await queryClient.cancelQueries({ queryKey: ['subtasks', task?.id] });
       const previousSubtasks = queryClient.getQueryData(['subtasks', task?.id]);
@@ -77,7 +77,7 @@ export default function TaskForm({
   });
 
   const updateSubtaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Task.update(id, data),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ['subtasks', task?.id] });
       const previousSubtasks = queryClient.getQueryData(['subtasks', task?.id]);
@@ -99,7 +99,7 @@ export default function TaskForm({
   });
 
   const deleteSubtaskMutation = useMutation({
-    mutationFn: (id) => base44.entities.Task.delete(id),
+    mutationFn: (id) => apiClient.entities.Task.delete(id),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['subtasks', task?.id] });
       const previousSubtasks = queryClient.getQueryData(['subtasks', task?.id]);
@@ -268,7 +268,7 @@ export default function TaskForm({
 
   const handleSaveAsTemplate = async () => {
     try {
-      await base44.entities.TaskTemplate.create({
+      await apiClient.entities.TaskTemplate.create({
         name: formData.name,
         category: 'custom',
         phase: formData.phase,

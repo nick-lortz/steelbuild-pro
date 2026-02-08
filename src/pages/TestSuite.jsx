@@ -22,7 +22,7 @@ export default function TestSuite() {
 
   const runTestsMutation = useMutation({
     mutationFn: async (suite) => {
-      const response = await base44.functions.invoke('testRunner', { test_suite: suite });
+      const response = await apiClient.functions.invoke('testRunner', { test_suite: suite });
       return response.data;
     },
     onSuccess: (data) => {

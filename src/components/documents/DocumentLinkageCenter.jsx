@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,19 +18,19 @@ export default function DocumentLinkageCenter({ projectId }) {
   // Fetch all documents linked to RFIs, Invoices, Submittals
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis-with-docs', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: invoiceLines = [] } = useQuery({
     queryKey: ['invoice-lines-with-docs', projectId],
-    queryFn: () => base44.entities.InvoiceLine.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.InvoiceLine.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: submittals = [] } = useQuery({
     queryKey: ['submittals-with-docs', projectId],
-    queryFn: () => base44.entities.Submittal.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Submittal.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 

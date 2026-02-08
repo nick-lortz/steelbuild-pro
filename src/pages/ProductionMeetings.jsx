@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -25,12 +26,12 @@ function ProductionNotesContent() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+    queryFn: () => apiClient.entities.Project.filter({ status: 'in_progress' })
   });
 
   const { data: allNotes = [] } = useQuery({
     queryKey: ['production-notes', weekInfo.week_id],
-    queryFn: () => base44.entities.ProductionNote.filter({ week_id: weekInfo.week_id })
+    queryFn: () => apiClient.entities.ProductionNote.filter({ week_id: weekInfo.week_id })
   });
 
   const notes = useMemo(() => {
@@ -51,7 +52,7 @@ function ProductionNotesContent() {
   }, [allNotes, advancedFilters]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ProductionNote.create(data),
+    mutationFn: (data) => apiClient.entities.ProductionNote.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production-notes'] });
       toast.success('Added');
@@ -59,7 +60,7 @@ function ProductionNotesContent() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ProductionNote.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.ProductionNote.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production-notes'] });
       toast.success('Updated');
@@ -67,7 +68,7 @@ function ProductionNotesContent() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ProductionNote.delete(id),
+    mutationFn: (id) => apiClient.entities.ProductionNote.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['production-notes'] });
       toast.success('Deleted');

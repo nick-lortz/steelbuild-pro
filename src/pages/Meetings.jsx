@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,18 +48,18 @@ export default function Meetings() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ['meetings'],
-    queryFn: () => base44.entities.Meeting.list('-meeting_date'),
+    queryFn: () => apiClient.entities.Meeting.list('-meeting_date'),
     staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Meeting.create(data),
+    mutationFn: (data) => apiClient.entities.Meeting.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setShowForm(false);
@@ -67,7 +68,7 @@ export default function Meetings() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Meeting.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Meeting.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setSelectedMeeting(null);
@@ -75,7 +76,7 @@ export default function Meetings() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Meeting.delete(id),
+    mutationFn: (id) => apiClient.entities.Meeting.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setDeleteMeeting(null);
@@ -96,7 +97,7 @@ export default function Meetings() {
         onSuccess: async (newMeeting) => {
           if (data.is_recurring && data.recurrence_pattern) {
             try {
-              await base44.functions.invoke('generateRecurringMeetings', {
+              await apiClient.functions.invoke('generateRecurringMeetings', {
                 meetingId: newMeeting.id,
               });
               toast.success('Recurring meetings generated successfully');

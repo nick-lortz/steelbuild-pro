@@ -24,7 +24,7 @@ export default function DocumentManager({ changeOrder, onUpdate }) {
 
     setUploading(true);
     try {
-      const { data } = await base44.integrations.Core.UploadFile({ file });
+      const { data } = await apiClient.integrations.Core.UploadFile({ file });
       
       const newAttachment = {
         file_url: data.file_url,
@@ -38,7 +38,7 @@ export default function DocumentManager({ changeOrder, onUpdate }) {
 
       const updatedAttachments = [...attachments, newAttachment];
       
-      await base44.entities.ChangeOrder.update(changeOrder.id, {
+      await apiClient.entities.ChangeOrder.update(changeOrder.id, {
         attachments: updatedAttachments
       });
 
@@ -55,7 +55,7 @@ export default function DocumentManager({ changeOrder, onUpdate }) {
   const handleDelete = async (index) => {
     const updatedAttachments = attachments.filter((_, i) => i !== index);
     
-    await base44.entities.ChangeOrder.update(changeOrder.id, {
+    await apiClient.entities.ChangeOrder.update(changeOrder.id, {
       attachments: updatedAttachments
     });
 
@@ -68,7 +68,7 @@ export default function DocumentManager({ changeOrder, onUpdate }) {
     const updatedAttachments = [...attachments];
     updatedAttachments[index].is_signed = !updatedAttachments[index].is_signed;
     
-    await base44.entities.ChangeOrder.update(changeOrder.id, {
+    await apiClient.entities.ChangeOrder.update(changeOrder.id, {
       attachments: updatedAttachments
     });
 

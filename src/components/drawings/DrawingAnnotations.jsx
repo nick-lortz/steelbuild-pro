@@ -22,12 +22,12 @@ export default function DrawingAnnotations({ drawingSetId, imageUrl }) {
 
   const { data: annotations = [] } = useQuery({
     queryKey: ['annotations', drawingSetId],
-    queryFn: () => base44.entities.DrawingAnnotation.filter({ drawing_set_id: drawingSetId }),
+    queryFn: () => apiClient.entities.DrawingAnnotation.filter({ drawing_set_id: drawingSetId }),
     enabled: !!drawingSetId
   });
 
   const createAnnotationMutation = useMutation({
-    mutationFn: (data) => base44.entities.DrawingAnnotation.create(data),
+    mutationFn: (data) => apiClient.entities.DrawingAnnotation.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['annotations']);
       setNewAnnotation(null);
@@ -38,7 +38,7 @@ export default function DrawingAnnotations({ drawingSetId, imageUrl }) {
   });
 
   const resolveAnnotationMutation = useMutation({
-    mutationFn: ({ id }) => base44.entities.DrawingAnnotation.update(id, {
+    mutationFn: ({ id }) => apiClient.entities.DrawingAnnotation.update(id, {
       is_resolved: true,
       resolved_by: currentUser?.email,
       resolved_date: new Date().toISOString()

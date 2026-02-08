@@ -45,7 +45,7 @@ export default function Schedule() {
   // Fetch projects for multi-project scheduling
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000
   });
@@ -86,7 +86,7 @@ export default function Schedule() {
       if (activeProjectIds.length === 0) return [];
       const results = await Promise.all(
         activeProjectIds.map(projectId => 
-          base44.entities.Task.filter({ project_id: projectId }, 'end_date')
+          apiClient.entities.Task.filter({ project_id: projectId }, 'end_date')
         )
       );
       return results.flat();
@@ -109,7 +109,7 @@ export default function Schedule() {
   // Fetch resources
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => apiClient.entities.Resource.list(),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000
   });
@@ -120,7 +120,7 @@ export default function Schedule() {
       if (activeProjectIds.length === 0) return [];
       const results = await Promise.all(
         activeProjectIds.map(projectId => 
-          base44.entities.RFI.filter({ project_id: projectId })
+          apiClient.entities.RFI.filter({ project_id: projectId })
         )
       );
       return results.flat();
@@ -135,7 +135,7 @@ export default function Schedule() {
       if (activeProjectIds.length === 0) return [];
       const results = await Promise.all(
         activeProjectIds.map(projectId => 
-          base44.entities.ChangeOrder.filter({ project_id: projectId })
+          apiClient.entities.ChangeOrder.filter({ project_id: projectId })
         )
       );
       return results.flat();
@@ -150,7 +150,7 @@ export default function Schedule() {
       if (activeProjectIds.length === 0) return [];
       const results = await Promise.all(
         activeProjectIds.map(projectId => 
-          base44.entities.DrawingSet.filter({ project_id: projectId })
+          apiClient.entities.DrawingSet.filter({ project_id: projectId })
         )
       );
       return results.flat();
@@ -201,7 +201,7 @@ export default function Schedule() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      return await base44.entities.Task.create(data);
+      return await apiClient.entities.Task.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
@@ -216,7 +216,7 @@ export default function Schedule() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      return await base44.entities.Task.update(id, data);
+      return await apiClient.entities.Task.update(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
@@ -231,7 +231,7 @@ export default function Schedule() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      return await base44.entities.Task.delete(id);
+      return await apiClient.entities.Task.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });

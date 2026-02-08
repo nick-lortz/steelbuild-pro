@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
@@ -73,19 +74,19 @@ export default function DrawingSetForm({ projects, projectId, drawingSet, onSubm
 
 Keep the summary concise (2-3 sentences).`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await apiClient.integrations.Core.InvokeLLM({
         prompt,
         file_urls: [fileUrl],
       });
 
       // Update the sheet with AI findings
-      const sheets = await base44.entities.DrawingSheet.filter({ 
+      const sheets = await apiClient.entities.DrawingSheet.filter({ 
         drawing_set_id: setId,
         file_name: fileName 
       });
 
       if (sheets.length > 0) {
-        await base44.entities.DrawingSheet.update(sheets[0].id, {
+        await apiClient.entities.DrawingSheet.update(sheets[0].id, {
           ai_reviewed: true,
           ai_findings: response,
         });

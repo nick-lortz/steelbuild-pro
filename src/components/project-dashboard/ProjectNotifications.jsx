@@ -24,31 +24,31 @@ import { createPageUrl } from '@/utils';
 export default function ProjectNotifications({ projectId }) {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', projectId],
-    queryFn: () => base44.entities.Delivery.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Delivery.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: fabrication = [] } = useQuery({
     queryKey: ['fabrication', projectId],
-    queryFn: () => base44.entities.Fabrication.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Fabrication.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', projectId],
-    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.ChangeOrder.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 

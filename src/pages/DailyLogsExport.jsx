@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ export default function DailyLogsExport() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000
   });
 
@@ -30,7 +31,7 @@ export default function DailyLogsExport() {
 
     setExporting(true);
     try {
-      const response = await base44.functions.invoke('exportDailyLogsPDF', {
+      const response = await apiClient.functions.invoke('exportDailyLogsPDF', {
         project_id: activeProjectId,
         start_date: startDate || null,
         end_date: endDate || null

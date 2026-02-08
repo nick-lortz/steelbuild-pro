@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Sparkles, Send, Loader2, AlertTriangle, FileText, MessageSquareWarning, FileCheck, Calendar } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -253,7 +254,7 @@ ${JSON.stringify(context, null, 2)}
 
 The user's question is about the ${selectedProject ? 'selected project' : 'all projects in the portfolio'}.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await apiClient.integrations.Core.InvokeLLM({
         prompt: `${systemPrompt}\n\nUser Question: ${userQuestion}`
       });
 

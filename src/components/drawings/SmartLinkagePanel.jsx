@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link2, FileText, MessageSquareWarning, Users, File, Loader2, Check, X, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export default function SmartLinkagePanel({ drawingSet, onLinksUpdated }) {
@@ -14,7 +15,7 @@ export default function SmartLinkagePanel({ drawingSet, onLinksUpdated }) {
   const handleAnalyze = async () => {
     setAnalyzing(true);
     try {
-      const response = await base44.functions.invoke('suggestDocumentLinks', {
+      const response = await apiClient.functions.invoke('suggestDocumentLinks', {
         drawing_set_id: drawingSet.id
       });
 
@@ -45,7 +46,7 @@ export default function SmartLinkagePanel({ drawingSet, onLinksUpdated }) {
         updates.linked_drawing_set_ids = [...existing, itemId];
       }
 
-      await base44.entities.DrawingSet.update(drawingSet.id, updates);
+      await apiClient.entities.DrawingSet.update(drawingSet.id, updates);
       
       // Remove from suggestions
       setSuggestions(prev => ({

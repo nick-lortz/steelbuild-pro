@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,13 @@ const STATUS_COLORS = {
 export default function RevisionHistory({ drawingSetId, open, onOpenChange }) {
   const { data: revisions = [], isLoading } = useQuery({
     queryKey: ['drawing-revisions', drawingSetId],
-    queryFn: () => base44.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }, '-revision_date'),
+    queryFn: () => apiClient.entities.DrawingRevision.filter({ drawing_set_id: drawingSetId }, '-revision_date'),
     enabled: !!drawingSetId && open
   });
 
   const { data: sheets = [] } = useQuery({
     queryKey: ['drawing-sheets', drawingSetId],
-    queryFn: () => base44.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
+    queryFn: () => apiClient.entities.DrawingSheet.filter({ drawing_set_id: drawingSetId }),
     enabled: !!drawingSetId && open
   });
 

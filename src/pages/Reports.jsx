@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,60 +44,60 @@ export default function Reports() {
 
   const { data: reports = [] } = useQuery({
     queryKey: ['reports'],
-    queryFn: () => base44.entities.Report.list('-created_date'),
+    queryFn: () => apiClient.entities.Report.list('-created_date'),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list(),
+    queryFn: () => apiClient.entities.Financial.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list(),
+    queryFn: () => apiClient.entities.Expense.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
+    queryFn: () => apiClient.entities.RFI.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
+    queryFn: () => apiClient.entities.ChangeOrder.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawingSets'],
-    queryFn: () => base44.entities.DrawingSet.list(),
+    queryFn: () => apiClient.entities.DrawingSet.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => apiClient.entities.Task.list(),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => apiClient.entities.Resource.list(),
     staleTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Report.create(data),
+    mutationFn: (data) => apiClient.entities.Report.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       setShowForm(false);
@@ -105,7 +106,7 @@ export default function Reports() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Report.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Report.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       setShowForm(false);
@@ -159,7 +160,7 @@ export default function Reports() {
     try {
       if (exportFormat === 'pdf' || exportFormat === 'excel') {
         // Use backend function for PDF/Excel generation
-        const response = await base44.functions.invoke('generateReport', {
+        const response = await apiClient.functions.invoke('generateReport', {
           reportType: report.report_type,
           projectIds: report.filters?.project_ids || [],
           dateRange: report.filters?.date_range || '30',

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,7 @@ export default function InspectionForm({ projectId, equipmentId, equipmentType, 
 
       const allPassed = formData.items.every(item => formData.checkedItems[item]);
 
-      const inspection = await base44.entities.InspectionChecklist.create({
+      const inspection = await apiClient.entities.InspectionChecklist.create({
         project_id: projectId,
         equipment_id: equipmentId,
         equipment_type: equipmentType,

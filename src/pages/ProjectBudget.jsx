@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,41 +30,41 @@ export default function ProjectBudget() {
 
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
-    queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
+    queryFn: () => apiClient.entities.Project.filter({ id: projectId }).then(res => res[0]),
     enabled: !!projectId
   });
 
   const { data: budgets = [], isLoading: budgetsLoading } = useQuery({
     queryKey: ['budgets', projectId],
-    queryFn: () => base44.entities.Budget.filter({ project_id: projectId }, '-created_date'),
+    queryFn: () => apiClient.entities.Budget.filter({ project_id: projectId }, '-created_date'),
     enabled: !!projectId
   });
 
   const { data: lineItems = [], isLoading: lineItemsLoading } = useQuery({
     queryKey: ['budget-line-items', selectedBudget?.id],
-    queryFn: () => base44.entities.BudgetLineItem.filter({ budget_id: selectedBudget.id }),
+    queryFn: () => apiClient.entities.BudgetLineItem.filter({ budget_id: selectedBudget.id }),
     enabled: !!selectedBudget?.id
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.filter({ is_active: true }, 'code')
+    queryFn: () => apiClient.entities.CostCode.filter({ is_active: true }, 'code')
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', projectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list()
+    queryFn: () => apiClient.entities.Resource.list()
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', projectId],
-    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Expense.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
@@ -78,7 +79,7 @@ export default function ProjectBudget() {
   }, [activeBudget, selectedBudget]);
 
   const createBudgetMutation = useMutation({
-    mutationFn: (data) => base44.entities.Budget.create(data),
+    mutationFn: (data) => apiClient.entities.Budget.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['budgets']);
       toast.success('Budget created successfully');
@@ -88,7 +89,7 @@ export default function ProjectBudget() {
   });
 
   const createLineItemMutation = useMutation({
-    mutationFn: (data) => base44.entities.BudgetLineItem.create(data),
+    mutationFn: (data) => apiClient.entities.BudgetLineItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['budget-line-items']);
       toast.success('Budget line item added');
@@ -99,7 +100,7 @@ export default function ProjectBudget() {
   });
 
   const updateLineItemMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.BudgetLineItem.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.BudgetLineItem.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['budget-line-items']);
       toast.success('Line item updated');
@@ -110,7 +111,7 @@ export default function ProjectBudget() {
   });
 
   const deleteLineItemMutation = useMutation({
-    mutationFn: (id) => base44.entities.BudgetLineItem.delete(id),
+    mutationFn: (id) => apiClient.entities.BudgetLineItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['budget-line-items']);
       toast.success('Line item deleted');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,31 +42,31 @@ export default function ResourceAllocation() {
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list('name'),
+    queryFn: () => apiClient.entities.Resource.list('name'),
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
   });
 
   const { data: allocations = [] } = useQuery({
     queryKey: ['resourceAllocations'],
-    queryFn: () => base44.entities.ResourceAllocation.list('-start_date'),
+    queryFn: () => apiClient.entities.ResourceAllocation.list('-start_date'),
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryFn: () => apiClient.entities.WorkPackage.list(),
   });
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['all-tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => apiClient.entities.Task.list(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ResourceAllocation.create(data),
+    mutationFn: (data) => apiClient.entities.ResourceAllocation.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
       setShowForm(false);
@@ -74,7 +75,7 @@ export default function ResourceAllocation() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ResourceAllocation.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.ResourceAllocation.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
       setShowForm(false);
@@ -83,7 +84,7 @@ export default function ResourceAllocation() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ResourceAllocation.delete(id),
+    mutationFn: (id) => apiClient.entities.ResourceAllocation.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
       setDeleteAllocation(null);

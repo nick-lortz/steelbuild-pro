@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Loader2 } from 'lucide-react';
 
 export default function QuickAddDrawingSet({ projects, open, onOpenChange, onSuccess }) {
@@ -20,7 +21,7 @@ export default function QuickAddDrawingSet({ projects, open, onOpenChange, onSuc
     setCreating(true);
     
     try {
-      await base44.entities.DrawingSet.create({
+      await apiClient.entities.DrawingSet.create({
         ...formData,
         current_revision: 'Rev 0',
         status: 'IFA',

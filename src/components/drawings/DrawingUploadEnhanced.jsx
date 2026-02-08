@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Upload, Loader2, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
 
@@ -36,10 +37,10 @@ export default function DrawingUploadEnhanced({
           idx === i ? { ...item, status: 'uploading' } : item
         ));
 
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
 
         // Create drawing sheet
-        const sheet = await base44.entities.DrawingSheet.create({
+        const sheet = await apiClient.entities.DrawingSheet.create({
           drawing_set_id: drawingSetId,
           sheet_number: `SHEET-${i + 1}`,
           sheet_name: file.name.replace(/\.[^/.]+$/, ''),
@@ -54,14 +55,14 @@ export default function DrawingUploadEnhanced({
           idx === i ? { ...item, status: 'extracting' } : item
         ));
 
-        const { metadata } = await base44.functions.invoke('extractDrawingMetadata', {
+        const { metadata } = await apiClient.functions.invoke('extractDrawingMetadata', {
           file_url,
           drawing_set_id: drawingSetId
         });
 
         // Update sheet with extracted metadata
         if (metadata.drawing_number) {
-          await base44.entities.DrawingSheet.update(sheet.id, {
+          await apiClient.entities.DrawingSheet.update(sheet.id, {
             sheet_number: metadata.drawing_number,
             sheet_name: metadata.title || sheet.sheet_name,
             ai_metadata: JSON.stringify({

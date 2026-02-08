@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,26 +26,26 @@ function LaborContent() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+    queryFn: () => apiClient.entities.Project.filter({ status: 'in_progress' })
   });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
-    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+    queryFn: () => apiClient.entities.Project.filter({ id: activeProjectId }),
     enabled: !!activeProjectId,
     select: (data) => data?.[0]
   });
 
   const { data: crews = [] } = useQuery({
     queryKey: ['crews', activeProjectId],
-    queryFn: () => base44.entities.Crew.filter({ project_id: activeProjectId, status: 'active' }),
+    queryFn: () => apiClient.entities.Crew.filter({ project_id: activeProjectId, status: 'active' }),
     enabled: !!activeProjectId
   });
 
   const { data: laborEntries = [] } = useQuery({
     queryKey: ['laborEntries', activeProjectId, filterDateRange],
     queryFn: async () => {
-      const allEntries = await base44.entities.LaborEntry.filter({ project_id: activeProjectId });
+      const allEntries = await apiClient.entities.LaborEntry.filter({ project_id: activeProjectId });
       
       const daysBack = filterDateRange === '7d' ? 7 : filterDateRange === '30d' ? 30 : 14;
       const cutoff = new Date();

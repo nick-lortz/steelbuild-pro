@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,7 +29,7 @@ export default function ProjectDetailedDashboard({ projectId }) {
 
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
-    queryFn: () => base44.entities.Project.filter({ id: projectId }),
+    queryFn: () => apiClient.entities.Project.filter({ id: projectId }),
     select: (data) => data?.[0],
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000
@@ -36,41 +37,41 @@ export default function ProjectDetailedDashboard({ projectId }) {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: risks = [] } = useQuery({
     queryKey: ['risks', projectId],
-    queryFn: () => base44.entities.ProjectRisk.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.ProjectRisk.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => apiClient.entities.Resource.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials', projectId],
-    queryFn: () => base44.entities.Financial.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Financial.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', projectId],
-    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.ChangeOrder.filter({ project_id: projectId }),
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000
   });

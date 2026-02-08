@@ -51,7 +51,7 @@ export default function ChangeOrders() {
 
   // Real-time subscription
   useEffect(() => {
-    const unsubscribe = base44.entities.ChangeOrder.subscribe((event) => {
+    const unsubscribe = apiClient.entities.ChangeOrder.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
     });
 
@@ -60,7 +60,7 @@ export default function ChangeOrders() {
 
   const { data: rawProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -72,13 +72,13 @@ export default function ChangeOrders() {
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list('co_number'),
+    queryFn: () => apiClient.entities.ChangeOrder.list('co_number'),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.ChangeOrder.create(data),
+    mutationFn: (data) => apiClient.entities.ChangeOrder.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
       setShowForm(false);
@@ -112,14 +112,14 @@ export default function ChangeOrders() {
       };
 
       // Send notification
-      await base44.functions.invoke('notifyStatusChange', {
+      await apiClient.functions.invoke('notifyStatusChange', {
         entity_type: 'ChangeOrder',
         entity_id: id,
         event_type: 'status_change',
         message: `CO-${current.co_number} updated to version ${newVersion}`
       });
 
-      return base44.entities.ChangeOrder.update(id, updateData);
+      return apiClient.entities.ChangeOrder.update(id, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
@@ -132,7 +132,7 @@ export default function ChangeOrders() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ChangeOrder.delete(id),
+    mutationFn: (id) => apiClient.entities.ChangeOrder.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
       setDeleteCO(null);

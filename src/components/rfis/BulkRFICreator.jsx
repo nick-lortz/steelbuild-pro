@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,12 +33,12 @@ export default function BulkRFICreator({ open, onOpenChange, projectId }) {
 
   const { data: existingRFIs = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list()
+    queryFn: () => apiClient.entities.RFI.list()
   });
 
   const bulkCreateMutation = useMutation({
     mutationFn: async (rfisData) => {
-      return Promise.all(rfisData.map((rfi) => base44.entities.RFI.create(rfi)));
+      return Promise.all(rfisData.map((rfi) => apiClient.entities.RFI.create(rfi)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });

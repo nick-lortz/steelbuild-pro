@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, AlertCircle, CheckCircle2, Clock, RefreshCw, AlertTriangle, FileText } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { useQuery } from '@tanstack/react-query';
 
@@ -13,7 +14,7 @@ export default function AIAnalysisPanel({ drawingSet, onAnalysisComplete }) {
   const { data: sheets } = useQuery({
     queryKey: ['drawing-sheets', drawingSet.id],
     queryFn: async () => {
-      return await base44.entities.DrawingSheet.filter({ 
+      return await apiClient.entities.DrawingSheet.filter({ 
         drawing_set_id: drawingSet.id 
       });
     },
@@ -81,7 +82,7 @@ export default function AIAnalysisPanel({ drawingSet, onAnalysisComplete }) {
   const handleAnalyze = async () => {
     setAnalyzing(true);
     try {
-      const response = await base44.functions.invoke('analyzeDrawingSet', {
+      const response = await apiClient.functions.invoke('analyzeDrawingSet', {
         drawing_set_id: drawingSet.id
       });
 

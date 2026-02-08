@@ -64,7 +64,7 @@ export default function Profile() {
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
       // Delete user account via backend function
-      return await base44.functions.invoke('deleteUserAccount', {});
+      return await apiClient.functions.invoke('deleteUserAccount', {});
     },
     onSuccess: () => {
       toast.success('Account deleted successfully');

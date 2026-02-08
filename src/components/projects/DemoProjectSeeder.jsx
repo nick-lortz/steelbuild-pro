@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Sparkles, Loader2 } from 'lucide-react';
@@ -71,7 +72,7 @@ export default function DemoProjectSeeder() {
     mutationFn: async () => {
       const results = [];
       for (const project of demoProjects) {
-        const result = await base44.entities.Project.create(project);
+        const result = await apiClient.entities.Project.create(project);
         results.push(result);
       }
       return results;

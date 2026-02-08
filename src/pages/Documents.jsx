@@ -113,48 +113,48 @@ export default function Documents() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.list('-created_date'),
+    queryFn: () => apiClient.entities.Document.list('-created_date'),
     staleTime: 2 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryFn: () => apiClient.entities.WorkPackage.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses'],
-    queryFn: () => base44.entities.Expense.list('-expense_date', 500),
+    queryFn: () => apiClient.entities.Expense.list('-expense_date', 500),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items'],
-    queryFn: () => base44.entities.SOVItem.list(),
+    queryFn: () => apiClient.entities.SOVItem.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['daily-logs'],
-    queryFn: () => base44.entities.DailyLog.list(),
+    queryFn: () => apiClient.entities.DailyLog.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => apiClient.entities.Task.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Document.create(data),
+    mutationFn: (data) => apiClient.entities.Document.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setShowForm(false);
@@ -163,7 +163,7 @@ export default function Documents() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Document.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Document.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setSelectedDoc(null);
@@ -172,7 +172,7 @@ export default function Documents() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Document.delete(id),
+    mutationFn: (id) => apiClient.entities.Document.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setDeleteDoc(null);
@@ -185,7 +185,7 @@ export default function Documents() {
 
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
       
       if (isNewVersion && selectedDoc) {
         // Create new version
@@ -209,7 +209,7 @@ export default function Documents() {
         // Auto-process new version with AI
         if (newDoc?.id) {
           toast.info('Processing with AI...');
-          base44.functions.invoke('autoProcessDocument', {
+          apiClient.functions.invoke('autoProcessDocument', {
             document_id: newDoc.id,
             file_url,
             category: formData.category,
@@ -242,7 +242,7 @@ export default function Documents() {
       // Auto-process with AI if file uploaded
       if (newDoc?.id && formData.file_url) {
         toast.info('Processing with AI...');
-        base44.functions.invoke('autoProcessDocument', {
+        apiClient.functions.invoke('autoProcessDocument', {
           document_id: newDoc.id,
           file_url: formData.file_url,
           category: formData.category,
@@ -306,7 +306,7 @@ export default function Documents() {
   const handleProcessOCR = async (docId) => {
     setProcessingOCR(docId);
     try {
-      await base44.functions.invoke('processDocumentOCR', { documentId: docId });
+      await apiClient.functions.invoke('processDocumentOCR', { documentId: docId });
       toast.success('Document processed with OCR');
       queryClient.invalidateQueries({ queryKey: ['documents'] });
     } catch (error) {
@@ -320,7 +320,7 @@ export default function Documents() {
   const handleAnalyzeDocument = async (doc) => {
     setAnalyzingDoc(doc.id);
     try {
-      const { data } = await base44.functions.invoke('autoProcessDocument', {
+      const { data } = await apiClient.functions.invoke('autoProcessDocument', {
         document_id: doc.id,
         file_url: doc.file_url,
         category: doc.category,
@@ -369,7 +369,7 @@ export default function Documents() {
     
     setBulkActing(true);
     try {
-      const { data } = await base44.functions.invoke('bulkUpdateDocuments', {
+      const { data } = await apiClient.functions.invoke('bulkUpdateDocuments', {
         document_ids: selectedDocs,
         action,
         updates: action === 'reject' ? { rejection_reason: rejectionReason } : undefined

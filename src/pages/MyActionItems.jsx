@@ -26,7 +26,7 @@ export default function MyActionItems() {
 
   const { data: allActions = [] } = useQuery({
     queryKey: ['my-actions', user?.email],
-    queryFn: () => base44.entities.ProductionNote.filter({ 
+    queryFn: () => apiClient.entities.ProductionNote.filter({ 
       note_type: 'action',
       owner_email: user?.email 
     }),
@@ -35,11 +35,11 @@ export default function MyActionItems() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => apiClient.entities.Project.list()
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ProductionNote.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.ProductionNote.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-actions'] });
       toast.success('Action updated');

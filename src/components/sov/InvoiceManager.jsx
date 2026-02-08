@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,24 +34,24 @@ export default function InvoiceManager({ projectId, canEdit }) {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', projectId],
-    queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }, '-period_end'),
+    queryFn: () => apiClient.entities.Invoice.filter({ project_id: projectId }, '-period_end'),
     enabled: !!projectId
   });
 
   const { data: invoiceLines = [] } = useQuery({
     queryKey: ['invoice-lines', selectedInvoiceId],
-    queryFn: () => base44.entities.InvoiceLine.filter({ invoice_id: selectedInvoiceId }),
+    queryFn: () => apiClient.entities.InvoiceLine.filter({ invoice_id: selectedInvoiceId }),
     enabled: !!selectedInvoiceId
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', projectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const generateMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('generateInvoice', data),
+    mutationFn: (data) => apiClient.functions.invoke('generateInvoice', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoice-lines'] });
@@ -63,7 +64,7 @@ export default function InvoiceManager({ projectId, canEdit }) {
   });
 
   const approveMutation = useMutation({
-    mutationFn: (invoice_id) => base44.functions.invoke('approveInvoice', { invoice_id }),
+    mutationFn: (invoice_id) => apiClient.functions.invoke('approveInvoice', { invoice_id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['sov-items'] });
@@ -72,14 +73,14 @@ export default function InvoiceManager({ projectId, canEdit }) {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.Invoice.update(id, { status }),
+    mutationFn: ({ id, status }) => apiClient.entities.Invoice.update(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('deleteInvoice', { invoice_id: id }),
+    mutationFn: (id) => apiClient.functions.invoke('deleteInvoice', { invoice_id: id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoice-lines'] });

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,12 +49,12 @@ export default function CostCodes() {
 
   const { data: costCodes = [], isLoading } = useQuery({
     queryKey: ['costCodes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+    queryFn: () => apiClient.entities.CostCode.list('code'),
     staleTime: 10 * 60 * 1000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.CostCode.create(data),
+    mutationFn: (data) => apiClient.entities.CostCode.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['costCodes'] });
       setShowForm(false);
@@ -62,7 +63,7 @@ export default function CostCodes() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.CostCode.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.CostCode.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['costCodes'] });
       setShowForm(false);
@@ -72,7 +73,7 @@ export default function CostCodes() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.CostCode.delete(id),
+    mutationFn: (id) => apiClient.entities.CostCode.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['costCodes'] });
       setDeleteCode(null);

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,7 +41,7 @@ export default function ProjectPhotos() {
     queryKey: ['projectPhotos', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return [];
-      return await base44.entities.Document.filter({
+      return await apiClient.entities.Document.filter({
         project_id: activeProjectId,
         category: 'photo'
       }, '-created_date');
@@ -49,7 +50,7 @@ export default function ProjectPhotos() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (docId) => base44.entities.Document.delete(docId),
+    mutationFn: (docId) => apiClient.entities.Document.delete(docId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectPhotos'] });
       toast.success('Photo deleted');
@@ -58,7 +59,7 @@ export default function ProjectPhotos() {
 
   const saveAnnotationsMutation = useMutation({
     mutationFn: ({ id, annotations }) => 
-      base44.entities.Document.update(id, { 
+      apiClient.entities.Document.update(id, { 
         notes: JSON.stringify(annotations)
       }),
     onSuccess: () => {
@@ -76,9 +77,9 @@ export default function ProjectPhotos() {
     
     try {
       for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
         
-        await base44.entities.Document.create({
+        await apiClient.entities.Document.create({
           project_id: activeProjectId,
           title: file.name.replace(/\.[^/.]+$/, ''),
           file_url,

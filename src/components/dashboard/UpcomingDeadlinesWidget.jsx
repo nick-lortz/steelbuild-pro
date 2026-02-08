@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, AlertTriangle } from 'lucide-react';
@@ -10,19 +11,19 @@ import { cn } from '@/lib/utils';
 export default function UpcomingDeadlinesWidget({ projectId }) {
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawing-sets-deadline', projectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-deadline', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis-deadline', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 

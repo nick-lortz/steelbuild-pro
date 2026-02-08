@@ -19,7 +19,7 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', formData.project_id],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: formData.project_id }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: formData.project_id }),
     enabled: !!formData.project_id,
     select: (items) => items.sort((a, b) => (a.sov_code || '').localeCompare(b.sov_code || ''))
   });

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,11 +20,11 @@ export default function PhotoCapture({ onPhotoCapture, entityType, entityId, pro
 
   const uploadMutation = useMutation({
     mutationFn: async (file) => {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
       
       // Auto-create Document record if projectId provided
       if (projectId) {
-        await base44.entities.Document.create({
+        await apiClient.entities.Document.create({
           project_id: projectId,
           title: file.name || `Photo - ${new Date().toLocaleDateString()}`,
           description: currentAnnotation,

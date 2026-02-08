@@ -1,17 +1,18 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function BudgetWidget({ projectId }) {
   const { data: financials = [] } = useQuery({
     queryKey: ['financials', projectId],
-    queryFn: () => base44.entities.Financial.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Financial.filter({ project_id: projectId })
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', projectId],
-    queryFn: () => base44.entities.Expense.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Expense.filter({ project_id: projectId })
   });
 
   const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);

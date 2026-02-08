@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Loader2, ArrowRight, Clock, Link2, FileText } from 'lucide-react';
@@ -25,7 +26,7 @@ export default function AITaskHelper({
         duration_days: t.duration_days
       }));
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await apiClient.integrations.Core.InvokeLLM({
         prompt: `You are a construction project management expert specializing in structural steel and metal fabrication.
 
 Project Type: ${projectType || 'Steel fabrication project'}

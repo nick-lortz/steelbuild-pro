@@ -15,19 +15,19 @@ import { createPageUrl } from '@/utils';
 export default function DashboardNotificationCenter({ projectId }) {
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawing-sets-notif', projectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }, '-updated_date'),
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: projectId }, '-updated_date'),
     enabled: !!projectId
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis-notif', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }, '-updated_date'),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId }, '-updated_date'),
     enabled: !!projectId
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-notif', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId }, '-updated_date'),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: projectId }, '-updated_date'),
     enabled: !!projectId
   });
 

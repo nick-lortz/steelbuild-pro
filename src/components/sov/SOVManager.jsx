@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,7 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', projectId],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: projectId }),
     select: (items) => {
       const seg = (s) => String(s ?? '').split(/[^\dA-Za-z]+/).filter(Boolean);
       const cmp = (a, b) => {
@@ -67,7 +68,7 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', projectId],
-    queryFn: () => base44.entities.Invoice.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.Invoice.filter({ project_id: projectId }),
     enabled: !!projectId,
     retry: 1,
     staleTime: 5 * 60 * 1000
@@ -76,7 +77,7 @@ export default function SOVManager({ projectId, canEdit }) {
   const { data: invoiceLines = [] } = useQuery({
     queryKey: ['invoice-lines', projectId],
     queryFn: async () => {
-      const lines = await base44.entities.InvoiceLine.list();
+      const lines = await apiClient.entities.InvoiceLine.list();
       const approvedInvoiceIds = new Set(
         invoices.filter(inv => inv.status === 'approved' || inv.status === 'paid').map(inv => inv.id)
       );
@@ -88,7 +89,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
+    mutationFn: (data) => apiClient.entities.SOVItem.create({ ...data, project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
       toast.success('SOV line added');
@@ -100,7 +101,7 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const bulkCreateMutation = useMutation({
     mutationFn: async (items) => {
-      return base44.entities.SOVItem.bulkCreate(
+      return apiClient.entities.SOVItem.bulkCreate(
         items.map(item => ({ ...item, project_id: projectId }))
       );
     },
@@ -116,7 +117,7 @@ export default function SOVManager({ projectId, canEdit }) {
     mutationFn: async ({ id, data }) => {
       // Validate if updating percent_complete
       if (data.percent_complete !== undefined) {
-        const validation = await base44.functions.invoke('validateSOVBudget', {
+        const validation = await apiClient.functions.invoke('validateSOVBudget', {
           sov_item_id: id,
           percent_complete: data.percent_complete,
           project_id: projectId
@@ -131,7 +132,7 @@ export default function SOVManager({ projectId, canEdit }) {
         }
       }
 
-      return base44.entities.SOVItem.update(id, data);
+      return apiClient.entities.SOVItem.update(id, data);
     },
     onSuccess: (result, variables) => {
       queryClient.setQueryData(['sov-items', projectId], (old) => {
@@ -145,7 +146,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SOVItem.delete(id),
+    mutationFn: (id) => apiClient.entities.SOVItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
       toast.success('SOV line deleted');

@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 export function useEntitySubscription(entityName, queryKey, options = {}) {
   const queryClient = useQueryClient();
@@ -36,7 +37,7 @@ export function useEntitySubscription(entityName, queryKey, options = {}) {
 
       try {
         // Subscribe to entity changes
-        const unsubscribe = base44.entities[entityName].subscribe((event) => {
+        const unsubscribe = apiClient.entities[entityName].subscribe((event) => {
           if (!mounted) return;
 
           // Reset reconnect attempts on successful message

@@ -2,6 +2,7 @@ import React from 'react';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import PageHeader from '@/components/ui/PageHeader';
 import DocumentLinkageCenter from '@/components/documents/DocumentLinkageCenter';
 
@@ -10,7 +11,7 @@ export default function DocumentLinkage() {
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
-    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+    queryFn: () => apiClient.entities.Project.filter({ id: activeProjectId }),
     enabled: !!activeProjectId,
     select: (data) => data?.[0] || null
   });

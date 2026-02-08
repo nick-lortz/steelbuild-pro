@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,14 +17,14 @@ export default function AdvancedForecastingDashboard({ projectId }) {
 
   const { data: project } = useQuery({
     queryKey: ['project', projectId],
-    queryFn: () => base44.entities.Project.filter({ id: projectId }).then(p => p[0]),
+    queryFn: () => apiClient.entities.Project.filter({ id: projectId }).then(p => p[0]),
     enabled: !!projectId
   });
 
   const runForecast = async () => {
     setForecasting(true);
     try {
-      const response = await base44.functions.invoke('advancedFinancialForecasting', {
+      const response = await apiClient.functions.invoke('advancedFinancialForecasting', {
         project_id: projectId,
         include_market_trends: true
       });

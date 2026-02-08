@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ import { cn } from '@/lib/utils';
 export default function ProjectHealthWidget({ projectId }) {
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawing-sets', projectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
@@ -19,9 +20,9 @@ export default function ProjectHealthWidget({ projectId }) {
     queryKey: ['revisions', projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const sets = await base44.entities.DrawingSet.filter({ project_id: projectId });
+      const sets = await apiClient.entities.DrawingSet.filter({ project_id: projectId });
       const allRevisions = await Promise.all(
-        sets.map(set => base44.entities.DrawingRevision.filter({ drawing_set_id: set.id }))
+        sets.map(set => apiClient.entities.DrawingRevision.filter({ drawing_set_id: set.id }))
       );
       return allRevisions.flat();
     },
@@ -30,7 +31,7 @@ export default function ProjectHealthWidget({ projectId }) {
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 

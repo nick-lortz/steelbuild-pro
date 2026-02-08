@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,21 +40,21 @@ export default function LookAheadPlanning() {
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
-      : base44.entities.Task.list('start_date'),
+      ? apiClient.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
+      : apiClient.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
+      ? apiClient.entities.WorkPackage.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
@@ -62,7 +63,7 @@ export default function LookAheadPlanning() {
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
+      ? apiClient.entities.DrawingSet.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
@@ -71,7 +72,7 @@ export default function LookAheadPlanning() {
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
+      ? apiClient.entities.Delivery.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
@@ -80,14 +81,14 @@ export default function LookAheadPlanning() {
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.RFI.filter({ project_id: activeProjectId })
+      ? apiClient.entities.RFI.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000
   });
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Task.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setEditingTask(null);

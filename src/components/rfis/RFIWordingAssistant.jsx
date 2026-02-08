@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useMutation } from '@tanstack/react-query';
 import { Lightbulb, Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,7 +16,7 @@ export default function RFIWordingAssistant({ rfiType, locationArea, linkedDrawi
 
   const improveMutation = useMutation({
     mutationFn: async () => {
-      const res = await base44.functions.invoke('improveRFIWording', {
+      const res = await apiClient.functions.invoke('improveRFIWording', {
         original_question: originalQuestion,
         rfi_type: rfiType,
         location_area: locationArea,

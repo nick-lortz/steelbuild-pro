@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ export default function LoadTesting() {
     
     try {
       const startTime = Date.now();
-      const { data } = await base44.functions.invoke('seedLoadTestData', config);
+      const { data } = await apiClient.functions.invoke('seedLoadTestData', config);
       const duration = Date.now() - startTime;
 
       setTestResults({
@@ -54,7 +55,7 @@ export default function LoadTesting() {
     setLoading(true);
     
     try {
-      const { data } = await base44.functions.invoke('cleanupLoadTestData', {});
+      const { data } = await apiClient.functions.invoke('cleanupLoadTestData', {});
       toast.success(`Deleted ${data.deleted.projects} projects, ${data.deleted.rfis} RFIs, ${data.deleted.tasks} tasks`);
       setTestResults(null);
     } catch (error) {
@@ -72,10 +73,10 @@ export default function LoadTesting() {
       
       // Simulate Dashboard query patterns
       const [projects, tasks, rfis, financials] = await Promise.all([
-        base44.entities.Project.list(),
-        base44.entities.Task.list('-created_date', 1000),
-        base44.entities.RFI.list('-created_date', 1000),
-        base44.entities.Financial.list()
+        apiClient.entities.Project.list(),
+        apiClient.entities.Task.list('-created_date', 1000),
+        apiClient.entities.RFI.list('-created_date', 1000),
+        apiClient.entities.Financial.list()
       ]);
       
       const duration = performance.now() - startTime;
@@ -108,7 +109,7 @@ export default function LoadTesting() {
     try {
       const startTime = performance.now();
       
-      const rfis = await base44.entities.RFI.list('-created_date', 5000);
+      const rfis = await apiClient.entities.RFI.list('-created_date', 5000);
       
       const duration = performance.now() - startTime;
 

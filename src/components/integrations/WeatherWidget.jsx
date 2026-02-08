@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Cloud, CloudRain, Wind, AlertTriangle, ThermometerSun } from 'lucide-react';
@@ -10,7 +11,7 @@ export default function WeatherWidget({ projectId }) {
   const { data: weather, isLoading } = useQuery({
     queryKey: ['weather', projectId],
     queryFn: async () => {
-      const { data } = await base44.functions.invoke('getWeatherForecast', { project_id: projectId });
+      const { data } = await apiClient.functions.invoke('getWeatherForecast', { project_id: projectId });
       return data;
     },
     enabled: !!projectId,

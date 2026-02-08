@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload, Download, FileSpreadsheet, CheckCircle, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Badge } from "@/components/ui/badge";
 
 export default function CSVUpload({ 
@@ -84,7 +85,7 @@ export default function CSVUpload({
             data = transformRow(data);
           }
           
-          await base44.entities[entityName].create(data);
+          await apiClient.entities[entityName].create(data);
           successCount++;
         } catch (error) {
           failedCount++;

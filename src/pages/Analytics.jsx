@@ -42,7 +42,7 @@ export default function Analytics() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
   });
@@ -80,19 +80,19 @@ export default function Analytics() {
   useEffect(() => {
     if (!activeProjectId) return;
 
-    const unsubscribeDrawings = base44.entities.DrawingSet.subscribe((event) => {
+    const unsubscribeDrawings = apiClient.entities.DrawingSet.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['drawings', activeProjectId] });
       }
     });
 
-    const unsubscribeTasks = base44.entities.Task.subscribe((event) => {
+    const unsubscribeTasks = apiClient.entities.Task.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
       }
     });
 
-    const unsubscribeRFIs = base44.entities.RFI.subscribe((event) => {
+    const unsubscribeRFIs = apiClient.entities.RFI.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['rfis', activeProjectId] });
       }
@@ -121,7 +121,7 @@ export default function Analytics() {
   const { data: portfolioMetrics, isLoading: metricsLoading } = useQuery({
     queryKey: ['portfolio-metrics', activeProjectId],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getPortfolioMetricsOptimized', {
+      const response = await apiClient.functions.invoke('getPortfolioMetricsOptimized', {
         project_ids: activeProjectId ? [activeProjectId] : userProjects.map(p => p.id).slice(0, 10)
       });
       return response.data;
@@ -133,7 +133,7 @@ export default function Analytics() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects', activeProjectId],
     queryFn: () => activeProjectId 
-      ? base44.entities.Project.filter({ id: activeProjectId })
+      ? apiClient.entities.Project.filter({ id: activeProjectId })
       : Promise.resolve([]),
     enabled: !!activeProjectId,
   });
@@ -144,8 +144,8 @@ export default function Analytics() {
     queryFn: () => {
       if (portfolioMetrics?.metrics) return [];
       return activeProjectId
-        ? base44.entities.Financial.filter({ project_id: activeProjectId })
-        : base44.entities.Financial.list();
+        ? apiClient.entities.Financial.filter({ project_id: activeProjectId })
+        : apiClient.entities.Financial.list();
     },
     enabled: !!activeProjectId && !portfolioMetrics?.metrics
   });
@@ -155,8 +155,8 @@ export default function Analytics() {
     queryFn: async () => {
       if (portfolioMetrics?.metrics) return [];
       const data = activeProjectId
-        ? await base44.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
-        : await base44.entities.Task.list();
+        ? await apiClient.entities.Task.filter({ project_id: activeProjectId }, 'end_date')
+        : await apiClient.entities.Task.list();
       return data;
     },
     enabled: !!activeProjectId && !portfolioMetrics?.metrics
@@ -165,22 +165,22 @@ export default function Analytics() {
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.Expense.filter({ project_id: activeProjectId })
-      : base44.entities.Expense.list(),
+      ? apiClient.entities.Expense.filter({ project_id: activeProjectId })
+      : apiClient.entities.Expense.list(),
     enabled: !!activeProjectId
   });
 
   const { data: estimatedCosts = [] } = useQuery({
     queryKey: ['etc', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId })
-      : base44.entities.EstimatedCostToComplete.list(),
+      ? apiClient.entities.EstimatedCostToComplete.filter({ project_id: activeProjectId })
+      : apiClient.entities.EstimatedCostToComplete.list(),
     enabled: !!activeProjectId
   });
 
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
+    queryFn: () => apiClient.entities.Resource.list(),
     enabled: !!activeProjectId,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000
@@ -189,7 +189,7 @@ export default function Analytics() {
   const { data: resourceAllocations = [] } = useQuery({
     queryKey: ['resourceAllocations', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.ResourceAllocation.filter({ project_id: activeProjectId })
+      ? apiClient.entities.ResourceAllocation.filter({ project_id: activeProjectId })
       : [],
     enabled: !!activeProjectId,
     staleTime: 5 * 60 * 1000,
@@ -200,8 +200,8 @@ export default function Analytics() {
     queryKey: ['rfis', activeProjectId],
     queryFn: async () => {
       const data = activeProjectId
-        ? await base44.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
-        : await base44.entities.RFI.list('-created_date');
+        ? await apiClient.entities.RFI.filter({ project_id: activeProjectId }, '-created_date')
+        : await apiClient.entities.RFI.list('-created_date');
       return data.filter(r => r.created_date); // Filter out invalid dates
     },
     enabled: !!activeProjectId
@@ -211,8 +211,8 @@ export default function Analytics() {
     queryKey: ['changeOrders', activeProjectId],
     queryFn: async () => {
       const data = activeProjectId
-        ? await base44.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
-        : await base44.entities.ChangeOrder.list('-created_date');
+        ? await apiClient.entities.ChangeOrder.filter({ project_id: activeProjectId }, '-created_date')
+        : await apiClient.entities.ChangeOrder.list('-created_date');
       return data.filter(co => co.created_date); // Filter out invalid dates
     },
     enabled: !!activeProjectId
@@ -221,70 +221,70 @@ export default function Analytics() {
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
-      : base44.entities.DrawingSet.list(),
+      ? apiClient.entities.DrawingSet.filter({ project_id: activeProjectId })
+      : apiClient.entities.DrawingSet.list(),
     enabled: !!activeProjectId
   });
 
   const { data: scopeGaps = [] } = useQuery({
     queryKey: ['scopeGaps', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.ScopeGap.filter({ project_id: activeProjectId })
-      : base44.entities.ScopeGap.list(),
+      ? apiClient.entities.ScopeGap.filter({ project_id: activeProjectId })
+      : apiClient.entities.ScopeGap.list(),
     enabled: !!activeProjectId
   });
 
   const { data: laborBreakdowns = [] } = useQuery({
     queryKey: ['laborBreakdowns', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.LaborBreakdown.filter({ project_id: activeProjectId })
-      : base44.entities.LaborBreakdown.list(),
+      ? apiClient.entities.LaborBreakdown.filter({ project_id: activeProjectId })
+      : apiClient.entities.LaborBreakdown.list(),
     enabled: !!activeProjectId
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['laborHours', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.LaborHours.filter({ project_id: activeProjectId })
-      : base44.entities.LaborHours.list(),
+      ? apiClient.entities.LaborHours.filter({ project_id: activeProjectId })
+      : apiClient.entities.LaborHours.list(),
     enabled: !!activeProjectId
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.SOVItem.filter({ project_id: activeProjectId })
-      : base44.entities.SOVItem.list(),
+      ? apiClient.entities.SOVItem.filter({ project_id: activeProjectId })
+      : apiClient.entities.SOVItem.list(),
     enabled: !!activeProjectId
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+    queryFn: () => apiClient.entities.CostCode.list('code'),
     enabled: !!activeProjectId
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.Invoice.filter({ project_id: activeProjectId })
-      : base44.entities.Invoice.list(),
+      ? apiClient.entities.Invoice.filter({ project_id: activeProjectId })
+      : apiClient.entities.Invoice.list(),
     enabled: !!activeProjectId
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.Delivery.filter({ project_id: activeProjectId })
-      : base44.entities.Delivery.list(),
+      ? apiClient.entities.Delivery.filter({ project_id: activeProjectId })
+      : apiClient.entities.Delivery.list(),
     enabled: !!activeProjectId
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['workPackages', activeProjectId],
     queryFn: () => activeProjectId
-      ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
-      : base44.entities.WorkPackage.list(),
+      ? apiClient.entities.WorkPackage.filter({ project_id: activeProjectId })
+      : apiClient.entities.WorkPackage.list(),
     enabled: !!activeProjectId
   });
 

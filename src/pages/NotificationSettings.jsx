@@ -35,7 +35,7 @@ export default function NotificationSettings() {
     queryKey: ['notificationPrefs', currentUser?.email],
     queryFn: async () => {
       if (!currentUser?.email) return null;
-      const prefs = await base44.entities.NotificationPreference.filter(
+      const prefs = await apiClient.entities.NotificationPreference.filter(
         { user_id: currentUser.email },
         '-created_date',
         1
@@ -72,9 +72,9 @@ export default function NotificationSettings() {
     mutationFn: async () => {
       setIsSaving(true);
       if (preferences?.id) {
-        return base44.entities.NotificationPreference.update(preferences.id, formData);
+        return apiClient.entities.NotificationPreference.update(preferences.id, formData);
       } else {
-        return base44.entities.NotificationPreference.create({
+        return apiClient.entities.NotificationPreference.create({
           ...formData,
           user_id: currentUser.email
         });
@@ -136,9 +136,9 @@ export default function NotificationSettings() {
         setFormData(newFormData);
         
         if (preferences?.id) {
-          await base44.entities.NotificationPreference.update(preferences.id, newFormData);
+          await apiClient.entities.NotificationPreference.update(preferences.id, newFormData);
         } else {
-          await base44.entities.NotificationPreference.create({
+          await apiClient.entities.NotificationPreference.create({
             ...newFormData,
             user_id: currentUser.email
           });

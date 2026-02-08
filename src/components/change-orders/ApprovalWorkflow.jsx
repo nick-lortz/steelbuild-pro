@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Clock, User, MessageSquare } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -17,7 +18,7 @@ export default function ApprovalWorkflow({ changeOrder, currentUser, onApprovalC
 
   const applyCascadeMutation = useMutation({
     mutationFn: async ({ change_order_id }) => {
-      return await base44.functions.invoke('applyCOApproval', { change_order_id });
+      return await apiClient.functions.invoke('applyCOApproval', { change_order_id });
     },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['change-orders', 'sov-items', 'financials', 'tasks'] });
@@ -51,7 +52,7 @@ export default function ApprovalWorkflow({ changeOrder, currentUser, onApprovalC
     
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('routeChangeOrderApproval', {
+      const response = await apiClient.functions.invoke('routeChangeOrderApproval', {
         changeOrderId: changeOrder.id,
         action,
         comments

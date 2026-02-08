@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -16,7 +17,7 @@ export default function RFIAssumptionTracker({ rfi, onUpdate }) {
 
   const documentAssumptionMutation = useMutation({
     mutationFn: async () => {
-      return base44.entities.RFI.update(rfi.id, {
+      return apiClient.entities.RFI.update(rfi.id, {
         assumption_risk: {
           proceeding_with_assumption: true,
           documented_assumption: assumptionText,

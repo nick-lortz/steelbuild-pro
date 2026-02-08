@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { AlertTriangle, TrendingUp, Search, Sparkles, Brain, Shield } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
@@ -18,7 +19,7 @@ export default function AIInsightsPanel({ projectId }) {
   const analyzeRisk = async () => {
     setLoading(true);
     try {
-      const { data } = await base44.functions.invoke('calculateProjectRiskScore', { project_id: projectId });
+      const { data } = await apiClient.functions.invoke('calculateProjectRiskScore', { project_id: projectId });
       setRiskScore(data);
       toast.success('Risk analysis complete');
     } catch (error) {
@@ -31,7 +32,7 @@ export default function AIInsightsPanel({ projectId }) {
   const detectAnomalies = async () => {
     setLoading(true);
     try {
-      const { data } = await base44.functions.invoke('detectAnomalies', { project_id: projectId });
+      const { data } = await apiClient.functions.invoke('detectAnomalies', { project_id: projectId });
       setAnomalies(data);
       toast.success('Anomaly detection complete');
     } catch (error) {
@@ -44,7 +45,7 @@ export default function AIInsightsPanel({ projectId }) {
   const predictDelays = async () => {
     setLoading(true);
     try {
-      const { data } = await base44.functions.invoke('predictScheduleDelays', { project_id: projectId });
+      const { data } = await apiClient.functions.invoke('predictScheduleDelays', { project_id: projectId });
       setDelayPredictions(data);
       toast.success('Delay prediction complete');
     } catch (error) {
@@ -60,7 +61,7 @@ export default function AIInsightsPanel({ projectId }) {
     
     setLoading(true);
     try {
-      const { data } = await base44.functions.invoke('nlQueryProjects', { query: nlQuery });
+      const { data } = await apiClient.functions.invoke('nlQueryProjects', { query: nlQuery });
       setQueryResults(data);
     } catch (error) {
       toast.error('Query failed');

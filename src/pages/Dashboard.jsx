@@ -40,7 +40,7 @@ export default function Dashboard() {
   const { data: dashboardData = { projects: [], metrics: {}, pagination: {} }, isLoading: projectsLoading, isFetching: projectsFetching, refetch: refetchDashboard } = useQuery({
     queryKey: ['dashboard', { page, pageSize, search: searchTerm, status: statusFilter, risk: riskFilter, sort: sortBy }],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getDashboardData', {
+      const response = await apiClient.functions.invoke('getDashboardData', {
         page,
         pageSize,
         search: searchTerm,
@@ -70,7 +70,7 @@ export default function Dashboard() {
   const { data: weeklySummary } = useQuery({
     queryKey: ['weekly-executive-summary'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('generateWeeklyExecutiveSummary', {});
+      const response = await apiClient.functions.invoke('generateWeeklyExecutiveSummary', {});
       return response.data.summary;
     },
     enabled: currentUser?.role === 'admin',

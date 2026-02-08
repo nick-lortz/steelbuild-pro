@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Send, UserPlus, CheckCircle, Clock, Mail, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
@@ -37,7 +38,7 @@ export default function ApprovalWorkflowPanel({ document, onWorkflowUpdate }) {
 
     setRouting(true);
     try {
-      await base44.functions.invoke('routeDocumentApproval', {
+      await apiClient.functions.invoke('routeDocumentApproval', {
         documentId: document.id,
         approvers,
         dueDate: dueDate || null,

@@ -91,48 +91,48 @@ export default function Projects() {
 
   const { data: projects = [], isLoading, refetch } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date'),
+    queryFn: () => apiClient.entities.Project.list('-updated_date'),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('full_name'),
+    queryFn: () => apiClient.entities.User.list('full_name'),
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list('start_date'),
+    queryFn: () => apiClient.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000
   });
 
   const { data: financials = [] } = useQuery({
     queryKey: ['financials'],
-    queryFn: () => base44.entities.Financial.list(),
+    queryFn: () => apiClient.entities.Financial.list(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
+    queryFn: () => apiClient.entities.ChangeOrder.list(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
+    queryFn: () => apiClient.entities.RFI.list(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
   });
 
   const createMutation = useMutation({
-    mutationFn: (/** @type {any} */ data) => base44.entities.Project.create(data),
+    mutationFn: (/** @type {any} */ data) => apiClient.entities.Project.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowForm(false);
@@ -149,7 +149,7 @@ export default function Projects() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (/** @type {{id: any, data: any}} */ { id, data }) => base44.entities.Project.update(id, data),
+    mutationFn: (/** @type {{id: any, data: any}} */ { id, data }) => apiClient.entities.Project.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setSelectedProject(null);
@@ -166,7 +166,7 @@ export default function Projects() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (/** @type {any} */ id) => base44.entities.Project.delete(id),
+    mutationFn: (/** @type {any} */ id) => apiClient.entities.Project.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project deleted successfully');

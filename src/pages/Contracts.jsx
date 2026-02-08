@@ -42,13 +42,13 @@ export default function Contracts() {
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     initialData: []
   });
 
   const { data: changeOrders } = useQuery({
     queryKey: ['change-orders', activeProjectId],
-    queryFn: () => base44.entities.ChangeOrder.filter(
+    queryFn: () => apiClient.entities.ChangeOrder.filter(
       activeProjectId ? { project_id: activeProjectId } : {}
     ),
     initialData: []
@@ -59,7 +59,7 @@ export default function Contracts() {
     : projects;
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Project.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowEditDialog(false);
@@ -72,7 +72,7 @@ export default function Contracts() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Project.create(data),
+    mutationFn: (data) => apiClient.entities.Project.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowAddDialog(false);
@@ -122,7 +122,7 @@ export default function Contracts() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
       const user = await apiClient.auth.me();
       
       const newDoc = {

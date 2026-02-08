@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,19 +51,19 @@ export default function PermissionManager() {
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('-created_date'),
+    queryFn: () => apiClient.entities.User.list('-created_date'),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: overrides = [] } = useQuery({
     queryKey: ['permission-overrides', selectedUser?.email],
-    queryFn: () => base44.entities.UserPermissionOverride.filter({
+    queryFn: () => apiClient.entities.UserPermissionOverride.filter({
       user_email: selectedUser.email
     }),
     enabled: !!selectedUser?.email,
@@ -71,7 +72,7 @@ export default function PermissionManager() {
 
   const updateUserRoleMutation = useMutation({
     mutationFn: async ({ email, custom_role }) => {
-      const response = await base44.functions.invoke('updateUserProfile', {
+      const response = await apiClient.functions.invoke('updateUserProfile', {
         user_email: email,
         custom_role
       });
@@ -85,7 +86,7 @@ export default function PermissionManager() {
   });
 
   const createOverrideMutation = useMutation({
-    mutationFn: (data) => base44.entities.UserPermissionOverride.create(data),
+    mutationFn: (data) => apiClient.entities.UserPermissionOverride.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permission-overrides'] });
       setShowOverrideDialog(false);
@@ -95,7 +96,7 @@ export default function PermissionManager() {
   });
 
   const deleteOverrideMutation = useMutation({
-    mutationFn: (id) => base44.entities.UserPermissionOverride.delete(id),
+    mutationFn: (id) => apiClient.entities.UserPermissionOverride.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permission-overrides'] });
       toast.success('Override removed');

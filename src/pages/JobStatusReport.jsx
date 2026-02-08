@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,53 +26,53 @@ export default function JobStatusReport() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name')
+    queryFn: () => apiClient.entities.Project.list('name')
   });
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', selectedProject],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', selectedProject],
-    queryFn: () => base44.entities.Invoice.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.Invoice.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', selectedProject],
-    queryFn: () => base44.entities.Expense.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.Expense.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', selectedProject],
-    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.ChangeOrder.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: estimatedCosts = [] } = useQuery({
     queryKey: ['etc', selectedProject],
-    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code')
+    queryFn: () => apiClient.entities.CostCode.list('code')
   });
 
   const { data: mappings = [] } = useQuery({
     queryKey: ['sov-cost-mappings', selectedProject],
-    queryFn: () => base44.entities.SOVCostCodeMap.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.SOVCostCodeMap.filter({ project_id: selectedProject }),
     enabled: !!selectedProject
   });
 
   const { data: invoiceLines = [] } = useQuery({
     queryKey: ['invoice-lines', selectedInvoice?.id],
-    queryFn: () => base44.entities.InvoiceLine.filter({ invoice_id: selectedInvoice.id }),
+    queryFn: () => apiClient.entities.InvoiceLine.filter({ invoice_id: selectedInvoice.id }),
     enabled: !!selectedInvoice
   });
 
@@ -217,7 +218,7 @@ export default function JobStatusReport() {
     }
 
     try {
-      await base44.functions.invoke('updateSOVPercentComplete', {
+      await apiClient.functions.invoke('updateSOVPercentComplete', {
         sov_item_id: sovItem.id,
         percent_complete: numValue
       });

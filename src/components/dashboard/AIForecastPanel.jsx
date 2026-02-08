@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ export default function AIForecastPanel({ projectId }) {
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['ai-forecast', projectId],
     queryFn: async () => {
-      const response = await base44.functions.invoke('aiProjectForecast', { project_id: projectId });
+      const response = await apiClient.functions.invoke('aiProjectForecast', { project_id: projectId });
       return response.data;
     },
     enabled: !!projectId,

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,13 +45,13 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
 
   const { data: crews, isLoading: crewsLoading } = useQuery({
     queryKey: ['crews', projectId],
-    queryFn: () => base44.entities.Crew.filter({ project_id: projectId, status: 'active' }),
+    queryFn: () => apiClient.entities.Crew.filter({ project_id: projectId, status: 'active' }),
     select: (data) => data || []
   });
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ 
+    queryFn: () => apiClient.entities.Task.filter({ 
       project_id: projectId, 
       status: 'in_progress'
     }),
@@ -59,7 +60,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
 
   const { data: equipment } = useQuery({
     queryKey: ['equipment', projectId],
-    queryFn: () => base44.entities.Resource.filter({
+    queryFn: () => apiClient.entities.Resource.filter({
       type: 'equipment',
       current_project_id: projectId
     }),
@@ -91,7 +92,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
 
   const createLaborEntry = useMutation({
     mutationFn: async (data) => {
-      const entry = await base44.entities.LaborEntry.create({
+      const entry = await apiClient.entities.LaborEntry.create({
         project_id: projectId,
         crew_id: formData.crew_id,
         work_date: formData.work_date,

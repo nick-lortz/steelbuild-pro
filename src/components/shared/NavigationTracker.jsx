@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 export default function NavigationTracker() {
   const location = useLocation();
@@ -22,7 +23,7 @@ export default function NavigationTracker() {
     lastLogTime.current = now;
 
     // Log page view - silently fail if rate limited
-    base44.analytics.track({
+    apiClient.analytics.track({
       eventName: 'page_view',
       properties: { page: pageName }
     }).catch(() => {

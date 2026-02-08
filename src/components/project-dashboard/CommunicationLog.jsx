@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquareWarning, Users, FileText } from 'lucide-react';
@@ -8,17 +9,17 @@ import { format } from 'date-fns';
 export default function CommunicationLog({ projectId }) {
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', projectId],
-    queryFn: () => base44.entities.RFI.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.RFI.filter({ project_id: projectId })
   });
 
   const { data: meetings = [] } = useQuery({
     queryKey: ['meetings', projectId],
-    queryFn: () => base44.entities.Meeting.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Meeting.filter({ project_id: projectId })
   });
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents', projectId],
-    queryFn: () => base44.entities.Document.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.Document.filter({ project_id: projectId })
   });
 
   // Combine and sort all communications

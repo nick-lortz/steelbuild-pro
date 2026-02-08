@@ -54,37 +54,37 @@ export default function RFIs() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 30 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date'),
+    queryFn: () => apiClient.entities.RFI.list('-created_date'),
     staleTime: 2 * 60 * 1000
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list(),
+    queryFn: () => apiClient.entities.DrawingSet.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
+    queryFn: () => apiClient.entities.ChangeOrder.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: submittal = [] } = useQuery({
     queryKey: ['submittals'],
-    queryFn: () => base44.entities.Submittal.list(),
+    queryFn: () => apiClient.entities.Submittal.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list(),
+    queryFn: () => apiClient.entities.Delivery.list(),
     staleTime: 10 * 60 * 1000
   });
 
@@ -114,7 +114,7 @@ export default function RFIs() {
         timestamp: new Date().toISOString()
       });
 
-      return base44.entities.RFI.create({
+      return apiClient.entities.RFI.create({
         ...rfiData,
         activity_log: activityLog
       });
@@ -147,7 +147,7 @@ export default function RFIs() {
           changes: data
         }
       ];
-      return base44.entities.RFI.update(id, { ...data, activity_log: activityLog });
+      return apiClient.entities.RFI.update(id, { ...data, activity_log: activityLog });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
@@ -163,7 +163,7 @@ export default function RFIs() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.RFI.delete(id),
+    mutationFn: (id) => apiClient.entities.RFI.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       setDeleteRFI(null);

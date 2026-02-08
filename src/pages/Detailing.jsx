@@ -60,7 +60,7 @@ export default function Detailing() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => apiClient.entities.Project.list(),
     staleTime: 5 * 60 * 1000
   });
 
@@ -76,7 +76,7 @@ export default function Detailing() {
 
   useEffect(() => {
     if (!activeProjectId) return;
-    const unsubscribe = base44.entities.DrawingSet.subscribe((event) => {
+    const unsubscribe = apiClient.entities.DrawingSet.subscribe((event) => {
       if (event.data?.project_id === activeProjectId) {
         queryClient.invalidateQueries({ queryKey: ['drawing-sets', activeProjectId] });
       }
@@ -86,26 +86,26 @@ export default function Detailing() {
 
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') : [],
+    queryFn: () => activeProjectId ? apiClient.entities.DrawingSet.filter({ project_id: activeProjectId }, 'due_date') : [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: () => apiClient.entities.User.list(),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }) : [],
+    queryFn: () => activeProjectId ? apiClient.entities.RFI.filter({ project_id: activeProjectId }) : [],
     enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.DrawingSet.update(id, {
+    mutationFn: ({ id, status }) => apiClient.entities.DrawingSet.update(id, {
       status,
       [`${status.toLowerCase().replace(/\s+/g, '_').replace('&', 'and')}_date`]: new Date().toISOString().split('T')[0]
     }),
@@ -116,7 +116,7 @@ export default function Detailing() {
   });
 
   const assignReviewerMutation = useMutation({
-    mutationFn: ({ id, reviewer }) => base44.entities.DrawingSet.update(id, { reviewer }),
+    mutationFn: ({ id, reviewer }) => apiClient.entities.DrawingSet.update(id, { reviewer }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       toast.success('Reviewer assigned');
@@ -125,8 +125,8 @@ export default function Detailing() {
 
   const createDrawingSetMutation = useMutation({
     mutationFn: async (data) => {
-      const createdSet = await base44.entities.DrawingSet.create(data);
-      await base44.entities.DrawingRevision.create({
+      const createdSet = await apiClient.entities.DrawingSet.create(data);
+      await apiClient.entities.DrawingRevision.create({
         drawing_set_id: createdSet.id,
         revision_number: data.current_revision || 'Rev 0',
         revision_date: new Date().toISOString().split('T')[0],
@@ -143,7 +143,7 @@ export default function Detailing() {
   });
 
   const deleteDrawingSetMutation = useMutation({
-    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
+    mutationFn: (id) => apiClient.entities.DrawingSet.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       toast.success('Drawing set deleted');

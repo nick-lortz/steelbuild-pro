@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Search, Sparkles, File, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -22,7 +23,7 @@ export default function AISearchPanel({ projectId, onDocumentClick }) {
     setError(null);
     
     try {
-      const response = await base44.functions.invoke('searchDocumentsAI', {
+      const response = await apiClient.functions.invoke('searchDocumentsAI', {
         query: query.trim(),
         projectId: projectId || null
       });

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -12,7 +13,7 @@ export default function PortfolioOverview({ projects = [], financials = [], task
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['portfolio-metrics', timeframe],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getPortfolioMetrics', { 
+      const response = await apiClient.functions.invoke('getPortfolioMetrics', { 
         timeframe,
         project_ids: null 
       });

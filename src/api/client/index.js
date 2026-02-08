@@ -4,5 +4,5 @@ import { getBackendProvider, isBase44Provider } from '@/api/client/provider';
 
 const provider = getBackendProvider();
 
-export const apiClient = provider === 'owned' ? ownedAdapter : base44Adapter;
+export const apiClient = /** @type {any} */ (provider === 'owned' ? ownedAdapter : base44Adapter);
 export { getBackendProvider, isBase44Provider };

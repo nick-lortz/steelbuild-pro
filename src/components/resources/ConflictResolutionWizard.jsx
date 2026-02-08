@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,7 +21,7 @@ export default function ConflictResolutionWizard({ conflict, allResources, onClo
 
   const updateTaskMutation = useMutation({
     mutationFn: async ({ taskId, updates }) => {
-      return await base44.entities.Task.update(taskId, updates);
+      return await apiClient.entities.Task.update(taskId, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });

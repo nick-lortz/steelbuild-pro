@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import {
   Select,
@@ -25,7 +26,7 @@ export default function QuickStatusUpdate({ project, compact = false }) {
 
   const updateMutation = useMutation({
     mutationFn: (/** @type {{ id: string, status: keyof typeof statusConfig }} */ payload) =>
-      base44.entities.Project.update(payload.id, { status: payload.status }),
+      apiClient.entities.Project.update(payload.id, { status: payload.status }),
     onSuccess: (_, /** @type {{ id: string, status: keyof typeof statusConfig }} */ variables) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(`Status updated to ${statusConfig[variables.status].label}`);

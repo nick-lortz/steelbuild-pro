@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { GitCompare, AlertTriangle, AlertCircle, ArrowRight, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import { useQuery } from '@tanstack/react-query';
 
@@ -16,7 +17,7 @@ export default function DrawingComparisonPanel({ currentDrawingSet, projectId })
   const { data: allSets } = useQuery({
     queryKey: ['drawing-sets-for-comparison', projectId],
     queryFn: async () => {
-      return await base44.entities.DrawingSet.filter({ 
+      return await apiClient.entities.DrawingSet.filter({ 
         project_id: projectId 
       });
     },
@@ -36,7 +37,7 @@ export default function DrawingComparisonPanel({ currentDrawingSet, projectId })
 
     setComparing(true);
     try {
-      const response = await base44.functions.invoke('compareDrawingVersions', {
+      const response = await apiClient.functions.invoke('compareDrawingVersions', {
         drawing_set_id_1: currentDrawingSet.id,
         drawing_set_id_2: selectedSetId
       });

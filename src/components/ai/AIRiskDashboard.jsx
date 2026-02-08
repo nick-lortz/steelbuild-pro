@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Shield, AlertTriangle, TrendingUp, Loader2, Calendar, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/notifications';
@@ -14,7 +15,7 @@ export default function AIRiskDashboard({ projectId }) {
   const analyzeRisks = async () => {
     setLoading(true);
     try {
-      const { data } = await base44.functions.invoke('aiRiskAssessment', { project_id: projectId });
+      const { data } = await apiClient.functions.invoke('aiRiskAssessment', { project_id: projectId });
       if (data.success) {
         setAssessment(data);
         toast.success('Risk assessment complete');

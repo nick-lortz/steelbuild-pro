@@ -1,13 +1,14 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function DrawingWidget({ projectId }) {
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawing-sets', projectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: projectId })
+    queryFn: () => apiClient.entities.DrawingSet.filter({ project_id: projectId })
   });
 
   const byStatus = drawingSets.reduce((acc, ds) => {

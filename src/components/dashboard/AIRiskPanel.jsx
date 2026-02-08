@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ export default function AIRiskPanel({ projectId }) {
   const { data: riskData, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['ai-risk', projectId],
     queryFn: async () => {
-      const response = await base44.functions.invoke('aiRiskAssessment', { project_id: projectId });
+      const response = await apiClient.functions.invoke('aiRiskAssessment', { project_id: projectId });
       return response.data;
     },
     enabled: !!projectId,

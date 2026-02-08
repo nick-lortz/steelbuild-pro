@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertTriangle, CheckCircle2, Clock, Plus, TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export default function RiskAssessmentModule({ projectId }) {
@@ -19,12 +20,12 @@ export default function RiskAssessmentModule({ projectId }) {
 
   const { data: risks = [] } = useQuery({
     queryKey: ['project-risks', projectId],
-    queryFn: () => base44.entities.ProjectRisk.filter({ project_id: projectId }),
+    queryFn: () => apiClient.entities.ProjectRisk.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const createRiskMutation = useMutation({
-    mutationFn: (data) => base44.entities.ProjectRisk.create(data),
+    mutationFn: (data) => apiClient.entities.ProjectRisk.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-risks'] });
       setShowDialog(false);
@@ -34,7 +35,7 @@ export default function RiskAssessmentModule({ projectId }) {
   });
 
   const updateRiskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ProjectRisk.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.ProjectRisk.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project-risks'] });
       setShowDialog(false);

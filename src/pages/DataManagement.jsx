@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -69,7 +70,7 @@ export default function DataManagement() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects-for-data-mgmt'],
-    queryFn: () => base44.entities.Project.list('-updated_date', 100)
+    queryFn: () => apiClient.entities.Project.list('-updated_date', 100)
   });
 
   const currentEntity = ENTITY_GROUPS.flatMap(g => g.entities).find(e => e.name === selectedEntity);
@@ -80,19 +81,19 @@ export default function DataManagement() {
       if (!selectedEntity) return [];
       
       if (selectedProject && currentEntity?.projectField) {
-        return await base44.entities[selectedEntity].filter({ 
+        return await apiClient.entities[selectedEntity].filter({ 
           [currentEntity.projectField]: selectedProject 
         });
       }
       
-      return await base44.entities[selectedEntity].list('-updated_date', 200);
+      return await apiClient.entities[selectedEntity].list('-updated_date', 200);
     },
     enabled: !!selectedEntity
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      await base44.entities[selectedEntity].delete(id);
+      await apiClient.entities[selectedEntity].delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
@@ -106,7 +107,7 @@ export default function DataManagement() {
 
   const bulkUpdateMutation = useMutation({
     mutationFn: async ({ ids, updates }) => {
-      await Promise.all(ids.map(id => base44.entities[selectedEntity].update(id, updates)));
+      await Promise.all(ids.map(id => apiClient.entities[selectedEntity].update(id, updates)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
@@ -120,7 +121,7 @@ export default function DataManagement() {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids) => {
-      await Promise.all(ids.map(id => base44.entities[selectedEntity].delete(id)));
+      await Promise.all(ids.map(id => apiClient.entities[selectedEntity].delete(id)));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
@@ -154,7 +155,7 @@ export default function DataManagement() {
     try {
       await Promise.all(recordsToDuplicate.map(record => {
         const { id, created_date, updated_date, created_by, ...data } = record;
-        return base44.entities[selectedEntity].create(data);
+        return apiClient.entities[selectedEntity].create(data);
       }));
       queryClient.invalidateQueries({ queryKey: ['entity-data', selectedEntity, selectedProject] });
       setSelectedRecords(new Set());

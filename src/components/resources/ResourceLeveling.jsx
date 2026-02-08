@@ -7,6 +7,7 @@ import { AlertTriangle, TrendingUp, Calendar, Clock, CheckCircle, Shuffle, Users
 import { format, addDays, differenceInDays, parseISO, isAfter, isBefore } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from 'sonner';
 
 export default function ResourceLeveling({ tasks, resources, projects, allocations, workPackages }) {
@@ -17,7 +18,7 @@ export default function ResourceLeveling({ tasks, resources, projects, allocatio
   const queryClient = useQueryClient();
 
   const updateTaskMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.Task.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },

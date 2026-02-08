@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceLevelingPanel({ projectId }) {
@@ -13,7 +14,7 @@ export default function ResourceLevelingPanel({ projectId }) {
   const runLeveling = async () => {
     setAnalyzing(true);
     try {
-      const response = await base44.functions.invoke('levelResources', {
+      const response = await apiClient.functions.invoke('levelResources', {
         project_id: projectId
       });
 

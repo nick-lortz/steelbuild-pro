@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,12 +45,12 @@ export default function RFIHub() {
   // Fetch all data
   const { data: allRFIs = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date')
+    queryFn: () => apiClient.entities.RFI.list('-created_date')
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => apiClient.entities.Project.list()
   });
 
   // Real-time subscription with auto-reconnect
@@ -185,7 +186,7 @@ export default function RFIHub() {
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.RFI.delete(id),
+    mutationFn: (id) => apiClient.entities.RFI.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rfis'] });
       toast.success('RFI deleted');

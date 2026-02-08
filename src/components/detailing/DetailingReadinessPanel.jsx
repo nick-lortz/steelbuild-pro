@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, AlertTriangle, Rocket } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
@@ -99,7 +100,7 @@ export default function DetailingReadinessPanel({
       if (!project) throw new Error('No project selected');
       
       // Update project to fabrication phase
-      await base44.entities.Project.update(project.id, {
+      await apiClient.entities.Project.update(project.id, {
         phase: 'fabrication',
         status: 'in_progress',
         notes: `${project.notes || ''}\n\nReleased to Fabrication: ${new Date().toISOString()}`

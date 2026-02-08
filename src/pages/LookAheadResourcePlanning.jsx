@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { format, addDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,43 +21,43 @@ function LookAheadContent() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+    queryFn: () => apiClient.entities.Project.filter({ status: 'in_progress' })
   });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
-    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+    queryFn: () => apiClient.entities.Project.filter({ id: activeProjectId }),
     enabled: !!activeProjectId,
     select: (data) => data?.[0]
   });
 
   const { data: crews = [] } = useQuery({
     queryKey: ['crews', activeProjectId],
-    queryFn: () => base44.entities.Crew.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Crew.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: laborEntries = [] } = useQuery({
     queryKey: ['laborEntries', activeProjectId],
-    queryFn: () => base44.entities.LaborEntry.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.LaborEntry.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: equipmentLogs = [] } = useQuery({
     queryKey: ['equipmentLogs', activeProjectId],
-    queryFn: () => base44.entities.EquipmentLog.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.EquipmentLog.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
-    queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Delivery.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.Task.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 

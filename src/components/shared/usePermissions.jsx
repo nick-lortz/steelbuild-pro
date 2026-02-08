@@ -136,7 +136,7 @@ export function usePermissions(projectId = null) {
 
   const { data: overrides = [] } = useQuery({
     queryKey: ['permission-overrides', currentUser?.email, projectId],
-    queryFn: () => base44.entities.UserPermissionOverride.filter({ 
+    queryFn: () => apiClient.entities.UserPermissionOverride.filter({ 
       user_email: currentUser?.email 
     }),
     enabled: !!currentUser?.email,

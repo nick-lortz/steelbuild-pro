@@ -34,7 +34,7 @@ export default function Financials() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
   });
@@ -52,7 +52,7 @@ export default function Financials() {
 
   const { data: budgetLines = [] } = useQuery({
     queryKey: ['financials', selectedProject],
-    queryFn: () => base44.entities.Financial.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.Financial.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000
@@ -60,7 +60,7 @@ export default function Financials() {
 
   const { data: expenses = [] } = useQuery({
     queryKey: ['expenses', selectedProject],
-    queryFn: () => base44.entities.Expense.filter({ project_id: selectedProject }, '-expense_date'),
+    queryFn: () => apiClient.entities.Expense.filter({ project_id: selectedProject }, '-expense_date'),
     enabled: !!selectedProject,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000
@@ -68,7 +68,7 @@ export default function Financials() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices', selectedProject],
-    queryFn: () => base44.entities.Invoice.filter({ project_id: selectedProject }, '-period_end'),
+    queryFn: () => apiClient.entities.Invoice.filter({ project_id: selectedProject }, '-period_end'),
     enabled: !!selectedProject,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
@@ -76,7 +76,7 @@ export default function Financials() {
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items', selectedProject],
-    queryFn: () => base44.entities.SOVItem.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.SOVItem.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000
@@ -84,7 +84,7 @@ export default function Financials() {
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['change-orders', selectedProject],
-    queryFn: () => base44.entities.ChangeOrder.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.ChangeOrder.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000
@@ -92,7 +92,7 @@ export default function Financials() {
 
   const { data: estimatedCosts = [] } = useQuery({
     queryKey: ['etc', selectedProject],
-    queryFn: () => base44.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
+    queryFn: () => apiClient.entities.EstimatedCostToComplete.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000
@@ -100,7 +100,7 @@ export default function Financials() {
 
   const { data: costCodes = [] } = useQuery({
     queryKey: ['cost-codes'],
-    queryFn: () => base44.entities.CostCode.list('code'),
+    queryFn: () => apiClient.entities.CostCode.list('code'),
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000
   });
@@ -114,7 +114,7 @@ export default function Financials() {
 
     const setupSubscriptions = () => {
       try {
-        const unsubFinancials = base44.entities.Financial.subscribe((event) => {
+        const unsubFinancials = apiClient.entities.Financial.subscribe((event) => {
           if (!mounted) return;
           if (event.data?.project_id === selectedProject) {
             queryClient.setQueryData(['financials', selectedProject], (old) => {
@@ -128,7 +128,7 @@ export default function Financials() {
         });
         subscriptions.push(unsubFinancials);
 
-        const unsubExpenses = base44.entities.Expense.subscribe((event) => {
+        const unsubExpenses = apiClient.entities.Expense.subscribe((event) => {
           if (!mounted) return;
           if (event.data?.project_id === selectedProject) {
             queryClient.setQueryData(['expenses', selectedProject], (old) => {
@@ -142,7 +142,7 @@ export default function Financials() {
         });
         subscriptions.push(unsubExpenses);
 
-        const unsubSOV = base44.entities.SOVItem.subscribe((event) => {
+        const unsubSOV = apiClient.entities.SOVItem.subscribe((event) => {
           if (!mounted) return;
           if (event.data?.project_id === selectedProject) {
             queryClient.setQueryData(['sov-items', selectedProject], (old) => {

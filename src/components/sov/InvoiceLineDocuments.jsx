@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +16,7 @@ export default function InvoiceLineDocuments({ invoiceLine, onUpdate }) {
   const [documents, setDocuments] = useState(invoiceLine.attachments || []);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.InvoiceLine.update(invoiceLine.id, data),
+    mutationFn: (data) => apiClient.entities.InvoiceLine.update(invoiceLine.id, data),
     onSuccess: () => {
       toast.success('Documents updated');
       setShowDialog(false);

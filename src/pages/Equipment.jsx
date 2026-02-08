@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,19 +31,19 @@ function EquipmentContent() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' })
+    queryFn: () => apiClient.entities.Project.filter({ status: 'in_progress' })
   });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
-    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+    queryFn: () => apiClient.entities.Project.filter({ id: activeProjectId }),
     enabled: !!activeProjectId,
     select: (data) => data?.[0]
   });
 
   const { data: equipment = [] } = useQuery({
     queryKey: ['equipment', activeProjectId],
-    queryFn: () => base44.entities.Resource.filter({
+    queryFn: () => apiClient.entities.Resource.filter({
       type: 'equipment',
       current_project_id: activeProjectId
     }),
@@ -52,7 +53,7 @@ function EquipmentContent() {
   const { data: logs = [] } = useQuery({
     queryKey: ['equipmentLogs', activeProjectId, filterDateRange],
     queryFn: async () => {
-      const allLogs = await base44.entities.EquipmentLog.filter({ project_id: activeProjectId });
+      const allLogs = await apiClient.entities.EquipmentLog.filter({ project_id: activeProjectId });
 
       const daysBack = filterDateRange === '7d' ? 7 : filterDateRange === '30d' ? 30 : 14;
       const cutoff = new Date();
@@ -65,7 +66,7 @@ function EquipmentContent() {
 
   const { data: inspections = [] } = useQuery({
     queryKey: ['inspections', activeProjectId],
-    queryFn: () => base44.entities.InspectionChecklist.filter({ project_id: activeProjectId }),
+    queryFn: () => apiClient.entities.InspectionChecklist.filter({ project_id: activeProjectId }),
     enabled: !!activeProjectId
   });
 
@@ -293,7 +294,7 @@ function EquipmentContent() {
               resource={{ type: 'equipment', current_project_id: activeProjectId, assigned_project_ids: [] }}
               projects={projects || []}
               onSubmit={async (data) => {
-                await base44.entities.Resource.create(data);
+                await apiClient.entities.Resource.create(data);
                 queryClient.invalidateQueries({ queryKey: ['equipment'] });
                 setShowAddEquipment(false);
               }}

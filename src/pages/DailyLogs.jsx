@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,18 +56,18 @@ export default function DailyLogs() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
+    queryFn: () => apiClient.entities.Project.list('name'),
     staleTime: 10 * 60 * 1000,
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['dailyLogs'],
-    queryFn: () => base44.entities.DailyLog.list('-log_date'),
+    queryFn: () => apiClient.entities.DailyLog.list('-log_date'),
     staleTime: 5 * 60 * 1000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.DailyLog.create(data),
+    mutationFn: (data) => apiClient.entities.DailyLog.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setShowForm(false);
@@ -75,7 +76,7 @@ export default function DailyLogs() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.DailyLog.update(id, data),
+    mutationFn: ({ id, data }) => apiClient.entities.DailyLog.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setSelectedLog(null);
@@ -84,7 +85,7 @@ export default function DailyLogs() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.DailyLog.delete(id),
+    mutationFn: (id) => apiClient.entities.DailyLog.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       setDeleteLog(null);

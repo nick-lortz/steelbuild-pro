@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity } from 'lucide-react';
@@ -9,17 +10,17 @@ import { isWithinInterval, differenceInDays } from 'date-fns';
 export default function ResourceUtilization() {
   const { data: resources = [] } = useQuery({
     queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list('name'),
+    queryFn: () => apiClient.entities.Resource.list('name'),
   });
 
   const { data: allocations = [] } = useQuery({
     queryKey: ['resourceAllocations'],
-    queryFn: () => base44.entities.ResourceAllocation.list(),
+    queryFn: () => apiClient.entities.ResourceAllocation.list(),
   });
 
   const { data: laborHours = [] } = useQuery({
     queryKey: ['laborHours'],
-    queryFn: () => base44.entities.LaborHours.list(),
+    queryFn: () => apiClient.entities.LaborHours.list(),
   });
 
   // Calculate utilization for each resource

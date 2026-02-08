@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 export default function DrawingSetDetails({ 
   drawingSet, 
@@ -39,7 +40,7 @@ export default function DrawingSetDetails({
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
+    queryFn: () => apiClient.entities.RFI.list(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -68,10 +69,10 @@ export default function DrawingSetDetails({
     setUploadingSheets(true);
     try {
       for (const file of uploadFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await apiClient.integrations.Core.UploadFile({ file });
         const sheetNumber = file.name.replace('.pdf', '');
         
-        await base44.entities.DrawingSheet.create({
+        await apiClient.entities.DrawingSheet.create({
           drawing_set_id: drawingSet.id,
           sheet_number: sheetNumber,
           sheet_name: file.name,

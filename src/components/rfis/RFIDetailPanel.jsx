@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { toast } from '@/components/ui/notifications';
 import DocumentUploader from '@/components/documents/DocumentUploader';
 
@@ -31,7 +32,7 @@ export default function RFIDetailPanel({
   const [documents, setDocuments] = useState(rfi.attachments || []);
 
   const updateRFIMutation = useMutation({
-    mutationFn: (data) => base44.entities.RFI.update(rfi.id, data),
+    mutationFn: (data) => apiClient.entities.RFI.update(rfi.id, data),
     onSuccess: () => {
       toast.success('Documents added to RFI');
       setShowDocUploader(false);
@@ -232,7 +233,7 @@ export default function RFIDetailPanel({
             <Button
               onClick={async () => {
                 try {
-                  const response = await base44.functions.invoke('exportRFItoPDF', { rfi_id: rfi.id });
+                  const response = await apiClient.functions.invoke('exportRFItoPDF', { rfi_id: rfi.id });
                   const blob = new Blob([response.data], { type: 'application/pdf' });
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');

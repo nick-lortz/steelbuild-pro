@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useMutation } from '@tanstack/react-query';
 import { Lightbulb, TrendingUp, Zap, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -18,7 +19,7 @@ export default function RFISmartInsights({ projectId, rfis = [] }) {
       const sample = rfis.filter(r => r.status !== 'closed')[0];
       if (!sample) return null;
       
-      const res = await base44.functions.invoke('predictRFIRisk', {
+      const res = await apiClient.functions.invoke('predictRFIRisk', {
         project_id: projectId,
         rfi_type: sample.rfi_type,
         discipline: sample.discipline,
@@ -34,7 +35,7 @@ export default function RFISmartInsights({ projectId, rfis = [] }) {
 
   const generateMeetingSummaryMutation = useMutation({
     mutationFn: async () => {
-      const res = await base44.functions.invoke('generateRFIMeetingSummary', {
+      const res = await apiClient.functions.invoke('generateRFIMeetingSummary', {
         project_id: projectId,
         meeting_date: new Date().toISOString().split('T')[0]
       });
@@ -48,7 +49,7 @@ export default function RFISmartInsights({ projectId, rfis = [] }) {
 
   const clusterProblemsMutation = useMutation({
     mutationFn: async () => {
-      const res = await base44.functions.invoke('clusterRFIsByProblem', {
+      const res = await apiClient.functions.invoke('clusterRFIsByProblem', {
         project_id: projectId
       });
       return res.data;

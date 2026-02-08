@@ -78,7 +78,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black text-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-zinc-800/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-zinc-950 to-black" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-600/5 via-zinc-950 to-black" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-40">
           <div className="text-center space-y-8">
             <div className="flex justify-center">

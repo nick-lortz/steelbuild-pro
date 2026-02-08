@@ -99,4 +99,80 @@ export {
   PaginationEllipsis,
 }
 
-export default Pagination;
+// Backward-compatible default export used across existing pages.
+export default function PaginationCompat({
+  total = 0,
+  page = 1,
+  pageSize = 25,
+  onPageChange,
+  onPageSizeChange,
+  className,
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const startIndex = total === 0 ? 0 : (page - 1) * pageSize + 1
+  const endIndex = Math.min(page * pageSize, total)
+  const safePage = Math.min(page, totalPages)
+
+  const canGoPrev = safePage > 1
+  const canGoNext = safePage < totalPages
+
+  const handlePageChange = (nextPage) => {
+    if (typeof onPageChange === "function") {
+      onPageChange(nextPage)
+    }
+  }
+
+  const handlePageSizeChange = (event) => {
+    if (typeof onPageSizeChange === "function") {
+      onPageSizeChange(Number(event.target.value))
+    }
+  }
+
+  return (
+    <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
+      <p className="text-sm text-muted-foreground">
+        Showing {startIndex}-{endIndex} of {total}
+      </p>
+
+      <div className="flex items-center gap-2">
+        {typeof onPageSizeChange === "function" && (
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+          >
+            {[10, 25, 50, 100].map((size) => (
+              <option key={size} value={size}>
+                {size}/page
+              </option>
+            ))}
+          </select>
+        )}
+
+        <button
+          type="button"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          disabled={!canGoPrev}
+          onClick={() => handlePageChange(safePage - 1)}
+        >
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          Prev
+        </button>
+
+        <span className="text-sm text-muted-foreground">
+          Page {safePage} of {totalPages}
+        </span>
+
+        <button
+          type="button"
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          disabled={!canGoNext}
+          onClick={() => handlePageChange(safePage + 1)}
+        >
+          Next
+          <ChevronRight className="ml-1 h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  )
+}

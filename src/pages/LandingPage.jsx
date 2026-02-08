@@ -181,15 +181,15 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
-        <Card className="bg-gradient-to-br from-blue-600/10 to-black border-blue-500/30 rounded-lg overflow-hidden">
+        <Card className="bg-gradient-to-br from-amber-600/10 to-black border-amber-500/30 rounded-lg overflow-hidden">
           <CardContent className="p-16 text-center space-y-6">
-            <h2 className="text-5xl font-bold tracking-tight">Ready to Transform Your Projects?</h2>
+            <h2 className="text-5xl font-bold tracking-tight">Close More Projects, On Time & On Budget</h2>
             <p className="text-lg text-zinc-400 max-w-2xl mx-auto font-light">
-              Join fabricators who are streamlining their operations with SteelBuild Pro
+              Start coordinating your next erection with SteelBuild Pro
             </p>
             <Link to={createPageUrl('Dashboard')}>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
-                Start Managing Projects
+              <Button className="bg-amber-600 hover:bg-amber-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-amber-600/30">
+                Launch Project
                 <ArrowRight size={20} className="ml-2" />
               </Button>
             </Link>

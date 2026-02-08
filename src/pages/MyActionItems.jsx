@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import PageHeader from '@/components/ui/PageHeader';
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
+import MetricsBar from '@/components/layout/MetricsBar';
 import { CheckCircle2, Clock, AlertTriangle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO, isPast, isWithinInterval, addDays } from 'date-fns';
@@ -83,49 +84,23 @@ export default function MyActionItems() {
     updateMutation.mutate({ id: actionId, data: { status: newStatus } });
   };
 
+  const metrics = [
+    { label: 'Total', value: stats.total, color: 'text-white', icon: null },
+    { label: 'Open', value: stats.open, color: 'text-blue-400', icon: Clock },
+    { label: 'Overdue', value: stats.overdue, color: 'text-red-400', icon: AlertTriangle },
+    { label: 'Done', value: stats.done, color: 'text-green-400', icon: CheckCircle2 }
+  ];
+
   return (
-    <div className="min-h-screen bg-background p-6">
+    <PageShell>
       <PageHeader 
         title="My Action Items"
         subtitle={`${stats.total} total • ${stats.open} open • ${stats.overdue} overdue`}
       />
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4 mt-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Open</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-500">{stats.open}</div>
-          </CardContent>
-        </Card>
-        <Card className="border-red-600">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">{stats.overdue}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">{stats.done}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <MetricsBar metrics={metrics} />
 
+      <ContentSection>
       {/* Filters */}
       <div className="flex gap-3 mt-6">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -256,6 +231,7 @@ export default function MyActionItems() {
           );
         })}
       </div>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

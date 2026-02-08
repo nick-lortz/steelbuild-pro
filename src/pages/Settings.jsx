@@ -11,33 +11,15 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  UserCircle, 
-  Shield, 
-  Users, 
-  Plus, 
-  Save, 
-  MessageSquare, 
-  Send, 
-  FileText, 
-  ExternalLink,
-  Bell,
-  Palette,
-  Settings as SettingsIcon,
-  Clock,
-  Globe,
-  Monitor,
-  Zap,
-  Layout,
-  DollarSign
-} from 'lucide-react';
-import PermissionManager from '@/components/settings/PermissionManager';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { toast } from "sonner";
+import PageShell from '@/components/layout/PageShell';
+import PageHeader from '@/components/layout/PageHeader';
+import ContentSection from '@/components/layout/ContentSection';
 import DataTable from '@/components/ui/DataTable';
-import { format } from 'date-fns';
+import PermissionManager from '@/components/settings/PermissionManager';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
+import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap } from 'lucide-react';
+import { toast } from "sonner";
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
@@ -186,16 +168,13 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="border-b-2 border-amber-500 bg-black">
-        <div className="max-w-[1400px] mx-auto px-6 py-4">
-          <h1 className="text-2xl font-black text-white uppercase tracking-tight">Settings</h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1">PROFILE • PREFERENCES • CUSTOMIZATION</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Settings"
+        subtitle="Profile • Preferences • Customization"
+      />
 
-      <div className="max-w-[1400px] mx-auto px-6 py-6">
+      <ContentSection>
         <Tabs defaultValue="profile" className="space-y-4">
           <TabsList className="bg-zinc-900 border border-zinc-800">
             <TabsTrigger value="profile"><UserCircle size={12} className="mr-1.5" />Profile</TabsTrigger>
@@ -604,6 +583,7 @@ export default function Settings() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+      </ContentSection>
+    </PageShell>
   );
 }

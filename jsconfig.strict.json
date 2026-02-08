@@ -1,0 +1,12 @@
+{
+  "extends": "./jsconfig.json",
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/utils/index.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

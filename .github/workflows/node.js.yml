@@ -27,4 +27,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
+    - run: npm run typecheck --if-present
+    - run: npm run typecheck:strict --if-present
     - run: npm run build --if-present

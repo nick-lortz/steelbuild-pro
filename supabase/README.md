@@ -26,6 +26,8 @@ This folder bootstraps the first owned-backend slice for Steelbuilder Pro.
      - `npm run owned:dev`
 6. Health-check gateway:
    - `curl http://localhost:8787/api/health`
+7. Run owned smoke checks (gateway required):
+   - `npm run owned:smoke`
 
 ## Next steps
 

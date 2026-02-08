@@ -167,6 +167,17 @@ function resolveEntityTable(entityName) {
   return table;
 }
 
+function getEntityPolicy(entityName) {
+  const name = String(entityName || '');
+  if (name === 'Budget' || name === 'BudgetLineItem') {
+    return { enforcedFilters: { category: 'budget' }, enforcedData: { category: 'budget' } };
+  }
+  if (name === 'EstimatedCostToComplete') {
+    return { enforcedFilters: { category: 'etc' }, enforcedData: { category: 'etc' } };
+  }
+  return { enforcedFilters: {}, enforcedData: {} };
+}
+
 function getFilterableColumns(table) {
   return TABLE_FILTERABLE_COLUMNS[table] || new Set(['id', 'project_id', 'status', 'name']);
 }
@@ -448,7 +459,7 @@ async function handleAuthUpdateMe(req, res) {
   }
 }
 
-async function handleEntitiesList(req, res, table, url) {
+async function handleEntitiesList(req, res, entity, table, url) {
   try {
     if (!hasSupabase()) {
       json(res, 200, []);
@@ -463,6 +474,11 @@ async function handleEntitiesList(req, res, table, url) {
     queryUrl.searchParams.set('order', `${sortField}.${parsed.ascending ? 'asc' : 'desc'}`);
     if (limit) queryUrl.searchParams.set('limit', String(limit));
 
+    const policy = getEntityPolicy(entity);
+    Object.entries(policy.enforcedFilters).forEach(([key, value]) => {
+      queryUrl.searchParams.set(key, `eq.${value}`);
+    });
+
     const rows = await fetchJson(queryUrl, { headers: supabaseHeaders() });
     json(res, 200, normalizeEntityRows(rows || []));
   } catch (error) {
@@ -470,12 +486,13 @@ async function handleEntitiesList(req, res, table, url) {
   }
 }
 
-async function handleEntitiesFilterOrCreate(req, res, table) {
+async function handleEntitiesFilterOrCreate(req, res, entity, table) {
   try {
     const body = await readBody(req);
+    const policy = getEntityPolicy(entity);
     if (!hasSupabase()) {
       if (body?.data) {
-        json(res, 200, normalizeEntityRow({ id: crypto.randomUUID(), ...body.data }));
+        json(res, 200, normalizeEntityRow({ id: crypto.randomUUID(), ...body.data, ...policy.enforcedData }));
       } else {
         json(res, 200, []);
       }
@@ -490,13 +507,13 @@ async function handleEntitiesFilterOrCreate(req, res, table) {
           'Content-Type': 'application/json',
           Prefer: 'return=representation'
         }),
-        body: JSON.stringify([body.data || {}])
+        body: JSON.stringify([{ ...(body.data || {}), ...policy.enforcedData }])
       });
       json(res, 200, normalizeEntityRow(rows?.[0] || null));
       return;
     }
 
-    const filters = body?.filters || {};
+    const filters = { ...(body?.filters || {}), ...policy.enforcedFilters };
     const sortBy = body?.sortBy;
     const limit = body?.limit;
     const parsed = parseSort(sortBy);
@@ -524,12 +541,13 @@ async function handleEntitiesFilterOrCreate(req, res, table) {
   }
 }
 
-async function handleEntitiesBulkCreate(req, res, table) {
+async function handleEntitiesBulkCreate(req, res, entity, table) {
   try {
     const body = await readBody(req);
     const records = Array.isArray(body?.records) ? body.records : [];
+    const policy = getEntityPolicy(entity);
     if (!hasSupabase()) {
-      json(res, 200, records.map((r) => normalizeEntityRow({ id: crypto.randomUUID(), ...r })));
+      json(res, 200, records.map((r) => normalizeEntityRow({ id: crypto.randomUUID(), ...(r || {}), ...policy.enforcedData })));
       return;
     }
     const insertUrl = `${SUPABASE_URL}/rest/v1/${table}`;
@@ -539,7 +557,7 @@ async function handleEntitiesBulkCreate(req, res, table) {
         'Content-Type': 'application/json',
         Prefer: 'return=representation'
       }),
-      body: JSON.stringify(records)
+      body: JSON.stringify(records.map((r) => ({ ...(r || {}), ...policy.enforcedData })))
     });
     json(res, 200, normalizeEntityRows(rows || []));
   } catch (error) {
@@ -547,10 +565,11 @@ async function handleEntitiesBulkCreate(req, res, table) {
   }
 }
 
-async function handleEntityUpdate(req, res, table, id) {
+async function handleEntityUpdate(req, res, entity, table, id) {
   try {
     const body = await readBody(req);
-    const data = body?.data || {};
+    const policy = getEntityPolicy(entity);
+    const data = { ...(body?.data || {}), ...policy.enforcedData };
     if (!hasSupabase()) {
       json(res, 200, normalizeEntityRow({ id, ...data }));
       return;
@@ -1131,36 +1150,38 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       if (method === 'GET') {
-        await handleEntitiesList(req, res, table, url);
+        await handleEntitiesList(req, res, entity, table, url);
         return;
       }
       if (method === 'POST') {
-        await handleEntitiesFilterOrCreate(req, res, table);
+        await handleEntitiesFilterOrCreate(req, res, entity, table);
         return;
       }
     }
 
     const entitiesBulkMatch = url.pathname.match(/^\/api\/entities\/([^/]+)\/bulk$/);
     if (entitiesBulkMatch && method === 'POST') {
-      const table = resolveEntityTable(entitiesBulkMatch[1]);
+      const entity = entitiesBulkMatch[1];
+      const table = resolveEntityTable(entity);
       if (!table) {
         await handleNotImplemented(res, `entities/${entitiesBulkMatch[1]}/bulk`);
         return;
       }
-      await handleEntitiesBulkCreate(req, res, table);
+      await handleEntitiesBulkCreate(req, res, entity, table);
       return;
     }
 
     const entitiesIdMatch = url.pathname.match(/^\/api\/entities\/([^/]+)\/([^/]+)$/);
     if (entitiesIdMatch) {
-      const table = resolveEntityTable(entitiesIdMatch[1]);
+      const entity = entitiesIdMatch[1];
+      const table = resolveEntityTable(entity);
       const id = entitiesIdMatch[2];
       if (!table) {
         await handleNotImplemented(res, `entities/${entitiesIdMatch[1]}/${id}`);
         return;
       }
       if (method === 'PATCH') {
-        await handleEntityUpdate(req, res, table, id);
+        await handleEntityUpdate(req, res, entity, table, id);
         return;
       }
       if (method === 'DELETE') {

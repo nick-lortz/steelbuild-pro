@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 
 const tabs = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, rootPage: 'Dashboard' },
@@ -44,7 +44,7 @@ export default function MobileNav({ currentPageName }) {
   const navigate = useNavigate();
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => apiClient.auth.me(),
   });
 
   const handleTabClick = (e, tab) => {

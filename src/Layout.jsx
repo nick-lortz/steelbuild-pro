@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
@@ -206,11 +206,11 @@ function LayoutContent({ children, currentPageName }) {
     queryKey: ['currentUser'],
     queryFn: async () => {
       try {
-        return await base44.auth.me();
+        return await apiClient.auth.me();
       } catch (error) {
         // If unauthorized, redirect to login
         if (error?.response?.status === 401 || error?.status === 401) {
-          base44.auth.redirectToLogin(window.location.pathname);
+          apiClient.auth.redirectToLogin(window.location.pathname);
           return null;
         }
         throw error;
@@ -229,7 +229,7 @@ function LayoutContent({ children, currentPageName }) {
     queryKey: ['activeProject', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return null;
-      return await base44.entities.Project.filter({ id: activeProjectId });
+      return await apiClient.entities.Project.filter({ id: activeProjectId });
     },
     enabled: !!activeProjectId,
     select: (data) => data?.[0] || null,
@@ -240,7 +240,7 @@ function LayoutContent({ children, currentPageName }) {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
-      base44.auth.logout();
+      apiClient.auth.logout();
     }
   };
 

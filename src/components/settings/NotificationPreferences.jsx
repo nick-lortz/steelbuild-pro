@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { apiClient } from '@/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -14,7 +14,7 @@ export default function NotificationPreferences() {
 
   const { data: currentUser, isLoading } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: () => apiClient.auth.me(),
   });
 
   const [preferences, setPreferences] = useState(null);
@@ -37,7 +37,7 @@ export default function NotificationPreferences() {
 
   const updateMutation = useMutation({
     mutationFn: (newPreferences) => 
-      base44.auth.updateMe({ notification_preferences: newPreferences }),
+      apiClient.auth.updateMe({ notification_preferences: newPreferences }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success('Notification preferences updated');

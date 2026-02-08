@@ -35,6 +35,7 @@ import DrawingComparisonPanel from './DrawingComparisonPanel';
 import SmartLinkagePanel from './SmartLinkagePanel';
 import DrawingDetailExtraction from './DrawingDetailExtraction';
 import MembersConnectionsTable from './MembersConnectionsTable';
+import SteelQAGate from './SteelQAGate';
 
 const safeFormatISO = (value, pattern = 'MMM d, yyyy') => {
   if (!value) return '—';
@@ -155,6 +156,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
         <Tabs defaultValue="details" className="mt-4">
           <TabsList className="bg-zinc-800 border-zinc-700">
             <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="qa">QA Gate</TabsTrigger>
             <TabsTrigger value="ai">AI Analysis</TabsTrigger>
             <TabsTrigger value="steel_details">Steel Details</TabsTrigger>
             <TabsTrigger value="sheets">
@@ -408,6 +410,15 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="qa" className="mt-4">
+            <SteelQAGate 
+              drawingSetId={drawingSetId}
+              onQAComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['drawing-set', drawingSetId] });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="ai" className="mt-4">

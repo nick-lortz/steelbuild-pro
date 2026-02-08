@@ -66,12 +66,12 @@ export default function LandingPage() {
   ];
 
   const benefits = [
-    "Reduce project delays by identifying critical path bottlenecks",
-    "Improve budget accuracy with real-time cost tracking",
-    "Streamline communication with automated RFI and CO workflows",
-    "Make data-driven decisions with AI-powered insights",
-    "Increase team productivity with centralized project data",
-    "Ensure compliance with comprehensive audit trails"
+    "Eliminate field surprises with detail library learning from recurring issues",
+    "Accelerate RFF (Release for Fabrication) with coordinated drawing approvals",
+    "Predict erection delays before equipment mobilizes",
+    "Track tonnage, work packages, and crew productivity end-to-end",
+    "Control change order impact with real-time cost and schedule analytics",
+    "Close projects faster with automated closeout documentation"
   ];
 
   return (

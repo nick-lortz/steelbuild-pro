@@ -39,10 +39,11 @@ FLAG ANY MISSING OR INCONSISTENT:
 - Missing bolt hole specifications
 - Unclear erection sequence callouts
 
-Return as JSON with three sections:
+Return as JSON with four sections:
 1. "members": array of {type, designation, quantity, grade, notes}
 2. "connections": array of {location, type, bolt_spec, weld_spec, status}
-3. "flags": array of {severity: "P0"|"P1", category, message, location}`;
+3. "flags": array of {severity: "P0"|"P1", category, message, location, resolution_suggestion}
+4. "flag_summary": {p0_categories: [category list], p1_categories: [category list]}`;
 
     const extractionResult = await base44.integrations.Core.InvokeLLM({
       prompt: analysisPrompt,
@@ -84,8 +85,16 @@ Return as JSON with three sections:
                 severity: { type: 'string' },
                 category: { type: 'string' },
                 message: { type: 'string' },
-                location: { type: 'string' }
+                location: { type: 'string' },
+                resolution_suggestion: { type: 'string' }
               }
+            }
+          },
+          flag_summary: {
+            type: 'object',
+            properties: {
+              p0_categories: { type: 'array', items: { type: 'string' } },
+              p1_categories: { type: 'array', items: { type: 'string' } }
             }
           }
         }

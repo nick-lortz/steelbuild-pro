@@ -18,7 +18,7 @@ import MetricsBar from '@/components/layout/MetricsBar';
 import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import DataTable from '@/components/ui/DataTable';
-import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Trash2, Repeat, Bell } from 'lucide-react';
 import { format, isPast, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
 

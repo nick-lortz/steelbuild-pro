@@ -11,8 +11,14 @@ import ErectionSequencingPanel from '@/components/schedule/ErectionSequencingPan
 import WorkPackageScheduleView from '@/components/schedule/WorkPackageScheduleView';
 
 export default function WeeklySchedule() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [view, setView] = useState('lookahead');
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000
+  });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
@@ -24,10 +30,10 @@ export default function WeeklySchedule() {
     enabled: !!activeProjectId
   });
 
-  if (!activeProjectId) {
+  if (!activeProjectId && allProjects.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-zinc-500">Select a project to view schedule</p>
+        <p className="text-zinc-500">No projects available</p>
       </div>
     );
   }
@@ -38,10 +44,22 @@ export default function WeeklySchedule() {
       <Card className="bg-zinc-800/50 border-zinc-700">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">{project?.name}</CardTitle>
-              <p className="text-xs text-zinc-400 mt-1">Phase: {project?.phase}</p>
+            <div className="flex-1">
+              <CardTitle className="text-2xl">{project?.name || 'Weekly Schedule'}</CardTitle>
+              <p className="text-xs text-zinc-400 mt-1">Phase: {project?.phase || 'N/A'}</p>
             </div>
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-80 bg-zinc-900 border-zinc-700">
+                <SelectValue placeholder="Select Project" />
+              </SelectTrigger>
+              <SelectContent>
+                {allProjects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
       </Card>

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import FieldIssueLogger from '@/components/field/FieldIssueLogger';
-import FieldIssueDashboard from '@/components/field/FieldIssueDashboard';
+import FieldIssueForm from '@/components/field/FieldIssueForm';
+import FieldIssuesDashboard from '@/components/field/FieldIssuesDashboard';
 import { AlertCircle, BarChart3 } from 'lucide-react';
 
 export default function FieldTools() {
@@ -52,7 +52,7 @@ export default function FieldTools() {
 
         {/* Log Issue Tab */}
         <TabsContent value="log" className="mt-4">
-          <FieldIssueLogger
+          <FieldIssueForm
             projectId={activeProjectId}
             onSuccess={() => {
               setShowSuccess(true);
@@ -63,7 +63,7 @@ export default function FieldTools() {
 
         {/* Dashboard Tab */}
         <TabsContent value="dashboard" className="mt-4">
-          <FieldIssueDashboard projectId={activeProjectId} />
+          <FieldIssuesDashboard projectId={activeProjectId} />
         </TabsContent>
       </Tabs>
     </div>

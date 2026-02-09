@@ -45,7 +45,9 @@ Deno.serve(async (req) => {
       };
     }
 
-    const allUserProjects = await base44.entities.Project.filter(projectQuery, '-status');
+    const allUserProjects = await base44.entities.Project.filter(projectQuery);
+    // Sort alphabetically by name
+    allUserProjects.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     if (allUserProjects.length === 0) {
       return Response.json({ 
         projects: [], 

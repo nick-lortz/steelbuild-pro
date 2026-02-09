@@ -239,6 +239,9 @@ export default function TaskForm({
   const laborResources = resources.filter((r) => r.type === 'labor' || r.type === 'subcontractor');
   const equipmentResources = resources.filter((r) => r.type === 'equipment');
   const selectedProject = projects.find((p) => p.id === formData.project_id);
+  
+  // Sort projects alphabetically for dropdown
+  const sortedProjects = [...projects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   const toggleArrayItem = (field, itemId) => {
     const current = formData[field] || [];
@@ -357,7 +360,7 @@ export default function TaskForm({
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
             <SelectContent>
-              {projects.map((p) =>
+              {sortedProjects.map((p) =>
               <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
               )}
             </SelectContent>

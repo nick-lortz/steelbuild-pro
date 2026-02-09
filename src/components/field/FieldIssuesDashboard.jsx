@@ -14,15 +14,18 @@ import {
   TrendingUp,
   Camera,
   Wrench,
-  ChevronRight
+  ChevronRight,
+  CheckSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import BulkFieldIssueActions from './BulkFieldIssueActions';
 
 export default function FieldIssuesDashboard({ projectId, onIssueClick }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const { data: issues = [], isLoading } = useQuery({
     queryKey: ['field-issues', projectId],
@@ -110,6 +113,22 @@ export default function FieldIssuesDashboard({ projectId, onIssueClick }) {
 
   return (
     <div className="space-y-4">
+      {showBulkActions ? (
+        <BulkFieldIssueActions
+          issues={filteredIssues}
+          onClose={() => setShowBulkActions(false)}
+        />
+      ) : (
+        <Button
+          onClick={() => setShowBulkActions(true)}
+          variant="outline"
+          className="w-full border-zinc-700"
+        >
+          <CheckSquare size={16} className="mr-2" />
+          Bulk Actions
+        </Button>
+      )}
+
       {/* Stats Bar */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Card className="bg-zinc-900 border-zinc-800">

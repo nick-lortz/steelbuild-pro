@@ -181,6 +181,12 @@ export default function ProjectAssistant({
 
   const quickAnalyses = [
   {
+    id: 'drawing_status',
+    label: 'Drawing Status & Blockers',
+    icon: FileText,
+    prompt: 'Analyze all drawing sets. Identify: sets blocking fabrication/erection, overdue drawings, sets awaiting approval, and sets with failed QA. Prioritize by impact to critical path. List specific drawing numbers and recommended actions to expedite release.'
+  },
+  {
     id: 'fabrication_bottlenecks',
     label: 'Fabrication Bottlenecks',
     icon: FileText,
@@ -188,27 +194,27 @@ export default function ProjectAssistant({
   },
   {
     id: 'delivery_analysis',
-    label: 'Delivery Schedule Analysis',
+    label: 'Delivery Schedule',
     icon: Calendar,
     prompt: 'Analyze the delivery schedule for the next 7-14 days. Identify overdue deliveries, potential conflicts, and sequencing issues. Recommend adjustments to optimize logistics and site readiness.'
   },
   {
+    id: 'rfi_impact',
+    label: 'RFI Impact Analysis',
+    icon: MessageSquareWarning,
+    prompt: 'Analyze all open RFIs. Identify which ones are blocking fabrication, holding up deliveries, or on critical path. Prioritize by urgency (days open, ball-in-court, linked tasks). Recommend escalation actions for stalled RFIs.'
+  },
+  {
     id: 'resource_allocation',
-    label: 'Resource Reallocation',
+    label: 'Resource Gaps',
     icon: MessageSquareWarning,
     prompt: 'Analyze resource assignments across all active tasks. Identify unassigned critical path tasks, over/under-allocated resources, and recommend specific reallocations to optimize production flow and prevent delays.'
   },
   {
-    id: 'production_gantt',
-    label: 'Production Timeline Visual',
-    icon: FileCheck,
-    prompt: 'Generate a textual Gantt chart representation showing fabrication and delivery timelines. Include start/end dates, durations, status, and critical path items. Format as a clear schedule table showing: Package | Phase | Start | End | Duration | Status | Notes.'
-  },
-  {
     id: 'weekly_summary',
-    label: 'Weekly Production Summary',
+    label: 'Weekly Production Report',
     icon: FileCheck,
-    prompt: 'Provide a comprehensive weekly production summary including: completed fabrications, active packages, upcoming deliveries, bottlenecks, resource utilization, and top 3 action items for the coming week.'
+    prompt: 'Provide a comprehensive weekly production summary including: completed fabrications, active packages, upcoming deliveries, bottlenecks, resource utilization, and top 3 action items for the coming week. Format as a ready-to-send report.'
   }];
 
 

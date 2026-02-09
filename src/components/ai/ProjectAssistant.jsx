@@ -283,7 +283,7 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
   return (
     <div className="space-y-4">
       {/* Quick Analysis Buttons */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {quickAnalyses.map((analysis) => {
           const Icon = analysis.icon;
           return (

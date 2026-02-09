@@ -19,7 +19,7 @@ import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import DataTable from '@/components/ui/DataTable';
 import PhotoCapture from '@/components/mobile/PhotoCapture';
-import { Plus, Calendar, Users, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Trash2, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 

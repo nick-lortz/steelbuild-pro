@@ -207,9 +207,13 @@ Deno.serve(async (req) => {
       metrics: {
         totalProjects: projectsWithHealth.length,
         activeProjects,
-        atRiskProjects,
+        healthyProjects,
+        riskProjects: atRiskProjects,
         overdueTasks,
-        upcomingMilestones
+        upcomingMilestones,
+        openRFIs,
+        avgRFIResponseDays,
+        avgHealth
       }
     });
 

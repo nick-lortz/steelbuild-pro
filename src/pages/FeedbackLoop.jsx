@@ -11,12 +11,14 @@ import PageHeader from '@/components/layout/PageHeader';
 import PatternAnalysisPanel from '@/components/detail-improvement/PatternAnalysisPanel';
 import DetailImprovementForm from '@/components/detail-improvement/DetailImprovementForm';
 import ApprovalWorkflow from '@/components/detail-improvement/ApprovalWorkflow';
+import BulkDetailingActions from '@/components/detail-improvement/BulkDetailingActions';
 
 export default function FeedbackLoop() {
   const { activeProjectId } = useActiveProject();
   const [selectedPattern, setSelectedPattern] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedImprovement, setSelectedImprovement] = useState(null);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const { data: improvements = [] } = useQuery({
     queryKey: ['detail-improvements', activeProjectId],
@@ -210,11 +212,53 @@ export default function FeedbackLoop() {
         </TabsContent>
 
         <TabsContent value="actions">
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardContent className="p-8 text-center text-zinc-500">
-              Execution actions coming soon
-            </CardContent>
-          </Card>
+          {showBulkActions && selectedImprovement ? (
+            <BulkDetailingActions
+              improvement={selectedImprovement}
+              projectId={activeProjectId}
+              onClose={() => {
+                setShowBulkActions(false);
+                setSelectedImprovement(null);
+              }}
+            />
+          ) : (
+            <div className="space-y-4">
+              {improvements.filter(i => i.status === 'approved').length === 0 ? (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardContent className="p-8 text-center text-zinc-500">
+                    No approved improvements to execute
+                  </CardContent>
+                </Card>
+              ) : (
+                improvements.filter(i => i.status === 'approved').map(imp => (
+                  <Card key={imp.id} className="bg-zinc-900 border-zinc-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="text-sm font-semibold text-white mb-1">{imp.title}</div>
+                          <div className="text-xs text-zinc-400">{imp.connection_type.replace(/_/g, ' ')}</div>
+                        </div>
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          Approved
+                        </Badge>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setSelectedImprovement(imp);
+                          setShowBulkActions(true);
+                        }}
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                        size="sm"
+                      >
+                        <Wrench size={14} className="mr-2" />
+                        Create Detailing Actions
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </PageShell>

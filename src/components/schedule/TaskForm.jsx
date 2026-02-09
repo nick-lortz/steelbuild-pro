@@ -240,8 +240,7 @@ export default function TaskForm({
   const equipmentResources = resources.filter((r) => r.type === 'equipment');
   const selectedProject = projects.find((p) => p.id === formData.project_id);
   
-  // Sort projects alphabetically for dropdown
-  const sortedProjects = [...projects].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  // Projects already sorted alphabetically by parent component/hook
 
   const toggleArrayItem = (field, itemId) => {
     const current = formData[field] || [];
@@ -360,7 +359,7 @@ export default function TaskForm({
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
             <SelectContent>
-              {sortedProjects.map((p) =>
+              {projects.map((p) =>
               <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
               )}
             </SelectContent>

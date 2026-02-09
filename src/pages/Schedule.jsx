@@ -28,6 +28,7 @@ export default function Schedule() {
   const [zoomLevel, setZoomLevel] = useState('week');
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [pmFilter, setPmFilter] = useState('all');
 
   const queryClient = useQueryClient();
 
@@ -52,15 +53,30 @@ export default function Schedule() {
   // Filter projects by user access
   const projects = useMemo(() => {
     if (!currentUser) return [];
-    const filtered = currentUser.role === 'admin' 
+    let filtered = currentUser.role === 'admin' 
       ? allProjects 
       : allProjects.filter(p => 
           p.project_manager === currentUser.email || 
           p.superintendent === currentUser.email ||
           (p.assigned_users && p.assigned_users.includes(currentUser.email))
         );
+    
+    // Apply PM filter
+    if (pmFilter !== 'all') {
+      filtered = filtered.filter(p => p.project_manager === pmFilter);
+    }
+    
     return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [currentUser, allProjects]);
+  }, [currentUser, allProjects, pmFilter]);
+
+  // Get unique PMs
+  const projectManagers = useMemo(() => {
+    const pms = new Set();
+    allProjects.forEach(p => {
+      if (p.project_manager) pms.add(p.project_manager);
+    });
+    return Array.from(pms).sort();
+  }, [allProjects]);
 
   // Determine which projects to show
   const activeProjects = useMemo(() => {
@@ -381,8 +397,8 @@ export default function Schedule() {
       <div className="border-b border-zinc-800/50 bg-zinc-950/30">
         <div className="max-w-[1800px] mx-auto px-8 py-3">
           <div className="flex items-center gap-4">
-            {/* Project Selector - Multi-select */}
-            <div className="w-80">
+            {/* Project Selector */}
+            <div className="w-64">
               <Select 
                 value={selectedProjects.length > 0 ? 'multi' : (activeProjectId || '')} 
                 onValueChange={(value) => {
@@ -400,7 +416,7 @@ export default function Schedule() {
                 <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
                   <SelectValue placeholder="Select Project(s)">
                     {selectedProjects.length > 1 
-                      ? `${selectedProjects.length} Projects Selected` 
+                      ? `${selectedProjects.length} Projects` 
                       : selectedProjects.length === 1
                         ? projects.find(p => p.id === selectedProjects[0])?.name
                         : activeProjectId
@@ -410,12 +426,31 @@ export default function Schedule() {
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-700 max-h-96">
                   <SelectItem value="all" className="text-white font-semibold">
-                    ✓ All Projects ({projects.length})
+                    All Projects ({projects.length})
                   </SelectItem>
                   <div className="border-t border-zinc-800 my-1" />
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id} className="text-white">
                       {p.project_number} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* PM Filter */}
+            <div className="w-56">
+              <Select value={pmFilter} onValueChange={setPmFilter}>
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-96">
+                  <SelectItem value="all" className="text-white">
+                    All PMs
+                  </SelectItem>
+                  {projectManagers.map((pm) => (
+                    <SelectItem key={pm} value={pm} className="text-white">
+                      {pm}
                     </SelectItem>
                   ))}
                 </SelectContent>

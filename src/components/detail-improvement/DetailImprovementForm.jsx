@@ -182,7 +182,7 @@ export default function DetailImprovementForm({ projectId, pattern, issueIds, on
             <Textarea
               value={formData.recommended_change}
               onChange={(e) => setFormData({ ...formData, recommended_change: e.target.value })}
-              placeholder="Specific detail change (e.g., 'Increase edge distance from 1.5\" to 2.0\" for 3/4\" bolts in A36 plates')"
+              placeholder="Specific detail change (e.g., increase edge distance from 1.5 to 2.0 inches for 3/4 inch bolts)"
               className="bg-zinc-800 border-zinc-700 min-h-[80px]"
               required
             />

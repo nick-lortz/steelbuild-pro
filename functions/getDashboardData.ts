@@ -171,10 +171,32 @@ Deno.serve(async (req) => {
     // === PORTFOLIO METRICS ===
     const activeProjects = projectsWithHealth.filter(p => p.status === 'in_progress' || p.status === 'awarded').length;
     const atRiskProjects = projectsWithHealth.filter(p => p.isAtRisk).length;
+    const healthyProjects = projectsWithHealth.filter(p => !p.isAtRisk).length;
     const overdueTasks = projectsWithHealth.reduce((sum, p) => sum + p.overdueTasks, 0);
     const upcomingMilestones = tasks.filter(t => 
       t.is_milestone && t.end_date >= today && t.end_date <= thirtyDaysFromNow
     ).length;
+
+    // Portfolio-level RFI metrics
+    const openRFIs = rfis.filter(r => r.status !== 'answered' && r.status !== 'closed').length;
+    
+    // RFI avg response days (answered RFIs only, submitted_date to response_date)
+    const answeredRFIs = rfis.filter(r => r.submitted_date && r.response_date);
+    const avgRFIResponseDays = answeredRFIs.length > 0
+      ? Math.round(
+          answeredRFIs.reduce((sum, r) => {
+            const submitted = new Date(r.submitted_date).getTime();
+            const responded = new Date(r.response_date).getTime();
+            const days = Math.max(0, (responded - submitted) / (1000 * 60 * 60 * 24));
+            return sum + days;
+          }, 0) / answeredRFIs.length
+        )
+      : 0;
+
+    // Average health score across all projects
+    const avgHealth = projectsWithHealth.length > 0
+      ? projectsWithHealth.reduce((sum, p) => sum + p.costHealth, 0) / projectsWithHealth.length
+      : 0;
 
     const duration = Date.now() - startTime;
     if (duration > 1000) console.warn(JSON.stringify({ fn: 'getDashboardData', duration_ms: duration }));

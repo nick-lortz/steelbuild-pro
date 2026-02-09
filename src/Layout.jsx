@@ -83,8 +83,7 @@ const navGroups = [
   { name: 'Fabrication', page: 'Fabrication', icon: Wrench },
   { name: 'Deliveries', page: 'Deliveries', icon: Truck },
   { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
-  { name: 'Field Tools', page: 'FieldTools', icon: Camera },
-  { name: 'Field Issues', page: 'FieldTools', icon: AlertCircle }],
+  { name: 'Field Tools', page: 'FieldTools', icon: Camera }],
 
   roles: ['admin', 'user']
 },

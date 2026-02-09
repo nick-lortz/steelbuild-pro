@@ -30,7 +30,7 @@ export default function ComprehensiveKPIs({ projects, rfis, changeOrders, expens
       .filter(t => filteredProjects.some(p => p.id === t.project_id))
       .reduce((sum, t) => sum + (t.actual_hours || 0), 0);
     
-    const hoursVariance = totalBaseline > 0 ? ((totalBaseline - totalActualHours) / totalBaseline) * 100 : 0;
+    const hoursVariance = totalBaseline > 0 ? ((totalActualHours - totalBaseline) / totalBaseline) * 100 : 0;
 
     // RFI Turnaround Time
     const answeredRFIs = filteredRFIs.filter(rfi => rfi.status === 'answered' && rfi.submitted_date && rfi.response_date);
@@ -91,7 +91,7 @@ export default function ComprehensiveKPIs({ projects, rfis, changeOrders, expens
       label: 'Baseline vs Actual Hours',
       value: `${kpis.actualHours.toLocaleString()} / ${kpis.baselineHours.toLocaleString()}`,
       subValue: `${kpis.hoursVariance >= 0 ? '+' : ''}${kpis.hoursVariance.toFixed(1)}%`,
-      status: kpis.hoursVariance >= 0 ? 'good' : 'bad',
+      status: kpis.hoursVariance <= 0 ? 'good' : 'bad',
       iconColor: 'text-purple-500'
     },
     {

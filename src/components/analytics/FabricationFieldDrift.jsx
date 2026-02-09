@@ -5,37 +5,6 @@ import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, AlertCircle, Minu
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Classification logic - deterministic and auditable
-function classifyExpense(expense, costCode) {
-  const category = expense.category?.toLowerCase() || '';
-  const codeName = costCode?.name?.toLowerCase() || '';
-  const code = costCode?.code?.toLowerCase() || '';
-
-  // Fabrication indicators
-  const fabKeywords = ['shop', 'fab', 'fabrication', 'detail', 'coating', 'paint', 'weld prep', 'fit-up', 'assembly'];
-  
-  // Field indicators
-  const fieldKeywords = ['field', 'erection', 'install', 'crane', 'lift', 'site', 'onsite', 'rigging', 'hoist'];
-
-  const nameMatch = fabKeywords.some(kw => codeName.includes(kw)) ? 'fabrication' :
-                    fieldKeywords.some(kw => codeName.includes(kw)) ? 'field' : null;
-
-  if (nameMatch) return nameMatch;
-
-  // Category-based classification
-  if (category === 'equipment') {
-    return fieldKeywords.some(kw => codeName.includes(kw)) ? 'field' : 'other';
-  }
-
-  if (category === 'labor') {
-    // Default shop labor vs field labor based on cost code patterns
-    if (code.startsWith('05-1') || code.startsWith('051')) return 'fabrication';
-    if (code.startsWith('05-5') || code.startsWith('055')) return 'field';
-  }
-
-  return 'other';
-}
-
 export default function FabricationFieldDrift({ 
   expenses = [], 
   financials = [], 
@@ -47,6 +16,37 @@ export default function FabricationFieldDrift({
   const [selectedCostCode, setSelectedCostCode] = useState('all');
 
   // Filter expenses
+  // Classification logic - deterministic and auditable
+  const classifyExpense = (expense, costCode) => {
+    const category = expense.category?.toLowerCase() || '';
+    const codeName = costCode?.name?.toLowerCase() || '';
+    const code = costCode?.code?.toLowerCase() || '';
+
+    // Fabrication indicators
+    const fabKeywords = ['shop', 'fab', 'fabrication', 'detail', 'coating', 'paint', 'weld prep', 'fit-up', 'assembly'];
+    
+    // Field indicators
+    const fieldKeywords = ['field', 'erection', 'install', 'crane', 'lift', 'site', 'onsite', 'rigging', 'hoist'];
+
+    const nameMatch = fabKeywords.some(kw => codeName.includes(kw)) ? 'fabrication' :
+                      fieldKeywords.some(kw => codeName.includes(kw)) ? 'field' : null;
+
+    if (nameMatch) return nameMatch;
+
+    // Category-based classification
+    if (category === 'equipment') {
+      return fieldKeywords.some(kw => codeName.includes(kw)) ? 'field' : 'other';
+    }
+
+    if (category === 'labor') {
+      // Default shop labor vs field labor based on cost code patterns
+      if (code.startsWith('05-1') || code.startsWith('051')) return 'fabrication';
+      if (code.startsWith('05-5') || code.startsWith('055')) return 'field';
+    }
+
+    return 'other';
+  };
+
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
       if (selectedSOV !== 'all' && e.sov_code !== selectedSOV) return false;

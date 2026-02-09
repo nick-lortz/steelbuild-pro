@@ -350,7 +350,7 @@ The user's question is about the ${selectedProject ? 'selected project' : 'all p
             <Textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ask about drawings, RFIs, schedule risks, budget variance, or any project metrics..."
+              placeholder="e.g., 'Which RFIs are blocking erection tasks?' or 'Show me all overdue drawing sets and their downstream impact'"
               rows={3} className="bg-zinc-800 text-slate-50 px-3 py-2 text-base rounded-md flex min-h-[60px] w-full border shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm border-zinc-700 resize-none"
 
               disabled={loading} />

@@ -17,6 +17,8 @@ import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import SubtaskManager from './SubtaskManager';
 import TimeTracker from './TimeTracker';
 import RecurringTaskConfig from './RecurringTaskConfig';
+import TaskDependencySelector from './TaskDependencySelector';
+import TaskResourceSelector from './TaskResourceSelector';
 import { toast } from '@/components/ui/notifications';
 
 export default function TaskForm({
@@ -610,53 +612,15 @@ export default function TaskForm({
 
       {/* Dependencies */}
       <div className="border-t border-zinc-800 pt-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-medium">Task Dependencies</h4>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => setShowDependencyConfig(true)} className="bg-background text-slate-950 px-3 text-xs font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm hover:bg-accent hover:text-accent-foreground h-8 border-zinc-700">
-
-
-
-            <Settings size={14} className="mr-1" />
-            Configure Dependencies
-          </Button>
-        </div>
-
-        {formData.predecessor_configs && formData.predecessor_configs.length > 0 ?
-        <div className="space-y-2">
-            <Label className="text-xs text-zinc-400">
-              {formData.predecessor_configs.length} predecessor{formData.predecessor_configs.length !== 1 ? 's' : ''} configured
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {formData.predecessor_configs.map((config, idx) => {
-              const t = tasks.find((task) => task.id === config.predecessor_id);
-              if (!t) return null;
-
-              const typeLabels = {
-                FS: 'Finish-Start',
-                SS: 'Start-Start',
-                FF: 'Finish-Finish',
-                SF: 'Start-Finish'
-              };
-
-              return (
-                <Badge key={idx} variant="outline" className="gap-2 bg-blue-500/10 text-blue-400 border-blue-500/20">
-                    <span className="font-medium">{t.name}</span>
-                    <span className="text-[10px] text-blue-300">
-                      {typeLabels[config.type]}
-                      {config.lag_days !== 0 && ` ${config.lag_days > 0 ? '+' : ''}${config.lag_days}d`}
-                    </span>
-                  </Badge>);
-
-            })}
-            </div>
-          </div> :
-
-        <p className="text-sm text-zinc-500">No dependencies configured. Click "Configure Dependencies" to add.</p>
-        }
+        <TaskDependencySelector
+          projectId={formData.project_id}
+          currentTaskId={task?.id}
+          dependencies={formData.predecessor_configs || []}
+          onChange={(configs) => {
+            handleChange('predecessor_configs', configs);
+            handleChange('predecessor_ids', configs.map(c => c.predecessor_id));
+          }}
+        />
       </div>
       
       {showDependencyConfig &&
@@ -733,42 +697,11 @@ export default function TaskForm({
 
       {/* Resources */}
       <div className="border-t border-zinc-800 pt-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-medium">Resources</h4>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={handleAssignToMe}
-            className="border-zinc-700"
-          >
-            <User size={14} className="mr-1" />
-            Assign to Me
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Labor / Subcontractors</Label>
-            <QuickResourceAssign
-              selectedResourceIds={formData.assigned_resources || []}
-              resources={laborResources}
-              onChange={(ids) => handleChange('assigned_resources', ids)}
-              placeholder="Assign labor/subs..."
-              triggerClassName="w-full bg-zinc-800 border-zinc-700"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Equipment</Label>
-            <QuickResourceAssign
-              selectedResourceIds={formData.assigned_equipment || []}
-              resources={equipmentResources}
-              onChange={(ids) => handleChange('assigned_equipment', ids)}
-              placeholder="Assign equipment..."
-              triggerClassName="w-full bg-zinc-800 border-zinc-700"
-            />
-          </div>
-        </div>
+        <TaskResourceSelector
+          projectId={formData.project_id}
+          assignedResources={formData.assigned_resources || []}
+          onChange={(resourceIds) => handleChange('assigned_resources', resourceIds)}
+        />
       </div>
 
       {/* Links */}

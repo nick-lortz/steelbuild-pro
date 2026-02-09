@@ -325,24 +325,21 @@ export default function Contracts() {
     }
   ];
 
-  const { totalReports, activeReports, scheduledReports } = reportStats;
+  const totalContracts = filteredProjects.length;
+  const activeContracts = filteredProjects.filter(p => p.contract_status !== 'void').length;
 
   return (
     <PageShell>
       <PageHeader
-        title="Report Center"
-        subtitle={`${totalReports} reports • ${activeReports} active`}
+        title="Contracts"
+        subtitle={`${totalContracts} contracts • ${activeContracts} active`}
         actions={
           <Button 
-            onClick={() => {
-              resetForm();
-              setEditingReport(null);
-              setShowForm(true);
-            }}
+            onClick={() => setShowAddDialog(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold"
           >
-            <FileText size={16} className="mr-2" />
-            Create
+            <Plus size={16} className="mr-2" />
+            Add Contract
           </Button>
         }
       />

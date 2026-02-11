@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from '@/components/ui/DataTable';
 import { UserPlus, Edit, Lock, Unlock } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import { cn } from '@/lib/utils';
 
 const USER_ROLES = [
   { value: 'admin', label: 'Admin' },

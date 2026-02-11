@@ -8,8 +8,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DataTable from '@/components/ui/DataTable';
 import SOVResourceAssignment from '@/components/resources/SOVResourceAssignment';
+import SOVDashboard from './SOVDashboard';
+import SOVVersionControl from './SOVVersionControl';
+import SOVImportExport from './SOVImportExport';
+import SOVReporting from './SOVReporting';
+import EnhancedSOVCostAlignment from './EnhancedSOVCostAlignment';
 import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
@@ -84,6 +90,13 @@ export default function SOVManager({ projectId, canEdit }) {
     },
     enabled: !!projectId && invoices.length > 0,
     retry: 1,
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: expenses = [] } = useQuery({
+    queryKey: ['expenses', projectId],
+    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+    enabled: !!projectId,
     staleTime: 5 * 60 * 1000
   });
 
@@ -359,9 +372,11 @@ export default function SOVManager({ projectId, canEdit }) {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-base font-semibold">Schedule of Values</h3>
-          <p className="text-xs text-muted-foreground">Project-level billing lines. Update % complete to calculate billing.</p>
+          <p className="text-xs text-muted-foreground">Project-level billing lines with comprehensive cost tracking and reporting</p>
         </div>
         <div className="flex gap-2">
+          <SOVVersionControl projectId={projectId} canEdit={canEdit} />
+          <SOVImportExport projectId={projectId} sovItems={sovItems} canEdit={canEdit} />
           <Button onClick={() => setShowBulkAddDialog(true)} disabled={!canEdit || sovItems.length > 0} variant="outline" size="sm">
             Add Standard SOV
           </Button>
@@ -372,50 +387,79 @@ export default function SOVManager({ projectId, canEdit }) {
         </div>
       </div>
 
-      {hasOverbilling && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded flex items-start gap-2">
-          <AlertTriangle size={16} className="text-red-400 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-red-400">Overbilling Detected</p>
-            <p className="text-xs text-muted-foreground">One or more SOV lines have billed more than earned. Adjust % complete or contact accounting.</p>
-          </div>
-        </div>
-      )}
+      <Tabs defaultValue="dashboard" className="w-full">
+        <TabsList>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="lines">SOV Lines</TabsTrigger>
+          <TabsTrigger value="alignment">Cost Alignment</TabsTrigger>
+          <TabsTrigger value="reporting">Reports</TabsTrigger>
+        </TabsList>
 
-      <Card className="bg-blue-500/5 border-blue-500/30">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-xs text-muted-foreground">Contract Value</p>
-              <p className="text-lg font-bold">${totals.scheduled.toFixed(2).toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Earned to Date</p>
-              <p className="text-lg font-bold text-green-400">${totals.earned.toFixed(2).toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Billed to Date</p>
-              <p className="text-lg font-bold">${totals.billed.toFixed(2).toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Ready to Bill</p>
-              <p className={`text-lg font-bold ${totals.toBill < 0 ? 'text-red-400' : 'text-amber-400'}`}>
-                ${totals.toBill.toFixed(2).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="dashboard" className="space-y-6">
+          <SOVDashboard sovItems={sovItems} expenses={expenses} />
+        </TabsContent>
 
-      <Card>
-        <CardContent className="p-4">
-          <DataTable
-            columns={columns}
-            data={sovItems}
-            emptyMessage="No SOV lines. Add Schedule of Values items to begin billing."
-          />
-        </CardContent>
-      </Card>
+        <TabsContent value="lines" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-muted-foreground">
+              Update % complete to calculate billing. Scheduled values locked after invoicing.
+            </p>
+          </div>
+
+          {hasOverbilling && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded flex items-start gap-2">
+              <AlertTriangle size={16} className="text-red-400 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-400">Overbilling Detected</p>
+                <p className="text-xs text-muted-foreground">One or more SOV lines have billed more than earned. Adjust % complete or contact accounting.</p>
+              </div>
+            </div>
+          )}
+
+          <Card className="bg-blue-500/5 border-blue-500/30">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Contract Value</p>
+                  <p className="text-lg font-bold">${totals.scheduled.toFixed(2).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Earned to Date</p>
+                  <p className="text-lg font-bold text-green-400">${totals.earned.toFixed(2).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Billed to Date</p>
+                  <p className="text-lg font-bold">${totals.billed.toFixed(2).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Ready to Bill</p>
+                  <p className={`text-lg font-bold ${totals.toBill < 0 ? 'text-red-400' : 'text-amber-400'}`}>
+                    ${totals.toBill.toFixed(2).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <DataTable
+                columns={columns}
+                data={sovItems}
+                emptyMessage="No SOV lines. Add Schedule of Values items to begin billing."
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="alignment" className="space-y-6">
+          <EnhancedSOVCostAlignment sovItems={sovItems} expenses={expenses} />
+        </TabsContent>
+
+        <TabsContent value="reporting" className="space-y-6">
+          <SOVReporting sovItems={sovItems} expenses={expenses} />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={showAddDialog} onOpenChange={(open) => {
         setShowAddDialog(open);

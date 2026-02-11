@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DataTable from '@/components/ui/DataTable';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showStandardDialog, setShowStandardDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState({});
   const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
@@ -63,6 +64,9 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
       queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
+      toast.success('Expense updated');
+      setShowEditDialog(false);
+      setEditingExpense(null);
     }
   });
 
@@ -176,20 +180,44 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
       header: '',
       accessor: 'actions',
       render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            if (window.confirm(`⚠️ Delete expense: ${row.description}?\n\nAmount: $${row.amount.toLocaleString()}\nVendor: ${row.vendor || 'N/A'}\n\nThis will update actual costs and cannot be undone.`)) {
-              deleteMutation.mutate(row.id);
-            }
-          }}
-          disabled={!canEdit}
-          className="text-red-400 hover:text-red-300 disabled:opacity-50"
-          title={!canEdit ? '🔒 Editing disabled' : 'Delete expense'}
-        >
-          <Trash2 size={16} />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setEditingExpense(row);
+              setFormData({
+                cost_code_id: row.cost_code_id,
+                expense_date: row.expense_date,
+                description: row.description,
+                vendor: row.vendor,
+                amount: row.amount,
+                invoice_number: row.invoice_number,
+                payment_status: row.payment_status
+              });
+              setShowEditDialog(true);
+            }}
+            disabled={!canEdit}
+            className="text-blue-400 hover:text-blue-300 disabled:opacity-50"
+            title={!canEdit ? '🔒 Editing disabled' : 'Edit expense'}
+          >
+            <Edit size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              if (window.confirm(`⚠️ Delete expense: ${row.description}?\n\nAmount: $${row.amount.toLocaleString()}\nVendor: ${row.vendor || 'N/A'}\n\nThis will update actual costs and cannot be undone.`)) {
+                deleteMutation.mutate(row.id);
+              }
+            }}
+            disabled={!canEdit}
+            className="text-red-400 hover:text-red-300 disabled:opacity-50"
+            title={!canEdit ? '🔒 Editing disabled' : 'Delete expense'}
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
       )
     }
   ];
@@ -315,6 +343,97 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
               <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
               <Button onClick={() => createMutation.mutate(formData)} disabled={!formData.amount}>
                 Add Expense
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Expense</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={formData.expense_date}
+                  onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Cost Code</Label>
+              <Select value={formData.cost_code_id} onValueChange={(v) => setFormData({ ...formData, cost_code_id: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cost code" />
+                </SelectTrigger>
+                <SelectContent>
+                  {costCodes.map(cc => (
+                    <SelectItem key={cc.id} value={cc.id}>{cc.code} - {cc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Vendor</Label>
+                <Input
+                  value={formData.vendor}
+                  onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Invoice #</Label>
+                <Input
+                  value={formData.invoice_number}
+                  onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Payment Status</Label>
+              <Select value={formData.payment_status} onValueChange={(v) => setFormData({ ...formData, payment_status: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="disputed">Disputed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={() => updateMutation.mutate({ 
+                  id: editingExpense.id, 
+                  data: formData 
+                })} 
+                disabled={!formData.amount}
+              >
+                Save Changes
               </Button>
             </div>
           </div>

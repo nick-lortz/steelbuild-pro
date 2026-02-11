@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -13,10 +14,20 @@ import {
   BarChart3,
   Sparkles,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  LogIn
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(window.location.pathname);
+  };
+
+  const handleForgotPassword = () => {
+    // Base44 handles password reset through the login flow
+    base44.auth.redirectToLogin(window.location.pathname);
+  };
+
   const features = [
     {
       icon: Building2,
@@ -71,8 +82,35 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black text-white">
+      {/* Top Bar with Login */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm border-b border-zinc-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
+              <Building2 size={16} className="text-white" />
+            </div>
+            <span className="font-bold text-lg">SteelBuild Pro</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleForgotPassword}
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Forgot Password?
+            </button>
+            <Button 
+              onClick={handleLogin}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
+            >
+              <LogIn size={18} className="mr-2" />
+              Log In
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-zinc-800/50">
+      <section className="relative overflow-hidden border-b border-zinc-800/50 pt-20">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-zinc-950 to-black" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-40">
           <div className="text-center space-y-8">
@@ -92,17 +130,20 @@ export default function LandingPage() {
               Powered by AI insights and real-time analytics.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-              <Link to={createPageUrl('Dashboard')}>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
-                  Get Started
-                  <ArrowRight size={20} className="ml-2" />
-                </Button>
-              </Link>
-              <Link to={createPageUrl('Projects')}>
-                <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800/50 text-lg px-10 py-7 font-semibold rounded-lg bg-zinc-800/20">
-                  View Projects
-                </Button>
-              </Link>
+              <Button 
+                onClick={handleLogin}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30"
+              >
+                Get Started
+                <ArrowRight size={20} className="ml-2" />
+              </Button>
+              <Button 
+                onClick={handleLogin}
+                variant="outline" 
+                className="border-zinc-700 text-white hover:bg-zinc-800/50 text-lg px-10 py-7 font-semibold rounded-lg bg-zinc-800/20"
+              >
+                View Projects
+              </Button>
             </div>
           </div>
         </div>
@@ -181,12 +222,13 @@ export default function LandingPage() {
             <p className="text-lg text-zinc-400 max-w-2xl mx-auto font-light">
               Join fabricators who are streamlining their operations with SteelBuild Pro
             </p>
-            <Link to={createPageUrl('Dashboard')}>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30">
-                Start Managing Projects
-                <ArrowRight size={20} className="ml-2" />
-              </Button>
-            </Link>
+            <Button 
+              onClick={handleLogin}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30"
+            >
+              Start Managing Projects
+              <ArrowRight size={20} className="ml-2" />
+            </Button>
           </CardContent>
         </Card>
       </section>

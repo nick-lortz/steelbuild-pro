@@ -450,11 +450,15 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
               <Button 
-                onClick={() => updateMutation.mutate({ 
-                  id: editingExpense.id, 
-                  data: formData 
-                })} 
-                disabled={!formData.amount}
+                onClick={() => {
+                  if (editingExpense) {
+                    updateMutation.mutate({ 
+                      id: editingExpense.id, 
+                      updates: formData 
+                    });
+                  }
+                }} 
+                disabled={!formData.amount || updateMutation.isPending}
               >
                 Save Changes
               </Button>

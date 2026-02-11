@@ -170,7 +170,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
       render: (row) => (
         <Select
           value={row.payment_status}
-          onValueChange={(v) => updateMutation.mutate({ id: row.id, data: { payment_status: v } })}
+          onValueChange={(v) => updateMutation.mutate({ id: row.id, updates: { payment_status: v } })}
           disabled={!canEdit}
         >
           <SelectTrigger className="w-32">

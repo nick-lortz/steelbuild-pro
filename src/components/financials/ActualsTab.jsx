@@ -67,6 +67,15 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
       toast.success('Expense updated');
       setShowEditDialog(false);
       setEditingExpense(null);
+      setFormData({
+        cost_code_id: '',
+        expense_date: format(new Date(), 'yyyy-MM-dd'),
+        description: '',
+        vendor: '',
+        amount: 0,
+        invoice_number: '',
+        payment_status: 'pending'
+      });
     }
   });
 
@@ -349,7 +358,21 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+      <Dialog open={showEditDialog} onOpenChange={(open) => {
+        setShowEditDialog(open);
+        if (!open) {
+          setEditingExpense(null);
+          setFormData({
+            cost_code_id: '',
+            expense_date: format(new Date(), 'yyyy-MM-dd'),
+            description: '',
+            vendor: '',
+            amount: 0,
+            invoice_number: '',
+            payment_status: 'pending'
+          });
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Expense</DialogTitle>

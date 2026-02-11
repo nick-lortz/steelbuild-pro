@@ -60,7 +60,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => backend.updateExpense(id, data),
+    mutationFn: ({ id, updates }) => backend.updateExpense(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
       queryClient.invalidateQueries({ queryKey: ['financials', projectId] });

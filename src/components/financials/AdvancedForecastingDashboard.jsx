@@ -376,7 +376,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
                 ? 'text-amber-400'
                 : 'text-red-400'
             }`}>
-              Confidence: {forecast.forecast.confidence.toUpperCase()}
+              Confidence: {String(forecast.forecast.confidence || '').toUpperCase()}
             </p>
             <p className="text-zinc-300 mt-1">{forecast.forecast.confidence_reason}</p>
           </AlertDescription>

@@ -18,7 +18,6 @@ export default function ReportExporter({ projects }) {
   });
 
   const handleExport = () => {
-    // Simulate export
     toast.success(`Exporting report as ${format.toUpperCase()}...`);
     setTimeout(() => {
       toast.success('Report downloaded');

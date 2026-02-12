@@ -8,12 +8,10 @@ export default function ProjectPerformanceKPIs({ projects, financials, tasks, de
   const kpis = useMemo(() => {
     const activeProjects = projects.filter(p => p.status === 'in_progress');
     
-    // Budget performance
     const totalBudget = projects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
     const totalActual = financials.reduce((sum, f) => sum + (f.actual_amount || 0), 0);
     const budgetVariance = ((totalActual - totalBudget) / totalBudget) * 100;
     
-    // Schedule adherence
     const completedOnTime = tasks.filter(t => 
       t.status === 'completed' && 
       new Date(t.actual_completion) <= new Date(t.target_completion)
@@ -21,7 +19,6 @@ export default function ProjectPerformanceKPIs({ projects, financials, tasks, de
     const totalCompleted = tasks.filter(t => t.status === 'completed').length;
     const scheduleAdherence = totalCompleted > 0 ? (completedOnTime / totalCompleted) * 100 : 100;
     
-    // Resource utilization
     const tasksInProgress = tasks.filter(t => t.status === 'in_progress');
     const resourceUtilization = tasksInProgress.length > 0 ? 
       (tasksInProgress.filter(t => t.assigned_resources?.length > 0).length / tasksInProgress.length) * 100 : 0;
@@ -44,7 +41,6 @@ export default function ProjectPerformanceKPIs({ projects, financials, tasks, de
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-6">
@@ -106,7 +102,6 @@ export default function ProjectPerformanceKPIs({ projects, financials, tasks, de
         </Card>
       </div>
 
-      {/* Detailed Breakdown */}
       {detailed && (
         <Card className="bg-zinc-900 border-zinc-800">
           <CardHeader>

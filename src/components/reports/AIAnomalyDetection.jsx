@@ -51,7 +51,7 @@ export default function AIAnomalyDetection({ projects, financials, tasks }) {
         .filter(f => f.updated_date && new Date(f.updated_date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
         .reduce((sum, f) => sum + (f.actual_amount || 0), 0);
       
-      const avgMonthlyBurn = totalBudget / 12; // Assuming 12-month project
+      const avgMonthlyBurn = totalBudget / 12;
       if (recentExpenses > avgMonthlyBurn * 1.5) {
         detected.push({
           project_id: project.id,
@@ -138,7 +138,6 @@ export default function AIAnomalyDetection({ projects, financials, tasks }) {
         </CardContent>
       </Card>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4">
         <Card className="bg-zinc-900 border-zinc-800">
           <CardContent className="p-4">

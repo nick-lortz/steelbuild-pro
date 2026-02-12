@@ -92,7 +92,6 @@ export default function CustomDashboardBuilder() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Dashboard Selector */}
             <div className="flex items-center gap-4">
               <Label>Dashboard:</Label>
               <Select 
@@ -110,7 +109,6 @@ export default function CustomDashboardBuilder() {
               </Select>
             </div>
 
-            {/* Widget Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               {selectedDashboard.widgets.map(widget => (
                 <Card key={widget.id} className="bg-zinc-950 border-zinc-800 relative group">
@@ -133,7 +131,6 @@ export default function CustomDashboardBuilder() {
                       </Button>
                     </div>
                     
-                    {/* Widget Preview */}
                     <div className="h-32 bg-zinc-900 border border-zinc-800 rounded flex items-center justify-center">
                       <Layout size={32} className="text-zinc-700" />
                     </div>
@@ -160,7 +157,6 @@ export default function CustomDashboardBuilder() {
         </CardContent>
       </Card>
 
-      {/* Add Widget Dialog */}
       <Dialog open={showWidgetDialog} onOpenChange={setShowWidgetDialog}>
         <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>

@@ -10,6 +10,10 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
   const [selectedSOV, setSelectedSOV] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
+  const formatCurrency = (value) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const alignment = useMemo(() => {
     return sovItems.map(sov => {
       const sovExpenses = expenses.filter(e => 
@@ -66,7 +70,7 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
     { 
       header: 'Scheduled', 
       accessor: 'scheduledValue', 
-      render: (row) => <span className="text-xs">${row.scheduledValue.toLocaleString()}</span> 
+      render: (row) => <span className="text-xs">${formatCurrency(row.scheduledValue)}</span> 
     },
     { 
       header: '% Done', 
@@ -83,14 +87,14 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
     { 
       header: 'Billed', 
       accessor: 'billed', 
-      render: (row) => <span className="text-xs font-semibold">${row.billed.toLocaleString()}</span> 
+      render: (row) => <span className="text-xs font-semibold">${formatCurrency(row.billed)}</span> 
     },
     { 
       header: 'Actual Cost', 
       accessor: 'cost', 
       render: (row) => (
         <div className="text-xs">
-          <div className="font-semibold">${row.cost.toLocaleString()}</div>
+          <div className="font-semibold">${formatCurrency(row.cost)}</div>
           <div className="text-muted-foreground">{row.expenseCount} expenses</div>
         </div>
       )
@@ -106,7 +110,7 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
           }
           <div className="text-xs">
             <div className={row.margin >= 0 ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
-              ${row.margin.toLocaleString()}
+              ${formatCurrency(row.margin)}
             </div>
             <div className="text-muted-foreground">({row.marginPct.toFixed(1)}%)</div>
           </div>
@@ -119,7 +123,7 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
       render: (row) => (
         <div className="text-xs">
           <div className={row.projectedMargin >= 0 ? 'text-green-400' : 'text-red-400'}>
-            ${row.projectedMargin.toLocaleString()}
+            ${formatCurrency(row.projectedMargin)}
           </div>
           <div className="text-muted-foreground">at completion</div>
         </div>
@@ -167,20 +171,20 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
             <div className="grid grid-cols-6 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Scheduled Value</p>
-                <p className="text-lg font-bold">${totals.scheduled.toLocaleString()}</p>
+                <p className="text-lg font-bold">${formatCurrency(totals.scheduled)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Billed</p>
-                <p className="text-lg font-bold">${totals.billed.toLocaleString()}</p>
+                <p className="text-lg font-bold">${formatCurrency(totals.billed)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Cost</p>
-                <p className="text-lg font-bold">${totals.cost.toLocaleString()}</p>
+                <p className="text-lg font-bold">${formatCurrency(totals.cost)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Current Margin</p>
                 <p className={`text-lg font-bold ${totals.margin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  ${totals.margin.toLocaleString()}
+                  ${formatCurrency(totals.margin)}
                 </p>
               </div>
               <div>
@@ -192,7 +196,7 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
               <div>
                 <p className="text-xs text-muted-foreground">Projected Margin</p>
                 <p className={`text-lg font-bold ${totals.projectedMargin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  ${totals.projectedMargin.toLocaleString()}
+                  ${formatCurrency(totals.projectedMargin)}
                 </p>
               </div>
             </div>
@@ -223,7 +227,7 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
               <div className="grid grid-cols-4 gap-4 p-3 bg-muted rounded">
                 <div>
                   <p className="text-xs text-muted-foreground">Scheduled Value</p>
-                  <p className="text-sm font-bold">${selectedSOV.scheduledValue.toLocaleString()}</p>
+                  <p className="text-sm font-bold">${formatCurrency(selectedSOV.scheduledValue)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">% Complete</p>
@@ -231,12 +235,12 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Actual Cost</p>
-                  <p className="text-sm font-bold">${selectedSOV.cost.toLocaleString()}</p>
+                  <p className="text-sm font-bold">${formatCurrency(selectedSOV.cost)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Margin</p>
                   <p className={`text-sm font-bold ${selectedSOV.margin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    ${selectedSOV.margin.toLocaleString()} ({selectedSOV.marginPct.toFixed(1)}%)
+                    ${formatCurrency(selectedSOV.margin)} ({selectedSOV.marginPct.toFixed(1)}%)
                   </p>
                 </div>
               </div>
@@ -267,7 +271,7 @@ export default function EnhancedSOVCostAlignment({ sovItems = [], expenses = [] 
                             <td className="p-2 text-xs">{new Date(expense.expense_date).toLocaleDateString()}</td>
                             <td className="p-2 text-xs">{expense.description}</td>
                             <td className="p-2 text-xs">{expense.vendor || '-'}</td>
-                            <td className="p-2 text-xs text-right font-semibold">${expense.amount.toLocaleString()}</td>
+                            <td className="p-2 text-xs text-right font-semibold">${formatCurrency(expense.amount)}</td>
                             <td className="p-2 text-xs capitalize">{expense.payment_status}</td>
                           </tr>
                         ))

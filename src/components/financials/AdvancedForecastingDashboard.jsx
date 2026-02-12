@@ -10,6 +10,9 @@ import { Sparkles, TrendingDown, TrendingUp, AlertTriangle, Target, Zap } from '
 import { toast } from '@/components/ui/notifications';
 
 export default function AdvancedForecastingDashboard({ projectId }) {
+  const formatCurrency = (value) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
   const [forecasting, setForecasting] = useState(false);
   const [forecast, setForecast] = useState(null);
   const [selectedScenario, setSelectedScenario] = useState('realistic');
@@ -84,7 +87,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
           <CardContent className="p-4">
             <p className="text-xs text-zinc-400 uppercase mb-2">Current Budget</p>
             <p className="text-2xl font-bold text-white">
-              ${(forecast.current_state.total_budget / 1000000).toFixed(1)}M
+              ${(forecast.current_state.total_budget / 1000000).toFixed(2)}M
             </p>
             <p className="text-xs text-zinc-500 mt-1">Total allocated</p>
           </CardContent>
@@ -94,7 +97,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
           <CardContent className="p-4">
             <p className="text-xs text-zinc-400 uppercase mb-2">Actual to Date</p>
             <p className="text-2xl font-bold text-blue-400">
-              ${(forecast.current_state.actual_cost / 1000000).toFixed(1)}M
+              ${(forecast.current_state.actual_cost / 1000000).toFixed(2)}M
             </p>
             <p className="text-xs text-zinc-500 mt-1">
               {forecast.current_state.cost_complete_pct}% spent
@@ -106,7 +109,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
           <CardContent className="p-4">
             <p className="text-xs text-zinc-400 uppercase mb-2">Committed</p>
             <p className="text-2xl font-bold text-purple-400">
-              ${(forecast.current_state.committed / 1000000).toFixed(1)}M
+              ${(forecast.current_state.committed / 1000000).toFixed(2)}M
             </p>
             <p className="text-xs text-zinc-500 mt-1">POs & contracts</p>
           </CardContent>
@@ -116,7 +119,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
           <CardContent className="p-4">
             <p className="text-xs text-zinc-400 uppercase mb-2">Remaining</p>
             <p className="text-2xl font-bold text-amber-400">
-              ${(forecast.current_state.remaining_unspent / 1000000).toFixed(1)}M
+              ${(forecast.current_state.remaining_unspent / 1000000).toFixed(2)}M
             </p>
             <p className="text-xs text-zinc-500 mt-1">Unspent budget</p>
           </CardContent>
@@ -160,11 +163,11 @@ export default function AdvancedForecastingDashboard({ projectId }) {
                   <Badge className="text-xs">{scenario.probability_pct}% likely</Badge>
                 </div>
                 <p className="text-xl font-bold text-white mb-1">
-                  ${(scenario.final_cost / 1000000).toFixed(1)}M
+                  ${(scenario.final_cost / 1000000).toFixed(2)}M
                 </p>
                 <p className={`text-sm ${scenario.variance_from_budget >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {scenario.variance_from_budget >= 0 ? '+' : ''}
-                  ${(scenario.variance_from_budget / 1000000).toFixed(1)}M ({scenario.variance_pct.toFixed(1)}%)
+                  ${(scenario.variance_from_budget / 1000000).toFixed(2)}M ({scenario.variance_pct.toFixed(1)}%)
                 </p>
               </div>
             ))}
@@ -213,7 +216,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
                     <div className="flex-1">
                       <p className="text-sm font-bold text-white capitalize">{cv.category}</p>
                       <p className="text-xs text-zinc-500">
-                        Budget: ${(cv.budget / 1000000).toFixed(1)}M | Actual: ${(cv.actual / 1000000).toFixed(1)}M
+                        Budget: ${(cv.budget / 1000000).toFixed(2)}M | Actual: ${(cv.actual / 1000000).toFixed(2)}M
                       </p>
                     </div>
                     <Badge className={cv.variance_pct > 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}>
@@ -257,12 +260,12 @@ export default function AdvancedForecastingDashboard({ projectId }) {
                   {categoryForecasts.map((cf, idx) => (
                     <tr key={idx} className="border-t border-zinc-800 hover:bg-zinc-950/50">
                       <td className="p-3 text-white capitalize">{cf.category}</td>
-                      <td className="p-3 text-right text-zinc-300">${(cf.budget / 1000000).toFixed(1)}M</td>
-                      <td className="p-3 text-right text-blue-400">${(cf.actual_to_date / 1000000).toFixed(1)}M</td>
-                      <td className="p-3 text-right text-amber-400">${(cf.etc / 1000000).toFixed(1)}M</td>
-                      <td className="p-3 text-right font-bold text-white">${(cf.eac / 1000000).toFixed(1)}M</td>
+                      <td className="p-3 text-right text-zinc-300">${(cf.budget / 1000000).toFixed(2)}M</td>
+                      <td className="p-3 text-right text-blue-400">${(cf.actual_to_date / 1000000).toFixed(2)}M</td>
+                      <td className="p-3 text-right text-amber-400">${(cf.etc / 1000000).toFixed(2)}M</td>
+                      <td className="p-3 text-right font-bold text-white">${(cf.eac / 1000000).toFixed(2)}M</td>
                       <td className={`p-3 text-right font-bold ${cf.variance >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {cf.variance >= 0 ? '+' : ''}${(cf.variance / 1000000).toFixed(1)}M
+                        {cf.variance >= 0 ? '+' : ''}${(cf.variance / 1000000).toFixed(2)}M
                       </td>
                     </tr>
                   ))}
@@ -290,7 +293,7 @@ export default function AdvancedForecastingDashboard({ projectId }) {
                     <AlertTriangle size={16} className="text-red-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-bold text-red-300">{risk.risk}</p>
-                      <p className="text-xs text-zinc-400 mt-1">Impact: ${(risk.impact_usd / 1000000).toFixed(1)}M</p>
+                      <p className="text-xs text-zinc-400 mt-1">Impact: ${(risk.impact_usd / 1000000).toFixed(2)}M</p>
                     </div>
                   </div>
                   <p className="text-xs text-zinc-300 pl-6">Mitigation: {risk.mitigation}</p>

@@ -43,55 +43,59 @@ export default function SOVDashboard({ sovItems = [], expenses = [] }) {
     };
   }, [sovItems, expenses]);
 
+  const formatCurrency = (value) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const kpis = [
     {
       label: 'Contract Value',
-      value: `$${metrics.contractValue.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.contractValue)}`,
       icon: DollarSign,
       color: 'text-blue-400'
     },
     {
       label: 'Earned to Date',
-      value: `$${metrics.earnedToDate.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.earnedToDate)}`,
       subValue: `${metrics.percentComplete.toFixed(1)}% Complete`,
       icon: Target,
       color: 'text-green-400'
     },
     {
       label: 'Billed to Date',
-      value: `$${metrics.billedToDate.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.billedToDate)}`,
       subValue: `${metrics.percentBilled.toFixed(1)}% Billed`,
       icon: DollarSign,
       color: 'text-amber-400'
     },
     {
       label: 'Ready to Bill',
-      value: `$${metrics.readyToBill.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.readyToBill)}`,
       icon: metrics.readyToBill >= 0 ? TrendingUp : TrendingDown,
       color: metrics.readyToBill >= 0 ? 'text-emerald-400' : 'text-red-400'
     },
     {
       label: 'Actual Costs',
-      value: `$${metrics.actualCosts.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.actualCosts)}`,
       icon: DollarSign,
       color: 'text-zinc-400'
     },
     {
       label: 'Cost Variance',
-      value: `$${metrics.costVariance.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.costVariance)}`,
       subValue: metrics.costVariance >= 0 ? 'Under Budget' : 'Over Budget',
       icon: metrics.costVariance >= 0 ? TrendingUp : TrendingDown,
       color: metrics.costVariance >= 0 ? 'text-green-400' : 'text-red-400'
     },
     {
       label: 'Remaining Budget',
-      value: `$${metrics.remainingBudget.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.remainingBudget)}`,
       icon: DollarSign,
       color: metrics.remainingBudget >= 0 ? 'text-blue-400' : 'text-red-400'
     },
     {
       label: 'Projected Margin',
-      value: `$${metrics.projectedMargin.toLocaleString()}`,
+      value: `$${formatCurrency(metrics.projectedMargin)}`,
       subValue: `${metrics.projectedMarginPct.toFixed(1)}%`,
       icon: metrics.projectedMargin >= 0 ? TrendingUp : AlertCircle,
       color: metrics.projectedMargin >= 0 ? 'text-green-400' : 'text-red-400'

@@ -20,6 +20,9 @@ import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function SOVManager({ projectId, canEdit }) {
+  const formatCurrency = (value) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showBulkAddDialog, setShowBulkAddDialog] = useState(false);
@@ -343,7 +346,7 @@ export default function SOVManager({ projectId, canEdit }) {
       render: (row) => (
         <div className="flex items-center gap-1">
           <Lock size={12} className="text-muted-foreground" />
-          <span className="font-semibold">${row.scheduled_value.toLocaleString()}</span>
+          <span className="font-semibold">${formatCurrency(row.scheduled_value)}</span>
         </div>
       )
     },
@@ -380,13 +383,13 @@ export default function SOVManager({ projectId, canEdit }) {
       accessor: 'earned',
       render: (row) => {
         const earned = ((row.scheduled_value || 0) * (row.percent_complete || 0)) / 100;
-        return <span className="text-green-400 font-semibold">${earned.toFixed(2).toLocaleString()}</span>;
+        return <span className="text-green-400 font-semibold">${formatCurrency(earned)}</span>;
       }
     },
     {
       header: 'Billed to Date',
       accessor: 'billed_to_date',
-      render: (row) => <span className="font-semibold">${(row.billed_to_date || 0).toLocaleString()}</span>
+      render: (row) => <span className="font-semibold">${formatCurrency(row.billed_to_date || 0)}</span>
     },
     {
       header: 'Ready to Bill',
@@ -396,7 +399,7 @@ export default function SOVManager({ projectId, canEdit }) {
         const toBill = earned - (row.billed_to_date || 0);
         return (
           <span className={toBill < 0 ? 'text-red-400 font-bold' : toBill > 0 ? 'text-amber-400 font-bold' : 'text-muted-foreground'}>
-            ${toBill.toFixed(2).toLocaleString()}
+            ${formatCurrency(toBill)}
           </span>
         );
       }
@@ -508,20 +511,20 @@ export default function SOVManager({ projectId, canEdit }) {
               <div className="grid grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">Contract Value</p>
-                  <p className="text-lg font-bold">${totals.scheduled.toFixed(2).toLocaleString()}</p>
+                  <p className="text-lg font-bold">${formatCurrency(totals.scheduled)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Earned to Date</p>
-                  <p className="text-lg font-bold text-green-400">${totals.earned.toFixed(2).toLocaleString()}</p>
+                  <p className="text-lg font-bold text-green-400">${formatCurrency(totals.earned)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Billed to Date</p>
-                  <p className="text-lg font-bold">${totals.billed.toFixed(2).toLocaleString()}</p>
+                  <p className="text-lg font-bold">${formatCurrency(totals.billed)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Ready to Bill</p>
                   <p className={`text-lg font-bold ${totals.toBill < 0 ? 'text-red-400' : 'text-amber-400'}`}>
-                    ${totals.toBill.toFixed(2).toLocaleString()}
+                    ${formatCurrency(totals.toBill)}
                   </p>
                 </div>
               </div>

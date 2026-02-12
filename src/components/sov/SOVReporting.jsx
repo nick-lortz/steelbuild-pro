@@ -16,6 +16,10 @@ export default function SOVReporting({ sovItems = [], expenses = [] }) {
     sortOrder: 'asc'
   });
 
+  const formatCurrency = (value) => {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const reportData = useMemo(() => {
     return sovItems.map(sov => {
       const sovExpenses = expenses.filter(e => 
@@ -179,19 +183,19 @@ export default function SOVReporting({ sovItems = [], expenses = [] }) {
     { header: 'Code', accessor: 'sov_code', render: (row) => <span className="font-mono text-xs">{row.sov_code}</span> },
     { header: 'Description', accessor: 'description', render: (row) => <span className="text-xs truncate max-w-xs">{row.description}</span> },
     { header: 'Category', accessor: 'category', render: (row) => <span className="text-xs capitalize">{row.category}</span> },
-    { header: 'Value', accessor: 'scheduled_value', render: (row) => <span className="text-xs">${row.scheduled_value.toLocaleString()}</span> },
+    { header: 'Value', accessor: 'scheduled_value', render: (row) => <span className="text-xs">${formatCurrency(row.scheduled_value)}</span> },
     { header: '% Done', accessor: 'percent_complete', render: (row) => <span className="text-xs">{row.percent_complete.toFixed(1)}%</span> },
-    { header: 'Earned', accessor: 'earned', render: (row) => <span className="text-xs text-green-400">${row.earned.toLocaleString()}</span> },
-    { header: 'Billed', accessor: 'billed', render: (row) => <span className="text-xs">${row.billed.toLocaleString()}</span> },
-    { header: 'To Bill', accessor: 'toBill', render: (row) => <span className={`text-xs ${row.toBill >= 0 ? 'text-amber-400' : 'text-red-400'}`}>${row.toBill.toLocaleString()}</span> },
-    { header: 'Actual Cost', accessor: 'actualCost', render: (row) => <span className="text-xs">${row.actualCost.toLocaleString()}</span> },
+    { header: 'Earned', accessor: 'earned', render: (row) => <span className="text-xs text-green-400">${formatCurrency(row.earned)}</span> },
+    { header: 'Billed', accessor: 'billed', render: (row) => <span className="text-xs">${formatCurrency(row.billed)}</span> },
+    { header: 'To Bill', accessor: 'toBill', render: (row) => <span className={`text-xs ${row.toBill >= 0 ? 'text-amber-400' : 'text-red-400'}`}>${formatCurrency(row.toBill)}</span> },
+    { header: 'Actual Cost', accessor: 'actualCost', render: (row) => <span className="text-xs">${formatCurrency(row.actualCost)}</span> },
     { 
       header: 'Margin', 
       accessor: 'margin', 
       render: (row) => (
         <div className="text-xs">
           <span className={row.margin >= 0 ? 'text-green-400' : 'text-red-400'}>
-            ${row.margin.toLocaleString()}
+            ${formatCurrency(row.margin)}
           </span>
           <span className="text-muted-foreground ml-1">({row.marginPct.toFixed(1)}%)</span>
         </div>
@@ -276,30 +280,30 @@ export default function SOVReporting({ sovItems = [], expenses = [] }) {
           <div className="grid grid-cols-6 gap-4 p-3 bg-blue-500/5 border border-blue-500/30 rounded">
             <div>
               <p className="text-xs text-muted-foreground">Total Value</p>
-              <p className="text-sm font-bold">${totals.value.toLocaleString()}</p>
+              <p className="text-sm font-bold">${formatCurrency(totals.value)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Earned</p>
-              <p className="text-sm font-bold text-green-400">${totals.earned.toLocaleString()}</p>
+              <p className="text-sm font-bold text-green-400">${formatCurrency(totals.earned)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Total Billed</p>
-              <p className="text-sm font-bold">${totals.billed.toLocaleString()}</p>
+              <p className="text-sm font-bold">${formatCurrency(totals.billed)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">To Bill</p>
               <p className={`text-sm font-bold ${totals.toBill >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
-                ${totals.toBill.toLocaleString()}
+                ${formatCurrency(totals.toBill)}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Actual Cost</p>
-              <p className="text-sm font-bold">${totals.cost.toLocaleString()}</p>
+              <p className="text-sm font-bold">${formatCurrency(totals.cost)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Margin</p>
               <p className={`text-sm font-bold ${totals.margin >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                ${totals.margin.toLocaleString()}
+                ${formatCurrency(totals.margin)}
               </p>
             </div>
           </div>

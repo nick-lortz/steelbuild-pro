@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 import { format, parseISO } from 'date-fns';
+import ResourceCostLogger from './ResourceCostLogger';
 
 export default function ComprehensiveResourceModule({ projectId }) {
   const queryClient = useQueryClient();
@@ -379,6 +380,10 @@ export default function ComprehensiveResourceModule({ projectId }) {
             <Calendar size={14} className="mr-2" />
             Assignments
           </TabsTrigger>
+          <TabsTrigger value="logger">
+            <DollarSign size={14} className="mr-2" />
+            Cost Logger
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -534,6 +539,11 @@ export default function ComprehensiveResourceModule({ projectId }) {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Cost Logger Tab */}
+        <TabsContent value="logger">
+          <ResourceCostLogger projectId={projectId} />
         </TabsContent>
       </Tabs>
 

@@ -484,6 +484,7 @@ export default function SOVManager({ projectId, canEdit }) {
           <TabsTrigger value="lines">SOV Lines</TabsTrigger>
           <TabsTrigger value="alignment">Cost Alignment</TabsTrigger>
           <TabsTrigger value="reporting">Reports</TabsTrigger>
+          <TabsTrigger value="resource-cost">Resource Cost</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -549,6 +550,10 @@ export default function SOVManager({ projectId, canEdit }) {
 
         <TabsContent value="reporting" className="space-y-6">
           <SOVReporting sovItems={sovItems} expenses={expenses} />
+        </TabsContent>
+
+        <TabsContent value="resource-cost" className="space-y-6">
+          <ComprehensiveResourceModule projectId={projectId} />
         </TabsContent>
       </Tabs>
 

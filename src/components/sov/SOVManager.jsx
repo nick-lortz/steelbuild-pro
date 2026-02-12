@@ -16,6 +16,7 @@ import SOVVersionControl from './SOVVersionControl';
 import SOVImportExport from './SOVImportExport';
 import SOVReporting from './SOVReporting';
 import EnhancedSOVCostAlignment from './EnhancedSOVCostAlignment';
+import ComprehensiveResourceModule from '../resources/ComprehensiveResourceModule';
 import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 

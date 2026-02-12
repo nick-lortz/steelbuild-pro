@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Admin from './pages/Admin';
 import Analytics from './pages/Analytics';
 import BudgetControl from './pages/BudgetControl';
 import Calendar from './pages/Calendar';
@@ -105,11 +106,11 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import Admin from './pages/Admin';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Admin": Admin,
     "Analytics": Analytics,
     "BudgetControl": BudgetControl,
     "Calendar": Calendar,
@@ -168,7 +169,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "Admin": Admin,
 }
 
 export const pagesConfig = {

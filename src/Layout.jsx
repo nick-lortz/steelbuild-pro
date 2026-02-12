@@ -211,12 +211,14 @@ function LayoutContent({ children, currentPageName }) {
       try {
         return await base44.auth.me();
       } catch (error) {
-        // If unauthorized, redirect to login
-        if (error?.response?.status === 401 || error?.status === 401) {
+        // If unauthorized, redirect to login (skip in preview/dev mode)
+        if ((error?.response?.status === 401 || error?.status === 401) && 
+            !window.location.hostname.includes('preview')) {
           base44.auth.redirectToLogin(window.location.pathname);
           return null;
         }
-        throw error;
+        // In preview mode or on error, return null without redirecting
+        return null;
       }
     },
     staleTime: Infinity,
@@ -224,7 +226,7 @@ function LayoutContent({ children, currentPageName }) {
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    refetchInterval: 30 * 60 * 1000, // Revalidate every 30 minutes to catch token expiry
+    refetchInterval: false, // Disable polling in preview
     refetchIntervalInBackground: false
   });
 

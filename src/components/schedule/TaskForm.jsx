@@ -235,10 +235,10 @@ export default function TaskForm({
     onSubmit(formData);
   };
 
-  const availableTasks = tasks.filter((t) => t.id !== task?.id);
-  const laborResources = resources.filter((r) => r.type === 'labor' || r.type === 'subcontractor');
-  const equipmentResources = resources.filter((r) => r.type === 'equipment');
-  const selectedProject = projects.find((p) => p.id === formData.project_id);
+  const availableTasks = (tasks || []).filter((t) => t.id !== task?.id);
+  const laborResources = (resources || []).filter((r) => r.type === 'labor' || r.type === 'subcontractor');
+  const equipmentResources = (resources || []).filter((r) => r.type === 'equipment');
+  const selectedProject = (projects || []).find((p) => p.id === formData.project_id);
   
   // Projects already sorted alphabetically by parent component/hook
 
@@ -291,7 +291,7 @@ export default function TaskForm({
     try {
       const currentUser = await base44.auth.me();
       // Assuming we need to find or create a resource for this user
-      const userResources = resources.filter((r) =>
+      const userResources = (resources || []).filter((r) =>
       r.contact_email === currentUser.email || r.name === currentUser.full_name
       );
 
@@ -310,7 +310,7 @@ export default function TaskForm({
   };
 
   const isSummaryTask = formData.parent_task_id === null || formData.parent_task_id === '';
-  const childTasks = tasks.filter((t) => t.parent_task_id === task?.id);
+  const childTasks = (tasks || []).filter((t) => t.parent_task_id === task?.id);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -359,7 +359,7 @@ export default function TaskForm({
               <SelectValue placeholder="Select project" />
             </SelectTrigger>
             <SelectContent>
-              {projects.map((p) =>
+              {(projects || []).map((p) =>
               <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
               )}
             </SelectContent>
@@ -718,7 +718,7 @@ export default function TaskForm({
                   <SelectValue placeholder="Link RFI" />
                 </SelectTrigger>
                 <SelectContent>
-                  {rfis.filter((r) => r.project_id === formData.project_id).map((r) =>
+                  {(rfis || []).filter((r) => r.project_id === formData.project_id).map((r) =>
                   <SelectItem key={r.id} value={r.id}>RFI-{r.rfi_number}: {r.subject}</SelectItem>
                   )}
                 </SelectContent>
@@ -732,7 +732,7 @@ export default function TaskForm({
                   <SelectValue placeholder="Link CO" />
                 </SelectTrigger>
                 <SelectContent>
-                  {changeOrders.filter((c) => c.project_id === formData.project_id).map((c) =>
+                  {(changeOrders || []).filter((c) => c.project_id === formData.project_id).map((c) =>
                   <SelectItem key={c.id} value={c.id}>CO-{c.co_number}: {c.title}</SelectItem>
                   )}
                 </SelectContent>

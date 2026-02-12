@@ -101,9 +101,28 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
+    mutationFn: async (data) => {
+      const result = await base44.entities.SOVItem.create({ ...data, project_id: projectId });
+      
+      // Create version snapshot
+      await base44.functions.invoke('createSOVVersion', {
+        project_id: projectId,
+        change_type: 'create',
+        change_summary: `Added SOV line ${data.sov_code}: ${data.description}`,
+        affected_sov_codes: [data.sov_code],
+        field_changes: [{
+          sov_code: data.sov_code,
+          field: 'created',
+          old_value: null,
+          new_value: `${data.description} - $${data.scheduled_value}`
+        }]
+      });
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('SOV line added');
       setShowAddDialog(false);
       setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
@@ -113,12 +132,29 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const bulkCreateMutation = useMutation({
     mutationFn: async (items) => {
-      return base44.entities.SOVItem.bulkCreate(
+      const result = await base44.entities.SOVItem.bulkCreate(
         items.map(item => ({ ...item, project_id: projectId }))
       );
+      
+      // Create version snapshot
+      await base44.functions.invoke('createSOVVersion', {
+        project_id: projectId,
+        change_type: 'bulk_create',
+        change_summary: `Added ${items.length} standard SOV line items`,
+        affected_sov_codes: items.map(i => i.sov_code),
+        field_changes: items.map(i => ({
+          sov_code: i.sov_code,
+          field: 'created',
+          old_value: null,
+          new_value: i.description
+        }))
+      });
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('Standard SOV items added');
       setShowBulkAddDialog(false);
     },
@@ -127,6 +163,10 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
+      // Get original item for version tracking
+      const original = await base44.entities.SOVItem.filter({ id });
+      const originalItem = original[0];
+      
       // Validate if updating percent_complete
       if (data.percent_complete !== undefined) {
         const validation = await base44.functions.invoke('validateSOVBudget', {
@@ -144,7 +184,32 @@ export default function SOVManager({ projectId, canEdit }) {
         }
       }
 
-      return base44.entities.SOVItem.update(id, data);
+      const result = await base44.entities.SOVItem.update(id, data);
+      
+      // Create version snapshot with field-level changes
+      const fieldChanges = [];
+      Object.keys(data).forEach(field => {
+        if (originalItem[field] !== data[field]) {
+          fieldChanges.push({
+            sov_code: originalItem.sov_code,
+            field,
+            old_value: String(originalItem[field] ?? ''),
+            new_value: String(data[field] ?? '')
+          });
+        }
+      });
+      
+      if (fieldChanges.length > 0) {
+        await base44.functions.invoke('createSOVVersion', {
+          project_id: projectId,
+          change_type: 'update',
+          change_summary: `Updated SOV line ${originalItem.sov_code}`,
+          affected_sov_codes: [originalItem.sov_code],
+          field_changes: fieldChanges
+        });
+      }
+      
+      return result;
     },
     onSuccess: (result, variables) => {
       queryClient.setQueryData(['sov-items', projectId], (old) => {
@@ -153,14 +218,36 @@ export default function SOVManager({ projectId, canEdit }) {
           item.id === variables.id ? { ...item, ...variables.data } : item
         );
       });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
     },
     onError: (err) => toast.error(err?.message ?? 'Update failed')
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SOVItem.delete(id),
+    mutationFn: async (id) => {
+      // Get item before deletion for version tracking
+      const items = await base44.entities.SOVItem.filter({ id });
+      const item = items[0];
+      
+      await base44.entities.SOVItem.delete(id);
+      
+      // Create version snapshot
+      await base44.functions.invoke('createSOVVersion', {
+        project_id: projectId,
+        change_type: 'delete',
+        change_summary: `Deleted SOV line ${item.sov_code}: ${item.description}`,
+        affected_sov_codes: [item.sov_code],
+        field_changes: [{
+          sov_code: item.sov_code,
+          field: 'deleted',
+          old_value: `${item.description} - $${item.scheduled_value}`,
+          new_value: null
+        }]
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('SOV line deleted');
     },
     onError: (err) => toast.error(err?.message ?? 'Delete failed')

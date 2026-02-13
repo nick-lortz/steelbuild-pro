@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { base44 } from '@/api/base44Client';
 import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
+import FormField from '@/components/ui/FormField';
 
 export default function DrawingSetForm({ projects, projectId, drawingSet, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
@@ -305,8 +306,9 @@ Keep the summary concise (2-3 sentences).`;
                       size="icon"
                       onClick={() => removeFile(index)}
                       className="h-6 w-6"
+                      aria-label={`Remove ${file.name}`}
                     >
-                      <X size={14} />
+                      <X size={14} aria-hidden="true" />
                     </Button>
                   )}
                 </div>

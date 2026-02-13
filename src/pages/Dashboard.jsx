@@ -107,8 +107,9 @@ export default function Dashboard() {
               onClick={refetchDashboard}
               disabled={projectsFetching}
               className="gap-2 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 rounded-lg"
+              aria-label="Refresh dashboard data"
             >
-              <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={projectsFetching ? 'animate-spin' : ''} aria-hidden="true" />
               {projectsFetching ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>

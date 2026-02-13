@@ -19,6 +19,7 @@ import EnhancedSOVCostAlignment from './EnhancedSOVCostAlignment';
 import ComprehensiveResourceModule from '../resources/ComprehensiveResourceModule';
 import { Plus, Trash2, Lock, AlertTriangle, Edit } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import FormField from '@/components/ui/FormField';
 
 export default function SOVManager({ projectId, canEdit }) {
   const formatCurrency = (value) => {
@@ -418,9 +419,9 @@ export default function SOVManager({ projectId, canEdit }) {
               onClick={() => handleEdit(row)}
               disabled={!canEdit}
               className="text-blue-400 hover:text-blue-300"
-              title="Edit SOV line"
+              aria-label={`Edit SOV line ${row.sov_code}`}
             >
-              <Edit size={16} />
+              <Edit size={16} aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
@@ -432,9 +433,9 @@ export default function SOVManager({ projectId, canEdit }) {
               }}
               disabled={!canEdit || isLocked}
               className="text-red-400 hover:text-red-300 disabled:opacity-50"
-              title={isLocked ? '🔒 Locked — line has approved invoices. Use Change Orders.' : 'Delete SOV line'}
+              aria-label={isLocked ? `Locked: SOV line ${row.sov_code} has approved invoices` : `Delete SOV line ${row.sov_code}`}
             >
-              <Trash2 size={16} />
+              <Trash2 size={16} aria-hidden="true" />
             </Button>
           </div>
         );
@@ -596,27 +597,24 @@ export default function SOVManager({ projectId, canEdit }) {
               createMutation.mutate(formData);
             }
           }} className="space-y-4">
-            <div>
-              <Label>SOV Code / Line #</Label>
+            <FormField label="SOV Code / Line #" required>
               <Input
                 value={formData.sov_code}
                 onChange={(e) => setFormData({ ...formData, sov_code: e.target.value })}
                 placeholder="e.g., 100, 05100"
                 required
               />
-            </div>
-            <div>
-              <Label>Description</Label>
+            </FormField>
+            <FormField label="Description" required>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Work item description"
                 required
               />
-            </div>
-            <div>
-              <Label>Category</Label>
-              <Select value={formData.sov_category} onValueChange={(v) => setFormData({ ...formData, sov_category: v })}>
+            </FormField>
+            <FormField label="Category" required>
+              <Select value={formData.sov_category} onValueChange={(v) => setFormData({ ...formData, sov_category: v })} aria-required="true">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -628,9 +626,11 @@ export default function SOVManager({ projectId, canEdit }) {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label>Scheduled Value</Label>
+            </FormField>
+            <FormField label="Scheduled Value" required 
+              hint={editingItem && lockedSovItemIds.has(editingItem.id) 
+                ? 'Locked — line has approved invoices. Use Change Orders.' 
+                : 'Locked after invoicing. Changes via Change Orders only.'}>
               <Input
                 type="number"
                 value={formData.scheduled_value}
@@ -638,13 +638,7 @@ export default function SOVManager({ projectId, canEdit }) {
                 disabled={editingItem && lockedSovItemIds.has(editingItem.id)}
                 required
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                <Lock size={10} className="inline mr-1" />
-                {editingItem && lockedSovItemIds.has(editingItem.id) 
-                  ? 'Locked — line has approved invoices. Use Change Orders.' 
-                  : 'Locked after invoicing. Changes via Change Orders only.'}
-              </p>
-            </div>
+            </FormField>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => {
                 setShowAddDialog(false);
@@ -668,11 +662,12 @@ export default function SOVManager({ projectId, canEdit }) {
           <div className="space-y-4">
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
+                <caption className="sr-only">Standard SOV items to be added</caption>
                 <thead className="bg-muted">
                   <tr>
-                    <th className="text-left p-2">Code</th>
-                    <th className="text-left p-2">Description</th>
-                    <th className="text-left p-2">Category</th>
+                    <th scope="col" className="text-left p-2">Code</th>
+                    <th scope="col" className="text-left p-2">Description</th>
+                    <th scope="col" className="text-left p-2">Category</th>
                   </tr>
                 </thead>
                 <tbody>

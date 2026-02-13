@@ -325,8 +325,9 @@ export default function Projects() {
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 className="gap-2 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
+                aria-label="Refresh projects list"
               >
-                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} aria-hidden="true" />
                 Refresh
               </Button>
               {can.createProject && (

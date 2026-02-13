@@ -19,16 +19,19 @@ export default function ResourceOptimizationWidget({ projectId }) {
       const totalActHours = activeResources.reduce((sum, r) => sum + (r.actual_hours || 0), 0);
       const utilization = totalEstHours > 0 ? (totalActHours / totalEstHours) * 100 : 0;
       
-      // Detect overallocations
-      const overallocated = activeResources.filter(r => 
-        (r.actual_hours || 0) > (r.estimated_hours || 0) * 1.1
-      );
+      // Detect overallocations (guard against zero estimate)
+      const overallocated = activeResources.filter(r => {
+        const est = r.estimated_hours || 0;
+        const act = r.actual_hours || 0;
+        return est > 0 && act > est * 1.1;
+      });
       
       // Detect underutilized
-      const underutilized = activeResources.filter(r => 
-        (r.actual_hours || 0) < (r.estimated_hours || 0) * 0.5 &&
-        r.estimated_hours > 0
-      );
+      const underutilized = activeResources.filter(r => {
+        const est = r.estimated_hours || 0;
+        const act = r.actual_hours || 0;
+        return est > 0 && act < est * 0.5;
+      });
 
       return {
         totalResources: activeResources.length,

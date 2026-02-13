@@ -122,6 +122,7 @@ export default function ChangeOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      setShowForm(false);
       setSelectedCO(null);
       setFormData(initialFormState);
     },
@@ -187,6 +188,7 @@ export default function ChangeOrders() {
       sov_allocations: co.sov_allocations || []
     });
     setSelectedCO(co);
+    setShowForm(true);
   };
 
   const filteredCOs = useMemo(() => {
@@ -291,17 +293,30 @@ export default function ChangeOrders() {
       header: '',
       accessor: 'actions',
       render: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteCO(row);
-          }}
-          className="text-zinc-500 hover:text-red-500"
-        >
-          <Trash2 size={16} />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(row);
+            }}
+            className="text-zinc-400 hover:text-white h-8 px-2"
+          >
+            Edit
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteCO(row);
+            }}
+            className="text-zinc-500 hover:text-red-500 h-8 w-8"
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -401,11 +416,17 @@ export default function ChangeOrders() {
         </SectionCard>
       </ContentSection>
 
-      {/* Create Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-lg bg-zinc-900 border-zinc-800 text-white">
+      {/* Create/Edit Dialog */}
+      <Dialog open={showForm} onOpenChange={(open) => {
+        setShowForm(open);
+        if (!open) {
+          setSelectedCO(null);
+          setFormData(initialFormState);
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
           <DialogHeader>
-            <DialogTitle>New Change Order</DialogTitle>
+            <DialogTitle>{selectedCO ? 'Edit Change Order' : 'New Change Order'}</DialogTitle>
           </DialogHeader>
           <ChangeOrderForm
             formData={formData}
@@ -413,7 +434,9 @@ export default function ChangeOrders() {
             projects={projects}
             onProjectChange={handleProjectChange}
             onSubmit={handleSubmit}
-            isLoading={createMutation.isPending}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+            isEdit={!!selectedCO}
+            changeOrder={selectedCO}
           />
         </DialogContent>
       </Dialog>

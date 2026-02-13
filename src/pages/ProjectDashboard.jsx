@@ -122,6 +122,15 @@ export default function ProjectDashboard() {
                   if (!widget) return null;
 
                   const WidgetComponent = widget.component;
+                  const canMoveUp = index > 0;
+                  const canMoveDown = index < widgetLayout.length - 1;
+
+                  const moveWidget = (fromIndex, toIndex) => {
+                    const items = Array.from(widgetLayout);
+                    const [moved] = items.splice(fromIndex, 1);
+                    items.splice(toIndex, 0, moved);
+                    handleUpdateLayout(items);
+                  };
 
                   return (
                     <Draggable key={widgetId} draggableId={widgetId} index={index}>
@@ -132,12 +141,44 @@ export default function ProjectDashboard() {
                           className={snapshot.isDragging ? 'opacity-50' : ''}
                         >
                           <Card className="bg-zinc-900/50 border-zinc-800 p-4 relative group">
+                            {/* Keyboard reorder controls (WCAG 2.1.1) */}
+                            <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => moveWidget(index, index - 1)}
+                                disabled={!canMoveUp}
+                                className="h-7 w-7 p-0"
+                                aria-label={`Move ${widget.label} up`}
+                              >
+                                <span aria-hidden="true">↑</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => moveWidget(index, index + 1)}
+                                disabled={!canMoveDown}
+                                className="h-7 w-7 p-0"
+                                aria-label={`Move ${widget.label} down`}
+                              >
+                                <span aria-hidden="true">↓</span>
+                              </Button>
+                            </div>
+
+                            {/* Drag handle (mouse users) */}
                             <div
                               {...provided.dragHandleProps}
                               className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
+                              aria-hidden="true"
                             >
                               <GripVertical size={16} className="text-zinc-600" />
                             </div>
+
+                            {/* Screen reader position info */}
+                            <span className="sr-only">
+                              {widget.label}, position {index + 1} of {widgetLayout.length}
+                            </span>
+
                             <WidgetComponent projectId={activeProjectId} />
                           </Card>
                         </div>

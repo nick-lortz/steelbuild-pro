@@ -282,6 +282,15 @@ export default function WorkPackages() {
                   key={pkg.id} 
                   className="bg-gradient-to-r from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-zinc-600/50 transition-all cursor-pointer group rounded-lg"
                   onClick={() => setViewingPackage(pkg)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setViewingPackage(pkg);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`View work package ${pkg.wpid || pkg.title}`}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
@@ -367,8 +376,10 @@ export default function WorkPackages() {
                               setDeletePackage(pkg);
                             }}
                             className="h-9 px-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-md"
+                            aria-label={`Delete work package ${pkg.wpid || pkg.title}`}
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={14} aria-hidden="true" />
+                            <span className="sr-only">Delete</span>
                           </Button>
                         </div>
                       </div>

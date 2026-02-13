@@ -15,10 +15,16 @@ import ChangeOrderWidget from '@/components/project-dashboard/ChangeOrderWidget'
 import WorkPackageWidget from '@/components/project-dashboard/WorkPackageWidget';
 import DrawingWidget from '@/components/project-dashboard/DrawingWidget';
 import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialog';
+import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
+import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
+import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 
 const AVAILABLE_WIDGETS = [
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
+  { id: 'ai_risk', label: 'AI Risk Assessment', component: AIRiskWidget },
+  { id: 'resource_optimization', label: 'Resource Optimization', component: ResourceOptimizationWidget },
+  { id: 'documents', label: 'Documents', component: DocumentsWidget },
   { id: 'rfis', label: 'Open RFIs', component: RFIWidget },
   { id: 'deliveries', label: 'Upcoming Deliveries', component: DeliveryWidget },
   { id: 'change_orders', label: 'Change Orders', component: ChangeOrderWidget },
@@ -29,9 +35,10 @@ const AVAILABLE_WIDGETS = [
 const DEFAULT_LAYOUT = [
   'progress',
   'budget',
+  'ai_risk',
+  'resource_optimization',
   'rfis',
-  'deliveries',
-  'change_orders'
+  'deliveries'
 ];
 
 export default function ProjectDashboard() {

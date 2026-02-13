@@ -88,16 +88,17 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
               onChange={handleFileSelect}
               className="hidden"
               required={!formData.file_url}
+              aria-label="Choose file to upload"
             />
             <label htmlFor="doc-upload" className="cursor-pointer">
               {uploading ? (
                 <div className="flex flex-col items-center">
-                  <Loader2 size={32} className="mb-2 animate-spin text-amber-500" />
-                  <p className="text-zinc-400">Uploading...</p>
+                  <Loader2 size={32} className="mb-2 animate-spin text-amber-500" aria-hidden="true" />
+                  <p className="text-zinc-400" role="status" aria-live="polite">Uploading...</p>
                 </div>
               ) : formData.file_url ? (
                 <div className="flex flex-col items-center">
-                  <File size={32} className="mb-2 text-green-500" />
+                  <File size={32} className="mb-2 text-green-500" aria-hidden="true" />
                   <p className="text-green-400 text-sm">{formData.file_name}</p>
                   <p className="text-xs text-zinc-500 mt-1">
                     {(formData.file_size / 1024).toFixed(2)} KB
@@ -105,9 +106,9 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <Upload size={32} className="mb-2 text-zinc-500" />
-                  <p className="text-zinc-400">Click to upload</p>
-                  <p className="text-xs text-zinc-500 mt-1">PDF, images, or office docs</p>
+                  <Upload size={32} className="mb-2 text-zinc-500" aria-hidden="true" />
+                  <p className="text-zinc-400">Click to upload file</p>
+                  <p className="text-xs text-zinc-500 mt-1">PDF, images, or office documents</p>
                 </div>
               )}
             </label>

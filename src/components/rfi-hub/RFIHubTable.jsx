@@ -47,18 +47,19 @@ export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
+            <caption className="sr-only">{title}: {rfis.length} RFIs</caption>
             <thead>
               <tr className="border-b border-zinc-800">
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">RFI #</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Project</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Subject</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Type</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Status</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Priority</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Owner</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Age</th>
-                <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Due</th>
-                <th className="text-right py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Actions</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">RFI #</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Project</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Subject</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Type</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Status</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Priority</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Owner</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Age</th>
+                <th scope="col" className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Due</th>
+                <th scope="col" className="text-right py-2 px-3 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -129,16 +130,18 @@ export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
                         variant="ghost"
                         onClick={() => onEdit(rfi)}
                         className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                        aria-label={`Edit RFI ${rfi.rfi_number}: ${rfi.subject}`}
                       >
-                        <Pencil size={12} />
+                        <Pencil size={12} aria-hidden="true" />
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => onDelete(rfi)}
                         className="h-7 w-7 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                        aria-label={`Delete RFI ${rfi.rfi_number}`}
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={12} aria-hidden="true" />
                       </Button>
                     </div>
                   </td>

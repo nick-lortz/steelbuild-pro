@@ -487,4 +487,9 @@ const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, 
 
 });
 
+// Add language attribute to root HTML
+if (typeof document !== 'undefined' && document.documentElement) {
+  document.documentElement.setAttribute('lang', 'en');
+}
+
 export default LayoutWithProviders;

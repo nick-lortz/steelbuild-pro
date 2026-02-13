@@ -251,8 +251,9 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
                     size="icon"
                     onClick={() => removeSOVAllocation(idx)}
                     className="h-8 w-8 text-red-400 hover:text-red-300"
+                    aria-label="Remove SOV allocation line"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} aria-hidden="true" />
                   </Button>
                 </div>
               </div>

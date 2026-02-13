@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Sparkles, FileText } from 'lucide-react';
 import AIImpactAnalysis from './AIImpactAnalysis';
 import ApprovalWorkflow from './ApprovalWorkflow';
+import FormField from '@/components/ui/FormField';
 
 export default function ChangeOrderForm({ formData, setFormData, projects, onProjectChange, onSubmit, isLoading, isEdit, changeOrder }) {
   const [sovAllocations, setSovAllocations] = useState(formData.sov_allocations || []);
@@ -92,12 +93,12 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
       <TabsContent value="details">
         <form onSubmit={handleFormSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Project *</Label>
+        <FormField label="Project" required>
           <Select 
             value={formData.project_id} 
             onValueChange={onProjectChange}
             disabled={isEdit}
+            aria-required="true"
           >
             <SelectTrigger className="bg-zinc-800 border-zinc-700">
               <SelectValue placeholder="Select project" />
@@ -108,9 +109,9 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>CO Number *</Label>
+        </FormField>
+        
+        <FormField label="CO Number" required>
           <Input
             type="number"
             value={formData.co_number}
@@ -118,11 +119,10 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
             className="bg-zinc-800 border-zinc-700 font-mono"
             required
           />
-        </div>
+        </FormField>
       </div>
       
-      <div className="space-y-2">
-        <Label>Title *</Label>
+      <FormField label="Title" required>
         <Input
           value={formData.title}
           onChange={(e) => handleChange('title', e.target.value)}
@@ -130,10 +130,9 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
           required
           className="bg-zinc-800 border-zinc-700"
         />
-      </div>
+      </FormField>
 
-      <div className="space-y-2">
-        <Label>Description</Label>
+      <FormField label="Description">
         <Textarea
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
@@ -141,7 +140,7 @@ export default function ChangeOrderForm({ formData, setFormData, projects, onPro
           placeholder="Detailed description of the change"
           className="bg-zinc-800 border-zinc-700"
         />
-      </div>
+      </FormField>
 
       <div className="space-y-2">
         <Label>Status</Label>

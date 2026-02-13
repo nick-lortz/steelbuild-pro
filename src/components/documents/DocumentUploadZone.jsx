@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Loader2, File } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import FormField from '@/components/ui/FormField';
 
 export default function DocumentUploadZone({ projectId, open, onClose, onUploadComplete }) {
   const [uploading, setUploading] = useState(false);
@@ -112,8 +113,7 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
             </label>
           </div>
 
-          <div className="space-y-2">
-            <Label>Title *</Label>
+          <FormField label="Title" required>
             <Input
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -121,17 +121,16 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
               required
               className="bg-zinc-800 border-zinc-700"
             />
-          </div>
+          </FormField>
 
-          <div className="space-y-2">
-            <Label>Description</Label>
+          <FormField label="Description">
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="bg-zinc-800 border-zinc-700"
             />
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

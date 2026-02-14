@@ -91,31 +91,30 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
       <Card className="hidden lg:block bg-card border-border">
         <div className="overflow-x-auto">
           <table className="w-full">
-          <caption className="sr-only">Projects list with {projects.length} items</caption>
           <thead>
             <tr className="border-b border-border">
-              <th scope="col" className="text-left px-3 py-2.5">
+              <th className="text-left px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Project</span>
               </th>
-              <th scope="col" className="text-left px-3 py-2.5">
+              <th className="text-left px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Client</span>
               </th>
-              <th scope="col" className="text-left px-3 py-2.5">
+              <th className="text-left px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Status</span>
               </th>
-              <th scope="col" className="text-right px-3 py-2.5">
+              <th className="text-right px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Value</span>
               </th>
-              <th scope="col" className="text-left px-3 py-2.5">
+              <th className="text-left px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Target</span>
               </th>
-              <th scope="col" className="text-center px-3 py-2.5">
+              <th className="text-center px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Progress</span>
               </th>
-              <th scope="col" className="text-left px-3 py-2.5">
+              <th className="text-left px-3 py-2.5">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">PM</span>
               </th>
-              <th scope="col" className="text-center px-3 py-2.5 w-28">
+              <th className="text-center px-3 py-2.5 w-28">
                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Actions</span>
               </th>
             </tr>
@@ -224,9 +223,9 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
                           e.stopPropagation();
                           onView(project);
                         }}
-                        aria-label={`View dashboard for ${project.name}`}
+                        title="View Dashboard"
                       >
-                        <Eye size={14} aria-hidden="true" />
+                        <Eye size={14} />
                       </Button>
                       {canEdit && (
                         <>
@@ -238,9 +237,9 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
                               e.stopPropagation();
                               onEdit(project);
                             }}
-                            aria-label={`Edit ${project.name}`}
+                            title="Edit Project"
                           >
-                            <Pencil size={14} aria-hidden="true" />
+                            <Pencil size={14} />
                           </Button>
                           <Button
                             variant="ghost"
@@ -250,9 +249,9 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
                               e.stopPropagation();
                               onSettings(project);
                             }}
-                            aria-label={`Settings for ${project.name}`}
+                            title="Project Settings"
                           >
-                            <Settings size={14} aria-hidden="true" />
+                            <Settings size={14} />
                           </Button>
                           <Button
                             variant="ghost"
@@ -262,9 +261,9 @@ export default function ProjectsTable({ projects, onView, onEdit, onDelete, onSe
                               e.stopPropagation();
                               onDelete(project);
                             }}
-                            aria-label={`Delete ${project.name}`}
+                            title="Delete Project"
                           >
-                            <Trash2 size={14} aria-hidden="true" />
+                            <Trash2 size={14} />
                           </Button>
                         </>
                       )}

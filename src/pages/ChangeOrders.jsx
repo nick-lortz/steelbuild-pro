@@ -313,10 +313,8 @@ export default function ChangeOrders() {
               setDeleteCO(row);
             }}
             className="text-zinc-500 hover:text-red-500 h-8 w-8"
-            aria-label={`Delete change order ${row.co_number}`}
           >
-            <Trash2 size={16} aria-hidden="true" />
-            <span className="sr-only">Delete</span>
+            <Trash2 size={16} />
           </Button>
         </div>
       ),

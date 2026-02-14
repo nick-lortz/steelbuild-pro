@@ -10,7 +10,6 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { parseLocalDate, formatLocalDate } from '@/components/shared/dateUtils';
-import FormField from '@/components/ui/FormField';
 
 export default function DeliveryForm({ delivery, projects, tasks, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({

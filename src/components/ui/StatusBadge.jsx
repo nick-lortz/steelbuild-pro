@@ -1,7 +1,6 @@
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, XCircle, Clock, AlertCircle, FileText } from 'lucide-react';
 
 const statusStyles = {
   // Project statuses
@@ -47,50 +46,16 @@ const statusStyles = {
   cancelled: "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium",
 };
 
-// Icon mapping for WCAG 1.4.1 (non-color identification)
-const statusIcons = {
-  // Success states
-  awarded: CheckCircle2,
-  completed: CheckCircle2,
-  approved: CheckCircle2,
-  answered: CheckCircle2,
-  FFF: CheckCircle2,
-  'As-Built': CheckCircle2,
-  
-  // In-progress states
-  in_progress: Clock,
-  submitted: Clock,
-  pending: Clock,
-  under_review: Clock,
-  
-  // Warning states
-  on_hold: AlertCircle,
-  'Revise & Resubmit': AlertCircle,
-  
-  // Error states
-  rejected: XCircle,
-  void: XCircle,
-  cancelled: XCircle,
-  
-  // Document states
-  draft: FileText,
-  IFA: FileText,
-  BFA: FileText,
-  BFS: FileText,
-};
-
-const StatusBadge = React.memo(function StatusBadge({ status, className, showIcon = true }) {
+const StatusBadge = React.memo(function StatusBadge({ status, className }) {
   const style = statusStyles[status] || "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium";
   const displayText = status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  const Icon = statusIcons[status];
   
   return (
     <Badge 
       variant="outline" 
-      className={cn("border px-2.5 py-0.5 text-xs inline-flex items-center gap-1", style, className)}
+      className={cn("border px-2.5 py-0.5 text-xs", style, className)}
     >
-      {showIcon && Icon && <Icon size={10} aria-hidden="true" />}
-      <span>{displayText}</span>
+      {displayText}
     </Badge>
   );
 });

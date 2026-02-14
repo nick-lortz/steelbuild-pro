@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import FormField from '@/components/ui/FormField';
 
 export default function WorkPackageForm({
   package: pkg,
@@ -101,7 +100,8 @@ export default function WorkPackageForm({
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-zinc-300 uppercase">Basic Information</h3>
         
-        <FormField label="WPID" required>
+        <div className="space-y-2">
+          <Label className="text-zinc-200">WPID *</Label>
           <Input
             value={formData.wpid}
             onChange={(e) => handleChange('wpid', e.target.value)}
@@ -109,9 +109,10 @@ export default function WorkPackageForm({
             className="bg-zinc-800 border-zinc-700 text-white"
             required
           />
-        </FormField>
+        </div>
 
-        <FormField label="Title" required>
+        <div className="space-y-2">
+          <Label className="text-zinc-200">Title *</Label>
           <Input
             value={formData.title}
             onChange={(e) => handleChange('title', e.target.value)}
@@ -119,9 +120,10 @@ export default function WorkPackageForm({
             className="bg-zinc-800 border-zinc-700 text-white"
             required
           />
-        </FormField>
+        </div>
 
-        <FormField label="Scope Summary">
+        <div className="space-y-2">
+          <Label className="text-zinc-200">Scope Summary</Label>
           <Textarea
             value={formData.scope_summary}
             onChange={(e) => handleChange('scope_summary', e.target.value)}
@@ -129,7 +131,7 @@ export default function WorkPackageForm({
             className="bg-zinc-800 border-zinc-700 text-white"
             rows={3}
           />
-        </FormField>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">

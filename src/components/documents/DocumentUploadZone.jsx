@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, Loader2, File } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import FormField from '@/components/ui/FormField';
 
 export default function DocumentUploadZone({ projectId, open, onClose, onUploadComplete }) {
   const [uploading, setUploading] = useState(false);
@@ -88,17 +87,16 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
               onChange={handleFileSelect}
               className="hidden"
               required={!formData.file_url}
-              aria-label="Choose file to upload"
             />
             <label htmlFor="doc-upload" className="cursor-pointer">
               {uploading ? (
                 <div className="flex flex-col items-center">
-                  <Loader2 size={32} className="mb-2 animate-spin text-amber-500" aria-hidden="true" />
-                  <p className="text-zinc-400" role="status" aria-live="polite">Uploading...</p>
+                  <Loader2 size={32} className="mb-2 animate-spin text-amber-500" />
+                  <p className="text-zinc-400">Uploading...</p>
                 </div>
               ) : formData.file_url ? (
                 <div className="flex flex-col items-center">
-                  <File size={32} className="mb-2 text-green-500" aria-hidden="true" />
+                  <File size={32} className="mb-2 text-green-500" />
                   <p className="text-green-400 text-sm">{formData.file_name}</p>
                   <p className="text-xs text-zinc-500 mt-1">
                     {(formData.file_size / 1024).toFixed(2)} KB
@@ -106,15 +104,16 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <Upload size={32} className="mb-2 text-zinc-500" aria-hidden="true" />
-                  <p className="text-zinc-400">Click to upload file</p>
-                  <p className="text-xs text-zinc-500 mt-1">PDF, images, or office documents</p>
+                  <Upload size={32} className="mb-2 text-zinc-500" />
+                  <p className="text-zinc-400">Click to upload</p>
+                  <p className="text-xs text-zinc-500 mt-1">PDF, images, or office docs</p>
                 </div>
               )}
             </label>
           </div>
 
-          <FormField label="Title" required>
+          <div className="space-y-2">
+            <Label>Title *</Label>
             <Input
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -122,16 +121,17 @@ export default function DocumentUploadZone({ projectId, open, onClose, onUploadC
               required
               className="bg-zinc-800 border-zinc-700"
             />
-          </FormField>
+          </div>
 
-          <FormField label="Description">
+          <div className="space-y-2">
+            <Label>Description</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="bg-zinc-800 border-zinc-700"
             />
-          </FormField>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

@@ -143,15 +143,6 @@ export default function SecureDocumentManager({ projectId }) {
             key={doc.id} 
             className="bg-zinc-900 border-zinc-800 hover:border-zinc-700 cursor-pointer transition-colors"
             onClick={() => setSelectedDoc(doc)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setSelectedDoc(doc);
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            aria-label={`View document: ${doc.title}`}
           >
             <CardContent className="p-3">
               <div className="flex items-start gap-3">
@@ -188,10 +179,8 @@ export default function SecureDocumentManager({ projectId }) {
                         window.open(doc.file_url, '_blank');
                       }}
                       className="h-7 w-7 p-0 text-zinc-400 hover:text-white"
-                      aria-label={`View ${doc.title}`}
                     >
-                      <Eye size={14} aria-hidden="true" />
-                      <span className="sr-only">View</span>
+                      <Eye size={14} />
                     </Button>
                   )}
                 </div>

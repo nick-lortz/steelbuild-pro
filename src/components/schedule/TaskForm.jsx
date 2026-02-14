@@ -20,7 +20,6 @@ import RecurringTaskConfig from './RecurringTaskConfig';
 import TaskDependencySelector from './TaskDependencySelector';
 import TaskResourceSelector from './TaskResourceSelector';
 import { toast } from '@/components/ui/notifications';
-import FormField from '@/components/ui/FormField';
 
 export default function TaskForm({
   task,

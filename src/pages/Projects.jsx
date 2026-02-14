@@ -6,7 +6,6 @@ import { checkPermission } from '@/components/shared/permissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import FormField from '@/components/ui/FormField';
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -325,9 +324,8 @@ export default function Projects() {
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 className="gap-2 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
-                aria-label="Refresh projects list"
               >
-                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} aria-hidden="true" />
+                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
                 Refresh
               </Button>
               {can.createProject && (
@@ -469,23 +467,26 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <FormField label="Project Number" required>
+        <div className="space-y-2">
+          <Label>Project Number *</Label>
           <Input
             value={formData.project_number}
             onChange={(e) => handleChange('project_number', e.target.value)}
             placeholder="e.g., 2024-001"
             required
             className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
-        </FormField>
-        
-        <FormField label="Project Name" required>
+
+        </div>
+        <div className="space-y-2">
+          <Label>Project Name *</Label>
           <Input
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             placeholder="Project name"
             required
             className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
-        </FormField>
+
+        </div>
         <div className="space-y-2">
           <Label>Client / GC</Label>
           <Input

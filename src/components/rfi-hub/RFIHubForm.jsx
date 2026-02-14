@@ -7,8 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showErrorToast, showSuccessToast, ErrorMessages } from '@/components/shared/errorHandling';
 import { SafeHTML } from '@/components/shared/sanitization';
-import FormField from '@/components/ui/FormField';
-import { Label } from "@/components/ui/label";
 
 export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -88,12 +86,13 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Project" required>
+            {/* Project */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Project *</label>
               <Select 
                 value={formData.project_id} 
                 onValueChange={(v) => setFormData({ ...formData, project_id: v })}
                 disabled={!!rfi}
-                aria-required="true"
               >
                 <SelectTrigger className="bg-zinc-800 border-zinc-700">
                   <SelectValue />
@@ -106,46 +105,52 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
                   ))}
                 </SelectContent>
               </Select>
-            </FormField>
+            </div>
 
-            <FormField label="RFI Number" hint="Auto-generated">
+            {/* RFI Number */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">RFI Number</label>
               <Input
                 type="number"
                 value={formData.rfi_number}
                 disabled
                 className="bg-zinc-800 border-zinc-700 text-zinc-500"
               />
-            </FormField>
+            </div>
           </div>
 
-          <FormField label="Subject / Title" required>
+          {/* Subject */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Subject / Title *</label>
             <Input
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
               placeholder="Brief description of the issue"
               className="bg-zinc-800 border-zinc-700"
-              required
             />
-          </FormField>
+          </div>
 
-          <FormField label="Question / Request" required>
+          {/* Question */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Question / Request *</label>
             <Textarea
               value={formData.question}
               onChange={(e) => setFormData({ ...formData, question: e.target.value })}
               placeholder="Detailed question or clarification needed"
               className="bg-zinc-800 border-zinc-700 min-h-[100px]"
-              required
             />
-          </FormField>
+          </div>
 
-          <FormField label="Response">
+          {/* Response */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Response</label>
             <Textarea
               value={formData.response}
               onChange={(e) => setFormData({ ...formData, response: e.target.value })}
               placeholder="Response from architect/engineer"
               className="bg-zinc-800 border-zinc-700 min-h-[100px]"
             />
-          </FormField>
+          </div>
 
           <div className="grid grid-cols-3 gap-4">
             {/* RFI Type */}

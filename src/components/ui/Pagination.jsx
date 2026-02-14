@@ -136,21 +136,17 @@ export default function PaginationCompat({
 
       <div className="flex items-center gap-2">
         {typeof onPageSizeChange === "function" && (
-          <label className="flex items-center gap-2">
-            <span className="sr-only">Results per page</span>
-            <select
-              className="h-9 rounded-md border bg-background px-2 text-sm"
-              value={pageSize}
-              onChange={handlePageSizeChange}
-              aria-label="Results per page"
-            >
-              {[10, 25, 50, 100].map((size) => (
-                <option key={size} value={size}>
-                  {size}/page
-                </option>
-              ))}
-            </select>
-          </label>
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={pageSize}
+            onChange={handlePageSizeChange}
+          >
+            {[10, 25, 50, 100].map((size) => (
+              <option key={size} value={size}>
+                {size}/page
+              </option>
+            ))}
+          </select>
         )}
 
         <button
@@ -158,13 +154,12 @@ export default function PaginationCompat({
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           disabled={!canGoPrev}
           onClick={() => handlePageChange(safePage - 1)}
-          aria-label="Go to previous page"
         >
-          <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+          <ChevronLeft className="mr-1 h-4 w-4" />
           Prev
         </button>
 
-        <span className="text-sm text-muted-foreground" aria-live="polite" aria-atomic="true">
+        <span className="text-sm text-muted-foreground">
           Page {safePage} of {totalPages}
         </span>
 
@@ -173,10 +168,9 @@ export default function PaginationCompat({
           className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           disabled={!canGoNext}
           onClick={() => handlePageChange(safePage + 1)}
-          aria-label="Go to next page"
         >
           Next
-          <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
+          <ChevronRight className="ml-1 h-4 w-4" />
         </button>
       </div>
     </div>

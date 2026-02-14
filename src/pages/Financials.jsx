@@ -182,21 +182,18 @@ export default function Financials() {
         <div className="text-center max-w-md">
           <DollarSign size={64} className="mx-auto mb-4 text-zinc-700" />
           <h3 className="text-xl font-bold text-white mb-4">Select Project</h3>
-          <label>
-            <span className="sr-only">Select project</span>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white" aria-label="Select project">
-                <SelectValue placeholder="Choose project..." />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {projects.map((p) =>
-                <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </label>
+          <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Choose project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {projects.map((p) =>
+              <SelectItem key={p.id} value={p.id}>
+                  {p.project_number} - {p.name}
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       </ErrorBoundary>

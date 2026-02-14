@@ -18,8 +18,14 @@ import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialo
 import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
 import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
+import AISummaryPanel from '@/components/project-dashboard/AISummaryPanel';
+import ProjectDocumentHub from '@/components/project-dashboard/ProjectDocumentHub';
+import GanttChart from '@/components/schedule/GanttChart';
 
 const AVAILABLE_WIDGETS = [
+  { id: 'ai_summary', label: 'AI Project Summary', component: AISummaryPanel },
+  { id: 'gantt', label: 'Critical Path Timeline', component: GanttChart },
+  { id: 'document_hub', label: 'Document Hub', component: ProjectDocumentHub },
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
   { id: 'ai_risk', label: 'AI Risk Assessment', component: AIRiskWidget },
@@ -33,12 +39,12 @@ const AVAILABLE_WIDGETS = [
 ];
 
 const DEFAULT_LAYOUT = [
+  'ai_summary',
+  'gantt',
+  'document_hub',
   'progress',
   'budget',
-  'ai_risk',
-  'resource_optimization',
-  'rfis',
-  'deliveries'
+  'resource_optimization'
 ];
 
 export default function ProjectDashboard() {

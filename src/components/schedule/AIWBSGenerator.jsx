@@ -16,6 +16,8 @@ export default function AIWBSGenerator({ project, open, onClose }) {
   const [keyDeliverables, setKeyDeliverables] = useState('');
   const [generatedWBS, setGeneratedWBS] = useState(null);
 
+  if (!project) return null;
+
   const generateWBSMutation = useMutation({
     mutationFn: async () => {
       const response = await base44.functions.invoke('generateWBS', {

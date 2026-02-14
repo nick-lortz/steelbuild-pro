@@ -66,7 +66,6 @@ const navGroups = [
   name: 'Overview',
   icon: LayoutDashboard,
   items: [
-  { name: 'Dashboard', page: 'Dashboard', icon: Building },
   { name: 'Project Dashboard', page: 'ProjectDashboard', icon: LayoutDashboard },
   { name: 'Projects', page: 'Projects', icon: Building },
   { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: BarChart3 },

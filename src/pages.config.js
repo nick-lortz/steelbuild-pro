@@ -52,6 +52,7 @@ import AdvancedReporting from './pages/AdvancedReporting';
 import Analytics from './pages/Analytics';
 import BudgetControl from './pages/BudgetControl';
 import Calendar from './pages/Calendar';
+import ChangeOrders from './pages/ChangeOrders';
 import Contracts from './pages/Contracts';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
@@ -68,6 +69,7 @@ import Fabrication from './pages/Fabrication';
 import FeedbackLoop from './pages/FeedbackLoop';
 import FieldTools from './pages/FieldTools';
 import FieldToolsMobile from './pages/FieldToolsMobile';
+import Financials from './pages/Financials';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
 import JobStatusReport from './pages/JobStatusReport';
@@ -87,8 +89,10 @@ import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
 import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
 import ProjectBudget from './pages/ProjectBudget';
+import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
+import Projects from './pages/Projects';
 import RFIHub from './pages/RFIHub';
 import RFIs from './pages/RFIs';
 import Reports from './pages/Reports';
@@ -101,11 +105,6 @@ import TermsOfService from './pages/TermsOfService';
 import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
-import Dashboard from './pages/Dashboard';
-import Financials from './pages/Financials';
-import Projects from './pages/Projects';
-import ChangeOrders from './pages/ChangeOrders';
-import ProjectDashboard from './pages/ProjectDashboard';
 import WorkPackages from './pages/WorkPackages';
 import __Layout from './Layout.jsx';
 
@@ -116,6 +115,7 @@ export const PAGES = {
     "Analytics": Analytics,
     "BudgetControl": BudgetControl,
     "Calendar": Calendar,
+    "ChangeOrders": ChangeOrders,
     "Contracts": Contracts,
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
@@ -132,6 +132,7 @@ export const PAGES = {
     "FeedbackLoop": FeedbackLoop,
     "FieldTools": FieldTools,
     "FieldToolsMobile": FieldToolsMobile,
+    "Financials": Financials,
     "Insights": Insights,
     "Integrations": Integrations,
     "JobStatusReport": JobStatusReport,
@@ -151,8 +152,10 @@ export const PAGES = {
     "Profile": Profile,
     "ProjectAnalyticsDashboard": ProjectAnalyticsDashboard,
     "ProjectBudget": ProjectBudget,
+    "ProjectDashboard": ProjectDashboard,
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
+    "Projects": Projects,
     "RFIHub": RFIHub,
     "RFIs": RFIs,
     "Reports": Reports,
@@ -165,11 +168,6 @@ export const PAGES = {
     "TestSuite": TestSuite,
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
-    "Dashboard": Dashboard,
-    "Financials": Financials,
-    "Projects": Projects,
-    "ChangeOrders": ChangeOrders,
-    "ProjectDashboard": ProjectDashboard,
     "WorkPackages": WorkPackages,
 }
 

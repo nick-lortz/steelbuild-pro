@@ -11,12 +11,12 @@ import { toast } from '@/components/ui/notifications';
 import { addDays, format } from 'date-fns';
 
 export default function AIWBSGenerator({ project, open, onClose }) {
+  if (!project) return null;
+  
   const queryClient = useQueryClient();
   const [scopeDescription, setScopeDescription] = useState(project?.scope_of_work || '');
   const [keyDeliverables, setKeyDeliverables] = useState('');
   const [generatedWBS, setGeneratedWBS] = useState(null);
-
-  if (!project) return null;
 
   const generateWBSMutation = useMutation({
     mutationFn: async () => {

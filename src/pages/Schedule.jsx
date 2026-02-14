@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, Download, Sliders } from 'lucide-react';
+import { Plus, Search, Calendar, Download, Sliders, Sparkles } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import TaskForm from '@/components/schedule/TaskForm';
 import GanttChart from '@/components/schedule/GanttChart';
@@ -15,6 +15,7 @@ import CalendarView from '@/components/schedule/CalendarView';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from '@/components/ui/notifications';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
+import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -29,6 +30,7 @@ export default function Schedule() {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [pmFilter, setPmFilter] = useState('all');
+  const [wbsGeneratorOpen, setWbsGeneratorOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -343,14 +345,25 @@ export default function Schedule() {
                 multi-project scheduling with dependencies
               </p>
             </div>
-            <Button
-              onClick={handleCreateTask}
-              disabled={activeProjectIds.length === 0}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6"
-            >
-              <Plus size={18} className="mr-2" />
-              Add Task
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setWbsGeneratorOpen(true)}
+                disabled={!activeProjectId}
+                variant="outline"
+                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+              >
+                <Sparkles size={18} className="mr-2" />
+                Generate WBS
+              </Button>
+              <Button
+                onClick={handleCreateTask}
+                disabled={activeProjectIds.length === 0}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6"
+              >
+                <Plus size={18} className="mr-2" />
+                Add Task
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -713,6 +726,12 @@ export default function Schedule() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <AIWBSGenerator
+        project={projects.find(p => p.id === activeProjectId)}
+        open={wbsGeneratorOpen}
+        onClose={() => setWbsGeneratorOpen(false)}
+      />
     </div>
     </ErrorBoundary>
   );

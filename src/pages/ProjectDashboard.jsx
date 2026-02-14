@@ -20,11 +20,11 @@ import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceO
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 import AISummaryPanel from '@/components/project-dashboard/AISummaryPanel';
 import ProjectDocumentHub from '@/components/project-dashboard/ProjectDocumentHub';
-import GanttChart from '@/components/schedule/GanttChart';
+import CriticalPathGantt from '@/components/project-dashboard/CriticalPathGantt';
 
 const AVAILABLE_WIDGETS = [
   { id: 'ai_summary', label: 'AI Project Summary', component: AISummaryPanel },
-  { id: 'gantt', label: 'Critical Path Timeline', component: GanttChart },
+  { id: 'gantt', label: 'Critical Path Timeline', component: CriticalPathGantt },
   { id: 'document_hub', label: 'Document Hub', component: ProjectDocumentHub },
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },

@@ -6,11 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, TrendingUp, Clock, Loader2 } from 'lucide-react';
 
 export default function AIRiskWidget({ projectId }) {
-  const { data: risks, isLoading } = useQuery({
+  const { data: risks, isLoading, error } = useQuery({
     queryKey: ['ai-risks', projectId],
     queryFn: async () => {
-      const { data } = await base44.functions.invoke('aiRiskAssessment', { project_id: projectId });
-      return data.risks || [];
+      try {
+        const { data } = await base44.functions.invoke('aiRiskAssessment', { project_id: projectId });
+        return data?.risks || [];
+      } catch (err) {
+        console.error('AI Risk Assessment error:', err);
+        return [];
+      }
     },
     enabled: !!projectId,
     staleTime: 5 * 60 * 1000
@@ -40,7 +45,7 @@ export default function AIRiskWidget({ projectId }) {
   }
 
   return (
-    <div>
+    <Card className="bg-zinc-900 border-zinc-800">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <AlertTriangle size={16} className="text-red-400" />
@@ -78,6 +83,6 @@ export default function AIRiskWidget({ projectId }) {
           ))
         )}
       </CardContent>
-    </div>
+    </Card>
   );
 }

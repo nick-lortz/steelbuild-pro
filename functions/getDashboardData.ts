@@ -195,9 +195,15 @@ Deno.serve(async (req) => {
         )
       : 0;
 
+    // Change Order metrics
+    const pendingCOs = changeOrders.filter(c => c.status === 'submitted' || c.status === 'under_review').length;
+
+    // Total contract value across all projects
+    const totalContractValue = allUserProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
+
     // Average health score across all projects
     const avgHealth = projectsWithHealth.length > 0
-      ? projectsWithHealth.reduce((sum, p) => sum + p.costHealth, 0) / projectsWithHealth.length
+      ? Math.round(projectsWithHealth.reduce((sum, p) => sum + p.costHealth, 0) / projectsWithHealth.length)
       : 0;
 
     const duration = Date.now() - startTime;
@@ -215,7 +221,9 @@ Deno.serve(async (req) => {
         upcomingMilestones,
         openRFIs,
         avgRFIResponseDays,
-        avgHealth
+        avgHealth,
+        pendingCOs,
+        totalContractValue
       }
     });
 

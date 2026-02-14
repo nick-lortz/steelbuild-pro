@@ -11,8 +11,6 @@ import { toast } from '@/components/ui/notifications';
 import { addDays, format } from 'date-fns';
 
 export default function AIWBSGenerator({ project, open, onClose }) {
-  if (!project) return null;
-  
   const queryClient = useQueryClient();
   const [scopeDescription, setScopeDescription] = useState(project?.scope_of_work || '');
   const [keyDeliverables, setKeyDeliverables] = useState('');
@@ -105,6 +103,8 @@ export default function AIWBSGenerator({ project, open, onClose }) {
     };
     return colors[phase] || 'bg-zinc-700';
   };
+
+  if (!project) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

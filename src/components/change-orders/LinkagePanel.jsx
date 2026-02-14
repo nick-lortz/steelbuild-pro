@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, X, ExternalLink, MessageSquareWarning, Calendar, FileText } from 'lucide-react';
-import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Link as LinkIcon, FileText, Package, CheckSquare, Truck, Plus, X } from 'lucide-react';
+import { toast } from '@/components/ui/notifications';
 
 export default function LinkagePanel({ changeOrder, onUpdate }) {
-  const queryClient = useQueryClient();
   const [addingType, setAddingType] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', changeOrder.project_id],
@@ -24,146 +24,260 @@ export default function LinkagePanel({ changeOrder, onUpdate }) {
     enabled: !!changeOrder.project_id
   });
 
-  const { data: drawings = [] } = useQuery({
-    queryKey: ['drawings', changeOrder.project_id],
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawing-sets', changeOrder.project_id],
     queryFn: () => base44.entities.DrawingSet.filter({ project_id: changeOrder.project_id }),
     enabled: !!changeOrder.project_id
   });
 
-  const updateLinks = async (field, value) => {
-    await base44.entities.ChangeOrder.update(changeOrder.id, {
-      [field]: value
-    });
-    queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
-    onUpdate();
-  };
-
-  const addLink = async (type, id) => {
-    const field = `linked_${type}_ids`;
-    const current = changeOrder[field] || [];
-    if (current.includes(id)) {
-      toast.error('Already linked');
-      return;
+  const linkMutation = useMutation({
+    mutationFn: ({ field, id }) => {
+      const currentIds = changeOrder[field] || [];
+      return base44.entities.ChangeOrder.update(changeOrder.id, {
+        [field]: [...currentIds, id]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      setAddingType(null);
+      toast.success('Link added');
+      onUpdate();
     }
-    await updateLinks(field, [...current, id]);
-    toast.success('Link added');
-    setAddingType(null);
-  };
+  });
 
-  const removeLink = async (type, id) => {
-    const field = `linked_${type}_ids`;
-    const current = changeOrder[field] || [];
-    await updateLinks(field, current.filter(i => i !== id));
-    toast.success('Link removed');
-  };
+  const unlinkMutation = useMutation({
+    mutationFn: ({ field, id }) => {
+      const currentIds = changeOrder[field] || [];
+      return base44.entities.ChangeOrder.update(changeOrder.id, {
+        [field]: currentIds.filter(i => i !== id)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      toast.success('Link removed');
+      onUpdate();
+    }
+  });
 
-  const linkedRFIs = (changeOrder.linked_rfi_ids || [])
-    .map(id => rfis.find(r => r.id === id))
-    .filter(Boolean);
+  const linkedRFIs = rfis.filter(r => changeOrder.linked_rfi_ids?.includes(r.id));
+  const linkedTasks = tasks.filter(t => changeOrder.linked_task_ids?.includes(t.id));
+  const linkedDrawings = drawingSets.filter(d => changeOrder.linked_drawing_set_ids?.includes(d.id));
 
-  const linkedTasks = (changeOrder.linked_task_ids || [])
-    .map(id => tasks.find(t => t.id === id))
-    .filter(Boolean);
+  const availableRFIs = rfis.filter(r => !changeOrder.linked_rfi_ids?.includes(r.id));
+  const availableTasks = tasks.filter(t => !changeOrder.linked_task_ids?.includes(t.id));
+  const availableDrawings = drawingSets.filter(d => !changeOrder.linked_drawing_set_ids?.includes(d.id));
 
-  const linkedDrawings = (changeOrder.linked_drawing_set_ids || [])
-    .map(id => drawings.find(d => d.id === id))
-    .filter(Boolean);
-
-  const renderSection = (title, icon, items, type, available) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-zinc-400 flex items-center gap-2">
-          {React.createElement(icon, { size: 14 })}
-          {title}
-        </h4>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setAddingType(addingType === type ? null : type)}
-          className="text-zinc-400 hover:text-white"
-        >
-          <Plus size={14} className="mr-1" />
-          Add
-        </Button>
-      </div>
-
-      {addingType === type && (
-        <div className="p-3 bg-zinc-800/50 rounded border border-zinc-700">
-          <Select onValueChange={(id) => addLink(type, id)}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700">
-              <SelectValue placeholder={`Select ${title.slice(0, -1).toLowerCase()}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {available.map(item => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.title || item.name || item.drawing_number || item.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {items.length === 0 ? (
-        <p className="text-xs text-zinc-600 py-2">No {title.toLowerCase()} linked</p>
-      ) : (
-        <div className="space-y-2">
-          {items.map(item => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between p-2 bg-zinc-800/50 rounded hover:bg-zinc-800 transition-colors"
+  return (
+    <div className="space-y-4">
+      {/* RFIs */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText size={16} className="text-cyan-400" />
+              Linked RFIs ({linkedRFIs.length})
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAddingType('rfi')}
+              className="border-zinc-700 h-8"
             >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm truncate">
-                  {type === 'rfi' ? `RFI-${item.rfi_number}` :
-                   type === 'task' ? item.name :
-                   item.drawing_number} - {item.title || item.subject || ''}
-                </p>
-                {item.status && (
-                  <Badge variant="outline" className="mt-1 text-xs">
-                    {item.status}
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
+              <Plus size={12} className="mr-1" />
+              Link RFI
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {addingType === 'rfi' && (
+            <div className="flex gap-2 mb-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded">
+              <Select onValueChange={(id) => linkMutation.mutate({ field: 'linked_rfi_ids', id })}>
+                <SelectTrigger className="flex-1 bg-zinc-900 border-zinc-700 h-9">
+                  <SelectValue placeholder="Select RFI..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {availableRFIs.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      RFI-{r.rfi_number} - {r.subject}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setAddingType(null)}
+                className="h-9 w-9 text-zinc-500"
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
+          {linkedRFIs.length === 0 ? (
+            <p className="text-sm text-zinc-500 text-center py-4">No linked RFIs</p>
+          ) : (
+            linkedRFIs.map(rfi => (
+              <div key={rfi.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">RFI-{rfi.rfi_number}</p>
+                  <p className="text-xs text-zinc-500">{rfi.subject}</p>
+                </div>
                 <Button
-                  variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-zinc-400 hover:text-white"
-                  onClick={() => {
-                    // Navigate to entity (simplified)
-                    const pages = { rfi: 'RFIs', task: 'Schedule', drawing_set: 'Detailing' };
-                    window.location.hash = `#${pages[type]}`;
-                  }}
-                >
-                  <ExternalLink size={12} />
-                </Button>
-                <Button
                   variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-zinc-400 hover:text-red-400"
-                  onClick={() => removeLink(type, item.id)}
+                  onClick={() => unlinkMutation.mutate({ field: 'linked_rfi_ids', id: rfi.id })}
+                  className="h-7 w-7 text-zinc-500 hover:text-red-500"
                 >
                   <X size={12} />
                 </Button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+            ))
+          )}
+        </CardContent>
+      </Card>
 
-  return (
-    <Card className="bg-zinc-900 border-zinc-800">
-      <CardHeader>
-        <CardTitle className="text-base">Linked Items</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {renderSection('RFIs', MessageSquareWarning, linkedRFIs, 'rfi', rfis)}
-        {renderSection('Tasks', Calendar, linkedTasks, 'task', tasks)}
-        {renderSection('Drawings', FileText, linkedDrawings, 'drawing_set', drawings)}
-      </CardContent>
-    </Card>
+      {/* Tasks */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CheckSquare size={16} className="text-purple-400" />
+              Linked Tasks ({linkedTasks.length})
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAddingType('task')}
+              className="border-zinc-700 h-8"
+            >
+              <Plus size={12} className="mr-1" />
+              Link Task
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {addingType === 'task' && (
+            <div className="flex gap-2 mb-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded">
+              <Select onValueChange={(id) => linkMutation.mutate({ field: 'linked_task_ids', id })}>
+                <SelectTrigger className="flex-1 bg-zinc-900 border-zinc-700 h-9">
+                  <SelectValue placeholder="Select task..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {availableTasks.map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setAddingType(null)}
+                className="h-9 w-9 text-zinc-500"
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
+          {linkedTasks.length === 0 ? (
+            <p className="text-sm text-zinc-500 text-center py-4">No linked tasks</p>
+          ) : (
+            linkedTasks.map(task => (
+              <div key={task.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">{task.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-[9px]">{task.phase}</Badge>
+                    <Badge variant="outline" className="text-[9px]">{task.status}</Badge>
+                  </div>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => unlinkMutation.mutate({ field: 'linked_task_ids', id: task.id })}
+                  className="h-7 w-7 text-zinc-500 hover:text-red-500"
+                >
+                  <X size={12} />
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Drawing Sets */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Package size={16} className="text-green-400" />
+              Linked Drawings ({linkedDrawings.length})
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAddingType('drawing')}
+              className="border-zinc-700 h-8"
+            >
+              <Plus size={12} className="mr-1" />
+              Link Drawing
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {addingType === 'drawing' && (
+            <div className="flex gap-2 mb-3 p-3 bg-green-500/10 border border-green-500/30 rounded">
+              <Select onValueChange={(id) => linkMutation.mutate({ field: 'linked_drawing_set_ids', id })}>
+                <SelectTrigger className="flex-1 bg-zinc-900 border-zinc-700 h-9">
+                  <SelectValue placeholder="Select drawing set..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {availableDrawings.map(d => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.set_name} ({d.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setAddingType(null)}
+                className="h-9 w-9 text-zinc-500"
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
+          {linkedDrawings.length === 0 ? (
+            <p className="text-sm text-zinc-500 text-center py-4">No linked drawings</p>
+          ) : (
+            linkedDrawings.map(drawing => (
+              <div key={drawing.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-white">{drawing.set_name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-[9px]">{drawing.status}</Badge>
+                    <span className="text-xs text-zinc-600">{drawing.current_revision}</span>
+                  </div>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => unlinkMutation.mutate({ field: 'linked_drawing_set_ids', id: drawing.id })}
+                  className="h-7 w-7 text-zinc-500 hover:text-red-500"
+                >
+                  <X size={12} />
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import PageHeader from '@/components/ui/PageHeader';
@@ -19,14 +18,8 @@ import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialo
 import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
 import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
-import AISummaryPanel from '@/components/project-dashboard/AISummaryPanel';
-import ProjectDocumentHub from '@/components/project-dashboard/ProjectDocumentHub';
-import CriticalPathGantt from '@/components/project-dashboard/CriticalPathGantt';
 
 const AVAILABLE_WIDGETS = [
-  { id: 'ai_summary', label: 'AI Project Summary', component: AISummaryPanel },
-  { id: 'gantt', label: 'Critical Path Timeline', component: CriticalPathGantt },
-  { id: 'document_hub', label: 'Document Hub', component: ProjectDocumentHub },
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
   { id: 'ai_risk', label: 'AI Risk Assessment', component: AIRiskWidget },
@@ -40,24 +33,18 @@ const AVAILABLE_WIDGETS = [
 ];
 
 const DEFAULT_LAYOUT = [
-  'ai_summary',
-  'gantt',
-  'document_hub',
   'progress',
   'budget',
-  'resource_optimization'
+  'ai_risk',
+  'resource_optimization',
+  'rfis',
+  'deliveries'
 ];
 
 export default function ProjectDashboard() {
-  const { activeProjectId, setActiveProject } = useActiveProject();
+  const { activeProjectId } = useActiveProject();
   const [widgetLayout, setWidgetLayout] = useState([]);
   const [configOpen, setConfigOpen] = useState(false);
-
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
-    staleTime: 5 * 60 * 1000
-  });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
@@ -106,32 +93,18 @@ export default function ProjectDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
       <PageHeader
-        title="Project Dashboard"
-        subtitle={project?.project_number || 'Select a project'}
+        title={project?.name || 'Project Dashboard'}
+        subtitle={project?.project_number || 'Loading...'}
         actions={
-          <div className="flex items-center gap-3">
-            <Select value={activeProjectId || ""} onValueChange={setActiveProject}>
-              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-700">
-                <SelectValue placeholder="Select project..." />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id} className="text-white">
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfigOpen(true)}
-              className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
-            >
-              <Settings size={14} className="mr-2" />
-              Configure
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfigOpen(true)}
+            className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
+          >
+            <Settings size={14} className="mr-2" />
+            Configure Widgets
+          </Button>
         }
       />
 
@@ -149,6 +122,15 @@ export default function ProjectDashboard() {
                   if (!widget) return null;
 
                   const WidgetComponent = widget.component;
+                  const canMoveUp = index > 0;
+                  const canMoveDown = index < widgetLayout.length - 1;
+
+                  const moveWidget = (fromIndex, toIndex) => {
+                    const items = Array.from(widgetLayout);
+                    const [moved] = items.splice(fromIndex, 1);
+                    items.splice(toIndex, 0, moved);
+                    handleUpdateLayout(items);
+                  };
 
                   return (
                     <Draggable key={widgetId} draggableId={widgetId} index={index}>
@@ -159,12 +141,44 @@ export default function ProjectDashboard() {
                           className={snapshot.isDragging ? 'opacity-50' : ''}
                         >
                           <Card className="bg-zinc-900/50 border-zinc-800 p-4 relative group">
+                            {/* Keyboard reorder controls (WCAG 2.1.1) */}
+                            <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => moveWidget(index, index - 1)}
+                                disabled={!canMoveUp}
+                                className="h-7 w-7 p-0"
+                                aria-label={`Move ${widget.label} up`}
+                              >
+                                <span aria-hidden="true">↑</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => moveWidget(index, index + 1)}
+                                disabled={!canMoveDown}
+                                className="h-7 w-7 p-0"
+                                aria-label={`Move ${widget.label} down`}
+                              >
+                                <span aria-hidden="true">↓</span>
+                              </Button>
+                            </div>
+
+                            {/* Drag handle (mouse users) */}
                             <div
                               {...provided.dragHandleProps}
                               className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
+                              aria-hidden="true"
                             >
                               <GripVertical size={16} className="text-zinc-600" />
                             </div>
+
+                            {/* Screen reader position info */}
+                            <span className="sr-only">
+                              {widget.label}, position {index + 1} of {widgetLayout.length}
+                            </span>
+
                             <WidgetComponent projectId={activeProjectId} />
                           </Card>
                         </div>

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import PageHeader from '@/components/ui/PageHeader';
@@ -48,9 +49,15 @@ const DEFAULT_LAYOUT = [
 ];
 
 export default function ProjectDashboard() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProject } = useActiveProject();
   const [widgetLayout, setWidgetLayout] = useState([]);
   const [configOpen, setConfigOpen] = useState(false);
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 5 * 60 * 1000
+  });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
@@ -99,18 +106,32 @@ export default function ProjectDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
       <PageHeader
-        title={project?.name || 'Project Dashboard'}
-        subtitle={project?.project_number || 'Loading...'}
+        title="Project Dashboard"
+        subtitle={project?.project_number || 'Select a project'}
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setConfigOpen(true)}
-            className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
-          >
-            <Settings size={14} className="mr-2" />
-            Configure Widgets
-          </Button>
+          <div className="flex items-center gap-3">
+            <Select value={activeProjectId || ""} onValueChange={setActiveProject}>
+              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-700">
+                <SelectValue placeholder="Select project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id} className="text-white">
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfigOpen(true)}
+              className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
+            >
+              <Settings size={14} className="mr-2" />
+              Configure
+            </Button>
+          </div>
         }
       />
 

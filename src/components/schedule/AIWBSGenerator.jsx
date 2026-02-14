@@ -183,7 +183,7 @@ export default function AIWBSGenerator({ project, open, onClose }) {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-white">Generated WBS</h3>
                 <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                  {generatedWBS.wbs.length} tasks • {generatedWBS.total_duration} days
+                  {generatedWBS?.wbs?.length || 0} tasks • {generatedWBS?.total_duration || 0} days
                 </Badge>
               </div>
               
@@ -219,7 +219,7 @@ export default function AIWBSGenerator({ project, open, onClose }) {
             {/* Tasks by Phase */}
             <div className="space-y-4">
               {['detailing', 'fabrication', 'delivery', 'erection', 'closeout'].map(phase => {
-                const phaseTasks = generatedWBS.wbs.filter(t => t.phase === phase);
+                const phaseTasks = (generatedWBS?.wbs || []).filter(t => t.phase === phase);
                 if (phaseTasks.length === 0) return null;
 
                 return (
@@ -292,7 +292,7 @@ export default function AIWBSGenerator({ project, open, onClose }) {
                   ) : (
                     <>
                       <Plus size={16} className="mr-2" />
-                      Create {generatedWBS.wbs.length} Tasks
+                      Create {generatedWBS?.wbs?.length || 0} Tasks
                     </>
                   )}
                 </Button>

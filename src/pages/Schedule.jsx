@@ -16,6 +16,8 @@ import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from '@/components/ui/notifications';
 import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
+import AITaskPrioritizer from '@/components/schedule/AITaskPrioritizer';
+import DependencyVisualizer from '@/components/schedule/DependencyVisualizer';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -31,6 +33,7 @@ export default function Schedule() {
   const [showFilters, setShowFilters] = useState(false);
   const [pmFilter, setPmFilter] = useState('all');
   const [wbsGeneratorOpen, setWbsGeneratorOpen] = useState(false);
+  const [taskPrioritizerOpen, setTaskPrioritizerOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -356,6 +359,15 @@ export default function Schedule() {
                 Generate WBS
               </Button>
               <Button
+                onClick={() => setTaskPrioritizerOpen(true)}
+                disabled={filteredTasks.length === 0}
+                variant="outline"
+                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+              >
+                <Sparkles size={18} className="mr-2" />
+                Prioritize Tasks
+              </Button>
+              <Button
                 onClick={handleCreateTask}
                 disabled={activeProjectIds.length === 0}
                 className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6"
@@ -623,6 +635,13 @@ export default function Schedule() {
 
       {/* Content */}
       <div className="max-w-[1800px] mx-auto px-8 py-6">
+        {/* Dependency Visualizer */}
+        {filteredTasks.length > 0 && (
+          <div className="mb-6">
+            <DependencyVisualizer tasks={filteredTasks} />
+          </div>
+        )}
+
         {activeProjectIds.length === 0 ? (
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
@@ -731,6 +750,13 @@ export default function Schedule() {
         project={projects.find(p => p.id === activeProjectId)}
         open={wbsGeneratorOpen}
         onClose={() => setWbsGeneratorOpen(false)}
+      />
+
+      <AITaskPrioritizer
+        projectId={activeProjectId}
+        tasks={filteredTasks}
+        open={taskPrioritizerOpen}
+        onClose={() => setTaskPrioritizerOpen(false)}
       />
     </div>
     </ErrorBoundary>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation } from 'react-query';
+import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

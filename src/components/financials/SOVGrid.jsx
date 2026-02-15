@@ -24,7 +24,9 @@ export default function SOVGrid({
   onImport,
   onExport,
   onPublish,
-  canEdit 
+  canEdit,
+  baseContract,
+  totalContract 
 }) {
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
@@ -88,6 +90,8 @@ export default function SOVGrid({
     earned_to_date: acc.earned_to_date + (item.earned_to_date || 0),
     billed_to_date: acc.billed_to_date + (item.billed_to_date || 0),
   }), { scheduled_value: 0, earned_to_date: 0, billed_to_date: 0 });
+
+  const sovMismatch = Math.abs(totals.scheduled_value - baseContract) > 1;
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
@@ -363,8 +367,17 @@ export default function SOVGrid({
 
               {/* Totals Row */}
               <tr className="bg-zinc-950 border-t-2 border-zinc-700 font-bold">
-                <td colSpan={3} className="p-3 text-zinc-300 text-xs uppercase">Totals</td>
-                <td className="p-3 text-right text-white text-xs font-mono">{formatCurrency(totals.scheduled_value)}</td>
+                <td colSpan={3} className="p-3 text-zinc-300 text-xs uppercase">
+                  Totals
+                  {sovMismatch && (
+                    <span className="ml-2 text-amber-400 font-normal">
+                      (Contract: {formatCurrency(baseContract)})
+                    </span>
+                  )}
+                </td>
+                <td className={`p-3 text-right text-xs font-mono ${sovMismatch ? 'text-amber-400' : 'text-white'}`}>
+                  {formatCurrency(totals.scheduled_value)}
+                </td>
                 <td className="p-3"></td>
                 <td className="p-3 text-right text-white text-xs font-mono">{formatCurrency(totals.earned_to_date)}</td>
                 <td className="p-3 text-right text-white text-xs font-mono">{formatCurrency(totals.billed_to_date)}</td>

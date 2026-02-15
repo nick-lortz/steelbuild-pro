@@ -6,7 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, AlertCircle, TrendingUp } from 'lucide-react';
+import { DollarSign, AlertCircle, TrendingUp, Edit2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DenominatorToggle from '@/components/financials/DenominatorToggle';
 import FinancialKPIStrip from '@/components/financials/FinancialKPIStrip';
 import SOVGrid from '@/components/financials/SOVGrid';
@@ -19,6 +21,8 @@ import { toast } from '@/components/ui/notifications';
 export default function FinancialsRedesign() {
   const [selectedProject, setSelectedProject] = useState('');
   const [denominatorMode, setDenominatorMode] = useState('total');
+  const [editingContractValue, setEditingContractValue] = useState(false);
+  const [contractValueInput, setContractValueInput] = useState('');
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -212,6 +216,17 @@ export default function FinancialsRedesign() {
     }
   });
 
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      return await base44.entities.Project.update(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setEditingContractValue(false);
+      toast.success('Contract value updated');
+    }
+  });
+
   if (!selectedProject) {
     return (
       <ErrorBoundary>
@@ -240,6 +255,26 @@ export default function FinancialsRedesign() {
   const projectStatus = metrics.costCoverage >= 95 ? 'On Track' : 'Action Needed';
   const statusColor = projectStatus === 'On Track' ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50';
 
+  const sovTotal = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
+  const sovMismatch = Math.abs(sovTotal - metrics.baseContract) > 1;
+
+  const handleEditContractValue = () => {
+    setContractValueInput(metrics.baseContract.toString());
+    setEditingContractValue(true);
+  };
+
+  const saveContractValue = async () => {
+    const newValue = parseFloat(contractValueInput) || 0;
+    if (newValue < 0) {
+      toast.error('Contract value cannot be negative');
+      return;
+    }
+    await updateProjectMutation.mutate({
+      id: selectedProject,
+      data: { contract_value: newValue }
+    });
+  };
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
@@ -251,11 +286,26 @@ export default function FinancialsRedesign() {
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-3xl font-bold text-white tracking-tight">Financials</h1>
                   <Badge className={statusColor}>{projectStatus}</Badge>
+                  {sovMismatch && (
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
+                      <AlertCircle size={12} className="mr-1" />
+                      SOV Mismatch: {formatCurrency(sovTotal)} vs {formatCurrency(metrics.baseContract)}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="text-sm text-zinc-500 font-mono">
                     {selectedProjectData?.project_number} - {selectedProjectData?.name}
                   </p>
+                  {canEdit && (
+                    <button
+                      onClick={handleEditContractValue}
+                      className="text-xs text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1"
+                    >
+                      <Edit2 size={12} />
+                      Edit Base Contract ({formatCurrency(metrics.baseContract)})
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -278,6 +328,8 @@ export default function FinancialsRedesign() {
             {/* KPI Strip */}
             <FinancialKPIStrip
               totalContract={metrics.totalContract}
+              baseContract={metrics.baseContract}
+              approvedChanges={metrics.approvedChanges}
               earnedValue={metrics.earnedValue}
               actualCost={metrics.actualCost}
               billed={metrics.billed}
@@ -337,6 +389,8 @@ export default function FinancialsRedesign() {
             <TabsContent value="sov">
               <SOVGrid
                 sovItems={sovItems}
+                baseContract={metrics.baseContract}
+                totalContract={metrics.totalContract}
                 onUpdate={(id, data) => updateSOVMutation.mutate({ id, data })}
                 onDelete={(id) => deleteSOVMutation.mutate(id)}
                 onCreate={(data) => createSOVMutation.mutate(data)}
@@ -417,6 +471,55 @@ export default function FinancialsRedesign() {
           </Tabs>
         </div>
       </div>
+
+      {/* Edit Contract Value Dialog */}
+      <Dialog open={editingContractValue} onOpenChange={setEditingContractValue}>
+        <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Base Contract Value</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <label className="text-xs text-zinc-400 mb-2 block">Base Contract Amount</label>
+              <Input
+                type="number"
+                step="0.01"
+                value={contractValueInput}
+                onChange={(e) => setContractValueInput(e.target.value)}
+                className="text-right font-mono text-lg bg-zinc-950 border-zinc-700 text-white"
+                autoFocus
+              />
+              <p className="text-xs text-zinc-500 mt-1">
+                Current: {formatCurrency(metrics.baseContract)}
+              </p>
+            </div>
+            {sovMismatch && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded">
+                <p className="text-xs text-amber-400">
+                  <AlertCircle size={12} className="inline mr-1" />
+                  SOV total ({formatCurrency(sovTotal)}) will not match base contract after this change
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={() => setEditingContractValue(false)}
+                variant="outline"
+                className="flex-1 border-zinc-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={saveContractValue}
+                disabled={updateProjectMutation.isPending}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-black font-bold"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </ErrorBoundary>
   );
 }

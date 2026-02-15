@@ -24,7 +24,9 @@ export default function FinancialKPIStrip({
   billed,
   etc,
   denominator,
-  denominatorMode 
+  denominatorMode,
+  baseContract,
+  approvedChanges 
 }) {
   const cv = earnedValue - actualCost;
   const readyToBill = Math.max(0, earnedValue - billed);
@@ -42,7 +44,13 @@ export default function FinancialKPIStrip({
   };
 
   const kpis = [
-    { label: 'Total Contract', value: formatCurrency(totalContract), subtext: denominatorMode === 'base' ? 'Base' : 'w/ Approved COs' },
+    { 
+      label: 'Total Contract', 
+      value: formatCurrency(totalContract), 
+      subtext: denominatorMode === 'base' 
+        ? `Base: ${formatCurrency(baseContract)}` 
+        : `Base ${formatCurrency(baseContract)} + COs ${formatCurrency(approvedChanges)}` 
+    },
     { label: 'Earned Value', value: formatCurrency(earnedValue), subtext: `${formatPercent(percentEarned)} Earned` },
     { label: 'Actual Cost', value: formatCurrency(actualCost), subtext: 'To Date' },
     { label: 'Cost Variance', value: formatCurrency(cv), subtext: cv >= 0 ? 'Under' : 'Over', trend: cv >= 0 },

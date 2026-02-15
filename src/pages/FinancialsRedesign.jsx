@@ -443,12 +443,35 @@ export default function FinancialsRedesign() {
                   toast.success('SOV exported');
                 }}
                 onPublish={async () => {
-                  // Create SOV version snapshot
-                  const { data } = await base44.functions.invoke('createSOVVersion', {
-                    project_id: selectedProject,
-                    change_summary: 'Manual publish'
-                  });
-                  toast.success('SOV version published');
+                  try {
+                    const sovSnapshot = sovItems.map(s => ({
+                      sov_code: s.sov_code,
+                      description: s.description,
+                      scheduled_value: s.scheduled_value,
+                      percent_complete: s.percent_complete,
+                      earned_to_date: s.earned_to_date,
+                      billed_to_date: s.billed_to_date
+                    }));
+
+                    const versions = await base44.entities.SOVVersion.filter({ project_id: selectedProject });
+                    const nextVersion = versions.length + 1;
+
+                    await base44.entities.SOVVersion.create({
+                      project_id: selectedProject,
+                      version_number: nextVersion,
+                      snapshot_data: JSON.stringify(sovSnapshot),
+                      change_summary: 'Manual publish',
+                      changed_by: currentUser?.email,
+                      change_type: 'update',
+                      affected_sov_codes: sovItems.map(s => s.sov_code),
+                      is_current: true
+                    });
+
+                    toast.success(`SOV version ${nextVersion} published`);
+                  } catch (error) {
+                    toast.error('Failed to publish SOV version');
+                    console.error(error);
+                  }
                 }}
                 canEdit={canEdit}
               />

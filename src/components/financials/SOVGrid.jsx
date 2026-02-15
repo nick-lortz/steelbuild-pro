@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Save, X, Upload, Download, Trash2, History } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+import HierarchicalCostCodeSelector from './HierarchicalCostCodeSelector';
 
 const formatCurrency = (value) => {
   if (value == null) return '$0.00';
@@ -26,7 +27,8 @@ export default function SOVGrid({
   onPublish,
   canEdit,
   baseContract,
-  totalContract 
+  totalContract,
+  costCodes = [] 
 }) {
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');

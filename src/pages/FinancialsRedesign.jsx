@@ -16,6 +16,11 @@ import CostAlignmentPanel from '@/components/financials/CostAlignmentPanel';
 import ETCGrid from '@/components/financials/ETCGrid';
 import ChangesPanel from '@/components/financials/ChangesPanel';
 import InvoiceGenerationPanel from '@/components/financials/InvoiceGenerationPanel';
+import ActualsGrid from '@/components/financials/ActualsGrid';
+import HierarchicalCostCodeSelector from '@/components/financials/HierarchicalCostCodeSelector';
+import EVMSummary from '@/components/financials/reports/EVMSummary';
+import CashFlowForecast from '@/components/financials/reports/CashFlowForecast';
+import ExecutiveSummary from '@/components/financials/reports/ExecutiveSummary';
 import { toast } from '@/components/ui/notifications';
 
 export default function FinancialsRedesign() {
@@ -77,9 +82,15 @@ export default function FinancialsRedesign() {
     staleTime: 2 * 60 * 1000
   });
 
+  const { data: costCodes = [] } = useQuery({
+    queryKey: ['cost-codes'],
+    queryFn: () => base44.entities.CostCode.list('code'),
+    staleTime: 30 * 60 * 1000
+  });
+
   const selectedProjectData = projects.find(p => p.id === selectedProject);
 
-  // Calculate financial metrics
+  // Calculate financial metrics with hierarchy aggregation
   const metrics = useMemo(() => {
     const baseContract = selectedProjectData?.contract_value || 0;
     const approvedChanges = changeOrders
@@ -93,6 +104,18 @@ export default function FinancialsRedesign() {
     }, 0);
 
     const billed = sovItems.reduce((sum, sov) => sum + (sov.billed_to_date || 0), 0);
+    
+    // Aggregate costs across hierarchy
+    const getCostCodeWithChildren = (codeId) => {
+      const ids = new Set([codeId]);
+      const children = costCodes.filter(c => c.parent_code_id === codeId);
+      children.forEach(child => {
+        const childIds = getCostCodeWithChildren(child.id);
+        childIds.forEach(id => ids.add(id));
+      });
+      return ids;
+    };
+
     const actualCost = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
     
     const totalETC = etcRecords.reduce((sum, etc) => sum + (etc.estimated_remaining_cost || 0), 0);
@@ -121,7 +144,7 @@ export default function FinancialsRedesign() {
       costCoverage,
       readyToBill: Math.max(0, earnedValue - billed)
     };
-  }, [selectedProjectData, sovItems, expenses, changeOrders, etcRecords, denominatorMode]);
+  }, [selectedProjectData, sovItems, expenses, changeOrders, etcRecords, denominatorMode, costCodes]);
 
   // Mutations
   const updateSOVMutation = useMutation({
@@ -350,6 +373,7 @@ export default function FinancialsRedesign() {
               <TabsTrigger value="changes">Changes</TabsTrigger>
               <TabsTrigger value="forecast">Forecast</TabsTrigger>
               <TabsTrigger value="invoices">Invoices</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -391,6 +415,7 @@ export default function FinancialsRedesign() {
                 sovItems={sovItems}
                 baseContract={metrics.baseContract}
                 totalContract={metrics.totalContract}
+                costCodes={costCodes}
                 onUpdate={(id, data) => updateSOVMutation.mutate({ id, data })}
                 onDelete={(id) => deleteSOVMutation.mutate(id)}
                 onCreate={(data) => createSOVMutation.mutate(data)}
@@ -429,7 +454,51 @@ export default function FinancialsRedesign() {
               />
             </TabsContent>
 
-            <TabsContent value="costs">
+            <TabsContent value="costs" className="space-y-6">
+              <ActualsGrid
+                expenses={expenses}
+                costCodes={costCodes}
+                sovItems={sovItems}
+                onUpdate={async (id, data) => {
+                  await base44.entities.Expense.update(id, data);
+                  queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                  toast.success('Expense updated');
+                }}
+                onDelete={async (id) => {
+                  await base44.entities.Expense.delete(id);
+                  queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                  toast.success('Expense deleted');
+                }}
+                onCreate={async (data) => {
+                  await base44.entities.Expense.create({ ...data, project_id: selectedProject });
+                  queryClient.invalidateQueries({ queryKey: ['expenses'] });
+                  toast.success('Expense created');
+                }}
+                onImport={() => toast.info('CSV/Excel import')}
+                onExport={() => {
+                  const csv = [
+                    ['Date', 'Description', 'Vendor', 'Category', 'Amount', 'SOV Code'],
+                    ...expenses.map(e => [
+                      e.expense_date,
+                      e.description,
+                      e.vendor,
+                      e.category,
+                      e.amount,
+                      e.sov_code || 'Not Mapped'
+                    ])
+                  ].map(row => row.join(',')).join('\n');
+                  
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `Actuals_${selectedProjectData?.project_number}.csv`;
+                  a.click();
+                  toast.success('Actuals exported');
+                }}
+                canEdit={canEdit}
+              />
+
               <CostAlignmentPanel
                 expenses={expenses}
                 sovItems={sovItems}
@@ -466,6 +535,91 @@ export default function FinancialsRedesign() {
                   toast.success('Invoice generated for ' + formatCurrency(amount));
                 }}
                 canEdit={canEdit}
+              />
+            </TabsContent>
+
+            <TabsContent value="reports" className="space-y-6">
+              <EVMSummary
+                earnedValue={metrics.earnedValue}
+                actualCost={metrics.actualCost}
+                plannedValue={null}
+                totalContract={metrics.totalContract}
+                onExport={() => {
+                  const csv = [
+                    ['Metric', 'Value'],
+                    ['Earned Value', metrics.earnedValue],
+                    ['Actual Cost', metrics.actualCost],
+                    ['Cost Variance', metrics.earnedValue - metrics.actualCost],
+                    ['CPI', actualCost > 0 ? earnedValue / actualCost : 0]
+                  ].map(row => row.join(',')).join('\n');
+                  
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `EVM_${selectedProjectData?.project_number}.csv`;
+                  a.click();
+                  toast.success('EVM exported');
+                }}
+              />
+
+              <CashFlowForecast
+                earnedValue={metrics.earnedValue}
+                actualCost={metrics.actualCost}
+                etc={metrics.totalETC}
+                billed={metrics.billed}
+                readyToBill={metrics.readyToBill}
+                onExport={() => {
+                  const csv = 'Month,Revenue,Cost,Net\n' + 
+                    Array(6).fill(0).map((_, i) => 
+                      `M${i},${(metrics.readyToBill/6).toFixed(2)},${(metrics.totalETC/6).toFixed(2)},${((metrics.readyToBill - metrics.totalETC)/6).toFixed(2)}`
+                    ).join('\n');
+                  
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `CashFlow_${selectedProjectData?.project_number}.csv`;
+                  a.click();
+                  toast.success('Cash flow exported');
+                }}
+              />
+
+              <ExecutiveSummary
+                project={selectedProjectData}
+                totalContract={metrics.totalContract}
+                baseContract={metrics.baseContract}
+                approvedChanges={metrics.approvedChanges}
+                earnedValue={metrics.earnedValue}
+                actualCost={metrics.actualCost}
+                billed={metrics.billed}
+                etc={metrics.totalETC}
+                denominator={metrics.denominator}
+                denominatorMode={denominatorMode}
+                costCoverage={metrics.costCoverage}
+                onExportPDF={() => toast.info('PDF export - integrate jsPDF')}
+                onExportCSV={() => {
+                  const csv = [
+                    ['Metric', 'Value'],
+                    ['Project', selectedProjectData?.name],
+                    ['Project Number', selectedProjectData?.project_number],
+                    ['Total Contract', metrics.totalContract],
+                    ['Earned Value', metrics.earnedValue],
+                    ['Actual Cost', metrics.actualCost],
+                    ['EAC', metrics.actualCost + metrics.totalETC],
+                    ['Projected Profit', metrics.totalContract - (metrics.actualCost + metrics.totalETC)],
+                    ['Margin %', ((metrics.totalContract - (metrics.actualCost + metrics.totalETC)) / metrics.totalContract * 100).toFixed(2)],
+                    ['CPI', (metrics.actualCost > 0 ? metrics.earnedValue / metrics.actualCost : 0).toFixed(3)]
+                  ].map(row => row.join(',')).join('\n');
+                  
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `ExecutiveSummary_${selectedProjectData?.project_number}.csv`;
+                  a.click();
+                  toast.success('Executive summary exported');
+                }}
               />
             </TabsContent>
           </Tabs>

@@ -18,6 +18,9 @@ import ChangesPanel from '@/components/financials/ChangesPanel';
 import InvoiceGenerationPanel from '@/components/financials/InvoiceGenerationPanel';
 import ActualsGrid from '@/components/financials/ActualsGrid';
 import HierarchicalCostCodeSelector from '@/components/financials/HierarchicalCostCodeSelector';
+import BaselineManager from '@/components/financials/BaselineManager';
+import ExpenseSplitter from '@/components/financials/ExpenseSplitter';
+import CostBreakdownDashboard from '@/components/financials/CostBreakdownDashboard';
 import EVMSummary from '@/components/financials/reports/EVMSummary';
 import CashFlowForecast from '@/components/financials/reports/CashFlowForecast';
 import ExecutiveSummary from '@/components/financials/reports/ExecutiveSummary';
@@ -28,6 +31,7 @@ export default function FinancialsRedesign() {
   const [denominatorMode, setDenominatorMode] = useState('total');
   const [editingContractValue, setEditingContractValue] = useState(false);
   const [contractValueInput, setContractValueInput] = useState('');
+  const [splittingExpense, setSplittingExpense] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -86,6 +90,33 @@ export default function FinancialsRedesign() {
     queryKey: ['cost-codes'],
     queryFn: () => base44.entities.CostCode.list('code'),
     staleTime: 30 * 60 * 1000
+  });
+
+  const { data: baseline } = useQuery({
+    queryKey: ['baseline', selectedProject],
+    queryFn: async () => {
+      const baselines = await base44.entities.ProjectBaseline.filter({ 
+        project_id: selectedProject, 
+        is_active: true 
+      });
+      return baselines[0] || null;
+    },
+    enabled: !!selectedProject,
+    staleTime: 10 * 60 * 1000
+  });
+
+  const { data: expenseSplits = [] } = useQuery({
+    queryKey: ['expense-splits', selectedProject],
+    queryFn: () => base44.entities.ExpenseSplit.filter({ project_id: selectedProject }),
+    enabled: !!selectedProject,
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['tasks', selectedProject],
+    queryFn: () => base44.entities.Task.filter({ project_id: selectedProject }),
+    enabled: !!selectedProject,
+    staleTime: 5 * 60 * 1000
   });
 
   const selectedProjectData = projects.find(p => p.id === selectedProject);
@@ -562,10 +593,33 @@ export default function FinancialsRedesign() {
             </TabsContent>
 
             <TabsContent value="reports" className="space-y-6">
+              <BaselineManager
+                projectId={selectedProject}
+                baseline={baseline}
+                sovItems={sovItems}
+                tasks={tasks}
+                onCreateBaseline={async (data) => {
+                  // Deactivate old baselines
+                  const oldBaselines = await base44.entities.ProjectBaseline.filter({ 
+                    project_id: selectedProject, 
+                    is_active: true 
+                  });
+                  await Promise.all(oldBaselines.map(b => 
+                    base44.entities.ProjectBaseline.update(b.id, { is_active: false })
+                  ));
+                  
+                  await base44.entities.ProjectBaseline.create(data);
+                  queryClient.invalidateQueries({ queryKey: ['baseline'] });
+                  toast.success('Baseline created');
+                }}
+                canEdit={canEdit}
+              />
+
               <EVMSummary
                 earnedValue={metrics.earnedValue}
                 actualCost={metrics.actualCost}
                 plannedValue={null}
+                baseline={baseline}
                 totalContract={metrics.totalContract}
                 onExport={() => {
                   const csv = [
@@ -644,10 +698,38 @@ export default function FinancialsRedesign() {
                   toast.success('Executive summary exported');
                 }}
               />
+
+              <CostBreakdownDashboard
+                expenses={expenses}
+                expenseSplits={expenseSplits}
+                tasks={tasks}
+                phases={['detailing', 'fabrication', 'delivery', 'erection', 'closeout']}
+              />
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      {splittingExpense && (
+        <ExpenseSplitter
+          expense={splittingExpense}
+          sovItems={sovItems}
+          costCodes={costCodes}
+          tasks={tasks}
+          onSave={async (splits) => {
+            await Promise.all(splits.map(split =>
+              base44.entities.ExpenseSplit.create({
+                ...split,
+                expense_id: splittingExpense.id,
+                project_id: selectedProject
+              })
+            ));
+            queryClient.invalidateQueries({ queryKey: ['expense-splits'] });
+            toast.success('Expense split saved');
+          }}
+          onClose={() => setSplittingExpense(null)}
+        />
+      )}
 
       {/* Edit Contract Value Dialog */}
       <Dialog open={editingContractValue} onOpenChange={setEditingContractValue}>

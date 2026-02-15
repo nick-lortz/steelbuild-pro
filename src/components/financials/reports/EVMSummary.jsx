@@ -20,11 +20,29 @@ export default function EVMSummary({
   actualCost, 
   plannedValue = null,
   totalContract,
+  baseline = null,
   onExport 
 }) {
-  const sv = plannedValue !== null ? earnedValue - plannedValue : null;
+  // Calculate PV from baseline if available
+  const currentPV = useMemo(() => {
+    if (!baseline?.planned_value_curve) return plannedValue;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const curve = baseline.planned_value_curve;
+    
+    // Find closest date in curve
+    const closestPoint = curve.reduce((prev, curr) => {
+      const prevDiff = Math.abs(new Date(prev.date) - new Date(today));
+      const currDiff = Math.abs(new Date(curr.date) - new Date(today));
+      return currDiff < prevDiff ? curr : prev;
+    });
+    
+    return closestPoint?.cumulative_pv || plannedValue;
+  }, [baseline, plannedValue]);
+
+  const sv = currentPV !== null ? earnedValue - currentPV : null;
   const cv = earnedValue - actualCost;
-  const spi = plannedValue > 0 ? earnedValue / plannedValue : null;
+  const spi = currentPV > 0 ? earnedValue / currentPV : null;
   const cpi = actualCost > 0 ? earnedValue / actualCost : 0;
 
   const metrics = [
@@ -40,11 +58,11 @@ export default function EVMSummary({
       color: 'text-amber-400',
       description: 'Cost incurred to date'
     },
-    ...(plannedValue !== null ? [{
+    ...(currentPV !== null ? [{
       label: 'PV (Planned Value)', 
-      value: formatCurrency(plannedValue), 
+      value: formatCurrency(currentPV), 
       color: 'text-purple-400',
-      description: 'Planned value from baseline'
+      description: baseline ? 'From project baseline' : 'Planned value'
     }] : []),
     { 
       label: 'CV (Cost Variance)', 
@@ -84,11 +102,11 @@ export default function EVMSummary({
         month: `M${i}`,
         EV: earnedValue * progress,
         AC: actualCost * progress,
-        ...(plannedValue !== null ? { PV: plannedValue * progress } : {})
+        ...(currentPV !== null ? { PV: currentPV * progress } : {})
       });
     }
     return points;
-  }, [earnedValue, actualCost, plannedValue]);
+  }, [earnedValue, actualCost, currentPV]);
 
   return (
     <Card className="bg-zinc-900 border-zinc-800">
@@ -201,12 +219,21 @@ export default function EVMSummary({
               <Legend />
               <Area type="monotone" dataKey="EV" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} name="Earned Value" />
               <Area type="monotone" dataKey="AC" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} name="Actual Cost" />
-              {plannedValue !== null && (
+              {currentPV !== null && (
                 <Area type="monotone" dataKey="PV" stroke="#a855f7" fill="#a855f7" fillOpacity={0.1} name="Planned Value" />
               )}
             </AreaChart>
           </ResponsiveContainer>
         </div>
+        
+        {baseline && (
+          <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded">
+            <p className="text-xs text-blue-400">
+              Baseline: {baseline.baseline_type} set on {new Date(baseline.baseline_date).toLocaleDateString()} 
+              ({baseline.planned_duration_days} days planned)
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

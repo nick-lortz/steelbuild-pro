@@ -193,37 +193,6 @@ export default function ETCGrid({ etcRecords, actualCostByCategory, onUpdate, ca
             </tbody>
           </table>
         </div>
-
-        {unalignedExpenses.length > 0 && (
-          <div className="mt-4 p-4 bg-zinc-950 border border-zinc-700 rounded">
-            <h4 className="text-xs font-semibold text-white mb-3 flex items-center gap-2">
-              <AlertCircle size={14} className="text-amber-400" />
-              Map Unaligned Costs ({unalignedExpenses.length})
-            </h4>
-            <div className="max-h-48 overflow-y-auto space-y-1 mb-3">
-              {unalignedExpenses.slice(0, 20).map(expense => (
-                <div
-                  key={expense.id}
-                  className={`flex items-center gap-2 p-2 rounded text-xs ${
-                    selectedExpenses.has(expense.id) ? 'bg-amber-500/10 border border-amber-500/30' : 'hover:bg-zinc-800/50'
-                  }`}
-                >
-                  <Checkbox
-                    checked={selectedExpenses.has(expense.id)}
-                    onCheckedChange={() => toggleExpense(expense.id)}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-white truncate">{expense.description || expense.vendor}</span>
-                  </div>
-                  <span className="text-white font-mono">{formatCurrency(expense.amount)}</span>
-                </div>
-              ))}
-            </div>
-            {unalignedExpenses.length > 20 && (
-              <p className="text-xs text-zinc-500 mb-3">...and {unalignedExpenses.length - 20} more</p>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

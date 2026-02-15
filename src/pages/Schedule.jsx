@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Calendar, Download, Sliders, Sparkles } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import TaskForm from '@/components/schedule/TaskForm';
 import GanttChart from '@/components/schedule/GanttChart';
 import TaskListView from '@/components/schedule/TaskListView';
@@ -18,6 +17,8 @@ import { useEntitySubscription } from '@/components/shared/hooks/useSubscription
 import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
 import AITaskPrioritizer from '@/components/schedule/AITaskPrioritizer';
 import DependencyVisualizer from '@/components/schedule/DependencyVisualizer';
+import QuickStatusUpdate from '@/components/schedule/QuickStatusUpdate';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -34,6 +35,7 @@ export default function Schedule() {
   const [pmFilter, setPmFilter] = useState('all');
   const [wbsGeneratorOpen, setWbsGeneratorOpen] = useState(false);
   const [taskPrioritizerOpen, setTaskPrioritizerOpen] = useState(false);
+  const [quickStatusOpen, setQuickStatusOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -249,6 +251,23 @@ export default function Schedule() {
     }
   });
 
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async (updates) => {
+      await Promise.all(
+        updates.map(({ id, status }) => 
+          base44.entities.Task.update(id, { status })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      toast.success('Tasks updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update tasks');
+    }
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       return await base44.entities.Task.delete(id);
@@ -366,6 +385,14 @@ export default function Schedule() {
               >
                 <Sparkles size={18} className="mr-2" />
                 Prioritize Tasks
+              </Button>
+              <Button
+                onClick={() => setQuickStatusOpen(true)}
+                disabled={filteredTasks.length === 0}
+                variant="outline"
+                className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+              >
+                Bulk Status Update
               </Button>
               <Button
                 onClick={handleCreateTask}
@@ -758,6 +785,21 @@ export default function Schedule() {
         open={taskPrioritizerOpen}
         onClose={() => setTaskPrioritizerOpen(false)}
       />
+
+      <Sheet open={quickStatusOpen} onOpenChange={setQuickStatusOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto bg-zinc-950 border-zinc-800">
+          <SheetHeader>
+            <SheetTitle className="text-white">Quick Status Update</SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <QuickStatusUpdate
+              tasks={filteredTasks}
+              onBulkUpdate={(updates) => bulkUpdateMutation.mutate(updates)}
+              onClose={() => setQuickStatusOpen(false)}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
     </ErrorBoundary>
   );

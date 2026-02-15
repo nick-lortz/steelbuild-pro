@@ -162,8 +162,19 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
       if (field === 'status') {
         return (
           <div className="flex items-center gap-1">
-            <Select value={editValue} onValueChange={setEditValue}>
-              <SelectTrigger className="h-7 text-xs border-amber-500">
+            <Select 
+              value={editValue} 
+              onValueChange={(val) => {
+                setEditValue(val);
+                // Auto-save on change
+                setTimeout(() => {
+                  onTaskUpdate(task.id, { status: val });
+                  setEditingCell(null);
+                  setEditValue('');
+                }, 100);
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs border-amber-500 w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -174,11 +185,8 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                 <SelectItem value="blocked">Blocked</SelectItem>
               </SelectContent>
             </Select>
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => saveEdit(task)}>
-              <Save size={12} className="text-green-400" />
-            </Button>
             <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEdit}>
-              <X size={12} className="text-red-400" />
+              <X size={12} className="text-zinc-400" />
             </Button>
           </div>
         );
@@ -187,8 +195,19 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
       if (field === 'assigned_resources') {
         return (
           <div className="flex items-center gap-1">
-            <Select value={editValue} onValueChange={setEditValue}>
-              <SelectTrigger className="h-7 text-xs border-amber-500">
+            <Select 
+              value={editValue} 
+              onValueChange={(val) => {
+                setEditValue(val);
+                // Auto-save on change
+                setTimeout(() => {
+                  onTaskUpdate(task.id, { assigned_resources: val ? [val] : [] });
+                  setEditingCell(null);
+                  setEditValue('');
+                }, 100);
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs border-amber-500 w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -197,11 +216,8 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                 ))}
               </SelectContent>
             </Select>
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => saveEdit(task)}>
-              <Save size={12} className="text-green-400" />
-            </Button>
             <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelEdit}>
-              <X size={12} className="text-red-400" />
+              <X size={12} className="text-zinc-400" />
             </Button>
           </div>
         );
@@ -409,7 +425,13 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                                   {phase}
                                 </td>
                                 <td className="p-3">
-                                  {renderCell(task, 'status', <StatusBadge status={task.status} />)}
+                                  <div onClick={() => startEdit(task.id, 'status', task.status)} className="cursor-pointer">
+                                    {editingCell?.taskId === task.id && editingCell?.field === 'status' ? (
+                                      renderCell(task, 'status', task.status)
+                                    ) : (
+                                      <StatusBadge status={task.status} />
+                                    )}
+                                  </div>
                                 </td>
                                 <td className="p-3 text-zinc-300 text-xs">
                                   {renderCell(task, 'start_date', task.start_date && safeParse(task.start_date) ? format(safeParse(task.start_date), 'MM/dd/yy') : '-')}

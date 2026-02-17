@@ -130,19 +130,19 @@ export default function PaginationCompat({
 
   return (
     <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-[#9CA3AF]">
         Showing {startIndex}-{endIndex} of {total}
       </p>
 
       <div className="flex items-center gap-2">
         {typeof onPageSizeChange === "function" && (
           <select
-            className="h-9 rounded-md border bg-background px-2 text-sm"
+            className="h-9 rounded-md border border-[rgba(255,255,255,0.1)] bg-[#0F1419] text-[#E5E7EB] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF9D42]"
             value={pageSize}
             onChange={handlePageSizeChange}
           >
             {[10, 25, 50, 100].map((size) => (
-              <option key={size} value={size}>
+              <option key={size} value={size} className="bg-[#0F1419]">
                 {size}/page
               </option>
             ))}
@@ -159,7 +159,7 @@ export default function PaginationCompat({
           Prev
         </button>
 
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-[#9CA3AF]">
           Page {safePage} of {totalPages}
         </span>
 

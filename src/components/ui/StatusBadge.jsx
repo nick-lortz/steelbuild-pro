@@ -4,56 +4,56 @@ import { cn } from "@/lib/utils";
 
 const statusStyles = {
   // Project statuses
-  bidding: "bg-blue-500/30 text-blue-300 border-blue-400/40 font-medium",
-  awarded: "bg-green-500/30 text-green-300 border-green-400/40 font-medium",
-  in_progress: "bg-amber-500/30 text-amber-300 border-amber-400/40 font-medium",
-  on_hold: "bg-orange-500/30 text-orange-300 border-orange-400/40 font-medium",
-  completed: "bg-emerald-500/30 text-emerald-300 border-emerald-400/40 font-medium",
-  closed: "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium",
+  bidding: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  awarded: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  in_progress: "bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30",
+  on_hold: "bg-[#F59E0B]/20 text-[#FCD34D] border-[#F59E0B]/30",
+  completed: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  closed: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
   
   // Drawing statuses
-  IFA: "bg-blue-500/30 text-blue-300 border-blue-400/40 font-medium",
-  BFA: "bg-blue-900/40 text-blue-300 border-blue-700/50 font-medium",
-  BFS: "bg-cyan-500/30 text-cyan-300 border-cyan-400/40 font-medium",
-  FFF: "bg-green-500/30 text-green-300 border-green-400/40 font-medium",
-  "As-Built": "bg-emerald-500/30 text-emerald-300 border-emerald-400/40 font-medium",
+  IFA: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  BFA: "bg-[#3B82F6]/15 text-[#93C5FD] border-[#3B82F6]/25",
+  BFS: "bg-[#06B6D4]/20 text-[#67E8F9] border-[#06B6D4]/30",
+  FFF: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  "As-Built": "bg-[#10B981]/25 text-[#6EE7B7] border-[#10B981]/35",
   
   // RFI statuses
-  draft: "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium",
-  submitted: "bg-blue-500/30 text-blue-300 border-blue-400/40 font-medium",
-  pending: "bg-amber-500/30 text-amber-300 border-amber-400/40 font-medium",
-  answered: "bg-green-500/30 text-green-300 border-green-400/40 font-medium",
+  draft: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  submitted: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  pending: "bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30",
+  answered: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
   
   // Change Order statuses
-  approved: "bg-green-500/30 text-green-300 border-green-400/40 font-medium",
-  rejected: "bg-red-500/30 text-red-300 border-red-400/40 font-medium",
-  void: "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium",
+  approved: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  rejected: "bg-[#EF4444]/20 text-[#FCA5A5] border-[#EF4444]/30",
+  void: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
   
   // Priority
-  low: "bg-slate-500/30 text-slate-300 border-slate-400/40 font-medium",
-  medium: "bg-amber-500/30 text-amber-200 border-amber-400/50 font-semibold",
-  high: "bg-orange-500/35 text-orange-200 border-orange-400/50 font-semibold",
-  critical: "bg-red-500/40 text-red-200 border-red-400/60 font-bold",
+  low: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  medium: "bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30",
+  high: "bg-[#F59E0B]/25 text-[#FCD34D] border-[#F59E0B]/35",
+  critical: "bg-[#EF4444]/25 text-[#FCA5A5] border-[#EF4444]/40",
   
   // Resource statuses
-  available: "bg-green-500/30 text-green-300 border-green-400/40 font-medium",
-  assigned: "bg-blue-500/30 text-blue-300 border-blue-400/40 font-medium",
-  unavailable: "bg-red-500/30 text-red-300 border-red-400/40 font-medium",
+  available: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  assigned: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  unavailable: "bg-[#EF4444]/20 text-[#FCA5A5] border-[#EF4444]/30",
   
   // Task statuses
-  not_started: "bg-slate-500/30 text-slate-300 border-slate-400/40 font-medium",
-  blocked: "bg-red-500/40 text-red-200 border-red-400/60 font-semibold",
-  cancelled: "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium",
+  not_started: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  blocked: "bg-[#EF4444]/25 text-[#FCA5A5] border-[#EF4444]/40",
+  cancelled: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
 };
 
 const StatusBadge = React.memo(function StatusBadge({ status, className }) {
-  const style = statusStyles[status] || "bg-zinc-500/30 text-zinc-300 border-zinc-400/40 font-medium";
+  const style = statusStyles[status] || "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]";
   const displayText = status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
   return (
     <Badge 
       variant="outline" 
-      className={cn("border px-2.5 py-0.5 text-xs", style, className)}
+      className={cn("border px-3 py-1 text-xs font-medium", style, className)}
     >
       {displayText}
     </Badge>

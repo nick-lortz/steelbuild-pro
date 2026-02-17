@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronRight, Plus, Trash2, Check, X, Calendar, AlertCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronDown, ChevronRight, Plus, Trash2, Check, X, Calendar, AlertCircle, List } from 'lucide-react';
 import { format, startOfWeek, addWeeks } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import { cn } from '@/lib/utils';
+import PMCalendarView from '@/components/pm-control/PMCalendarView';
 
 const CATEGORIES = [
   { value: 'schedule', label: 'Schedule Items', color: 'bg-blue-500/20 text-blue-400' },
@@ -250,12 +252,36 @@ export default function PMProjectControl() {
       </div>
 
       {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6 space-y-4">
-        {pmProjects.length === 0 && (
-          <Card className="p-12 text-center">
-            <p className="text-zinc-500">No projects assigned to this PM</p>
-          </Card>
-        )}
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        <Tabs defaultValue="list" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="list">
+              <List size={16} className="mr-2" />
+              List View
+            </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <Calendar size={16} className="mr-2" />
+              Calendar View
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="calendar">
+            <PMCalendarView
+              entries={entries}
+              projects={pmProjects}
+              selectedPM={selectedPM}
+              onCreateEntry={(data) => createEntryMutation.mutate(data)}
+              onUpdateEntry={(id, data) => updateEntryMutation.mutate({ id, data })}
+              onDeleteEntry={(id) => deleteEntryMutation.mutate(id)}
+            />
+          </TabsContent>
+
+          <TabsContent value="list" className="space-y-4">
+            {pmProjects.length === 0 && (
+              <Card className="p-12 text-center">
+                <p className="text-zinc-500">No projects assigned to this PM</p>
+              </Card>
+            )}
 
         {pmProjects.map(project => {
           const isExpanded = expandedProjects.has(project.id);
@@ -477,6 +503,8 @@ export default function PMProjectControl() {
             </Card>
           );
         })}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -43,19 +43,25 @@ export default function PMProjectControl() {
     staleTime: 5 * 60 * 1000
   });
 
-  // Get unique PMs
+  // Get unique PMs - check both project_manager and assigned_users
   const pmList = useMemo(() => {
     const pms = new Set();
     allProjects.forEach(p => {
       if (p.project_manager) pms.add(p.project_manager);
+      if (p.assigned_users?.length > 0) {
+        p.assigned_users.forEach(user => pms.add(user));
+      }
     });
     return Array.from(pms).sort();
   }, [allProjects]);
 
-  // Auto-select current user as PM if they're a PM
+  // Auto-select current user as PM if they're assigned to projects
   React.useEffect(() => {
     if (currentUser && !selectedPM && pmList.includes(currentUser.email)) {
       setSelectedPM(currentUser.email);
+    } else if (currentUser && !selectedPM && currentUser.role === 'admin' && pmList.length > 0) {
+      // Auto-select first PM for admins
+      setSelectedPM(pmList[0]);
     }
   }, [currentUser, pmList, selectedPM]);
 
@@ -66,9 +72,12 @@ export default function PMProjectControl() {
     staleTime: 30 * 1000
   });
 
-  // Filter projects by selected PM
+  // Filter projects by selected PM - check both project_manager and assigned_users
   const pmProjects = useMemo(() => {
-    return allProjects.filter(p => p.project_manager === selectedPM);
+    return allProjects.filter(p => 
+      p.project_manager === selectedPM || 
+      p.assigned_users?.includes(selectedPM)
+    );
   }, [allProjects, selectedPM]);
 
   const createEntryMutation = useMutation({

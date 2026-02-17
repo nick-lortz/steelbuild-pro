@@ -38,7 +38,7 @@ export default function LookAheadPlanning() {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => (activeProjectId && activeProjectId !== 'all')
       ? base44.entities.Task.filter({ project_id: activeProjectId }, 'start_date')
       : base44.entities.Task.list('start_date'),
     staleTime: 2 * 60 * 1000
@@ -52,37 +52,33 @@ export default function LookAheadPlanning() {
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => (activeProjectId && activeProjectId !== 'all')
       ? base44.entities.WorkPackage.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
+      : base44.entities.WorkPackage.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => (activeProjectId && activeProjectId !== 'all')
       ? base44.entities.DrawingSet.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
+      : base44.entities.DrawingSet.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => (activeProjectId && activeProjectId !== 'all')
       ? base44.entities.Delivery.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
+      : base44.entities.Delivery.list(),
     staleTime: 5 * 60 * 1000
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId 
+    queryFn: () => (activeProjectId && activeProjectId !== 'all')
       ? base44.entities.RFI.filter({ project_id: activeProjectId })
-      : [],
-    enabled: !!activeProjectId,
+      : base44.entities.RFI.list(),
     staleTime: 5 * 60 * 1000
   });
 
@@ -252,12 +248,12 @@ export default function LookAheadPlanning() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <Select value={activeProjectId || 'all'} onValueChange={setActiveProjectId}>
                 <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
                   <SelectValue placeholder="Select project..." />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
-                  <SelectItem value={null}>All Projects</SelectItem>
+                  <SelectItem value="all">All Projects</SelectItem>
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.project_number} - {p.name}</SelectItem>
                   ))}

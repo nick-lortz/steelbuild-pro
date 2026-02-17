@@ -308,14 +308,14 @@ export default function Projects() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+    <div className="min-h-screen bg-[#0A0E13]">
       {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50 backdrop-blur-sm">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
         <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Projects</h1>
-              <p className="text-sm text-zinc-500 font-mono mt-1">{projects.length} projects</p>
+              <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Projects</h1>
+              <p className="text-sm text-[#6B7280] font-mono mt-1">{projects.length} projects</p>
             </div>
             <div className="flex items-center gap-2">
               <Button 
@@ -323,7 +323,7 @@ export default function Projects() {
                 size="sm"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="gap-2 bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20"
+                className="gap-2"
               >
                 <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
                 Refresh
@@ -335,7 +335,6 @@ export default function Projects() {
                     setFormData(initialFormState);
                     setShowForm(true);
                   }}
-                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
                 >
                   <Plus size={14} className="mr-1" />
                   New Project
@@ -347,14 +346,14 @@ export default function Projects() {
       </div>
 
       {/* KPI Bar */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)]">
         <div className="max-w-[1800px] mx-auto px-8 py-4">
           <ProjectsKPIBar projects={projectsWithMetrics} tasks={tasks} financials={financials} />
         </div>
       </div>
 
       {/* Filters */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.01)]">
         <div className="max-w-[1800px] mx-auto px-8 py-3">
             <ProjectsFilters
             searchTerm={searchTerm}
@@ -385,8 +384,8 @@ export default function Projects() {
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground text-sm">Loading projects...</p>
+              <div className="w-12 h-12 border-4 border-[#FF9D42] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-[#9CA3AF] text-sm">Loading projects...</p>
             </div>
           </div>
         ) : (
@@ -403,7 +402,7 @@ export default function Projects() {
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-950 border-zinc-800/50 text-white rounded-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Project</DialogTitle>
           </DialogHeader>
@@ -420,9 +419,9 @@ export default function Projects() {
 
       {/* Edit Sheet */}
       <Sheet open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
-        <SheetContent className="w-full sm:max-w-xl bg-zinc-950 border-zinc-800/50 text-white overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-white">Edit Project</SheetTitle>
+            <SheetTitle>Edit Project</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <ProjectForm
@@ -473,8 +472,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
             value={formData.project_number}
             onChange={(e) => handleChange('project_number', e.target.value)}
             placeholder="e.g., 2024-001"
-            required
-            className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
+            required />
 
         </div>
         <div className="space-y-2">
@@ -644,39 +642,39 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         </div>
       </div>
 
-      <div className="border-t border-zinc-800 pt-4">
-        <h4 className="text-sm font-medium text-zinc-400 mb-3">Assigned Users</h4>
+      <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
+        <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Assigned Users</h4>
         <div className="space-y-2">
-          <Label className="text-xs text-zinc-500">Select users who can access this project</Label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-zinc-950 border border-zinc-800 rounded-lg">
+          <Label className="text-xs text-[#6B7280]">Select users who can access this project</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-3 bg-[#0A0E13] border border-[rgba(255,255,255,0.05)] rounded-lg">
             {users.map((user) =>
             <label
               key={user.id}
-              className="flex items-center gap-2 p-2 rounded hover:bg-zinc-800 cursor-pointer transition-colors">
+              className="flex items-center gap-2 p-2 rounded-lg hover:bg-[rgba(255,157,66,0.03)] cursor-pointer transition-colors">
 
                 <input
                 type="checkbox"
                 checked={(formData.assigned_users || []).includes(user.email)}
                 onChange={() => toggleUser(user.email)}
-                className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500 focus:ring-amber-500" />
+                className="w-4 h-4 rounded border-[rgba(255,255,255,0.2)] bg-[#0F1419] text-[#FF9D42] focus:ring-[#FF9D42]" />
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">{user.full_name || user.email}</p>
-                  <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                  <p className="text-sm text-[#E5E7EB] truncate">{user.full_name || user.email}</p>
+                  <p className="text-xs text-[#6B7280] truncate">{user.email}</p>
                 </div>
               </label>
             )}
           </div>
           {(formData.assigned_users || []).length > 0 &&
-          <p className="text-xs text-zinc-500 mt-2">
+          <p className="text-xs text-[#6B7280] mt-2">
               {(formData.assigned_users || []).length} user(s) assigned
             </p>
           }
         </div>
       </div>
 
-      <div className="border-t border-zinc-800 pt-4">
-        <h4 className="text-sm font-medium text-zinc-400 mb-3">GC Contact Info</h4>
+      <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
+        <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">GC Contact Info</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Contact Name</Label>
@@ -706,8 +704,8 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         </div>
       </div>
 
-      <div className="border-t border-zinc-800 pt-4">
-        <h4 className="text-sm font-medium text-zinc-400 mb-3">Scope of Work</h4>
+      <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
+        <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Scope of Work</h4>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Scope Description</Label>
@@ -737,16 +735,14 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
         <Textarea
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
-          rows={3}
-          className="bg-zinc-800 border-zinc-700" />
+          rows={3} />
 
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+      <div className="flex justify-end gap-3 pt-4 border-t border-[rgba(255,255,255,0.05)]">
         <Button
           type="submit"
-          disabled={isLoading}
-          className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-lg shadow-purple-600/30">
+          disabled={isLoading}>
 
           {isLoading ? 'Saving...' : isEdit ? 'Update Project' : 'Create Project'}
         </Button>

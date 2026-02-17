@@ -1,250 +1,358 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
-import { base44 } from '@/api/base44Client';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
-  Building2, 
-  DollarSign, 
-  FileText, 
-  MessageSquareWarning, 
-  FileCheck, 
-  Calendar,
-  BarChart3,
-  Sparkles,
-  CheckCircle,
+  Building, 
+  Zap, 
+  TrendingUp, 
+  Shield, 
   ArrowRight,
-  LogIn
+  CheckCircle2,
+  Sparkles,
+  BarChart3,
+  Users,
+  Clock
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function LandingPage() {
-  const handleLogin = () => {
-    base44.auth.redirectToLogin(window.location.pathname);
-  };
+  const navigate = useNavigate();
 
-  const handleForgotPassword = () => {
-    // Base44 handles password reset through the login flow
-    base44.auth.redirectToLogin(window.location.pathname);
+  const handleGetStarted = async () => {
+    const isAuthenticated = await base44.auth.isAuthenticated();
+    if (isAuthenticated) {
+      navigate(createPageUrl('ProjectDashboard'));
+    } else {
+      base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
+    }
   };
 
   const features = [
     {
-      icon: Building2,
-      title: "Project Management",
-      description: "Centralized hub for all your structural steel projects with real-time status tracking"
-    },
-    {
-      icon: DollarSign,
-      title: "Financial Control",
-      description: "Comprehensive budget tracking, expense management, and forecast analytics"
-    },
-    {
-      icon: FileText,
-      title: "Drawing Management",
-      description: "Track drawing submissions, revisions, and approvals with automated workflows"
-    },
-    {
-      icon: MessageSquareWarning,
-      title: "RFI Tracking",
-      description: "Streamline Request for Information processes with priority-based management"
-    },
-    {
-      icon: FileCheck,
-      title: "Change Orders",
-      description: "Monitor change order impacts on budget and schedule in real-time"
-    },
-    {
-      icon: Calendar,
-      title: "Schedule Management",
-      description: "Gantt charts, critical path analysis, and resource allocation tools"
+      icon: Sparkles,
+      title: 'AI-Powered Insights',
+      description: 'Intelligent analysis and predictions for your construction projects'
     },
     {
       icon: BarChart3,
-      title: "Performance Analytics",
-      description: "Data-driven insights on project performance, costs, and timelines"
+      title: 'Real-Time Analytics',
+      description: 'Track budgets, schedules, and performance metrics instantly'
     },
     {
-      icon: Sparkles,
-      title: "AI Project Manager",
-      description: "Intelligent analysis and recommendations based on your actual project data"
+      icon: Users,
+      title: 'Team Collaboration',
+      description: 'Seamless coordination across detailing, fab, and field teams'
+    },
+    {
+      icon: Clock,
+      title: 'Schedule Optimization',
+      description: 'Smart sequencing and critical path management'
     }
   ];
 
   const benefits = [
-    "Reduce project delays by identifying critical path bottlenecks",
-    "Improve budget accuracy with real-time cost tracking",
-    "Streamline communication with automated RFI and CO workflows",
-    "Make data-driven decisions with AI-powered insights",
-    "Increase team productivity with centralized project data",
-    "Ensure compliance with comprehensive audit trails"
+    'Complete project visibility from estimating to closeout',
+    'Automated RFI tracking and change order management',
+    'Real-time cost tracking and earned value analysis',
+    'Mobile-first field tools for daily logs and inspections',
+    'Integrated drawing management with AI analysis',
+    'Advanced reporting and executive dashboards'
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black text-white">
-      {/* Top Bar with Login */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm border-b border-zinc-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
-              <Building2 size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-lg">SteelBuild Pro</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={handleForgotPassword}
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Forgot Password?
-            </button>
-            <Button 
-              onClick={handleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
-            >
-              <LogIn size={18} className="mr-2" />
-              Log In
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0A0E13] text-[#E5E7EB] relative overflow-hidden">
+      {/* Ambient background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div 
+          className="absolute top-[10%] right-[10%] w-[800px] h-[800px] opacity-30"
+          style={{ background: 'radial-gradient(circle at center, rgba(255, 107, 44, 0.2) 0%, transparent 70%)' }} 
+        />
+        <div 
+          className="absolute bottom-[10%] left-[10%] w-[600px] h-[600px] opacity-20"
+          style={{ background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, transparent 70%)' }} 
+        />
       </div>
 
+      {/* Grid pattern overlay */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.02]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: '32px 32px'
+        }}
+      />
+
+      {/* Header */}
+      <header className="relative z-10 border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
+              style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.3)' }}
+            >
+              <Building size={20} className="text-[#0A0E13]" />
+            </div>
+            <span className="text-xl font-bold tracking-wide">SteelBuild Pro</span>
+          </div>
+          <Button onClick={handleGetStarted} variant="outline">
+            Sign In
+          </Button>
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-zinc-800/50 pt-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-zinc-950 to-black" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 sm:py-40">
-          <div className="text-center space-y-8">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Building2 size={40} className="text-white" />
+      <section className="relative z-10 container mx-auto px-6 pt-20 pb-32">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mx-auto text-center"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="inline-block mb-6 px-4 py-2 rounded-full bg-[rgba(255,157,66,0.1)] border border-[rgba(255,157,66,0.2)]"
+          >
+            <span className="text-sm font-medium text-[#FF9D42] tracking-wide">
+              Your Intelligent AI Agent for Every Task
+            </span>
+          </motion.div>
+
+          <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
+            <span className="bg-gradient-to-r from-[#E5E7EB] to-[#9CA3AF] bg-clip-text text-transparent">
+              Steel Construction
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-[#FF6B2C] via-[#FF9D42] to-[#FFB84D] bg-clip-text text-transparent">
+              Project Management
+            </span>
+          </h1>
+
+          <p className="text-xl text-[#9CA3AF] mb-12 max-w-2xl mx-auto leading-relaxed">
+            Automate conversations, analyze data, and make smarter decisions — all in one place.
+            Built for structural steel fabricators and erectors.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              onClick={handleGetStarted}
+              className="text-base gap-2"
+            >
+              Get Started <ArrowRight size={18} />
+            </Button>
+            <Button size="lg" variant="outline" className="text-base">
+              How it Works
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Floating dashboard preview */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="mt-20 max-w-6xl mx-auto"
+        >
+          <div 
+            className="rounded-2xl border border-[rgba(255,157,66,0.2)] bg-[#0F1419]/60 backdrop-blur-md p-2 shadow-2xl"
+            style={{ 
+              boxShadow: '0 0 60px rgba(255, 157, 66, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5)',
+              background: 'linear-gradient(135deg, rgba(255, 107, 44, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)'
+            }}
+          >
+            <div className="aspect-video rounded-xl bg-[#0A0E13] overflow-hidden">
+              {/* Placeholder for screenshot/demo */}
+              <div className="w-full h-full flex items-center justify-center text-[#6B7280]">
+                <div className="text-center">
+                  <Sparkles size={48} className="mx-auto mb-4 text-[#FF9D42]" />
+                  <p className="text-lg">Dashboard Preview</p>
+                </div>
               </div>
             </div>
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tighter">
-              SteelBuild <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Pro</span>
-            </h1>
-            <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto font-light">
-              Complete project management platform for structural steel fabricators
-            </p>
-            <p className="text-base text-zinc-500 max-w-2xl mx-auto">
-              Manage drawings, budgets, schedules, and teams from a single unified platform. 
-              Powered by AI insights and real-time analytics.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-              <Button 
-                onClick={handleLogin}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30"
-              >
-                Get Started
-                <ArrowRight size={20} className="ml-2" />
-              </Button>
-              <Button 
-                onClick={handleLogin}
-                variant="outline" 
-                className="border-zinc-700 text-white hover:bg-zinc-800/50 text-lg px-10 py-7 font-semibold rounded-lg bg-zinc-800/20"
-              >
-                View Projects
-              </Button>
-            </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Features Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
-        <div className="text-center mb-20">
-          <h2 className="text-5xl font-bold mb-4 tracking-tight">Everything You Need</h2>
-          <p className="text-zinc-400 text-lg font-light">Comprehensive tools for structural steel project management</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, idx) => {
-            const Icon = feature.icon;
-            return (
-              <Card key={idx} className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-blue-500/50 transition-all rounded-lg">
-                <CardContent className="p-6 space-y-3">
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                    <Icon size={24} className="text-blue-400" />
-                  </div>
-                  <h3 className="text-base font-semibold text-white">{feature.title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
+      {/* Features Section */}
+      <section className="relative z-10 py-24 border-t border-[rgba(255,255,255,0.05)]">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 tracking-tight">
+              <span className="text-[#E5E7EB]">Smart Technology That</span>{' '}
+              <span className="bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] bg-clip-text text-transparent">
+                Works for You
+              </span>
+            </h2>
+            <p className="text-lg text-[#9CA3AF] max-w-2xl mx-auto">
+              Everything you need to manage steel construction projects from bid to closeout
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card className="h-full hover:border-[rgba(255,157,66,0.2)] transition-all group">
+                  <CardContent className="p-6">
+                    <div 
+                      className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center mb-4 group-hover:shadow-lg transition-shadow"
+                      style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.2)' }}
+                    >
+                      <feature.icon size={24} className="text-[#0A0E13]" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2 text-[#E5E7EB]">{feature.title}</h3>
+                    <p className="text-sm text-[#9CA3AF] leading-relaxed">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="bg-gradient-to-b from-zinc-900/30 to-black border-y border-zinc-800/50 py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-5xl font-bold mb-6 tracking-tight">Built for Steel Fabricators</h2>
-              <p className="text-zinc-400 text-base mb-10 leading-relaxed font-light">
-                SteelBuild Pro is specifically designed to handle the complexities of structural steel fabrication projects, 
-                from initial detailing through final erection.
-              </p>
-              <div className="space-y-4">
-                {benefits.map((benefit, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <CheckCircle size={20} className="text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-zinc-300 text-sm">{benefit}</p>
+      <section className="relative z-10 py-24">
+        <div className="container mx-auto px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-4xl font-bold mb-6 tracking-tight">
+                  Everything you need,{' '}
+                  <span className="bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] bg-clip-text text-transparent">
+                    in one platform
+                  </span>
+                </h2>
+                <p className="text-lg text-[#9CA3AF] mb-8">
+                  Built specifically for structural steel professionals who need practical, field-tested tools.
+                </p>
+                <div className="space-y-4">
+                  {benefits.map((benefit, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                      className="flex items-start gap-3"
+                    >
+                      <CheckCircle2 size={20} className="text-[#FF9D42] flex-shrink-0 mt-0.5" />
+                      <span className="text-[#E5E7EB]">{benefit}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div 
+                  className="rounded-2xl border border-[rgba(255,157,66,0.2)] bg-[#0F1419]/60 backdrop-blur-md p-8"
+                  style={{ boxShadow: '0 0 40px rgba(255, 157, 66, 0.1)' }}
+                >
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl bg-[#151B24] flex items-center justify-center">
+                        <TrendingUp size={32} className="text-[#FF9D42]" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-[#E5E7EB]">98%</div>
+                        <div className="text-sm text-[#9CA3AF]">On-time delivery</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl bg-[#151B24] flex items-center justify-center">
+                        <Shield size={32} className="text-[#3B82F6]" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-[#E5E7EB]">45%</div>
+                        <div className="text-sm text-[#9CA3AF]">Fewer RFI delays</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-xl bg-[#151B24] flex items-center justify-center">
+                        <Zap size={32} className="text-[#FF9D42]" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-[#E5E7EB]">3x</div>
+                        <div className="text-sm text-[#9CA3AF]">Faster reporting</div>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-blue-400 mb-2">99.9%</div>
-                <p className="text-sm text-zinc-400">System Uptime</p>
-              </Card>
-              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-cyan-400 mb-2">Real-time</div>
-                <p className="text-sm text-zinc-400">Data Updates</p>
-              </Card>
-              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-blue-400 mb-2">AI-Powered</div>
-                <p className="text-sm text-zinc-400">Insights</p>
-              </Card>
-              <Card className="bg-gradient-to-br from-zinc-800 to-zinc-900 border-zinc-700/50 p-6 rounded-lg">
-                <div className="text-3xl font-bold text-cyan-400 mb-2">24/7</div>
-                <p className="text-sm text-zinc-400">Access</p>
-              </Card>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28">
-        <Card className="bg-gradient-to-br from-blue-600/10 to-black border-blue-500/30 rounded-lg overflow-hidden">
-          <CardContent className="p-16 text-center space-y-6">
-            <h2 className="text-5xl font-bold tracking-tight">Ready to Transform Your Projects?</h2>
-            <p className="text-lg text-zinc-400 max-w-2xl mx-auto font-light">
-              Join fabricators who are streamlining their operations with SteelBuild Pro
-            </p>
-            <Button 
-              onClick={handleLogin}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-7 font-semibold rounded-lg shadow-lg shadow-blue-600/30"
+      <section className="relative z-10 py-24 border-t border-[rgba(255,255,255,0.05)]">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto text-center"
+          >
+            <div 
+              className="rounded-2xl border border-[rgba(255,157,66,0.2)] bg-gradient-to-br from-[#0F1419] to-[#151B24] p-12"
+              style={{ boxShadow: '0 0 60px rgba(255, 157, 66, 0.15)' }}
             >
-              Start Managing Projects
-              <ArrowRight size={20} className="ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+              <h2 className="text-4xl font-bold mb-4 tracking-tight">
+                Ready to transform your{' '}
+                <span className="bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] bg-clip-text text-transparent">
+                  steel projects?
+                </span>
+              </h2>
+              <p className="text-lg text-[#9CA3AF] mb-8">
+                Join leading steel contractors managing millions in project value
+              </p>
+              <Button size="lg" onClick={handleGetStarted} className="text-base gap-2">
+                Get Started Now <ArrowRight size={18} />
+              </Button>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800/50 py-8 bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded flex items-center justify-center">
-                <Building2 size={16} className="text-white" />
+      <footer className="relative z-10 border-t border-[rgba(255,255,255,0.05)] py-12">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
+                style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.3)' }}
+              >
+                <Building size={16} className="text-[#0A0E13]" />
               </div>
-              <span className="font-bold">SteelBuild Pro</span>
+              <span className="font-bold tracking-wide">SteelBuild Pro</span>
             </div>
-            <p className="text-sm text-zinc-500">
-              © 2025 SteelBuild Pro. All rights reserved.
+            <p className="text-sm text-[#6B7280]">
+              © 2026 SteelBuild Pro. Built for construction professionals.
             </p>
           </div>
         </div>

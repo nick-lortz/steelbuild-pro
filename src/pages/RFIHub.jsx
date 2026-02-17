@@ -217,26 +217,26 @@ export default function RFIHub() {
         subtitle={`${filteredRFIs.length} RFIs • ${groupedRFIs.active.length} active • ${groupedRFIs.closed.length} closed`}
         actions={
           <>
-            <div className="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+            <div className="flex border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg p-1">
               <button
                 onClick={() => {
                   setViewMode('portfolio');
                   setSelectedProjectId(null);
                 }}
-                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                   viewMode === 'portfolio' 
-                    ? 'bg-amber-500 text-black' 
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' 
+                    : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)]'
                 }`}
               >
                 Portfolio
               </button>
               <button
                 onClick={() => setViewMode('project')}
-                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors ${
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                   viewMode === 'project' 
-                    ? 'bg-amber-500 text-black' 
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' 
+                    : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)]'
                 }`}
               >
                 Project
@@ -245,10 +245,10 @@ export default function RFIHub() {
 
             {viewMode === 'project' && (
               <Select value={selectedProjectId || ''} onValueChange={setSelectedProjectId}>
-                <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                <SelectTrigger className="w-64">
                   <SelectValue placeholder="Select Project..." />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent>
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.project_number} - {p.name}
@@ -260,7 +260,6 @@ export default function RFIHub() {
 
             <Button
               onClick={handleAddNew}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
             >
               <Plus size={16} className="mr-2" />
               Add RFI
@@ -269,15 +268,15 @@ export default function RFIHub() {
         }
       />
 
-      <div className="bg-zinc-900/50 border-b border-zinc-800 py-3">
+      <div className="bg-[rgba(255,255,255,0.01)] border-b border-[rgba(255,255,255,0.05)] py-3">
         <div className="flex items-center gap-3 px-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" size={16} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#6B7280]" size={16} />
             <Input
               placeholder="Search RFIs by number, subject, or project..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+              className="pl-10"
             />
           </div>
           <RFIHubFilters filters={filters} onFilterChange={setFilters} />
@@ -293,7 +292,7 @@ export default function RFIHub() {
 
         {/* RFI Lists by Category */}
         <Tabs defaultValue="active" className="space-y-4">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
+          <TabsList>
             <TabsTrigger value="active">
               <FileText size={14} className="mr-2" />
               Active ({groupedRFIs.active.length})

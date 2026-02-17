@@ -11,7 +11,7 @@ const TabsList = React.forwardRef((/** @type {any} */ { className, ...props }, /
     ref={ref}
     role="tablist"
     className={cn(
-      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      "inline-flex h-11 items-center justify-center rounded-lg bg-[#0F1419] p-1 border border-[rgba(255,255,255,0.05)]",
       className
     )}
     {...props} />
@@ -23,7 +23,12 @@ const TabsTrigger = React.forwardRef((/** @type {any} */ { className, ...props }
     ref={ref}
     role="tab"
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all",
+      "text-[#6B7280] hover:text-[#9CA3AF] hover:bg-[rgba(255,157,66,0.05)]",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9D42] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0E13]",
+      "disabled:pointer-events-none disabled:opacity-40",
+      "data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#FF6B2C] data-[state=active]:to-[#FF9D42]",
+      "data-[state=active]:text-[#0A0E13] data-[state=active]:font-semibold data-[state=active]:shadow-md",
       className
     )}
     {...props} />
@@ -36,7 +41,7 @@ const TabsContent = React.forwardRef((/** @type {any} */ { className, ...props }
     role="tabpanel"
     tabIndex={0}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "mt-4 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9D42] focus-visible:ring-offset-2",
       className
     )}
     {...props} />

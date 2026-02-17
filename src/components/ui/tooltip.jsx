@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -17,9 +18,12 @@ const TooltipContent = React.forwardRef(({ className, sideOffset = 4, ...props }
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-50 overflow-hidden rounded-lg bg-[#151B24]/95 backdrop-blur-md border border-[rgba(255,255,255,0.1)] px-3 py-2 text-xs text-[#E5E7EB] shadow-xl",
+        "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className
       )}
+      style={{ boxShadow: '0 0 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 157, 66, 0.1)' }}
       {...props} />
   </TooltipPrimitive.Portal>
 ))

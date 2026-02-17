@@ -180,7 +180,7 @@ export default function LookAheadCore({ projectId }) {
       </Card>
 
       {/* Timeline Header */}
-      <div className="grid gap-1" style={{ gridTemplateColumns: `100px repeat(6, 1fr)` }}>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `200px repeat(6, 1fr)` }}>
         <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider p-2">Task</div>
         {weeks.map((week) => (
           <div key={week.number} className="text-xs font-bold text-zinc-400 uppercase tracking-wider p-2 text-center border-l border-zinc-700">
@@ -208,19 +208,19 @@ export default function LookAheadCore({ projectId }) {
               <div
                 key={task.id}
                 className="grid gap-1 items-stretch"
-                style={{ gridTemplateColumns: `100px repeat(6, 1fr)` }}
+                style={{ gridTemplateColumns: `200px repeat(6, 1fr)` }}
               >
                 {/* Task name */}
-                <div className="flex items-center gap-2 px-2 py-1 bg-zinc-900 rounded-l border border-r-0 border-zinc-700 truncate">
+                <div className="flex items-center gap-2 px-2 py-2 bg-zinc-900 rounded-l border border-r-0 border-zinc-700 min-h-[56px]">
                   {task.is_critical && (
                     <Lock size={12} className="text-red-400 flex-shrink-0" />
                   )}
-                  <div className="truncate">
-                    <div className="text-xs font-mono font-bold text-white truncate">
+                  <div className="flex-1 overflow-hidden">
+                    <div className="text-xs font-mono font-bold text-white break-words line-clamp-2">
                       {task.name}
                     </div>
                     {taskConflicts.length > 0 && (
-                      <div className="text-[10px] text-red-400">
+                      <div className="text-[10px] text-red-400 mt-1">
                         {taskConflicts.length} conflict{taskConflicts.length > 1 ? 's' : ''}
                       </div>
                     )}

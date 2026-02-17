@@ -280,25 +280,34 @@ function LayoutContent({ children, currentPageName }) {
     // CSP headers applied server-side; CSP documented in components/shared/securityHeaders.js
   }
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-[#0A0E13] text-[#E5E7EB] relative overflow-hidden">
+      {/* Ambient background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-50%] right-[-25%] w-full h-full opacity-40"
+             style={{ background: 'radial-gradient(circle at center, rgba(255, 107, 44, 0.15) 0%, transparent 60%)' }} />
+        <div className="absolute bottom-[-50%] left-[-25%] w-full h-full opacity-30"
+             style={{ background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 60%)' }} />
+      </div>
+      
       <SkipToMainContent />
       <OfflineIndicator />
       <Toaster />
       <CommandPalette />
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-card border-b border-border flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-[#0F1419]/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-zinc-400 hover:text-white">
+            className="p-2 text-[#9CA3AF] hover:text-[#FF9D42] transition-colors">
 
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center">
-              <Building size={18} className="text-black" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center shadow-lg"
+                 style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.3)' }}>
+              <Building size={18} className="text-[#0A0E13]" />
             </div>
-            <span className="font-bold text-lg tracking-tight">SteelBuild Pro</span>
+            <span className="font-bold text-lg tracking-tight text-[#E5E7EB]">SteelBuild Pro</span>
           </div>
         </div>
 
@@ -337,16 +346,18 @@ function LayoutContent({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-black border-r border-zinc-800 flex flex-col',
-          'lg:translate-x-0',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-[#0F1419]/95 backdrop-blur-md border-r border-[rgba(255,255,255,0.05)] flex flex-col',
+          'lg:translate-x-0 transition-transform duration-300',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        )}>
+        )}
+        style={{ boxShadow: '4px 0 24px rgba(0, 0, 0, 0.5)' }}>
 
-        <div className="h-16 flex items-center px-4 border-b-2 border-zinc-800 flex-shrink-0">
-          <div className="w-8 h-8 bg-amber-500 flex items-center justify-center">
-            <Building size={18} className="text-black" />
+        <div className="h-16 flex items-center px-4 border-b border-[rgba(255,255,255,0.05)] flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
+               style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.3)' }}>
+            <Building size={18} className="text-[#0A0E13]" />
           </div>
-          <span className="font-bold text-lg tracking-tight ml-3 text-white">SteelBuild Pro</span>
+          <span className="font-bold text-lg tracking-wider ml-3 text-[#E5E7EB]">SteelBuild Pro</span>
         </div>
 
         <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
@@ -361,8 +372,8 @@ function LayoutContent({ children, currentPageName }) {
                 <button
                   onClick={() => toggleGroup(group.name)}
                   className={cn(
-                    'w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors rounded-lg',
-                    hasActivePage ? 'text-amber-500' : 'text-zinc-400 hover:text-white'
+                    'w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg',
+                    hasActivePage ? 'text-[#FF9D42] bg-[rgba(255,157,66,0.08)]' : 'text-[#6B7280] hover:text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)]'
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -391,13 +402,14 @@ function LayoutContent({ children, currentPageName }) {
                         to={createPageUrl(item.page)}
                         onClick={() => setSidebarOpen(false)}
                         className={cn(
-                          'flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors rounded',
+                          'flex items-center gap-2.5 px-3 py-2 text-xs font-medium transition-all rounded-lg group',
                           isActive ?
-                          'bg-amber-500 text-black' :
-                          'text-zinc-400 hover:text-white hover:bg-zinc-900'
-                        )}>
+                          'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' :
+                          'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)] hover:border-[rgba(255,157,66,0.1)] border border-transparent'
+                        )}
+                        style={isActive ? { boxShadow: '0 0 20px rgba(255, 157, 66, 0.2)' } : {}}>
 
-                          <Icon size={13} />
+                          <Icon size={14} className={isActive ? '' : 'group-hover:text-[#FF9D42] transition-colors'} />
                           {item.name}
                         </Link>);
 
@@ -410,22 +422,22 @@ function LayoutContent({ children, currentPageName }) {
         </nav>
 
         {currentUser &&
-        <div className="border-t-2 border-zinc-800 p-2 flex-shrink-0">
+        <div className="border-t border-[rgba(255,255,255,0.05)] p-3 flex-shrink-0 bg-[rgba(0,0,0,0.2)]">
             <div className="flex items-center justify-between mb-2 px-2">
               <ThemeToggle />
               <NotificationCenter />
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center gap-2 px-2 py-2 hover:bg-zinc-900 transition-colors">
-                <UserCircle size={14} className="text-amber-500" />
+              <DropdownMenuTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-[rgba(255,157,66,0.05)] transition-all rounded-lg border border-transparent hover:border-[rgba(255,157,66,0.1)]">
+                <UserCircle size={16} className="text-[#FF9D42]" />
                 <div className="flex-1 text-left">
-                  <p className="text-xs font-bold text-white truncate uppercase tracking-wider">
+                  <p className="text-xs font-semibold text-[#E5E7EB] truncate tracking-wide">
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest">{currentUser.role}</p>
+                  <p className="text-[10px] text-[#6B7280] uppercase tracking-widest">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
+              <DropdownMenuContent align="end" className="w-56 bg-[#151B24]/95 backdrop-blur-md border-[rgba(255,255,255,0.1)] text-[#E5E7EB]">
                 <DropdownMenuItem asChild className="text-white hover:text-white">
                   <Link to={createPageUrl('Settings')}>
                     <Settings size={16} className="mr-2" />
@@ -445,21 +457,21 @@ function LayoutContent({ children, currentPageName }) {
 
       {sidebarOpen &&
       <div
-        className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 lg:hidden transition-opacity"
         onClick={() => setSidebarOpen(false)} />
 
       }
 
-      <main id="main-content" className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0" role="main">
+      <main id="main-content" className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0 relative z-10" role="main">
         <PullToRefresh onRefresh={handleRefresh}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPageName}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="text-slate-50 p-4 lg:p-6">
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: [0.65, 0, 0.35, 1] }}
+              className="text-[#E5E7EB] p-4 lg:p-6">
 
               {children}
             </motion.div>

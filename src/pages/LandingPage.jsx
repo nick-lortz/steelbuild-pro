@@ -63,7 +63,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0E13] text-[#E5E7EB] relative overflow-hidden">
+    <div className="min-h-screen bg-black text-[#E5E7EB] relative overflow-hidden">
       {/* Ambient background effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div 
@@ -89,7 +89,7 @@ export default function LandingPage() {
       />
 
       {/* Header */}
-      <header className="relative z-10 border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
+      <header className="relative z-10 border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div 
@@ -162,13 +162,13 @@ export default function LandingPage() {
           className="mt-20 max-w-6xl mx-auto"
         >
           <div 
-            className="rounded-2xl border border-[rgba(255,157,66,0.2)] bg-[#0F1419]/60 backdrop-blur-md p-2 shadow-2xl"
+            className="rounded-2xl border border-[rgba(255,157,66,0.3)] bg-black/80 backdrop-blur-md p-2 shadow-2xl"
             style={{ 
-              boxShadow: '0 0 60px rgba(255, 157, 66, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5)',
-              background: 'linear-gradient(135deg, rgba(255, 107, 44, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%)'
+              boxShadow: '0 0 80px rgba(255, 157, 66, 0.25), 0 20px 60px rgba(0, 0, 0, 0.8)',
+              background: 'linear-gradient(135deg, rgba(255, 107, 44, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)'
             }}
           >
-            <div className="aspect-video rounded-xl bg-[#0A0E13] overflow-hidden">
+            <div className="aspect-video rounded-xl bg-black overflow-hidden">
               {/* Placeholder for screenshot/demo */}
               <div className="w-full h-full flex items-center justify-center text-[#6B7280]">
                 <div className="text-center">
@@ -268,12 +268,12 @@ export default function LandingPage() {
                 className="relative"
               >
                 <div 
-                  className="rounded-2xl border border-[rgba(255,157,66,0.2)] bg-[#0F1419]/60 backdrop-blur-md p-8"
-                  style={{ boxShadow: '0 0 40px rgba(255, 157, 66, 0.1)' }}
+                  className="rounded-2xl border border-[rgba(255,157,66,0.3)] bg-black/70 backdrop-blur-md p-8"
+                  style={{ boxShadow: '0 0 60px rgba(255, 157, 66, 0.2)' }}
                 >
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-[#151B24] flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-xl bg-[#0F0F0F] border border-[rgba(255,255,255,0.05)] flex items-center justify-center">
                         <TrendingUp size={32} className="text-[#FF9D42]" />
                       </div>
                       <div>
@@ -318,8 +318,8 @@ export default function LandingPage() {
             className="max-w-4xl mx-auto text-center"
           >
             <div 
-              className="rounded-2xl border border-[rgba(255,157,66,0.2)] bg-gradient-to-br from-[#0F1419] to-[#151B24] p-12"
-              style={{ boxShadow: '0 0 60px rgba(255, 157, 66, 0.15)' }}
+              className="rounded-2xl border border-[rgba(255,157,66,0.3)] bg-gradient-to-br from-black to-[#0A0A0A] p-12"
+              style={{ boxShadow: '0 0 80px rgba(255, 157, 66, 0.25)' }}
             >
               <h2 className="text-4xl font-bold mb-4 tracking-tight">
                 Ready to transform your{' '}
@@ -345,9 +345,9 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <div 
                 className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
-                style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.3)' }}
+                style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.5)' }}
               >
-                <Building size={16} className="text-[#0A0E13]" />
+                <Building size={16} className="text-black" />
               </div>
               <span className="font-bold tracking-wide">SteelBuild Pro</span>
             </div>

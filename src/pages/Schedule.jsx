@@ -356,9 +356,9 @@ export default function Schedule() {
 
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-[#0A0E13]">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md">
         <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>

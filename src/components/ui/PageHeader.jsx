@@ -24,7 +24,7 @@ const PageHeader = React.memo(function PageHeader(/** @type {any} */ { title, su
     : !isRootPage;
 
   return (
-    <div className="bg-transparent text-[#E5E7EB] mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="bg-black text-[#E5E7EB] mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         {shouldShowBackButton ? (
           <Button
@@ -37,9 +37,9 @@ const PageHeader = React.memo(function PageHeader(/** @type {any} */ { title, su
         ) : (
           <div 
             className="w-8 h-8 bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] rounded-lg flex items-center justify-center lg:hidden"
-            style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.3)' }}
+            style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.5)' }}
           >
-            <Building size={18} className="text-[#0A0E13]" />
+            <Building size={18} className="text-black" />
           </div>
         )}
         <div>

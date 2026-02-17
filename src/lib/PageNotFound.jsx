@@ -20,7 +20,7 @@ export default function PageNotFound({}) {
     });
     
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-[#0A0E13] relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-black relative overflow-hidden">
             {/* Ambient background effects */}
             <div className="fixed inset-0 pointer-events-none">
                 <div 
@@ -49,13 +49,13 @@ export default function PageNotFound({}) {
                     
                     {/* Admin Note */}
                     {isFetched && authData.isAuthenticated && authData.user?.role === 'admin' && (
-                        <div className="mt-8 p-4 bg-[#0F1419]/60 backdrop-blur-md rounded-xl border border-[rgba(255,157,66,0.2)]">
+                        <div className="mt-8 p-4 bg-[#0A0A0A]/80 backdrop-blur-md rounded-xl border border-[rgba(255,157,66,0.3)]">
                             <div className="flex items-start space-x-3">
                                 <div 
                                     className="flex-shrink-0 w-6 h-6 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center mt-0.5"
-                                    style={{ boxShadow: '0 0 12px rgba(255, 157, 66, 0.3)' }}
+                                    style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.5)' }}
                                 >
-                                    <div className="w-2 h-2 rounded-full bg-[#0A0E13]"></div>
+                                    <div className="w-2 h-2 rounded-full bg-black"></div>
                                 </div>
                                 <div className="text-left space-y-1">
                                     <p className="text-sm font-semibold text-[#E5E7EB]">Admin Note</p>
@@ -71,7 +71,7 @@ export default function PageNotFound({}) {
                     <div className="pt-6">
                         <button 
                             onClick={() => window.location.href = '/'} 
-                            className="inline-flex items-center px-6 py-3 text-sm font-semibold rounded-lg bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-lg hover:shadow-[0_0_30px_rgba(255,157,66,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-250 focus:outline-none focus:ring-2 focus:ring-[#FF9D42] focus:ring-offset-2 focus:ring-offset-[#0A0E13]"
+                            className="inline-flex items-center px-6 py-3 text-sm font-semibold rounded-lg bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-black shadow-lg hover:shadow-[0_0_40px_rgba(255,157,66,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-250 focus:outline-none focus:ring-2 focus:ring-[#FF9D42] focus:ring-offset-2 focus:ring-offset-black"
                         >
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />

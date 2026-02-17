@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 export default function PageHeader({ title, subtitle, actions, children, className }) {
   return (
     <div className={cn(
-      "border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md",
+      "border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md",
       className
     )}>
       <div className="max-w-[1800px] mx-auto px-8 py-6">

@@ -284,7 +284,7 @@ export default function FinancialsRedesign() {
   if (!selectedProject) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-[#0A0E13] flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center max-w-md">
             <DollarSign size={64} className="mx-auto mb-4 text-[#4B5563]" />
             <h3 className="text-xl font-bold text-[#E5E7EB] mb-4">Select Project</h3>
@@ -331,9 +331,9 @@ export default function FinancialsRedesign() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-[#0A0E13]">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <div className="border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
+        <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md">
           <div className="max-w-[1800px] mx-auto px-8 py-6">
             <div className="flex items-center justify-between mb-4">
               <div>

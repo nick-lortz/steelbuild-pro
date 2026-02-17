@@ -280,7 +280,7 @@ function LayoutContent({ children, currentPageName }) {
     // CSP headers applied server-side; CSP documented in components/shared/securityHeaders.js
   }
   return (
-    <div className="min-h-screen bg-[#0A0E13] text-[#E5E7EB] relative overflow-hidden">
+    <div className="min-h-screen bg-black text-[#E5E7EB] relative overflow-hidden">
       {/* Ambient background effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-50%] right-[-25%] w-full h-full opacity-40"
@@ -294,7 +294,7 @@ function LayoutContent({ children, currentPageName }) {
       <Toaster />
       <CommandPalette />
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-[#0F1419]/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-black/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -304,8 +304,8 @@ function LayoutContent({ children, currentPageName }) {
           </button>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center shadow-lg"
-                 style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.3)' }}>
-              <Building size={18} className="text-[#0A0E13]" />
+                 style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.5)' }}>
+              <Building size={18} className="text-black" />
             </div>
             <span className="font-bold text-lg tracking-tight text-[#E5E7EB]">SteelBuild Pro</span>
           </div>
@@ -346,16 +346,16 @@ function LayoutContent({ children, currentPageName }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-[#0F1419]/95 backdrop-blur-md border-r border-[rgba(255,255,255,0.05)] flex flex-col',
+          'fixed top-0 left-0 z-40 h-full w-64 bg-black/95 backdrop-blur-md border-r border-[rgba(255,255,255,0.05)] flex flex-col',
           'lg:translate-x-0 transition-transform duration-300',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
-        style={{ boxShadow: '4px 0 24px rgba(0, 0, 0, 0.5)' }}>
+        style={{ boxShadow: '4px 0 24px rgba(0, 0, 0, 0.8)' }}>
 
         <div className="h-16 flex items-center px-4 border-b border-[rgba(255,255,255,0.05)] flex-shrink-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
-               style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.3)' }}>
-            <Building size={18} className="text-[#0A0E13]" />
+               style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.5)' }}>
+            <Building size={18} className="text-black" />
           </div>
           <span className="font-bold text-lg tracking-wider ml-3 text-[#E5E7EB]">SteelBuild Pro</span>
         </div>

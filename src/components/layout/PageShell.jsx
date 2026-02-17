@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 export default function PageShell({ children, className }) {
   return (
     <div className={cn(
-      "min-h-screen bg-[#0A0E13]",
+      "min-h-screen bg-black",
       className
     )}>
       {children}

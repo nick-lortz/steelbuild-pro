@@ -86,7 +86,7 @@ export default function ProjectDashboard() {
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-[#0A0E13]">
+      <div className="min-h-screen bg-black">
         <PageHeader 
           title="Project Dashboard" 
           subtitle="Select a project to view dashboard"
@@ -115,7 +115,7 @@ export default function ProjectDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0E13]">
+    <div className="min-h-screen bg-black">
       <PageHeader
         title={project?.name || 'Project Dashboard'}
         subtitle={project?.project_number || 'Loading...'}

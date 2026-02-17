@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -5,7 +6,11 @@ import { cn } from "@/lib/utils"
 const Card = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <div
     ref={ref}
-    className={cn("rounded-xl border bg-card text-card-foreground shadow", className)}
+    className={cn(
+      "rounded-xl border border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-sm text-[#E5E7EB] shadow-lg",
+      "hover:border-[rgba(255,255,255,0.1)] transition-all duration-300",
+      className
+    )}
     {...props} />
 ))
 Card.displayName = "Card"
@@ -13,7 +18,7 @@ Card.displayName = "Card"
 const CardHeader = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-2 p-6 border-b border-[rgba(255,255,255,0.05)]", className)}
     {...props} />
 ))
 CardHeader.displayName = "CardHeader"
@@ -21,7 +26,7 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <h3
     ref={ref}
-    className={cn("font-semibold leading-none tracking-tight", className)}
+    className={cn("text-lg font-semibold leading-none tracking-wide text-[#E5E7EB]", className)}
     {...props} />
 ))
 CardTitle.displayName = "CardTitle"
@@ -29,7 +34,7 @@ CardTitle.displayName = "CardTitle"
 const CardDescription = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <div
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm text-[#9CA3AF]", className)}
     {...props} />
 ))
 CardDescription.displayName = "CardDescription"

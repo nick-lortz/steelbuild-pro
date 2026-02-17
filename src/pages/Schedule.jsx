@@ -356,14 +356,14 @@ export default function Schedule() {
 
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+    <div className="min-h-screen bg-[#0A0E13]">
       {/* Header */}
-      <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
         <div className="max-w-[1800px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Schedule</h1>
-              <p className="text-sm text-zinc-500 font-mono mt-1">
+              <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Schedule</h1>
+              <p className="text-sm text-[#6B7280] font-mono mt-1">
                 multi-project scheduling with dependencies
               </p>
             </div>
@@ -372,7 +372,6 @@ export default function Schedule() {
                 onClick={() => setWbsGeneratorOpen(true)}
                 disabled={!activeProjectId}
                 variant="outline"
-                className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
               >
                 <Sparkles size={18} className="mr-2" />
                 Generate WBS
@@ -381,7 +380,6 @@ export default function Schedule() {
                 onClick={() => setTaskPrioritizerOpen(true)}
                 disabled={filteredTasks.length === 0}
                 variant="outline"
-                className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
               >
                 <Sparkles size={18} className="mr-2" />
                 Prioritize Tasks
@@ -390,14 +388,12 @@ export default function Schedule() {
                 onClick={() => setQuickStatusOpen(true)}
                 disabled={filteredTasks.length === 0}
                 variant="outline"
-                className="border-green-500/30 text-green-400 hover:bg-green-500/10"
               >
                 Bulk Status Update
               </Button>
               <Button
                 onClick={handleCreateTask}
                 disabled={activeProjectIds.length === 0}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6"
               >
                 <Plus size={18} className="mr-2" />
                 Add Task
@@ -408,37 +404,37 @@ export default function Schedule() {
       </div>
 
       {/* Metrics */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/50">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)]">
         <div className="max-w-[1800px] mx-auto px-8 py-4">
           <div className="grid grid-cols-5 gap-4">
-            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+            <Card>
               <CardContent className="p-4">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Total Tasks</div>
-                <div className="text-3xl font-bold text-white">{statusCounts.all}</div>
+                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Total Tasks</div>
+                <div className="text-3xl font-bold text-[#E5E7EB]">{statusCounts.all}</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+            <Card>
               <CardContent className="p-4">
-                <div className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold mb-1">Not Started</div>
-                <div className="text-3xl font-bold text-zinc-300">{statusCounts.not_started}</div>
+                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Not Started</div>
+                <div className="text-3xl font-bold text-[#9CA3AF]">{statusCounts.not_started}</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+            <Card>
               <CardContent className="p-4">
-                <div className="text-[10px] text-blue-400 uppercase tracking-wider font-semibold mb-1">In Progress</div>
-                <div className="text-3xl font-bold text-blue-400">{statusCounts.in_progress}</div>
+                <div className="text-[10px] text-[#3B82F6] uppercase tracking-wider font-semibold mb-1">In Progress</div>
+                <div className="text-3xl font-bold text-[#3B82F6]">{statusCounts.in_progress}</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+            <Card>
               <CardContent className="p-4">
-                <div className="text-[10px] text-green-400 uppercase tracking-wider font-semibold mb-1">Completed</div>
-                <div className="text-3xl font-bold text-green-400">{statusCounts.completed}</div>
+                <div className="text-[10px] text-[#10B981] uppercase tracking-wider font-semibold mb-1">Completed</div>
+                <div className="text-3xl font-bold text-[#10B981]">{statusCounts.completed}</div>
               </CardContent>
             </Card>
-            <Card className="bg-zinc-900 border-zinc-800 rounded-lg">
+            <Card>
               <CardContent className="p-4">
-                <div className="text-[10px] text-red-400 uppercase tracking-wider font-semibold mb-1">Overdue</div>
-                <div className="text-3xl font-bold text-red-400">{statusCounts.overdue}</div>
+                <div className="text-[10px] text-[#EF4444] uppercase tracking-wider font-semibold mb-1">Overdue</div>
+                <div className="text-3xl font-bold text-[#EF4444]">{statusCounts.overdue}</div>
               </CardContent>
             </Card>
           </div>
@@ -446,7 +442,7 @@ export default function Schedule() {
       </div>
 
       {/* Filters */}
-      <div className="border-b border-zinc-800/50 bg-zinc-950/30">
+      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.01)]">
         <div className="max-w-[1800px] mx-auto px-8 py-3">
           <div className="flex items-center gap-4">
             {/* Project Selector */}
@@ -465,7 +461,7 @@ export default function Schedule() {
                   }
                 }}
               >
-                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                <SelectTrigger>
                   <SelectValue placeholder="Select Project(s)">
                     {selectedProjects.length > 1 
                       ? `${selectedProjects.length} Projects` 
@@ -476,13 +472,13 @@ export default function Schedule() {
                           : 'Select Project(s)'}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-96">
-                  <SelectItem value="all" className="text-white font-semibold">
+                <SelectContent className="max-h-96">
+                  <SelectItem value="all">
                     All Projects ({projects.length})
                   </SelectItem>
-                  <div className="border-t border-zinc-800 my-1" />
+                  <div className="border-t border-[rgba(255,255,255,0.05)] my-1" />
                   {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id} className="text-white">
+                    <SelectItem key={p.id} value={p.id}>
                       {p.project_number} - {p.name}
                     </SelectItem>
                   ))}
@@ -493,15 +489,15 @@ export default function Schedule() {
             {/* PM Filter */}
             <div className="w-56">
               <Select value={pmFilter} onValueChange={setPmFilter}>
-                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-700 max-h-96">
-                  <SelectItem value="all" className="text-white">
+                <SelectContent className="max-h-96">
+                  <SelectItem value="all">
                     All PMs
                   </SelectItem>
                   {projectManagers.map((pm) => (
-                    <SelectItem key={pm} value={pm} className="text-white">
+                    <SelectItem key={pm} value={pm}>
                       {pm}
                     </SelectItem>
                   ))}
@@ -511,12 +507,12 @@ export default function Schedule() {
 
             {/* Search */}
             <div className="flex-1 relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
               <Input
                 placeholder="Search tasks by name or WBS..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+                className="pl-10"
               />
             </div>
 
@@ -525,14 +521,14 @@ export default function Schedule() {
               variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
-              className={`border-zinc-800 ${showFilters ? 'bg-zinc-800 text-amber-400' : 'text-white'}`}
+              className={showFilters ? 'bg-[rgba(255,157,66,0.08)] text-[#FF9D42]' : ''}
             >
               <Sliders size={16} className="mr-2" />
               Filters
             </Button>
 
             {/* View Mode */}
-            <div className="flex gap-1 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
               {[
                 { value: 'gantt', label: 'Gantt' },
                 { value: 'list', label: 'List' },
@@ -541,10 +537,10 @@ export default function Schedule() {
                 <button
                   key={value}
                   onClick={() => setViewMode(value)}
-                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                     viewMode === value 
-                      ? 'bg-amber-500 text-black' 
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                      ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' 
+                      : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)]'
                   }`}
                 >
                   {label}
@@ -554,7 +550,7 @@ export default function Schedule() {
 
             {/* Zoom Level (for Gantt) */}
             {viewMode === 'gantt' && (
-              <div className="flex gap-1 border border-zinc-800 rounded-lg overflow-hidden">
+              <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
                 {[
                   { value: 'day', label: 'Day' },
                   { value: 'week', label: 'Week' },
@@ -563,10 +559,10 @@ export default function Schedule() {
                   <button
                     key={value}
                     onClick={() => setZoomLevel(value)}
-                    className={`px-3 py-2 text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                       zoomLevel === value 
-                        ? 'bg-zinc-800 text-amber-400' 
-                        : 'text-zinc-500 hover:text-white'
+                        ? 'bg-[#151B24] text-[#FF9D42]' 
+                        : 'text-[#6B7280] hover:text-[#E5E7EB]'
                     }`}
                   >
                     {label}
@@ -580,7 +576,6 @@ export default function Schedule() {
               variant="outline"
               size="sm"
               onClick={handleExportICS}
-              className="border-zinc-800 text-white"
               disabled={filteredTasks.length === 0}
             >
               <Download size={16} className="mr-2" />
@@ -590,14 +585,14 @@ export default function Schedule() {
 
           {/* Filters Panel */}
           {showFilters && (
-            <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-zinc-800">
+            <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-[rgba(255,255,255,0.05)]">
               <div>
-                <label className="text-xs text-zinc-500 uppercase mb-2 block">Status</label>
+                <label className="text-xs text-[#6B7280] uppercase mb-2 block">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="not_started">Not Started</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
@@ -610,12 +605,12 @@ export default function Schedule() {
               </div>
 
               <div>
-                <label className="text-xs text-zinc-500 uppercase mb-2 block">Priority</label>
+                <label className="text-xs text-[#6B7280] uppercase mb-2 block">Priority</label>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectContent>
                     <SelectItem value="all">All Priorities</SelectItem>
                     <SelectItem value="critical">Critical Path Only</SelectItem>
                     <SelectItem value="normal">Normal</SelectItem>
@@ -624,12 +619,12 @@ export default function Schedule() {
               </div>
 
               <div>
-                <label className="text-xs text-zinc-500 uppercase mb-2 block">Phase</label>
+                <label className="text-xs text-[#6B7280] uppercase mb-2 block">Phase</label>
                 <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectContent>
                     <SelectItem value="all">All Phases</SelectItem>
                     <SelectItem value="detailing">Detailing</SelectItem>
                     <SelectItem value="fabrication">Fabrication</SelectItem>
@@ -650,7 +645,7 @@ export default function Schedule() {
                     setPhaseFilter('all');
                     setSearchTerm('');
                   }}
-                  className="text-zinc-400 hover:text-white w-full"
+                  className="w-full"
                 >
                   Clear All Filters
                 </Button>
@@ -672,9 +667,9 @@ export default function Schedule() {
         {activeProjectIds.length === 0 ? (
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Project Selected</h3>
-              <p className="text-sm text-zinc-500 max-w-md">
+              <Calendar size={64} className="mx-auto mb-4 text-[#4B5563]" />
+              <h3 className="text-xl font-semibold text-[#E5E7EB] mb-2">No Project Selected</h3>
+              <p className="text-sm text-[#9CA3AF] max-w-md">
                 Select one or more projects to view and manage their schedules
               </p>
             </div>
@@ -682,15 +677,15 @@ export default function Schedule() {
         ) : isLoading ? (
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-4 rounded-full" />
-              <p className="text-sm text-zinc-500">Loading schedule...</p>
+              <div className="w-12 h-12 border-4 border-[#FF9D42] border-t-transparent animate-spin mx-auto mb-4 rounded-full" />
+              <p className="text-sm text-[#9CA3AF]">Loading schedule...</p>
             </div>
           </div>
         ) : filteredTasks.length === 0 ? (
           <div className="text-center py-32">
-            <Calendar size={64} className="mx-auto mb-4 text-zinc-700" />
-            <h3 className="text-xl font-semibold text-white mb-2">No Tasks Found</h3>
-            <p className="text-sm text-zinc-500 mb-6 max-w-md mx-auto">
+            <Calendar size={64} className="mx-auto mb-4 text-[#4B5563]" />
+            <h3 className="text-xl font-semibold text-[#E5E7EB] mb-2">No Tasks Found</h3>
+            <p className="text-sm text-[#9CA3AF] mb-6 max-w-md mx-auto">
               {allScheduleTasks.length === 0 
                 ? 'Create your first task to begin scheduling'
                 : 'No tasks match your current filters'}
@@ -698,7 +693,6 @@ export default function Schedule() {
             {allScheduleTasks.length === 0 && (
               <Button
                 onClick={handleCreateTask}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
               >
                 <Plus size={18} className="mr-2" />
                 Create First Task
@@ -741,9 +735,9 @@ export default function Schedule() {
         setShowTaskForm(open);
         if (!open) setEditingTask(null);
       }}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto bg-zinc-950 border-zinc-800">
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-white">
+            <SheetTitle>
               {editingTask?.id ? 'Edit Task' : 'New Task'}
             </SheetTitle>
           </SheetHeader>
@@ -787,9 +781,9 @@ export default function Schedule() {
       />
 
       <Sheet open={quickStatusOpen} onOpenChange={setQuickStatusOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto bg-zinc-950 border-zinc-800">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-white">Quick Status Update</SheetTitle>
+            <SheetTitle>Quick Status Update</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <QuickStatusUpdate

@@ -284,17 +284,17 @@ export default function FinancialsRedesign() {
   if (!selectedProject) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black flex items-center justify-center">
+        <div className="min-h-screen bg-[#0A0E13] flex items-center justify-center">
           <div className="text-center max-w-md">
-            <DollarSign size={64} className="mx-auto mb-4 text-zinc-700" />
-            <h3 className="text-xl font-bold text-white mb-4">Select Project</h3>
+            <DollarSign size={64} className="mx-auto mb-4 text-[#4B5563]" />
+            <h3 className="text-xl font-bold text-[#E5E7EB] mb-4">Select Project</h3>
             <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger className="w-full bg-zinc-900 border-zinc-800 text-white">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose project..." />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectContent>
                 {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id} className="text-white">
+                  <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
                   </SelectItem>
                 ))}
@@ -307,7 +307,7 @@ export default function FinancialsRedesign() {
   }
 
   const projectStatus = metrics.costCoverage >= 95 ? 'On Track' : 'Action Needed';
-  const statusColor = projectStatus === 'On Track' ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50';
+  const statusColor = projectStatus === 'On Track' ? 'bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30' : 'bg-[#EF4444]/20 text-[#FCA5A5] border-[#EF4444]/30';
 
   const sovTotal = sovItems.reduce((sum, s) => sum + (s.scheduled_value || 0), 0);
   const sovMismatch = Math.abs(sovTotal - metrics.baseContract) > 1;
@@ -331,30 +331,30 @@ export default function FinancialsRedesign() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-b from-zinc-950 to-black">
+      <div className="min-h-screen bg-[#0A0E13]">
         {/* Header */}
-        <div className="border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50">
+        <div className="border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
           <div className="max-w-[1800px] mx-auto px-8 py-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-white tracking-tight">Financials</h1>
+                  <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Financials</h1>
                   <Badge className={statusColor}>{projectStatus}</Badge>
                   {sovMismatch && (
-                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/50">
+                    <Badge className="bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30">
                       <AlertCircle size={12} className="mr-1" />
                       SOV Mismatch: {formatCurrency(sovTotal)} vs {formatCurrency(metrics.baseContract)}
                     </Badge>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-zinc-500 font-mono">
+                  <p className="text-sm text-[#6B7280] font-mono">
                     {selectedProjectData?.project_number} - {selectedProjectData?.name}
                   </p>
                   {canEdit && (
                     <button
                       onClick={handleEditContractValue}
-                      className="text-xs text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1"
+                      className="text-xs text-[#6B7280] hover:text-[#FF9D42] transition-colors flex items-center gap-1"
                     >
                       <Edit2 size={12} />
                       Edit Base Contract ({formatCurrency(metrics.baseContract)})
@@ -365,12 +365,12 @@ export default function FinancialsRedesign() {
               <div className="flex items-center gap-4">
                 <DenominatorToggle mode={denominatorMode} onChange={setDenominatorMode} />
                 <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
+                  <SelectTrigger className="w-64">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent>
                     {projects.map(p => (
-                      <SelectItem key={p.id} value={p.id} className="text-white">
+                      <SelectItem key={p.id} value={p.id}>
                         {p.project_number} - {p.name}
                       </SelectItem>
                     ))}
@@ -397,7 +397,7 @@ export default function FinancialsRedesign() {
         {/* Content */}
         <div className="max-w-[1800px] mx-auto px-8 py-6">
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="bg-zinc-900 border border-zinc-800">
+            <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="sov">SOV</TabsTrigger>
               <TabsTrigger value="costs">Costs</TabsTrigger>
@@ -409,11 +409,11 @@ export default function FinancialsRedesign() {
 
             <TabsContent value="overview" className="space-y-6">
               {metrics.costCoverage < 95 && (
-                <div className="p-4 bg-red-500/10 border-2 border-red-500/50 rounded-lg flex items-start gap-3">
-                  <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="p-4 bg-[#EF4444]/10 border-2 border-[#EF4444]/30 rounded-lg flex items-start gap-3">
+                  <AlertCircle size={20} className="text-[#EF4444] flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-red-400 mb-1">Cost Alignment Required</p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-sm font-semibold text-[#EF4444] mb-1">Cost Alignment Required</p>
+                    <p className="text-xs text-[#9CA3AF]">
                       {formatCurrency(expenses.filter(e => !e.sov_code).reduce((s, e) => s + (e.amount || 0), 0))} 
                       {' '}in unaligned costs. Map to SOV lines to enable invoicing.
                     </p>
@@ -733,28 +733,28 @@ export default function FinancialsRedesign() {
 
       {/* Edit Contract Value Dialog */}
       <Dialog open={editingContractValue} onOpenChange={setEditingContractValue}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Base Contract Value</DialogTitle>
+            <DialogTitle>Edit Base Contract Value</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
-              <label className="text-xs text-zinc-400 mb-2 block">Base Contract Amount</label>
+              <label className="text-xs text-[#9CA3AF] mb-2 block">Base Contract Amount</label>
               <Input
                 type="number"
                 step="0.01"
                 value={contractValueInput}
                 onChange={(e) => setContractValueInput(e.target.value)}
-                className="text-right font-mono text-lg bg-zinc-950 border-zinc-700 text-white"
+                className="text-right font-mono text-lg"
                 autoFocus
               />
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-[#6B7280] mt-1">
                 Current: {formatCurrency(metrics.baseContract)}
               </p>
             </div>
             {sovMismatch && (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded">
-                <p className="text-xs text-amber-400">
+              <div className="p-3 bg-[#FF9D42]/10 border border-[#FF9D42]/30 rounded-lg">
+                <p className="text-xs text-[#FCD34D]">
                   <AlertCircle size={12} className="inline mr-1" />
                   SOV total ({formatCurrency(sovTotal)}) will not match base contract after this change
                 </p>
@@ -764,14 +764,14 @@ export default function FinancialsRedesign() {
               <Button
                 onClick={() => setEditingContractValue(false)}
                 variant="outline"
-                className="flex-1 border-zinc-700"
+                className="flex-1"
               >
                 Cancel
               </Button>
               <Button
                 onClick={saveContractValue}
                 disabled={updateProjectMutation.isPending}
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-black font-bold"
+                className="flex-1"
               >
                 Save
               </Button>

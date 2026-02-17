@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings, GripVertical } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import PageHeader from '@/components/ui/PageHeader';
@@ -42,9 +43,15 @@ const DEFAULT_LAYOUT = [
 ];
 
 export default function ProjectDashboard() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [widgetLayout, setWidgetLayout] = useState([]);
   const [configOpen, setConfigOpen] = useState(false);
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('name'),
+    staleTime: 5 * 60 * 1000
+  });
 
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
@@ -80,7 +87,24 @@ export default function ProjectDashboard() {
   if (!activeProjectId) {
     return (
       <div className="min-h-screen bg-[#0A0E13]">
-        <PageHeader title="Project Dashboard" subtitle="Select a project to view dashboard" />
+        <PageHeader 
+          title="Project Dashboard" 
+          subtitle="Select a project to view dashboard"
+          actions={
+            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-80">
+                <SelectValue placeholder="Select project..." />
+              </SelectTrigger>
+              <SelectContent>
+                {allProjects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
+        />
         <div className="max-w-[1800px] mx-auto px-8 py-6">
           <Card className="p-12 text-center">
             <p className="text-[#6B7280]">No project selected</p>
@@ -96,14 +120,28 @@ export default function ProjectDashboard() {
         title={project?.name || 'Project Dashboard'}
         subtitle={project?.project_number || 'Loading...'}
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setConfigOpen(true)}
-          >
-            <Settings size={14} className="mr-2" />
-            Configure Widgets
-          </Button>
+          <>
+            <Select value={activeProjectId} onValueChange={setActiveProjectId}>
+              <SelectTrigger className="w-80">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allProjects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} - {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfigOpen(true)}
+            >
+              <Settings size={14} className="mr-2" />
+              Configure Widgets
+            </Button>
+          </>
         }
       />
 

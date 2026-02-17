@@ -71,6 +71,7 @@ import FieldTools from './pages/FieldTools';
 import FieldToolsMobile from './pages/FieldToolsMobile';
 import Financials from './pages/Financials';
 import FinancialsRedesign from './pages/FinancialsRedesign';
+import HowItWorks from './pages/HowItWorks';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
 import JobStatusReport from './pages/JobStatusReport';
@@ -107,7 +108,7 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import HowItWorks from './pages/HowItWorks';
+import PMProjectControl from './pages/PMProjectControl';
 import __Layout from './Layout.jsx';
 
 
@@ -136,6 +137,7 @@ export const PAGES = {
     "FieldToolsMobile": FieldToolsMobile,
     "Financials": Financials,
     "FinancialsRedesign": FinancialsRedesign,
+    "HowItWorks": HowItWorks,
     "Insights": Insights,
     "Integrations": Integrations,
     "JobStatusReport": JobStatusReport,
@@ -172,7 +174,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "HowItWorks": HowItWorks,
+    "PMProjectControl": PMProjectControl,
 }
 
 export const pagesConfig = {

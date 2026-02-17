@@ -168,12 +168,55 @@ export default function LandingPage() {
               background: 'linear-gradient(135deg, rgba(255, 107, 44, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)'
             }}
           >
-            <div className="aspect-video rounded-xl bg-black overflow-hidden">
-              {/* Placeholder for screenshot/demo */}
-              <div className="w-full h-full flex items-center justify-center text-[#6B7280]">
-                <div className="text-center">
-                  <Sparkles size={48} className="mx-auto mb-4 text-[#FF9D42]" />
-                  <p className="text-lg">Dashboard Preview</p>
+            <div className="aspect-video rounded-xl bg-black overflow-hidden border border-[rgba(255,255,255,0.05)] relative">
+              {/* Mock Dashboard Content */}
+              <div className="absolute inset-0 p-6 space-y-4">
+                {/* Mock Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-[rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42]" style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.5)' }} />
+                    <div className="h-4 w-32 bg-[#1F1F1F] rounded" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-20 bg-[#1F1F1F] rounded-lg" />
+                    <div className="h-8 w-8 bg-[#1F1F1F] rounded-lg" />
+                  </div>
+                </div>
+
+                {/* Mock Metrics Grid */}
+                <div className="grid grid-cols-4 gap-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-3 space-y-2">
+                      <div className="h-3 w-16 bg-[#1F1F1F] rounded" />
+                      <div className="h-5 w-20 bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] rounded" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mock Chart Area */}
+                <div className="grid grid-cols-2 gap-3 flex-1">
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 space-y-3">
+                    <div className="h-3 w-24 bg-[#1F1F1F] rounded" />
+                    <div className="flex items-end gap-2 h-24">
+                      {[40, 65, 45, 80, 55, 70, 50].map((h, i) => (
+                        <div 
+                          key={i} 
+                          className="flex-1 bg-gradient-to-t from-[#FF6B2C] to-[#FF9D42] rounded-t opacity-70"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 space-y-2">
+                    <div className="h-3 w-20 bg-[#1F1F1F] rounded mb-3" />
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center gap-3 py-2">
+                        <div className="w-2 h-2 rounded-full bg-[#FF9D42]" />
+                        <div className="h-2 flex-1 bg-[#1F1F1F] rounded" />
+                        <div className="h-2 w-12 bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] rounded" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

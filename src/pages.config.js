@@ -85,6 +85,7 @@ import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
 import MyActionItems from './pages/MyActionItems';
 import NotificationSettings from './pages/NotificationSettings';
+import PMProjectControl from './pages/PMProjectControl';
 import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
@@ -108,7 +109,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import PMProjectControl from './pages/PMProjectControl';
 import __Layout from './Layout.jsx';
 
 
@@ -151,6 +151,7 @@ export const PAGES = {
     "Messages": Messages,
     "MyActionItems": MyActionItems,
     "NotificationSettings": NotificationSettings,
+    "PMProjectControl": PMProjectControl,
     "Performance": Performance,
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
@@ -174,7 +175,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "PMProjectControl": PMProjectControl,
 }
 
 export const pagesConfig = {

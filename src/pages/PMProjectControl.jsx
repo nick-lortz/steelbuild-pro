@@ -216,20 +216,20 @@ export default function PMProjectControl() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
             <div className="flex items-center gap-2">
-              <Calendar size={16} className="text-zinc-500" />
-              <span className="text-sm text-zinc-400">Week of:</span>
+              <Calendar size={16} className="text-zinc-500 flex-shrink-0" />
+              <span className="text-sm text-zinc-400 whitespace-nowrap">Week of:</span>
               <Input
                 type="date"
                 value={currentWeek}
                 onChange={(e) => setCurrentWeek(e.target.value)}
-                className="w-40 bg-zinc-900 border-zinc-700"
+                className="flex-1 lg:w-40 bg-zinc-900 border-zinc-700 h-11"
               />
             </div>
 
             <Select value={selectedPM} onValueChange={setSelectedPM}>
-              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-700">
+              <SelectTrigger className="w-full lg:w-64 bg-zinc-900 border-zinc-700 h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -244,6 +244,7 @@ export default function PMProjectControl() {
               size="sm"
               onClick={() => carryForwardMutation.mutate()}
               disabled={carryForwardMutation.isPending}
+              className="h-11"
             >
               Carry Forward to Next Week
             </Button>
@@ -347,12 +348,12 @@ export default function PMProjectControl() {
                                   className="bg-zinc-800 border-zinc-700"
                                   autoFocus
                                 />
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                   <Select
                                     value={newEntry.priority}
                                     onValueChange={(val) => setNewEntry({ ...newEntry, priority: val })}
                                   >
-                                    <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
+                                    <SelectTrigger className="w-full sm:w-32 bg-zinc-800 border-zinc-700 h-11">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -366,24 +367,27 @@ export default function PMProjectControl() {
                                     placeholder="Assigned to..."
                                     value={newEntry.assigned_to || ''}
                                     onChange={(e) => setNewEntry({ ...newEntry, assigned_to: e.target.value })}
-                                    className="flex-1 bg-zinc-800 border-zinc-700"
+                                    className="flex-1 bg-zinc-800 border-zinc-700 h-11"
                                   />
                                   <Input
                                     type="date"
                                     value={newEntry.due_date || ''}
                                     onChange={(e) => setNewEntry({ ...newEntry, due_date: e.target.value })}
-                                    className="w-40 bg-zinc-800 border-zinc-700"
+                                    className="w-full sm:w-40 bg-zinc-800 border-zinc-700 h-11"
                                   />
-                                  <Button size="sm" onClick={() => handleAddEntry(project.id, cat.value)}>
-                                    <Check size={14} />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setNewEntry({ project_id: '', category: '', description: '', priority: 'normal' })}
-                                  >
-                                    <X size={14} />
-                                  </Button>
+                                  <div className="flex gap-2">
+                                    <Button size="sm" onClick={() => handleAddEntry(project.id, cat.value)} className="h-11 flex-1 sm:flex-none">
+                                      <Check size={14} />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setNewEntry({ project_id: '', category: '', description: '', priority: 'normal' })}
+                                      className="h-11 flex-1 sm:flex-none"
+                                    >
+                                      <X size={14} />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             </Card>
@@ -402,38 +406,40 @@ export default function PMProjectControl() {
                               )}>
                                 {isEditing ? (
                                   <div className="space-y-2">
+                                  <Input
+                                    value={editingEntry.description}
+                                    onChange={(e) => setEditingEntry({ ...editingEntry, description: e.target.value })}
+                                    className="bg-zinc-800 border-zinc-700 h-11"
+                                  />
+                                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                    <Select
+                                      value={editingEntry.priority}
+                                      onValueChange={(val) => setEditingEntry({ ...editingEntry, priority: val })}
+                                    >
+                                      <SelectTrigger className="w-full sm:w-32 bg-zinc-800 border-zinc-700 h-11">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="normal">Normal</SelectItem>
+                                        <SelectItem value="urgent">Urgent</SelectItem>
+                                        <SelectItem value="critical">Critical</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                     <Input
-                                      value={editingEntry.description}
-                                      onChange={(e) => setEditingEntry({ ...editingEntry, description: e.target.value })}
-                                      className="bg-zinc-800 border-zinc-700"
+                                      placeholder="Assigned to..."
+                                      value={editingEntry.assigned_to || ''}
+                                      onChange={(e) => setEditingEntry({ ...editingEntry, assigned_to: e.target.value })}
+                                      className="flex-1 bg-zinc-800 border-zinc-700 h-11"
                                     />
-                                    <div className="flex items-center gap-2">
-                                      <Select
-                                        value={editingEntry.priority}
-                                        onValueChange={(val) => setEditingEntry({ ...editingEntry, priority: val })}
-                                      >
-                                        <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="normal">Normal</SelectItem>
-                                          <SelectItem value="urgent">Urgent</SelectItem>
-                                          <SelectItem value="critical">Critical</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                      <Input
-                                        placeholder="Assigned to..."
-                                        value={editingEntry.assigned_to || ''}
-                                        onChange={(e) => setEditingEntry({ ...editingEntry, assigned_to: e.target.value })}
-                                        className="flex-1 bg-zinc-800 border-zinc-700"
-                                      />
-                                      <Button size="sm" onClick={() => handleUpdateEntry(editingEntry)}>
+                                    <div className="flex gap-2">
+                                      <Button size="sm" onClick={() => handleUpdateEntry(editingEntry)} className="h-11 flex-1 sm:flex-none">
                                         <Check size={14} />
                                       </Button>
-                                      <Button size="sm" variant="ghost" onClick={() => setEditingEntry(null)}>
+                                      <Button size="sm" variant="ghost" onClick={() => setEditingEntry(null)} className="h-11 flex-1 sm:flex-none">
                                         <X size={14} />
                                       </Button>
                                     </div>
+                                  </div>
                                   </div>
                                 ) : (
                                   <div className="flex items-start justify-between">

@@ -98,8 +98,8 @@ export default function PMCalendarView({
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 justify-center">
           <Button
             variant="outline"
             size="sm"
@@ -119,9 +119,9 @@ export default function PMCalendarView({
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Select value={filterProject} onValueChange={setFilterProject}>
-            <SelectTrigger className="w-48 bg-zinc-900 border-zinc-700">
+            <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-700 h-11">
               <SelectValue placeholder="All Projects" />
             </SelectTrigger>
             <SelectContent>
@@ -135,7 +135,7 @@ export default function PMCalendarView({
           </Select>
 
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-40 bg-zinc-900 border-zinc-700">
+            <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-700 h-11">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>

@@ -288,11 +288,12 @@ export default function FinancialsRedesign() {
           <div className="text-center max-w-md">
             <DollarSign size={64} className="mx-auto mb-4 text-[#4B5563]" />
             <h3 className="text-xl font-bold text-[#E5E7EB] mb-4">Select Project</h3>
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
+            <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose project..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">Choose project...</SelectItem>
                 {projects.map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}
@@ -364,11 +365,12 @@ export default function FinancialsRedesign() {
               </div>
               <div className="flex items-center gap-4">
                 <DenominatorToggle mode={denominatorMode} onChange={setDenominatorMode} />
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
                   <SelectTrigger className="w-64">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Select project...</SelectItem>
                     {projects.map(p => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.project_number} - {p.name}

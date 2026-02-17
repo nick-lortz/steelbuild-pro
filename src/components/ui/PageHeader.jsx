@@ -24,34 +24,36 @@ const PageHeader = React.memo(function PageHeader(/** @type {any} */ { title, su
     : !isRootPage;
 
   return (
-    <div className="bg-transparent text-slate-50 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="bg-transparent text-[#E5E7EB] mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         {shouldShowBackButton ? (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800 lg:hidden">
+            className="lg:hidden">
             <ArrowLeft size={20} />
           </Button>
         ) : (
-          <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center lg:hidden">
-            <Building size={18} className="text-black" />
+          <div 
+            className="w-8 h-8 bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] rounded-lg flex items-center justify-center lg:hidden"
+            style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.3)' }}
+          >
+            <Building size={18} className="text-[#0A0E13]" />
           </div>
         )}
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">{title}</h1>
-          {subtitle && <p className="text-zinc-400 mt-1">{subtitle}</p>}
+          <h1 className="text-2xl font-bold text-[#E5E7EB] tracking-tight">{title}</h1>
+          {subtitle && <p className="text-[#9CA3AF] mt-1">{subtitle}</p>}
         </div>
       </div>
-      <div className="text-slate-950 flex items-center gap-2">
+      <div className="flex items-center gap-2">
         {onRefresh &&
         <Button
           variant="outline"
           size="icon"
           onClick={onRefresh}
-          disabled={isRefreshing} className="bg-background text-slate-50 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border shadow-sm h-9 w-9 border-zinc-700 hover:text-white hover:bg-zinc-800">
-
+          disabled={isRefreshing}>
 
             <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
           </Button>

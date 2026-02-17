@@ -57,20 +57,24 @@ export default function ProjectsKPIBar({ projects, tasks, financials }) {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {kpis.map((kpi, idx) => (
-        <Card key={idx} className="bg-card border-border">
-          <div className="p-3">
+        <Card key={idx}>
+          <div className="p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 truncate">
+                <p className="text-[9px] uppercase tracking-widest text-[#6B7280] font-bold mb-2 truncate">
                   {kpi.label}
                 </p>
-                <div className="flex items-baseline gap-1.5 mb-0.5">
-                  <span className="text-2xl font-bold text-foreground tabular-nums">{kpi.value}</span>
+                <div className="flex items-baseline gap-1.5 mb-1">
+                  <span className="text-2xl font-bold text-[#E5E7EB] tabular-nums">{kpi.value}</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground truncate">{kpi.subtext}</p>
+                <p className="text-[10px] text-[#9CA3AF] truncate">{kpi.subtext}</p>
               </div>
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0", kpi.bg)}>
-                <kpi.icon className={cn("w-4 h-4", kpi.color)} />
+              <div 
+                className={cn("w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0", kpi.bg)}
+                style={kpi.color.includes('amber') || kpi.color.includes('green') ? 
+                  { boxShadow: '0 0 16px rgba(255, 157, 66, 0.15)' } : {}}
+              >
+                <kpi.icon className={cn("w-5 h-5", kpi.color)} />
               </div>
             </div>
           </div>

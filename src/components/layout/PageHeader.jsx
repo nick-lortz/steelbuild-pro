@@ -12,15 +12,15 @@ import { cn } from '@/lib/utils';
 export default function PageHeader({ title, subtitle, actions, children, className }) {
   return (
     <div className={cn(
-      "border-b border-zinc-800/50 bg-gradient-to-b from-zinc-900 to-zinc-950/50",
+      "border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md",
       className
     )}>
       <div className="max-w-[1800px] mx-auto px-8 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">{title}</h1>
+            <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-zinc-500 font-mono mt-1">{subtitle}</p>
+              <p className="text-sm text-[#6B7280] font-mono mt-1">{subtitle}</p>
             )}
           </div>
           {actions && (

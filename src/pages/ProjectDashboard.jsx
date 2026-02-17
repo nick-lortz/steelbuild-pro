@@ -79,11 +79,11 @@ export default function ProjectDashboard() {
 
   if (!activeProjectId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+      <div className="min-h-screen bg-[#0A0E13]">
         <PageHeader title="Project Dashboard" subtitle="Select a project to view dashboard" />
         <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <Card className="bg-zinc-900/50 border-zinc-800 p-12 text-center">
-            <p className="text-zinc-500">No project selected</p>
+          <Card className="p-12 text-center">
+            <p className="text-[#6B7280]">No project selected</p>
           </Card>
         </div>
       </div>
@@ -91,7 +91,7 @@ export default function ProjectDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+    <div className="min-h-screen bg-[#0A0E13]">
       <PageHeader
         title={project?.name || 'Project Dashboard'}
         subtitle={project?.project_number || 'Loading...'}
@@ -100,7 +100,6 @@ export default function ProjectDashboard() {
             variant="outline"
             size="sm"
             onClick={() => setConfigOpen(true)}
-            className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10"
           >
             <Settings size={14} className="mr-2" />
             Configure Widgets
@@ -140,7 +139,7 @@ export default function ProjectDashboard() {
                           {...provided.draggableProps}
                           className={snapshot.isDragging ? 'opacity-50' : ''}
                         >
-                          <Card className="bg-zinc-900/50 border-zinc-800 p-4 relative group">
+                          <Card className="p-4 relative group">
                             {/* Keyboard reorder controls (WCAG 2.1.1) */}
                             <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
                               <Button
@@ -171,7 +170,7 @@ export default function ProjectDashboard() {
                               className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
                               aria-hidden="true"
                             >
-                              <GripVertical size={16} className="text-zinc-600" />
+                              <GripVertical size={16} className="text-[#6B7280]" />
                             </div>
 
                             {/* Screen reader position info */}
@@ -193,11 +192,10 @@ export default function ProjectDashboard() {
         </DragDropContext>
 
         {widgetLayout.length === 0 && (
-          <Card className="bg-zinc-900/50 border-zinc-800 p-12 text-center">
-            <p className="text-zinc-500 mb-4">No widgets configured</p>
+          <Card className="p-12 text-center">
+            <p className="text-[#6B7280] mb-4">No widgets configured</p>
             <Button
               onClick={() => setConfigOpen(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black"
             >
               Add Widgets
             </Button>

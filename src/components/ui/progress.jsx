@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,14 +10,17 @@ const Progress = React.forwardRef((/** @type {any} */ { className, value, ...pro
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
-      "relative h-2 w-full overflow-hidden rounded-full bg-zinc-800",
+      "relative h-2 w-full overflow-hidden rounded-full bg-[#151B24]",
       className
     )}
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-amber-500 transition-all"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      className="h-full w-full flex-1 bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] transition-all shadow-lg"
+      style={{
+        transform: `translateX(-${100 - (value || 0)}%)`,
+        boxShadow: '0 0 12px rgba(255, 157, 66, 0.4)'
+      }}
     />
   </ProgressPrimitive.Root>
 ))

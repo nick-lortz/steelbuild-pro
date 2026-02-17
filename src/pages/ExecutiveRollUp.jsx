@@ -194,8 +194,8 @@ export default function ExecutiveRollUp() {
         <PageHeader title="Executive Financial Roll-Up" subtitle="Portfolio health overview" />
         <Card>
           <CardContent className="p-8 text-center">
-            <AlertTriangle size={48} className="mx-auto mb-4 text-amber-400" />
-            <p className="text-muted-foreground">This dashboard is restricted to executives and administrators.</p>
+            <AlertTriangle size={48} className="mx-auto mb-4 text-[#FF9D42]" />
+            <p className="text-[#9CA3AF]">This dashboard is restricted to executives and administrators.</p>
           </CardContent>
         </Card>
       </div>
@@ -208,25 +208,25 @@ export default function ExecutiveRollUp() {
       accessor: 'project',
       render: (row) => (
         <div>
-          <div className="font-semibold">{row.project.name}</div>
-          <div className="text-xs text-muted-foreground">{row.project.project_number}</div>
+          <div className="font-semibold text-[#E5E7EB]">{row.project.name}</div>
+          <div className="text-xs text-[#6B7280]">{row.project.project_number}</div>
         </div>
       )
     },
     {
       header: 'Contract Value',
       accessor: 'contractValue',
-      render: (row) => <span className="font-semibold">${row.contractValue.toLocaleString()}</span>
+      render: (row) => <span className="font-semibold text-[#E5E7EB]">${row.contractValue.toLocaleString()}</span>
     },
     {
       header: 'Projected Margin',
       accessor: 'projectedProfit',
       render: (row) => (
         <div>
-          <div className={cn('font-semibold', row.projectedProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
+          <div className={cn('font-semibold', row.projectedProfit >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]')}>
             ${row.projectedProfit.toLocaleString()}
           </div>
-          <div className={cn('text-xs', row.projectedProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
+          <div className={cn('text-xs', row.projectedProfit >= 0 ? 'text-[#6EE7B7]' : 'text-[#FCA5A5]')}>
             {row.projectedMarginPercent.toFixed(1)}%
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function ExecutiveRollUp() {
     {
       header: 'Largest Risk Driver',
       accessor: 'largestDriver',
-      render: (row) => <span className="text-sm text-muted-foreground">{row.largestDriver}</span>
+      render: (row) => <span className="text-sm text-[#9CA3AF]">{row.largestDriver}</span>
     }
   ];
 
@@ -264,53 +264,53 @@ export default function ExecutiveRollUp() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-1">
-              <DollarSign size={14} className="text-muted-foreground" />
+              <DollarSign size={14} className="text-[#6B7280]" />
             </div>
-            <p className="text-xs text-muted-foreground">Total Contract</p>
-            <p className="text-lg font-bold">${aggregates.totalContract.toLocaleString()}</p>
+            <p className="text-xs text-[#6B7280]">Total Contract</p>
+            <p className="text-lg font-bold text-[#E5E7EB]">${aggregates.totalContract.toLocaleString()}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-1">
-              <TrendingUp size={14} className="text-green-400" />
+              <TrendingUp size={14} className="text-[#10B981]" />
             </div>
-            <p className="text-xs text-muted-foreground">Total Earned</p>
-            <p className="text-lg font-bold text-green-400">${aggregates.totalEarned.toLocaleString()}</p>
+            <p className="text-xs text-[#6B7280]">Total Earned</p>
+            <p className="text-lg font-bold text-[#10B981]">${aggregates.totalEarned.toLocaleString()}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-1">
-              <DollarSign size={14} className="text-muted-foreground" />
+              <DollarSign size={14} className="text-[#6B7280]" />
             </div>
-            <p className="text-xs text-muted-foreground">Total Billed</p>
-            <p className="text-lg font-bold">${aggregates.totalBilled.toLocaleString()}</p>
+            <p className="text-xs text-[#6B7280]">Total Billed</p>
+            <p className="text-lg font-bold text-[#E5E7EB]">${aggregates.totalBilled.toLocaleString()}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-1">
-              <TrendingUp size={14} className="text-red-400" />
+              <TrendingUp size={14} className="text-[#EF4444]" />
             </div>
-            <p className="text-xs text-muted-foreground">Total Cost</p>
-            <p className="text-lg font-bold text-red-400">${aggregates.totalCost.toLocaleString()}</p>
+            <p className="text-xs text-[#6B7280]">Total Cost</p>
+            <p className="text-lg font-bold text-[#EF4444]">${aggregates.totalCost.toLocaleString()}</p>
           </CardContent>
         </Card>
 
-        <Card className={aggregates.totalProfit >= 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}>
+        <Card className={aggregates.totalProfit >= 0 ? 'bg-[#10B981]/10 border-[#10B981]/30' : 'bg-[#EF4444]/10 border-[#EF4444]/30'}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-1">
-              <TrendingUp size={14} className={aggregates.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'} />
+              <TrendingUp size={14} className={aggregates.totalProfit >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'} />
             </div>
-            <p className="text-xs text-muted-foreground">Aggregate Margin</p>
-            <p className={cn('text-lg font-bold', aggregates.totalProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
+            <p className="text-xs text-[#6B7280]">Aggregate Margin</p>
+            <p className={cn('text-lg font-bold', aggregates.totalProfit >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]')}>
               ${aggregates.totalProfit.toLocaleString()}
             </p>
-            <p className={cn('text-xs', aggregates.totalProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
+            <p className={cn('text-xs', aggregates.totalProfit >= 0 ? 'text-[#6EE7B7]' : 'text-[#FCA5A5]')}>
               {aggregates.totalMarginPercent.toFixed(1)}%
             </p>
           </CardContent>
@@ -325,19 +325,19 @@ export default function ExecutiveRollUp() {
         <CardContent>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-red-400" />
-              <span className="text-sm text-muted-foreground">Red:</span>
-              <span className="text-lg font-bold text-red-400">{aggregates.riskCounts.red}</span>
+              <AlertTriangle size={16} className="text-[#EF4444]" />
+              <span className="text-sm text-[#9CA3AF]">Red:</span>
+              <span className="text-lg font-bold text-[#EF4444]">{aggregates.riskCounts.red}</span>
             </div>
             <div className="flex items-center gap-2">
-              <AlertCircle size={16} className="text-amber-400" />
-              <span className="text-sm text-muted-foreground">Yellow:</span>
-              <span className="text-lg font-bold text-amber-400">{aggregates.riskCounts.yellow}</span>
+              <AlertCircle size={16} className="text-[#FF9D42]" />
+              <span className="text-sm text-[#9CA3AF]">Yellow:</span>
+              <span className="text-lg font-bold text-[#FF9D42]">{aggregates.riskCounts.yellow}</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle size={16} className="text-green-400" />
-              <span className="text-sm text-muted-foreground">Green:</span>
-              <span className="text-lg font-bold text-green-400">{aggregates.riskCounts.green}</span>
+              <CheckCircle size={16} className="text-[#10B981]" />
+              <span className="text-sm text-[#9CA3AF]">Green:</span>
+              <span className="text-lg font-bold text-[#10B981]">{aggregates.riskCounts.green}</span>
             </div>
           </div>
         </CardContent>
@@ -347,7 +347,7 @@ export default function ExecutiveRollUp() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Project Risk Overview</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">Click any project to view detailed Job Status Report</p>
+          <p className="text-xs text-[#9CA3AF] mt-1">Click any project to view detailed Job Status Report</p>
         </CardHeader>
         <CardContent>
           <DataTable

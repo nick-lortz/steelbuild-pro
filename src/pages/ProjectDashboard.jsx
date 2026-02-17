@@ -91,11 +91,12 @@ export default function ProjectDashboard() {
           title="Project Dashboard" 
           subtitle="Select a project to view dashboard"
           actions={
-            <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
+            <Select value={activeProjectId || 'none'} onValueChange={(val) => setActiveProjectId(val === 'none' ? null : val)}>
               <SelectTrigger className="w-80">
                 <SelectValue placeholder="Select project..." />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">Select project...</SelectItem>
                 {allProjects.map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}

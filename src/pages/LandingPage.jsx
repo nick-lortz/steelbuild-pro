@@ -148,7 +148,12 @@ export default function LandingPage() {
             >
               Get Started <ArrowRight size={18} />
             </Button>
-            <Button size="lg" variant="outline" className="text-base">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="text-base"
+              onClick={() => navigate(createPageUrl('HowItWorks'))}
+            >
               How it Works
             </Button>
           </div>

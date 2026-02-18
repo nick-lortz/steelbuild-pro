@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -14,6 +15,8 @@ Deno.serve(async (req) => {
     if (!project_id || !sov_item_id || !cost_code_id) {
       return Response.json({ error: 'project_id, sov_item_id, and cost_code_id required' }, { status: 400 });
     }
+
+    await requireProjectAccess(base44, user, project_id);
 
     // Validate SOV item exists
     const sovItems = await base44.entities.SOVItem.filter({ id: sov_item_id, project_id });

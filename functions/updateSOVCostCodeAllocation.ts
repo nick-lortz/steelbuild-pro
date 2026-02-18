@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -23,6 +24,8 @@ Deno.serve(async (req) => {
     if (mappings.length === 0) {
       return Response.json({ error: 'Mapping not found' }, { status: 404 });
     }
+
+    await requireProjectAccess(base44, user, mappings[0].project_id);
 
     await base44.entities.SOVCostCodeMap.update(sov_cost_code_map_id, {
       allocation_percent

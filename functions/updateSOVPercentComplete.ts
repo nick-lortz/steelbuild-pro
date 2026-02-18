@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -16,20 +17,20 @@ Deno.serve(async (req) => {
 
   const numPercent = Number(percent_complete);
 
-  // Validate range 0-100
   if (numPercent < 0 || numPercent > 100) {
     return Response.json({ 
       error: 'Percent complete must be between 0 and 100' 
     }, { status: 400 });
   }
 
-  // Fetch SOV item
   const sovItems = await base44.entities.SOVItem.filter({ id: sov_item_id });
   if (sovItems.length === 0) {
     return Response.json({ error: 'SOV item not found' }, { status: 404 });
   }
 
   const sovItem = sovItems[0];
+
+  await requireProjectAccess(base44, user, sovItem.project_id);
 
   // Block percent decrease if any approved/paid invoices exist
   if (numPercent < (sovItem.percent_complete || 0)) {

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -24,6 +25,8 @@ Deno.serve(async (req) => {
         error: 'project_id, drawing_set_id, and revision_number required' 
       }, { status: 400 });
     }
+
+    await requireProjectAccess(base44, user, project_id);
 
     // Mark previous current revision as not current
     const existingRevisions = await base44.asServiceRole.entities.DrawingRevision.filter({

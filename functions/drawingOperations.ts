@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -12,7 +13,6 @@ Deno.serve(async (req) => {
 
     switch (operation) {
       case 'supersede':
-        // SUPERSEDE PATTERN: New drawing set replaces old, old becomes read-only
         const oldSet = await base44.asServiceRole.entities.DrawingSet.filter({ 
           id: data.oldSetId 
         });
@@ -20,6 +20,8 @@ Deno.serve(async (req) => {
         if (!oldSet || oldSet.length === 0) {
           return Response.json({ error: 'Drawing set not found' }, { status: 404 });
         }
+
+        await requireProjectAccess(base44, user, oldSet[0].project_id);
 
         // Create new revision
         const newSet = await base44.asServiceRole.entities.DrawingSet.create({
@@ -49,7 +51,6 @@ Deno.serve(async (req) => {
         });
 
       case 'release_for_fab':
-        // Only sets in BFS status can be released
         const setToRelease = await base44.asServiceRole.entities.DrawingSet.filter({ 
           id: data.setId 
         });
@@ -57,6 +58,8 @@ Deno.serve(async (req) => {
         if (!setToRelease || setToRelease.length === 0) {
           return Response.json({ error: 'Drawing set not found' }, { status: 404 });
         }
+
+        await requireProjectAccess(base44, user, setToRelease[0].project_id);
 
         if (setToRelease[0].status !== 'BFS') {
           return Response.json({ 

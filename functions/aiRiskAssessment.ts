@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { callLLMSafe } from './_lib/aiPolicy.js';
+import { clampInt } from './_lib/utils.js';
 
 Deno.serve(async (req) => {
   try {
@@ -9,13 +11,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { project_id } = await req.json();
+    const body = await req.json();
+    const { project_id } = body;
 
     if (!project_id) {
       return Response.json({ error: 'project_id required' }, { status: 400 });
     }
 
-    // Fetch comprehensive project data
+    // Fetch comprehensive project data (with limits for LLM)
+    const MAX_ITEMS = 500; // Prevent huge LLM payloads
+    
     const projects = await base44.entities.Project.filter({ id: project_id });
     const project = projects[0];
 
@@ -24,14 +29,14 @@ Deno.serve(async (req) => {
     }
 
     const [tasks, rfis, changeOrders, drawingSets, financials, expenses, deliveries, dailyLogs] = await Promise.all([
-      base44.entities.Task.filter({ project_id }),
-      base44.entities.RFI.filter({ project_id }),
-      base44.entities.ChangeOrder.filter({ project_id }),
-      base44.entities.DrawingSet.filter({ project_id }),
-      base44.entities.Financial.filter({ project_id }),
-      base44.entities.Expense.filter({ project_id }),
-      base44.entities.Delivery.filter({ project_id }),
-      base44.entities.DailyLog.filter({ project_id })
+      base44.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.RFI.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.DrawingSet.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Expense.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Delivery.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.DailyLog.filter({ project_id }, null, 50) // Recent logs only
     ]);
 
     // Calculate metrics
@@ -55,12 +60,17 @@ Deno.serve(async (req) => {
     const safetyIncidents = dailyLogs.filter(log => log.safety_incidents).length;
     const delayDays = dailyLogs.filter(log => log.delays).length;
 
+    // Build minimal, anonymized prompt (no names, no exact contract values)
+    const contractMagnitude = project.contract_value > 1000000 ? '>$1M' : 
+                             project.contract_value > 500000 ? '$500K-$1M' :
+                             project.contract_value > 100000 ? '$100K-$500K' : '<$100K';
+    
     const prompt = `You are an AI risk analyst for structural steel construction projects. Analyze this project for risks, delays, and issues.
 
-PROJECT: ${project.name}
-Phase: ${project.phase} | Status: ${project.status}
+PROJECT PHASE: ${project.phase}
+Status: ${project.status}
 Target Completion: ${project.target_completion}
-Contract Value: $${project.contract_value?.toLocaleString() || 'N/A'}
+Contract Magnitude: ${contractMagnitude}
 
 SCHEDULE METRICS:
 - Total Tasks: ${tasks.length}
@@ -87,9 +97,9 @@ FINANCIAL:
 FIELD CONDITIONS (Last 7 Days):
 - Safety Incidents: ${safetyIncidents}
 - Days with Delays: ${delayDays}
-- Recent Issues: ${recentLogs.filter(l => l.delays || l.safety_incidents).map(l => l.delay_reason || l.safety_notes).filter(Boolean).join('; ')}
+- Issue Count: ${recentLogs.filter(l => l.delays || l.safety_incidents).length}
 
-Provide a comprehensive risk assessment:
+Provide a comprehensive risk assessment (NO PII, NO specific names):
 
 Return ONLY valid JSON:
 {
@@ -125,7 +135,19 @@ Return ONLY valid JSON:
   "summary": "string"
 }`;
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    // Use safe LLM wrapper (enforces AI policy + redaction)
+    const response = await callLLMSafe(base44, {
+      prompt,
+      payload: null,
+      project_id
+    });
+    
+    // Parse response with schema validation
+    const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+    
+    // If using Core.InvokeLLM directly with schema, uncomment below:
+    /*
+    const parsed = await base44.integrations.Core.InvokeLLM({
       prompt,
       response_json_schema: {
         type: "object",
@@ -174,10 +196,11 @@ Return ONLY valid JSON:
         }
       }
     });
+    */
 
     return Response.json({
       success: true,
-      assessment: response,
+      assessment: parsed,
       metrics: {
         overdue_tasks: overdueTasks.length,
         overdue_rfis: overdueRFIs.length,

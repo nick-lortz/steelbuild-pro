@@ -19,10 +19,12 @@ import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialo
 import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
 import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
+import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
 
 const AVAILABLE_WIDGETS = [
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
+  { id: 'margin_risk', label: 'Work Packages At Margin Risk', component: MarginRiskWidget },
   { id: 'ai_risk', label: 'AI Risk Assessment', component: AIRiskWidget },
   { id: 'resource_optimization', label: 'Resource Optimization', component: ResourceOptimizationWidget },
   { id: 'documents', label: 'Documents', component: DocumentsWidget },
@@ -36,8 +38,8 @@ const AVAILABLE_WIDGETS = [
 const DEFAULT_LAYOUT = [
   'progress',
   'budget',
+  'margin_risk',
   'ai_risk',
-  'resource_optimization',
   'rfis',
   'deliveries'
 ];

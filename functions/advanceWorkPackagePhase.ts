@@ -29,6 +29,37 @@ Deno.serve(async (req) => {
 
     const workPackage = workPackages[0];
 
+    // EXECUTION GATE: Check ExecutionPermission before phase change
+    const permissions = await base44.asServiceRole.entities.ExecutionPermission.filter({
+      work_package_id
+    });
+
+    if (permissions.length > 0) {
+      const permission = permissions[0];
+      if (permission.permission_status !== 'RELEASED') {
+        // Get linked risk assessment for detailed response
+        let assessment = null;
+        if (permission.linked_margin_risk_assessment_id) {
+          const assessments = await base44.asServiceRole.entities.MarginRiskAssessment.filter({
+            id: permission.linked_margin_risk_assessment_id
+          });
+          assessment = assessments[0];
+        }
+
+        return Response.json({
+          blocked: true,
+          reason: permission.blocking_reason,
+          permission_status: permission.permission_status,
+          risk_level: assessment?.risk_level || 'UNKNOWN',
+          risk_score: assessment?.risk_score || 0,
+          margin_at_risk: assessment?.margin_at_risk || 0,
+          ecc_impact_estimate: assessment?.ecc_impact_estimate || 0,
+          drivers: assessment?.drivers || [],
+          message: 'Work package execution blocked. Resolve risk drivers or obtain PM override.'
+        }, { status: 403 });
+      }
+    }
+
     // Reject if already complete
     if (workPackage.status === 'complete') {
       return Response.json({ error: 'Work Package already complete' }, { status: 400 });

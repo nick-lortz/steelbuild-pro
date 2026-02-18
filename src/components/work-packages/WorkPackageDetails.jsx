@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import BudgetManager from '@/components/budget/BudgetManager';
+import TaskAssignment from '@/components/work-packages/TaskAssignment';
 
 export default function WorkPackageDetails({
   package: pkg,
@@ -273,7 +274,7 @@ export default function WorkPackageDetails({
                 <div key={dwg.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
                   <div>
                     <div className="font-mono text-xs text-blue-500">{dwg.set_number}</div>
-                    <div className="text-sm text-zinc-200">{dwg.set_name}</div>
+                    <div className="text-sm text-zinc-200">{dwg.title}</div>
                   </div>
                   <StatusBadge status={dwg.status} />
                 </div>
@@ -292,17 +293,23 @@ export default function WorkPackageDetails({
         </TabsList>
 
         <TabsContent value="details" className="space-y-4 mt-4">
+          <TaskAssignment
+            workPackage={pkg}
+            tasks={tasks}
+            projectId={projectId}
+          />
+
           {/* Description & Notes */}
-          {(pkg.description || pkg.notes) && (
+          {(pkg.scope_summary || pkg.notes) && (
             <Card className="bg-zinc-800/50 border-zinc-700">
               <CardHeader>
                 <CardTitle className="text-sm">Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {pkg.description && (
+                {pkg.scope_summary && (
                   <div>
-                    <div className="text-xs text-zinc-500 mb-1">Description</div>
-                    <div className="text-sm text-zinc-200">{pkg.description}</div>
+                    <div className="text-xs text-zinc-500 mb-1">Scope Summary</div>
+                    <div className="text-sm text-zinc-200">{pkg.scope_summary}</div>
                   </div>
                 )}
                 {pkg.notes && (
@@ -315,10 +322,10 @@ export default function WorkPackageDetails({
             </Card>
           )}
 
-          {pkg.assigned_to && (
+          {pkg.assigned_pm && (
             <div className="text-sm">
-              <span className="text-zinc-500">Assigned to: </span>
-              <span className="text-zinc-200">{pkg.assigned_to}</span>
+              <span className="text-zinc-500">Assigned PM: </span>
+              <span className="text-zinc-200">{pkg.assigned_pm}</span>
             </div>
           )}
         </TabsContent>
@@ -400,7 +407,7 @@ export default function WorkPackageDetails({
                     <div key={dwg.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
                       <div>
                         <div className="font-mono text-xs text-blue-500">{dwg.set_number}</div>
-                        <div className="text-sm text-zinc-200">{dwg.set_name}</div>
+                        <div className="text-sm text-zinc-200">{dwg.title}</div>
                       </div>
                       <StatusBadge status={dwg.status} />
                     </div>

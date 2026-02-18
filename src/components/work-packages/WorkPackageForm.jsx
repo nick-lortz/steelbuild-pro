@@ -259,7 +259,7 @@ export default function WorkPackageForm({
                   onCheckedChange={() => toggleArrayItem('linked_drawing_set_ids', dwg.id)}
                 />
                 <label className="text-sm text-zinc-200 cursor-pointer">
-                  {dwg.set_number} - {dwg.set_name} ({dwg.status})
+                  {dwg.set_number} - {dwg.title} ({dwg.status})
                 </label>
               </div>
             ))}

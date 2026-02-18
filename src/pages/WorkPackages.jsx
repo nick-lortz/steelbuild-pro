@@ -21,6 +21,7 @@ import EmptyState from '@/components/layout/EmptyState';
 import LoadingState from '@/components/layout/LoadingState';
 import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
 import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
+import ProgressReport from '@/components/work-packages/ProgressReport';
 
 export default function WorkPackages() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -215,6 +216,12 @@ export default function WorkPackages() {
           </>
         }
       />
+
+      {workPackages.length > 0 && (
+        <div className="mb-4">
+          <ProgressReport workPackages={workPackages} tasks={tasks} />
+        </div>
+      )}
 
       <MetricsBar
         metrics={[

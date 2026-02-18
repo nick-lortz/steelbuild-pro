@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { config } from './_lib/config.js';
 
 Deno.serve(async (req) => {
   try {
@@ -9,15 +10,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const publicKey = Deno.env.get('VAPID_PUBLIC_KEY');
-    
-    if (!publicKey) {
-      return Response.json({ error: 'VAPID public key not configured' }, { status: 500 });
-    }
+    // Public key is safe to return to client
+    const publicKey = config.VAPID_PUBLIC_KEY();
 
     return Response.json({ publicKey });
 
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'VAPID public key not configured' }, { status: 500 });
   }
 });

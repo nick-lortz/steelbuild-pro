@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { config } from './_lib/config.js';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -11,7 +13,7 @@ Deno.serve(async (req) => {
 
     const { channel, message, type = 'info', project_name, attachments = [] } = await req.json();
 
-    const token = Deno.env.get('SLACK_BOT_TOKEN');
+    const token = config.SLACK_BOT_TOKEN();
     if (!token) {
       return Response.json({ 
         error: 'Slack not configured',
@@ -19,31 +21,31 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // Redact PII before sending external
+    const safeMessage = redactPII(message);
+    const safeProjectName = project_name ? redactPII(project_name) : 'SteelBuild-Pro Notification';
+    
     // Build Slack message
     const emoji = type === 'urgent' ? ':rotating_light:' : 
                   type === 'warning' ? ':warning:' : 
                   type === 'success' ? ':white_check_mark:' : ':information_source:';
 
-    const color = type === 'urgent' ? '#ef4444' :
-                  type === 'warning' ? '#f59e0b' :
-                  type === 'success' ? '#10b981' : '#3b82f6';
-
     const slackPayload = {
       channel: channel.startsWith('#') ? channel : `#${channel}`,
-      text: message,
+      text: safeMessage,
       blocks: [
         {
           type: 'header',
           text: {
             type: 'plain_text',
-            text: `${emoji} ${project_name || 'SteelBuild-Pro Notification'}`
+            text: `${emoji} ${safeProjectName}`
           }
         },
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: message
+            text: safeMessage
           }
         }
       ]

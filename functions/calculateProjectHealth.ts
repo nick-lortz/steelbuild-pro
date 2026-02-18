@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import { checkRateLimit, rateLimitResponse } from './utils/rateLimit.js';
+import { clampInt } from './_lib/utils.js';
 
 /**
  * calculateProjectHealth (TIME_LIMIT hardened)
@@ -86,11 +87,11 @@ Deno.serve(async (req) => {
     const project_id = body?.project_id;
     const include_details = body?.include_details === true;
 
-    // Hard caps (tune if needed)
-    const max_tasks = Number.isFinite(body?.max_tasks) ? body.max_tasks : 2500;
-    const max_rfis = Number.isFinite(body?.max_rfis) ? body.max_rfis : 2500;
-    const max_financials = Number.isFinite(body?.max_financials) ? body.max_financials : 2500;
-    const max_change_orders = Number.isFinite(body?.max_change_orders) ? body.max_change_orders : 2500;
+    // Enforce hard caps to prevent performance issues (clamped 10-2000)
+    const max_tasks = clampInt(body?.max_tasks, 10, 2000, 500);
+    const max_rfis = clampInt(body?.max_rfis, 10, 2000, 500);
+    const max_financials = clampInt(body?.max_financials, 10, 2000, 500);
+    const max_change_orders = clampInt(body?.max_change_orders, 10, 2000, 500);
 
     if (!project_id) return json(400, { error: "project_id required" });
 

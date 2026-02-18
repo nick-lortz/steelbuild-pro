@@ -1,26 +1,44 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { requireAuth } from './utils/auth.js';
-import { logger } from './utils/logging.js';
+import { requireAdmin, requireConfirm } from './_lib/authz.js';
+import { auditLog } from './_lib/utils.js';
 
 /**
  * Cleanup Load Test Data
  * Removes all LT- prefixed projects and related data
+ * REQUIRES: admin role + explicit confirm=true
  */
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await requireAuth(base44);
+    const user = await base44.auth.me();
     
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Admin only' }, { status: 403 });
-    }
+    requireAdmin(user);
+    
+    const body = await req.json();
+    requireConfirm(body, "Cleanup requires explicit confirmation { confirm: true }");
 
-    logger.info('cleanupLoadTestData', 'Starting cleanup');
+    // Hard limit to prevent accidental mass deletion
+    const MAX_DELETE_PER_RUN = 1000;
+    
+    console.log('[INFO] cleanupLoadTestData: Starting cleanup');
+    
+    // Audit log before deletion
+    await auditLog(base44, 'cleanup_load_test_data_initiated', user, {
+      timestamp: new Date().toISOString(),
+      confirm: body.confirm
+    });
 
     // Find all load test projects
     const allProjects = await base44.asServiceRole.entities.Project.list();
     const loadTestProjects = allProjects.filter(p => p.project_number?.startsWith('LT-'));
+    
+    if (loadTestProjects.length > MAX_DELETE_PER_RUN) {
+      return Response.json({
+        error: `Safety limit: Found ${loadTestProjects.length} projects. Max ${MAX_DELETE_PER_RUN} per run.`,
+        hint: "Run multiple times or increase MAX_DELETE_PER_RUN in code"
+      }, { status: 400 });
+    }
     
     let deletedProjects = 0;
     let deletedRFIs = 0;
@@ -47,11 +65,19 @@ Deno.serve(async (req) => {
       deletedProjects++;
 
       if (deletedProjects % 10 === 0) {
-        logger.info('cleanupLoadTestData', `Progress: ${deletedProjects}/${loadTestProjects.length} projects deleted`);
+        console.log(`[INFO] Progress: ${deletedProjects}/${loadTestProjects.length} projects deleted`);
       }
     }
+    
+    // Audit log after deletion
+    await auditLog(base44, 'cleanup_load_test_data_completed', user, {
+      deleted_count: deletedProjects,
+      deleted_rfis: deletedRFIs,
+      deleted_tasks: deletedTasks,
+      timestamp: new Date().toISOString()
+    });
 
-    logger.info('cleanupLoadTestData', 'Cleanup completed', {
+    console.log('[INFO] cleanupLoadTestData: Cleanup completed', {
       deletedProjects,
       deletedRFIs,
       deletedTasks
@@ -67,7 +93,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    logger.error('cleanupLoadTestData', 'Cleanup failed', error);
+    console.error('[ERROR] cleanupLoadTestData: Cleanup failed', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

@@ -21,26 +21,33 @@ Deno.serve(async (req) => {
       const daysUntil = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
 
       // Get user preferences to determine notification threshold
-      const prefs = await base44.asServiceRole.entities.NotificationPreference.filter(
-        { user_id: task.assigned_resources?.[0] },
-        '-created_date',
-        1
-      );
+      const assignedEmail = task.assigned_resources?.[0];
+      const prefs = assignedEmail 
+        ? await base44.asServiceRole.entities.NotificationPreference.filter(
+            { user_email: assignedEmail },
+            '-created_date',
+            1
+          )
+        : [];
 
       const daysBefore = prefs?.[0]?.deadline_days_before || 3;
 
       if (daysUntil > 0 && daysUntil <= daysBefore && !notifiedTasks.has(task.id)) {
-        const wp = await base44.asServiceRole.entities.WorkPackage.filter(
-          { id: task.work_package_id },
-          '-created_date',
-          1
-        );
+        const wp = task.work_package_id
+          ? await base44.asServiceRole.entities.WorkPackage.filter(
+              { id: task.work_package_id },
+              '-created_date',
+              1
+            )
+          : [];
 
-        const project = await base44.asServiceRole.entities.Project.filter(
-          { id: task.project_id },
-          '-created_date',
-          1
-        );
+        const project = task.project_id
+          ? await base44.asServiceRole.entities.Project.filter(
+              { id: task.project_id },
+              '-created_date',
+              1
+            )
+          : [];
 
         // Generate notification for each assigned resource
         for (const resourceEmail of task.assigned_resources || []) {

@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { callLLMSafe } from './_lib/aiPolicy.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { redactFinancials } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -14,16 +17,19 @@ Deno.serve(async (req) => {
     if (!project_id) {
       return Response.json({ error: 'project_id required' }, { status: 400 });
     }
+    
+    await requireProjectAccess(base44, user, project_id);
+    const MAX_ITEMS = 500;
 
-    // Fetch comprehensive project data
+    // Fetch comprehensive project data (capped)
     const [project, tasks, workPackages, rfis, changeOrders, expenses, laborHours] = await Promise.all([
       base44.entities.Project.filter({ id: project_id }).then(r => r[0]),
-      base44.entities.Task.filter({ project_id }),
-      base44.entities.WorkPackage.filter({ project_id }),
-      base44.entities.RFI.filter({ project_id }),
-      base44.entities.ChangeOrder.filter({ project_id }),
-      base44.entities.Expense.filter({ project_id }),
-      base44.entities.LaborHours.filter({ project_id })
+      base44.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.WorkPackage.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.RFI.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Expense.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.LaborHours.filter({ project_id }, null, MAX_ITEMS)
     ]);
 
     if (!project) {
@@ -61,14 +67,12 @@ Deno.serve(async (req) => {
     const daysRemaining = Math.max((targetDate - today) / (1000 * 60 * 60 * 24), 0);
     const schedulePct = totalDays > 0 ? (daysElapsed / totalDays) * 100 : 0;
 
-    // Build comprehensive analysis prompt
+    // Build comprehensive analysis prompt (anonymized)
     const analysisPrompt = `You are an expert construction project analyst specializing in structural steel fabrication and erection. Analyze this project data and provide detailed forecasting:
 
 PROJECT OVERVIEW:
-- Name: ${project.name}
-- Contract Value: $${project.contract_value?.toLocaleString() || 0}
 - Phase: ${project.phase}
-- Start: ${project.start_date}, Target Completion: ${project.target_completion}
+- Start: ${project.start_date}, Target: ${project.target_completion}
 - Days Elapsed: ${daysElapsed.toFixed(0)} / ${totalDays.toFixed(0)} (${schedulePct.toFixed(1)}% schedule elapsed)
 - Days Remaining: ${daysRemaining.toFixed(0)}
 
@@ -82,16 +86,13 @@ RISK INDICATORS:
 - Open RFIs: ${openRFIs} (${blockerRFIs} blockers, ${overdueRFIs} overdue)
 - Approved Change Orders: ${approvedCOs.length}
 - Total Schedule Impact from COs: ${totalScheduleImpact} days
-- Total Cost Impact from COs: $${totalCOImpact.toLocaleString()}
 
-FINANCIAL STATUS:
-- Total Expenses: $${totalExpenses.toLocaleString()}
+FINANCIAL STATUS (RATIOS):
 - Budget Used: ${budgetUsedPct.toFixed(1)}%
-- Budget Remaining: $${(project.contract_value - totalExpenses).toLocaleString()}
 - Budget vs Schedule Variance: ${(budgetUsedPct - schedulePct).toFixed(1)}%
 
 LABOR PERFORMANCE:
-- Total Hours Logged: ${totalLaborHours.toFixed(0)}
+- Total Hours: ${totalLaborHours.toFixed(0)}
 - Baseline Hours: ${baselineHours.toFixed(0)}
 - Labor Burn Rate: ${laborBurnRate.toFixed(1)}%
 
@@ -109,8 +110,10 @@ Provide a detailed forecast analyzing:
 
 Be specific with dates and dollar amounts. Think like a steel PM managing detailing → fab → erection workflow.`;
 
-    const forecast = await base44.integrations.Core.InvokeLLM({
+    const forecast = await callLLMSafe(base44, {
       prompt: analysisPrompt,
+      payload: null,
+      project_id,
       response_json_schema: {
         type: "object",
         properties: {
@@ -185,7 +188,6 @@ Be specific with dates and dollar amounts. Think like a steel PM managing detail
     return Response.json({
       success: true,
       project_id,
-      project_name: project.name,
       analysis_date: new Date().toISOString(),
       current_metrics: {
         progress_pct: progressPct,

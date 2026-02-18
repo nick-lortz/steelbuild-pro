@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { callLLMSafe } from './_lib/aiPolicy.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,6 +13,13 @@ Deno.serve(async (req) => {
     }
 
     const { project_id, period = 'week' } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    await requireProjectAccess(base44, user, project_id);
+    const MAX_ITEMS = 500;
 
     if (!project_id) {
       return Response.json({ error: 'project_id required' }, { status: 400 });
@@ -34,17 +44,17 @@ Deno.serve(async (req) => {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
-    // Fetch activity in period
+    // Fetch activity in period (capped)
     const [tasks, rfis, submittals, dailyLogs, changeOrders, deliveries] = await Promise.all([
-      base44.entities.Task.filter({ project_id }),
-      base44.entities.RFI.filter({ project_id }),
-      base44.entities.Submittal.filter({ project_id }),
+      base44.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.RFI.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Submittal.filter({ project_id }, null, MAX_ITEMS),
       base44.entities.DailyLog.filter({ 
         project_id,
         log_date: { $gte: startDateStr, $lte: endDateStr }
-      }),
-      base44.entities.ChangeOrder.filter({ project_id }),
-      base44.entities.Delivery.filter({ project_id })
+      }, null, 100),
+      base44.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Delivery.filter({ project_id }, null, MAX_ITEMS)
     ]);
 
     // Calculate metrics
@@ -81,13 +91,12 @@ Deno.serve(async (req) => {
 
     const prompt = `Generate a concise executive progress summary for this steel construction project.
 
-PROJECT: ${project.name}
 Phase: ${project.phase}
 Period: ${period === 'week' ? 'Last 7 Days' : 'Last 30 Days'}
 Date Range: ${startDateStr} to ${endDateStr}
 
 ACCOMPLISHMENTS:
-- Tasks Completed: ${completedTasks.length} (${completedTasks.map(t => t.name).join(', ')})
+- Tasks Completed: ${completedTasks.length}
 - Overall Progress: ${overallProgress}%
 - Labor Hours: ${totalLabor} hours (Avg Crew: ${avgCrew})
 - Deliveries: ${recentDeliveries.length}
@@ -96,16 +105,13 @@ RFIs & SUBMITTALS:
 - New RFIs: ${newRFIs.length}
 - RFIs Closed: ${closedRFIs.length}
 - Open RFIs: ${rfis.filter(r => r.status !== 'closed').length}
-- Approved Change Orders: ${approvedCOs.length} (Total Impact: $${approvedCOs.reduce((sum, co) => sum + (co.cost_impact || 0), 0).toLocaleString()})
+- Approved Change Orders: ${approvedCOs.length}
 
 FIELD CONDITIONS:
 - Days Logged: ${dailyLogs.length}
 - Safety Incidents: ${safetyIncidents}
 - Weather Delays: ${weatherDelays} days
-- Recent Issues: ${dailyLogs.filter(l => l.delays).map(l => l.delay_reason).filter(Boolean).slice(0, 3).join('; ')}
-
-KEY ACTIVITIES:
-${dailyLogs.slice(0, 5).map(log => `${log.log_date}: ${log.work_performed || 'No details'}`).join('\n')}
+- Issue Count: ${dailyLogs.filter(l => l.delays).length}
 
 Write a professional, direct summary suitable for client reporting or executive review. Focus on:
 1. Key accomplishments and milestones
@@ -136,8 +142,10 @@ Return ONLY valid JSON:
   "client_ready": "string (1-2 paragraph version for client)"
 }`;
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await callLLMSafe(base44, {
       prompt,
+      payload: null,
+      project_id,
       response_json_schema: {
         type: "object",
         properties: {

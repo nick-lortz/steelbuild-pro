@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
@@ -13,19 +15,25 @@ Deno.serve(async (req) => {
     if (!project_id) {
       return Response.json({ error: 'Missing project_id' }, { status: 400 });
     }
+    
+    // Job status reports require PM/Finance/Admin
+    requireRole(user, ['admin', 'pm', 'finance']);
+    
+    await requireProjectAccess(base44, user, project_id);
+    const MAX_ITEMS = 1000;
 
     const asOfDate = as_of_date ? new Date(as_of_date) : new Date();
 
-    // Fetch all data
+    // Fetch all data (capped for performance)
     const [projects, sovItems, changeOrders, expenses, invoices, tasks, rfis, scopeGaps] = await Promise.all([
       base44.asServiceRole.entities.Project.filter({ id: project_id }),
-      base44.asServiceRole.entities.SOVItem.filter({ project_id }),
-      base44.asServiceRole.entities.ChangeOrder.filter({ project_id }),
-      base44.asServiceRole.entities.Expense.filter({ project_id }),
-      base44.asServiceRole.entities.Invoice.filter({ project_id }),
-      base44.asServiceRole.entities.Task.filter({ project_id }),
-      base44.asServiceRole.entities.RFI.filter({ project_id }),
-      base44.asServiceRole.entities.ScopeGap.filter({ project_id })
+      base44.asServiceRole.entities.SOVItem.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Expense.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Invoice.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.RFI.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.ScopeGap.filter({ project_id }, null, MAX_ITEMS)
     ]);
 
     if (projects.length === 0) {

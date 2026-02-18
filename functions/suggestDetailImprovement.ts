@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,6 +13,11 @@ Deno.serve(async (req) => {
     }
 
     const { field_issue_id, project_id } = await req.json();
+    
+    // Detail improvements require Detailer/PM/Admin
+    requireRole(user, ['admin', 'pm', 'detailer']);
+    
+    await requireProjectAccess(base44, user, project_id);
 
     if (!field_issue_id || !project_id) {
       return Response.json({ error: 'Missing field_issue_id or project_id' }, { status: 400 });
@@ -23,12 +31,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Field issue not found' }, { status: 404 });
     }
 
-    // Analyze for repeat pattern
+    // Analyze for repeat pattern (capped for performance)
+    const MAX_ISSUES = 500;
     const allIssues = await base44.entities.FieldIssue.filter({
       project_id: project_id,
       issue_type: fieldIssue.issue_type,
       affected_connection_types: fieldIssue.affected_connection_types?.[0]
-    });
+    }, null, MAX_ISSUES);
 
     // Find similar issues (same type, connection, root cause)
     const similarIssues = allIssues.filter(
@@ -51,14 +60,16 @@ Deno.serve(async (req) => {
     ];
     const isDesignIntentChange = designIntentChanges.includes(fieldIssue.root_cause);
 
-    // AI prompt
+    // AI prompt (redact PII from descriptions)
+    const safeDescription = redactPII(fieldIssue.description);
+    
     const prompt = `
 You are a structural steel detailing expert analyzing a field issue to suggest a preventive detail improvement.
 
 FIELD ISSUE:
 Type: ${fieldIssue.issue_type}
 Root Cause: ${fieldIssue.root_cause}
-Description: ${fieldIssue.description}
+Description: ${safeDescription}
 Severity: ${fieldIssue.severity}
 Connection Types Affected: ${fieldIssue.affected_connection_types?.join(', ') || 'N/A'}
 Is Repeat Issue: ${isRepeat ? 'YES - ' + evidenceCount + ' similar instances found' : 'No (single occurrence)'}

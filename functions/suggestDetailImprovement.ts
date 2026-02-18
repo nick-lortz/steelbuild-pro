@@ -102,7 +102,7 @@ RESPONSE FORMAT (JSON):
   "ai_confidence_notes": "Detailed reasoning"
 }
 
-Return ONLY valid JSON, no markdown.
+NO PII, NO worker names. Return ONLY valid JSON, no markdown.
 `;
 
     const aiResponse = await base44.integrations.Core.InvokeLLM({

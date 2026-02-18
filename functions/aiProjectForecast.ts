@@ -103,12 +103,12 @@ WORK PACKAGES:
 
 Provide a detailed forecast analyzing:
 1. Projected completion date (consider schedule variance, blocker RFIs, remaining work, labor productivity)
-2. Budget forecast at completion (consider burn rate, remaining scope, identified risks, CO impacts)
+2. Budget variance percentage forecast (NO specific dollar amounts)
 3. Milestone achievement probability (assess readiness, constraints, dependencies)
 4. Critical risk factors affecting delivery
 5. Recommended corrective actions
 
-Be specific with dates and dollar amounts. Think like a steel PM managing detailing → fab → erection workflow.`;
+NO PII, NO exact costs. Think like a steel PM managing detailing → fab → erection workflow.`;
 
     const forecast = await callLLMSafe(base44, {
       prompt: analysisPrompt,

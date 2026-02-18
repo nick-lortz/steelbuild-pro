@@ -1,19 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { config } from './_lib/config.js';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin access required' }, { status: 403 });
-    }
+    // QuickBooks sync requires Finance/Admin only
+    requireRole(user, ['admin', 'finance']);
 
     const { project_id, date_from } = await req.json();
 
-    const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
-    const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
-    const refreshToken = Deno.env.get('QUICKBOOKS_REFRESH_TOKEN');
+    const clientId = config.QUICKBOOKS_CLIENT_ID();
+    const clientSecret = config.QUICKBOOKS_CLIENT_SECRET();
+    const refreshToken = Deno.env.get('QUICKBOOKS_REFRESH_TOKEN'); // Stored server-side
     const realmId = Deno.env.get('QUICKBOOKS_REALM_ID');
 
     if (!clientId || !clientSecret || !refreshToken || !realmId) {
@@ -53,14 +54,15 @@ Deno.serve(async (req) => {
     let syncedCount = 0;
     const errors = [];
 
-    // Sync each expense to QuickBooks
+    // Sync each expense to QuickBooks (no sensitive data logging)
     for (const expense of expenses) {
       try {
+        // Build minimal payload (no internal notes/PII)
         const billPayload = {
           Line: [{
             DetailType: 'AccountBasedExpenseLineDetail',
             Amount: expense.amount,
-            Description: expense.description,
+            Description: expense.description.substring(0, 200), // Truncate descriptions
             AccountBasedExpenseLineDetail: {
               AccountRef: {
                 name: 'Job Expenses'
@@ -85,9 +87,14 @@ Deno.serve(async (req) => {
 
         if (qbResponse.ok) {
           syncedCount++;
+          // DO NOT log response payload (contains QB internal IDs)
         } else {
-          const error = await qbResponse.json();
-          errors.push({ expense_id: expense.id, error: error.Fault?.Error?.[0]?.Message || 'Sync failed' });
+          const errorData = await qbResponse.json();
+          // Only log error message, not full payload
+          errors.push({ 
+            expense_id: expense.id, 
+            error: errorData.Fault?.Error?.[0]?.Message || 'Sync failed' 
+          });
         }
 
       } catch (err) {
@@ -95,6 +102,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    // DO NOT return access_token or refresh_token
     return Response.json({
       success: true,
       synced_count: syncedCount,
@@ -103,7 +111,8 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('QuickBooks sync error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    // DO NOT log tokens or credentials
+    console.error('QuickBooks sync error:', error.message);
+    return Response.json({ error: 'QuickBooks sync failed' }, { status: 500 });
   }
 });

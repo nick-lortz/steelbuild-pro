@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -8,6 +9,9 @@ Deno.serve(async (req) => {
   if (!user) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  
+  // SOV creation requires PM/Finance/Admin
+  requireRole(user, ['admin', 'pm', 'finance']);
 
   const { project_id, sov_code, description, sov_category, scheduled_value } = await req.json();
 

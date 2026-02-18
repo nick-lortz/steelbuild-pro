@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
@@ -8,6 +9,9 @@ Deno.serve(async (req) => {
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // Financial operations require PM/Finance/Admin
+    requireRole(user, ['admin', 'pm', 'finance']);
 
     const { sov_cost_code_map_id } = await req.json();
 

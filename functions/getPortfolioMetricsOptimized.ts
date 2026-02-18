@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
@@ -7,30 +8,45 @@ Deno.serve(async (req) => {
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // Portfolio metrics require PM/Admin/Finance
+    requireRole(user, ['admin', 'pm', 'finance']);
 
     const { project_ids, date_from, date_to } = await req.json();
+    
+    // Get user's accessible projects
+    const allProjects = await base44.asServiceRole.entities.Project.list();
+    const accessibleProjects = user.role === 'admin' 
+      ? allProjects
+      : allProjects.filter(p => 
+          p.project_manager === user.email ||
+          p.superintendent === user.email ||
+          (p.assigned_users && p.assigned_users.includes(user.email))
+        );
+    
+    // Filter by requested IDs if provided, otherwise use all accessible
+    const targetProjectIds = project_ids && project_ids.length > 0 
+      ? project_ids.filter(pid => accessibleProjects.some(p => p.id === pid))
+      : accessibleProjects.map(p => p.id);
+    
+    const MAX_ITEMS = 2000;
 
-    // Build query filters
-    const projectFilter = project_ids && project_ids.length > 0 
-      ? { id: { $in: project_ids } } 
-      : {};
-
-    // Fetch only necessary data with filters
+    // Fetch only necessary data with filters (capped)
     const [projects, tasks, financials, rfis, changeOrders] = await Promise.all([
-      base44.entities.Project.filter(projectFilter),
-      base44.entities.Task.filter({ 
-        ...(project_ids?.length > 0 ? { project_id: { $in: project_ids } } : {}),
+      base44.asServiceRole.entities.Project.filter({ id: { $in: targetProjectIds } }),
+      base44.asServiceRole.entities.Task.filter({ 
+        project_id: { $in: targetProjectIds },
         ...(date_from ? { end_date: { $gte: date_from } } : {}),
         ...(date_to ? { start_date: { $lte: date_to } } : {})
-      }),
-      base44.entities.Financial.filter(
-        project_ids?.length > 0 ? { project_id: { $in: project_ids } } : {}
+      }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Financial.filter(
+        { project_id: { $in: targetProjectIds } }, null, MAX_ITEMS
       ),
-      base44.entities.RFI.filter(
-        project_ids?.length > 0 ? { project_id: { $in: project_ids } } : {}
+      base44.asServiceRole.entities.RFI.filter(
+        { project_id: { $in: targetProjectIds } }, null, MAX_ITEMS
       ),
-      base44.entities.ChangeOrder.filter(
-        project_ids?.length > 0 ? { project_id: { $in: project_ids } } : {}
+      base44.asServiceRole.entities.ChangeOrder.filter(
+        { project_id: { $in: targetProjectIds } }, null, MAX_ITEMS
       )
     ]);
 

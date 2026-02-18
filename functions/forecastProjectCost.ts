@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { callLLMSafe, preparePayload } from './_lib/aiPolicy.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
@@ -11,14 +13,23 @@ Deno.serve(async (req) => {
     }
 
     const { project_id } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // Financial forecasting requires PM/Admin/Finance
+    requireRole(user, ['admin', 'pm', 'finance']);
+    await requireProjectAccess(base44, user, project_id);
+    
     const MAX_ITEMS = 500;
 
     const [project, financials, workPackages, changeOrders, tasks] = await Promise.all([
-      base44.entities.Project.filter({ id: project_id }).then(p => p[0]),
-      base44.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
-      base44.entities.WorkPackage.filter({ project_id }, null, MAX_ITEMS),
-      base44.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
-      base44.entities.Task.filter({ project_id }, null, MAX_ITEMS)
+      base44.asServiceRole.entities.Project.filter({ id: project_id }).then(p => p[0]),
+      base44.asServiceRole.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.WorkPackage.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Task.filter({ project_id }, null, MAX_ITEMS)
     ]);
 
     if (!project) {

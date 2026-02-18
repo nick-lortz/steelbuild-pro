@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { redactPII } from './_lib/redact.js';
 
 /**
  * Advanced financial forecasting with:
@@ -16,16 +19,26 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { project_id, include_market_trends = true } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // Financial forecasting requires PM/Admin/Finance
+    requireRole(user, ['admin', 'pm', 'finance']);
+    await requireProjectAccess(base44, user, project_id);
+    
+    const MAX_ITEMS = 1000;
 
     const [project, financials, expenses, tasks, laborHours, changeOrders, workPackages] = 
       await Promise.all([
-        base44.entities.Project.filter({ id: project_id }).then(p => p[0]),
-        base44.entities.Financial.filter({ project_id }),
-        base44.entities.Expense.filter({ project_id }, '-expense_date'),
-        base44.entities.Task.filter({ project_id }),
-        base44.entities.LaborHours.filter({ project_id }, '-work_date'),
-        base44.entities.ChangeOrder.filter({ project_id }),
-        base44.entities.WorkPackage.filter({ project_id })
+        base44.asServiceRole.entities.Project.filter({ id: project_id }).then(p => p[0]),
+        base44.asServiceRole.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
+        base44.asServiceRole.entities.Expense.filter({ project_id }, '-expense_date', MAX_ITEMS),
+        base44.asServiceRole.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+        base44.asServiceRole.entities.LaborHours.filter({ project_id }, '-work_date', MAX_ITEMS),
+        base44.asServiceRole.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+        base44.asServiceRole.entities.WorkPackage.filter({ project_id }, null, MAX_ITEMS)
       ]);
 
     if (!project) return Response.json({ error: 'Project not found' }, { status: 404 });
@@ -96,8 +109,6 @@ Deno.serve(async (req) => {
     const forecastResponse = await base44.integrations.Core.InvokeLLM({
       prompt: `Sophisticated cost forecast for steel fabrication/erection project.
 
-PROJECT: ${project.name}
-Contract: $${(project.contract_value || 0).toLocaleString()}
 Phase: ${project.phase || 'fabrication'}
 Target Completion: ${project.target_completion || 'TBD'}
 
@@ -200,7 +211,6 @@ Provide actionable insights grounded in historical project data and market condi
 
     return Response.json({
       project_id,
-      project_name: project.name,
       generated_at: new Date().toISOString(),
       current_state: {
         total_budget: totalBudget,

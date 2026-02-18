@@ -1,25 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
     
-    let user;
-    try {
-      user = await base44.auth.me();
-    } catch (authError) {
-      return Response.json({ 
-        error: 'UNAUTHORIZED',
-        message: 'User not authenticated'
-      }, { status: 401 });
-    }
-
     if (!user) {
-      return Response.json({ 
-        error: 'UNAUTHORIZED',
-        message: 'User not authenticated'
-      }, { status: 401 });
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // Portfolio metrics require PM/Admin/Finance
+    requireRole(user, ['admin', 'pm', 'finance']);
 
     const { searchParams } = new URL(req.url);
     const timeframe = searchParams.get('timeframe') || '12_months';
@@ -30,21 +22,43 @@ Deno.serve(async (req) => {
     const cutoffDate = new Date();
     cutoffDate.setMonth(cutoffDate.getMonth() - monthsBack);
     const cutoffStr = cutoffDate.toISOString().split('T')[0];
+    
+    // Get user's accessible projects
+    const allProjects = await base44.asServiceRole.entities.Project.list();
+    const accessibleProjects = user.role === 'admin' 
+      ? allProjects
+      : allProjects.filter(p => 
+          p.project_manager === user.email ||
+          p.superintendent === user.email ||
+          (p.assigned_users && p.assigned_users.includes(user.email))
+        );
+    
+    const accessibleProjectIds = new Set(accessibleProjects.map(p => p.id));
+    const MAX_ITEMS = 2000;
 
-    // Fetch all data in parallel
-    const [projects, financials, tasks, rfis, changeOrders, expenses] = await Promise.all([
-      base44.entities.Project.list(),
-      base44.entities.Financial.list(),
-      base44.entities.Task.list(),
-      base44.entities.RFI.list(),
-      base44.entities.ChangeOrder.list(),
-      base44.entities.Expense.list()
+    // Fetch data for accessible projects only (capped)
+    const [financials, tasks, rfis, changeOrders, expenses] = await Promise.all([
+      base44.asServiceRole.entities.Financial.filter({ 
+        project_id: { $in: Array.from(accessibleProjectIds) } 
+      }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Task.filter({ 
+        project_id: { $in: Array.from(accessibleProjectIds) } 
+      }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.RFI.filter({ 
+        project_id: { $in: Array.from(accessibleProjectIds) } 
+      }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.ChangeOrder.filter({ 
+        project_id: { $in: Array.from(accessibleProjectIds) } 
+      }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Expense.filter({ 
+        project_id: { $in: Array.from(accessibleProjectIds) } 
+      }, null, MAX_ITEMS)
     ]);
 
     // Filter projects if specified
     let filteredProjects = projectIdsFilter 
-      ? projects.filter(p => projectIdsFilter.includes(p.id))
-      : projects.filter(p => p.status === 'in_progress' || p.status === 'awarded');
+      ? accessibleProjects.filter(p => projectIdsFilter.includes(p.id))
+      : accessibleProjects.filter(p => p.status === 'in_progress' || p.status === 'awarded');
 
     const projectIds = new Set(filteredProjects.map(p => p.id));
 

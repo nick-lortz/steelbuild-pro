@@ -9,7 +9,7 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
 
     // Crane double-booking
     const craneUsage = {};
-    deliveries.forEach(d => {
+    deliveries.forEach((d) => {
       if (d.required_crane && d.delivery_status !== 'cancelled') {
         if (!craneUsage[d.required_crane]) craneUsage[d.required_crane] = [];
         craneUsage[d.required_crane].push(d);
@@ -19,7 +19,7 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
     Object.entries(craneUsage).forEach(([crane, delivs]) => {
       if (delivs.length > 1) {
         const dates = {};
-        delivs.forEach(d => {
+        delivs.forEach((d) => {
           const date = d.confirmed_date || d.scheduled_date;
           if (!dates[date]) dates[date] = [];
           dates[date].push(d);
@@ -41,7 +41,7 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
 
     // Crew conflicts
     const crewUsage = {};
-    deliveries.forEach(d => {
+    deliveries.forEach((d) => {
       if (d.required_crew && d.delivery_status !== 'cancelled') {
         if (!crewUsage[d.required_crew]) crewUsage[d.required_crew] = [];
         crewUsage[d.required_crew].push(d);
@@ -62,7 +62,7 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
 
     // Overloaded days
     const dayLoads = {};
-    deliveries.forEach(d => {
+    deliveries.forEach((d) => {
       const date = d.confirmed_date || d.scheduled_date;
       if (date && d.delivery_status !== 'cancelled') {
         if (!dayLoads[date]) dayLoads[date] = [];
@@ -83,7 +83,7 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
     });
 
     // Deliveries before erection readiness (would need erection task status check)
-    deliveries.forEach(d => {
+    deliveries.forEach((d) => {
       if (d.delivery_status === 'scheduled' && !d.erection_task_ready) {
         issues.push({
           type: 'readiness',
@@ -96,15 +96,15 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
     });
 
     // Not sequenced to erection order
-    const withSequence = deliveries.filter(d => d.erection_sequence).length;
-    const withoutSequence = deliveries.filter(d => !d.erection_sequence && d.delivery_status !== 'cancelled').length;
+    const withSequence = deliveries.filter((d) => d.erection_sequence).length;
+    const withoutSequence = deliveries.filter((d) => !d.erection_sequence && d.delivery_status !== 'cancelled').length;
     if (withoutSequence > 0 && withSequence > 0) {
       issues.push({
         type: 'sequence',
         severity: 'low',
         title: 'Missing Erection Sequence',
         detail: `${withoutSequence} deliveries not sequenced`,
-        deliveries: deliveries.filter(d => !d.erection_sequence)
+        deliveries: deliveries.filter((d) => !d.erection_sequence)
       });
     }
 
@@ -119,8 +119,8 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
             <span>✓</span> No conflicts detected
           </p>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   const severityIcons = {
@@ -138,42 +138,42 @@ export default function DeliveryConflictPanel({ deliveries, onSelectDelivery }) 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {conflicts.map((issue, idx) => (
-          <button
-            key={idx}
-            onClick={() => issue.deliveries.length === 1 && onSelectDelivery?.(issue.deliveries[0])}
-            className="w-full p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 rounded text-left transition-colors"
-          >
-            <div className="flex items-start gap-3">
+        {conflicts.map((issue, idx) =>
+        <button
+          key={idx}
+          onClick={() => issue.deliveries.length === 1 && onSelectDelivery?.(issue.deliveries[0])}
+          className="w-full p-3 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 rounded text-left transition-colors">
+
+            <div className="text-slate-50 flex items-start gap-3">
               <div className="mt-1">
                 {severityIcons[issue.severity]}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="text-slate-50 flex-1 min-w-0">
                 <p className="text-sm font-bold text-white">
                   {issue.title}
                 </p>
                 <p className="text-xs text-zinc-400 mt-0.5">
                   {issue.detail}
                 </p>
-                {issue.deliveries.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {issue.deliveries.slice(0, 3).map(d => (
-                      <Badge key={d.id} className="text-[10px] bg-zinc-900 border border-zinc-600">
+                {issue.deliveries.length > 0 &&
+              <div className="text-slate-50 mt-2 flex flex-wrap gap-2">
+                    {issue.deliveries.slice(0, 3).map((d) =>
+                <Badge key={d.id} className="text-[10px] bg-zinc-900 border border-zinc-600">
                         {d.delivery_number}
                       </Badge>
-                    ))}
-                    {issue.deliveries.length > 3 && (
-                      <Badge className="text-[10px] bg-zinc-900 border border-zinc-600">
+                )}
+                    {issue.deliveries.length > 3 &&
+                <Badge className="text-[10px] bg-zinc-900 border border-zinc-600">
                         +{issue.deliveries.length - 3}
                       </Badge>
-                    )}
+                }
                   </div>
-                )}
+              }
               </div>
             </div>
           </button>
-        ))}
+        )}
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 }

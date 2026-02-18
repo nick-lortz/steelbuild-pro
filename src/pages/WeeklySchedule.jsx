@@ -48,12 +48,12 @@ export default function WeeklySchedule() {
               <CardTitle className="text-2xl">{project?.name || 'Weekly Schedule'}</CardTitle>
               <p className="text-xs text-zinc-400 mt-1">Phase: {project?.phase || 'N/A'}</p>
             </div>
-            <Select value={activeProjectId || 'none'} onValueChange={(val) => setActiveProjectId(val === 'none' ? null : val)}>
+            <Select value={activeProjectId || 'all'} onValueChange={(val) => setActiveProjectId(val === 'all' ? null : val)}>
               <SelectTrigger className="w-80 bg-zinc-900 border-zinc-700">
                 <SelectValue placeholder="Select Project" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Select Project...</SelectItem>
+                <SelectItem value="all">All Projects</SelectItem>
                 {allProjects.map(p => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.project_number} - {p.name}

@@ -62,6 +62,7 @@ export default function EnhancedDrawingUpload({ projectId, onComplete }) {
         set_number: formData.set_number,
         title: formData.title,
         discipline: formData.discipline,
+        spec_section: formData.spec_section,
         status: formData.status,
         submitted_date: new Date().toISOString().split('T')[0],
         sheet_count: files.length,
@@ -69,7 +70,7 @@ export default function EnhancedDrawingUpload({ projectId, onComplete }) {
       });
 
       // Create initial revision
-      await base44.entities.DrawingRevision.create({
+      const revision = await base44.entities.DrawingRevision.create({
         project_id: projectId,
         drawing_set_id: drawingSet.id,
         revision_number: 'Rev 0',
@@ -77,6 +78,11 @@ export default function EnhancedDrawingUpload({ projectId, onComplete }) {
         description: 'Initial upload',
         status: formData.status,
         is_current: true
+      });
+
+      // Link revision back to drawing set
+      await base44.entities.DrawingSet.update(drawingSet.id, {
+        current_revision_id: revision.id
       });
 
       // Upload sheets

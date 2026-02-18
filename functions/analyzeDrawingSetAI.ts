@@ -4,8 +4,8 @@ Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
   
-  if (!user || !['admin', 'pm', 'detailer'].includes(user.role)) {
-    return Response.json({ error: 'Unauthorized' }, { status: 403 });
+  if (!user) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { drawing_set_id, project_id } = await req.json();

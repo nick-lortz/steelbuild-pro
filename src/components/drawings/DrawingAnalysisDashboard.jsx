@@ -12,6 +12,11 @@ import { cn } from '@/lib/utils';
 export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
   const queryClient = useQueryClient();
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
+
   const { data: conflicts = [] } = useQuery({
     queryKey: ['drawing-conflicts', projectId],
     queryFn: () => base44.entities.DrawingConflict.filter({ project_id: projectId }),
@@ -74,9 +79,13 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
 
   const convertToRFIMutation = useMutation({
     mutationFn: async (suggestion) => {
+      // Get max RFI number to avoid conflicts
+      const existingRFIs = await base44.entities.RFI.filter({ project_id: projectId });
+      const maxRFINumber = existingRFIs.reduce((max, rfi) => Math.max(max, rfi.rfi_number || 0), 0);
+      
       const rfi = await base44.entities.RFI.create({
         project_id: projectId,
-        rfi_number: Math.floor(Math.random() * 1000),
+        rfi_number: maxRFINumber + 1,
         subject: `Drawing Conflict - ${suggestion.location_reference || 'Auto-generated'}`,
         question: suggestion.proposed_question,
         status: 'draft',
@@ -490,7 +499,11 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                     <Button
                       size="sm"
                       onClick={() => {
-                        base44.entities.DesignIntentFlag.update(flag.id, { status: 'approved', approved_by: user.email, approved_at: new Date().toISOString() });
+                        base44.entities.DesignIntentFlag.update(flag.id, { 
+                          status: 'approved', 
+                          approved_by: currentUser?.email, 
+                          approved_at: new Date().toISOString() 
+                        });
                         queryClient.invalidateQueries(['design-flags']);
                         toast.success('Approved');
                       }}

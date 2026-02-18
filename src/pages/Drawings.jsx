@@ -18,7 +18,9 @@ import DrawingSetTable from '@/components/drawings/DrawingSetTable';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
 import DrawingUploadEnhanced from '@/components/drawings/DrawingUploadEnhanced';
-import { FileText, Plus, Upload, Search } from 'lucide-react';
+import EnhancedDrawingUpload from '@/components/drawings/EnhancedDrawingUpload';
+import DrawingAnalysisDashboard from '@/components/drawings/DrawingAnalysisDashboard';
+import { FileText, Plus, Upload, Search, Sparkles } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function Drawings() {
@@ -31,6 +33,7 @@ export default function Drawings() {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedSet, setSelectedSet] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showAnalysisDashboard, setShowAnalysisDashboard] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -211,12 +214,21 @@ export default function Drawings() {
               </SelectContent>
             </Select>
             <Button
+              onClick={() => setShowAnalysisDashboard(!showAnalysisDashboard)}
+              disabled={!activeProjectId}
+              variant="outline"
+              className="border-purple-700 text-purple-300 hover:bg-purple-900/20"
+            >
+              <Sparkles size={16} className="mr-2" />
+              AI Analysis
+            </Button>
+            <Button
               onClick={() => setShowUploadDialog(true)}
               disabled={!activeProjectId}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Upload size={16} className="mr-2" />
-              Upload Drawings
+              Upload Set
             </Button>
             <Button
               onClick={() => setShowCreateDialog(true)}
@@ -240,6 +252,12 @@ export default function Drawings() {
         </ContentSection>
       ) : (
         <>
+          {showAnalysisDashboard && (
+            <div className="mb-6">
+              <DrawingAnalysisDashboard projectId={activeProjectId} />
+            </div>
+          )}
+
           <MetricsBar
             metrics={[
               { label: 'Total Sets', value: metrics.total },
@@ -333,13 +351,14 @@ export default function Drawings() {
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800">
           <DialogHeader>
-            <DialogTitle>Upload Drawings</DialogTitle>
+            <DialogTitle>Upload Drawing Set with AI Analysis</DialogTitle>
           </DialogHeader>
-          <DrawingUploadEnhanced
+          <EnhancedDrawingUpload
             projectId={activeProjectId}
-            onUploadComplete={() => {
+            onComplete={() => {
               queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
               queryClient.invalidateQueries({ queryKey: ['drawing-sheets'] });
+              queryClient.invalidateQueries({ queryKey: ['drawing-conflicts'] });
               setShowUploadDialog(false);
             }}
           />

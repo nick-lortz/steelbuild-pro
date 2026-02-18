@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireAdmin } from './_lib/authz.js';
 
 const STANDARD_COST_CODES = [
   { code: '01', name: 'Detailing', category: 'labor' },
@@ -23,9 +24,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    requireAdmin(user);
 
     // Check if cost codes already exist
     const existing = await base44.entities.CostCode.list();

@@ -60,17 +60,12 @@ Deno.serve(async (req) => {
     const safetyIncidents = dailyLogs.filter(log => log.safety_incidents).length;
     const delayDays = dailyLogs.filter(log => log.delays).length;
 
-    // Build minimal, anonymized prompt (no names, no exact contract values)
-    const contractMagnitude = project.contract_value > 1000000 ? '>$1M' : 
-                             project.contract_value > 500000 ? '$500K-$1M' :
-                             project.contract_value > 100000 ? '$100K-$500K' : '<$100K';
-    
+    // Build minimal, anonymized metrics (NO contract values, NO project names, NO PII)
     const prompt = `You are an AI risk analyst for structural steel construction projects. Analyze this project for risks, delays, and issues.
 
 PROJECT PHASE: ${project.phase}
 Status: ${project.status}
-Target Completion: ${project.target_completion}
-Contract Magnitude: ${contractMagnitude}
+Target: ${project.target_completion}
 
 SCHEDULE METRICS:
 - Total Tasks: ${tasks.length}
@@ -91,8 +86,7 @@ DRAWINGS:
 
 FINANCIAL:
 - Budget Variance: ${budgetVariance.toFixed(1)}%
-- Total Actual Costs: $${totalActual.toLocaleString()}
-- Total Budget: $${totalBudget.toLocaleString()}
+- Variance Status: ${budgetVariance > 10 ? 'Over' : budgetVariance < -5 ? 'Under' : 'On Track'}
 
 FIELD CONDITIONS (Last 7 Days):
 - Safety Incidents: ${safetyIncidents}

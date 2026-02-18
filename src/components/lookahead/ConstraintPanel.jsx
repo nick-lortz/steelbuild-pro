@@ -10,16 +10,15 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, AlertCircle, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Shield, AlertTriangle } from 'lucide-react';
+import WaiverDialog from './WaiverDialog';
 import { cn } from '@/lib/utils';
 
 export default function ConstraintPanel({ taskId, open, onClose, projectId }) {
   const queryClient = useQueryClient();
-  const [waiverReason, setWaiverReason] = useState('');
-  const [selectedConstraintId, setSelectedConstraintId] = useState(null);
+  const [waiverDialogOpen, setWaiverDialogOpen] = useState(false);
+  const [selectedConstraintForWaiver, setSelectedConstraintForWaiver] = useState(null);
 
   const { data: task } = useQuery({
     queryKey: ['task', taskId],
@@ -51,40 +50,74 @@ export default function ConstraintPanel({ taskId, open, onClose, projectId }) {
 
   const clearMutation = useMutation({
     mutationFn: async (constraintId) => {
+      const user = await base44.auth.me();
       await base44.entities.Constraint.update(constraintId, {
         status: 'CLEARED',
-        cleared_at: new Date().toISOString()
+        cleared_at: new Date().toISOString(),
+        cleared_by_user_id: user.email
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Re-evaluate task readiness
+      if (taskId && projectId) {
+        await base44.functions.invoke('evaluateErectionReadiness', { 
+          project_id: projectId,
+          task_id: taskId 
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['constraints'] });
       queryClient.invalidateQueries({ queryKey: ['erectionLookahead'] });
+      queryClient.invalidateQueries({ queryKey: ['erectionReadiness'] });
     }
   });
 
   const waiveMutation = useMutation({
-    mutationFn: async ({ constraintId, reason }) => {
-      await base44.entities.Constraint.update(constraintId, {
+    mutationFn: async ({ constraint_id, reason_code, notes }) => {
+      const user = await base44.auth.me();
+      
+      // Update constraint with waiver details
+      await base44.entities.Constraint.update(constraint_id, {
         status: 'WAIVED',
         waived_at: new Date().toISOString(),
-        waiver_reason: reason
+        waived_by_user_id: user.email,
+        waiver_reason: `[${reason_code}] ${notes}`
+      });
+
+      // Log audit trail
+      await base44.entities.AuditLog.create({
+        project_id: projectId,
+        entity_type: 'Constraint',
+        entity_id: constraint_id,
+        action: 'WAIVED',
+        action_by: user.email,
+        action_timestamp: new Date().toISOString(),
+        details: {
+          reason_code,
+          notes,
+          task_id: taskId,
+          constraint_type: selectedConstraintForWaiver?.constraint_type
+        }
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Re-evaluate task readiness
+      if (taskId && projectId) {
+        await base44.functions.invoke('evaluateErectionReadiness', { 
+          project_id: projectId,
+          task_id: taskId 
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['constraints'] });
       queryClient.invalidateQueries({ queryKey: ['erectionLookahead'] });
-      setWaiverReason('');
-      setSelectedConstraintId(null);
+      queryClient.invalidateQueries({ queryKey: ['erectionReadiness'] });
+      setWaiverDialogOpen(false);
+      setSelectedConstraintForWaiver(null);
     }
   });
 
-  const handleWaive = (constraintId) => {
-    if (!waiverReason.trim()) {
-      alert('Waiver reason required');
-      return;
-    }
-
-    waiveMutation.mutate({ constraintId, reason: waiverReason });
+  const handleWaiveClick = (constraint) => {
+    setSelectedConstraintForWaiver(constraint);
+    setWaiverDialogOpen(true);
   };
 
   const blockers = constraints.filter(c => c.severity === 'BLOCKER');
@@ -125,49 +158,28 @@ export default function ConstraintPanel({ taskId, open, onClose, projectId }) {
                               </Badge>
                             )}
                           </div>
-                          <X 
-                            className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer"
-                            onClick={() => setSelectedConstraintId(constraint.id)}
-                          />
                         </div>
 
-                        {selectedConstraintId === constraint.id && (
-                          <div className="pt-3 border-t border-border space-y-2">
-                            <Label className="text-xs">Waiver Reason (PM Only)</Label>
-                            <Textarea
-                              value={waiverReason}
-                              onChange={(e) => setWaiverReason(e.target.value)}
-                              placeholder="Document why this constraint is being waived..."
-                              rows={3}
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => clearMutation.mutate(constraint.id)}
-                              >
-                                Mark Cleared
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => handleWaive(constraint.id)}
-                                disabled={!waiverReason.trim()}
-                              >
-                                Waive
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setSelectedConstraintId(null);
-                                  setWaiverReason('');
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => clearMutation.mutate(constraint.id)}
+                            disabled={clearMutation.isPending}
+                          >
+                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                            Mark Cleared
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleWaiveClick(constraint)}
+                            className="text-amber-500 border-amber-500/30 hover:bg-amber-500/10"
+                          >
+                            <Shield className="w-3 h-3 mr-1" />
+                            Waive (PM)
+                          </Button>
+                        </div>
                       </div>
                     </AlertDescription>
                   </Alert>
@@ -223,6 +235,13 @@ export default function ConstraintPanel({ taskId, open, onClose, projectId }) {
           )}
         </div>
       </SheetContent>
+
+      <WaiverDialog
+        open={waiverDialogOpen}
+        onOpenChange={setWaiverDialogOpen}
+        constraint={selectedConstraintForWaiver}
+        onWaive={waiveMutation.mutate}
+      />
     </Sheet>
   );
 }

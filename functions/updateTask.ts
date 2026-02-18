@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { validateInput, TaskUpdateSchema } from './utils/schemas.js';
 import { handleFunctionError } from './utils/errorHandler.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 function validateTaskData(data: any): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -74,29 +75,13 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Get existing task to verify access
     const existingTasks = await base44.asServiceRole.entities.Task.filter({ id: task_id });
     if (!existingTasks.length) {
       return Response.json({ error: 'Task not found' }, { status: 404 });
     }
 
     const existingTask = existingTasks[0];
-
-    // Verify user has access to the project
-    const projects = await base44.asServiceRole.entities.Project.filter({ id: existingTask.project_id });
-    if (!projects.length) {
-      return Response.json({ error: 'Project not found' }, { status: 404 });
-    }
-    
-    const project = projects[0];
-    const hasAccess = user.role === 'admin' || 
-      project.project_manager === user.email || 
-      project.superintendent === user.email ||
-      (project.assigned_users && project.assigned_users.includes(user.email));
-
-    if (!hasAccess) {
-      return Response.json({ error: 'Access denied to this project' }, { status: 403 });
-    }
+    await requireProjectAccess(base44, user, existingTask.project_id);
 
     // Update task
     const updatedTask = await base44.asServiceRole.entities.Task.update(task_id, task_data);

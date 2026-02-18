@@ -13,9 +13,17 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Load all projects (for analysis, not user-filtered)
-    const allProjects = await base44.entities.Project.list('-start_date');
-    if (allProjects.length === 0) {
+    // Load user's accessible projects only
+    const allProjects = await base44.asServiceRole.entities.Project.list('-start_date');
+    const accessibleProjects = user.role === 'admin' 
+      ? allProjects
+      : allProjects.filter(p => 
+          p.project_manager === user.email ||
+          p.superintendent === user.email ||
+          (p.assigned_users && p.assigned_users.includes(user.email))
+        );
+    
+    if (accessibleProjects.length === 0) {
       return Response.json({ 
         trends: {}, 
         bottlenecks: [], 
@@ -25,20 +33,20 @@ Deno.serve(async (req) => {
     }
 
     // Filter to completed or near-complete projects (min 50% progress)
-    const completedProjects = allProjects.filter(p => 
+    const completedProjects = accessibleProjects.filter(p => 
       p.status === 'completed' || p.status === 'closed'
     );
 
-    const projectIds = allProjects.map(p => p.id);
+    const projectIds = accessibleProjects.map(p => p.id);
 
-    // Parallel load all related data
+    // Parallel load all related data (capped)
     const [tasks, financials, rfis, changeOrders, laborHours, workPackages] = await Promise.all([
-      base44.entities.Task.filter({ project_id: { $in: projectIds } }),
-      base44.entities.Financial.filter({ project_id: { $in: projectIds } }),
-      base44.entities.RFI.filter({ project_id: { $in: projectIds } }),
-      base44.entities.ChangeOrder.filter({ project_id: { $in: projectIds } }),
-      base44.entities.LaborHours.filter({ project_id: { $in: projectIds } }),
-      base44.entities.WorkPackage.filter({ project_id: { $in: projectIds } })
+      base44.asServiceRole.entities.Task.filter({ project_id: { $in: projectIds } }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Financial.filter({ project_id: { $in: projectIds } }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.RFI.filter({ project_id: { $in: projectIds } }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.ChangeOrder.filter({ project_id: { $in: projectIds } }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.LaborHours.filter({ project_id: { $in: projectIds } }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.WorkPackage.filter({ project_id: { $in: projectIds } }, null, MAX_ITEMS)
     ]);
 
     // Index by project

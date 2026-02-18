@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { callLLMSafe } from './_lib/aiPolicy.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,9 +12,16 @@ Deno.serve(async (req) => {
     }
 
     const { project_id } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    await requireProjectAccess(base44, user, project_id);
+    const MAX_ITEMS = 500;
 
-    // Fetch project data
-    const projects = await base44.entities.Project.filter({ id: project_id });
+    // Fetch project data (capped)
+    const projects = await base44.asServiceRole.entities.Project.filter({ id: project_id });
     const project = projects[0];
 
     if (!project) {
@@ -21,12 +30,12 @@ Deno.serve(async (req) => {
 
     // Fetch related data
     const [workPackages, tasks, drawingSets, fabrications, deliveries, financials] = await Promise.all([
-      base44.entities.WorkPackage.filter({ project_id }),
-      base44.entities.Task.filter({ project_id }),
-      base44.entities.DrawingSet.filter({ project_id }),
-      base44.entities.Fabrication.filter({ project_id }),
-      base44.entities.Delivery.filter({ project_id }),
-      base44.entities.Financial.filter({ project_id })
+      base44.asServiceRole.entities.WorkPackage.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.DrawingSet.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Fabrication.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Delivery.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Financial.filter({ project_id }, null, MAX_ITEMS)
     ]);
 
     // Calculate risk metrics
@@ -56,11 +65,10 @@ Deno.serve(async (req) => {
     const budgetTotal = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
     const costOverrunPct = budgetTotal > 0 ? (budgetVariance / budgetTotal) * 100 : 0;
 
-    // Predictive analysis using AI
-    const prediction = await base44.integrations.Core.InvokeLLM({
+    // Predictive analysis using AI (anonymized)
+    const prediction = await callLLMSafe(base44, {
       prompt: `You are analyzing a structural steel construction project for risk prediction.
 
-PROJECT: ${project.name}
 Target Completion: ${project.target_completion || 'Not set'}
 Current Phase: ${project.phase}
 
@@ -86,17 +94,17 @@ DELIVERY METRICS:
 - On-time delivery rate: ${(onTimeDeliveryRate * 100).toFixed(1)}%
 
 COST METRICS:
-- Total budget: $${budgetTotal.toLocaleString()}
-- Budget variance: $${budgetVariance.toLocaleString()}
-- Cost overrun: ${costOverrunPct.toFixed(1)}%
+- Budget variance: ${costOverrunPct.toFixed(1)}%
 
-Based on these metrics, predict:
+Based on these metrics, predict (NO PII, NO names):
 1. Probability of project delay (low, medium, high) and estimated days at risk
 2. Top 3 critical risks (schedule, cost, quality, coordination)
 3. Recommended actions to mitigate risks
 4. Cost forecast at completion (likely final cost overrun %)
 
 Be specific and construction-focused. Think like a PM analyzing project health.`,
+      payload: null,
+      project_id,
       response_json_schema: {
         type: "object",
         properties: {
@@ -136,7 +144,6 @@ Be specific and construction-focused. Think like a PM analyzing project health.`
 
     return Response.json({
       project_id,
-      project_name: project.name,
       metrics: {
         schedule: {
           total_tasks: tasks.length,

@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
@@ -15,13 +17,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Two drawing set IDs required' }, { status: 400 });
     }
 
-    // Get both drawing sets
+    // Get both drawing sets and verify project access
     const [drawingSet1] = await base44.asServiceRole.entities.DrawingSet.filter({ id: drawing_set_id_1 });
     const [drawingSet2] = await base44.asServiceRole.entities.DrawingSet.filter({ id: drawing_set_id_2 });
 
     if (!drawingSet1 || !drawingSet2) {
       return Response.json({ error: 'One or both drawing sets not found' }, { status: 404 });
     }
+    
+    // Drawing comparisons require Detailer/PM/Admin
+    requireRole(user, ['admin', 'pm', 'detailer']);
+    
+    // Both sets must be from same project
+    if (drawingSet1.project_id !== drawingSet2.project_id) {
+      return Response.json({ error: 'Drawing sets must be from same project' }, { status: 400 });
+    }
+    
+    await requireProjectAccess(base44, user, drawingSet1.project_id);
 
     // Get sheets for both sets
     const sheets1 = await base44.asServiceRole.entities.DrawingSheet.filter({ 

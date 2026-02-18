@@ -46,18 +46,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'revision_id required' }, { status: 400 });
     }
 
-    // Update status to in_progress
-    await base44.asServiceRole.entities.DrawingRevision.update(revision_id, {
-      qa_status: 'in_progress'
-    });
-
-    // Get revision
+    // Get revision and verify project access
     const revisions = await base44.asServiceRole.entities.DrawingRevision.filter({ id: revision_id });
     const revision = revisions[0];
     
     if (!revision) {
       return Response.json({ error: 'Revision not found' }, { status: 404 });
     }
+    
+    // QA requires Detailer/PM/Admin
+    const { requireRole } = await import('./_lib/authz.js');
+    const { requireProjectAccess } = await import('./utils/requireProjectAccess.js');
+    requireRole(user, ['admin', 'pm', 'detailer']);
+    await requireProjectAccess(base44, user, revision.project_id);
+
+    // Update status to in_progress
+    await base44.asServiceRole.entities.DrawingRevision.update(revision_id, {
+      qa_status: 'in_progress'
+    });
 
     const findings = [];
     let p0Count = 0;

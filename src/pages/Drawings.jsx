@@ -115,15 +115,17 @@ export default function Drawings() {
         total_revision_count: 1
       });
 
-      await base44.entities.DrawingRevision.create({
-        project_id: data.project_id,
-        drawing_set_id: createdSet.id,
-        revision_number: 'Rev 0',
-        revision_date: new Date().toISOString().split('T')[0],
-        description: 'Initial submission',
-        status: data.status || 'IFA',
-        is_current: true
-      });
+      if (createdSet && createdSet.id) {
+        await base44.entities.DrawingRevision.create({
+          project_id: createdSet.project_id,
+          drawing_set_id: createdSet.id,
+          revision_number: 'Rev 0',
+          revision_date: new Date().toISOString().split('T')[0],
+          description: 'Initial submission',
+          status: createdSet.status || 'IFA',
+          is_current: true
+        });
+      }
 
       return createdSet;
     },

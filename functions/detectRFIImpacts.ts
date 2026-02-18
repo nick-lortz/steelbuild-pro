@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 /**
  * Detect what work is blocked by an RFI
@@ -7,7 +9,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const { project_id, linked_task_ids, linked_piece_marks, linked_delivery_ids } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // RFI impact analysis requires PM/Detailer/Admin
+    requireRole(user, ['admin', 'pm', 'detailer']);
+    
+    // Verify project access
+    await requireProjectAccess(base44, user, project_id);
 
     const impacts = {
       fabrication_blocked: false,
@@ -20,11 +38,12 @@ Deno.serve(async (req) => {
       days_of_impact: 0
     };
 
-    // Check tasks
+    // Check tasks (cap to prevent abuse)
     if (linked_task_ids && linked_task_ids.length > 0) {
+      const taskIdsCapped = linked_task_ids.slice(0, 100);
       const tasks = await base44.entities.Task.filter({
         project_id,
-        id: { $in: linked_task_ids }
+        id: { $in: taskIdsCapped }
       });
 
       tasks.forEach(task => {
@@ -41,11 +60,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check deliveries
+    // Check deliveries (cap to prevent abuse)
     if (linked_delivery_ids && linked_delivery_ids.length > 0) {
+      const deliveryIdsCapped = linked_delivery_ids.slice(0, 100);
       const deliveries = await base44.entities.Delivery.filter({
         project_id,
-        id: { $in: linked_delivery_ids }
+        id: { $in: deliveryIdsCapped }
       });
 
       if (deliveries.length > 0) {

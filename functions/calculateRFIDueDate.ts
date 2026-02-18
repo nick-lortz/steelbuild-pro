@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 /**
  * Auto-calculate RFI due date based on impacted task start date
@@ -8,7 +9,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const { project_id, rfi_id, linked_task_ids } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // Verify project access
+    await requireProjectAccess(base44, user, project_id);
 
     if (!linked_task_ids || linked_task_ids.length === 0) {
       return Response.json({ due_date: null, days_until_impact: null });

@@ -1,9 +1,66 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+/**
+ * Webhook endpoint for GPS tracking updates
+ * Requires HMAC signature validation (X-Signature header)
+ */
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
   
-  const { delivery_id, lat, lng, speed_mph, heading } = await req.json();
+  // WEBHOOK SECURITY: Validate HMAC signature
+  const signature = req.headers.get('x-signature');
+  const webhookSecret = Deno.env.get('DELIVERY_WEBHOOK_SECRET');
+  
+  if (!webhookSecret) {
+    return Response.json({ 
+      error: 'Webhook not configured',
+      required_secrets: ['DELIVERY_WEBHOOK_SECRET']
+    }, { status: 500 });
+  }
+  
+  if (!signature) {
+    return Response.json({ error: 'Missing X-Signature header' }, { status: 401 });
+  }
+  
+  // Read raw body for HMAC validation
+  const rawBody = await req.text();
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(webhookSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const expectedSignature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(rawBody)
+  );
+  
+  const expectedHex = Array.from(new Uint8Array(expectedSignature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Timing-safe comparison
+  if (signature !== expectedHex) {
+    return Response.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+  
+  // Validate timestamp to prevent replay (±5 min)
+  const timestampHeader = req.headers.get('x-timestamp');
+  if (timestampHeader) {
+    const requestTime = parseInt(timestampHeader);
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    if (Math.abs(now - requestTime) > fiveMinutes) {
+      return Response.json({ error: 'Request timestamp too old' }, { status: 401 });
+    }
+  }
+  
+  const { delivery_id, lat, lng, speed_mph, heading } = JSON.parse(rawBody);
 
   if (!delivery_id || !lat || !lng) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -15,6 +72,14 @@ Deno.serve(async (req) => {
   }
 
   const currentDelivery = delivery[0];
+  
+  // Additional validation: ensure delivery is in trackable state
+  if (!['confirmed', 'in_transit'].includes(currentDelivery.delivery_status)) {
+    return Response.json({ 
+      error: 'Delivery not in trackable state',
+      current_status: currentDelivery.delivery_status
+    }, { status: 400 });
+  }
   const timestamp = new Date().toISOString();
 
   // Update current location

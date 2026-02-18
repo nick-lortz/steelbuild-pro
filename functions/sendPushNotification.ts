@@ -32,15 +32,20 @@ Deno.serve(async (req) => {
     // Send push notification using Web Push API
     const webpush = await import('npm:web-push@3.6.7');
     
-    const vapidKeys = {
-      publicKey: Deno.env.get('VAPID_PUBLIC_KEY'),
-      privateKey: Deno.env.get('VAPID_PRIVATE_KEY')
-    };
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      return Response.json({ 
+        error: 'VAPID keys not configured',
+        required_secrets: ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY']
+      }, { status: 500 });
+    }
 
     webpush.setVapidDetails(
       'mailto:notifications@steelbuildpro.com',
-      vapidKeys.publicKey,
-      vapidKeys.privateKey
+      vapidPublicKey,
+      vapidPrivateKey
     );
 
     const payload = JSON.stringify({

@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 /**
  * Cluster RFIs to identify design problem areas
@@ -8,12 +10,29 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const { project_id } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // RFI analysis requires PM/Detailer/Admin
+    requireRole(user, ['admin', 'pm', 'detailer']);
+    
+    // Verify project access
+    await requireProjectAccess(base44, user, project_id);
 
+    const MAX_RFIS = 1000; // Performance cap
     const rfis = await base44.entities.RFI.filter({
       project_id,
       status: { $ne: 'closed' }
-    });
+    }, null, MAX_RFIS);
 
     // Cluster by location
     const byLocation = {};

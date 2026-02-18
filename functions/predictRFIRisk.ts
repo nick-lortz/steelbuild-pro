@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 /**
  * Predict RFI response time & impact risk based on historical project data
@@ -7,13 +9,30 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const { project_id, rfi_type, discipline, is_blocker } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // RFI risk prediction requires PM/Detailer/Admin
+    requireRole(user, ['admin', 'pm', 'detailer']);
+    
+    // Verify project access
+    await requireProjectAccess(base44, user, project_id);
 
-    // Fetch historical RFIs from project
+    // Fetch historical RFIs from project (cap for performance)
+    const MAX_HISTORICAL = 500;
     const historicalRFIs = await base44.entities.RFI.filter({
       project_id,
       status: 'closed'
-    });
+    }, null, MAX_HISTORICAL);
 
     if (historicalRFIs.length === 0) {
       return Response.json({

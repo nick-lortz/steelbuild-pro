@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { requireRole } from './_lib/authz.js';
 
 /**
  * Auto-route RFI to appropriate stakeholders based on type & discipline
@@ -9,7 +11,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     const { project_id, rfi_type, discipline, is_internal } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    // RFI routing requires PM/Detailer/Superintendent/Admin
+    requireRole(user, ['admin', 'pm', 'superintendent', 'detailer']);
+    
+    // Verify project access
+    await requireProjectAccess(base44, user, project_id);
 
     const routing = {
       connection_detail: { role: 'structural_engineer', internal: true },

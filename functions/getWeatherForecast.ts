@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -13,10 +14,13 @@ Deno.serve(async (req) => {
     
     const project = await base44.entities.Project.list().then(p => p.find(pr => pr.id === project_id));
     const location = project?.location || 'Phoenix, AZ';
+    
+    // Redact any PII from location string
+    const safeLocation = redactPII(location);
 
-    // Use weather API (example with Open-Meteo - free, no API key needed)
+    // Use weather API (Open-Meteo - free, no API key, minimal data exposure)
     const geocodeResponse = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(safeLocation)}&count=1&language=en&format=json`
     );
     const geocodeData = await geocodeResponse.json();
     

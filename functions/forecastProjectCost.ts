@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { callLLMSafe, preparePayload } from './_lib/aiPolicy.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,13 +11,14 @@ Deno.serve(async (req) => {
     }
 
     const { project_id } = await req.json();
+    const MAX_ITEMS = 500;
 
     const [project, financials, workPackages, changeOrders, tasks] = await Promise.all([
       base44.entities.Project.filter({ id: project_id }).then(p => p[0]),
-      base44.entities.Financial.filter({ project_id }),
-      base44.entities.WorkPackage.filter({ project_id }),
-      base44.entities.ChangeOrder.filter({ project_id }),
-      base44.entities.Task.filter({ project_id })
+      base44.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.WorkPackage.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Task.filter({ project_id }, null, MAX_ITEMS)
     ]);
 
     if (!project) {
@@ -47,39 +49,37 @@ Deno.serve(async (req) => {
     // Cost velocity (burn rate)
     const monthlyBurn = totalActual / Math.max((overallProgress / 100), 0.01); // Extrapolate based on progress
     
-    // Use AI for sophisticated forecast
-    const forecast = await base44.integrations.Core.InvokeLLM({
-      prompt: `Analyze construction project cost forecast.
+    // Use AI for sophisticated forecast (anonymized)
+    const prompt = `Analyze construction project cost forecast.
 
-PROJECT: ${project.name}
-Contract Value: $${(project.contract_value || 0).toLocaleString()}
-Target Completion: ${project.target_completion || 'Not set'}
+PROJECT PHASE: ${project.phase}
+Target: ${project.target_completion || 'Not set'}
 
-FINANCIAL DATA:
-- Total Budget: $${totalBudget.toLocaleString()}
-- Actual Costs: $${totalActual.toLocaleString()}
-- Committed: $${totalCommitted.toLocaleString()}
-- Current Forecast: $${totalForecast.toLocaleString()}
+FINANCIAL DATA (RATIOS):
+- Budget/Actual Ratio: ${(totalBudget > 0 ? totalActual / totalBudget : 0).toFixed(2)}
+- Committed %: ${(totalBudget > 0 ? (totalCommitted / totalBudget) * 100 : 0).toFixed(1)}%
+- Forecast Variance: ${(totalForecast - totalBudget).toFixed(0)} (magnitude)
 
 PROGRESS:
 - Work Package Completion: ${overallProgress.toFixed(1)}%
 - Task Completion: ${(taskProgress * 100).toFixed(1)}%
 
 CHANGE ORDERS:
-- Approved COs: ${approvedCOs.length} totaling $${totalCOImpact.toLocaleString()}
-- Pending COs: ${pendingCOs.length} totaling $${potentialCOImpact.toLocaleString()}
-
-BURN RATE:
-- Monthly cost velocity: $${monthlyBurn.toLocaleString()}
+- Approved COs: ${approvedCOs.length} items
+- Pending COs: ${pendingCOs.length} items
 
 Provide cost forecast including:
-1. Estimated final cost (best case, likely case, worst case)
-2. Projected cost overrun or underrun percentage
-3. Key cost drivers (labor, material, change orders, delays)
-4. Confidence level (high, medium, low)
-5. Risk factors that could affect forecast
+1. Estimated variance percentages (best, likely, worst case)
+2. Key cost drivers (categories only, no amounts)
+3. Confidence level
+4. Risk factors
 
-Be realistic and data-driven.`,
+NO specific dollar amounts in output, NO names.`;
+
+    const forecast = await callLLMSafe(base44, {
+      prompt,
+      payload: null,
+      project_id,
       response_json_schema: {
         type: "object",
         properties: {
@@ -111,9 +111,9 @@ Be realistic and data-driven.`,
       }
     });
 
+    // Return sanitized response (real financials, AI insights)
     return Response.json({
       project_id,
-      project_name: project.name,
       current_state: {
         contract_value: project.contract_value,
         total_budget: totalBudget,

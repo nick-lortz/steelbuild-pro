@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,6 +11,7 @@ Deno.serve(async (req) => {
     }
 
     const { week_id, project_ids } = await req.json();
+    const MAX_NOTES = 500;
 
     if (!week_id) {
       return Response.json({ error: 'week_id required' }, { status: 400 });
@@ -22,7 +24,7 @@ Deno.serve(async (req) => {
       query = { week_id, project_id: { $in: project_ids } };
     }
 
-    const notes = await base44.entities.ProductionNote.filter(query);
+    const notes = await base44.entities.ProductionNote.filter(query, null, MAX_NOTES);
     const projects = await base44.entities.Project.list();
 
     // Get project names map
@@ -37,21 +39,21 @@ Deno.serve(async (req) => {
     const blockers = notes.filter(n => n.note_type === 'blocker' || n.priority === 'critical');
     const risks = notes.filter(n => n.note_type === 'risk');
 
-    // Build context for AI
+    // Build context for AI (redact PII from notes)
     const context = `
 You are summarizing production meeting notes for week ${week_id} for a structural steel fabrication and erection company.
 
 DECISIONS MADE (${decisions.length}):
-${decisions.map(d => `- [${projectMap[d.project_id]}] ${d.title || d.body} (${d.category})`).join('\n')}
+${decisions.map(d => `- [Project] ${redactPII(d.title || d.body)} (${d.category})`).join('\n')}
 
 OPEN ACTION ITEMS (${actions.length}):
-${actions.map(a => `- [${projectMap[a.project_id]}] ${a.title || a.body} | Owner: ${a.owner_email || 'Unassigned'} | Due: ${a.due_date || 'No date'} | Status: ${a.status}`).join('\n')}
+${actions.map(a => `- [Project] ${redactPII(a.title || a.body)} | Due: ${a.due_date || 'TBD'} | Status: ${a.status}`).join('\n')}
 
 BLOCKERS & CRITICAL ITEMS (${blockers.length}):
-${blockers.map(b => `- [${projectMap[b.project_id]}] ${b.title || b.body}`).join('\n')}
+${blockers.map(b => `- [Project] ${redactPII(b.title || b.body)}`).join('\n')}
 
 RISKS IDENTIFIED (${risks.length}):
-${risks.map(r => `- [${projectMap[r.project_id]}] ${r.title || r.body}`).join('\n')}
+${risks.map(r => `- [Project] ${redactPII(r.title || r.body)}`).join('\n')}
 
 Generate a concise executive summary in the following format:
 

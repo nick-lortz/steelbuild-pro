@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
 
 Deno.serve(async (req) => {
   try {
@@ -7,8 +8,12 @@ Deno.serve(async (req) => {
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    // Executive summaries for PM/Finance/Admin only
+    requireRole(user, ['admin', 'pm', 'finance']);
 
     const { project_id, report_type = 'weekly' } = await req.json();
+    const MAX_ITEMS = 500;
 
     // Calculate date range
     const today = new Date();
@@ -17,16 +22,16 @@ Deno.serve(async (req) => {
     startDate.setDate(startDate.getDate() - daysAgo);
     const dateFilter = startDate.toISOString().split('T')[0];
 
-    // Fetch data
+    // Fetch data (capped for performance)
     const [project, tasks, financials, expenses, rfis, changeOrders, drawingSets, dailyLogs] = await Promise.all([
       base44.entities.Project.filter({ id: project_id }),
-      base44.entities.Task.filter({ project_id }),
-      base44.entities.Financial.filter({ project_id }),
-      base44.entities.Expense.filter({ project_id }),
-      base44.entities.RFI.filter({ project_id }),
-      base44.entities.ChangeOrder.filter({ project_id }),
-      base44.entities.DrawingSet.filter({ project_id }),
-      base44.entities.DailyLog.filter({ project_id })
+      base44.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.Expense.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.RFI.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.DrawingSet.filter({ project_id }, null, MAX_ITEMS),
+      base44.entities.DailyLog.filter({ project_id }, null, 100)
     ]);
 
     if (!project[0]) {

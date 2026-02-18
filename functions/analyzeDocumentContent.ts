@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,12 +11,15 @@ Deno.serve(async (req) => {
     }
 
     const { document_id, file_url, title, current_category } = await req.json();
+    
+    // Redact PII from title before LLM
+    const safeTitle = redactPII(title);
 
     // Use AI to analyze document and suggest categorization
     const analysisResult = await base44.integrations.Core.InvokeLLM({
       prompt: `You are analyzing a construction document for a structural steel project management system.
 
-Document title: "${title}"
+Document title: "${safeTitle}"
 Current category: "${current_category || 'not set'}"
 
 Based on the title and optionally the file content (if image/PDF), suggest:

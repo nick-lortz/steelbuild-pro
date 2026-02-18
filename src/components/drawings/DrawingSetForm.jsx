@@ -11,17 +11,12 @@ import { Badge } from "@/components/ui/badge";
 export default function DrawingSetForm({ projects, projectId, drawingSet, onSubmit, onCancel, isLoading }) {
   const [formData, setFormData] = useState({
     project_id: drawingSet?.project_id || projectId || '',
-    set_name: drawingSet?.set_name || '',
+    title: drawingSet?.title || '',
     set_number: drawingSet?.set_number || '',
-    current_revision: drawingSet?.current_revision || 'Rev 0',
     status: drawingSet?.status || 'IFA',
     discipline: drawingSet?.discipline || 'structural',
-    ifa_date: drawingSet?.ifa_date || '',
-    bfa_date: drawingSet?.bfa_date || '',
-    bfs_date: drawingSet?.bfs_date || '',
-    released_for_fab_date: drawingSet?.released_for_fab_date || '',
-    due_date: drawingSet?.due_date || '',
-    reviewer: drawingSet?.reviewer || '',
+    submitted_date: drawingSet?.submitted_date || '',
+    approved_date: drawingSet?.approved_date || '',
     notes: drawingSet?.notes || '',
   });
 
@@ -55,7 +50,6 @@ export default function DrawingSetForm({ projects, projectId, drawingSet, onSubm
     const setData = {
       ...formData,
       sheet_count: files.length,
-      ai_review_status: files.length > 0 ? 'pending' : 'completed',
     };
 
     // Just pass the data up - let parent handle creation
@@ -116,32 +110,22 @@ Keep the summary concise (2-3 sentences).`;
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Set Number</Label>
-            <Input
-              value={formData.set_number}
-              onChange={(e) => handleChange('set_number', e.target.value)}
-              placeholder="e.g., S-100"
-              className="bg-zinc-800 border-zinc-700 font-mono"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Revision</Label>
-            <Input
-              value={formData.current_revision}
-              onChange={(e) => handleChange('current_revision', e.target.value)}
-              placeholder="e.g., Rev 0"
-              className="bg-zinc-800 border-zinc-700 font-mono"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Set Number *</Label>
+          <Input
+            value={formData.set_number}
+            onChange={(e) => handleChange('set_number', e.target.value)}
+            placeholder="e.g., S-100"
+            required
+            className="bg-zinc-800 border-zinc-700 font-mono"
+          />
         </div>
 
         <div className="space-y-2">
-          <Label>Set Name *</Label>
+          <Label>Title *</Label>
           <Input
-            value={formData.set_name}
-            onChange={(e) => handleChange('set_name', e.target.value)}
+            value={formData.title}
+            onChange={(e) => handleChange('title', e.target.value)}
             placeholder="e.g., Structural Steel - Level 1"
             required
             className="bg-zinc-800 border-zinc-700"
@@ -172,10 +156,11 @@ Keep the summary concise (2-3 sentences).`;
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="structural">Structural</SelectItem>
-                <SelectItem value="misc_metals">Misc Metals</SelectItem>
-                <SelectItem value="stairs">Stairs</SelectItem>
-                <SelectItem value="handrails">Handrails</SelectItem>
-                <SelectItem value="connections">Connections</SelectItem>
+                <SelectItem value="architectural">Architectural</SelectItem>
+                <SelectItem value="mechanical">Mechanical</SelectItem>
+                <SelectItem value="electrical">Electrical</SelectItem>
+                <SelectItem value="plumbing">Plumbing</SelectItem>
+                <SelectItem value="civil">Civil</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
@@ -183,68 +168,28 @@ Keep the summary concise (2-3 sentences).`;
         </div>
       </div>
 
-      {/* Milestones */}
+      {/* Key Dates */}
       <div className="border-t border-zinc-800 pt-4">
-        <h4 className="text-sm font-medium text-zinc-400 mb-3">Milestone Dates</h4>
+        <h4 className="text-sm font-medium text-zinc-400 mb-3">Key Dates</h4>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>IFA Date</Label>
+            <Label>Submitted Date</Label>
             <Input
               type="date"
-              value={formData.ifa_date}
-              onChange={(e) => handleChange('ifa_date', e.target.value)}
+              value={formData.submitted_date}
+              onChange={(e) => handleChange('submitted_date', e.target.value)}
               className="bg-zinc-800 border-zinc-700"
             />
           </div>
           <div className="space-y-2">
-            <Label>BFA Date</Label>
+            <Label>Approved Date</Label>
             <Input
               type="date"
-              value={formData.bfa_date}
-              onChange={(e) => handleChange('bfa_date', e.target.value)}
+              value={formData.approved_date}
+              onChange={(e) => handleChange('approved_date', e.target.value)}
               className="bg-zinc-800 border-zinc-700"
             />
           </div>
-          <div className="space-y-2">
-            <Label>BFS Date</Label>
-            <Input
-              type="date"
-              value={formData.bfs_date}
-              onChange={(e) => handleChange('bfs_date', e.target.value)}
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Released for Fab</Label>
-            <Input
-              type="date"
-              value={formData.released_for_fab_date}
-              onChange={(e) => handleChange('released_for_fab_date', e.target.value)}
-              className="bg-zinc-800 border-zinc-700"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Due Date & Reviewer */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Due Date</Label>
-          <Input
-            type="date"
-            value={formData.due_date}
-            onChange={(e) => handleChange('due_date', e.target.value)}
-            className="bg-zinc-800 border-zinc-700"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Reviewer</Label>
-          <Input
-            value={formData.reviewer}
-            onChange={(e) => handleChange('reviewer', e.target.value)}
-            placeholder="Assigned reviewer"
-            className="bg-zinc-800 border-zinc-700"
-          />
         </div>
       </div>
 

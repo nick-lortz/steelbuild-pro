@@ -51,7 +51,7 @@ Return as JSON with four sections:
 
     const extractionResult = await base44.integrations.Core.InvokeLLM({
       prompt: analysisPrompt,
-      file_urls: drawing_file_url,
+      file_urls: [drawing_file_url],
       response_json_schema: {
         type: 'object',
         properties: {
@@ -105,11 +105,11 @@ Return as JSON with four sections:
       }
     });
 
-    if (!extractionResult.data) {
+    if (!extractionResult) {
       throw new Error('AI extraction failed');
     }
 
-    const extractedData = extractionResult.data;
+    const extractedData = extractionResult;
 
     // Save to DrawingSheet metadata if sheet ID provided
     if (drawing_sheet_id) {

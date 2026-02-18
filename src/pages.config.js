@@ -64,6 +64,7 @@ import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
+import ErectionLookahead from './pages/ErectionLookahead';
 import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import Fabrication from './pages/Fabrication';
 import FeedbackLoop from './pages/FeedbackLoop';
@@ -109,7 +110,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ErectionLookahead from './pages/ErectionLookahead';
 import __Layout from './Layout.jsx';
 
 
@@ -131,6 +131,7 @@ export const PAGES = {
     "Documents": Documents,
     "Drawings": Drawings,
     "Equipment": Equipment,
+    "ErectionLookahead": ErectionLookahead,
     "ExecutiveRollUp": ExecutiveRollUp,
     "Fabrication": Fabrication,
     "FeedbackLoop": FeedbackLoop,
@@ -176,7 +177,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ErectionLookahead": ErectionLookahead,
 }
 
 export const pagesConfig = {

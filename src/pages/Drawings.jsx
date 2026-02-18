@@ -102,14 +102,29 @@ export default function Drawings() {
 
   const createDrawingSetMutation = useMutation({
     mutationFn: async (data) => {
-      const createdSet = await base44.entities.DrawingSet.create(data);
+      const createdSet = await base44.entities.DrawingSet.create({
+        project_id: data.project_id,
+        set_number: data.set_number,
+        title: data.title,
+        discipline: data.discipline,
+        status: data.status,
+        submitted_date: data.submitted_date || null,
+        approved_date: data.approved_date || null,
+        notes: data.notes || '',
+        sheet_count: data.sheet_count || 0,
+        total_revision_count: 1
+      });
+
       await base44.entities.DrawingRevision.create({
+        project_id: data.project_id,
         drawing_set_id: createdSet.id,
-        revision_number: data.current_revision || 'Rev 0',
+        revision_number: 'Rev 0',
         revision_date: new Date().toISOString().split('T')[0],
         description: 'Initial submission',
         status: data.status || 'IFA',
+        is_current: true
       });
+
       return createdSet;
     },
     onSuccess: () => {
@@ -117,7 +132,10 @@ export default function Drawings() {
       setShowCreateDialog(false);
       toast.success('Drawing set created');
     },
-    onError: () => toast.error('Creation failed')
+    onError: (error) => {
+      console.error('Create error:', error);
+      toast.error('Creation failed: ' + (error.message || 'Unknown error'));
+    }
   });
 
   const deleteDrawingSetMutation = useMutation({

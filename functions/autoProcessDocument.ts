@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { callLLMSafe } from './_lib/aiPolicy.js';
+import { redactPII } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -14,10 +17,20 @@ Deno.serve(async (req) => {
     if (!document_id || !file_url) {
       return Response.json({ error: 'document_id and file_url required' }, { status: 400 });
     }
+    
+    // Get document and verify project access
+    const docs = await base44.asServiceRole.entities.Document.filter({ id: document_id });
+    const currentDoc = docs[0];
+    
+    if (!currentDoc) {
+      return Response.json({ error: 'Document not found' }, { status: 404 });
+    }
+    
+    await requireProjectAccess(base44, user, currentDoc.project_id, 'edit');
 
-    // Extract metadata and text using AI
-    const extraction = await base44.integrations.Core.InvokeLLM({
-      prompt: `Analyze this construction document and extract ALL relevant information:
+    // Extract metadata and text using AI (PII-safe)
+    const extraction = await callLLMSafe(base44, {
+      prompt: `Analyze this construction document and extract ALL relevant information (NO PII, NO worker names):
 
 STRUCTURAL ELEMENTS (if applicable):
 - Drawing/sheet number (e.g., S-101, A-201)
@@ -47,6 +60,8 @@ CATEGORIZATION:
 
 Return comprehensive data for search indexing and metadata population.`,
       file_urls: [file_url],
+      payload: null,
+      project_id: currentDoc.project_id,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -97,8 +112,6 @@ Return comprehensive data for search indexing and metadata population.`,
 
     // Store full extraction in notes for search
     const extractionNotes = `AI_EXTRACTED: ${JSON.stringify(extraction)}`;
-    const docs = await base44.entities.Document.filter({ id: document_id });
-    const currentDoc = docs[0];
     
     if (currentDoc?.notes) {
       updateData.notes = `${currentDoc.notes}\n\n${extractionNotes}`;
@@ -106,9 +119,9 @@ Return comprehensive data for search indexing and metadata population.`,
       updateData.notes = extractionNotes;
     }
 
-    await base44.entities.Document.update(document_id, updateData);
+    await base44.asServiceRole.entities.Document.update(document_id, updateData);
 
-    // AI-powered entity linking
+    // AI-powered entity linking (capped for performance)
     const linkedEntities = await findLinkedEntities(base44, currentDoc.project_id, extraction);
 
     // Store suggestions in document for user review
@@ -133,7 +146,7 @@ Return comprehensive data for search indexing and metadata population.`,
     const suggestionsNote = `\n\nAI_SUGGESTIONS: ${JSON.stringify(suggestions)}`;
     updateData.notes = (updateData.notes || '') + suggestionsNote;
 
-    await base44.entities.Document.update(document_id, updateData);
+    await base44.asServiceRole.entities.Document.update(document_id, updateData);
 
     return Response.json({
       success: true,
@@ -158,11 +171,12 @@ async function findLinkedEntities(base44, projectId, extraction) {
 
   if (!projectId) return results;
 
-  // Fetch relevant entities
+  // Fetch relevant entities (capped for performance)
+  const MAX_ITEMS = 500;
   const [tasks, workPackages, rfis] = await Promise.all([
-    base44.entities.Task.filter({ project_id: projectId, status: { $in: ['not_started', 'in_progress'] } }),
-    base44.entities.WorkPackage.filter({ project_id: projectId }),
-    base44.entities.RFI.filter({ project_id: projectId, status: { $in: ['draft', 'submitted', 'under_review'] } })
+    base44.asServiceRole.entities.Task.filter({ project_id: projectId, status: { $in: ['not_started', 'in_progress'] } }, null, MAX_ITEMS),
+    base44.asServiceRole.entities.WorkPackage.filter({ project_id: projectId }, null, MAX_ITEMS),
+    base44.asServiceRole.entities.RFI.filter({ project_id: projectId, status: { $in: ['draft', 'submitted', 'under_review'] } }, null, MAX_ITEMS)
   ]);
 
   const keywords = [

@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
+import { callLLMSafe } from './_lib/aiPolicy.js';
+import { redactPII, redactFinancials } from './_lib/redact.js';
 
 Deno.serve(async (req) => {
   try {
@@ -10,18 +13,25 @@ Deno.serve(async (req) => {
     }
 
     const { project_id, recipient_email } = await req.json();
+    
+    if (!project_id) {
+      return Response.json({ error: 'project_id required' }, { status: 400 });
+    }
+    
+    await requireProjectAccess(base44, user, project_id);
 
-    // Fetch data for the past week
+    // Fetch data for the past week (capped for performance)
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
+    const MAX_ITEMS = 500;
 
     const [project, tasks, rfis, changeOrders, financials, dailyLogs] = await Promise.all([
-      base44.entities.Project.list().then(p => p.find(pr => pr.id === project_id)),
-      base44.entities.Task.filter({ project_id }),
-      base44.entities.RFI.filter({ project_id }),
-      base44.entities.ChangeOrder.filter({ project_id }),
-      base44.entities.Financial.filter({ project_id }),
-      base44.entities.DailyLog.filter({ project_id })
+      base44.asServiceRole.entities.Project.filter({ id: project_id }).then(p => p[0]),
+      base44.asServiceRole.entities.Task.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.RFI.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.ChangeOrder.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.Financial.filter({ project_id }, null, MAX_ITEMS),
+      base44.asServiceRole.entities.DailyLog.filter({ project_id }, null, 100)
     ]);
 
     // Filter for recent activity
@@ -40,18 +50,16 @@ Deno.serve(async (req) => {
 
     const prompt = `Generate a professional weekly project digest for this structural steel project.
 
-PROJECT: ${project?.name} (${project?.project_number})
-CLIENT: ${project?.client || 'N/A'}
 STATUS: ${project?.status}
+PHASE: ${project?.phase}
 
 PROGRESS THIS WEEK:
 - Tasks completed: ${recentTasks.filter(t => t.status === 'completed').length}
 - Tasks started: ${recentTasks.filter(t => t.status === 'in_progress').length}
 - Overall progress: ${progress.toFixed(1)}%
 
-FINANCIAL STATUS:
-- Contract value: $${budget.toLocaleString()}
-- Spent to date: $${actualCost.toLocaleString()} (${budgetUsed.toFixed(1)}%)
+FINANCIAL STATUS (RATIOS):
+- Budget used: ${budgetUsed.toFixed(1)}%
 
 RFIS & COS:
 - New RFIs this week: ${recentRFIs.length}
@@ -70,10 +78,12 @@ Generate an executive summary in professional tone covering:
 4. Next week's focus areas
 5. Action items requiring attention
 
-Format as an email-ready summary.`;
+Format as an email-ready summary. NO PII, NO dollar amounts.`;
 
-    const response = await base44.integrations.Core.InvokeLLM({
+    const response = await callLLMSafe(base44, {
       prompt,
+      payload: null,
+      project_id,
       response_json_schema: {
         type: "object",
         properties: {

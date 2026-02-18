@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -15,22 +17,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Document ID and approvers required' }, { status: 400 });
     }
     
-    // Fetch document
-    const documents = await base44.entities.Document.filter({ id: documentId });
+    // Fetch document and verify project access
+    const documents = await base44.asServiceRole.entities.Document.filter({ id: documentId });
     const document = documents[0];
     
     if (!document) {
       return Response.json({ error: 'Document not found' }, { status: 404 });
     }
     
+    // Document routing requires PM/Admin
+    requireRole(user, ['admin', 'pm', 'superintendent']);
+    await requireProjectAccess(base44, user, document.project_id, 'edit');
+    
     const project = document.project_id 
-      ? (await base44.entities.Project.filter({ id: document.project_id }))[0]
+      ? (await base44.asServiceRole.entities.Project.filter({ id: document.project_id }))[0]
       : null;
     
     console.log(`[routeDocumentApproval] Routing document: ${document.title} to ${approvers.length} approvers`);
     
     // Update document workflow stage
-    await base44.entities.Document.update(documentId, {
+    await base44.asServiceRole.entities.Document.update(documentId, {
       workflow_stage: 'pending_review',
       reviewer: approvers[0], // Primary reviewer
       review_due_date: dueDate,

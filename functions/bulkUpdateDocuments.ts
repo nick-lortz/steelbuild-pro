@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireRole } from './_lib/authz.js';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -14,6 +16,9 @@ Deno.serve(async (req) => {
     if (!document_ids || !Array.isArray(document_ids) || document_ids.length === 0) {
       return Response.json({ error: 'document_ids array required' }, { status: 400 });
     }
+    
+    // Bulk updates require PM/Admin
+    requireRole(user, ['admin', 'pm', 'superintendent']);
 
     const results = [];
     const notifications = [];
@@ -21,16 +26,19 @@ Deno.serve(async (req) => {
     // Process bulk action
     if (action === 'approve') {
       for (const docId of document_ids) {
-        const docs = await base44.entities.Document.filter({ id: docId });
+        const docs = await base44.asServiceRole.entities.Document.filter({ id: docId });
         const doc = docs[0];
 
         if (!doc) {
           results.push({ id: docId, status: 'not_found' });
           continue;
         }
+        
+        // Verify project access for each document
+        await requireProjectAccess(base44, user, doc.project_id, 'edit');
 
         // Update document to approved
-        await base44.entities.Document.update(docId, {
+        await base44.asServiceRole.entities.Document.update(docId, {
           workflow_stage: 'approved',
           status: 'approved',
           reviewer: user.email,
@@ -56,16 +64,19 @@ Deno.serve(async (req) => {
       }
     } else if (action === 'reject') {
       for (const docId of document_ids) {
-        const docs = await base44.entities.Document.filter({ id: docId });
+        const docs = await base44.asServiceRole.entities.Document.filter({ id: docId });
         const doc = docs[0];
 
         if (!doc) {
           results.push({ id: docId, status: 'not_found' });
           continue;
         }
+        
+        // Verify project access for each document
+        await requireProjectAccess(base44, user, doc.project_id, 'edit');
 
         // Update document to rejected
-        await base44.entities.Document.update(docId, {
+        await base44.asServiceRole.entities.Document.update(docId, {
           workflow_stage: 'rejected',
           status: 'void',
           reviewer: user.email,
@@ -93,7 +104,16 @@ Deno.serve(async (req) => {
     } else if (action === 'update' && updates) {
       // Bulk update with custom data
       for (const docId of document_ids) {
-        await base44.entities.Document.update(docId, updates);
+        const docs = await base44.asServiceRole.entities.Document.filter({ id: docId });
+        if (!docs.length) {
+          results.push({ id: docId, status: 'not_found' });
+          continue;
+        }
+        
+        // Verify project access for each document
+        await requireProjectAccess(base44, user, docs[0].project_id, 'edit');
+        
+        await base44.asServiceRole.entities.Document.update(docId, updates);
         results.push({ id: docId, status: 'updated' });
       }
     } else {

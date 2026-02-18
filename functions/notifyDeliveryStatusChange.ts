@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -15,13 +16,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Fetch delivery details
+    // Fetch delivery details and verify project access
     const deliveries = await base44.asServiceRole.entities.Delivery.filter({ id: delivery_id });
     const delivery = deliveries[0];
 
     if (!delivery) {
       return Response.json({ error: 'Delivery not found' }, { status: 404 });
     }
+    
+    await requireProjectAccess(base44, user, delivery.project_id, 'edit');
 
     // Fetch project to get stakeholders
     const projects = await base44.asServiceRole.entities.Project.filter({ id: delivery.project_id });

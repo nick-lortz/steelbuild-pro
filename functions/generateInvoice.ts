@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -13,6 +14,9 @@ Deno.serve(async (req) => {
   if (!project_id || !period_start || !period_end) {
     return Response.json({ error: 'Missing required fields' }, { status: 400 });
   }
+
+  // Verify project access
+  await requireProjectAccess(base44, user, project_id);
 
   // Fetch all SOV items for this project
   const sovItems = await base44.entities.SOVItem.filter({ project_id });

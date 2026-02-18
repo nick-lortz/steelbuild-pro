@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireProjectAccess } from './utils/requireProjectAccess.js';
 
 Deno.serve(async (req) => {
   try {
@@ -21,6 +22,9 @@ Deno.serve(async (req) => {
         }
 
         const co = changeOrder[0];
+        
+        // Verify project access
+        await requireProjectAccess(base44, user, co.project_id);
         if (co.status !== 'submitted') {
           return Response.json({ 
             error: 'Change order must be in submitted status to approve' 

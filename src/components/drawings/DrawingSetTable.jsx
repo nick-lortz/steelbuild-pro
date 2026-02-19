@@ -136,7 +136,7 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
                     </td>
                     <td className="p-3" onClick={() => onSelectSet(set)}>
                       <div>
-                        <p className="font-medium text-white">{set.set_name}</p>
+                        <p className="font-medium text-white">{set.title || set.set_name}</p>
                         <p className="text-xs text-zinc-500 font-mono">{set.set_number || '-'}</p>
                       </div>
                     </td>

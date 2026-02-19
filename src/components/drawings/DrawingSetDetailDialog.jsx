@@ -103,7 +103,19 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
   });
 
   const handleSave = () => {
-    updateMutation.mutate(formData);
+    const updateData = {
+      project_id: formData.project_id,
+      set_number: formData.set_number,
+      title: formData.set_name || formData.title, // map set_name to title
+      discipline: formData.discipline,
+      status: formData.status,
+      submitted_date: formData.ifa_date || formData.submitted_date || null,
+      approved_date: formData.approved_date || null,
+      notes: formData.notes || '',
+      sheet_count: formData.sheet_count || 0,
+      current_revision: formData.current_revision || null
+    };
+    updateMutation.mutate(updateData);
   };
 
   const handleCancel = () => {
@@ -128,7 +140,7 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">{drawingSet.set_name}</DialogTitle>
+            <DialogTitle className="text-xl font-bold">{drawingSet.title || drawingSet.set_name}</DialogTitle>
             <div className="flex items-center gap-2">
               {editMode ? (
                 <>
@@ -194,15 +206,15 @@ export default function DrawingSetDetailDialog({ drawingSetId, open, onOpenChang
                     )}
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-400 uppercase tracking-wider">Set Name</label>
+                    <label className="text-xs text-zinc-400 uppercase tracking-wider">Title</label>
                     {editMode ? (
                       <Input
-                        value={formData.set_name || ''}
-                        onChange={(e) => setFormData({ ...formData, set_name: e.target.value })}
+                        value={formData.set_name || formData.title || ''}
+                        onChange={(e) => setFormData({ ...formData, set_name: e.target.value, title: e.target.value })}
                         className="mt-1 bg-zinc-900 border-zinc-700"
                       />
                     ) : (
-                      <div className="text-white mt-1">{drawingSet.set_name}</div>
+                      <div className="text-white mt-1">{drawingSet.title || drawingSet.set_name}</div>
                     )}
                   </div>
                 </div>

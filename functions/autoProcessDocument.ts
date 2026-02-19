@@ -30,35 +30,55 @@ Deno.serve(async (req) => {
 
     // Extract metadata and text using AI (PII-safe)
     const extraction = await callLLMSafe(base44, {
-      prompt: `Analyze this construction document and extract ALL relevant information (NO PII, NO worker names):
+      prompt: `Analyze this construction document for a structural steel project. Extract ALL relevant information (NO PII, NO worker names):
 
 STRUCTURAL ELEMENTS (if applicable):
-- Drawing/sheet number (e.g., S-101, A-201)
-- Drawing title
+- Drawing/sheet number (e.g., S-101, A-201, DS-001)
+- Drawing title and description
 - Revision number and date
-- Referenced drawings
-- Structural members (beams, columns, connections)
-- Material specifications
-- Dimensions and callouts
+- Referenced drawings or details
+- Structural members: beams (W-shapes, HSS), columns, braces, joists, deck, connections
+- Material specifications: ASTM grades (A992, A36, A572), steel types, coating specs
+- Weld specifications: E70XX, SMAW, FCAW, inspection requirements
+- Bolt specifications: A325, A490, sizes, pretension requirements
+- Anchor/embed details: embedment depth, anchor bolt types, grout requirements
+- Dimensions, grid lines, elevations, tolerances
 
-GENERAL METADATA:
-- Document type (drawing, spec, RFI, submittal, report, invoice, contract)
-- Project number/name (if visible)
-- Date (issue date, revision date, or document date)
-- Revision/version info
-- Author/company
-- Important notes or requirements
+EQUIPMENT & MATERIALS:
+- Equipment mentioned: cranes (capacity, boom length), lifts, welding machines, tools
+- Material quantities: tonnage, linear footage, square footage, piece counts
+- Consumables: welding wire, bolts, shims, grout, paint
+- Subcontractor scopes: detailing, galvanizing, inspection, fireproofing
 
-TEXT CONTENT:
-- Extract ALL searchable text from the document
-- Key requirements, specifications, or action items
-- Important measurements, quantities, or cost information
+SPECIFICATIONS & REQUIREMENTS:
+- Spec section references (e.g., 05 12 00 Structural Steel)
+- Code requirements: IBC, AISC, AWS D1.1, OSHA
+- QA/QC requirements and inspection hold points
+- Load ratings, deflection limits, safety factors
+- Installation tolerances and acceptance criteria
 
-CATEGORIZATION:
-- Suggest best category: drawing, specification, rfi, submittal, contract, report, photo, correspondence, receipt, invoice, other
-- Suggest relevant tags for search (5-10 keywords)
+SCHEDULE & LOGISTICS:
+- Milestone dates: shop release, delivery windows, erection sequences
+- Lead times for materials or fabrication
+- Delivery requirements: staging areas, crane picks, access constraints
+- Weather/seasonal constraints
 
-Return comprehensive data for search indexing and metadata population.`,
+COST & COMMERCIAL:
+- Cost code references
+- Budget line items or SOV references
+- Change order impacts
+- Vendor/subcontractor pricing
+
+RFI/ISSUE TRACKING:
+- Open questions or unresolved conflicts
+- Design clarifications needed
+- Missing information or dimension gaps
+
+TAGS & CATEGORIZATION:
+- Suggest 8-12 specific tags for robust search: structural elements, phases, locations, spec sections, action items
+- Examples: W18x35, Grid_A1-A5, Level_2, erection_sequence, crane_pick, hold_point, AWS_D1.1, galv_required
+
+Return comprehensive, field-ready metadata for project control and search.`,
       file_urls: [file_url],
       payload: null,
       project_id: currentDoc.project_id,
@@ -74,16 +94,51 @@ Return comprehensive data for search indexing and metadata population.`,
           project_info: { type: ['string', 'null'] },
           structural_elements: {
             type: 'array',
-            items: { type: 'string' }
+            items: { type: 'string' },
+            description: 'Member types, connections, details'
+          },
+          materials: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'ASTM specs, steel grades, coating types'
+          },
+          equipment: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Cranes, tools, machinery mentioned'
+          },
+          specifications: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Spec sections, code references'
           },
           referenced_drawings: {
             type: 'array',
             items: { type: 'string' }
           },
           extracted_text: { type: 'string' },
+          summary: { 
+            type: 'string',
+            description: '2-3 sentence executive summary of document content and purpose'
+          },
           key_requirements: {
             type: 'array',
             items: { type: 'string' }
+          },
+          action_items: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Required actions, approvals, or follow-ups'
+          },
+          schedule_impacts: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Dates, milestones, lead times mentioned'
+          },
+          cost_impacts: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Cost items, pricing, budget references'
           },
           suggested_tags: {
             type: 'array',
@@ -96,13 +151,16 @@ Return comprehensive data for search indexing and metadata population.`,
 
     // Update document with extracted data
     const updateData = {
-      description: extraction.extracted_text?.substring(0, 500) || null,
+      description: extraction.summary || extraction.extracted_text?.substring(0, 500) || null,
       revision: extraction.revision || null,
       category: extraction.suggested_category || category,
       tags: [
-        ...(extraction.suggested_tags || []).slice(0, 10),
-        ...(extraction.structural_elements || []).slice(0, 5)
-      ].filter(Boolean),
+        ...(extraction.suggested_tags || []),
+        ...(extraction.structural_elements || []).slice(0, 5),
+        ...(extraction.materials || []).slice(0, 3),
+        ...(extraction.equipment || []).slice(0, 3),
+        ...(extraction.specifications || []).slice(0, 3)
+      ].filter(Boolean).slice(0, 15),
     };
 
     // If drawing number extracted and not in title, update title
@@ -110,8 +168,20 @@ Return comprehensive data for search indexing and metadata population.`,
       updateData.title = `${extraction.drawing_number} - ${title}`;
     }
 
-    // Store full extraction in notes for search
-    const extractionNotes = `AI_EXTRACTED: ${JSON.stringify(extraction)}`;
+    // Store full extraction and summary
+    const extractionData = {
+      summary: extraction.summary,
+      structural_elements: extraction.structural_elements || [],
+      materials: extraction.materials || [],
+      equipment: extraction.equipment || [],
+      specifications: extraction.specifications || [],
+      action_items: extraction.action_items || [],
+      schedule_impacts: extraction.schedule_impacts || [],
+      cost_impacts: extraction.cost_impacts || [],
+      full_extraction: extraction
+    };
+    
+    const extractionNotes = `AI_EXTRACTED: ${JSON.stringify(extractionData)}`;
     
     if (currentDoc?.notes) {
       updateData.notes = `${currentDoc.notes}\n\n${extractionNotes}`;

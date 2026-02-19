@@ -59,6 +59,7 @@ import Contracts from './pages/Contracts';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
+import Dashboard from './pages/Dashboard';
 import DataManagement from './pages/DataManagement';
 import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
@@ -112,7 +113,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -129,6 +129,7 @@ export const PAGES = {
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
+    "Dashboard": Dashboard,
     "DataManagement": DataManagement,
     "Deliveries": Deliveries,
     "Detailing": Detailing,
@@ -182,7 +183,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {

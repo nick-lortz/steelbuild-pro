@@ -40,6 +40,7 @@ import DocumentFolderTree from '@/components/documents/DocumentFolderTree';
 import AISearchPanel from '@/components/documents/AISearchPanel';
 import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel';
 import DocumentLinkSuggestions from '@/components/documents/DocumentLinkSuggestions';
+import AIDocumentAnalysis from '@/components/documents/AIDocumentAnalysis';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import {
@@ -1236,55 +1237,12 @@ export default function Documents() {
               />
             )}
 
-            {/* AI Processing */}
+            {/* Enhanced AI Analysis */}
             {selectedDoc?.file_url && (
-              <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <h4 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2">
-                  <Sparkles size={14} />
-                  AI Document Processing
-                </h4>
-                <div className="space-y-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleProcessOCR(selectedDoc.id)}
-                    disabled={processingOCR === selectedDoc.id}
-                    className="bg-blue-500 hover:bg-blue-600 w-full"
-                  >
-                    {processingOCR === selectedDoc.id ? (
-                      <>
-                        <Loader2 size={16} className="mr-2 animate-spin" />
-                        Processing OCR...
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={16} className="mr-2" />
-                        Extract Text (OCR)
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleAnalyzeDocument(selectedDoc)}
-                    disabled={analyzingDoc === selectedDoc.id}
-                    className="bg-purple-500 hover:bg-purple-600 w-full"
-                  >
-                    {analyzingDoc === selectedDoc.id ? (
-                      <>
-                        <Loader2 size={16} className="mr-2 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} className="mr-2" />
-                        Auto-Extract Metadata
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-blue-300 mt-3">
-                  AI extracts: drawing numbers, revisions, structural elements, text content, and suggests tags
-                </p>
-              </div>
+              <AIDocumentAnalysis
+                document={selectedDoc}
+                onUpdate={() => queryClient.invalidateQueries({ queryKey: ['documents'] })}
+              />
             )}
 
             {/* Version Upload */}

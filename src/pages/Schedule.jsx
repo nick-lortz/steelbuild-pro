@@ -223,31 +223,37 @@ export default function Schedule() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      return await base44.entities.Task.create(data);
+      const result = await base44.entities.Task.create(data);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
-      toast.success('Task created');
+      toast.success('Task created successfully');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to create task');
+      console.error('Create task error:', error);
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to create task');
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      return await base44.entities.Task.update(id, data);
+      const result = await base44.entities.Task.update(id, data);
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
-      toast.success('Task updated');
+      toast.success('Task updated successfully');
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to update task');
+      console.error('Update task error:', error);
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to update task');
     }
   });
 

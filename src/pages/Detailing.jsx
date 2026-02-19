@@ -76,31 +76,33 @@ export default function Detailing() {
     }
   });
 
-  // Calculate KPIs
+  // Calculate KPIs with null-safety
   const kpis = React.useMemo(() => {
-    const total = detailingItems.length;
-    const released = detailingItems.filter(i => i.status === 'released').length;
-    const inReview = detailingItems.filter(i => i.status === 'review');
-    const criticalPastDue = detailingItems.filter(i => 
+    const total = detailingItems?.length || 0;
+    const released = detailingItems?.filter(i => i.status === 'released').length || 0;
+    const inReview = detailingItems?.filter(i => i.status === 'review') || [];
+    const criticalPastDue = detailingItems?.filter(i => 
       i.priority === 'critical' && 
       i.due_date && 
       new Date(i.due_date) < new Date()
-    ).length;
+    ).length || 0;
 
     const reviewTimes = inReview
       .map(i => {
         const created = new Date(i.created_date);
         const now = new Date();
         return (now - created) / (1000 * 60 * 60 * 24);
-      });
+      })
+      .filter(time => !isNaN(time) && isFinite(time));
+    
     const avgReviewDays = reviewTimes.length > 0 
       ? Math.round(reviewTimes.reduce((a, b) => a + b, 0) / reviewTimes.length)
       : 0;
 
     return {
-      percentReleased: total > 0 ? Math.round((released / total) * 100) : 0,
-      avgReviewDays,
-      criticalPastDue
+      percentReleased: total > 0 ? Math.min(100, Math.max(0, Math.round((released / total) * 100))) : 0,
+      avgReviewDays: Math.max(0, avgReviewDays),
+      criticalPastDue: Math.max(0, criticalPastDue)
     };
   }, [detailingItems]);
 
@@ -282,6 +284,7 @@ export default function Detailing() {
                               size="sm"
                               variant="ghost"
                               className="text-xs h-7"
+                              disabled={updateStatusMutation.isPending}
                               onClick={() => {
                                 const nextStatus = {
                                   not_started: 'in_progress',

@@ -79,18 +79,31 @@ export default function WorkPackageForm({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.wpid || !formData.title) {
+    if (!formData.wpid?.trim() || !formData.title?.trim()) {
       toast.error('WPID and Title are required');
       return;
     }
 
     const submitData = {
-      ...formData,
+      project_id: formData.project_id,
+      wpid: formData.wpid.trim(),
+      title: formData.title.trim(),
+      scope_summary: formData.scope_summary || null,
+      phase: formData.phase,
+      status: formData.status,
       budget_at_award: formData.budget_at_award ? parseFloat(formData.budget_at_award) : 0,
       forecast_at_completion: formData.forecast_at_completion ? parseFloat(formData.forecast_at_completion) : 0,
-      percent_complete: formData.percent_complete ? parseFloat(formData.percent_complete) : 0
+      percent_complete: formData.percent_complete ? parseFloat(formData.percent_complete) : 0,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+      target_date: formData.target_date || null,
+      assigned_pm: formData.assigned_pm || null,
+      linked_drawing_set_ids: Array.isArray(formData.linked_drawing_set_ids) ? formData.linked_drawing_set_ids : [],
+      linked_delivery_ids: Array.isArray(formData.linked_delivery_ids) ? formData.linked_delivery_ids : [],
+      notes: formData.notes || null
     };
 
+    console.log('WorkPackageForm submitting:', pkg ? 'UPDATE' : 'CREATE', submitData);
     onSubmit(submitData);
   };
 

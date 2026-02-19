@@ -435,56 +435,78 @@ export default function ResourceForecasting({ projects, resources, allocations, 
         </Card>
       )}
 
-        {/* Phase-Based Demand */}
-        <div>
-          <h3 className="text-sm font-medium text-zinc-300 mb-3">Demand by Phase</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Phase-Based Demand */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Users size={20} className="text-amber-500" />
+            Demand by Project Phase
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Object.entries(forecast.demandByPhase).map(([phase, types]) => (
-              <div key={phase} className="p-3 bg-zinc-800 rounded border border-zinc-700">
-                <h4 className="text-xs font-bold uppercase tracking-wide text-amber-500 mb-2">
+              <div key={phase} className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-amber-500 mb-3">
                   {phase}
                 </h4>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {Object.entries(types).map(([type, count]) => (
-                    <div key={type} className="flex justify-between text-xs">
-                      <span className="text-zinc-300 capitalize">{type}</span>
-                      <span className="text-white font-medium">{count}</span>
+                    <div key={type} className="flex justify-between items-center">
+                      <span className="text-xs text-zinc-300 capitalize">{type}</span>
+                      <span className="text-sm font-bold text-white">{count}</span>
                     </div>
                   ))}
                   {Object.keys(types).length === 0 && (
-                    <p className="text-xs text-zinc-500">No demand</p>
+                    <p className="text-xs text-zinc-500 italic">No demand</p>
                   )}
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Utilization Trends */}
-        <div>
-          <h3 className="text-sm font-medium text-zinc-300 mb-3">Avg Utilization (Last 30 Days)</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {forecast.utilizationByType.map(({ type, avg_utilization }) => (
-              <div key={type} className="p-3 bg-zinc-800 rounded border border-zinc-700">
-                <p className="text-xs text-zinc-400 capitalize mb-1">{type}</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${
-                        avg_utilization > 80 ? 'bg-red-500' :
-                        avg_utilization > 60 ? 'bg-amber-500' :
-                        'bg-green-500'
-                      }`}
-                      style={{ width: `${Math.min(avg_utilization, 100)}%` }}
-                    />
+      {/* Historical Utilization */}
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <TrendingUp size={20} className="text-amber-500" />
+            Historical Utilization (Last 90 Days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {forecast.utilizationByType.map(({ type, avg_utilization, peak_concurrent }) => (
+              <div key={type} className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
+                <p className="text-xs text-zinc-400 capitalize mb-2">{type}</p>
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-zinc-500">Avg Utilization</span>
+                      <span className="text-xs font-medium text-white">{avg_utilization}%</span>
+                    </div>
+                    <div className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          avg_utilization > 80 ? 'bg-red-500' :
+                          avg_utilization > 60 ? 'bg-amber-500' :
+                          'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(avg_utilization, 100)}%` }}
+                      />
+                    </div>
                   </div>
-                  <span className="text-sm font-medium text-white">{avg_utilization}%</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500">Peak Tasks</span>
+                    <span className="text-white font-medium">{peak_concurrent}</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

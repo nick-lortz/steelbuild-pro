@@ -244,6 +244,7 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                       size="sm"
                       variant="ghost"
                       onClick={() => updateConflictMutation.mutate({ id: conflict.id, data: { status: 'resolved' }})}
+                      disabled={updateConflictMutation.isPending}
                       className="h-7 text-green-400 hover:text-green-300 hover:bg-green-500/10"
                     >
                       <CheckCircle2 size={14} />
@@ -252,6 +253,7 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                       size="sm"
                       variant="ghost"
                       onClick={() => updateConflictMutation.mutate({ id: conflict.id, data: { status: 'waived' }})}
+                      disabled={updateConflictMutation.isPending}
                       className="h-7 text-zinc-400 hover:text-zinc-300"
                     >
                       <X size={14} />
@@ -301,6 +303,7 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                       size="sm"
                       variant="ghost"
                       onClick={() => updateErectionIssueMutation.mutate({ id: issue.id, data: { status: 'acknowledged' }})}
+                      disabled={updateErectionIssueMutation.isPending}
                       className="h-7 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
                     >
                       <Eye size={14} />
@@ -309,6 +312,7 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                       size="sm"
                       variant="ghost"
                       onClick={() => updateErectionIssueMutation.mutate({ id: issue.id, data: { status: 'resolved' }})}
+                      disabled={updateErectionIssueMutation.isPending}
                       className="h-7 text-green-400 hover:text-green-300 hover:bg-green-500/10"
                     >
                       <CheckCircle2 size={14} />
@@ -355,14 +359,16 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                     <Button
                       size="sm"
                       onClick={() => convertToRFIMutation.mutate(rfi)}
+                      disabled={convertToRFIMutation.isPending}
                       className="bg-blue-600 hover:bg-blue-700 h-7 text-xs"
                     >
-                      Convert to RFI
+                      {convertToRFIMutation.isPending ? 'Creating...' : 'Convert to RFI'}
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => updateRFISuggestionMutation.mutate({ id: rfi.id, data: { status: 'rejected' }})}
+                      disabled={updateRFISuggestionMutation.isPending}
                       className="h-7 text-xs text-zinc-400 hover:text-zinc-300"
                     >
                       Reject
@@ -415,8 +421,8 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                   <div className="flex flex-col gap-1">
                     <Button
                       size="sm"
-                      onClick={() => {
-                        base44.entities.ConnectionImprovement.update(improvement.id, { status: 'approved' });
+                      onClick={async () => {
+                        await base44.entities.ConnectionImprovement.update(improvement.id, { status: 'approved' });
                         queryClient.invalidateQueries(['connection-improvements']);
                         toast.success('Approved');
                       }}
@@ -427,8 +433,8 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        base44.entities.ConnectionImprovement.update(improvement.id, { status: 'rejected' });
+                      onClick={async () => {
+                        await base44.entities.ConnectionImprovement.update(improvement.id, { status: 'rejected' });
                         queryClient.invalidateQueries(['connection-improvements']);
                         toast.success('Rejected');
                       }}
@@ -498,8 +504,8 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                   <div className="flex flex-col gap-1">
                     <Button
                       size="sm"
-                      onClick={() => {
-                        base44.entities.DesignIntentFlag.update(flag.id, { 
+                      onClick={async () => {
+                        await base44.entities.DesignIntentFlag.update(flag.id, { 
                           status: 'approved', 
                           approved_by: currentUser?.email, 
                           approved_at: new Date().toISOString() 
@@ -514,8 +520,8 @@ export default function DrawingAnalysisDashboard({ drawingSetId, projectId }) {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        base44.entities.DesignIntentFlag.update(flag.id, { status: 'rejected' });
+                      onClick={async () => {
+                        await base44.entities.DesignIntentFlag.update(flag.id, { status: 'rejected' });
                         queryClient.invalidateQueries(['design-flags']);
                         toast.success('Rejected');
                       }}

@@ -27,6 +27,16 @@ export default function DrawingUploadEnhanced({
     }));
     setUploadProgress(progressItems);
 
+    // Fetch drawing set to get project_id
+    const drawingSet = await base44.entities.DrawingSet.filter({ id: drawingSetId });
+    const projectId = drawingSet[0]?.project_id;
+
+    if (!projectId) {
+      toast.error('Unable to determine project for drawing set');
+      setUploading(false);
+      return;
+    }
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       
@@ -38,8 +48,9 @@ export default function DrawingUploadEnhanced({
 
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-        // Create drawing sheet
+        // Create drawing sheet with required project_id
         const sheet = await base44.entities.DrawingSheet.create({
+          project_id: projectId,
           drawing_set_id: drawingSetId,
           sheet_number: `SHEET-${i + 1}`,
           sheet_name: file.name.replace(/\.[^/.]+$/, ''),

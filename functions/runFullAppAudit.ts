@@ -170,17 +170,25 @@ async function auditImports(base44) {
 async function auditUIActions(base44) {
   const findings = [];
 
+  // Common undefined handler patterns
+  const commonIssues = [
+    'onClick={handleSubmit} without handleSubmit definition',
+    'onClick={() => someUndefinedFunction()} where function is not imported or defined',
+    'onSubmit={onSubmit} where onSubmit prop is not provided',
+    'Missing mutation.isPending or loading state checks causing double-clicks'
+  ];
+
   findings.push({
-    title: 'Verify all button onClick handlers exist',
-    description: 'Check that all buttons call defined functions with correct signatures',
-    location: 'components/**/*.jsx, pages/**/*.jsx',
+    title: 'UI action handler validation',
+    description: 'All onClick/onSubmit must reference defined functions. Common issues: ' + commonIssues.join(', '),
+    location: 'All interactive components',
     category: 'UI_ACTIONS',
     severity: 'HIGH',
-    root_cause: 'Buttons may reference undefined handlers or incorrect params',
-    proposed_fix: 'Ensure all onClick/onSubmit handlers are defined',
+    root_cause: 'Handler functions may be undefined, not imported, or have incorrect signatures',
+    proposed_fix: 'Search for onClick/onSubmit patterns and verify handler exists in scope. Add loading states to async actions.',
     auto_fixable: false,
-    repro_steps: 'Click all interactive elements',
-    regression_checks: 'No undefined function errors in console'
+    repro_steps: '1. Search for onClick={, 2. Verify each handler is defined/imported, 3. Test all buttons',
+    regression_checks: 'No "X is not defined" errors in console, buttons disable during async operations'
   });
 
   return findings;
@@ -234,18 +242,34 @@ async function auditFormulas(base44) {
 async function auditDataFlow(base44) {
   const findings = [];
 
-  // Check project scoping
+  // Get all project-owned entities
+  const projectEntities = [
+    'Task', 'WorkPackage', 'RFI', 'DrawingSet', 'DrawingSheet', 'DrawingRevision',
+    'DrawingConflict', 'ErectionIssue', 'RFISuggestion', 'ConnectionImprovement',
+    'DesignIntentFlag', 'ChangeOrder', 'Delivery', 'Constraint', 'MarginRiskAssessment',
+    'ExecutionPermission', 'ErectionReadiness', 'SOVItem', 'BudgetLineItem',
+    'Submittal', 'Document', 'FieldIssue', 'DailyLog'
+  ];
+
+  // Common patterns that indicate proper scoping
+  const wellScopedPatterns = [
+    'filter({ project_id:',
+    'filter({project_id:',
+    'filter({ ...filters, project_id:',
+    'useActiveProject'
+  ];
+
   findings.push({
-    title: 'Verify project-scoped queries',
-    description: 'All entity queries should filter by project_id where applicable',
-    location: 'pages/**/*.jsx, components/**/*.jsx',
+    title: 'Project-scoped query validation',
+    description: `All queries for project-owned entities (${projectEntities.length} entities) must filter by project_id. Review all .filter(), .list() calls.`,
+    location: 'All pages and components',
     category: 'DATA_FLOW',
     severity: 'HIGH',
-    root_cause: 'Queries may fetch data across projects',
-    proposed_fix: 'Add project_id filters to all project-owned entity queries',
+    root_cause: 'Missing project_id in entity queries can leak data across projects',
+    proposed_fix: 'Add { project_id: projectId } to all entity.filter() calls for project-owned entities',
     auto_fixable: false,
-    repro_steps: 'Check query filters in components',
-    regression_checks: 'Users only see their project data'
+    repro_steps: '1. Search codebase for base44.entities.[ProjectEntity].filter() without project_id, 2. Test with multiple projects',
+    regression_checks: 'Users only see data from their assigned projects'
   });
 
   return findings;

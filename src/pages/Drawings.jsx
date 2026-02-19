@@ -107,8 +107,8 @@ export default function Drawings() {
     mutationFn: async (data) => {
       const createdSet = await base44.entities.DrawingSet.create({
         project_id: data.project_id,
+        title: data.title || data.set_name,
         set_number: data.set_number,
-        title: data.title,
         discipline: data.discipline,
         status: data.status,
         submitted_date: data.submitted_date || null,

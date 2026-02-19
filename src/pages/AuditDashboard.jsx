@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import AuditSummaryCards from '@/components/audit/AuditSummaryCards';
+import FindingCard from '@/components/audit/FindingCard';
 
 export default function AuditDashboard() {
   const queryClient = useQueryClient();
@@ -68,26 +70,7 @@ export default function AuditDashboard() {
     }
   });
 
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'CRITICAL': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'HIGH': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'MEDIUM': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      default: return 'bg-zinc-700/20 text-zinc-400 border-zinc-600/30';
-    }
-  };
 
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'ROUTES': return LinkIcon;
-      case 'IMPORTS': return Code;
-      case 'AUTHZ': return Shield;
-      case 'DATA_FLOW': return Database;
-      case 'FORMULAS': return Zap;
-      case 'RUNTIME_ERRORS': return XCircle;
-      default: return FileWarning;
-    }
-  };
 
   const groupedFindings = findings.reduce((acc, f) => {
     if (!acc[f.severity]) acc[f.severity] = [];
@@ -138,46 +121,7 @@ export default function AuditDashboard() {
       </div>
 
       {/* Latest Run Summary */}
-      {latestRun && (
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <Card className="bg-zinc-800/50 border-zinc-700">
-            <CardContent className="p-4">
-              <div className="text-xs text-zinc-500 mb-1">Total Issues</div>
-              <div className="text-2xl font-bold text-white">{latestRun.counts?.total || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-red-900/20 border-red-700/30">
-            <CardContent className="p-4">
-              <div className="text-xs text-red-300 mb-1">Critical</div>
-              <div className="text-2xl font-bold text-white">{latestRun.counts?.critical || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-orange-900/20 border-orange-700/30">
-            <CardContent className="p-4">
-              <div className="text-xs text-orange-300 mb-1">High</div>
-              <div className="text-2xl font-bold text-white">{latestRun.counts?.high || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-amber-900/20 border-amber-700/30">
-            <CardContent className="p-4">
-              <div className="text-xs text-amber-300 mb-1">Medium</div>
-              <div className="text-2xl font-bold text-white">{latestRun.counts?.medium || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-zinc-800/50 border-zinc-700">
-            <CardContent className="p-4">
-              <div className="text-xs text-zinc-500 mb-1">Low</div>
-              <div className="text-2xl font-bold text-white">{latestRun.counts?.low || 0}</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-green-900/20 border-green-700/30">
-            <CardContent className="p-4">
-              <div className="text-xs text-green-300 mb-1">Auto-Fixed</div>
-              <div className="text-2xl font-bold text-white">{latestRun.counts?.auto_fixed || 0}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {latestRun && <AuditSummaryCards counts={latestRun.counts} />}
 
       {/* Findings */}
       {latestRun && findings.length > 0 && (
@@ -199,85 +143,13 @@ export default function AuditDashboard() {
 
           {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(severity => (
             <TabsContent key={severity} value={severity} className="space-y-3 mt-4">
-              {(groupedFindings[severity] || []).map(finding => {
-                const CategoryIcon = getCategoryIcon(finding.category);
-                
-                return (
-                  <Card key={finding.id} className="bg-zinc-800/50 border-zinc-700">
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-3">
-                            <CategoryIcon size={14} className="text-zinc-400" />
-                            <Badge variant="outline" className={cn("text-xs font-semibold", getSeverityColor(finding.severity))}>
-                              {finding.severity}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs bg-zinc-900/50 border-zinc-700">
-                              {finding.category}
-                            </Badge>
-                            {finding.fix_applied && (
-                              <Badge className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
-                                <CheckCircle2 size={10} className="mr-1" />
-                                FIXED
-                              </Badge>
-                            )}
-                            {finding.auto_fixable && !finding.fix_applied && (
-                              <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
-                                AUTO-FIXABLE
-                              </Badge>
-                            )}
-                          </div>
-
-                          <div className="text-base font-semibold text-white mb-2">{finding.title}</div>
-                          <div className="text-sm text-zinc-300 mb-3">{finding.description}</div>
-
-                          <div className="space-y-2 text-xs">
-                            <div className="flex items-start gap-2">
-                              <span className="text-zinc-600 min-w-24">Location:</span>
-                              <span className="font-mono text-blue-400">{finding.location}</span>
-                            </div>
-                            {finding.root_cause && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-zinc-600 min-w-24">Root Cause:</span>
-                                <span className="text-zinc-400">{finding.root_cause}</span>
-                              </div>
-                            )}
-                            {finding.proposed_fix && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-zinc-600 min-w-24">Proposed Fix:</span>
-                                <span className="text-amber-400">{finding.proposed_fix}</span>
-                              </div>
-                            )}
-                            {finding.fix_patch && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-zinc-600 min-w-24">Applied Patch:</span>
-                                <span className="text-green-400">{finding.fix_patch}</span>
-                              </div>
-                            )}
-                            {finding.regression_checks && (
-                              <div className="flex items-start gap-2">
-                                <span className="text-zinc-600 min-w-24">Regression:</span>
-                                <span className="text-zinc-500">{finding.regression_checks}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {finding.auto_fixable && !finding.fix_applied && (
-                          <Button
-                            size="sm"
-                            onClick={() => applyFixMutation.mutate(finding.id)}
-                            disabled={applyFixMutation.isPending}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            Apply Fix
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {(groupedFindings[severity] || []).map(finding => (
+                <FindingCard 
+                  key={finding.id} 
+                  finding={finding} 
+                  onApplyFix={() => applyFixMutation.mutate(finding.id)}
+                />
+              ))}
               {(groupedFindings[severity] || []).length === 0 && (
                 <div className="text-center py-12 text-zinc-500">
                   No {severity.toLowerCase()} severity issues found

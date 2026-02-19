@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, AlertTriangle, CheckCircle2, Calendar } from 'lucide-react';
-import { format, addMonths, parseISO } from 'date-fns';
+import { TrendingUp, AlertTriangle, CheckCircle2, Calendar, Users, ArrowUp, ArrowDown } from 'lucide-react';
+import { format, addMonths, addWeeks, parseISO, isWithinInterval, differenceInDays, startOfMonth, endOfMonth } from 'date-fns';
 
 export default function ResourceForecasting({ projects, resources, allocations, tasks }) {
   const forecast = useMemo(() => {
@@ -14,6 +14,61 @@ export default function ResourceForecasting({ projects, resources, allocations, 
     const pipelineProjects = projects.filter(p => 
       ['bidding', 'awarded', 'in_progress'].includes(p.status)
     );
+
+    // Build monthly timeline forecast (next 6 months)
+    const monthlyTimeline = [];
+    for (let i = 0; i < 6; i++) {
+      const monthStart = startOfMonth(addMonths(today, i));
+      const monthEnd = endOfMonth(addMonths(today, i));
+      
+      const monthData = {
+        month: format(monthStart, 'MMM yyyy'),
+        start: monthStart,
+        end: monthEnd,
+        demandByType: {},
+        projects: []
+      };
+
+      // Calculate demand per month based on task scheduling
+      pipelineProjects.forEach(project => {
+        const projectStart = project.start_date ? parseISO(project.start_date) : today;
+        const projectEnd = project.target_completion ? parseISO(project.target_completion) : addMonths(projectStart, 6);
+        
+        // Check if project overlaps this month
+        if (isWithinInterval(monthStart, { start: projectStart, end: projectEnd }) ||
+            isWithinInterval(monthEnd, { start: projectStart, end: projectEnd }) ||
+            isWithinInterval(projectStart, { start: monthStart, end: monthEnd })) {
+          
+          monthData.projects.push(project);
+          
+          const tonnage = project.rough_square_footage 
+            ? Math.round(project.rough_square_footage * 0.012)
+            : 100;
+          
+          const phase = project.phase || 'fabrication';
+          const needsByPhase = {
+            detailing: { labor: Math.ceil(tonnage / 500) },
+            fabrication: { 
+              labor: Math.ceil(tonnage / 50),
+              equipment: Math.ceil(tonnage / 200)
+            },
+            erection: { 
+              labor: Math.ceil(tonnage / 30),
+              equipment: Math.ceil(tonnage / 300),
+              subcontractor: Math.ceil(tonnage / 150)
+            }
+          };
+          
+          const phaseNeeds = needsByPhase[phase] || needsByPhase.fabrication;
+          Object.entries(phaseNeeds).forEach(([type, count]) => {
+            if (!monthData.demandByType[type]) monthData.demandByType[type] = 0;
+            monthData.demandByType[type] += count;
+          });
+        }
+      });
+      
+      monthlyTimeline.push(monthData);
+    }
 
     // Calculate resource demand by type and phase
     const demandByType = {};
@@ -67,56 +122,112 @@ export default function ResourceForecasting({ projects, resources, allocations, 
 
     // Calculate current capacity
     const capacityByType = {};
+    const availableCapacityByType = {};
     resources.forEach(r => {
       if (r.status === 'available' || r.status === 'assigned') {
         if (!capacityByType[r.type]) capacityByType[r.type] = 0;
         capacityByType[r.type]++;
+        
+        if (r.status === 'available') {
+          if (!availableCapacityByType[r.type]) availableCapacityByType[r.type] = 0;
+          availableCapacityByType[r.type]++;
+        }
       }
     });
 
-    // Identify gaps
+    // Identify gaps and surpluses
     const gaps = [];
+    const surpluses = [];
     Object.entries(demandByType).forEach(([type, demand]) => {
       const capacity = capacityByType[type] || 0;
-      const shortfall = demand.upcoming - capacity;
+      const available = availableCapacityByType[type] || 0;
+      const delta = capacity - demand.upcoming;
       
-      if (shortfall > 0) {
+      if (delta < 0) {
         gaps.push({
           type,
           current_capacity: capacity,
+          available_now: available,
           needed_next_3mo: demand.upcoming,
-          shortfall,
-          severity: shortfall > 5 ? 'critical' : shortfall > 2 ? 'high' : 'moderate'
+          shortfall: Math.abs(delta),
+          severity: Math.abs(delta) > 5 ? 'critical' : Math.abs(delta) > 2 ? 'high' : 'moderate'
+        });
+      } else if (delta > 3 && demand.upcoming > 0) {
+        surpluses.push({
+          type,
+          current_capacity: capacity,
+          needed_next_3mo: demand.upcoming,
+          surplus: delta
         });
       }
     });
 
-    // Historical utilization (last 30 days)
-    const recentAllocations = allocations.filter(a => {
+    // Historical utilization analysis (last 90 days)
+    const last90Days = addMonths(today, -3);
+    const historicalAllocations = allocations.filter(a => {
       const endDate = a.end_date ? parseISO(a.end_date) : today;
-      return endDate >= addMonths(today, -1);
+      return endDate >= last90Days;
     });
 
     const utilizationByType = {};
+    const utilizationTrend = {};
     resources.forEach(r => {
-      const resourceAllocations = recentAllocations.filter(ra => ra.resource_id === r.id);
+      const resourceAllocations = historicalAllocations.filter(ra => ra.resource_id === r.id);
       const avgAllocation = resourceAllocations.length > 0
         ? resourceAllocations.reduce((sum, ra) => sum + (ra.allocation_percentage || 100), 0) / resourceAllocations.length
         : 0;
 
-      if (!utilizationByType[r.type]) utilizationByType[r.type] = { total: 0, count: 0 };
+      if (!utilizationByType[r.type]) {
+        utilizationByType[r.type] = { total: 0, count: 0, peakDemand: 0 };
+        utilizationTrend[r.type] = { recent: 0, historical: 0 };
+      }
       utilizationByType[r.type].total += avgAllocation;
       utilizationByType[r.type].count++;
+      
+      // Track peak demand
+      const recentTasks = tasks.filter(t => 
+        (t.assigned_resources || []).includes(r.id) || 
+        (t.assigned_equipment || []).includes(r.id)
+      );
+      utilizationByType[r.type].peakDemand = Math.max(
+        utilizationByType[r.type].peakDemand,
+        recentTasks.length
+      );
+    });
+
+    // Calculate task-based demand forecast
+    const upcomingTasks = tasks.filter(t => {
+      if (!t.start_date || t.status === 'completed') return false;
+      const startDate = parseISO(t.start_date);
+      return startDate <= next3Months;
+    });
+
+    const taskBasedDemand = {};
+    upcomingTasks.forEach(task => {
+      ['assigned_resources', 'assigned_equipment'].forEach(field => {
+        (task[field] || []).forEach(resourceId => {
+          const resource = resources.find(r => r.id === resourceId);
+          if (resource) {
+            if (!taskBasedDemand[resource.type]) taskBasedDemand[resource.type] = 0;
+            taskBasedDemand[resource.type]++;
+          }
+        });
+      });
     });
 
     return {
       demandByType,
       demandByPhase,
       capacityByType,
+      availableCapacityByType,
       gaps: gaps.sort((a, b) => b.shortfall - a.shortfall),
+      surpluses: surpluses.sort((a, b) => b.surplus - a.surplus),
+      monthlyTimeline,
+      taskBasedDemand,
       utilizationByType: Object.entries(utilizationByType).map(([type, data]) => ({
         type,
-        avg_utilization: Math.round(data.total / data.count)
+        avg_utilization: Math.round(data.total / data.count),
+        peak_concurrent: data.peakDemand
       }))
     };
   }, [projects, resources, allocations, tasks]);

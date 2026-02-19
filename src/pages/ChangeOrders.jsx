@@ -59,20 +59,24 @@ export default function ChangeOrders() {
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const user = await base44.auth.me();
-      return base44.entities.ChangeOrder.create({
+      const result = await base44.entities.ChangeOrder.create({
         ...data,
         version: 1,
         version_history: [],
         created_by: user.email
       });
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
       setShowForm(false);
-      toast.success('Change order created');
+      setEditingCO(null);
+      toast.success('Change order created successfully');
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create CO');
+      console.error('Create change order error:', error);
+      toast.error(error?.message || 'Failed to create change order');
     }
   });
 
@@ -81,43 +85,50 @@ export default function ChangeOrders() {
       const current = changeOrders.find(co => co.id === id);
       const user = await base44.auth.me();
       
-      const versionHistory = current.version_history || [];
-      const newVersion = (current.version || 1) + 1;
+      const versionHistory = current?.version_history || [];
+      const newVersion = (current?.version || 1) + 1;
       
       versionHistory.push({
-        version: current.version || 1,
+        version: current?.version || 1,
         changed_by: user.email,
         changed_at: new Date().toISOString(),
         changes_summary: changesSummary || 'Updated change order',
         snapshot: { ...current }
       });
 
-      return base44.entities.ChangeOrder.update(id, {
+      const result = await base44.entities.ChangeOrder.update(id, {
         ...data,
         version: newVersion,
         version_history: versionHistory
       });
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['sov-items'] });
       setShowForm(false);
       setEditingCO(null);
-      toast.success('Change order updated');
+      toast.success('Change order updated successfully');
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update CO');
+      console.error('Update change order error:', error);
+      toast.error(error?.message || 'Failed to update change order');
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ChangeOrder.delete(id),
+    mutationFn: async (id) => {
+      const result = await base44.entities.ChangeOrder.delete(id);
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
       setDeleteCO(null);
-      toast.success('Change order deleted');
+      toast.success('Change order deleted successfully');
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to delete CO');
+      console.error('Delete change order error:', error);
+      toast.error(error?.message || 'Failed to delete change order');
     }
   });
 

@@ -52,11 +52,13 @@ Deno.serve(async (req) => {
     }
 
     // Create findings in database
+    const createdFindings = [];
     for (const finding of findings) {
-      await base44.asServiceRole.entities.AuditFinding.create({
+      const created = await base44.asServiceRole.entities.AuditFinding.create({
         audit_run_id: auditRun.id,
         ...finding
       });
+      createdFindings.push(created);
 
       // Auto-fix if safe
       if (finding.auto_fixable && finding.severity !== 'CRITICAL') {
@@ -66,7 +68,7 @@ Deno.serve(async (req) => {
           });
 
           if (fixResult.data?.success) {
-            await base44.asServiceRole.entities.AuditFinding.update(finding.id, {
+            await base44.asServiceRole.entities.AuditFinding.update(created.id, {
               fix_applied: true,
               fix_patch: fixResult.data.patch,
               regression_checks: fixResult.data.regression_checks,
@@ -78,7 +80,7 @@ Deno.serve(async (req) => {
         } catch (error) {
           // Fix failed, create manual task
           await base44.asServiceRole.entities.AuditFixTask.create({
-            audit_finding_id: finding.id,
+            audit_finding_id: created.id,
             status: 'FAILED',
             error_message: error.message
           });
@@ -86,7 +88,7 @@ Deno.serve(async (req) => {
       } else if (!finding.auto_fixable) {
         // Create manual fix task
         await base44.asServiceRole.entities.AuditFixTask.create({
-          audit_finding_id: finding.id,
+          audit_finding_id: created.id,
           status: 'PENDING'
         });
       }

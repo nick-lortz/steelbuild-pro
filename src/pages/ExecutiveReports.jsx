@@ -38,7 +38,6 @@ import {
 import { format, differenceInDays } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -332,24 +331,40 @@ export default function ExecutiveReports() {
       }
 
       // Cost Variance Table
-      if (reportConfig.includeFinancials && yPos < 250) {
+      if (reportConfig.includeFinancials && yPos < 220) {
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
         doc.text('Cost Variance by Project', 20, yPos);
-        yPos += 5;
+        yPos += 8;
         
-        doc.autoTable({
-          startY: yPos,
-          head: [['Project', 'Budget', 'Forecast', 'Variance']],
-          body: costVarianceChartData.map(d => [
-            d.name,
-            `$${d.budget.toFixed(0)}K`,
-            `$${d.forecast.toFixed(0)}K`,
-            `${d.variance >= 0 ? '+' : ''}$${d.variance.toFixed(0)}K`
-          ]),
-          theme: 'grid',
-          headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-          styles: { fontSize: 8 }
+        // Table header
+        doc.setFontSize(9);
+        doc.setFillColor(59, 130, 246);
+        doc.rect(20, yPos, 170, 6, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.text('Project', 22, yPos + 4);
+        doc.text('Budget', 80, yPos + 4);
+        doc.text('Forecast', 110, yPos + 4);
+        doc.text('Variance', 150, yPos + 4);
+        yPos += 6;
+        
+        // Table rows
+        doc.setTextColor(0, 0, 0);
+        costVarianceChartData.slice(0, 15).forEach((d, i) => {
+          if (yPos > 270) return;
+          if (i % 2 === 0) {
+            doc.setFillColor(245, 245, 245);
+            doc.rect(20, yPos, 170, 5, 'F');
+          }
+          doc.setFontSize(8);
+          doc.text(d.name.slice(0, 25), 22, yPos + 3.5);
+          doc.text(`$${d.budget.toFixed(0)}K`, 80, yPos + 3.5);
+          doc.text(`$${d.forecast.toFixed(0)}K`, 110, yPos + 3.5);
+          const varianceColor = d.variance >= 0 ? [34, 197, 94] : [239, 68, 68];
+          doc.setTextColor(...varianceColor);
+          doc.text(`${d.variance >= 0 ? '+' : ''}$${d.variance.toFixed(0)}K`, 150, yPos + 3.5);
+          doc.setTextColor(0, 0, 0);
+          yPos += 5;
         });
       }
 

@@ -22,46 +22,49 @@ export default function KPIDashboard({ metrics = {} }) {
   const [showConfig, setShowConfig] = useState(false);
 
   const calculateKPI = (kpiId) => {
+    const safeMetrics = metrics || {};
     switch(kpiId) {
       case 'schedule':
-        return { value: 87, unit: '%', trend: 2 };
+        return { value: safeMetrics.schedule || 87, unit: '%', trend: safeMetrics.schedule_trend || 2 };
       case 'budget':
-        return { value: -3.2, unit: '%', trend: -1.5 };
+        return { value: safeMetrics.budget !== undefined ? safeMetrics.budget : -3.2, unit: '%', trend: safeMetrics.budget_trend || -1.5 };
       case 'safety':
-        return { value: 98, unit: '%', trend: 1 };
+        return { value: safeMetrics.safety || 98, unit: '%', trend: safeMetrics.safety_trend || 1 };
       case 'quality':
-        return { value: 94, unit: '%', trend: 0.5 };
+        return { value: safeMetrics.quality || 94, unit: '%', trend: safeMetrics.quality_trend || 0.5 };
       case 'rfi_velocity':
-        return { value: 4.2, unit: 'days', trend: -0.8 };
+        return { value: safeMetrics.rfi_velocity || 4.2, unit: 'days', trend: safeMetrics.rfi_velocity_trend || -0.8 };
       case 'co_efficiency':
-        return { value: 76, unit: '%', trend: 3 };
+        return { value: safeMetrics.co_efficiency || 76, unit: '%', trend: safeMetrics.co_efficiency_trend || 3 };
       case 'resource_util':
-        return { value: 82, unit: '%', trend: 2.5 };
+        return { value: safeMetrics.resource_util || 82, unit: '%', trend: safeMetrics.resource_util_trend || 2.5 };
       case 'delivery_ontime':
-        return { value: 91, unit: '%', trend: 1.2 };
+        return { value: safeMetrics.delivery_ontime || 91, unit: '%', trend: safeMetrics.delivery_ontime_trend || 1.2 };
       default:
         return { value: 0, unit: '', trend: 0 };
     }
   };
 
   const getKPIColor = (value, kpiId) => {
+    const safeValue = Number(value) || 0;
     if (kpiId === 'budget') {
-      return value > -5 && value < 5 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
+      return safeValue > -5 && safeValue < 5 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
     }
     if (kpiId === 'rfi_velocity') {
-      return value < 7 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
+      return safeValue < 7 ? 'bg-green-500/10 border-green-500/20' : 'bg-red-500/10 border-red-500/20';
     }
-    return value >= 90 ? 'bg-green-500/10 border-green-500/20' : value >= 80 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
+    return safeValue >= 90 ? 'bg-green-500/10 border-green-500/20' : safeValue >= 80 ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20';
   };
 
   const getTextColor = (value, kpiId) => {
+    const safeValue = Number(value) || 0;
     if (kpiId === 'budget') {
-      return value > -5 && value < 5 ? 'text-green-400' : 'text-red-400';
+      return safeValue > -5 && safeValue < 5 ? 'text-green-400' : 'text-red-400';
     }
     if (kpiId === 'rfi_velocity') {
-      return value < 7 ? 'text-green-400' : 'text-red-400';
+      return safeValue < 7 ? 'text-green-400' : 'text-red-400';
     }
-    return value >= 90 ? 'text-green-400' : value >= 80 ? 'text-amber-400' : 'text-red-400';
+    return safeValue >= 90 ? 'text-green-400' : safeValue >= 80 ? 'text-amber-400' : 'text-red-400';
   };
 
   const visibleKPIData = visibleKPIs.map(id => {

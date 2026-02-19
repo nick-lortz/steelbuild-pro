@@ -243,106 +243,114 @@ export default function ResourceForecasting({ projects, resources, allocations, 
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-400 uppercase tracking-wide">Critical Gaps</p>
-                <p className="text-2xl font-bold text-red-400 mt-1">
-                  {forecast.gaps.filter(g => g.severity === 'critical').length}
-                </p>
-              </div>
-              <AlertTriangle className="text-red-400" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-400 uppercase tracking-wide">Total Shortfalls</p>
-                <p className="text-2xl font-bold text-amber-400 mt-1">
-                  {forecast.gaps.reduce((sum, g) => sum + g.shortfall, 0)}
-                </p>
-              </div>
-              <ArrowUp className="text-amber-400" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-400 uppercase tracking-wide">Surplus Resources</p>
-                <p className="text-2xl font-bold text-green-400 mt-1">
-                  {forecast.surpluses.reduce((sum, s) => sum + s.surplus, 0)}
-                </p>
-              </div>
-              <ArrowDown className="text-green-400" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-zinc-400 uppercase tracking-wide">Pipeline Projects</p>
-                <p className="text-2xl font-bold text-blue-400 mt-1">
-                  {projects.filter(p => ['bidding', 'awarded', 'in_progress'].includes(p.status)).length}
-                </p>
-              </div>
-              <Calendar className="text-blue-400" size={24} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Monthly Timeline Forecast */}
       <Card className="bg-zinc-900 border-zinc-800">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
-            <Calendar size={20} className="text-amber-500" />
-            6-Month Resource Demand Forecast
+            <TrendingUp size={20} className="text-amber-500" />
+            Advanced Resource Forecasting
           </CardTitle>
           <CardDescription className="text-zinc-400">
-            Projected demand by resource type across project pipeline
+            Pipeline-based demand projection with historical analysis
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-        {/* Resource Gaps */}
-        <div>
-          <h3 className="text-sm font-medium text-zinc-300 mb-3">Resource Shortfalls</h3>
-          {forecast.gaps.length === 0 ? (
-            <div className="flex items-center gap-2 text-green-400 text-sm">
-              <CheckCircle2 size={16} />
-              <span>Current capacity meets pipeline demand</span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {forecast.gaps.map((gap, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-zinc-800 rounded border border-zinc-700">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle size={16} className="text-amber-500" />
-                    <div>
-                      <p className="text-sm font-medium text-white capitalize">{gap.type}</p>
-                      <p className="text-xs text-zinc-400">
-                        Current: {gap.current_capacity} | Needed: {gap.needed_next_3mo}
-                      </p>
+          {/* Critical Shortfalls */}
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">Projected Shortfalls (Next 3 Months)</h3>
+            {forecast.gaps.length === 0 ? (
+              <div className="flex items-center gap-2 text-green-400 text-sm p-3 bg-green-950/30 rounded border border-green-900">
+                <CheckCircle2 size={16} />
+                <span>Current capacity sufficient for pipeline demand</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {forecast.gaps.map((gap, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-zinc-800 rounded border border-zinc-700">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle size={18} className="text-red-500 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-white capitalize">{gap.type}</p>
+                        <p className="text-xs text-zinc-400">
+                          Available: {gap.available_now} | Total: {gap.current_capacity} | Required: {gap.needed_next_3mo}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className={getSeverityColor(gap.severity)}>
+                        <ArrowUp size={12} className="mr-1" />
+                        Need {gap.shortfall} more
+                      </Badge>
+                      <span className="text-xs text-zinc-500">Action required</span>
                     </div>
                   </div>
-                  <Badge className={getSeverityColor(gap.severity)}>
-                    Short {gap.shortfall} {gap.type}
-                  </Badge>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Surplus Resources */}
+          {forecast.surpluses.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-zinc-300 mb-3">Surplus Capacity</h3>
+              <div className="space-y-2">
+                {forecast.surpluses.map((surplus, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-zinc-800 rounded border border-zinc-700">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium text-white capitalize">{surplus.type}</p>
+                        <p className="text-xs text-zinc-400">
+                          Available: {surplus.current_capacity} | Required: {surplus.needed_next_3mo}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-600/20 text-green-400 border-green-600/30">
+                      <ArrowDown size={12} className="mr-1" />
+                      +{surplus.surplus} excess
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </div>
+
+          {/* Monthly Timeline */}
+          <div>
+            <h3 className="text-sm font-medium text-zinc-300 mb-3">6-Month Demand Timeline</h3>
+            <div className="space-y-2">
+              {forecast.monthlyTimeline.map((month, idx) => {
+                const totalDemand = Object.values(month.demandByType).reduce((sum, v) => sum + v, 0);
+                const capacityColor = totalDemand > (Object.values(forecast.capacityByType).reduce((sum, v) => sum + v, 0) * 0.8)
+                  ? 'border-red-500/30 bg-red-950/20'
+                  : totalDemand > (Object.values(forecast.capacityByType).reduce((sum, v) => sum + v, 0) * 0.6)
+                  ? 'border-amber-500/30 bg-amber-950/20'
+                  : 'border-zinc-700 bg-zinc-800';
+                
+                return (
+                  <div key={idx} className={`p-3 rounded border ${capacityColor}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-zinc-400" />
+                        <span className="text-sm font-semibold text-white">{month.month}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {month.projects.length} projects
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-zinc-400">Total: {totalDemand} resources</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {Object.entries(month.demandByType).map(([type, count]) => (
+                        <div key={type} className="flex justify-between text-xs">
+                          <span className="text-zinc-300 capitalize">{type}:</span>
+                          <span className="text-white font-medium">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
         {/* Phase-Based Demand */}
         <div>

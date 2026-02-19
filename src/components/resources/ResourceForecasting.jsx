@@ -361,7 +361,7 @@ export default function ResourceForecasting({ projects, resources, allocations, 
           </CardTitle>
         </CardHeader>
         <CardContent>
-        {forecast.gaps.length === 0 ? (
+          {forecast.gaps.length === 0 ? (
             <div className="flex items-center gap-2 text-green-400 text-sm p-4 bg-green-950/20 rounded border border-green-900/50">
               <CheckCircle2 size={16} />
               <span>Current capacity meets pipeline demand</span>

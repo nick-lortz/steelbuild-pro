@@ -38,8 +38,9 @@ export default function DrawingSetDetails({
   const project = projects.find(p => p.id === drawingSet.project_id);
 
   const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list(),
+    queryKey: ['rfis', drawingSet.project_id],
+    queryFn: () => base44.entities.RFI.filter({ project_id: drawingSet.project_id }),
+    enabled: !!drawingSet.project_id,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -72,6 +73,7 @@ export default function DrawingSetDetails({
         const sheetNumber = file.name.replace('.pdf', '');
         
         await base44.entities.DrawingSheet.create({
+          project_id: drawingSet.project_id,
           drawing_set_id: drawingSet.id,
           sheet_number: sheetNumber,
           sheet_name: file.name,
@@ -83,8 +85,11 @@ export default function DrawingSetDetails({
         });
       }
       
-      // Update sheet count
-      await onUpdate({ sheet_count: sheets.length + uploadFiles.length });
+      // Update sheet count and project_id
+      await onUpdate({ 
+        sheet_count: sheets.length + uploadFiles.length,
+        project_id: drawingSet.project_id 
+      });
       
       setUploadFiles([]);
       alert('Sheets uploaded successfully');
@@ -498,9 +503,10 @@ export default function DrawingSetDetails({
                 setShowDeleteDialog(false);
                 onClose();
               }}
+              disabled={isUpdating}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              {isUpdating ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

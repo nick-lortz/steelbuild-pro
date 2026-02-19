@@ -31,9 +31,9 @@ export default function ResourceForecast({ tasks, resources, projects, allocatio
         const taskEnd = parseISO(task.end_date);
 
         return (
-          isWithinInterval(taskStart, { start: monthStart, end: monthEnd }) ||
-          isWithinInterval(taskEnd, { start: monthStart, end: monthEnd }) ||
-          taskStart <= monthStart && taskEnd >= monthEnd);
+          isWithinInterval(taskStart, { start: periodStart, end: periodEnd }) ||
+          isWithinInterval(taskEnd, { start: periodStart, end: periodEnd }) ||
+          (taskStart <= periodStart && taskEnd >= periodEnd));
 
       });
 

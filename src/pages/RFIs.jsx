@@ -59,31 +59,31 @@ export default function RFIs() {
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis'],
-    queryFn: () => base44.entities.RFI.list('-created_date'),
+    queryFn: () => base44.entities.RFI.list('-created_date', 500),
     staleTime: 2 * 60 * 1000
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings'],
-    queryFn: () => base44.entities.DrawingSet.list(),
+    queryFn: () => base44.entities.DrawingSet.list('set_number', 500),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: changeOrders = [] } = useQuery({
     queryKey: ['changeOrders'],
-    queryFn: () => base44.entities.ChangeOrder.list(),
+    queryFn: () => base44.entities.ChangeOrder.list('co_number', 500),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: submittal = [] } = useQuery({
     queryKey: ['submittals'],
-    queryFn: () => base44.entities.Submittal.list(),
+    queryFn: () => base44.entities.Submittal.list('-created_date', 500),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries'],
-    queryFn: () => base44.entities.Delivery.list(),
+    queryFn: () => base44.entities.Delivery.list('-delivery_date', 500),
     staleTime: 10 * 60 * 1000
   });
 
@@ -667,9 +667,10 @@ ${user?.full_name || 'Project Team'}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteRFI.id)}
+              disabled={deleteMutation.isPending}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -118,13 +118,13 @@ export default function Documents() {
 
   const { data: documents = [] } = useQuery({
     queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.list('-created_date'),
+    queryFn: () => base44.entities.Document.list('-created_date', 500),
     staleTime: 2 * 60 * 1000
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryFn: () => base44.entities.WorkPackage.list('wpid', 500),
     staleTime: 5 * 60 * 1000
   });
 
@@ -136,19 +136,19 @@ export default function Documents() {
 
   const { data: sovItems = [] } = useQuery({
     queryKey: ['sov-items'],
-    queryFn: () => base44.entities.SOVItem.list(),
+    queryFn: () => base44.entities.SOVItem.list('item_number', 500),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: dailyLogs = [] } = useQuery({
     queryKey: ['daily-logs'],
-    queryFn: () => base44.entities.DailyLog.list(),
+    queryFn: () => base44.entities.DailyLog.list('-log_date', 500),
     staleTime: 10 * 60 * 1000
   });
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => base44.entities.Task.list(),
+    queryFn: () => base44.entities.Task.list('name', 500),
     staleTime: 5 * 60 * 1000
   });
 
@@ -1458,9 +1458,10 @@ export default function Documents() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteDoc.id)}
+              disabled={deleteMutation.isPending}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

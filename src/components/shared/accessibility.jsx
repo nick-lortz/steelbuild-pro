@@ -25,6 +25,8 @@ export function handleKeyboardNav(event, onEnter, onEscape) {
   }
 }
 
+import React from 'react';
+
 /**
  * Focus trap for modals (WCAG 2.1 AA requirement)
  */

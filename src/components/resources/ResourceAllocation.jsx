@@ -57,11 +57,13 @@ export default function ResourceAllocation() {
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages'],
     queryFn: () => base44.entities.WorkPackage.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['all-tasks'],
     queryFn: () => base44.entities.Task.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const createMutation = useMutation({
@@ -166,11 +168,7 @@ export default function ResourceAllocation() {
                   </span>
                 )}
               </CardTitle>
-              {activeTasks > 0 && (
-                <p className="text-xs text-zinc-500 mt-1">
-                  {activeTasks} active tasks ({assignedTasks} total)
-                </p>
-              )}
+
             </CardHeader>
             <CardContent>
               {allocations.length === 0 ? (
@@ -268,9 +266,10 @@ export default function ResourceAllocation() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(deleteAllocation.id)}
+              disabled={deleteMutation.isPending}
               className="bg-red-500 hover:bg-red-600"
             >
-              Delete
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

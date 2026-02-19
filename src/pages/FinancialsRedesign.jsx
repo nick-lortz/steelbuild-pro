@@ -688,7 +688,7 @@ export default function FinancialsRedesign() {
                     ['EAC', metrics.actualCost + metrics.totalETC],
                     ['Projected Profit', metrics.totalContract - (metrics.actualCost + metrics.totalETC)],
                     ['Margin %', ((metrics.totalContract - (metrics.actualCost + metrics.totalETC)) / metrics.totalContract * 100).toFixed(2)],
-                    ['CPI', (metrics.actualCost > 0 ? metrics.earnedValue / metrics.actualCost : 0).toFixed(3)]
+                    ['CPI', (metrics.actualCost > 0 ? (metrics.earnedValue / metrics.actualCost).toFixed(3) : '0.000')]
                   ].map(row => row.join(',')).join('\n');
                   
                   const blob = new Blob([csv], { type: 'text/csv' });
@@ -775,7 +775,7 @@ export default function FinancialsRedesign() {
                 disabled={updateProjectMutation.isPending}
                 className="flex-1"
               >
-                Save
+                {updateProjectMutation.isPending ? 'Saving...' : 'Save'}
               </Button>
             </div>
           </div>

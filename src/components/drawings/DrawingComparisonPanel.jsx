@@ -24,8 +24,9 @@ export default function DrawingComparisonPanel({ currentDrawingSet, projectId })
   });
 
   const availableSets = allSets?.filter(s => 
-    s.id !== currentDrawingSet.id && 
-    (s.set_number === currentDrawingSet.set_number || s.set_name.includes(currentDrawingSet.set_name.split('-')[0]))
+    s.id !== currentDrawingSet?.id && 
+    (s.set_number === currentDrawingSet?.set_number || 
+     (s.set_name && currentDrawingSet?.set_name && s.set_name.includes(currentDrawingSet.set_name.split('-')[0])))
   ) || [];
 
   const handleCompare = async () => {

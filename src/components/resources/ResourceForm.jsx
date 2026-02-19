@@ -13,42 +13,42 @@ import {
 } from "@/components/ui/select";
 
 export default function ResourceForm({ resource, projects, onSubmit, onCancel, isLoading }) {
-  const [formData, setFormData] = useState(() => {
-    if (resource) {
-      return {
-        ...resource,
-        skills: Array.isArray(resource.skills) ? resource.skills : [],
-        certifications: Array.isArray(resource.certifications) ? resource.certifications : [],
-        assigned_project_ids: Array.isArray(resource.assigned_project_ids) ? resource.assigned_project_ids : [],
-        rate: resource.rate || '',
-        max_concurrent_assignments: resource.max_concurrent_assignments || 3,
-      };
-    }
-    return {
-      type: 'labor',
-      name: '',
-      role: '',
-      classification: '',
-      skills: [],
-      rate: '',
-      rate_type: 'hourly',
-      status: 'available',
-      availability_start: '',
-      availability_end: '',
-      current_project_id: '',
-      assigned_project_ids: [],
-      certifications: [],
-      max_concurrent_assignments: 3,
-      contact_name: '',
-      contact_phone: '',
-      contact_email: '',
-      notes: '',
-    };
+    const NONE_PROJECT_VALUE = '__none__';
+
+  const buildDefaultFormData = () => ({
+    type: 'labor',
+    name: '',
+    role: '',
+    classification: '',
+    skills: [],
+    rate: '',
+    rate_type: 'hourly',
+    status: 'available',
+    availability_start: '',
+    availability_end: '',
+    current_project_id: '',
+    assigned_project_ids: [],
+    certifications: [],
+    max_concurrent_assignments: 3,
+    contact_name: '',
+    contact_phone: '',
+    contact_email: '',
+    notes: '',
   });
 
-  // Reset form when dialog opens/closes
-  useEffect(() => {
-    if (resource) {
+  const buildResourceFormData = (resourceData) => ({
+    ...buildDefaultFormData(),
+    ...resourceData,
+    skills: Array.isArray(resourceData?.skills) ? resourceData.skills : [],
+    certifications: Array.isArray(resourceData?.certifications) ? resourceData.certifications : [],
+    assigned_project_ids: Array.isArray(resourceData?.assigned_project_ids)
+      ? resourceData.assigned_project_ids
+      : [],
+    rate: resourceData?.rate || '',
+    max_concurrent_assignments: resourceData?.max_concurrent_assignments || 3,
+    current_project_id: resourceData?.current_project_id || '',
+  });
+
       setFormData({
         ...resource,
         skills: Array.isArray(resource.skills) ? resource.skills : [],

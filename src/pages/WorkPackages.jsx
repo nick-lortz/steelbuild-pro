@@ -104,22 +104,39 @@ export default function WorkPackages() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.WorkPackage.create(data),
+    mutationFn: async (data) => {
+      const result = await base44.entities.WorkPackage.create(data);
+      return result;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
       setShowForm(false);
-      toast.success('Work package created');
+      setEditingPackage(null);
+      toast.success('Work package created successfully');
+    },
+    onError: (error) => {
+      console.error('Create work package error:', error);
+      toast.error(error?.message || 'Failed to create work package');
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.WorkPackage.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const result = await base44.entities.WorkPackage.update(id, data);
+      return result;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
       setShowForm(false);
       setEditingPackage(null);
       setViewingPackage(null);
-      toast.success('Updated');
+      toast.success('Work package updated successfully');
+    },
+    onError: (error) => {
+      console.error('Update work package error:', error);
+      toast.error(error?.message || 'Failed to update work package');
     }
   });
 

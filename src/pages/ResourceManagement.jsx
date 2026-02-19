@@ -82,35 +82,44 @@ export default function ResourceManagement() {
 
   // Create/Update resource mutations
   const createResourceMutation = useMutation({
-    mutationFn: (data) => base44.entities.Resource.create(data),
+    mutationFn: async (data) => {
+      const result = await base44.entities.Resource.create(data);
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
       setCreateDialogOpen(false);
       setEditingResource(null);
       toast.success('Resource created');
     },
-    onError: (error) => toast.error(error.message || 'Failed to create resource')
+    onError: (error) => {
+      console.error('Create resource error:', error);
+      toast.error(error?.message || 'Failed to create resource');
+    }
   });
 
   const updateResourceMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      console.log('Updating resource:', id, 'with data:', data);
-      return await base44.entities.Resource.update(id, data);
+      const result = await base44.entities.Resource.update(id, data);
+      return result;
     },
-    onSuccess: (result) => {
-      console.log('Update successful:', result);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
+      queryClient.invalidateQueries({ queryKey: ['resourceAllocations'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setCreateDialogOpen(false);
       setEditingResource(null);
-      toast.success('Resource updated');
+      toast.success('Resource updated successfully');
     },
     onError: (error) => {
-      console.error('Update failed:', error);
-      toast.error(error.message || 'Failed to update resource');
+      console.error('Update resource error:', error);
+      toast.error(error?.message || 'Failed to update resource');
     }
   });
 
   const handleResourceSubmit = (data) => {
+    console.log('Submitting resource:', editingResource ? 'update' : 'create', data);
     if (editingResource) {
       updateResourceMutation.mutate({ id: editingResource.id, data });
     } else {

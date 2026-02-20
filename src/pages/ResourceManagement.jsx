@@ -869,6 +869,7 @@ export default function ResourceManagement() {
 
           {/* Skills Tab */}
           <TabsContent value="skills" className="space-y-6">
+            <UserSkillsManager />
             <SkillMatrixView
               resources={resources}
               tasks={tasks}

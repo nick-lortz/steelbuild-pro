@@ -61,33 +61,33 @@ export default function LandingPage() {
   const features = [
     {
       icon: Sparkles,
-      title: 'AI-Powered Insights',
-      description: 'Intelligent analysis and predictions for your construction projects'
+      title: 'AI-Powered Analysis',
+      description: 'Automated drawing QA, RFI generation, and conflict detection to catch issues before they reach the field'
     },
     {
       icon: BarChart3,
-      title: 'Real-Time Analytics',
-      description: 'Track budgets, schedules, and performance metrics instantly'
+      title: 'Real-Time Project Control',
+      description: 'Live tonnage tracking, cost forecasting, and EVM metrics — know exactly where you stand at any moment'
     },
     {
       icon: Users,
-      title: 'Team Collaboration',
-      description: 'Seamless coordination across detailing, fab, and field teams'
+      title: 'Fabrication to Field Integration',
+      description: 'Seamless handoff from detailing to shop to erection — no information lost between phases'
     },
     {
       icon: Clock,
-      title: 'Schedule Optimization',
-      description: 'Smart sequencing and critical path management'
+      title: 'Constraint-Based Scheduling',
+      description: 'Automated lookahead planning with RFI, delivery, and readiness tracking for every pick'
     }
   ];
 
   const benefits = [
-    'Complete project visibility from estimating to closeout',
-    'Automated RFI tracking and change order management',
-    'Real-time cost tracking and earned value analysis',
-    'Mobile-first field tools for daily logs and inspections',
-    'Integrated drawing management with AI analysis',
-    'Advanced reporting and executive dashboards'
+    'End-to-end visibility from estimating through closeout and final billing',
+    'Automated RFI tracking with smart due dates, piece mark linkage, and fabrication holds',
+    'Real-time cost tracking with SOV integration and earned value management',
+    'Mobile field tools for daily logs, progress photos, and time tracking',
+    'Drawing version control with AI-driven conflict detection and QA gates',
+    'Executive dashboards showing health scores, margin risk, and forecast at completion'
   ];
 
   return (

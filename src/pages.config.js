@@ -73,6 +73,7 @@ import ExecutiveReports from './pages/ExecutiveReports';
 import ExecutiveRollUp from './pages/ExecutiveRollUp';
 import Fabrication from './pages/Fabrication';
 import FeedbackLoop from './pages/FeedbackLoop';
+import FieldReporting from './pages/FieldReporting';
 import FieldTools from './pages/FieldTools';
 import FieldToolsMobile from './pages/FieldToolsMobile';
 import Financials from './pages/Financials';
@@ -115,7 +116,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import FieldReporting from './pages/FieldReporting';
 import __Layout from './Layout.jsx';
 
 
@@ -146,6 +146,7 @@ export const PAGES = {
     "ExecutiveRollUp": ExecutiveRollUp,
     "Fabrication": Fabrication,
     "FeedbackLoop": FeedbackLoop,
+    "FieldReporting": FieldReporting,
     "FieldTools": FieldTools,
     "FieldToolsMobile": FieldToolsMobile,
     "Financials": Financials,
@@ -188,7 +189,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "FieldReporting": FieldReporting,
 }
 
 export const pagesConfig = {

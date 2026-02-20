@@ -370,22 +370,31 @@ export default function WorkPackages() {
               const forecast = pkg.forecast_at_completion || 0;
               const variance = forecast - budget;
               const variancePercent = budget > 0 ? ((variance / budget) * 100) : 0;
+              const validation = validationResults[pkg.id];
               
               const phaseMap = {
-                'pre_fab': { next: 'shop', label: 'To Shop', color: 'bg-blue-500' },
-                'shop': { next: 'delivery', label: 'To Delivery', color: 'bg-purple-500' },
-                'delivery': { next: 'erection', label: 'To Erection', color: 'bg-amber-500' },
-                'erection': { next: 'punch', label: 'To Punch', color: 'bg-green-500' },
-                'punch': { next: 'completed', label: 'Complete', color: 'bg-zinc-500' }
+                'pre_fab': { next: 'shop', label: 'Advance to Shop', color: 'bg-blue-500' },
+                'shop': { next: 'delivery', label: 'Release for Delivery', color: 'bg-purple-500' },
+                'delivery': { next: 'erection', label: 'Start Erection', color: 'bg-amber-500' },
+                'erection': { next: 'punch', label: 'Begin Punchlist', color: 'bg-green-500' },
+                'punch': { next: 'completed', label: 'Mark Complete', color: 'bg-zinc-500' }
               };
               const currentPhase = phaseMap[pkg.phase];
 
               return (
-                <Card 
-                  key={pkg.id} 
-                  className="bg-gradient-to-r from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-zinc-600/50 transition-all cursor-pointer group rounded-lg"
-                  onClick={() => setViewingPackage(pkg)}
-                >
+                <div key={pkg.id} className="space-y-2">
+                  {validation && (
+                    <WorkflowGuidancePanel 
+                      validationResult={validation}
+                      workPackage={pkg}
+                      showHints={showHints}
+                    />
+                  )}
+                  
+                  <Card 
+                    className="bg-gradient-to-r from-zinc-800 to-zinc-900 border-zinc-700/50 hover:border-zinc-600/50 transition-all cursor-pointer group rounded-lg"
+                    onClick={() => setViewingPackage(pkg)}
+                  >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
                       {/* Phase Indicator */}

@@ -4,64 +4,53 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
+    
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { file_url, previous_file_url } = await req.json();
+    const { sheet_id, file_url } = await req.json();
 
-    if (!file_url) {
-      return Response.json({ error: 'file_url required' }, { status: 400 });
+    if (!sheet_id || !file_url) {
+      return Response.json({ error: 'Missing sheet_id or file_url' }, { status: 400 });
     }
 
-    let prompt = `Analyze this construction drawing and identify any revision clouds or markup areas that indicate changes or revisions.
+    // Fetch the sheet
+    const sheets = await base44.entities.DrawingSheet.filter({ id: sheet_id });
+    const sheet = sheets[0];
 
-Describe:
-1. How many revision clouds are visible
-2. Which areas of the drawing they highlight (use grid references if visible, or describe location like "upper left quadrant", "column line A-B")
-3. The revision number associated with each cloud if labeled
-
-Return as JSON:
-{
-  "clouds": [
-    {
-      "revision": "string (e.g., 'Rev 1', 'A')",
-      "location": "string description",
-      "area": "string (e.g., 'connection detail', 'beam size change')"
-    }
-  ],
-  "total_count": number
-}`;
-
-    const file_urls = [file_url];
-    if (previous_file_url) {
-      file_urls.push(previous_file_url);
-      prompt = `Compare these two construction drawings (current and previous revision).
-
-Identify:
-1. All revision clouds or markup areas showing changes
-2. What changed between versions (new elements, size changes, detail modifications)
-3. Grid locations or areas affected
-
-Return as JSON:
-{
-  "clouds": [
-    {
-      "revision": "string",
-      "location": "string",
-      "area": "string",
-      "change_type": "added|modified|removed"
-    }
-  ],
-  "total_count": number,
-  "major_changes": ["list of significant changes between versions"]
-}`;
+    if (!sheet) {
+      return Response.json({ error: 'Sheet not found' }, { status: 404 });
     }
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      file_urls,
+    // Use AI to detect revision clouds from the drawing
+    const prompt = `Analyze this construction drawing PDF and detect revision clouds. 
+    Revision clouds are typically irregular, cloud-like shapes used to highlight changes or revisions on drawings.
+    
+    For each revision cloud detected, provide:
+    1. Location (x, y coordinates as percentage of page)
+    2. Size (width and height as percentage of page)
+    3. Confidence level (0-1)
+    4. Any nearby text or annotations that explain the change
+    5. Description of what was likely changed
+    
+    Return the results as a JSON array of objects with this structure:
+    [
+      {
+        "x": 0.25,
+        "y": 0.40,
+        "width": 0.15,
+        "height": 0.10,
+        "confidence": 0.92,
+        "nearby_text": "Rev A - Member size changed",
+        "linked_changes": "W14x48 changed to W16x57"
+      }
+    ]`;
+
+    const aiResult = await base44.integrations.Core.InvokeLLM({
+      prompt: prompt,
+      add_context_from_internet: false,
+      file_urls: file_url,
       response_json_schema: {
         type: "object",
         properties: {
@@ -70,29 +59,45 @@ Return as JSON:
             items: {
               type: "object",
               properties: {
-                revision: { type: "string" },
-                location: { type: "string" },
-                area: { type: "string" },
-                change_type: { type: "string" }
+                x: { type: "number" },
+                y: { type: "number" },
+                width: { type: "number" },
+                height: { type: "number" },
+                confidence: { type: "number" },
+                nearby_text: { type: "string" },
+                linked_changes: { type: "string" }
               }
             }
-          },
-          total_count: { type: "number" },
-          major_changes: {
-            type: "array",
-            items: { type: "string" }
           }
-        },
-        required: ["clouds", "total_count"]
+        }
       }
+    });
+
+    const detectedClouds = aiResult.clouds || [];
+
+    // Update sheet with detected revision clouds
+    await base44.entities.DrawingSheet.update(sheet_id, {
+      revision_clouds: JSON.stringify(detectedClouds),
+      ai_reviewed: true,
+      ai_findings: `Detected ${detectedClouds.length} revision clouds. ${
+        detectedClouds.length > 0 
+          ? `High confidence detections: ${detectedClouds.filter(c => c.confidence > 0.8).length}`
+          : 'No significant revisions found.'
+      }`
     });
 
     return Response.json({
       success: true,
-      analysis: result
+      clouds_detected: detectedClouds.length,
+      high_confidence: detectedClouds.filter(c => c.confidence > 0.8).length,
+      clouds: detectedClouds
     });
+
   } catch (error) {
-    console.error('Revision cloud detection error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error detecting revision clouds:', error);
+    return Response.json({ 
+      error: error.message,
+      details: error.stack 
+    }, { status: 500 });
   }
 });

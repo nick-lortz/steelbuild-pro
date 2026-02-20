@@ -115,6 +115,7 @@ const navGroups = [
   name: 'Resources',
   icon: Users,
   items: [
+  { name: 'Resources', page: 'Resources', icon: Users },
   { name: 'Resource Management', page: 'ResourceManagement', icon: Package },
   { name: 'Equipment', page: 'Equipment', icon: Truck },
   { name: 'Labor', page: 'Labor', icon: Clock }],

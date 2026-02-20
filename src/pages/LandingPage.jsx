@@ -177,8 +177,8 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-xl text-[#9CA3AF] mb-12 max-w-2xl mx-auto leading-relaxed">
-            Automate conversations, analyze data, and make smarter decisions — all in one place.
-            Built for structural steel fabricators and erectors.
+            From detailing to closeout — track tonnage, control costs, manage RFIs, and sequence erection with real-time visibility.
+            Built specifically for structural steel fabricators and erectors.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -464,11 +464,23 @@ export default function WorkPackages() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                advancePhaseMutation.mutate({ work_package_id: pkg.id, target_phase: currentPhase.next });
+                                advancePhaseMutation.mutate({ 
+                                  work_package_id: pkg.id, 
+                                  target_phase: currentPhase.next,
+                                  wp: pkg 
+                                });
                               }}
-                              className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-md"
+                              disabled={validation && !validation.canAdvance}
+                              className={cn(
+                                "h-9 px-3 text-xs font-semibold rounded-md whitespace-nowrap",
+                                validation?.canAdvance 
+                                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  : "bg-zinc-700 text-zinc-400 cursor-not-allowed"
+                              )}
+                              title={validation?.canAdvance ? currentPhase.label : 'Prerequisites not met'}
                             >
-                              <ArrowRight size={14} />
+                              {currentPhase.label}
+                              <ArrowRight size={14} className="ml-1" />
                             </Button>
                           )}
                           <Button

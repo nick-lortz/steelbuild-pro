@@ -119,7 +119,6 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
 
               return (
                 <React.Fragment key={set.id}>
-                  {/* Main Row */}
                   <tr className="border-b border-zinc-800 hover:bg-zinc-800/30 cursor-pointer">
                     <td className="p-3">
                       <Button

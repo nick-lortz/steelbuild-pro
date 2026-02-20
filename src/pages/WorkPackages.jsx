@@ -22,6 +22,9 @@ import LoadingState from '@/components/layout/LoadingState';
 import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
 import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
 import ProgressReport from '@/components/work-packages/ProgressReport';
+import WorkflowGuidancePanel from '@/components/work-packages/WorkflowGuidancePanel';
+import Breadcrumbs from '@/components/shared/Breadcrumbs';
+import { validatePhaseTransition } from '@/components/work-packages/WorkPackageBlockerEngine';
 
 export default function WorkPackages() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -30,6 +33,11 @@ export default function WorkPackages() {
   const [viewingPackage, setViewingPackage] = useState(null);
   const [deletePackage, setDeletePackage] = useState(null);
   const [phaseFilter, setPhaseFilter] = useState('all');
+  const [validationResults, setValidationResults] = useState({});
+  const [showHints, setShowHints] = useState(() => {
+    const saved = localStorage.getItem('workflow_hints_enabled');
+    return saved === null ? true : saved === 'true';
+  });
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -154,15 +162,70 @@ export default function WorkPackages() {
   });
 
   const advancePhaseMutation = useMutation({
-    mutationFn: async ({ work_package_id, target_phase }) => {
+    mutationFn: async ({ work_package_id, target_phase, wp }) => {
+      // Validate before advancing
+      const validation = await validatePhaseTransition(wp, target_phase, base44);
+      
+      if (!validation.canAdvance) {
+        // Track blocked attempt
+        await base44.functions.invoke('trackWorkflowBlocker', {
+          work_package_id,
+          project_id: wp.project_id,
+          current_phase: wp.phase,
+          attempted_phase: target_phase,
+          blocker_type: validation.blockers[0]?.type,
+          blocker_severity: validation.blockers[0]?.severity,
+          blocker_message: validation.blockers[0]?.message
+        });
+        throw new Error('Cannot advance: prerequisites not met');
+      }
+      
       const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['work-packages', activeProjectId]);
       toast.success('Phase advanced');
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Cannot advance phase');
     }
   });
+  
+  // Validate work packages on load
+  React.useEffect(() => {
+    if (!workPackages.length) return;
+    
+    const validatePackages = async () => {
+      const results = {};
+      for (const wp of workPackages) {
+        const nextPhase = getNextPhase(wp.phase);
+        if (nextPhase) {
+          const validation = await validatePhaseTransition(wp, nextPhase, base44);
+          results[wp.id] = validation;
+        }
+      }
+      setValidationResults(results);
+    };
+    
+    validatePackages();
+  }, [workPackages]);
+  
+  const getNextPhase = (currentPhase) => {
+    const transitions = {
+      'pre_fab': 'shop',
+      'shop': 'delivery',
+      'delivery': 'erection',
+      'erection': 'punch'
+    };
+    return transitions[currentPhase];
+  };
+  
+  const toggleHints = () => {
+    const newValue = !showHints;
+    setShowHints(newValue);
+    localStorage.setItem('workflow_hints_enabled', newValue.toString());
+  };
 
   const filteredPackages = useMemo(() => {
     return workPackages.filter(wp => phaseFilter === 'all' || wp.phase === phaseFilter);
@@ -211,11 +274,27 @@ export default function WorkPackages() {
 
   return (
     <PageShell>
+      <Breadcrumbs 
+        items={[
+          { label: 'Projects', href: '/projects' },
+          { label: selectedProject?.name || 'Work Packages' }
+        ]}
+        className="mb-4"
+      />
+      
       <PageHeader
         title="Work Packages"
         subtitle={`${selectedProject?.project_number} • ${stats.total} packages`}
         actions={
           <>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={toggleHints}
+              className="mr-2"
+            >
+              {showHints ? 'Hide' : 'Show'} Workflow Hints
+            </Button>
             <Select value={activeProjectId || ''} onValueChange={setActiveProjectId}>
               <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
                 <SelectValue />
@@ -228,7 +307,7 @@ export default function WorkPackages() {
             </Select>
             <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
               <Plus size={16} className="mr-2" />
-              Add Package
+              Create Work Package
             </Button>
           </>
         }

@@ -490,6 +490,12 @@ export default function ResourceManagement() {
               tasks={tasks}
               projects={projects}
             />
+
+            <ResourceWorkloadChart
+              resources={resources}
+              allocations={allocations}
+              tasks={tasks}
+            />
             
             {/* Keep existing overview content below */}
             {/* KPI Cards */}

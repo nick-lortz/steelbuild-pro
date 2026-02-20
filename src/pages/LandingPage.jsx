@@ -148,12 +148,23 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 container mx-auto px-6 pt-20 pb-32">
+      <section className="relative z-10 min-h-[90vh] flex items-center">
+        {/* Hero Background Image */}
+        <div className="absolute inset-0 overflow-hidden">
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/694bc0dd754d739afc7067e9/d33cbf84a_ChatGPTImageFeb19202610_36_19PM.png"
+            alt="Steel fabrication and ironworker welding"
+            className="w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto text-center"
+          className="container mx-auto px-6 relative z-10"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -166,22 +177,22 @@ export default function LandingPage() {
             </span>
           </motion.div>
 
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 leading-tight tracking-tight">
-            <span className="bg-gradient-to-r from-[#E5E7EB] to-[#9CA3AF] bg-clip-text text-transparent">
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight tracking-tight max-w-5xl text-left">
+            <span className="text-white drop-shadow-2xl">
               Steel Construction
             </span>
             <br />
-            <span className="bg-gradient-to-r from-[#FF6B2C] via-[#FF9D42] to-[#FFB84D] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#FF6B2C] via-[#FF9D42] to-[#FFB84D] bg-clip-text text-transparent drop-shadow-2xl">
               Project Management
             </span>
           </h1>
 
-          <p className="text-xl text-[#9CA3AF] mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-[#E5E7EB] mb-12 max-w-2xl text-left leading-relaxed drop-shadow-lg">
             From detailing to closeout — track tonnage, control costs, manage RFIs, and sequence erection with real-time visibility.
             Built specifically for structural steel fabricators and erectors.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-start">
             <Button 
               size="lg" 
               onClick={handleGetStarted}

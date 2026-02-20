@@ -121,12 +121,25 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div 
-              className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
-              style={{ boxShadow: '0 0 20px rgba(255, 157, 66, 0.3)' }}
+              className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center relative overflow-hidden"
+              style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.4)' }}
             >
-              <Building size={20} className="text-[#0A0E13]" />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+              <Building size={24} className="text-[#0A0E13] relative z-10" strokeWidth={2.5} />
             </div>
-            <span className="text-xl font-bold tracking-wide">SteelBuild Pro</span>
+            <div>
+              <div className="text-xl font-bold tracking-wide flex items-center gap-2">
+                <span className="bg-gradient-to-r from-[#E5E7EB] to-[#9CA3AF] bg-clip-text text-transparent">
+                  SteelBuild
+                </span>
+                <span className="bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] bg-clip-text text-transparent">
+                  Pro
+                </span>
+              </div>
+              <div className="text-[10px] text-[#6B7280] uppercase tracking-widest font-semibold">
+                Steel Construction Intelligence
+              </div>
+            </div>
           </div>
           <Button onClick={handleGetStarted} variant="outline">
             Sign In

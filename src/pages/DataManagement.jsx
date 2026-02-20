@@ -53,6 +53,13 @@ const ENTITY_GROUPS = [
       { name: 'Document', label: 'Documents', projectField: 'project_id' },
       { name: 'DrawingSheet', label: 'Drawing Sheets', projectField: 'drawing_set_id' }
     ]
+  },
+  {
+    group: 'Resources',
+    entities: [
+      { name: 'Resource', label: 'Resources', projectField: 'current_project_id' },
+      { name: 'Crew', label: 'Crews', projectField: 'project_id' }
+    ]
   }
 ];
 

@@ -52,6 +52,7 @@ import AdvancedReporting from './pages/AdvancedReporting';
 import Analytics from './pages/Analytics';
 import AuditDashboard from './pages/AuditDashboard';
 import AuditFixQueue from './pages/AuditFixQueue';
+import AutomationWorkflows from './pages/AutomationWorkflows';
 import BudgetControl from './pages/BudgetControl';
 import Calendar from './pages/Calendar';
 import ChangeOrders from './pages/ChangeOrders';
@@ -114,7 +115,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import AutomationWorkflows from './pages/AutomationWorkflows';
 import __Layout from './Layout.jsx';
 
 
@@ -124,6 +124,7 @@ export const PAGES = {
     "Analytics": Analytics,
     "AuditDashboard": AuditDashboard,
     "AuditFixQueue": AuditFixQueue,
+    "AutomationWorkflows": AutomationWorkflows,
     "BudgetControl": BudgetControl,
     "Calendar": Calendar,
     "ChangeOrders": ChangeOrders,
@@ -186,7 +187,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "AutomationWorkflows": AutomationWorkflows,
 }
 
 export const pagesConfig = {

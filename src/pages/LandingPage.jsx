@@ -217,51 +217,85 @@ export default function LandingPage() {
             <div className="aspect-video rounded-xl bg-black overflow-hidden border border-[rgba(255,255,255,0.05)] relative">
               {/* Mock Dashboard Content */}
               <div className="absolute inset-0 p-6 space-y-4">
-                {/* Mock Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-[rgba(255,255,255,0.05)]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42]" style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.5)' }} />
-                    <div className="h-4 w-32 bg-[#1F1F1F] rounded" />
+                {/* Dashboard Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-[rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center" style={{ boxShadow: '0 0 16px rgba(255, 157, 66, 0.4)' }}>
+                      <Building size={14} className="text-black" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#E5E7EB]">Project 24-087</div>
+                      <div className="text-[9px] text-[#6B7280]">Industrial Distribution Center</div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <div className="h-8 w-20 bg-[#1F1F1F] rounded-lg" />
-                    <div className="h-8 w-8 bg-[#1F1F1F] rounded-lg" />
+                    <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded text-[9px] text-green-400 font-medium">
+                      On Schedule
+                    </div>
                   </div>
                 </div>
 
-                {/* Mock Metrics Grid */}
-                <div className="grid grid-cols-4 gap-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-3 space-y-2">
-                      <div className="h-3 w-16 bg-[#1F1F1F] rounded" />
-                      <div className="h-5 w-20 bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] rounded" />
-                    </div>
-                  ))}
+                {/* Real Metrics Grid */}
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-2">
+                    <div className="text-[9px] text-[#6B7280] font-medium mb-1">Total Tonnage</div>
+                    <div className="text-lg font-bold text-[#FF9D42]">387 T</div>
+                    <div className="text-[8px] text-green-400">↑ 12% vs plan</div>
+                  </div>
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-2">
+                    <div className="text-[9px] text-[#6B7280] font-medium mb-1">Budget Status</div>
+                    <div className="text-lg font-bold text-[#10B981]">$847K</div>
+                    <div className="text-[8px] text-green-400">Under by 3.2%</div>
+                  </div>
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-2">
+                    <div className="text-[9px] text-[#6B7280] font-medium mb-1">Open RFIs</div>
+                    <div className="text-lg font-bold text-[#F59E0B]">8</div>
+                    <div className="text-[8px] text-[#6B7280]">2 critical</div>
+                  </div>
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-2">
+                    <div className="text-[9px] text-[#6B7280] font-medium mb-1">Erection</div>
+                    <div className="text-lg font-bold text-[#3B82F6]">68%</div>
+                    <div className="text-[8px] text-[#9CA3AF]">Wk 18 of 26</div>
+                  </div>
                 </div>
 
-                {/* Mock Chart Area */}
-                <div className="grid grid-cols-2 gap-3 flex-1">
-                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 space-y-3">
-                    <div className="h-3 w-24 bg-[#1F1F1F] rounded" />
-                    <div className="flex items-end gap-2 h-24">
-                      {[40, 65, 45, 80, 55, 70, 50].map((h, i) => (
-                        <div 
-                          key={i} 
-                          className="flex-1 bg-gradient-to-t from-[#FF6B2C] to-[#FF9D42] rounded-t opacity-70"
-                          style={{ height: `${h}%` }}
+                {/* Real Chart Area with Data */}
+                <div className="grid grid-cols-2 gap-2 flex-1">
+                  {/* Fabrication Tonnage Chart */}
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-3">
+                    <div className="text-[10px] font-semibold text-[#E5E7EB] mb-2">Weekly Fabrication Output</div>
+                    <ResponsiveContainer width="100%" height="85%">
+                      <BarChart data={fabricationData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="week" tick={{ fill: '#6B7280', fontSize: 9 }} />
+                        <YAxis tick={{ fill: '#6B7280', fontSize: 9 }} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#0A0A0A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                          labelStyle={{ color: '#E5E7EB' }}
                         />
-                      ))}
-                    </div>
+                        <Bar dataKey="tonnage" fill="#FF9D42" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="target" fill="#3B82F6" radius={[4, 4, 0, 0]} opacity={0.3} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-4 space-y-2">
-                    <div className="h-3 w-20 bg-[#1F1F1F] rounded mb-3" />
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="flex items-center gap-3 py-2">
-                        <div className="w-2 h-2 rounded-full bg-[#FF9D42]" />
-                        <div className="h-2 flex-1 bg-[#1F1F1F] rounded" />
-                        <div className="h-2 w-12 bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] rounded" />
-                      </div>
-                    ))}
+
+                  {/* Budget Performance Chart */}
+                  <div className="bg-[#0A0A0A] rounded-lg border border-[rgba(255,255,255,0.05)] p-3">
+                    <div className="text-[10px] font-semibold text-[#E5E7EB] mb-2">Budget vs Actual by Phase</div>
+                    <ResponsiveContainer width="100%" height="85%">
+                      <BarChart data={budgetData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                        <XAxis dataKey="phase" tick={{ fill: '#6B7280', fontSize: 9 }} />
+                        <YAxis tick={{ fill: '#6B7280', fontSize: 9 }} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#0A0A0A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                          labelStyle={{ color: '#E5E7EB' }}
+                          formatter={(value) => `$${(value/1000).toFixed(0)}K`}
+                        />
+                        <Bar dataKey="budget" fill="#6B7280" radius={[4, 4, 0, 0]} opacity={0.5} />
+                        <Bar dataKey="actual" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
               </div>

@@ -498,7 +498,8 @@ export default function WorkPackages() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                  </Card>
+                </div>
               );
             })}
           </div>

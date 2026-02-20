@@ -116,6 +116,7 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -189,6 +190,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
 }
 
 export const pagesConfig = {

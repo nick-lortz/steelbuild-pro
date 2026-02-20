@@ -66,6 +66,7 @@ import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
+import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import ErectionLookahead from './pages/ErectionLookahead';
@@ -116,7 +117,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -140,6 +140,7 @@ export const PAGES = {
     "Detailing": Detailing,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
+    "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
     "Drawings": Drawings,
     "Equipment": Equipment,
     "ErectionLookahead": ErectionLookahead,
@@ -190,7 +191,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
 }
 
 export const pagesConfig = {

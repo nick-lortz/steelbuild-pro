@@ -581,6 +581,13 @@ export default function WorkPackages() {
         </SheetContent>
       </Sheet>
 
+      {assigningResources && (
+        <WorkPackageResourceAssignment
+          workPackage={assigningResources}
+          onClose={() => setAssigningResources(null)}
+        />
+      )}
+
       <AlertDialog open={!!deletePackage} onOpenChange={() => setDeletePackage(null)}>
         <AlertDialogContent className="bg-gradient-to-b from-zinc-900 to-zinc-950 border-zinc-700/50 rounded-lg">
           <AlertDialogHeader>

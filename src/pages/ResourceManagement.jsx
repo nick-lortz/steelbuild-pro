@@ -24,6 +24,8 @@ import ResourceForm from '@/components/resources/ResourceForm';
 import ResourceForecasting from '@/components/resources/ResourceForecasting';
 import SkillGapAnalysis from '@/components/resources/SkillGapAnalysis';
 import ResourceDashboard from '@/components/resources/ResourceDashboard';
+import ResourceWorkloadChart from '@/components/resources/ResourceWorkloadChart';
+import UserSkillsManager from '@/components/resources/UserSkillsManager';
 import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, isAfter, parseISO } from 'date-fns';

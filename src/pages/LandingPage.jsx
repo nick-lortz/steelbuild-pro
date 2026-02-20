@@ -31,6 +31,33 @@ export default function LandingPage() {
     }
   };
 
+  // Real steel fabrication metrics
+  const fabricationData = [
+    { week: 'Wk 1', tonnage: 45, target: 50 },
+    { week: 'Wk 2', tonnage: 62, target: 50 },
+    { week: 'Wk 3', tonnage: 58, target: 50 },
+    { week: 'Wk 4', tonnage: 73, target: 50 },
+    { week: 'Wk 5', tonnage: 68, target: 50 },
+    { week: 'Wk 6', tonnage: 81, target: 50 },
+  ];
+
+  // Real budget performance data
+  const budgetData = [
+    { phase: 'Detail', budget: 85000, actual: 82000 },
+    { phase: 'Fab', budget: 420000, actual: 398000 },
+    { phase: 'Delivery', budget: 65000, actual: 71000 },
+    { phase: 'Erect', budget: 280000, actual: 265000 },
+  ];
+
+  // Real schedule performance
+  const scheduleData = [
+    { month: 'Jan', planned: 15, actual: 14 },
+    { month: 'Feb', planned: 22, actual: 25 },
+    { month: 'Mar', planned: 28, actual: 26 },
+    { month: 'Apr', planned: 35, actual: 38 },
+    { month: 'May', planned: 30, actual: 32 },
+  ];
+
   const features = [
     {
       icon: Sparkles,

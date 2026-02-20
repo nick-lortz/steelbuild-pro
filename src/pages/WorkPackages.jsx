@@ -23,6 +23,7 @@ import WorkPackageForm from '@/components/work-packages/WorkPackageForm';
 import WorkPackageDetails from '@/components/work-packages/WorkPackageDetails';
 import ProgressReport from '@/components/work-packages/ProgressReport';
 import WorkflowGuidancePanel from '@/components/work-packages/WorkflowGuidancePanel';
+import WorkPackageResourceAssignment from '@/components/resources/WorkPackageResourceAssignment';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import { validatePhaseTransition } from '@/components/work-packages/WorkPackageBlockerEngine';
 
@@ -32,6 +33,7 @@ export default function WorkPackages() {
   const [editingPackage, setEditingPackage] = useState(null);
   const [viewingPackage, setViewingPackage] = useState(null);
   const [deletePackage, setDeletePackage] = useState(null);
+  const [assigningResources, setAssigningResources] = useState(null);
   const [phaseFilter, setPhaseFilter] = useState('all');
   const [validationResults, setValidationResults] = useState({});
   const [showHints, setShowHints] = useState(() => {
@@ -483,6 +485,18 @@ export default function WorkPackages() {
                               <ArrowRight size={14} className="ml-1" />
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAssigningResources(pkg);
+                            }}
+                            className="h-9 px-3 text-xs"
+                            title="Assign resources"
+                          >
+                            Assign
+                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"

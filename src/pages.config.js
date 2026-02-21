@@ -117,6 +117,11 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import PMJobSetup from './pages/PMJobSetup';
+import PMScopeExclusions from './pages/PMScopeExclusions';
+import PMChangeOrders from './pages/PMChangeOrders';
+import PMShippingTravel from './pages/PMShippingTravel';
+import PMContacts from './pages/PMContacts';
 import __Layout from './Layout.jsx';
 
 
@@ -191,6 +196,11 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "PMJobSetup": PMJobSetup,
+    "PMScopeExclusions": PMScopeExclusions,
+    "PMChangeOrders": PMChangeOrders,
+    "PMShippingTravel": PMShippingTravel,
+    "PMContacts": PMContacts,
 }
 
 export const pagesConfig = {

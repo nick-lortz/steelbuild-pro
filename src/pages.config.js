@@ -93,7 +93,12 @@ import Meetings from './pages/Meetings';
 import Messages from './pages/Messages';
 import MyActionItems from './pages/MyActionItems';
 import NotificationSettings from './pages/NotificationSettings';
+import PMChangeOrders from './pages/PMChangeOrders';
+import PMContacts from './pages/PMContacts';
+import PMJobSetup from './pages/PMJobSetup';
 import PMProjectControl from './pages/PMProjectControl';
+import PMScopeExclusions from './pages/PMScopeExclusions';
+import PMShippingTravel from './pages/PMShippingTravel';
 import Performance from './pages/Performance';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
@@ -117,11 +122,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import PMJobSetup from './pages/PMJobSetup';
-import PMScopeExclusions from './pages/PMScopeExclusions';
-import PMChangeOrders from './pages/PMChangeOrders';
-import PMShippingTravel from './pages/PMShippingTravel';
-import PMContacts from './pages/PMContacts';
 import __Layout from './Layout.jsx';
 
 
@@ -172,7 +172,12 @@ export const PAGES = {
     "Messages": Messages,
     "MyActionItems": MyActionItems,
     "NotificationSettings": NotificationSettings,
+    "PMChangeOrders": PMChangeOrders,
+    "PMContacts": PMContacts,
+    "PMJobSetup": PMJobSetup,
     "PMProjectControl": PMProjectControl,
+    "PMScopeExclusions": PMScopeExclusions,
+    "PMShippingTravel": PMShippingTravel,
     "Performance": Performance,
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
@@ -196,11 +201,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "PMJobSetup": PMJobSetup,
-    "PMScopeExclusions": PMScopeExclusions,
-    "PMChangeOrders": PMChangeOrders,
-    "PMShippingTravel": PMShippingTravel,
-    "PMContacts": PMContacts,
 }
 
 export const pagesConfig = {

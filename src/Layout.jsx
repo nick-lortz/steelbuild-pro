@@ -159,6 +159,20 @@ const navGroups = [
   roles: ['admin', 'user']
 },
 {
+  name: 'PM Toolkit',
+  icon: DollarSign,
+  items: [
+  { name: 'PM Dashboard', page: 'PMToolkit', icon: LayoutDashboard },
+  { name: 'Job Setup', page: 'PMJobSetup', icon: CheckCircle2 },
+  { name: 'Scope & Exclusions', page: 'PMScopeExclusions', icon: FileText },
+  { name: 'Change Orders', page: 'PMChangeOrders', icon: DollarSign },
+  { name: 'Shipping & Travel', page: 'PMShippingTravel', icon: Truck },
+  { name: 'Contacts', page: 'PMContacts', icon: Users },
+  { name: 'Reports', page: 'PMReports', icon: FileText }],
+
+  roles: ['admin', 'project_manager', 'user']
+},
+{
   name: 'Settings',
   icon: Settings,
   items: [

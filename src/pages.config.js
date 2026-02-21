@@ -97,6 +97,7 @@ import PMChangeOrders from './pages/PMChangeOrders';
 import PMContacts from './pages/PMContacts';
 import PMJobSetup from './pages/PMJobSetup';
 import PMProjectControl from './pages/PMProjectControl';
+import PMReports from './pages/PMReports';
 import PMScopeExclusions from './pages/PMScopeExclusions';
 import PMShippingTravel from './pages/PMShippingTravel';
 import Performance from './pages/Performance';
@@ -122,7 +123,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import PMReports from './pages/PMReports';
 import __Layout from './Layout.jsx';
 
 
@@ -177,6 +177,7 @@ export const PAGES = {
     "PMContacts": PMContacts,
     "PMJobSetup": PMJobSetup,
     "PMProjectControl": PMProjectControl,
+    "PMReports": PMReports,
     "PMScopeExclusions": PMScopeExclusions,
     "PMShippingTravel": PMShippingTravel,
     "Performance": Performance,
@@ -202,7 +203,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "PMReports": PMReports,
 }
 
 export const pagesConfig = {

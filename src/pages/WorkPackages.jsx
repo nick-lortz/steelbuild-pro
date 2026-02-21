@@ -194,23 +194,33 @@ export default function WorkPackages() {
     }
   });
   
-  // Validate work packages on load
+  // Validate work packages on load (debounced to prevent rate limiting)
   React.useEffect(() => {
     if (!workPackages.length) return;
     
     const validatePackages = async () => {
       const results = {};
-      for (const wp of workPackages) {
+      // Batch validate to avoid rate limiting - only validate first 5
+      const packagesToValidate = workPackages.slice(0, 5);
+      
+      for (const wp of packagesToValidate) {
         const nextPhase = getNextPhase(wp.phase);
         if (nextPhase) {
-          const validation = await validatePhaseTransition(wp, nextPhase, base44);
-          results[wp.id] = validation;
+          try {
+            const validation = await validatePhaseTransition(wp, nextPhase, base44);
+            results[wp.id] = validation;
+          } catch (error) {
+            console.error('Validation error for WP', wp.id, error);
+            // Skip this validation on error
+          }
         }
       }
       setValidationResults(results);
     };
     
-    validatePackages();
+    // Debounce validation to prevent rapid re-validation
+    const timer = setTimeout(validatePackages, 500);
+    return () => clearTimeout(timer);
   }, [workPackages]);
   
   const getNextPhase = (currentPhase) => {

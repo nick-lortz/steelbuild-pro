@@ -37,7 +37,10 @@ import { toast } from 'sonner';
 
 export default function Deliveries() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [projectFilter, setProjectFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('project') || 'all';
+  });
   const [statusFilter, setStatusFilter] = useState('all');
   const [showWizard, setShowWizard] = useState(false);
   const [editingDelivery, setEditingDelivery] = useState(null);

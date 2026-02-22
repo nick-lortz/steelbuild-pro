@@ -21,15 +21,28 @@ export const STATUS_TRANSITIONS = {
 
 /**
  * Validates if WorkPackage can advance to next phase
+ * Optimized with request batching to avoid rate limits
  */
 export async function validatePhaseTransition(workPackage, nextPhase, base44) {
   const blockers = [];
   
-  // Check drawing status
-  const drawingSets = await base44.entities.DrawingSet.filter({
-    id: { $in: workPackage.linked_drawing_set_ids || [] }
-  });
+  // Batch drawing + RFI queries together since they use IDs
+  const [drawingSets, openRFIs] = await Promise.all([
+    workPackage.linked_drawing_set_ids?.length 
+      ? base44.entities.DrawingSet.filter({
+          id: { $in: workPackage.linked_drawing_set_ids }
+        })
+      : Promise.resolve([]),
+    
+    workPackage.linked_rfi_ids?.length
+      ? base44.entities.RFI.filter({
+          id: { $in: workPackage.linked_rfi_ids },
+          status: { $in: ['draft', 'submitted', 'under_review', 'reopened'] }
+        })
+      : Promise.resolve([])
+  ]);
   
+  // Check drawing status
   const hasApprovedDrawings = drawingSets.some(ds => ds.status === 'FFF');
   if (!hasApprovedDrawings && drawingSets.length > 0) {
     blockers.push({
@@ -43,7 +56,7 @@ export async function validatePhaseTransition(workPackage, nextPhase, base44) {
     });
   }
   
-  if (drawingSets.length === 0) {
+  if (drawingSets.length === 0 && workPackage.linked_drawing_set_ids?.length) {
     blockers.push({
       type: 'MISSING_DRAWINGS',
       severity: 'CRITICAL',
@@ -56,11 +69,6 @@ export async function validatePhaseTransition(workPackage, nextPhase, base44) {
   }
   
   // Check open RFIs
-  const openRFIs = await base44.entities.RFI.filter({
-    id: { $in: workPackage.linked_rfi_ids || [] },
-    status: { $in: ['draft', 'submitted', 'under_review', 'reopened'] }
-  });
-  
   if (openRFIs.length > 0) {
     blockers.push({
       type: 'OPEN_RFI',
@@ -74,29 +82,31 @@ export async function validatePhaseTransition(workPackage, nextPhase, base44) {
     });
   }
   
-  // Check design intent flags
-  const designFlags = await base44.entities.DesignIntentFlag.filter({
-    project_id: workPackage.project_id,
-    status: { $in: ['flagged', 'pm_review', 'engineer_review'] }
-  });
-  
-  const criticalFlags = designFlags.filter(f => 
-    f.requires_PM_approval || f.requires_engineer_review
-  );
-  
-  if (criticalFlags.length > 0) {
-    blockers.push({
-      type: 'DESIGN_INTENT_CHANGE',
-      severity: 'CRITICAL',
-      message: `${criticalFlags.length} design change(s) require approval`,
-      responsible: criticalFlags[0].requires_engineer_review ? 'Engineer of Record' : 'Project Manager',
-      action: 'Review and approve design changes',
-      entity_type: 'DesignIntentFlag',
-      entity_ids: criticalFlags.map(f => f.id)
+  // Check design intent flags (project-wide, only if transitioning to shop)
+  if (nextPhase === 'shop') {
+    const designFlags = await base44.entities.DesignIntentFlag.filter({
+      project_id: workPackage.project_id,
+      status: { $in: ['flagged', 'pm_review', 'engineer_review'] }
     });
+    
+    const criticalFlags = designFlags.filter(f => 
+      f.requires_PM_approval || f.requires_engineer_review
+    );
+    
+    if (criticalFlags.length > 0) {
+      blockers.push({
+        type: 'DESIGN_INTENT_CHANGE',
+        severity: 'CRITICAL',
+        message: `${criticalFlags.length} design change(s) require approval`,
+        responsible: criticalFlags[0].requires_engineer_review ? 'Engineer of Record' : 'Project Manager',
+        action: 'Review and approve design changes',
+        entity_type: 'DesignIntentFlag',
+        entity_ids: criticalFlags.map(f => f.id)
+      });
+    }
   }
   
-  // Check fabrication readiness
+  // Phase-specific queries (only run needed checks)
   if (nextPhase === 'shop') {
     const fabItems = await base44.entities.FabReadinessItem.filter({
       work_package_id: workPackage.id,
@@ -115,10 +125,7 @@ export async function validatePhaseTransition(workPackage, nextPhase, base44) {
         entity_ids: fabItems.map(f => f.id)
       });
     }
-  }
-  
-  // Check delivery prerequisites
-  if (nextPhase === 'delivery') {
+  } else if (nextPhase === 'delivery') {
     const fabRecords = await base44.entities.Fabrication.filter({
       work_package_id: workPackage.id,
       status: { $ne: 'completed' }
@@ -135,14 +142,13 @@ export async function validatePhaseTransition(workPackage, nextPhase, base44) {
         entity_ids: fabRecords.map(f => f.id)
       });
     }
-  }
-  
-  // Check erection prerequisites
-  if (nextPhase === 'erection') {
-    const deliveries = await base44.entities.Delivery.filter({
-      id: { $in: workPackage.linked_delivery_ids || [] },
-      delivery_status: { $ne: 'received' }
-    });
+  } else if (nextPhase === 'erection') {
+    const deliveries = workPackage.linked_delivery_ids?.length
+      ? await base44.entities.Delivery.filter({
+          id: { $in: workPackage.linked_delivery_ids },
+          delivery_status: { $ne: 'received' }
+        })
+      : [];
     
     if (deliveries.length > 0) {
       blockers.push({

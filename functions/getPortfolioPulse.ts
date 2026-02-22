@@ -26,19 +26,10 @@ Deno.serve(async (req) => {
     // Compute pulse for each project in parallel
     const pulsePromises = projects.map(async (project) => {
       try {
-        // Call getProjectPulse for each project
-        const pulseResponse = await fetch(`${req.url.replace(/\/[^/]+$/, '')}/getProjectPulse`, {
-          method: 'POST',
-          headers: req.headers,
-          body: JSON.stringify({ project_id: project.id })
+        // Call getProjectPulse for each project using SDK
+        const pulse = await base44.functions.invoke('getProjectPulse', { 
+          project_id: project.id 
         });
-        
-        if (!pulseResponse.ok) {
-          console.error(`Failed to get pulse for project ${project.id}`);
-          return null;
-        }
-        
-        const { data: pulse } = await pulseResponse.json();
         
         // Calculate health score
         const healthScore = calculateHealthScore(pulse.blockers);

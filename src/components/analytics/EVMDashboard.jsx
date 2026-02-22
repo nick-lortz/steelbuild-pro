@@ -165,8 +165,9 @@ export default function EVMDashboard({ project, financials, tasks }) {
         <CardHeader>
           <CardTitle className="text-base">EVM Trend Analysis</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+        <CardContent className="min-h-[300px]">
+          <div className="w-full h-full">
+            <ResponsiveContainer width="100%" height={300}>
             <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="month" stroke="#888" />
@@ -180,9 +181,10 @@ export default function EVMDashboard({ project, financials, tasks }) {
               <Line type="monotone" dataKey="EV" stroke="#82ca9d" name="Earned Value" />
               <Line type="monotone" dataKey="AC" stroke="#ffc658" name="Actual Cost" />
             </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+            </ResponsiveContainer>
+            </div>
+            </CardContent>
+            </Card>
 
       {/* Performance Indices Detail */}
       <Card>

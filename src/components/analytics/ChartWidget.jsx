@@ -45,7 +45,8 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
 
   if (chartType === 'line') {
     return (
-      <ResponsiveContainer width="100%" height={300}>
+      <div className="min-h-[300px] w-full">
+        <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
@@ -67,12 +68,14 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
           ))}
         </LineChart>
       </ResponsiveContainer>
+      </div>
     );
   }
 
   if (chartType === 'bar') {
     return (
-      <ResponsiveContainer width="100%" height={300}>
+      <div className="min-h-[300px] w-full">
+        <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
@@ -91,12 +94,14 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
           ))}
         </BarChart>
       </ResponsiveContainer>
+      </div>
     );
   }
 
   if (chartType === 'area') {
     return (
-      <ResponsiveContainer width="100%" height={300}>
+      <div className="min-h-[300px] w-full">
+        <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
@@ -118,12 +123,14 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
           ))}
         </AreaChart>
       </ResponsiveContainer>
+      </div>
     );
   }
 
   if (chartType === 'pie') {
     return (
-      <ResponsiveContainer width="100%" height={300}>
+      <div className="min-h-[300px] w-full">
+        <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
             data={aggregateData}
@@ -144,6 +151,7 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
           />
         </PieChart>
       </ResponsiveContainer>
+      </div>
     );
   }
 

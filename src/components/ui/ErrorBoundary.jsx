@@ -20,8 +20,17 @@ class ErrorBoundary extends React.Component {
     console.error('ErrorBoundary caught:', error, errorInfo);
     this.setState({ error, errorInfo });
     
-    // In production, send to monitoring service
-    // Example: Sentry.captureException(error, { extra: errorInfo });
+    // Send to Sentry with global context
+    import('@/components/providers/SentryProvider').then(({ captureSentryException }) => {
+      const route = window.location.pathname;
+      const projectId = localStorage.getItem('active_project_id');
+      
+      captureSentryException(error, {
+        route: { path: route },
+        project: projectId ? { project_id: projectId } : {},
+        componentStack: errorInfo.componentStack,
+      });
+    });
   }
 
   handleReset = () => {

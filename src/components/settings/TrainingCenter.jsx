@@ -279,11 +279,16 @@ function RFIManagementContent() {
         </AccordionItem>
 
         <AccordionItem value="blockers" className="border border-zinc-800 rounded-lg px-4 bg-zinc-900/50">
-          <AccordionTrigger className="text-white font-semibold">Fabrication Blockers</AccordionTrigger>
-          <AccordionContent className="text-sm text-zinc-300 space-y-2">
-            <p>Tag RFIs as <strong>Fab Blocker</strong> if they prevent release to shop.</p>
-            <p>Link to <strong>Release Groups</strong> and <strong>Piece Marks</strong> for traceability.</p>
-            <p>Dashboard surfaces all fab blockers for daily stand-up review.</p>
+          <AccordionTrigger className="text-white font-semibold">Blocker & Install Impact Flags</AccordionTrigger>
+          <AccordionContent className="text-sm text-zinc-300 space-y-3">
+            <p>Mark RFIs with two independent flags:</p>
+            <ul className="list-disc ml-5 space-y-1">
+              <li><strong>fab_blocker:</strong> Prevents fabrication release (blocks fab readiness check)</li>
+              <li><strong>is_install_blocker:</strong> Prevents erection (blocks install readiness check)</li>
+            </ul>
+            <p><strong>Link to Work Packages:</strong> System propagates RFI status to affected WPs, blocking phase transitions.</p>
+            <p><strong>Impact tracking:</strong> RFI detail shows linked WPs and deliveries, allowing PM to assess scope of delay.</p>
+            <p className="text-amber-400 text-xs mt-2">Dashboard surfaces all blockers by type—separate views for fab hold vs. erection hold.</p>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

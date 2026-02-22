@@ -34,6 +34,12 @@ Deno.serve(async (req) => {
         linked_delivery_ids: { $in: [event.entity_id] }
       });
       wps.forEach(wp => triggeredWpIds.add(wp.id));
+    } else if (event.entity_name === 'PunchItem') {
+      // Find WPs linked to this PunchItem
+      const wps = await base44.asServiceRole.entities.WorkPackage.filter({
+        linked_punch_item_ids: { $in: [event.entity_id] }
+      });
+      wps.forEach(wp => triggeredWpIds.add(wp.id));
     } else if (event.entity_name === 'WorkPackage') {
       // Direct WP change
       triggeredWpIds.add(event.entity_id);

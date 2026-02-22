@@ -134,7 +134,9 @@ export default function WorkPackages() {
       return { previousPackages };
     },
     onError: (error, newPackage, context) => {
-      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      if (context?.previousPackages) {
+        queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      }
       console.error('Create work package error:', error);
       toast.error(error?.message || 'Failed to create work package');
     },
@@ -166,7 +168,9 @@ export default function WorkPackages() {
       return { previousPackages };
     },
     onError: (error, variables, context) => {
-      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      if (context?.previousPackages) {
+        queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      }
       console.error('Update work package error:', error);
       toast.error(error?.message || 'Failed to update work package');
     },
@@ -199,7 +203,9 @@ export default function WorkPackages() {
       return { previousPackages };
     },
     onError: (error, work_package_id, context) => {
-      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      if (context?.previousPackages) {
+        queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      }
       toast.error('Failed to delete package');
     },
     onSuccess: () => {
@@ -246,7 +252,9 @@ export default function WorkPackages() {
       return { previousPackages };
     },
     onError: (error, variables, context) => {
-      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      if (context?.previousPackages) {
+        queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      }
       toast.error(error?.message || 'Cannot advance phase');
     },
     onSuccess: () => {

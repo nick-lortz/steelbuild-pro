@@ -13,7 +13,54 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { parseInput, requireUser, requireProjectAccess, ok, badRequest, unauthorized, forbidden, serverError } from './_lib/guard.js';
+
+// Inline guard functions (Base44 doesn't support local imports)
+async function parseInput(req, schema) {
+  const body = await req.json().catch(() => ({}));
+  for (const [key, rules] of Object.entries(schema)) {
+    if (rules.required && !body[key]) {
+      throw { status: 400, message: `Missing required field: ${key}` };
+    }
+    if (body[key] && rules.type && typeof body[key] !== rules.type) {
+      throw { status: 400, message: `Invalid type for ${key}: expected ${rules.type}` };
+    }
+  }
+  return body;
+}
+
+async function requireUser(req) {
+  const base44 = createClientFromRequest(req);
+  const user = await base44.auth.me();
+  if (!user) throw { status: 401, message: 'Unauthorized' };
+  return user;
+}
+
+async function requireProjectAccess(user, project_id, base44) {
+  if (user.role === 'admin') return;
+  const projects = await base44.entities.Project.filter({ id: project_id });
+  if (projects.length === 0) throw { status: 403, message: 'Project access denied' };
+}
+
+function ok(data) {
+  return Response.json({ success: true, data }, { status: 200 });
+}
+
+function badRequest(message) {
+  return Response.json({ success: false, error: message }, { status: 400 });
+}
+
+function unauthorized(message = 'Unauthorized') {
+  return Response.json({ success: false, error: message }, { status: 401 });
+}
+
+function forbidden(message = 'Forbidden') {
+  return Response.json({ success: false, error: message }, { status: 403 });
+}
+
+function serverError(message = 'Internal server error', error = null) {
+  console.error('[SERVER_ERROR]', message, error);
+  return Response.json({ success: false, error: message }, { status: 500 });
+}
 
 // SLA thresholds in days
 const SLA = {

@@ -123,15 +123,35 @@ export default function Deliveries() {
       
       return base44.entities.Delivery.create(cleanData);
     },
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: ['deliveries'] });
+      
+      const previousDeliveries = queryClient.getQueryData(['deliveries']);
+      
+      const optimisticDelivery = {
+        ...data,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString(),
+        delivery_number: data.delivery_number || `DEL-${Date.now().toString().slice(-6)}`,
+        delivery_status: data.delivery_status || 'draft'
+      };
+      
+      queryClient.setQueryData(['deliveries'], (old = []) => [optimisticDelivery, ...old]);
+      
+      return { previousDeliveries };
+    },
+    onError: (error, data, context) => {
+      queryClient.setQueryData(['deliveries'], context.previousDeliveries);
+      console.error('Create delivery error:', error);
+      toast.error('Failed to create: ' + (error.message || 'Unknown error'));
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowWizard(false);
       setEditingDelivery(null);
       toast.success('Delivery created successfully');
     },
-    onError: (error) => {
-      console.error('Create delivery error:', error);
-      toast.error('Failed to create: ' + (error.message || 'Unknown error'));
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
     }
   });
 
@@ -165,26 +185,57 @@ export default function Deliveries() {
       
       return base44.entities.Delivery.update(id, { ...data, activity_log: updatedActivityLog });
     },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['deliveries'] });
+      
+      const previousDeliveries = queryClient.getQueryData(['deliveries']);
+      
+      queryClient.setQueryData(['deliveries'], (old = []) =>
+        old.map(del => del.id === id ? { ...del, ...data } : del)
+      );
+      
+      return { previousDeliveries };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['deliveries'], context.previousDeliveries);
+      console.error('Update delivery error:', error);
+      toast.error('Failed to update: ' + (error.message || 'Unknown error'));
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setShowWizard(false);
       setEditingDelivery(null);
       setSelectedDelivery(null);
       setReceivingDelivery(null);
       toast.success('Delivery updated successfully');
     },
-    onError: (error) => {
-      console.error('Update delivery error:', error);
-      toast.error('Failed to update: ' + (error.message || 'Unknown error'));
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Delivery.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['deliveries'] });
+      
+      const previousDeliveries = queryClient.getQueryData(['deliveries']);
+      
+      queryClient.setQueryData(['deliveries'], (old = []) =>
+        old.filter(del => del.id !== id)
+      );
+      
+      return { previousDeliveries };
+    },
+    onError: (error, id, context) => {
+      queryClient.setQueryData(['deliveries'], context.previousDeliveries);
+      toast.error('Failed to delete delivery');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
       setDeleteDelivery(null);
       toast.success('Delivery deleted');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['deliveries'] });
     }
   });
 

@@ -12,7 +12,6 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 
 export default function PortfolioPulse() {
   const [expandedProjects, setExpandedProjects] = useState(new Set());
-  const [selectedMetric, setSelectedMetric] = useState('health');
 
   const { data: portfolioPulse, isLoading, error, refetch } = useQuery({
     queryKey: ['portfolioPulse'],

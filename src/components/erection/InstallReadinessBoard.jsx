@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, XCircle, DollarSign } from 'lucide-react';
+import { CheckCircle2, XCircle, DollarSign, AlertCircle } from 'lucide-react';
 
 export default function InstallReadinessBoard({ projectId }) {
   const { data: wps, isLoading } = useQuery({
@@ -19,15 +19,17 @@ export default function InstallReadinessBoard({ projectId }) {
     refetchInterval: 60000
   });
 
-  const { readyWps, blockedWps, totalCostRisk } = useMemo(() => {
-    if (!wps) return { readyWps: [], blockedWps: [], totalCostRisk: 0 };
+  const { readyWps, blockedWps, warningWps, totalCostRisk } = useMemo(() => {
+    if (!wps) return { readyWps: [], blockedWps: [], warningWps: [], totalCostRisk: 0 };
 
-    const ready = wps.filter(w => w.install_ready === true);
+    const ready = wps.filter(w => w.install_ready === true && (!w.install_ready_warnings || w.install_ready_warnings.length === 0));
+    const warning = wps.filter(w => w.install_ready === true && w.install_ready_warnings && w.install_ready_warnings.length > 0);
     const blocked = wps.filter(w => w.install_ready === false);
     const totalRisk = blocked.reduce((sum, w) => sum + (w.readiness_cost_risk || 0), 0);
 
     return {
       readyWps: ready.sort((a, b) => (a.install_day || 0) - (b.install_day || 0)),
+      warningWps: warning.sort((a, b) => (a.install_day || 0) - (b.install_day || 0)),
       blockedWps: blocked.sort((a, b) => (a.install_day || 0) - (b.install_day || 0)),
       totalCostRisk: totalRisk
     };
@@ -65,10 +67,14 @@ export default function InstallReadinessBoard({ projectId }) {
 
       {/* Table View */}
       <Tabs defaultValue="blocked" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="blocked">
             <XCircle className="w-4 h-4 mr-2 text-red-500" />
             Blocked ({blockedWps.length})
+          </TabsTrigger>
+          <TabsTrigger value="warnings">
+            <AlertCircle className="w-4 h-4 mr-2 text-amber-500" />
+            Warnings ({warningWps.length})
           </TabsTrigger>
           <TabsTrigger value="ready">
             <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
@@ -124,6 +130,55 @@ export default function InstallReadinessBoard({ projectId }) {
                           {(wp.readiness_cost_risk || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                         </div>
                         <div className="text-xs text-gray-500">Delay Cost</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Warning WPs */}
+        <TabsContent value="warnings">
+          <div className="space-y-2">
+            {warningWps.length === 0 ? (
+              <Card className="border-amber-900/20 bg-amber-950/10">
+                <CardContent className="pt-6 pb-6">
+                  <div className="text-center text-amber-400 text-sm">No WPs with warnings</div>
+                </CardContent>
+              </Card>
+            ) : (
+              warningWps.map((wp) => (
+                <Card key={wp.id} className="border-amber-900/20 hover:bg-amber-950/5 transition">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="grid grid-cols-12 gap-3 items-start">
+                      <div className="col-span-2">
+                        <div className="font-semibold text-amber-300">{wp.wpid}</div>
+                        <div className="text-xs text-gray-500">WP</div>
+                      </div>
+
+                      <div className="col-span-1">
+                        <div className="font-semibold text-gray-300">{wp.install_day || '—'}</div>
+                        <div className="text-xs text-gray-500">Day</div>
+                      </div>
+
+                      <div className="col-span-2">
+                        <Badge className="bg-amber-900 text-amber-200 w-full justify-center">READY+WARN</Badge>
+                      </div>
+
+                      <div className="col-span-4 text-xs text-amber-300 space-y-0.5">
+                        {wp.install_ready_warnings && wp.install_ready_warnings.slice(0, 2).map((warn, idx) => (
+                          <div key={idx}>⚠ {warn}</div>
+                        ))}
+                        {wp.install_ready_warnings && wp.install_ready_warnings.length > 2 && (
+                          <div className="text-amber-600">+ {wp.install_ready_warnings.length - 2} more</div>
+                        )}
+                      </div>
+
+                      <div className="col-span-3 text-right">
+                        <div className="text-xs text-amber-400 font-semibold">{wp.install_ready_warnings_severity}</div>
+                        <div className="text-xs text-gray-500">Severity</div>
                       </div>
                     </div>
                   </CardContent>

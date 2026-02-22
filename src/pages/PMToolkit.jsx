@@ -100,27 +100,24 @@ export default function PMToolkit() {
   const openRFIs = rfis.filter(r => !['closed', 'answered'].includes(r.status)).length;
   const hasScope = !!scopeRef?.scope_letter_url || (scopeRef?.furnished_installed?.length > 0);
 
-  if (!activeProjectId) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="p-12 text-center text-muted-foreground">
-            Select a project to access PM Toolkit
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-[#E5E7EB]">PM Toolkit</h1>
-          <p className="text-sm text-[#9CA3AF] mt-1">{project?.project_number} • Job Folder & Estimating Tools</p>
+          <p className="text-sm text-[#9CA3AF] mt-1">{project?.project_number || 'Job Folder & Estimating Tools'}</p>
         </div>
         <PMProjectSelector />
       </div>
+
+      {!activeProjectId ? (
+        <Card>
+          <CardContent className="p-12 text-center text-muted-foreground">
+            Select a project above to access PM Toolkit
+          </CardContent>
+        </Card>
+      ) : (
+        <>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-4 gap-4">
@@ -360,6 +357,8 @@ export default function PMToolkit() {
           </Card>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

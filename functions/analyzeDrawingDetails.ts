@@ -10,8 +10,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Drawing analysis requires Detailer/PM/Admin
-    requireRole(user, ['admin', 'pm', 'detailer']);
+    // Drawing analysis requires Admin/PM (flexible role check)
+    if (!['admin', 'project_manager'].includes(user.role)) {
+      return Response.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
 
     const { drawing_file_url, drawing_sheet_id } = await req.json();
 

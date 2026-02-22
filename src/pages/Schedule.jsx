@@ -244,16 +244,37 @@ export default function Schedule() {
       const result = await base44.entities.Task.update(id, data);
       return result;
     },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      
+      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
+      const previousTasks = queryClient.getQueryData(['tasks']);
+      
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) =>
+        old.map(t => t.id === id ? { ...t, ...data } : t)
+      );
+      
+      queryClient.setQueryData(['tasks'], (old = []) =>
+        old?.map(t => t.id === id ? { ...t, ...data } : t)
+      );
+      
+      return { previousScheduleTasks, previousTasks };
+    },
+    onError: (error, { id, data }, context) => {
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
+      queryClient.setQueryData(['tasks'], context.previousTasks);
+      console.error('Update task error:', error);
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to update task');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task updated successfully');
     },
-    onError: (error) => {
-      console.error('Update task error:', error);
-      toast.error(error?.response?.data?.error || error?.message || 'Failed to update task');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
   });
 
@@ -265,12 +286,27 @@ export default function Schedule() {
         )
       );
     },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
+      
+      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
+      
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) => {
+        const updateMap = new Map(updates.map(u => [u.id, u.status]));
+        return old.map(t => updateMap.has(t.id) ? { ...t, status: updateMap.get(t.id) } : t);
+      });
+      
+      return { previousScheduleTasks };
+    },
+    onError: (error, updates, context) => {
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
+      toast.error('Failed to update tasks');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       toast.success('Tasks updated');
     },
-    onError: (error) => {
-      toast.error('Failed to update tasks');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
     }
   });
 

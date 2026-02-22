@@ -130,7 +130,13 @@ export default function Settings() {
 
   const deleteAccountMutation = useMutation({
     mutationFn: async () => {
-      await base44.functions.invoke('deleteUserAccount', { user_id: currentUser.id });
+      const response = await base44.functions.invoke('deleteUserAccount', { 
+        confirmText: deleteConfirmText
+      });
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+      return response.data;
     },
     onSuccess: () => {
       toast.success('Account deleted. Logging out...');
@@ -615,13 +621,14 @@ export default function Settings() {
             </ul>
             <div className="space-y-2 pt-2 border-t border-zinc-800">
               <Label className="text-xs font-bold text-zinc-400">
-                Type DELETE to confirm
+                Type DELETE MY ACCOUNT to confirm
               </Label>
               <Input
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder="DELETE"
+                placeholder="DELETE MY ACCOUNT"
                 className="bg-zinc-800 border-zinc-700 h-9 font-mono"
+                autoComplete="off"
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -638,11 +645,11 @@ export default function Settings() {
               </Button>
               <Button
                 onClick={() => {
-                  if (deleteConfirmText === 'DELETE') {
+                  if (deleteConfirmText === 'DELETE MY ACCOUNT') {
                     deleteAccountMutation.mutate();
                   }
                 }}
-                disabled={deleteConfirmText !== 'DELETE' || deleteAccountMutation.isPending}
+                disabled={deleteConfirmText !== 'DELETE MY ACCOUNT' || deleteAccountMutation.isPending}
                 className="bg-red-600 hover:bg-red-700 text-white h-9 text-xs"
               >
                 <Trash2 size={14} className="mr-1" />

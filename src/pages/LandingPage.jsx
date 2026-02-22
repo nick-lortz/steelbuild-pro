@@ -475,7 +475,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-[rgba(255,255,255,0.05)] py-12">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
               <div 
                 className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
@@ -484,6 +484,26 @@ export default function LandingPage() {
                 <Building size={16} className="text-black" />
               </div>
               <span className="font-bold tracking-wide">SteelBuild Pro</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm">
+              <button 
+                onClick={() => navigate(createPageUrl('PrivacyPolicy'))}
+                className="text-[#9CA3AF] hover:text-[#FF9D42] transition-colors"
+              >
+                Privacy Policy
+              </button>
+              <button 
+                onClick={() => navigate(createPageUrl('TermsOfService'))}
+                className="text-[#9CA3AF] hover:text-[#FF9D42] transition-colors"
+              >
+                Terms of Service
+              </button>
+              <a 
+                href="mailto:support@steelbuildpro.com"
+                className="text-[#9CA3AF] hover:text-[#FF9D42] transition-colors"
+              >
+                Contact Support
+              </a>
             </div>
             <p className="text-sm text-[#6B7280]">
               © 2026 SteelBuild Pro. Built for construction professionals.

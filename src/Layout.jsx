@@ -203,6 +203,18 @@ function LayoutContent({ children, currentPageName }) {
     initSentry();
   }, []);
 
+  // Set Sentry user context when authenticated
+  useEffect(() => {
+    if (currentUser) {
+      import('@/components/providers/SentryProvider').then(({ setSentryUser, setSentryContext }) => {
+        setSentryUser(currentUser);
+        if (activeProjectId) {
+          setSentryContext('project', { project_id: activeProjectId });
+        }
+      });
+    }
+  }, [currentUser, activeProjectId]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {
     const saved = localStorage.getItem('nav_expanded_groups');

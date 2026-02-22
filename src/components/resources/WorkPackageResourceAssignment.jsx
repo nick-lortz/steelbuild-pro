@@ -38,13 +38,14 @@ export default function WorkPackageResourceAssignment({ workPackage, onClose }) 
     [allocations]
   );
 
-  // Filter resources
+  // Filter resources (labor + subcontractors)
   const filteredResources = useMemo(() => {
     return resources.filter(r => {
       const matchesSearch = !searchTerm || 
         r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.classification?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch && r.type === 'labor';
+        r.classification?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.contact_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch && (r.type === 'labor' || r.type === 'subcontractor');
     });
   }, [resources, searchTerm]);
 
@@ -128,7 +129,14 @@ export default function WorkPackageResourceAssignment({ workPackage, onClose }) 
                     <div className="flex items-center gap-3">
                       <CheckCircle2 size={16} className="text-emerald-500" />
                       <div>
-                        <div className="font-medium text-white">{resource?.name || 'Unknown'}</div>
+                        <div className="font-medium text-white flex items-center gap-2">
+                          {resource?.name || 'Unknown'}
+                          {resource?.type === 'subcontractor' && (
+                            <Badge variant="outline" className="text-[9px] bg-purple-500/10 text-purple-400 border-purple-500/30">
+                              SUB
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-xs text-zinc-400">
                           {resource?.classification} • {allocation.allocation_percentage}% allocated
                         </div>
@@ -152,12 +160,12 @@ export default function WorkPackageResourceAssignment({ workPackage, onClose }) 
         {/* Available Resources */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-semibold">Available Resources</Label>
+            <Label className="text-sm font-semibold">Available Resources (Labor + Subcontractors)</Label>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                 <Input
-                  placeholder="Search..."
+                  placeholder="Search labor or subs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9 w-64 h-9"
@@ -195,9 +203,19 @@ export default function WorkPackageResourceAssignment({ workPackage, onClose }) 
                         {isSelected && <CheckCircle2 size={12} className="text-white" />}
                       </div>
                       <div>
-                        <div className="font-medium text-white">{resource.name}</div>
+                        <div className="font-medium text-white flex items-center gap-2">
+                          {resource.name}
+                          {resource.type === 'subcontractor' && (
+                            <Badge variant="outline" className="text-[9px] bg-purple-500/10 text-purple-400 border-purple-500/30">
+                              SUB
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-xs text-zinc-400">
-                          {resource.classification} • {resource.skill_level || 'N/A'}
+                          {resource.type === 'subcontractor' 
+                            ? `${resource.classification || 'Subcontractor'} • ${resource.contact_name || 'No contact'}`
+                            : `${resource.classification} • ${resource.skill_level || 'N/A'}`
+                          }
                           {resource.skills?.length > 0 && (
                             <span> • {resource.skills.slice(0, 2).join(', ')}</span>
                           )}

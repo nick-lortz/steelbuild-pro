@@ -1,154 +1,63 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-const statusConfig = {
-  // Project/Task Status
-  not_started: { 
-    label: 'Not Started', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-muted))] border border-[hsl(var(--border-default))]' 
-  },
-  in_progress: { 
-    label: 'In Progress', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  completed: { 
-    label: 'Completed', 
-    className: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border border-[hsl(var(--success-border))]' 
-  },
-  on_hold: { 
-    label: 'On Hold', 
-    className: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border border-[hsl(var(--warning-border))]' 
-  },
-  blocked: { 
-    label: 'Blocked', 
-    className: 'bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))] border border-[hsl(var(--error-border))]' 
-  },
-  cancelled: { 
-    label: 'Cancelled', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-muted))] border border-[hsl(var(--border-default))]' 
-  },
-
-  // RFI Status
-  draft: { 
-    label: 'Draft', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-muted))] border border-[hsl(var(--border-default))]' 
-  },
-  internal_review: { 
-    label: 'Internal Review', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  submitted: { 
-    label: 'Submitted', 
-    className: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border border-[hsl(var(--warning-border))]' 
-  },
-  under_review: { 
-    label: 'Under Review', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  answered: { 
-    label: 'Answered', 
-    className: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border border-[hsl(var(--success-border))]' 
-  },
-  closed: { 
-    label: 'Closed', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-secondary))] border border-[hsl(var(--border-default))]' 
-  },
-
+const statusStyles = {
+  // Project statuses
+  bidding: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  awarded: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  in_progress: "bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30",
+  on_hold: "bg-[#F59E0B]/20 text-[#FCD34D] border-[#F59E0B]/30",
+  completed: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  closed: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  
+  // Drawing statuses
+  IFA: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  BFA: "bg-[#3B82F6]/15 text-[#93C5FD] border-[#3B82F6]/25",
+  BFS: "bg-[#06B6D4]/20 text-[#67E8F9] border-[#06B6D4]/30",
+  FFF: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  "As-Built": "bg-[#10B981]/25 text-[#6EE7B7] border-[#10B981]/35",
+  
+  // RFI statuses
+  draft: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  submitted: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  pending: "bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30",
+  answered: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  
+  // Change Order statuses
+  approved: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  rejected: "bg-[#EF4444]/20 text-[#FCA5A5] border-[#EF4444]/30",
+  void: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  
   // Priority
-  low: { 
-    label: 'Low', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  medium: { 
-    label: 'Medium', 
-    className: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border border-[hsl(var(--warning-border))]' 
-  },
-  high: { 
-    label: 'High', 
-    className: 'bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))] border border-[hsl(var(--error-border))]' 
-  },
-  critical: { 
-    label: 'Critical', 
-    className: 'bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))] border border-[hsl(var(--error-border))] font-bold' 
-  },
-
-  // Work Package Phases
-  pre_fab: { 
-    label: 'Pre-Fab', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-secondary))] border border-[hsl(var(--border-default))]' 
-  },
-  shop: { 
-    label: 'Shop', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  delivery: { 
-    label: 'Delivery', 
-    className: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border border-[hsl(var(--warning-border))]' 
-  },
-  erection: { 
-    label: 'Erection', 
-    className: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border border-[hsl(var(--success-border))]' 
-  },
-  punch: { 
-    label: 'Punch', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-secondary))] border border-[hsl(var(--border-default))]' 
-  },
-
-  // Drawing Status
-  IFA: { 
-    label: 'IFA', 
-    className: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border border-[hsl(var(--warning-border))]' 
-  },
-  BFA: { 
-    label: 'BFA', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  BFS: { 
-    label: 'BFS', 
-    className: 'bg-[hsl(var(--info-bg))] text-[hsl(var(--info-text))] border border-[hsl(var(--info-border))]' 
-  },
-  FFF: { 
-    label: 'FFF', 
-    className: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border border-[hsl(var(--success-border))]' 
-  },
-  superseded: { 
-    label: 'Superseded', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-muted))] border border-[hsl(var(--border-default))]' 
-  },
-
-  // Generic
-  active: { 
-    label: 'Active', 
-    className: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border border-[hsl(var(--success-border))]' 
-  },
-  inactive: { 
-    label: 'Inactive', 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-muted))] border border-[hsl(var(--border-default))]' 
-  },
-  pending: { 
-    label: 'Pending', 
-    className: 'bg-[hsl(var(--warning-bg))] text-[hsl(var(--warning-text))] border border-[hsl(var(--warning-border))]' 
-  },
-  approved: { 
-    label: 'Approved', 
-    className: 'bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] border border-[hsl(var(--success-border))]' 
-  },
-  rejected: { 
-    label: 'Rejected', 
-    className: 'bg-[hsl(var(--error-bg))] text-[hsl(var(--error-text))] border border-[hsl(var(--error-border))]' 
-  },
+  low: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  medium: "bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30",
+  high: "bg-[#F59E0B]/25 text-[#FCD34D] border-[#F59E0B]/35",
+  critical: "bg-[#EF4444]/25 text-[#FCA5A5] border-[#EF4444]/40",
+  
+  // Resource statuses
+  available: "bg-[#10B981]/20 text-[#6EE7B7] border-[#10B981]/30",
+  assigned: "bg-[#3B82F6]/20 text-[#93C5FD] border-[#3B82F6]/30",
+  unavailable: "bg-[#EF4444]/20 text-[#FCA5A5] border-[#EF4444]/30",
+  
+  // Task statuses
+  not_started: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
+  blocked: "bg-[#EF4444]/25 text-[#FCA5A5] border-[#EF4444]/40",
+  cancelled: "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]",
 };
 
-export default function StatusBadge({ status, label, className }) {
-  const config = statusConfig[status] || { 
-    label: status, 
-    className: 'bg-[hsl(var(--surface-2))] text-[hsl(var(--text-secondary))] border border-[hsl(var(--border-default))]' 
-  };
-
+const StatusBadge = React.memo(function StatusBadge({ status, className }) {
+  const style = statusStyles[status] || "bg-[rgba(255,255,255,0.05)] text-[#9CA3AF] border-[rgba(255,255,255,0.1)]";
+  const displayText = status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  
   return (
-    <Badge className={cn(config.className, className)}>
-      {label || config.label}
+    <Badge 
+      variant="outline" 
+      className={cn("border px-3 py-1 text-xs font-medium", style, className)}
+    >
+      {displayText}
     </Badge>
   );
-}
+});
+
+export default StatusBadge;

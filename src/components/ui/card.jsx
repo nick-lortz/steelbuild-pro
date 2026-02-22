@@ -7,8 +7,8 @@ const Card = React.forwardRef((/** @type {any} */ { className, ...props }, /** @
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border border-[hsl(var(--border-default))] bg-[hsl(var(--surface-1))] text-[hsl(var(--text-primary))] shadow-[var(--shadow-md)]",
-      "hover:border-[hsl(var(--border-strong))] transition-all duration-300",
+      "rounded-xl border border-[rgba(255,255,255,0.05)] bg-[#0A0A0A]/90 backdrop-blur-sm text-[#E5E7EB] shadow-lg",
+      "hover:border-[rgba(255,255,255,0.1)] transition-all duration-300",
       className
     )}
     {...props} />
@@ -18,7 +18,7 @@ Card.displayName = "Card"
 const CardHeader = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-2 p-6 border-b border-[hsl(var(--border-subtle))]", className)}
+    className={cn("flex flex-col space-y-2 p-6 border-b border-[rgba(255,255,255,0.05)]", className)}
     {...props} />
 ))
 CardHeader.displayName = "CardHeader"
@@ -26,7 +26,7 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <h3
     ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-wide text-[hsl(var(--text-primary))]", className)}
+    className={cn("text-lg font-semibold leading-none tracking-wide text-[#E5E7EB]", className)}
     {...props} />
 ))
 CardTitle.displayName = "CardTitle"
@@ -34,7 +34,7 @@ CardTitle.displayName = "CardTitle"
 const CardDescription = React.forwardRef((/** @type {any} */ { className, ...props }, /** @type {any} */ ref) => (
   <div
     ref={ref}
-    className={cn("text-sm text-[hsl(var(--text-secondary))]", className)}
+    className={cn("text-sm text-[#9CA3AF]", className)}
     {...props} />
 ))
 CardDescription.displayName = "CardDescription"

@@ -7,13 +7,12 @@ const Input = React.forwardRef((/** @type {any} */ { className, type, ...props }
     (<input
       type={type}
       className={cn(
-        "flex h-10 w-full rounded-lg border border-[rgba(255,255,255,0.1)] bg-[#0F1419] px-4 py-2.5 text-sm text-[#E5E7EB]",
-        "shadow-sm transition-all duration-250",
-        "placeholder:text-[#6B7280]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9D42] focus-visible:border-[rgba(255,157,66,0.3)]",
-        "hover:border-[rgba(255,255,255,0.15)]",
-        "disabled:cursor-not-allowed disabled:opacity-40",
-        "file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-[#E5E7EB]",
+        "flex h-10 w-full rounded-lg border border-[hsl(var(--border-default))] bg-[hsl(var(--surface-2))] px-3 py-2 text-sm text-[hsl(var(--text-primary))] shadow-[var(--shadow-sm)] transition-colors",
+        "placeholder:text-[hsl(var(--text-muted))]",
+        "hover:border-[hsl(var(--border-strong))]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--focus-ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--app-bg))]",
+        "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[hsl(var(--disabled-bg))]",
+        "file:border-0 file:bg-transparent file:text-sm file:font-medium",
         className
       )}
       ref={ref}

@@ -5,20 +5,20 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF9D42] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0E13] disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--focus-ring))] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-black font-semibold shadow-lg hover:shadow-[0_0_40px_rgba(255,157,66,0.6)] hover:scale-[1.02] active:scale-[0.98]",
+          "bg-[hsl(var(--accent-primary))] text-[hsl(var(--accent-text))] font-semibold shadow-md hover:bg-[hsl(var(--accent-hover))] active:bg-[hsl(var(--accent-pressed))] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
         destructive:
-          "bg-[#EF4444] text-white shadow-md hover:bg-[#DC2626] hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]",
+          "bg-[hsl(var(--error-border))] text-white shadow-md hover:opacity-90",
         outline:
-          "border border-[rgba(255,255,255,0.1)] bg-transparent text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.1)] hover:border-[rgba(255,157,66,0.3)] hover:text-[#FF9D42]",
+          "border border-[hsl(var(--border-default))] bg-transparent text-[hsl(var(--text-primary))] hover:bg-[hsl(var(--surface-hover))] hover:border-[hsl(var(--border-accent))]",
         secondary:
-          "bg-[#0A0A0A] text-[#E5E7EB] border border-[rgba(255,255,255,0.05)] hover:bg-[#0F0F0F] hover:border-[rgba(255,255,255,0.1)]",
-        ghost: "text-[#9CA3AF] hover:bg-[rgba(255,157,66,0.1)] hover:text-[#FF9D42]",
-        link: "text-[#FF9D42] underline-offset-4 hover:underline hover:text-[#FFB84D]",
+          "bg-[hsl(var(--surface-2))] text-[hsl(var(--text-primary))] border border-[hsl(var(--border-subtle))] hover:bg-[hsl(var(--surface-hover))]",
+        ghost: "text-[hsl(var(--text-secondary))] hover:bg-[hsl(var(--surface-hover))] hover:text-[hsl(var(--text-primary))]",
+        link: "text-[hsl(var(--link-default))] underline-offset-4 hover:underline hover:text-[hsl(var(--link-hover))]",
       },
       size: {
         default: "h-10 px-5 py-2.5",

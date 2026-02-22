@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, AlertCircle, TrendingUp, Edit2 } from 'lucide-react';
+import { DollarSign, AlertCircle, TrendingUp, Edit2, Home } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DenominatorToggle from '@/components/financials/DenominatorToggle';
@@ -24,6 +24,7 @@ import CostBreakdownDashboard from '@/components/financials/CostBreakdownDashboa
 import EVMSummary from '@/components/financials/reports/EVMSummary';
 import CashFlowForecast from '@/components/financials/reports/CashFlowForecast';
 import ExecutiveSummary from '@/components/financials/reports/ExecutiveSummary';
+import PortfolioFinancialHomepage from '@/components/financials/PortfolioFinancialHomepage';
 import { toast } from '@/components/ui/notifications';
 
 export default function FinancialsRedesign() {
@@ -117,6 +118,25 @@ export default function FinancialsRedesign() {
     queryFn: () => base44.entities.Task.filter({ project_id: selectedProject }),
     enabled: !!selectedProject,
     staleTime: 5 * 60 * 1000
+  });
+
+  // Portfolio-level data (always fetch)
+  const { data: allSovItems = [] } = useQuery({
+    queryKey: ['all-sov-items'],
+    queryFn: () => base44.entities.SOVItem.list(),
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: allExpenses = [] } = useQuery({
+    queryKey: ['all-expenses'],
+    queryFn: () => base44.entities.Expense.list(),
+    staleTime: 2 * 60 * 1000
+  });
+
+  const { data: allChangeOrders = [] } = useQuery({
+    queryKey: ['all-change-orders'],
+    queryFn: () => base44.entities.ChangeOrder.list(),
+    staleTime: 2 * 60 * 1000
   });
 
   const selectedProjectData = projects.find(p => p.id === selectedProject);
@@ -281,26 +301,44 @@ export default function FinancialsRedesign() {
     }
   });
 
+  // Show portfolio view when no project selected, otherwise show project view
   if (!selectedProject) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <DollarSign size={64} className="mx-auto mb-4 text-[#4B5563]" />
-            <h3 className="text-xl font-bold text-[#E5E7EB] mb-4">Select Project</h3>
-            <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose project..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Choose project...</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="min-h-screen bg-black">
+          {/* Header */}
+          <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md sticky top-0 z-10">
+            <div className="max-w-[1800px] mx-auto px-8 py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <Home size={28} className="text-[#FF9D42]" />
+                  <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Financials</h1>
+                </div>
+                <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Select project to drill down..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Portfolio View</SelectItem>
+                    {projects.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.project_number} - {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Portfolio Dashboard */}
+          <div className="max-w-[1800px] mx-auto px-8 py-6">
+            <PortfolioFinancialHomepage
+              projects={projects}
+              sovItems={allSovItems}
+              expenses={allExpenses}
+              changeOrders={allChangeOrders}
+            />
           </div>
         </div>
       </ErrorBoundary>

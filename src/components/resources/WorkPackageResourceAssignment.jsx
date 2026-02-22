@@ -57,9 +57,10 @@ export default function WorkPackageResourceAssignment({ workPackage, onClose }) 
           resource_id: resourceId,
           project_id: workPackage.project_id,
           work_package_id: workPackage.id,
-          start_date: workPackage.start_date || new Date().toISOString().split('T')[0],
-          end_date: workPackage.end_date || workPackage.target_date || new Date().toISOString().split('T')[0],
-          allocation_percentage: 100
+          allocated_start_date: workPackage.start_date || new Date().toISOString().split('T')[0],
+          allocated_end_date: workPackage.end_date || workPackage.target_date || new Date().toISOString().split('T')[0],
+          allocated_hours: 0,
+          status: 'assigned'
         })
       );
       return await Promise.all(promises);

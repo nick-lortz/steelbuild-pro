@@ -68,6 +68,19 @@ export default function ProjectDashboard() {
   });
 
   useEffect(() => {
+    // Check for ?project= URL param and set active project
+    const params = new URLSearchParams(window.location.search);
+    const projectParam = params.get('project');
+    
+    if (projectParam && projectParam !== activeProjectId) {
+      setActiveProjectId(projectParam);
+    } else if (!projectParam && !activeProjectId && allProjects.length > 0) {
+      // Default to first project if none set
+      setActiveProjectId(allProjects[0].id);
+    }
+  }, [allProjects]);
+
+  useEffect(() => {
     const saved = localStorage.getItem(`dashboard_layout_${activeProjectId}`);
     setWidgetLayout(saved ? JSON.parse(saved) : DEFAULT_LAYOUT);
   }, [activeProjectId]);

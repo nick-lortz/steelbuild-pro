@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 export default function FilterBar({ children, className }) {
   return (
     <div className={cn(
-      "border-b border-zinc-800/50 bg-zinc-950/30",
+      "border-b border-[hsl(var(--border-subtle))] bg-[hsl(var(--surface-1))]",
       className
     )}>
       <div className="max-w-[1800px] mx-auto px-8 py-3">

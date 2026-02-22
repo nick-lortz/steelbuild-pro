@@ -23,6 +23,8 @@ Deno.serve(async (req) => {
 
     const readinessReasons = [];
     const blockingEntityIds = [];
+    const warnings = [];
+    let maxWarningSeverity = 'info';
     let costAtRisk = 0;
 
     // CONDITION 1: OPEN RFIs
@@ -85,6 +87,34 @@ Deno.serve(async (req) => {
       readinessReasons.push('Delivery sequencing mismatch (install day or sequence group)');
     }
 
+    // CONDITION 7: OPEN PUNCH ITEMS
+    if (wp.linked_punch_item_ids && wp.linked_punch_item_ids.length > 0) {
+      const punchItems = await base44.entities.PunchItem.filter({ id: { $in: wp.linked_punch_item_ids } });
+      const openPunch = punchItems.filter(p => p.status !== 'closed' && p.status !== 'completed');
+      if (openPunch.length > 0) {
+        readinessReasons.push(`Open punch items (${openPunch.length})`);
+        blockingEntityIds.push(...openPunch.map(p => p.id));
+      }
+    }
+
+    // WARNINGS (non-blocking checks)
+    // WARNING 1: UPCOMING SCHEDULE CONFLICTS (within 3 days)
+    if (wp.install_day) {
+      const installDate = new Date(wp.install_day);
+      const daysUntilInstall = Math.floor((installDate - new Date()) / (1000 * 60 * 60 * 24));
+      if (daysUntilInstall < 3 && daysUntilInstall >= 0) {
+        warnings.push(`Imminent install in ${daysUntilInstall} days - verify crew availability`);
+        maxWarningSeverity = 'caution';
+      }
+    }
+
+    // WARNING 2: CHECK FOR MATERIAL AVAILABILITY ISSUES (if exists in WP data)
+    // This is extensible - assumes a field like material_availability_status exists
+    if (wp.material_availability_status && wp.material_availability_status !== 'confirmed') {
+      warnings.push('Material availability not confirmed');
+      maxWarningSeverity = 'warning';
+    }
+
     // COST RISK CALCULATION
     if (readinessReasons.length > 0) {
       // Get project for rates
@@ -108,7 +138,9 @@ Deno.serve(async (req) => {
       install_ready: installReady,
       readiness_reason: readinessReasons,
       readiness_cost_risk: costAtRisk,
-      blocking_entity_ids: blockingEntityIds
+      blocking_entity_ids: blockingEntityIds,
+      install_ready_warnings: warnings,
+      install_ready_warnings_severity: maxWarningSeverity
     });
 
     return Response.json({
@@ -118,6 +150,8 @@ Deno.serve(async (req) => {
       readiness_reason: readinessReasons,
       readiness_cost_risk: costAtRisk,
       blocking_entity_ids: blockingEntityIds,
+      install_ready_warnings: warnings,
+      install_ready_warnings_severity: maxWarningSeverity,
       timestamp: new Date().toISOString()
     });
 

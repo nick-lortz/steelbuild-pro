@@ -70,10 +70,13 @@ export default function PMContacts() {
           <h1 className="text-2xl font-bold text-[#E5E7EB]">Project Contacts</h1>
           <p className="text-sm text-[#9CA3AF]">Centralized Contact Directory</p>
         </div>
-        <Button onClick={() => setShowDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Contact
-        </Button>
+        <div className="flex items-center gap-4">
+          <PMProjectSelector />
+          <Button onClick={() => setShowDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Contact
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">

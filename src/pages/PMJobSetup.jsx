@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import PMProjectSelector from '@/components/pm-toolkit/PMProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -105,7 +106,10 @@ export default function PMJobSetup() {
           <h1 className="text-2xl font-bold text-[#E5E7EB]">Job Setup</h1>
           <p className="text-sm text-[#9CA3AF]">"So You've Won a Job" - Kickoff Tasks & Communications</p>
         </div>
-        <Badge className="text-lg px-4 py-2">{progress}% Complete</Badge>
+        <div className="flex items-center gap-4">
+          <PMProjectSelector />
+          <Badge className="text-lg px-4 py-2">{progress}% Complete</Badge>
+        </div>
       </div>
 
       {checklistItems.length === 0 && templates.length > 0 && (

@@ -69,10 +69,13 @@ export default function PMChangeOrders() {
           <h1 className="text-2xl font-bold text-[#E5E7EB]">Change Orders (PM Estimating)</h1>
           <p className="text-sm text-[#9CA3AF]">CO Backup, Pricing, & Cost Tracking</p>
         </div>
-        <Button onClick={() => setShowCODialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Change Order
-        </Button>
+        <div className="flex items-center gap-4">
+          <PMProjectSelector />
+          <Button onClick={() => setShowCODialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Change Order
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">

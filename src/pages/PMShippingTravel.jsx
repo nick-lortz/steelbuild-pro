@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import PMProjectSelector from '@/components/pm-toolkit/PMProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -103,9 +104,12 @@ export default function PMShippingTravel() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#E5E7EB]">Shipping & Travel Calculator</h1>
-        <p className="text-sm text-[#9CA3AF]">PM Cost Impact Tools (Not Bid Estimating)</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-[#E5E7EB]">Shipping & Travel Calculator</h1>
+          <p className="text-sm text-[#9CA3AF]">PM Cost Impact Tools (Not Bid Estimating)</p>
+        </div>
+        <PMProjectSelector />
       </div>
 
       <Tabs defaultValue="shipping">

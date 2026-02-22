@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import PMProjectSelector from '@/components/pm-toolkit/PMProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,7 +103,9 @@ export default function PMScopeExclusions() {
           <h1 className="text-2xl font-bold text-[#E5E7EB]">Scope & Exclusions</h1>
           <p className="text-sm text-[#9CA3AF]">Scope Letter Reference & Justification Anchor</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-4">
+          <PMProjectSelector />
+          <div className="flex gap-2">
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)}>Edit Scope Reference</Button>
           ) : (
@@ -111,6 +114,7 @@ export default function PMScopeExclusions() {
               <Button onClick={handleSave} disabled={saveMutation.isPending}>Save</Button>
             </>
           )}
+          </div>
         </div>
       </div>
 

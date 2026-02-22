@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import PMProjectSelector from '@/components/pm-toolkit/PMProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -113,9 +114,12 @@ export default function PMToolkit() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-[#E5E7EB]">PM Toolkit</h1>
-        <p className="text-sm text-[#9CA3AF] mt-1">{project?.project_number} • Job Folder & Estimating Tools</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-[#E5E7EB]">PM Toolkit</h1>
+          <p className="text-sm text-[#9CA3AF] mt-1">{project?.project_number} • Job Folder & Estimating Tools</p>
+        </div>
+        <PMProjectSelector />
       </div>
 
       {/* Quick Stats */}

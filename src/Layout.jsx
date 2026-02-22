@@ -203,25 +203,14 @@ function LayoutContent({ children, currentPageName }) {
     initSentry();
   }, []);
 
-  // Set Sentry user context when authenticated
-  useEffect(() => {
-    if (currentUser) {
-      import('@/components/providers/SentryProvider').then(({ setSentryUser, setSentryContext }) => {
-        setSentryUser(currentUser);
-        if (activeProjectId) {
-          setSentryContext('project', { project_id: activeProjectId });
-        }
-      });
-    }
-  }, [currentUser, activeProjectId]);
+  const { activeProjectId } = useActiveProject();
+  const queryClient = useQueryClient();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(() => {
     const saved = localStorage.getItem('nav_expanded_groups');
     return saved ? JSON.parse(saved) : ['Overview', 'Project Execution'];
   });
-  const { activeProjectId } = useActiveProject();
-  const queryClient = useQueryClient();
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries();
@@ -261,6 +250,17 @@ function LayoutContent({ children, currentPageName }) {
     refetchInterval: false, // Disable polling in preview
     refetchIntervalInBackground: false
   });
+
+  // Set Sentry user context when authenticated
+  useEffect(() => {
+    if (!currentUser) return;
+    import('@/components/providers/SentryProvider').then(({ setSentryUser, setSentryContext }) => {
+      setSentryUser(currentUser);
+      if (activeProjectId) {
+        setSentryContext('project', { project_id: activeProjectId });
+      }
+    });
+  }, [currentUser, activeProjectId]);
 
   const { data: activeProject } = useQuery({
     queryKey: ['activeProject', activeProjectId],

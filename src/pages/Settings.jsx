@@ -16,13 +16,15 @@ import ContentSection from '@/components/layout/ContentSection';
 import DataTable from '@/components/ui/DataTable';
 import PermissionManager from '@/components/settings/PermissionManager';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
-import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap } from 'lucide-react';
+import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from "sonner";
 import { safeFormat } from '@/components/shared/dateUtilsSafe';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
   const [profileData, setProfileData] = useState({
@@ -125,6 +127,19 @@ export default function Settings() {
     }
   });
 
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      await base44.functions.invoke('deleteUserAccount', { user_id: currentUser.id });
+    },
+    onSuccess: () => {
+      toast.success('Account deleted. Logging out...');
+      setTimeout(() => base44.auth.logout(), 2000);
+    },
+    onError: (error) => {
+      toast.error('Failed to delete account: ' + error.message);
+    }
+  });
+
   const { data: myFeedback = [] } = useQuery({
     queryKey: ['feedback'],
     queryFn: () => base44.entities.Feedback.filter({ user_email: currentUser?.email }, '-created_date'),
@@ -186,7 +201,7 @@ export default function Settings() {
           </TabsList>
 
           {/* Profile */}
-          <TabsContent value="profile">
+          <TabsContent value="profile" className="space-y-6">
             <Card className="bg-zinc-900 border-zinc-800">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base uppercase tracking-wide">Profile</CardTitle>
@@ -546,6 +561,65 @@ export default function Settings() {
             </div>
           </TabsContent>
         </Tabs>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-zinc-900 border-red-900/50 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-red-400 flex items-center gap-2">
+              <AlertTriangle size={20} />
+              Confirm Account Deletion
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-300">
+              You are about to permanently delete your account. This will:
+            </p>
+            <ul className="text-xs text-zinc-400 space-y-1 ml-4 list-disc">
+              <li>Remove all your personal data</li>
+              <li>Revoke access to all projects</li>
+              <li>Delete your preferences and settings</li>
+              <li>Cannot be undone</li>
+            </ul>
+            <div className="space-y-2 pt-2 border-t border-zinc-800">
+              <Label className="text-xs font-bold text-zinc-400">
+                Type DELETE to confirm
+              </Label>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="bg-zinc-800 border-zinc-700 h-9 font-mono"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteConfirmText('');
+                }}
+                className="border-zinc-700 h-9 text-xs"
+              >
+                CANCEL
+              </Button>
+              <Button
+                onClick={() => {
+                  if (deleteConfirmText === 'DELETE') {
+                    deleteAccountMutation.mutate();
+                  }
+                }}
+                disabled={deleteConfirmText !== 'DELETE' || deleteAccountMutation.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white h-9 text-xs"
+              >
+                <Trash2 size={14} className="mr-1" />
+                {deleteAccountMutation.isPending ? 'DELETING...' : 'DELETE ACCOUNT'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Invite Dialog */}
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>

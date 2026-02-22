@@ -311,7 +311,8 @@ function LayoutContent({ children, currentPageName }) {
       <Toaster />
       <CommandPalette />
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-black/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-black/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4"
+              style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

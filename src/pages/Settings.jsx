@@ -249,6 +249,31 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Delete Account Section */}
+            <Card className="bg-zinc-900 border-red-900/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base uppercase tracking-wide text-red-400">Danger Zone</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-white">Delete Account</h4>
+                    <p className="text-xs text-zinc-400">
+                      Permanently delete your account and all associated data. This action cannot be undone.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => setShowDeleteDialog(true)}
+                    variant="destructive"
+                    className="bg-red-600 hover:bg-red-700 h-9 text-xs shrink-0"
+                  >
+                    <Trash2 size={14} className="mr-1" />
+                    DELETE
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Users */}

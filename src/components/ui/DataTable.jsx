@@ -24,11 +24,21 @@ export default function DataTable({ columns, data, onRowClick = null, emptyMessa
             <Card
               key={row.id || rowIdx}
               onClick={() => onRowClick?.(row)}
+              onKeyDown={(e) => {
+                if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  onRowClick(row);
+                }
+              }}
+              tabIndex={onRowClick ? 0 : -1}
+              role={onRowClick ? "button" : undefined}
+              aria-label={onRowClick ? `View details for row ${rowIdx + 1}` : undefined}
               className={cn(
-                onRowClick && "cursor-pointer hover:bg-[rgba(255,157,66,0.03)] transition-colors"
+                "min-h-[44px]",
+                onRowClick && "cursor-pointer hover:bg-[rgba(255,157,66,0.03)] transition-colors active:bg-[rgba(255,157,66,0.05)] focus:outline-none focus:ring-2 focus:ring-[#FF9D42]"
               )}
             >
-              <CardContent className="pt-6 space-y-3">
+              <CardContent className="pt-6 pb-6 space-y-3">
                 {columns.map((col, colIdx) => (
                   <div key={colIdx}>
                     <div className="text-[10px] uppercase tracking-wider text-[#6B7280] font-bold mb-1">

@@ -16,7 +16,8 @@ import ContentSection from '@/components/layout/ContentSection';
 import DataTable from '@/components/ui/DataTable';
 import PermissionManager from '@/components/settings/PermissionManager';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
-import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle } from 'lucide-react';
+import TrainingCenter from '@/components/settings/TrainingCenter';
+import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle, GraduationCap } from 'lucide-react';
 import { toast } from "sonner";
 import { safeFormat } from '@/components/shared/dateUtilsSafe';
 import { cn } from '@/lib/utils';
@@ -197,6 +198,7 @@ export default function Settings() {
             <TabsTrigger value="display"><Monitor size={12} className="mr-1.5" />Display</TabsTrigger>
             <TabsTrigger value="workflow"><Zap size={12} className="mr-1.5" />Workflow</TabsTrigger>
             <TabsTrigger value="notifications"><Bell size={12} className="mr-1.5" />Notifications</TabsTrigger>
+            <TabsTrigger value="training"><GraduationCap size={12} className="mr-1.5" />Training</TabsTrigger>
             <TabsTrigger value="feedback"><MessageSquare size={12} className="mr-1.5" />Feedback</TabsTrigger>
           </TabsList>
 
@@ -464,6 +466,11 @@ export default function Settings() {
           {/* Notifications */}
           <TabsContent value="notifications">
             <NotificationPreferences />
+          </TabsContent>
+
+          {/* Training */}
+          <TabsContent value="training">
+            <TrainingCenter />
           </TabsContent>
 
           {/* Feedback */}

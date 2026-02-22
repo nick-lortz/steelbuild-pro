@@ -49,6 +49,7 @@
  */
 import Admin from './pages/Admin';
 import AdvancedReporting from './pages/AdvancedReporting';
+import Alerts from './pages/Alerts';
 import Analytics from './pages/Analytics';
 import AppStoreAuditReport from './pages/AppStoreAuditReport';
 import AppStoreCompliance from './pages/AppStoreCompliance';
@@ -104,6 +105,7 @@ import PMScopeExclusions from './pages/PMScopeExclusions';
 import PMShippingTravel from './pages/PMShippingTravel';
 import PMToolkit from './pages/PMToolkit';
 import Performance from './pages/Performance';
+import PortfolioPulse from './pages/PortfolioPulse';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
@@ -126,14 +128,13 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import PortfolioPulse from './pages/PortfolioPulse';
-import Alerts from './pages/Alerts';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Admin": Admin,
     "AdvancedReporting": AdvancedReporting,
+    "Alerts": Alerts,
     "Analytics": Analytics,
     "AppStoreAuditReport": AppStoreAuditReport,
     "AppStoreCompliance": AppStoreCompliance,
@@ -189,6 +190,7 @@ export const PAGES = {
     "PMShippingTravel": PMShippingTravel,
     "PMToolkit": PMToolkit,
     "Performance": Performance,
+    "PortfolioPulse": PortfolioPulse,
     "PrivacyPolicy": PrivacyPolicy,
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
@@ -211,8 +213,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "PortfolioPulse": PortfolioPulse,
-    "Alerts": Alerts,
 }
 
 export const pagesConfig = {

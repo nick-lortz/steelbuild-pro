@@ -12,13 +12,15 @@ import { createPageUrl } from '@/utils';
 export default function PortfolioPulse() {
   const [expandedProjects, setExpandedProjects] = useState(new Set());
 
-  const { data: portfolioPulse, isLoading, refetch } = useQuery({
+  const { data: portfolioPulse, isLoading, error, refetch } = useQuery({
     queryKey: ['portfolioPulse'],
     queryFn: async () => {
       const { data } = await base44.functions.invoke('getPortfolioPulse', {});
       return data;
     },
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const toggleExpanded = (projectId) => {
@@ -59,6 +61,32 @@ export default function PortfolioPulse() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0A0E13] flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <p className="text-white font-semibold mb-2">Failed to load portfolio pulse</p>
+          <p className="text-zinc-400 text-sm mb-4">{error.message}</p>
+          <Button onClick={() => refetch()} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!portfolioPulse || !portfolioPulse.projects) {
+    return (
+      <div className="min-h-screen bg-[#0A0E13] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-400">No portfolio data available</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0E13]">
       {/* Header */}
@@ -84,7 +112,7 @@ export default function PortfolioPulse() {
             <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <Building className="w-5 h-5 text-[#FF9D42] mb-2" />
-                <p className="text-3xl font-bold text-white">{portfolioPulse?.portfolio_stats.total_projects || 0}</p>
+                <p className="text-3xl font-bold text-white">{portfolioPulse.portfolio_stats?.total_projects || 0}</p>
                 <p className="text-xs text-[#6B7280] uppercase tracking-widest">Total Projects</p>
               </CardContent>
             </Card>
@@ -92,7 +120,7 @@ export default function PortfolioPulse() {
             <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <TrendingUp className="w-5 h-5 text-green-400 mb-2" />
-                <p className="text-3xl font-bold text-white">{portfolioPulse?.portfolio_stats.avg_health_score || 0}</p>
+                <p className="text-3xl font-bold text-white">{Math.round(portfolioPulse.portfolio_stats?.avg_health_score || 0)}</p>
                 <p className="text-xs text-[#6B7280] uppercase tracking-widest">Avg Health Score</p>
               </CardContent>
             </Card>
@@ -100,7 +128,7 @@ export default function PortfolioPulse() {
             <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <AlertTriangle className="w-5 h-5 text-red-400 mb-2" />
-                <p className="text-3xl font-bold text-red-400">{portfolioPulse?.portfolio_stats.critical_projects || 0}</p>
+                <p className="text-3xl font-bold text-red-400">{portfolioPulse.portfolio_stats?.critical_projects || 0}</p>
                 <p className="text-xs text-[#6B7280] uppercase tracking-widest">Critical Projects</p>
               </CardContent>
             </Card>
@@ -108,7 +136,7 @@ export default function PortfolioPulse() {
             <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <AlertTriangle className="w-5 h-5 text-amber-400 mb-2" />
-                <p className="text-3xl font-bold text-white">{portfolioPulse?.portfolio_stats.total_blockers || 0}</p>
+                <p className="text-3xl font-bold text-white">{portfolioPulse.portfolio_stats?.total_blockers || 0}</p>
                 <p className="text-xs text-[#6B7280] uppercase tracking-widest">Total Blockers</p>
               </CardContent>
             </Card>
@@ -118,8 +146,14 @@ export default function PortfolioPulse() {
 
       {/* Projects List */}
       <div className="max-w-[1800px] mx-auto px-8 py-8">
-        <div className="space-y-3">
-          {portfolioPulse?.projects.map(project => {
+        {portfolioPulse.projects.length === 0 ? (
+          <div className="text-center py-12">
+            <Building className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+            <p className="text-zinc-400">No projects found</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {portfolioPulse.projects.map(project => {
             const isExpanded = expandedProjects.has(project.project_id);
             
             return (
@@ -178,13 +212,13 @@ export default function PortfolioPulse() {
 
                 {isExpanded && (
                   <CardContent className="border-t border-[rgba(255,255,255,0.05)] pt-4">
-                    {project.top_blockers.length === 0 ? (
+                    {!project.top_blockers || project.top_blockers.length === 0 ? (
                       <div className="text-center py-4 text-green-400">
                         ✓ No critical blockers
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-[#9CA3AF] mb-2">Top Blockers</h4>
+                        <h4 className="text-sm font-semibold text-[#9CA3AF] mb-2">Top Blockers ({project.top_blockers.length})</h4>
                         {project.top_blockers.map((blocker, idx) => (
                           <div key={idx} className="p-3 bg-[#151515] rounded-lg border border-[rgba(255,255,255,0.03)]">
                             <div className="flex items-start gap-2">
@@ -214,8 +248,9 @@ export default function PortfolioPulse() {
                 )}
               </Card>
             );
-          })}
-        </div>
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

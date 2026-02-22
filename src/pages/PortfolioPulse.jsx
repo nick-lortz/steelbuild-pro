@@ -141,7 +141,7 @@ export default function PortfolioPulse() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#0A0A0A]/90 cursor-pointer hover:border-[rgba(255,255,255,0.15)] transition-all" onClick={() => setSelectedMetric('health')}>
+            <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <TrendingUp className="w-5 h-5 text-green-400 mb-2" />
                 <p className="text-3xl font-bold text-white">{Math.round(portfolioPulse.portfolio_stats?.avg_health_score || 0)}</p>
@@ -149,7 +149,7 @@ export default function PortfolioPulse() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#0A0A0A]/90 cursor-pointer hover:border-[rgba(255,255,255,0.15)] transition-all" onClick={() => setSelectedMetric('critical')}>
+            <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <AlertTriangle className="w-5 h-5 text-red-400 mb-2" />
                 <p className="text-3xl font-bold text-red-400">{portfolioPulse.portfolio_stats?.critical_projects || 0}</p>
@@ -157,7 +157,7 @@ export default function PortfolioPulse() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#0A0A0A]/90 cursor-pointer hover:border-[rgba(255,255,255,0.15)] transition-all" onClick={() => setSelectedMetric('blockers')}>
+            <Card className="bg-[#0A0A0A]/90">
               <CardContent className="p-6">
                 <Activity className="w-5 h-5 text-amber-400 mb-2" />
                 <p className="text-3xl font-bold text-white">{portfolioPulse.portfolio_stats?.total_blockers || 0}</p>

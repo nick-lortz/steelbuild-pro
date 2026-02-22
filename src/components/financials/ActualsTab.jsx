@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import * as backend from '../services/backend';
 
 const STANDARD_EXPENSE_CATEGORIES = [
@@ -29,6 +30,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState({});
   const [editingExpense, setEditingExpense] = useState(null);
+  const [deleteExpense, setDeleteExpense] = useState(null);
   const [formData, setFormData] = useState({
     cost_code_id: '',
     expense_date: format(new Date(), 'yyyy-MM-dd'),
@@ -268,11 +270,7 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              if (window.confirm(`⚠️ Delete expense: ${row.description}?\n\nAmount: $${row.amount.toLocaleString()}\nVendor: ${row.vendor || 'N/A'}\n\nThis will update actual costs and cannot be undone.`)) {
-                deleteMutation.mutate(row.id);
-              }
-            }}
+            onClick={() => setDeleteExpense(row)}
             disabled={!canEdit}
             className="text-red-400 hover:text-red-300 disabled:opacity-50"
             title={!canEdit ? '🔒 Editing disabled' : 'Delete expense'}
@@ -519,6 +517,37 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteExpense} onOpenChange={() => setDeleteExpense(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Delete Expense?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Delete expense: {deleteExpense?.description}
+              <br /><br />
+              Amount: ${deleteExpense?.amount?.toLocaleString()}
+              <br />
+              Vendor: {deleteExpense?.vendor || 'N/A'}
+              <br /><br />
+              This will update actual costs and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                deleteMutation.mutate(deleteExpense.id);
+                setDeleteExpense(null);
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import ProjectPulsePanel from '@/components/dashboard/ProjectPulsePanel';
+import TopBlockersPanel from '@/components/dashboard/TopBlockersPanel';
 
 export default function Dashboard() {
   const [selectedProjectForPulse, setSelectedProjectForPulse] = useState(null);
@@ -250,6 +251,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Top Blockers - Show for single project selection */}
+      {activeProjects.length === 1 && (
+        <div className="max-w-[1800px] mx-auto px-8 pt-8">
+          <TopBlockersPanel projectId={activeProjects[0].id} />
+        </div>
+      )}
 
       {/* Projects Grid */}
       <div className="max-w-[1800px] mx-auto px-8 py-8">

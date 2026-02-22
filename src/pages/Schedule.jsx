@@ -22,6 +22,17 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
+  
+  // Initialize from URL param if no active project
+  React.useEffect(() => {
+    if (!activeProjectId) {
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('project');
+      if (projectId) {
+        setActiveProjectId(projectId);
+      }
+    }
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');

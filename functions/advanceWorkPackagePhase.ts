@@ -1,160 +1,199 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+/**
+ * ADVANCE WORK PACKAGE PHASE
+ * 
+ * Canonical API for advancing work package through workflow gates.
+ * Enforces all requirements server-side before allowing phase transition.
+ * UI must not directly mutate phase/status - only call this function.
+ * 
+ * Actions:
+ * - 'start_detailing' - planning → detailing
+ * - 'release_fabrication' - detailing → fabrication
+ * - 'start_erection' - fabrication → erection
+ * - 'complete' - erection → closeout
+ */
 
-const PHASE_ORDER = ['fabrication', 'delivery', 'erection', 'complete'];
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { parseInput, requireUser, requireProjectAccess, ok, badRequest, forbidden, serverError, logServiceRoleAccess } from './_lib/guard.js';
 
 Deno.serve(async (req) => {
   try {
+    // 1. Parse input
+    const { project_id, work_package_id, action, override_reason } = await parseInput(req, {
+      project_id: { required: true, type: 'string' },
+      work_package_id: { required: true, type: 'string' },
+      action: { required: true, type: 'string' }
+    });
+    
+    // 2. Authenticate user
+    const user = await requireUser(req);
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { work_package_id, target_phase } = await req.json();
-
-    if (!work_package_id || !target_phase) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    if (!PHASE_ORDER.includes(target_phase)) {
-      return Response.json({ error: 'Invalid phase' }, { status: 400 });
-    }
-
-    // Get work package
-    const workPackages = await base44.asServiceRole.entities.WorkPackage.filter({ id: work_package_id });
+    
+    // 3. Authorize project access
+    await requireProjectAccess(user, project_id, base44);
+    
+    // 4. Fetch work package
+    const workPackages = await base44.entities.WorkPackage.filter({ 
+      id: work_package_id,
+      project_id 
+    });
+    
     if (!workPackages.length) {
-      return Response.json({ error: 'Work package not found' }, { status: 404 });
+      return notFound('Work package not found');
     }
-
+    
     const workPackage = workPackages[0];
-
-    // EXECUTION GATE: Check ExecutionPermission before phase change
-    const permissions = await base44.asServiceRole.entities.ExecutionPermission.filter({
-      work_package_id
+    
+    // 5. Get current execution state
+    const stateCheck = await fetch(`${req.url.replace(/\/[^/]+$/, '')}/getWorkPackageExecutionState`, {
+      method: 'POST',
+      headers: req.headers,
+      body: JSON.stringify({ project_id, work_package_id })
     });
-
-    if (permissions.length > 0) {
-      const permission = permissions[0];
-      if (permission.permission_status !== 'RELEASED') {
-        // Get linked risk assessment for detailed response
-        let assessment = null;
-        if (permission.linked_margin_risk_assessment_id) {
-          const assessments = await base44.asServiceRole.entities.MarginRiskAssessment.filter({
-            id: permission.linked_margin_risk_assessment_id
-          });
-          assessment = assessments[0];
-        }
-
-        return Response.json({
-          blocked: true,
-          reason: permission.blocking_reason,
-          permission_status: permission.permission_status,
-          risk_level: assessment?.risk_level || 'UNKNOWN',
-          risk_score: assessment?.risk_score || 0,
-          margin_at_risk: assessment?.margin_at_risk || 0,
-          ecc_impact_estimate: assessment?.ecc_impact_estimate || 0,
-          drivers: assessment?.drivers || [],
-          message: 'Work package execution blocked. Resolve risk drivers or obtain PM override.'
-        }, { status: 403 });
-      }
+    
+    if (!stateCheck.ok) {
+      return serverError('Failed to check execution state');
     }
-
-    // Reject if already complete
-    if (workPackage.status === 'complete') {
-      return Response.json({ error: 'Work Package already complete' }, { status: 400 });
+    
+    const state = await stateCheck.json();
+    
+    // 6. Validate action is allowed
+    const transition = validateTransition(workPackage, action, state.data, user, override_reason);
+    
+    if (!transition.allowed) {
+      return badRequest(transition.reason, { blockers: transition.blockers });
     }
-
-    const currentIndex = PHASE_ORDER.indexOf(workPackage.phase);
-    const targetIndex = PHASE_ORDER.indexOf(target_phase);
-
-    // Enforce sequential progression only
-    if (targetIndex !== currentIndex + 1) {
-      return Response.json({ 
-        error: 'Invalid phase transition. Can only advance one phase at a time.' 
-      }, { status: 400 });
-    }
-
-    // Close all tasks in current phase
-    const closedTasks = await base44.asServiceRole.entities.Task.filter({
+    
+    // 7. Apply transition (service role for controlled state change)
+    logServiceRoleAccess({
+      function_name: 'advanceWorkPackagePhase',
+      project_id,
+      user_id: user.id,
+      user_email: user.email,
+      action,
+      entity_name: 'WorkPackage',
+      reason: `Phase transition: ${action}`
+    });
+    
+    await base44.asServiceRole.entities.WorkPackage.update(work_package_id, {
+      phase: transition.new_phase,
+      status: transition.new_status,
+      phase_advanced_at: new Date().toISOString(),
+      phase_advanced_by: user.email
+    });
+    
+    // 8. Create audit log
+    await base44.asServiceRole.entities.AuditLog.create({
+      entity_type: 'WorkPackage',
+      entity_id: work_package_id,
+      action: `phase_advance_${action}`,
+      user_email: user.email,
+      changes: {
+        from_phase: workPackage.phase,
+        to_phase: transition.new_phase,
+        from_status: workPackage.status,
+        to_status: transition.new_status,
+        override_reason
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+    return ok({
       work_package_id,
-      phase: workPackage.phase
+      previous_phase: workPackage.phase,
+      new_phase: transition.new_phase,
+      new_status: transition.new_status,
+      message: transition.message
     });
-
-    for (const task of closedTasks) {
-      await base44.asServiceRole.entities.Task.update(task.id, {
-        status: 'completed',
-        progress_percent: 100
-      });
-    }
-
-    // Create tasks for next phase (from templates if available)
-    const createdTasks = [];
-    if (target_phase !== 'complete') {
-      // Check for TaskTemplate entity
-      const templates = await base44.asServiceRole.entities.TaskTemplate.filter({ 
-        phase: target_phase 
-      }).catch(() => []);
-
-      if (templates.length > 0) {
-        // Use templates if available
-        for (const tpl of templates) {
-          const task = await base44.asServiceRole.entities.Task.create({
-            project_id: workPackage.project_id,
-            work_package_id,
-            name: tpl.name,
-            phase: target_phase,
-            status: 'not_started',
-            start_date: tpl.start_date,
-            end_date: tpl.end_date,
-            duration_days: tpl.duration_days,
-            estimated_hours: tpl.estimated_hours
-          });
-          createdTasks.push(task);
-        }
-      } else {
-        // Fallback: create basic placeholder tasks
-        const phaseTaskTemplates = {
-          fabrication: ['Material procurement', 'Shop fabrication', 'QC inspection'],
-          delivery: ['Load planning', 'Transportation', 'Site delivery'],
-          erection: ['Site prep', 'Crane setup', 'Steel erection', 'Final inspection']
-        };
-
-        const taskNames = phaseTaskTemplates[target_phase] || [];
-        const startDate = new Date().toISOString().split('T')[0];
-        const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-        for (const taskName of taskNames) {
-          const task = await base44.asServiceRole.entities.Task.create({
-            project_id: workPackage.project_id,
-            work_package_id,
-            name: taskName,
-            phase: target_phase,
-            status: 'not_started',
-            start_date: startDate,
-            end_date: endDate
-          });
-          createdTasks.push(task);
-        }
-      }
-    }
-
-    // Update work package phase
-    const updatedWorkPackage = await base44.asServiceRole.entities.WorkPackage.update(work_package_id, {
-      phase: target_phase,
-      status: target_phase === 'complete' ? 'complete' : 'active'
-    });
-
-    return Response.json({
-      success: true,
-      work_package: updatedWorkPackage,
-      closed_tasks: closedTasks,
-      created_tasks: createdTasks,
-      message: `Work package advanced to ${target_phase}`
-    });
-
+    
   } catch (error) {
-    console.error('Error advancing work package phase:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    if (error.status === 400) return badRequest(error.message);
+    if (error.status === 401) return unauthorized(error.message);
+    if (error.status === 403) return forbidden(error.message);
+    if (error.status === 404) return notFound(error.message);
+    return serverError('Failed to advance phase', error);
   }
 });
+
+function validateTransition(workPackage, action, executionState, user, override_reason) {
+  const currentPhase = workPackage.phase;
+  
+  // Define valid transitions
+  const transitions = {
+    start_detailing: {
+      from: 'planning',
+      to: 'detailing',
+      status: 'in_progress',
+      gates: [],
+      message: 'Detailing phase started'
+    },
+    release_fabrication: {
+      from: 'detailing',
+      to: 'fabrication',
+      status: 'in_progress',
+      gates: ['drawings_approved', 'no_blocking_rfis', 'detailing_complete'],
+      message: 'Released to fabrication'
+    },
+    start_erection: {
+      from: 'fabrication',
+      to: 'erection',
+      status: 'in_progress',
+      gates: ['material_available'],
+      message: 'Erection started'
+    },
+    complete: {
+      from: 'erection',
+      to: 'closeout',
+      status: 'completed',
+      gates: [],
+      message: 'Work package completed'
+    }
+  };
+  
+  const transition = transitions[action];
+  
+  if (!transition) {
+    return { allowed: false, reason: `Unknown action: ${action}` };
+  }
+  
+  if (currentPhase !== transition.from) {
+    return { 
+      allowed: false, 
+      reason: `Invalid transition: cannot ${action} from ${currentPhase} phase (must be ${transition.from})` 
+    };
+  }
+  
+  // Check gates
+  const failedGates = [];
+  for (const gate of transition.gates) {
+    if (!executionState.gate_status[gate]) {
+      failedGates.push(gate);
+    }
+  }
+  
+  // Allow admin override with reason
+  if (failedGates.length > 0) {
+    if (user.role === 'admin' && override_reason) {
+      console.log('[PHASE_ADVANCE_OVERRIDE]', {
+        user: user.email,
+        work_package_id: workPackage.id,
+        action,
+        failed_gates: failedGates,
+        override_reason
+      });
+    } else {
+      return { 
+        allowed: false, 
+        reason: `Gates not satisfied: ${failedGates.join(', ')}`,
+        blockers: executionState.blockers,
+        failed_gates: failedGates
+      };
+    }
+  }
+  
+  return {
+    allowed: true,
+    new_phase: transition.to,
+    new_status: transition.status,
+    message: transition.message
+  };
+}

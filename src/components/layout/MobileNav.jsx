@@ -17,7 +17,7 @@ const tabs = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, rootPage: 'Dashboard' },
   { name: 'Projects', page: 'Projects', icon: Building2, rootPage: 'Projects' },
   { name: 'Schedule', page: 'Schedule', icon: Calendar, rootPage: 'Schedule' },
-  { name: 'Financials', page: 'Financials', icon: DollarSign, rootPage: 'Financials' },
+  { name: 'Financials', page: 'FinancialsRedesign', icon: DollarSign, rootPage: 'FinancialsRedesign' },
   { name: 'Resources', page: 'Resources', icon: Users, rootPage: 'ResourceManagement' },
 ];
 
@@ -27,16 +27,26 @@ const pageToTabMap = {
   'Projects': 'Projects',
   'ProjectDashboard': 'Projects',
   'ProjectSettings': 'Projects',
+  'PortfolioPulse': 'Dashboard',
   'Schedule': 'Schedule',
   'LookAheadPlanning': 'Schedule',
   'WeeklySchedule': 'Schedule',
-  'Financials': 'Financials',
-  'BudgetControl': 'Financials',
-  'CostCodes': 'Financials',
+  'FinancialsRedesign': 'FinancialsRedesign',
+  'Financials': 'FinancialsRedesign',
+  'BudgetControl': 'FinancialsRedesign',
+  'CostCodes': 'FinancialsRedesign',
   'ResourceManagement': 'Resources',
   'Resources': 'Resources',
   'Equipment': 'Resources',
   'Labor': 'Resources',
+  'RFIHub': 'Dashboard',
+  'WorkPackages': 'Dashboard',
+  'Deliveries': 'Dashboard',
+  'ChangeOrders': 'Dashboard',
+  'Drawings': 'Dashboard',
+  'Submittals': 'Dashboard',
+  'Detailing': 'Dashboard',
+  'Fabrication': 'Dashboard',
   'Profile': 'Profile'
 };
 

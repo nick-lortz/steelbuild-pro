@@ -70,7 +70,9 @@ const navGroups = [
   items: [
   { name: 'Project Dashboard', page: 'ProjectDashboard', icon: LayoutDashboard },
   { name: 'Projects', page: 'Projects', icon: Building },
+  { name: 'Portfolio Pulse', page: 'PortfolioPulse', icon: Gauge },
   { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: BarChart3 },
+  { name: 'Alerts', page: 'Alerts', icon: AlertCircle },
   { name: 'Calendar', page: 'Calendar', icon: Calendar }],
 
   roles: ['admin', 'user']

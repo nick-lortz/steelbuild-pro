@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,11 +9,14 @@ import { createPageUrl } from '@/utils';
 import { 
   Building, ArrowRight, AlertCircle, Clock, DollarSign, 
   MessageSquareWarning, Calendar, TrendingUp, CheckCircle2,
-  AlertTriangle, FileText
+  AlertTriangle, FileText, Activity
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
+import ProjectPulsePanel from '@/components/dashboard/ProjectPulsePanel';
 
 export default function Dashboard() {
+  const [selectedProjectForPulse, setSelectedProjectForPulse] = useState(null);
+
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -149,6 +152,12 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex gap-4">
+              <Link to={createPageUrl('PortfolioPulse')}>
+                <Button variant="outline" className="border-[rgba(255,255,255,0.1)]">
+                  <Activity size={16} className="mr-2" />
+                  Portfolio Pulse
+                </Button>
+              </Link>
               <Link to={createPageUrl('ExecutiveRollUp')}>
                 <Button variant="outline" className="border-[rgba(255,255,255,0.1)]">
                   <TrendingUp size={16} className="mr-2" />
@@ -374,6 +383,14 @@ export default function Dashboard() {
 
                       {/* Quick Actions */}
                       <div className="flex gap-2 pt-3 border-t border-[rgba(255,255,255,0.03)]">
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-[rgba(255,255,255,0.1)] text-white hover:border-[#FF9D42] hover:text-[#FF9D42] text-xs"
+                          onClick={() => setSelectedProjectForPulse(project)}
+                        >
+                          <Activity size={14} className="mr-1" />
+                          Pulse
+                        </Button>
                         <Link to={createPageUrl('ProjectDashboard') + `?project=${project.id}`} className="flex-1">
                           <Button 
                             variant="outline" 
@@ -390,14 +407,6 @@ export default function Dashboard() {
                             RFIs
                           </Button>
                         </Link>
-                        <Link to={createPageUrl('Schedule') + `?project=${project.id}`} className="flex-1">
-                          <Button 
-                            variant="outline" 
-                            className="w-full border-[rgba(255,255,255,0.1)] text-white hover:border-[#FF9D42] hover:text-[#FF9D42] text-xs"
-                          >
-                            Schedule
-                          </Button>
-                        </Link>
                       </div>
                     </CardContent>
                   </Card>
@@ -407,6 +416,28 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Project Pulse Modal */}
+      {selectedProjectForPulse && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl mt-20">
+            <div className="flex justify-end mb-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedProjectForPulse(null)}
+                className="text-white"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </div>
+            <ProjectPulsePanel 
+              projectId={selectedProjectForPulse.id} 
+              projectName={selectedProjectForPulse.name}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Quick Access Shortcuts */}
       <div className="max-w-[1800px] mx-auto px-8 py-8">

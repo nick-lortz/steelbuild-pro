@@ -139,8 +139,29 @@ export default function PMJobSetup() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Checklist Items</CardTitle>
-          <CardDescription>{completedCount} of {totalCount} completed</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Checklist Items</CardTitle>
+              <CardDescription>{completedCount} of {totalCount} completed</CardDescription>
+            </div>
+            <Button onClick={() => {
+              const title = prompt('Task title:');
+              if (!title) return;
+              base44.entities.ProjectChecklistItem.create({
+                project_id: activeProjectId,
+                category: 'job_setup',
+                title,
+                status: 'not_started',
+                order: checklistItems.length
+              }).then(() => {
+                queryClient.invalidateQueries(['checklistItems']);
+                toast.success('Task added');
+              });
+            }} size="sm" variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Task
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {checklistItems.sort((a, b) => (a.order || 0) - (b.order || 0)).map((item) => (
@@ -182,11 +203,33 @@ export default function PMJobSetup() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5" />
-            Email Templates
-          </CardTitle>
-          <CardDescription>Draft job setup communications</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Email Templates
+              </CardTitle>
+              <CardDescription>Draft job setup communications</CardDescription>
+            </div>
+            <Button onClick={() => {
+              const name = prompt('Template name:');
+              if (!name) return;
+              const subject = prompt('Email subject:');
+              if (!subject) return;
+              base44.entities.EmailTemplate.create({
+                name,
+                subject,
+                body: 'Enter email content here...',
+                category: 'job_setup'
+              }).then(() => {
+                queryClient.invalidateQueries(['emailTemplates']);
+                toast.success('Template created');
+              });
+            }} size="sm" variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Template
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {emailTemplates.map(template => (

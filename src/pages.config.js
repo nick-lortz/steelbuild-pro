@@ -50,6 +50,8 @@
 import Admin from './pages/Admin';
 import AdvancedReporting from './pages/AdvancedReporting';
 import Analytics from './pages/Analytics';
+import AppStoreAuditReport from './pages/AppStoreAuditReport';
+import AppStoreCompliance from './pages/AppStoreCompliance';
 import AuditDashboard from './pages/AuditDashboard';
 import AuditFixQueue from './pages/AuditFixQueue';
 import AutomationWorkflows from './pages/AutomationWorkflows';
@@ -124,8 +126,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import AppStoreCompliance from './pages/AppStoreCompliance';
-import AppStoreAuditReport from './pages/AppStoreAuditReport';
 import __Layout from './Layout.jsx';
 
 
@@ -133,6 +133,8 @@ export const PAGES = {
     "Admin": Admin,
     "AdvancedReporting": AdvancedReporting,
     "Analytics": Analytics,
+    "AppStoreAuditReport": AppStoreAuditReport,
+    "AppStoreCompliance": AppStoreCompliance,
     "AuditDashboard": AuditDashboard,
     "AuditFixQueue": AuditFixQueue,
     "AutomationWorkflows": AutomationWorkflows,
@@ -207,8 +209,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "AppStoreCompliance": AppStoreCompliance,
-    "AppStoreAuditReport": AppStoreAuditReport,
 }
 
 export const pagesConfig = {

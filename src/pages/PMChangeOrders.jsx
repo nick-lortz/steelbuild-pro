@@ -67,6 +67,28 @@ export default function PMChangeOrders() {
     }
   });
 
+  const updateCOMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ChangeOrder.update(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['changeOrders', activeProjectId] });
+      const previousCOs = queryClient.getQueryData(['changeOrders', activeProjectId]);
+      queryClient.setQueryData(['changeOrders', activeProjectId], (old = []) =>
+        old.map(co => co.id === id ? { ...co, ...data } : co)
+      );
+      return { previousCOs };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['changeOrders', activeProjectId], context.previousCOs);
+      toast.error('Failed to update change order');
+    },
+    onSuccess: () => {
+      toast.success('Change order updated');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+    }
+  });
+
   const createLineItemMutation = useMutation({
     mutationFn: (data) => base44.entities.ChangeOrderLineItem.create(data),
     onMutate: async (newLineItem) => {
@@ -94,6 +116,30 @@ export default function PMChangeOrders() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['coLineItems'] });
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+    }
+  });
+
+  const updateLineItemMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ChangeOrderLineItem.update(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['coLineItems', selectedCO?.id] });
+      const previousLineItems = queryClient.getQueryData(['coLineItems', selectedCO?.id]);
+      queryClient.setQueryData(['coLineItems', selectedCO?.id], (old = []) =>
+        old.map(li => li.id === id ? { ...li, ...data } : li)
+      );
+      return { previousLineItems };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['coLineItems', selectedCO?.id], context.previousLineItems);
+      toast.error('Failed to update line item');
+    },
+    onSuccess: () => {
+      toast.success('Line item updated');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['coLineItems'] });
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
     }
   });
 
@@ -131,7 +177,18 @@ export default function PMChangeOrders() {
                     <CardTitle>CO #{co.co_number} - {co.title}</CardTitle>
                     <p className="text-sm text-[#9CA3AF] mt-1">{co.description}</p>
                   </div>
-                  <Badge>{co.status}</Badge>
+                  <Select value={co.status} onValueChange={(v) => updateCOMutation.mutate({ id: co.id, data: { status: v } })}>
+                    <SelectTrigger className="w-36" onClick={(e) => e.stopPropagation()}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="under_review">Under Review</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               <CardContent>
@@ -188,20 +245,63 @@ export default function PMChangeOrders() {
               </Button>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {lineItems.map((item, idx) => (
-                  <div key={item.id} className="p-3 border border-[rgba(255,255,255,0.05)] rounded">
+                  <div key={item.id} className="p-3 border border-[rgba(255,255,255,0.05)] rounded hover:border-[rgba(255,157,66,0.2)]">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-mono text-[#6B7280]">#{item.item_number || idx + 1}</span>
-                          <Badge variant={item.type === 'credit' ? 'success' : 'default'}>{item.type}</Badge>
-                          <span className="font-medium">{item.description}</span>
+                          <Select value={item.type} onValueChange={(v) => updateLineItemMutation.mutate({ id: item.id, data: { type: v } })}>
+                            <SelectTrigger className="w-24 h-7">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="charge">Charge</SelectItem>
+                              <SelectItem value="credit">Credit</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => updateLineItemMutation.mutate({ id: item.id, data: { description: e.target.value } })}
+                            className="flex-1 bg-transparent border-none outline-none font-medium"
+                          />
                         </div>
-                        <div className="grid grid-cols-5 gap-2 mt-2 text-xs text-[#9CA3AF]">
-                          <div>Shop: {item.shop_hours}h</div>
-                          <div>Field: {item.field_hours}h</div>
-                          <div>Weight: {item.weight_tons}T</div>
-                          <div>Cost: ${item.total_cost?.toLocaleString()}</div>
-                          <div className="font-semibold text-[#E5E7EB]">Price: ${item.price?.toLocaleString()}</div>
+                        <div className="grid grid-cols-5 gap-2 mt-2 text-xs">
+                          <Input
+                            type="number"
+                            value={item.shop_hours || 0}
+                            onChange={(e) => updateLineItemMutation.mutate({ id: item.id, data: { shop_hours: Number(e.target.value) } })}
+                            className="h-7 text-xs"
+                            placeholder="Shop hrs"
+                          />
+                          <Input
+                            type="number"
+                            value={item.field_hours || 0}
+                            onChange={(e) => updateLineItemMutation.mutate({ id: item.id, data: { field_hours: Number(e.target.value) } })}
+                            className="h-7 text-xs"
+                            placeholder="Field hrs"
+                          />
+                          <Input
+                            type="number"
+                            value={item.weight_tons || 0}
+                            onChange={(e) => updateLineItemMutation.mutate({ id: item.id, data: { weight_tons: Number(e.target.value) } })}
+                            className="h-7 text-xs"
+                            placeholder="Tons"
+                          />
+                          <Input
+                            type="number"
+                            value={item.total_cost || 0}
+                            onChange={(e) => updateLineItemMutation.mutate({ id: item.id, data: { total_cost: Number(e.target.value) } })}
+                            className="h-7 text-xs"
+                            placeholder="Cost"
+                          />
+                          <Input
+                            type="number"
+                            value={item.price || 0}
+                            onChange={(e) => updateLineItemMutation.mutate({ id: item.id, data: { price: Number(e.target.value) } })}
+                            className="h-7 text-xs font-semibold"
+                            placeholder="Price"
+                          />
                         </div>
                       </div>
                     </div>

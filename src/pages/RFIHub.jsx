@@ -26,7 +26,10 @@ import { getRFIEscalationLevel, getBusinessDaysBetween } from '@/components/shar
 export default function RFIHub() {
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState('portfolio');
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('project') || null;
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingRFI, setEditingRFI] = useState(null);

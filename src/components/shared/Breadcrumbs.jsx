@@ -17,7 +17,7 @@ export default function Breadcrumbs({ items, className }) {
       </Link>
       
       {items.map((item, index) => (
-        <React.Fragment key={index}>
+        <div key={index} className="flex items-center gap-2">
           <ChevronRight size={14} className="text-zinc-600" />
           
           {item.href && index < items.length - 1 ? (
@@ -32,7 +32,7 @@ export default function Breadcrumbs({ items, className }) {
               {item.label}
             </span>
           )}
-        </React.Fragment>
+        </div>
       ))}
     </nav>
   );

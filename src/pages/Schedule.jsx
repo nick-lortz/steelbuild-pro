@@ -226,16 +226,39 @@ export default function Schedule() {
       const result = await base44.entities.Task.create(data);
       return result;
     },
+    onMutate: async (newTask) => {
+      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      
+      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
+      const previousTasks = queryClient.getQueryData(['tasks']);
+      
+      const optimisticTask = {
+        ...newTask,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString(),
+        created_by: currentUser?.email
+      };
+      
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) => [...old, optimisticTask]);
+      queryClient.setQueryData(['tasks'], (old = []) => old ? [...old, optimisticTask] : [optimisticTask]);
+      
+      return { previousScheduleTasks, previousTasks };
+    },
+    onError: (error, newTask, context) => {
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
+      queryClient.setQueryData(['tasks'], context.previousTasks);
+      console.error('Create task error:', error);
+      toast.error(error?.response?.data?.error || error?.message || 'Failed to create task');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setShowTaskForm(false);
       setEditingTask(null);
       toast.success('Task created successfully');
     },
-    onError: (error) => {
-      console.error('Create task error:', error);
-      toast.error(error?.response?.data?.error || error?.message || 'Failed to create task');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
     }
   });
 
@@ -314,12 +337,26 @@ export default function Schedule() {
     mutationFn: async (id) => {
       return await base44.entities.Task.delete(id);
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
+      
+      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
+      
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) =>
+        old.filter(t => t.id !== id)
+      );
+      
+      return { previousScheduleTasks };
+    },
+    onError: (error, id, context) => {
+      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
+      toast.error(error.response?.data?.error || 'Failed to delete task');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
       toast.success('Task deleted');
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to delete task');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
     }
   });
 

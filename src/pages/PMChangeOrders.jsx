@@ -39,19 +39,61 @@ export default function PMChangeOrders() {
 
   const createCOMutation = useMutation({
     mutationFn: (data) => base44.entities.ChangeOrder.create(data),
+    onMutate: async (newCO) => {
+      await queryClient.cancelQueries({ queryKey: ['changeOrders', activeProjectId] });
+      
+      const previousCOs = queryClient.getQueryData(['changeOrders', activeProjectId]);
+      
+      const optimisticCO = {
+        ...newCO,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString()
+      };
+      
+      queryClient.setQueryData(['changeOrders', activeProjectId], (old = []) => [...old, optimisticCO]);
+      
+      return { previousCOs };
+    },
+    onError: (error, newCO, context) => {
+      queryClient.setQueryData(['changeOrders', activeProjectId], context.previousCOs);
+      toast.error('Failed to create change order');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['changeOrders']);
       toast.success('Change order created');
       setShowCODialog(false);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
     }
   });
 
   const createLineItemMutation = useMutation({
     mutationFn: (data) => base44.entities.ChangeOrderLineItem.create(data),
+    onMutate: async (newLineItem) => {
+      await queryClient.cancelQueries({ queryKey: ['coLineItems', selectedCO?.id] });
+      
+      const previousLineItems = queryClient.getQueryData(['coLineItems', selectedCO?.id]);
+      
+      const optimisticLineItem = {
+        ...newLineItem,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString()
+      };
+      
+      queryClient.setQueryData(['coLineItems', selectedCO?.id], (old = []) => [...old, optimisticLineItem]);
+      
+      return { previousLineItems };
+    },
+    onError: (error, newLineItem, context) => {
+      queryClient.setQueryData(['coLineItems', selectedCO?.id], context.previousLineItems);
+      toast.error('Failed to add line item');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['coLineItems']);
       toast.success('Line item added');
       setShowLineItemDialog(false);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['coLineItems'] });
     }
   });
 

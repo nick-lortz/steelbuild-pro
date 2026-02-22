@@ -33,10 +33,10 @@ export const TabNavigationProvider = ({ children }) => {
   });
   
   const scrollPositions = useRef({});
-  const navigationStacks = useRef(() => {
+  const navigationStacks = useRef((() => {
     const saved = sessionStorage.getItem('navigation_stacks');
     return saved ? JSON.parse(saved) : {};
-  }());
+  })());
 
   const currentTab = pageToTabMap[location.pathname.split('/').pop()] || 'Dashboard';
 

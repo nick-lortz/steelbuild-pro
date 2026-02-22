@@ -458,30 +458,30 @@ function WorkPackagesContent() {
         </AccordionItem>
 
         <AccordionItem value="blocker" className="border border-zinc-800 rounded-lg px-4 bg-zinc-900/50">
-          <AccordionTrigger className="text-white font-semibold">Blocker Engine</AccordionTrigger>
+          <AccordionTrigger className="text-white font-semibold">Blocker Engine & State Transitions</AccordionTrigger>
           <AccordionContent className="text-sm text-zinc-300 space-y-2">
-            <p>Before advancing a work package, system checks:</p>
+            <p>System prevents premature phase advancement by checking blocking conditions:</p>
             <ul className="list-disc ml-5 space-y-1">
-              <li>All drawings status = FFF (Final for Fabrication)</li>
-              <li>No open design intent flags</li>
-              <li>No fab blocker RFIs</li>
-              <li>Material availability confirmed</li>
+              <li><strong>Detailing → Fab:</strong> All drawings FFF, no design intent flags, fab blocker RFIs closed</li>
+              <li><strong>Fab → Delivery:</strong> All pieces fabricated, QC passed, drawings as-built updated</li>
+              <li><strong>Delivery → Erection:</strong> Delivery staged on-site, staging confirmed, crew assigned</li>
+              <li><strong>Erection:</strong> Open punch items on WP don't block next phase (warnings only)</li>
             </ul>
-            <p className="text-red-400 text-xs mt-2">If blocked, system shows exact issue and owner to resolve.</p>
+            <p className="text-amber-400 text-xs mt-2">When blocked, modal shows exact blockers and owner—resolve before retry.</p>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="readiness" className="border border-zinc-800 rounded-lg px-4 bg-zinc-900/50">
-          <AccordionTrigger className="text-white font-semibold">Fabrication Readiness Score</AccordionTrigger>
-          <AccordionContent className="text-sm text-zinc-300 space-y-2">
-            <p>Automated scoring (0-100%) based on:</p>
+          <AccordionTrigger className="text-white font-semibold">Install Readiness (Erection Phase)</AccordionTrigger>
+          <AccordionContent className="text-sm text-zinc-300 space-y-3">
+            <p>Before erection crew touches steel, WP must pass <strong>Install Readiness check</strong>:</p>
             <ul className="list-disc ml-5 space-y-1">
-              <li>Drawing approval completeness</li>
-              <li>Open RFI count and severity</li>
-              <li>Material procurement status</li>
-              <li>Connection design finalization</li>
+              <li><strong>Blocking Issues (RED):</strong> Open RFIs tagged install_blocker, missing shop approvals, no load list</li>
+              <li><strong>Warnings (YELLOW):</strong> Punch items on delivery, schedule conflicts, crew shortages</li>
+              <li><strong>Clear to Install (GREEN):</strong> All blocking resolved, no critical warnings</li>
             </ul>
-            <p className="text-xs text-zinc-500 mt-2">Below 80% = high risk of shop delays or rework.</p>
+            <p>Dashboard rolls up by project: counts ready/warning/blocked WPs and total cost at risk.</p>
+            <p className="text-amber-400 text-xs mt-2">Use Install Readiness Board in Project Dashboard for weekly erection planning.</p>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

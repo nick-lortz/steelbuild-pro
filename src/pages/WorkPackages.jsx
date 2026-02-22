@@ -220,7 +220,7 @@ export default function WorkPackages() {
 
   const advancePhaseMutation = useMutation({
     mutationFn: async ({ work_package_id, target_phase, wp }) => {
-      const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
+      const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_state: target_phase });
       return response.data;
     },
     onMutate: async ({ work_package_id, target_phase }) => {
@@ -262,8 +262,7 @@ export default function WorkPackages() {
           try {
             const result = await base44.functions.invoke('advanceWorkPackagePhase', { 
               work_package_id: wp.id, 
-              target_phase: nextPhase,
-              validate_only: true 
+              target_state: nextPhase 
             });
             results[wp.id] = result.data;
             await new Promise(resolve => setTimeout(resolve, 200));
@@ -272,7 +271,10 @@ export default function WorkPackages() {
               console.warn('Rate limit hit during WP validation');
               break;
             }
-            console.error('Validation error for WP', wp.id, error);
+            // Silent fail on 400 (blockers exist) - just skip validation for this WP
+            if (error?.response?.status !== 400) {
+              console.error('Validation error for WP', wp.id, error);
+            }
           }
         }
       }

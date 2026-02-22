@@ -25,27 +25,35 @@ Deno.serve(async (req) => {
 
     const workPackage = workPackages[0];
 
-    // Import state machine (dynamic to avoid build-time issues)
-    const { WorkPackageStateMachine } = await import('../components/work-packages/WorkPackageStateMachine.js');
-    const stateMachine = new WorkPackageStateMachine(base44);
+    // Verify user has access to this work package's project
+    const userProjects = user.project_ids || [];
+    if (!userProjects.includes(workPackage.project_id) && user.role !== 'admin') {
+      return Response.json({ error: 'Access denied to this work package' }, { status: 403 });
+    }
+
+    // Import state machine from backend-safe module
+    const { validatePhaseTransition, getWorkflowGuidance } = await import('./stateMachine.js');
 
     // Evaluate transition
-    const trace = await stateMachine.evaluateTransition(workPackage, target_state, context);
+    const trace = await validatePhaseTransition(workPackage, target_state, base44);
 
-    // If gates pass, execute transition
-    if (trace.overall_pass) {
-      const result = await stateMachine.executeTransition(workPackage, target_state, context);
+    // If no critical blockers, execute transition
+    if (trace.canAdvance) {
+      const result = await base44.entities.WorkPackage.update(workPackage.id, {
+        phase: target_state,
+        updated_date: new Date().toISOString()
+      });
       
       return Response.json({
         success: true,
-        work_package: result.work_package,
+        work_package: result,
         trace,
       });
     } else {
-      // Gates failed - return evaluation without executing
+      // Blockers exist - return evaluation without executing
       return Response.json({
         success: false,
-        message: 'Gate checks failed',
+        message: 'Prerequisites not met',
         trace,
         can_override: user.role === 'admin' || user.role === 'project_manager',
       }, { status: 400 });

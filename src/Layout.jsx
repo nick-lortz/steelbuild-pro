@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
+import { useAuth } from '@/components/shared/hooks/useAuth';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Building,
@@ -226,30 +227,8 @@ function LayoutContent({ children, currentPageName }) {
     });
   };
 
-  const { data: currentUser, isLoading: userLoading, error: userError } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch (error) {
-        // If unauthorized, redirect to login (skip in preview/dev mode)
-        if ((error?.response?.status === 401 || error?.status === 401) && 
-            !window.location.hostname.includes('preview')) {
-          base44.auth.redirectToLogin(window.location.pathname);
-          return null;
-        }
-        // In preview mode or on error, return null without redirecting
-        return null;
-      }
-    },
-    staleTime: Infinity,
-    gcTime: Infinity,
-    retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false, // Disable polling in preview
-    refetchIntervalInBackground: false
-  });
+  // Single source of truth - imported from useAuth hook
+  const { user: currentUser, isLoading: userLoading } = useAuth();
 
   // Set Sentry user context when authenticated
   useEffect(() => {

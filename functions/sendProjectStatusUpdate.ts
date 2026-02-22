@@ -79,40 +79,14 @@ Deno.serve(async (req) => {
     body += `Generated: ${new Date().toLocaleString()}\n`;
     body += `Sent by: ${user.full_name || user.email}\n`;
     
-    // Get Gmail access token
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
-    
-    // Create email message in RFC 2822 format
-    const emailLines = [
-      `From: ${user.email}`,
-      `To: ${recipient_emails.join(', ')}`,
-      `Subject: ${subject}`,
-      `Content-Type: text/plain; charset=utf-8`,
-      '',
-      body
-    ];
-    
-    const rawMessage = emailLines.join('\r\n');
-    const encodedMessage = btoa(unescape(encodeURIComponent(rawMessage)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    
-    // Send via Gmail API
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        raw: encodedMessage
-      })
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Gmail API error: ${error}`);
+    // Send emails to each recipient using built-in email
+    for (const email of recipient_emails) {
+      await base44.integrations.Core.SendEmail({
+        from_name: `${project.name} Status`,
+        to: email,
+        subject: subject,
+        body: body
+      });
     }
     
     return ok({ 

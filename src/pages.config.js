@@ -125,6 +125,7 @@ import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
 import AppStoreCompliance from './pages/AppStoreCompliance';
+import AppStoreAuditReport from './pages/AppStoreAuditReport';
 import __Layout from './Layout.jsx';
 
 
@@ -207,6 +208,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
     "AppStoreCompliance": AppStoreCompliance,
+    "AppStoreAuditReport": AppStoreAuditReport,
 }
 
 export const pagesConfig = {

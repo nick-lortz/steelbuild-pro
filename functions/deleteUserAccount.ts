@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { password, confirmText } = await req.json();
+    const { confirmText } = await req.json();
 
     // Verify confirmation text
     if (confirmText !== 'DELETE MY ACCOUNT') {

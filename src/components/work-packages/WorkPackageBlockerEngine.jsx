@@ -1,9 +1,26 @@
-
 /**
  * WorkPackage Progression Validation Engine
  * 
- * Frontend wrapper - imports from backend-safe module
- * Use functions/_lib/stateMachine.js for backend imports
+ * Frontend wrapper - calls backend via SDK
+ * All workflow logic enforced server-side via advanceWorkPackagePhase function
  */
 
-export { PHASE_TRANSITIONS, STATUS_TRANSITIONS, validatePhaseTransition, getWorkflowGuidance } from '../../../functions/_lib/stateMachine';
+import { base44 } from '@/api/base44Client';
+
+/**
+ * Call backend to validate and advance WP phase
+ */
+export async function getWorkflowGuidance(workPackage) {
+  try {
+    const result = await base44.functions.invoke('advanceWorkPackagePhase', {
+      wpId: workPackage.id,
+      projectId: workPackage.project_id,
+      targetPhase: workPackage.phase,
+      validate_only: true
+    });
+    return result.data;
+  } catch (error) {
+    console.error('Workflow guidance error:', error);
+    return { pass: false, reasons: ['Error evaluating workflow'], required_actions: [] };
+  }
+}

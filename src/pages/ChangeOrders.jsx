@@ -21,7 +21,10 @@ export default function ChangeOrders() {
   const [deleteCO, setDeleteCO] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [projectFilter, setProjectFilter] = useState('all');
+  const [projectFilter, setProjectFilter] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('project') || 'all';
+  });
 
   const queryClient = useQueryClient();
 

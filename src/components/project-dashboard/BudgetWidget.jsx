@@ -4,15 +4,33 @@ import { base44 } from '@/api/base44Client';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function BudgetWidget({ projectId }) {
-  const { data: financials = [] } = useQuery({
+  const { data: financials = [], isLoading: financialsLoading } = useQuery({
     queryKey: ['financials', projectId],
-    queryFn: () => base44.entities.Financial.filter({ project_id: projectId })
+    queryFn: () => base44.entities.Financial.filter({ project_id: projectId }),
+    enabled: !!projectId
   });
 
-  const { data: expenses = [] } = useQuery({
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
     queryKey: ['expenses', projectId],
-    queryFn: () => base44.entities.Expense.filter({ project_id: projectId })
+    queryFn: () => base44.entities.Expense.filter({ project_id: projectId }),
+    enabled: !!projectId
   });
+
+  if (financialsLoading || expensesLoading) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <DollarSign size={16} className="text-amber-500" />
+          <h3 className="text-sm font-semibold text-white">Budget vs Actual</h3>
+        </div>
+        <div className="animate-pulse space-y-3">
+          <div className="h-6 bg-zinc-800/50 rounded w-full" />
+          <div className="h-6 bg-zinc-800/50 rounded w-full" />
+          <div className="h-6 bg-zinc-800/50 rounded w-full" />
+        </div>
+      </div>
+    );
+  }
 
   const totalBudget = financials.reduce((sum, f) => sum + (f.current_budget || 0), 0);
   const totalActual = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);

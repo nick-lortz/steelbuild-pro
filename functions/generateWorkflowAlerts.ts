@@ -12,7 +12,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { parseInput, requireUser, requireProjectAccess, ok, badRequest, forbidden, serverError, logServiceRoleAccess } from './_lib/guard.js';
+import { parseInput, requireUser, requireProjectAccess, ok, badRequest, unauthorized, forbidden, serverError, logServiceRoleAccess } from './_lib/guard.js';
 
 Deno.serve(async (req) => {
   try {

@@ -21,7 +21,7 @@ import {
 // Prevents "unknown prop" warnings when data-* attrs are injected by parent/HOC
 const GroupWrapper = ({ children }) => <>{children}</>;
 
-export default function TaskListView({ tasks, projects, resources, workPackages, onTaskUpdate, onTaskClick, onTaskDelete }) {
+export default function TaskListView({ tasks, projects, resources, workPackages, riskState, onTaskUpdate, onTaskClick, onTaskDelete }) {
   const [collapsedProjects, setCollapsedProjects] = useState(new Set());
   const [collapsedPhases, setCollapsedPhases] = useState(new Set());
   const [sortBy, setSortBy] = useState('end_date');
@@ -67,8 +67,18 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
     return isPast(endDate);
   };
 
-  const isAtRisk = (task) => {
+  const isAtRisk = (task, riskState) => {
+    // Check workflow risk state first (authoritative)
+    if (riskState?.at_risk_tasks) {
+      return riskState.at_risk_tasks.some(rt => rt.schedule_task_id === task.id);
+    }
+    // Fallback to basic heuristics
     return isOverdue(task) || task.status === 'blocked' || (task.predecessor_ids?.length > 0 && getVariance(task) > 3);
+  };
+
+  const getTaskRiskInfo = (task, riskState) => {
+    if (!riskState?.at_risk_tasks) return null;
+    return riskState.at_risk_tasks.find(rt => rt.schedule_task_id === task.id);
   };
 
   const getResourceName = (resourceId) => {
@@ -317,7 +327,7 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                 const isProjectCollapsed = collapsedProjects.has(projectId);
                 const projectTasks = Object.values(phaseGroups).flat();
                 const completedCount = projectTasks.filter(t => t.status === 'completed').length;
-                const atRiskCount = projectTasks.filter(isAtRisk).length;
+                const atRiskCount = projectTasks.filter(t => isAtRisk(t, riskState)).length;
 
                 return (
                   <GroupWrapper key={projectId}>
@@ -353,7 +363,7 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                       const phaseKey = `${projectId}-${phase}`;
                       const isPhaseCollapsed = collapsedPhases.has(phaseKey);
                       const phaseCompleted = phaseTasks.filter(t => t.status === 'completed').length;
-                      const phaseAtRisk = phaseTasks.filter(isAtRisk).length;
+                      const phaseAtRisk = phaseTasks.filter(t => isAtRisk(t, riskState)).length;
 
                       return (
                         <GroupWrapper key={phaseKey}>
@@ -385,7 +395,8 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                           {!isPhaseCollapsed && phaseTasks.map(task => {
                             const variance = getVariance(task);
                             const overdue = isOverdue(task);
-                            const atRisk = isAtRisk(task);
+                            const atRisk = isAtRisk(task, riskState);
+                            const riskInfo = getTaskRiskInfo(task, riskState);
                             const completed = task.status === 'completed';
                             const assignedResource = task.assigned_resources?.[0];
                             const workPackage = workPackages?.find(wp => wp.id === task.work_package_id);
@@ -404,9 +415,28 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                                       e.stopPropagation();
                                       onTaskClick(task);
                                     }}
-                                    className="text-left hover:text-amber-400 transition-colors flex items-center gap-2"
+                                    className="text-left hover:text-amber-400 transition-colors flex items-center gap-2 group relative"
+                                    title={riskInfo ? `⚠️ At Risk: ${riskInfo.blockers.map(b => b.reason).join(', ')}` : undefined}
                                   >
-                                    {atRisk && <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />}
+                                    {atRisk && riskInfo && (
+                                      <div className="relative">
+                                        <AlertTriangle size={14} className="text-red-400 flex-shrink-0" />
+                                        {/* Tooltip on hover */}
+                                        <div className="absolute left-0 top-6 hidden group-hover:block z-50 w-64 p-3 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl">
+                                          <p className="text-xs font-semibold text-red-400 mb-2">⚠️ At Risk - {riskInfo.risk_level.toUpperCase()}</p>
+                                          <div className="space-y-1">
+                                            {riskInfo.blockers.map((blocker, idx) => (
+                                              <div key={idx} className="text-xs text-zinc-300">
+                                                <span className="text-amber-400">{blocker.type}:</span> {blocker.reason}
+                                                {blocker.days_blocked > 0 && (
+                                                  <span className="text-red-400"> ({blocker.days_blocked}d)</span>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
                                     {task.is_milestone && <span className="text-amber-400">◆</span>}
                                     <span className={completed ? 'line-through text-zinc-500' : 'text-white'}>
                                       {task.name}
@@ -414,6 +444,11 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                                     {task.is_critical && (
                                       <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/40">
                                         CRITICAL
+                                      </span>
+                                    )}
+                                    {atRisk && riskInfo && (
+                                      <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/40">
+                                        AT RISK
                                       </span>
                                     )}
                                   </button>

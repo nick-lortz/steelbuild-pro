@@ -31,6 +31,43 @@ export default function RFIDetailPanel({
   const [showDocUploader, setShowDocUploader] = useState(false);
   const [documents, setDocuments] = useState(rfi.attachments || []);
 
+  const statusMutation = useMutation({
+    mutationFn: async (newStatus) => {
+      return await base44.entities.RFI.update(rfi.id, { 
+        status: newStatus,
+        ...(newStatus === 'closed' && { closed_date: new Date().toISOString() }),
+        ...(newStatus === 'answered' && !rfi.response_date && { response_date: new Date().toISOString() })
+      });
+    },
+    onMutate: async (newStatus) => {
+      await queryClient.cancelQueries({ queryKey: ['rfis'] });
+      
+      const previousRFIs = queryClient.getQueryData(['rfis', rfi.project_id]);
+      
+      queryClient.setQueryData(['rfis', rfi.project_id], (old = []) =>
+        old.map(r => r.id === rfi.id ? { 
+          ...r, 
+          status: newStatus,
+          ...(newStatus === 'closed' && { closed_date: new Date().toISOString() }),
+          ...(newStatus === 'answered' && !r.response_date && { response_date: new Date().toISOString() })
+        } : r)
+      );
+      
+      return { previousRFIs };
+    },
+    onError: (error, newStatus, context) => {
+      queryClient.setQueryData(['rfis', rfi.project_id], context.previousRFIs);
+      toast.error('Failed to update status');
+    },
+    onSuccess: (data, newStatus) => {
+      toast.success(`RFI marked as ${newStatus}`);
+      if (onStatusChange) onStatusChange(rfi.id, newStatus);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfis'] });
+    }
+  });
+
   const updateRFIMutation = useMutation({
     mutationFn: (data) => base44.entities.RFI.update(rfi.id, data),
     onMutate: async (newData) => {
@@ -467,12 +504,12 @@ export default function RFIDetailPanel({
 
           {rfi.status === 'answered' && !['closed'].includes(rfi.status) && (
             <Button
-              onClick={() => onStatusChange(rfi.id, 'closed')}
+              onClick={() => statusMutation.mutate('closed')}
+              disabled={statusMutation.isPending || !rfi.closeout_checklist?.drawings_updated || !rfi.closeout_checklist?.detailing_updated}
               className="w-full bg-green-600 hover:bg-green-700"
-              disabled={!rfi.closeout_checklist?.drawings_updated || !rfi.closeout_checklist?.detailing_updated}
             >
               <CheckCircle2 size={14} className="mr-2" />
-              Close RFI
+              {statusMutation.isPending ? 'Closing...' : 'Close RFI'}
             </Button>
           )}
         </TabsContent>
@@ -519,28 +556,31 @@ export default function RFIDetailPanel({
 
             {rfi.status === 'draft' && (
               <Button 
-                onClick={() => onStatusChange(rfi.id, 'submitted')}
+                onClick={() => statusMutation.mutate('submitted')}
+                disabled={statusMutation.isPending}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-black"
               >
-                Submit RFI
+                {statusMutation.isPending ? 'Submitting...' : 'Submit RFI'}
               </Button>
             )}
 
             {rfi.status === 'submitted' && (
               <Button 
-                onClick={() => onStatusChange(rfi.id, 'under_review')}
+                onClick={() => statusMutation.mutate('under_review')}
+                disabled={statusMutation.isPending}
                 className="w-full bg-blue-500 hover:bg-blue-600"
               >
-                Mark Under Review
+                {statusMutation.isPending ? 'Updating...' : 'Mark Under Review'}
               </Button>
             )}
 
             {rfi.status === 'under_review' && (
               <Button 
-                onClick={() => onStatusChange(rfi.id, 'answered')}
+                onClick={() => statusMutation.mutate('answered')}
+                disabled={statusMutation.isPending}
                 className="w-full bg-green-500 hover:bg-green-600"
               >
-                Mark Answered
+                {statusMutation.isPending ? 'Updating...' : 'Mark Answered'}
               </Button>
             )}
           </CardContent>

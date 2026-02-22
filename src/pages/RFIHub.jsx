@@ -183,14 +183,27 @@ export default function RFIHub() {
     return { groupedRFIs: grouped, paginatedGroups: paginated };
   }, [filteredRFIs, skip, limit]);
 
-  // Delete mutation
+  // Delete mutation with optimistic update
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.RFI.delete(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['rfis'] });
+      const previousRFIs = queryClient.getQueryData(['rfis']);
+      
+      queryClient.setQueryData(['rfis'], (old = []) => old.filter(r => r.id !== id));
+      
+      return { previousRFIs };
+    },
+    onError: (error, id, context) => {
+      queryClient.setQueryData(['rfis'], context.previousRFIs);
+      toast.error('Failed to delete RFI');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rfis'] });
       toast.success('RFI deleted');
     },
-    onError: () => toast.error('Failed to delete RFI')
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['rfis'] });
+    }
   });
 
   const handleDelete = (rfi) => {

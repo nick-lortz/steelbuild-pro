@@ -46,10 +46,8 @@ Deno.serve(async (req) => {
     // Compute pulse for each project in parallel
     const pulsePromises = projects.map(async (project) => {
       try {
-        // Call getProjectPulse for each project using SDK
-        const pulse = await base44.functions.invoke('getProjectPulse', { 
-          project_id: project.id 
-        });
+        // Compute pulse inline (can't invoke other functions in preview)
+        const pulse = await computeProjectPulse(base44, project.id);
         
         // Calculate health score
         const healthScore = calculateHealthScore(pulse.blockers);
@@ -137,4 +135,113 @@ function getHealthGrade(score) {
   if (score >= 70) return 'C';
   if (score >= 60) return 'D';
   return 'F';
+}
+
+// Inline pulse computation (from getProjectPulse)
+async function computeProjectPulse(base44, project_id) {
+  const now = new Date();
+  const SLA = { RFI_STANDARD: 7, RFI_CRITICAL: 3, SUBMITTAL: 14, CHANGE_ORDER: 10, DELIVERY: 1 };
+  
+  const [rfis, submittals, changeOrders, deliveries, tasks, drawingSets] = await Promise.all([
+    base44.asServiceRole.entities.RFI.filter({ project_id }),
+    base44.asServiceRole.entities.Submittal.filter({ project_id }),
+    base44.asServiceRole.entities.ChangeOrder.filter({ project_id }),
+    base44.asServiceRole.entities.Delivery.filter({ project_id }),
+    base44.asServiceRole.entities.Task.filter({ project_id }),
+    base44.asServiceRole.entities.DrawingSet.filter({ project_id })
+  ]);
+  
+  const counts = {
+    rfi_open: rfis.filter(r => !['answered', 'closed'].includes(r.status)).length,
+    submittal_open: submittals.filter(s => !['approved', 'closed'].includes(s.status)).length,
+    co_open: changeOrders.filter(co => !['approved', 'rejected', 'void'].includes(co.status)).length,
+    deliveries_overdue: 0,
+    safety_open: 0,
+    tasks_overdue: 0,
+    drawings_pending: drawingSets.filter(ds => ds.status !== 'FFF').length
+  };
+  
+  const blockers = [];
+  
+  // Process RFIs
+  rfis.forEach(rfi => {
+    if (['answered', 'closed'].includes(rfi.status)) return;
+    const daysOpen = rfi.business_days_open || getDaysOpen(rfi.submitted_date, now);
+    const sla = rfi.priority === 'critical' ? SLA.RFI_CRITICAL : SLA.RFI_STANDARD;
+    
+    if (daysOpen > sla || rfi.fab_blocker) {
+      blockers.push({
+        type: 'rfi_overdue',
+        entity: 'RFI',
+        entity_id: rfi.id,
+        title: `RFI #${rfi.rfi_number}: ${rfi.subject}`,
+        severity: rfi.fab_blocker ? 'critical' : (daysOpen > sla * 2 ? 'high' : 'medium'),
+        reason: rfi.fab_blocker ? `Blocking fabrication for ${daysOpen} days` : `Open ${daysOpen} days (SLA: ${sla}d)`,
+        days_open: daysOpen,
+        recommended_action: rfi.fab_blocker ? 'Escalate to GC/Engineer immediately' : 'Follow up with responder'
+      });
+    }
+  });
+  
+  // Process Deliveries
+  deliveries.forEach(delivery => {
+    if (['delivered', 'received', 'cancelled'].includes(delivery.status)) return;
+    const scheduledDate = delivery.scheduled_date || delivery.expected_date;
+    if (!scheduledDate) return;
+    const daysLate = getDaysOpen(scheduledDate, now);
+    
+    if (daysLate > SLA.DELIVERY) {
+      counts.deliveries_overdue++;
+      blockers.push({
+        type: 'delivery_overdue',
+        entity: 'Delivery',
+        entity_id: delivery.id,
+        title: delivery.description || 'Material Delivery',
+        severity: daysLate > 7 ? 'critical' : 'high',
+        reason: `${daysLate} days past scheduled date`,
+        days_open: daysLate,
+        recommended_action: 'Contact supplier for ETA update'
+      });
+    }
+  });
+  
+  // Process Tasks
+  tasks.forEach(task => {
+    if (task.status === 'completed') return;
+    const endDate = task.end_date;
+    if (!endDate) return;
+    const daysLate = getDaysOpen(endDate, now);
+    
+    if (daysLate > 0) {
+      counts.tasks_overdue++;
+      if (task.priority === 'critical' || task.priority === 'high' || task.is_critical) {
+        blockers.push({
+          type: 'task_overdue',
+          entity: 'Task',
+          entity_id: task.id,
+          title: task.title,
+          severity: task.is_critical ? 'critical' : 'high',
+          reason: `${daysLate} days overdue`,
+          days_open: daysLate,
+          recommended_action: 'Reassign or extend deadline'
+        });
+      }
+    }
+  });
+  
+  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  blockers.sort((a, b) => {
+    if (a.severity !== b.severity) return severityOrder[a.severity] - severityOrder[b.severity];
+    return b.days_open - a.days_open;
+  });
+  
+  return { project_id, generated_at: now.toISOString(), counts, blockers };
+}
+
+function getDaysOpen(startDate, endDate) {
+  if (!startDate) return 0;
+  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+  const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
+  const diffMs = end - start;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }

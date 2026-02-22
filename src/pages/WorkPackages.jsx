@@ -118,16 +118,34 @@ export default function WorkPackages() {
       const result = await base44.entities.WorkPackage.create(data);
       return result;
     },
+    onMutate: async (newPackage) => {
+      await queryClient.cancelQueries({ queryKey: ['work-packages', activeProjectId] });
+      
+      const previousPackages = queryClient.getQueryData(['work-packages', activeProjectId]);
+      
+      const optimisticPackage = {
+        ...newPackage,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString()
+      };
+      
+      queryClient.setQueryData(['work-packages', activeProjectId], (old = []) => [optimisticPackage, ...old]);
+      
+      return { previousPackages };
+    },
+    onError: (error, newPackage, context) => {
+      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      console.error('Create work package error:', error);
+      toast.error(error?.message || 'Failed to create work package');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
       setShowForm(false);
       setEditingPackage(null);
       toast.success('Work package created successfully');
     },
-    onError: (error) => {
-      console.error('Create work package error:', error);
-      toast.error(error?.message || 'Failed to create work package');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
     }
   });
 
@@ -136,17 +154,31 @@ export default function WorkPackages() {
       const result = await base44.entities.WorkPackage.update(id, data);
       return result;
     },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['work-packages', activeProjectId] });
+      
+      const previousPackages = queryClient.getQueryData(['work-packages', activeProjectId]);
+      
+      queryClient.setQueryData(['work-packages', activeProjectId], (old = []) =>
+        old.map(pkg => pkg.id === id ? { ...pkg, ...data } : pkg)
+      );
+      
+      return { previousPackages };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      console.error('Update work package error:', error);
+      toast.error(error?.message || 'Failed to update work package');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
       setShowForm(false);
       setEditingPackage(null);
       setViewingPackage(null);
       toast.success('Work package updated successfully');
     },
-    onError: (error) => {
-      console.error('Update work package error:', error);
-      toast.error(error?.message || 'Failed to update work package');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-packages', activeProjectId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', activeProjectId] });
     }
   });
 
@@ -155,11 +187,28 @@ export default function WorkPackages() {
       const response = await base44.functions.invoke('cascadeDeleteWorkPackage', { work_package_id });
       return response.data;
     },
+    onMutate: async (work_package_id) => {
+      await queryClient.cancelQueries({ queryKey: ['work-packages', activeProjectId] });
+      
+      const previousPackages = queryClient.getQueryData(['work-packages', activeProjectId]);
+      
+      queryClient.setQueryData(['work-packages', activeProjectId], (old = []) =>
+        old.filter(pkg => pkg.id !== work_package_id)
+      );
+      
+      return { previousPackages };
+    },
+    onError: (error, work_package_id, context) => {
+      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      toast.error('Failed to delete package');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages', activeProjectId]);
-      queryClient.invalidateQueries(['tasks', activeProjectId]);
       setDeletePackage(null);
       toast.success('Deleted');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
+      queryClient.invalidateQueries(['tasks', activeProjectId]);
     }
   });
 
@@ -185,12 +234,26 @@ export default function WorkPackages() {
       const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
       return response.data;
     },
+    onMutate: async ({ work_package_id, target_phase }) => {
+      await queryClient.cancelQueries({ queryKey: ['work-packages', activeProjectId] });
+      
+      const previousPackages = queryClient.getQueryData(['work-packages', activeProjectId]);
+      
+      queryClient.setQueryData(['work-packages', activeProjectId], (old = []) =>
+        old.map(pkg => pkg.id === work_package_id ? { ...pkg, phase: target_phase } : pkg)
+      );
+      
+      return { previousPackages };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['work-packages', activeProjectId], context.previousPackages);
+      toast.error(error?.message || 'Cannot advance phase');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['work-packages', activeProjectId]);
       toast.success('Phase advanced');
     },
-    onError: (error) => {
-      toast.error(error?.message || 'Cannot advance phase');
+    onSettled: () => {
+      queryClient.invalidateQueries(['work-packages', activeProjectId]);
     }
   });
   

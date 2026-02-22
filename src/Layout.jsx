@@ -49,6 +49,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { TabNavigationProvider } from '@/components/shared/hooks/useTabNavigation';
 import { SkipToMainContent } from '@/components/shared/accessibility';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
@@ -508,7 +509,9 @@ const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, 
       <ThemeProvider>
         <ConfirmProvider>
           <ActiveProjectProvider>
-            <LayoutContent children={children} currentPageName={currentPageName} />
+            <TabNavigationProvider>
+              <LayoutContent children={children} currentPageName={currentPageName} />
+            </TabNavigationProvider>
           </ActiveProjectProvider>
         </ConfirmProvider>
       </ThemeProvider>

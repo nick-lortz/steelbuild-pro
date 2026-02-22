@@ -41,9 +41,27 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
 
   const createMutation = useMutation({
     mutationFn: (data) => backend.createExpense({ ...data, project_id: projectId }),
+    onMutate: async (newExpense) => {
+      await queryClient.cancelQueries({ queryKey: ['expenses', projectId] });
+      
+      const previousExpenses = queryClient.getQueryData(['expenses', projectId]);
+      
+      const optimisticExpense = {
+        ...newExpense,
+        project_id: projectId,
+        id: `temp-${Date.now()}`,
+        created_date: new Date().toISOString()
+      };
+      
+      queryClient.setQueryData(['expenses', projectId], (old = []) => [optimisticExpense, ...old]);
+      
+      return { previousExpenses };
+    },
+    onError: (error, newExpense, context) => {
+      queryClient.setQueryData(['expenses', projectId], context.previousExpenses);
+      toast.error('Failed to add expense');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
       toast.success('Expense added');
       setShowAddDialog(false);
       setEditingExpense(null);
@@ -56,14 +74,31 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
         invoice_number: '',
         payment_status: 'pending'
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, updates }) => backend.updateExpense(id, updates),
+    onMutate: async ({ id, updates }) => {
+      await queryClient.cancelQueries({ queryKey: ['expenses', projectId] });
+      
+      const previousExpenses = queryClient.getQueryData(['expenses', projectId]);
+      
+      queryClient.setQueryData(['expenses', projectId], (old = []) =>
+        old.map(exp => exp.id === id ? { ...exp, ...updates } : exp)
+      );
+      
+      return { previousExpenses };
+    },
+    onError: (error, variables, context) => {
+      queryClient.setQueryData(['expenses', projectId], context.previousExpenses);
+      toast.error('Failed to update expense');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
       toast.success('Expense updated');
       setShowEditDialog(false);
       setEditingExpense(null);
@@ -76,18 +111,36 @@ export default function ActualsTab({ projectId, expenses = [], costCodes = [], c
         invoice_number: '',
         payment_status: 'pending'
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => backend.deleteExpense(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['expenses', projectId] });
+      
+      const previousExpenses = queryClient.getQueryData(['expenses', projectId]);
+      
+      queryClient.setQueryData(['expenses', projectId], (old = []) =>
+        old.filter(exp => exp.id !== id)
+      );
+      
+      return { previousExpenses };
+    },
+    onError: (error, id, context) => {
+      queryClient.setQueryData(['expenses', projectId], context.previousExpenses);
+      toast.error(error.message || 'Failed to delete expense');
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
       toast.success('Expense deleted');
     },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to delete expense');
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['expenses', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['financials', projectId] });
     }
   });
 

@@ -201,11 +201,19 @@ function SchedulingContent() {
         </AccordionItem>
 
         <AccordionItem value="lookahead" className="border border-zinc-800 rounded-lg px-4 bg-zinc-900/50">
-          <AccordionTrigger className="text-white font-semibold">Look-Ahead Planning</AccordionTrigger>
-          <AccordionContent className="text-sm text-zinc-300 space-y-2">
-            <p>Weekly look-ahead view shows upcoming work by crew and area.</p>
-            <p><strong>Constraint detection:</strong> System flags tasks missing drawings, materials, or resources.</p>
-            <p>Use this for <strong>Friday planning meetings</strong> to ensure Monday readiness.</p>
+          <AccordionTrigger className="text-white font-semibold">Look-Ahead Planning & Constraints</AccordionTrigger>
+          <AccordionContent className="text-sm text-zinc-300 space-y-3">
+            <p><strong>Look-Ahead:</strong> 10-day rolling view of upcoming erection work by crew, sequence group, install date.</p>
+            <p><strong>Constraint Detection:</strong> System auto-flags work packages ready to pull (install_ready=true) vs. constraints:</p>
+            <ul className="list-disc ml-5 space-y-1">
+              <li>Drawings not finalized (blocker)</li>
+              <li>Delivery not staged yet (blocker)</li>
+              <li>Open punch items from prior phase (warning, no erection hold)</li>
+              <li>Crew not assigned (blocker)</li>
+              <li>RFI response pending (blocker if marked install_blocker)</li>
+            </ul>
+            <p><strong>Friday Planning:</strong> Review next week's look-ahead, confirm which WPs are safe to pull Monday, escalate constraints to PM.</p>
+            <p className="text-amber-400 text-xs mt-2">Prevents wasted crew time and improves daily erection pace.</p>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

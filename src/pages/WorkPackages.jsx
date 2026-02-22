@@ -257,14 +257,14 @@ export default function WorkPackages() {
     }
   });
   
-  // Validate work packages on load (debounced to prevent rate limiting)
+  // Validate work packages on load (with rate limit protection)
   React.useEffect(() => {
     if (!workPackages.length) return;
     
     const validatePackages = async () => {
       const results = {};
-      // Batch validate to avoid rate limiting - only validate first 5
-      const packagesToValidate = workPackages.slice(0, 5);
+      // Limit to 3 WPs per batch to avoid rate limiting
+      const packagesToValidate = workPackages.slice(0, 3);
       
       for (const wp of packagesToValidate) {
         const nextPhase = getNextPhase(wp.phase);
@@ -272,9 +272,15 @@ export default function WorkPackages() {
           try {
             const validation = await validatePhaseTransition(wp, nextPhase, base44);
             results[wp.id] = validation;
+            // Small delay between validations to avoid burst requests
+            await new Promise(resolve => setTimeout(resolve, 200));
           } catch (error) {
+            if (error?.response?.status === 429) {
+              // Rate limited - skip remaining validations
+              console.warn('Rate limit hit during WP validation, skipping remaining');
+              break;
+            }
             console.error('Validation error for WP', wp.id, error);
-            // Skip this validation on error
           }
         }
       }
@@ -282,7 +288,7 @@ export default function WorkPackages() {
     };
     
     // Debounce validation to prevent rapid re-validation
-    const timer = setTimeout(validatePackages, 500);
+    const timer = setTimeout(validatePackages, 1000);
     return () => clearTimeout(timer);
   }, [workPackages]);
   

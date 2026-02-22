@@ -11,7 +11,27 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { requireUser, ok, unauthorized, serverError } from './_lib/guard.js';
+
+// Inline guard functions (Base44 doesn't support local imports)
+async function requireUser(req) {
+  const base44 = createClientFromRequest(req);
+  const user = await base44.auth.me();
+  if (!user) throw { status: 401, message: 'Unauthorized' };
+  return user;
+}
+
+function ok(data) {
+  return Response.json({ success: true, data }, { status: 200 });
+}
+
+function unauthorized(message = 'Unauthorized') {
+  return Response.json({ success: false, error: message }, { status: 401 });
+}
+
+function serverError(message = 'Internal server error', error = null) {
+  console.error('[SERVER_ERROR]', message, error);
+  return Response.json({ success: false, error: message }, { status: 500 });
+}
 
 Deno.serve(async (req) => {
   try {

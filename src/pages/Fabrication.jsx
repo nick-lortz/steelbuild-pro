@@ -42,43 +42,60 @@ export default function FabricationPage() {
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 15 * 60 * 1000, // 15 mins
+    retry: (count, error) => {
+      if (error?.response?.status === 429) return false; // Don't retry 429s
+      return count < 2;
+    }
   });
 
   const { data: workPackages = [] } = useQuery({
     queryKey: ['work-packages', activeProjectId],
     queryFn: () => base44.entities.WorkPackage.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, error) => error?.response?.status === 429 ? false : count < 2
   });
 
   const { data: fabricationPackages = [] } = useQuery({
     queryKey: ['fabrication-packages', activeProjectId],
     queryFn: () => base44.entities.FabricationPackage.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, error) => error?.response?.status === 429 ? false : count < 2
   });
 
   const { data: fabricationItems = [] } = useQuery({
     queryKey: ['fabrication', activeProjectId],
     queryFn: () => base44.entities.Fabrication.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, error) => error?.response?.status === 429 ? false : count < 2
   });
 
   const { data: drawings = [] } = useQuery({
     queryKey: ['drawings', activeProjectId],
     queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, error) => error?.response?.status === 429 ? false : count < 2
   });
 
   const { data: deliveries = [] } = useQuery({
     queryKey: ['deliveries', activeProjectId],
     queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, error) => error?.response?.status === 429 ? false : count < 2
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
     queryFn: () => base44.entities.RFI.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
+    enabled: !!activeProjectId,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, error) => error?.response?.status === 429 ? false : count < 2
   });
 
   // Real-time subscriptions

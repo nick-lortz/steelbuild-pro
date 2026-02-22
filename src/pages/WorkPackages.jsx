@@ -25,7 +25,7 @@ import ProgressReport from '@/components/work-packages/ProgressReport';
 import WorkflowGuidancePanel from '@/components/work-packages/WorkflowGuidancePanel';
 import WorkPackageResourceAssignment from '@/components/resources/WorkPackageResourceAssignment';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
-import { validatePhaseTransition } from '@/components/work-packages/WorkPackageBlockerEngine';
+
 
 export default function WorkPackages() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -220,23 +220,6 @@ export default function WorkPackages() {
 
   const advancePhaseMutation = useMutation({
     mutationFn: async ({ work_package_id, target_phase, wp }) => {
-      // Validate before advancing
-      const validation = await validatePhaseTransition(wp, target_phase, base44);
-      
-      if (!validation.canAdvance) {
-        // Track blocked attempt
-        await base44.functions.invoke('trackWorkflowBlocker', {
-          work_package_id,
-          project_id: wp.project_id,
-          current_phase: wp.phase,
-          attempted_phase: target_phase,
-          blocker_type: validation.blockers[0]?.type,
-          blocker_severity: validation.blockers[0]?.severity,
-          blocker_message: validation.blockers[0]?.message
-        });
-        throw new Error('Cannot advance: prerequisites not met');
-      }
-      
       const response = await base44.functions.invoke('advanceWorkPackagePhase', { work_package_id, target_phase });
       return response.data;
     },
@@ -265,27 +248,28 @@ export default function WorkPackages() {
     }
   });
   
-  // Validate work packages on load (with rate limit protection)
+  // Validate work packages on load
   React.useEffect(() => {
     if (!workPackages.length) return;
     
     const validatePackages = async () => {
       const results = {};
-      // Limit to 3 WPs per batch to avoid rate limiting
       const packagesToValidate = workPackages.slice(0, 3);
       
       for (const wp of packagesToValidate) {
         const nextPhase = getNextPhase(wp.phase);
         if (nextPhase) {
           try {
-            const validation = await validatePhaseTransition(wp, nextPhase, base44);
-            results[wp.id] = validation;
-            // Small delay between validations to avoid burst requests
+            const result = await base44.functions.invoke('advanceWorkPackagePhase', { 
+              work_package_id: wp.id, 
+              target_phase: nextPhase,
+              validate_only: true 
+            });
+            results[wp.id] = result.data;
             await new Promise(resolve => setTimeout(resolve, 200));
           } catch (error) {
             if (error?.response?.status === 429) {
-              // Rate limited - skip remaining validations
-              console.warn('Rate limit hit during WP validation, skipping remaining');
+              console.warn('Rate limit hit during WP validation');
               break;
             }
             console.error('Validation error for WP', wp.id, error);
@@ -295,7 +279,6 @@ export default function WorkPackages() {
       setValidationResults(results);
     };
     
-    // Debounce validation to prevent rapid re-validation
     const timer = setTimeout(validatePackages, 1000);
     return () => clearTimeout(timer);
   }, [workPackages]);

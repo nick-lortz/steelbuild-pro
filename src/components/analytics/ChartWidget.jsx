@@ -1,9 +1,33 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
+// Intersection Observer for visibility
+function useIsVisible(ref) {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.unobserve(entry.target);
+      }
+    }, { threshold: 0.1 });
+    
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [ref]);
+  
+  return isVisible;
+}
+
 export default function ChartWidget({ chartType, metrics, data, timeRange, title, tasks, financials, expenses }) {
+  const containerRef = useRef(null);
+  const isVisible = useIsVisible(containerRef);
   const chartData = useMemo(() => {
     // Generate time-series data based on timeRange
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
@@ -45,8 +69,8 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
 
   if (chartType === 'line') {
     return (
-      <div className="min-h-[300px] w-full">
-        <ResponsiveContainer width="100%" height={300}>
+      <div ref={containerRef} className="min-h-[300px] w-full">
+        {isVisible && <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
@@ -67,15 +91,15 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
             />
           ))}
         </LineChart>
-      </ResponsiveContainer>
-      </div>
-    );
-  }
+        </ResponsiveContainer>}
+        </div>
+        );
+        }
 
-  if (chartType === 'bar') {
-    return (
-      <div className="min-h-[300px] w-full">
-        <ResponsiveContainer width="100%" height={300}>
+        if (chartType === 'bar') {
+        return (
+        <div ref={containerRef} className="min-h-[300px] w-full">
+        {isVisible && <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
@@ -93,15 +117,15 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
             />
           ))}
         </BarChart>
-      </ResponsiveContainer>
-      </div>
-    );
-  }
+        </ResponsiveContainer>}
+        </div>
+        );
+        }
 
-  if (chartType === 'area') {
-    return (
-      <div className="min-h-[300px] w-full">
-        <ResponsiveContainer width="100%" height={300}>
+        if (chartType === 'area') {
+        return (
+        <div ref={containerRef} className="min-h-[300px] w-full">
+        {isVisible && <ResponsiveContainer width="100%" height={300}>
         <AreaChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
           <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
@@ -122,15 +146,15 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
             />
           ))}
         </AreaChart>
-      </ResponsiveContainer>
-      </div>
-    );
-  }
+        </ResponsiveContainer>}
+        </div>
+        );
+        }
 
-  if (chartType === 'pie') {
-    return (
-      <div className="min-h-[300px] w-full">
-        <ResponsiveContainer width="100%" height={300}>
+        if (chartType === 'pie') {
+        return (
+        <div ref={containerRef} className="min-h-[300px] w-full">
+        {isVisible && <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
             data={aggregateData}
@@ -150,10 +174,10 @@ export default function ChartWidget({ chartType, metrics, data, timeRange, title
             contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
           />
         </PieChart>
-      </ResponsiveContainer>
-      </div>
-    );
-  }
+        </ResponsiveContainer>}
+        </div>
+        );
+        }
 
-  return null;
-}
+        return null;
+        }

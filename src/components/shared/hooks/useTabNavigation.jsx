@@ -25,9 +25,18 @@ const pageToTabMap = {
 
 export const TabNavigationProvider = ({ children }) => {
   const location = useLocation();
-  const [tabStates, setTabStates] = useState({});
+  
+  // Initialize from sessionStorage
+  const [tabStates, setTabStates] = useState(() => {
+    const saved = sessionStorage.getItem('tab_states');
+    return saved ? JSON.parse(saved) : {};
+  });
+  
   const scrollPositions = useRef({});
-  const navigationStacks = useRef({});
+  const navigationStacks = useRef(() => {
+    const saved = sessionStorage.getItem('navigation_stacks');
+    return saved ? JSON.parse(saved) : {};
+  }());
 
   const currentTab = pageToTabMap[location.pathname.split('/').pop()] || 'Dashboard';
 
@@ -46,10 +55,11 @@ export const TabNavigationProvider = ({ children }) => {
 
   // Save tab state (filters, search, etc.)
   const saveTabState = useCallback((tab, state) => {
-    setTabStates(prev => ({
-      ...prev,
-      [tab]: { ...prev[tab], ...state }
-    }));
+    setTabStates(prev => {
+      const updated = { ...prev, [tab]: { ...prev[tab], ...state } };
+      sessionStorage.setItem('tab_states', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   // Get tab state
@@ -60,6 +70,7 @@ export const TabNavigationProvider = ({ children }) => {
   // Save navigation stack for tab
   const saveNavigationStack = useCallback((tab, stack) => {
     navigationStacks.current[tab] = stack;
+    sessionStorage.setItem('navigation_stacks', JSON.stringify(navigationStacks.current));
   }, []);
 
   // Get navigation stack for tab

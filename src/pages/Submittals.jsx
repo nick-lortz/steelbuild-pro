@@ -24,8 +24,19 @@ import { format, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 
 export default function Submittals() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const queryClient = useQueryClient();
+  
+  // Initialize from URL param if no active project
+  React.useEffect(() => {
+    if (!activeProjectId) {
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('project');
+      if (projectId) {
+        setActiveProjectId(projectId);
+      }
+    }
+  }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

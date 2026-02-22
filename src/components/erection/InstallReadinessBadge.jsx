@@ -6,9 +6,11 @@ import { Card, CardContent } from '@/components/ui/card';
 export default function InstallReadinessBadge({ wp }) {
   if (!wp) return null;
 
-  const { install_ready, readiness_reason, readiness_cost_risk } = wp;
+  const { install_ready, readiness_reason, readiness_cost_risk, install_ready_warnings, install_ready_warnings_severity } = wp;
 
   if (install_ready === undefined) return null;
+
+  const warningColor = install_ready_warnings_severity === 'caution' ? 'amber' : 'yellow';
 
   return (
     <div className="space-y-2">
@@ -50,8 +52,25 @@ export default function InstallReadinessBadge({ wp }) {
         </Card>
       )}
 
+      {/* Warnings */}
+      {install_ready && install_ready_warnings && install_ready_warnings.length > 0 && (
+        <Card className={`border-${warningColor}-900/30 bg-${warningColor}-950/20`}>
+          <CardContent className="pt-4">
+            <div className="flex gap-2 mb-2">
+              <AlertCircle className={`w-4 h-4 text-${warningColor}-400 flex-shrink-0 mt-0.5`} />
+              <div className={`text-sm font-semibold text-${warningColor}-300`}>Warnings:</div>
+            </div>
+            <ul className={`space-y-1 ml-6 text-xs text-${warningColor}-200`}>
+              {install_ready_warnings.map((warning, idx) => (
+                <li key={idx}>⚠ {warning}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
       {/* All Clear */}
-      {install_ready && (
+      {install_ready && (!install_ready_warnings || install_ready_warnings.length === 0) && (
         <Card className="border-green-900/30 bg-green-950/20">
           <CardContent className="pt-4">
             <div className="flex gap-2 items-center text-green-200 text-sm">

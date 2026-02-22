@@ -51,6 +51,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { TabNavigationProvider } from '@/components/shared/hooks/useTabNavigation';
 import { SkipToMainContent } from '@/components/shared/accessibility';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import NotificationPanel from '@/components/notifications/NotificationPanel';
 import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
@@ -260,10 +261,10 @@ function LayoutContent({ children, currentPageName }) {
     refetchOnWindowFocus: false
   });
 
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      base44.auth.logout();
-    }
+    base44.auth.logout();
   };
 
   const projectPhase = activeProject?.phase || 'fabrication';
@@ -352,7 +353,7 @@ function LayoutContent({ children, currentPageName }) {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
+                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="text-red-400 hover:text-red-300">
                   <LogOut size={16} className="mr-2" />
                   Logout
                 </DropdownMenuItem>
@@ -361,6 +362,23 @@ function LayoutContent({ children, currentPageName }) {
           </div>
         }
       </header>
+
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to logout?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-amber-500 hover:bg-amber-600 text-black">
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sidebar */}
       <aside
@@ -464,7 +482,7 @@ function LayoutContent({ children, currentPageName }) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300">
+                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="text-red-400 hover:text-red-300">
                   <LogOut size={16} className="mr-2" />
                   Logout
                 </DropdownMenuItem>

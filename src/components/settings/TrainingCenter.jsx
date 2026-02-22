@@ -439,15 +439,16 @@ function DeliveriesContent() {
         </AccordionItem>
 
         <AccordionItem value="conflicts" className="border border-zinc-800 rounded-lg px-4 bg-zinc-900/50">
-          <AccordionTrigger className="text-white font-semibold">Delivery Conflict Detection</AccordionTrigger>
-          <AccordionContent className="text-sm text-zinc-300 space-y-2">
-            <p>System flags conflicts:</p>
+          <AccordionTrigger className="text-white font-semibold">Delivery Sequencing & Blocking</AccordionTrigger>
+          <AccordionContent className="text-sm text-zinc-300 space-y-3">
+            <p>Deliveries must respect erection sequencing—ship Grid A before Grid B. System validates:</p>
             <ul className="list-disc ml-5 space-y-1">
-              <li>Delivery arrives before erection crew assigned</li>
-              <li>Multiple heavy lifts scheduled same day (crane conflict)</li>
-              <li>Delivery scheduled before prerequisite tasks complete</li>
+              <li><strong>Sequencing Legal:</strong> Delivery load sequence matches WP erection sequence (blocking check)</li>
+              <li><strong>Installable Delivery:</strong> All WPs on delivery are install_ready (warning if not)</li>
+              <li><strong>Safe to Ship:</strong> No open fab blocker RFIs on WPs in delivery (blocking check)</li>
             </ul>
-            <p className="text-xs text-zinc-500 mt-2">Review conflicts weekly in Look-Ahead Planning.</p>
+            <p><strong>Staging Confirmation:</strong> Confirm delivery has arrived and staged on-site before allowing erection start on linked WPs.</p>
+            <p className="text-amber-400 text-xs mt-2">Use Delivery detail panel to see which WPs are ready vs. blocked, resolve constraints before shipping.</p>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

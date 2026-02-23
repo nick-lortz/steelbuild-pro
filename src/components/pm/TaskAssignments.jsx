@@ -72,7 +72,15 @@ export default function TaskAssignments({ projectId }) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Task Assignments</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Task Assignments</CardTitle>
+            <Link to={createPageUrl('ResourceManagement')}>
+              <Button variant="outline" size="sm">
+                <User className="w-4 h-4 mr-2" />
+                Manage Resources
+              </Button>
+            </Link>
+          </div>
           <div className="flex flex-col md:flex-row gap-4 mt-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />

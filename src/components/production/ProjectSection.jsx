@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -84,33 +84,16 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
 
         <CollapsibleContent>
           <CardContent className="pt-0 space-y-4">
-            {/* Quick Add Buttons */}
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                onClick={() => { setComposerType('note'); setShowComposer(true); }}
-                variant="outline"
-              >
-                <Plus size={14} className="mr-1" />
-                Note
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => { setComposerType('action'); setShowComposer(true); }}
-                variant="outline"
-              >
-                <Plus size={14} className="mr-1" />
-                Action Item
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => { setComposerType('decision'); setShowComposer(true); }}
-                variant="outline"
-              >
-                <Plus size={14} className="mr-1" />
-                Decision
-              </Button>
-            </div>
+            {/* Quick Add */}
+            <Button 
+              size="sm" 
+              onClick={() => { setComposerType('note'); setShowComposer(true); }}
+              variant="outline"
+              className="w-full"
+            >
+              <Plus size={14} className="mr-2" />
+              Add Note
+            </Button>
 
             {showComposer && (
               <NoteComposer
@@ -122,90 +105,24 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
               />
             )}
 
-            {/* Tabs */}
-            <Tabs defaultValue="detailing" className="w-full">
-              <TabsList className="grid w-full grid-cols-7 bg-zinc-800 gap-1">
-                <TabsTrigger value="detailing" className="text-xs sm:text-sm">Detailing</TabsTrigger>
-                <TabsTrigger value="fabrication" className="text-xs sm:text-sm">Fabrication</TabsTrigger>
-                <TabsTrigger value="delivery" className="text-xs sm:text-sm">Delivery</TabsTrigger>
-                <TabsTrigger value="erection" className="text-xs sm:text-sm">Erection</TabsTrigger>
-                <TabsTrigger value="rfis" className="text-xs sm:text-sm">RFIs</TabsTrigger>
-                <TabsTrigger value="change_orders" className="text-xs sm:text-sm">COs</TabsTrigger>
-                <TabsTrigger value="blockers" className="text-xs sm:text-sm">
-                  Blockers
-                  {openActions.length > 0 && (
-                    <Badge variant="outline" className="ml-1 text-xs">{openActions.length}</Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
+            {/* Category Sections - Horizontal Layout */}
+            <div className="space-y-2">
+              <CategorySection category="detailing" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+              <CategorySection category="fabrication" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+              <CategorySection category="delivery" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+              <CategorySection category="erection" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+              <CategorySection category="rfi" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+              <CategorySection category="change_order" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+              <CategorySection 
+                category="blocker" 
+                notes={notes} 
+                onUpdate={onUpdateNote} 
+                onDelete={onDeleteNote}
+                openCount={openActions.length}
+              />
+            </div>
 
-              <TabsContent value="detailing" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'detailing').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No detailing notes</div>
-                )}
-                {notes.filter(n => n.category === 'detailing').map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                ))}
-              </TabsContent>
 
-              <TabsContent value="fabrication" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'fabrication').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No fabrication notes</div>
-                )}
-                {notes.filter(n => n.category === 'fabrication').map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                ))}
-              </TabsContent>
-
-              <TabsContent value="delivery" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'delivery').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No delivery notes</div>
-                )}
-                {notes.filter(n => n.category === 'delivery').map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                ))}
-              </TabsContent>
-
-              <TabsContent value="erection" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'erection').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No erection notes</div>
-                )}
-                {notes.filter(n => n.category === 'erection').map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                ))}
-              </TabsContent>
-
-              <TabsContent value="rfis" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'rfi').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No RFI notes</div>
-                )}
-                {notes.filter(n => n.category === 'rfi').map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                ))}
-              </TabsContent>
-
-              <TabsContent value="change_orders" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'change_order').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No change order notes</div>
-                )}
-                {notes.filter(n => n.category === 'change_order').map(note => (
-                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                ))}
-              </TabsContent>
-
-              <TabsContent value="blockers" className="space-y-2 mt-3">
-                {notes.filter(n => n.category === 'blocker' || n.note_type === 'action').length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No blockers or action items</div>
-                )}
-                {notes.filter(n => n.category === 'blocker' || n.note_type === 'action').map(note => (
-                  note.note_type === 'action' ? (
-                    <ActionItemCard key={note.id} action={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                  ) : (
-                    <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                  )
-                ))}
-              </TabsContent>
-            </Tabs>
           </CardContent>
         </CollapsibleContent>
       </Card>
@@ -412,62 +329,65 @@ function ActionItemCard({ action, onUpdate, onDelete }) {
   );
 }
 
-function DecisionCard({ decision, onUpdate, onDelete }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    title: decision.title,
-    body: decision.body
-  });
-
-  const handleSave = () => {
-    onUpdate(decision.id, editData);
-    setIsEditing(false);
+function CategorySection({ category, notes, onUpdate, onDelete, openCount }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const categoryLabels = {
+    detailing: 'Detailing',
+    fabrication: 'Fabrication',
+    delivery: 'Delivery',
+    erection: 'Erection',
+    rfi: 'RFIs',
+    change_order: 'Change Orders',
+    blocker: 'Blockers/Constraints'
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Delete this decision?')) {
-      onDelete(decision.id);
-    }
-  };
+  const filteredNotes = category === 'blocker' 
+    ? notes.filter(n => n.category === 'blocker' || n.note_type === 'action')
+    : notes.filter(n => n.category === category);
 
-  if (isEditing) {
-    return (
-      <div className="p-3 bg-blue-900/20 border border-blue-700 rounded space-y-2">
-        <Input
-          placeholder="Decision title"
-          value={editData.title || ''}
-          onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-          className="bg-zinc-900 border-zinc-700 text-sm"
-        />
-        <Textarea
-          placeholder="Details"
-          value={editData.body}
-          onChange={(e) => setEditData({ ...editData, body: e.target.value })}
-          className="bg-zinc-900 border-zinc-700 text-sm h-16"
-        />
-        <div className="flex justify-end gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave}>Save</Button>
-        </div>
-      </div>
-    );
-  }
+  const hasContent = filteredNotes.length > 0;
 
   return (
-    <div className="p-3 bg-blue-900/20 border border-blue-700 rounded text-sm group">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="font-medium text-blue-200">{decision.title}</div>
-          <div className="text-blue-100 mt-1">{decision.body}</div>
-          <div className="text-xs text-blue-400 mt-2">
-            {decision.created_by} • {decision.created_date ? format(parseISO(decision.created_date), 'MMM d, h:mm a') : ''}
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <button className="w-full flex items-center justify-between p-2 bg-zinc-800 hover:bg-zinc-750 rounded transition-colors">
+          <div className="flex items-center gap-2">
+            <ChevronDown 
+              size={14} 
+              className={cn("transition-transform text-zinc-400", isOpen && "rotate-0", !isOpen && "-rotate-90")}
+            />
+            <span className="text-sm font-medium">{categoryLabels[category]}</span>
+            {hasContent && (
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+            )}
           </div>
-        </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>Edit</Button>
-          <Button size="sm" variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300">Delete</Button>
-        </div>
-      </div>
-    </div>
+          {hasContent && (
+            <Badge variant="outline" className="text-xs">
+              {filteredNotes.length}
+            </Badge>
+          )}
+          {category === 'blocker' && openCount > 0 && (
+            <Badge className="bg-red-700 text-xs ml-1">
+              {openCount} Open
+            </Badge>
+          )}
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2 space-y-2">
+        {!hasContent && (
+          <div className="text-xs text-zinc-500 italic p-3 text-center bg-zinc-900 rounded">
+            No {categoryLabels[category].toLowerCase()} notes
+          </div>
+        )}
+        {filteredNotes.map(note => (
+          note.note_type === 'action' ? (
+            <ActionItemCard key={note.id} action={note} onUpdate={onUpdate} onDelete={onDelete} />
+          ) : (
+            <NoteCard key={note.id} note={note} onUpdate={onUpdate} onDelete={onDelete} />
+          )
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

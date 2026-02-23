@@ -1,23 +1,10 @@
-/**
- * GET PORTFOLIO PULSE
- * 
- * Multi-project health rollup for executive dashboard.
- * Returns health scores and top blockers across all accessible projects.
- * 
- * Health Score Calculation (0-100):
- * - Base: 100
- * - Deduct per blocker: critical (-15), high (-10), medium (-5), low (-2)
- * - Floor: 0 (can't go negative)
- */
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Inline guard functions (Base44 doesn't support local imports)
 async function requireUser(req) {
   const base44 = createClientFromRequest(req);
   const user = await base44.auth.me();
   if (!user) throw { status: 401, message: 'Unauthorized' };
-  return user;
+  return { user, base44 };
 }
 
 function ok(data) {
@@ -35,30 +22,23 @@ function serverError(message = 'Internal server error', error = null) {
 
 Deno.serve(async (req) => {
   try {
-    const user = await requireUser(req);
-    const base44 = createClientFromRequest(req);
-    
-    // Get user's accessible projects (RLS enforced)
+    const { base44 } = await requireUser(req);
+
+    // RLS enforced projects user can see
     const projects = await base44.entities.Project.filter({
       status: { $in: ['awarded', 'in_progress', 'on_hold'] }
     });
-    
-    if (projects.length === 0) {
+
+    const projectIds = projects.map((p) => p.id);
+    if (projectIds.length === 0) {
       return ok({
         generated_at: new Date().toISOString(),
         projects: [],
-        portfolio_stats: {
-          total_projects: 0,
-          avg_health_score: 0,
-          critical_projects: 0,
-          total_blockers: 0
-        }
+        portfolio_stats: { total_projects: 0, avg_health_score: 0, critical_projects: 0, total_blockers: 0 }
       });
     }
-    
-    const projectIds = projects.map(p => p.id);
-    
-    // BATCH FETCH all related entities once
+
+    // Batch fetch all entities (RLS enforced)
     const [rfis, submittals, changeOrders, deliveries, tasks, drawingSets, insights] = await Promise.all([
       base44.entities.RFI.filter({ project_id: { $in: projectIds } }),
       base44.entities.Submittal.filter({ project_id: { $in: projectIds } }),
@@ -66,136 +46,119 @@ Deno.serve(async (req) => {
       base44.entities.Delivery.filter({ project_id: { $in: projectIds } }),
       base44.entities.Task.filter({ project_id: { $in: projectIds } }),
       base44.entities.DrawingSet.filter({ project_id: { $in: projectIds } }),
-      base44.entities.AIInsight.filter({ 
-        project_id: { $in: projectIds }, 
+      base44.entities.AIInsight.filter({
+        project_id: { $in: projectIds },
         insight_type: 'project_pulse',
         is_published: true
       })
     ]);
-    
-    // Group by project_id in memory
-    const groupedData = {};
-    projectIds.forEach(pid => {
-      groupedData[pid] = {
-        rfis: rfis.filter(r => r.project_id === pid),
-        submittals: submittals.filter(s => s.project_id === pid),
-        changeOrders: changeOrders.filter(co => co.project_id === pid),
-        deliveries: deliveries.filter(d => d.project_id === pid),
-        tasks: tasks.filter(t => t.project_id === pid),
-        drawingSets: drawingSets.filter(ds => ds.project_id === pid),
-        insights: insights.filter(i => i.project_id === pid)
-      };
-    });
-    
-    // Compute pulse per project using grouped data
-    const portfolioPulse = projects.map(project => {
-      try {
-        const data = groupedData[project.id];
-        const pulse = computeProjectPulseFromData(project.id, data);
-        const healthScore = calculateHealthScore(pulse.blockers);
-        
-        // Get latest insight
-        const latestInsight = data.insights.sort((a, b) => 
-          new Date(b.generated_at) - new Date(a.generated_at)
-        )[0];
-        
-        return {
-          project_id: project.id,
-          project_number: project.project_number,
-          project_name: project.name,
-          phase: project.phase,
-          status: project.status,
-          health_score: healthScore,
-          health_grade: getHealthGrade(healthScore),
-          top_blockers: pulse.blockers.slice(0, 3),
-          key_counts: pulse.counts,
-          last_generated_at: pulse.generated_at,
-          latest_insight: latestInsight ? {
-            summary: latestInsight.summary,
-            generated_at: latestInsight.generated_at
-          } : null
-        };
-      } catch (error) {
-        console.error(`Error processing project ${project.id}:`, error);
-        return null;
+
+    // Group by project_id
+    const byProject = (rows) => {
+      const map = new Map();
+      for (const r of rows) {
+        const arr = map.get(r.project_id) || [];
+        arr.push(r);
+        map.set(r.project_id, arr);
       }
-    })
-      .filter(p => p !== null)
-      .sort((a, b) => a.health_score - b.health_score);
-    
-    // Portfolio-level stats (safe division)
+      return map;
+    };
+
+    const rfisBy = byProject(rfis);
+    const submittalsBy = byProject(submittals);
+    const coBy = byProject(changeOrders);
+    const deliveriesBy = byProject(deliveries);
+    const tasksBy = byProject(tasks);
+    const drawingSetsBy = byProject(drawingSets);
+
+    // Latest insight per project
+    const latestInsightBy = new Map();
+    for (const ins of insights) {
+      const existing = latestInsightBy.get(ins.project_id);
+      if (!existing) {
+        latestInsightBy.set(ins.project_id, ins);
+        continue;
+      }
+      const a = new Date(existing.generated_at).getTime();
+      const b = new Date(ins.generated_at).getTime();
+      if (b > a) latestInsightBy.set(ins.project_id, ins);
+    }
+
+    const now = new Date();
+
+    const portfolioPulse = projects.map((project) => {
+      const pulse = computeProjectPulseFromGrouped({
+        project,
+        now,
+        rfis: rfisBy.get(project.id) || [],
+        submittals: submittalsBy.get(project.id) || [],
+        changeOrders: coBy.get(project.id) || [],
+        deliveries: deliveriesBy.get(project.id) || [],
+        tasks: tasksBy.get(project.id) || [],
+        drawingSets: drawingSetsBy.get(project.id) || []
+      });
+
+      const healthScore = calculateHealthScore(pulse.blockers);
+      const latestInsight = latestInsightBy.get(project.id);
+
+      return {
+        project_id: project.id,
+        project_number: project.project_number,
+        project_name: project.name,
+        phase: project.phase,
+        status: project.status,
+        health_score: healthScore,
+        health_grade: getHealthGrade(healthScore),
+        top_blockers: pulse.blockers.slice(0, 3),
+        key_counts: pulse.counts,
+        last_generated_at: pulse.generated_at,
+        latest_insight: latestInsight
+          ? { summary: latestInsight.summary, generated_at: latestInsight.generated_at }
+          : null
+      };
+    }).sort((a, b) => a.health_score - b.health_score);
+
+    const avg = Math.round(portfolioPulse.reduce((sum, p) => sum + p.health_score, 0) / portfolioPulse.length);
+
     const portfolioStats = {
       total_projects: portfolioPulse.length,
-      avg_health_score: portfolioPulse.length > 0
-        ? Math.round(portfolioPulse.reduce((sum, p) => sum + p.health_score, 0) / portfolioPulse.length)
-        : 0,
-      critical_projects: portfolioPulse.filter(p => p.health_score < 50).length,
+      avg_health_score: avg,
+      critical_projects: portfolioPulse.filter((p) => p.health_score < 50).length,
       total_blockers: portfolioPulse.reduce((sum, p) => sum + p.top_blockers.length, 0)
     };
-    
+
     return ok({
       generated_at: new Date().toISOString(),
       projects: portfolioPulse,
       portfolio_stats: portfolioStats
     });
-    
   } catch (error) {
-    if (error.status === 401) return unauthorized(error.message);
+    if (error?.status === 401) return unauthorized(error.message);
     return serverError('Failed to compute portfolio pulse', error);
   }
 });
 
-function calculateHealthScore(blockers) {
-  // Health score weights (deductions from 100)
-  const weights = {
-    critical: 15,
-    high: 10,
-    medium: 5,
-    low: 2
-  };
-  
-  let score = 100;
-  
-  for (const blocker of blockers) {
-    score -= weights[blocker.severity] || 0;
-  }
-  
-  return Math.max(0, score); // Floor at 0
-}
-
-function getHealthGrade(score) {
-  if (score >= 90) return 'A';
-  if (score >= 80) return 'B';
-  if (score >= 70) return 'C';
-  if (score >= 60) return 'D';
-  return 'F';
-}
-
-// Compute pulse from pre-fetched grouped data
-function computeProjectPulseFromData(project_id, data) {
-  const now = new Date();
+function computeProjectPulseFromGrouped({ project, now, rfis, submittals, changeOrders, deliveries, tasks, drawingSets }) {
   const SLA = { RFI_STANDARD: 7, RFI_CRITICAL: 3, SUBMITTAL: 14, CHANGE_ORDER: 10, DELIVERY: 1 };
-  
-  const { rfis, submittals, changeOrders, deliveries, tasks, drawingSets } = data;
-  
+
   const counts = {
-    rfi_open: rfis.filter(r => !['answered', 'closed'].includes(r.status)).length,
-    submittal_open: submittals.filter(s => !['approved', 'closed'].includes(s.status)).length,
-    co_open: changeOrders.filter(co => !['approved', 'rejected', 'void'].includes(co.status)).length,
+    rfi_open: rfis.filter((r) => !['answered', 'closed'].includes(r.status)).length,
+    submittal_open: submittals.filter((s) => !['approved', 'closed'].includes(s.status)).length,
+    co_open: changeOrders.filter((co) => !['approved', 'rejected', 'void'].includes(co.status)).length,
     deliveries_overdue: 0,
     safety_open: 0,
     tasks_overdue: 0,
-    drawings_pending: drawingSets.filter(ds => ds.status !== 'FFF').length
+    drawings_pending: drawingSets.filter((ds) => ds.status !== 'FFF').length
   };
-  
+
   const blockers = [];
-  
-  // Process RFIs
-  rfis.forEach(rfi => {
-    if (['answered', 'closed'].includes(rfi.status)) return;
+
+  // RFIs
+  for (const rfi of rfis) {
+    if (['answered', 'closed'].includes(rfi.status)) continue;
     const daysOpen = rfi.business_days_open || getDaysOpen(rfi.submitted_date, now);
     const sla = rfi.priority === 'critical' ? SLA.RFI_CRITICAL : SLA.RFI_STANDARD;
-    
+
     if (daysOpen > sla || rfi.fab_blocker) {
       blockers.push({
         type: 'rfi_overdue',
@@ -208,15 +171,15 @@ function computeProjectPulseFromData(project_id, data) {
         recommended_action: rfi.fab_blocker ? 'Escalate to GC/Engineer immediately' : 'Follow up with responder'
       });
     }
-  });
-  
-  // Process Deliveries
-  deliveries.forEach(delivery => {
-    if (['delivered', 'received', 'cancelled'].includes(delivery.status)) return;
+  }
+
+  // Deliveries
+  for (const delivery of deliveries) {
+    if (['delivered', 'received', 'cancelled'].includes(delivery.status)) continue;
     const scheduledDate = delivery.scheduled_date || delivery.expected_date;
-    if (!scheduledDate) return;
+    if (!scheduledDate) continue;
+
     const daysLate = getDaysOpen(scheduledDate, now);
-    
     if (daysLate > SLA.DELIVERY) {
       counts.deliveries_overdue++;
       blockers.push({
@@ -230,15 +193,15 @@ function computeProjectPulseFromData(project_id, data) {
         recommended_action: 'Contact supplier for ETA update'
       });
     }
-  });
-  
-  // Process Tasks
-  tasks.forEach(task => {
-    if (task.status === 'completed') return;
+  }
+
+  // Tasks
+  for (const task of tasks) {
+    if (task.status === 'completed') continue;
     const endDate = task.end_date;
-    if (!endDate) return;
+    if (!endDate) continue;
+
     const daysLate = getDaysOpen(endDate, now);
-    
     if (daysLate > 0) {
       counts.tasks_overdue++;
       if (task.priority === 'critical' || task.priority === 'high' || task.is_critical) {
@@ -254,21 +217,36 @@ function computeProjectPulseFromData(project_id, data) {
         });
       }
     }
-  });
-  
+  }
+
   const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
   blockers.sort((a, b) => {
     if (a.severity !== b.severity) return severityOrder[a.severity] - severityOrder[b.severity];
-    return b.days_open - a.days_open;
+    return (b.days_open || 0) - (a.days_open || 0);
   });
-  
-  return { project_id, generated_at: now.toISOString(), counts, blockers };
+
+  return { project_id: project.id, generated_at: now.toISOString(), counts, blockers };
+}
+
+function calculateHealthScore(blockers) {
+  const weights = { critical: 15, high: 10, medium: 5, low: 2 };
+  let score = 100;
+  for (const b of blockers) score -= weights[b.severity] || 0;
+  return Math.max(0, score);
+}
+
+function getHealthGrade(score) {
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
 }
 
 function getDaysOpen(startDate, endDate) {
   if (!startDate) return 0;
   const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
   const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
-  const diffMs = end - start;
+  const diffMs = end.getTime() - start.getTime();
   return Math.floor(diffMs / (1000 * 60 * 60 * 24));
 }

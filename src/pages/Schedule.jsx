@@ -55,6 +55,16 @@ export default function Schedule() {
 
   const queryClient = useQueryClient();
 
+  // Expose to TaskListView for resource assignment trigger
+  useEffect(() => {
+    window.setSelectedTaskForResources = setSelectedTaskForResources;
+    window.setResourceAssignOpen = setResourceAssignOpen;
+    return () => {
+      delete window.setSelectedTaskForResources;
+      delete window.setResourceAssignOpen;
+    };
+  }, []);
+
   // Fetch current user
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

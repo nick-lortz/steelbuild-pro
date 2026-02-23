@@ -315,9 +315,10 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                   </div>
                 </th>
                 <th className="text-left p-3 text-zinc-300 font-semibold w-40">
-                  RESPONSIBLE
+                  RESOURCES
                 </th>
-                <th className="text-right p-3 text-zinc-300 font-semibold w-16">
+                <th className="text-right p-3 text-zinc-300 font-semibold w-24">
+                  ACTIONS
                 </th>
               </tr>
             </thead>
@@ -484,21 +485,46 @@ export default function TaskListView({ tasks, projects, resources, workPackages,
                                 }`}>
                                   {variance !== null ? (variance > 0 ? `+${variance}` : variance) : '-'}
                                 </td>
-                                <td className="p-3 text-zinc-300 text-xs">
-                                  {renderCell(task, 'assigned_resources', assignedResource ? getResourceName(assignedResource) : '-')}
+                                <td className="p-3">
+                                  <button
+                                    onClick={() => {
+                                      // Trigger resource assignment
+                                      if (window.setSelectedTaskForResources) {
+                                        window.setSelectedTaskForResources(task);
+                                        window.setResourceAssignOpen(true);
+                                      }
+                                    }}
+                                    className="text-xs text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1"
+                                  >
+                                    <Users size={12} />
+                                    {(task.assigned_resources?.length || 0) + (task.assigned_equipment?.length || 0) || 'Assign'}
+                                  </button>
                                 </td>
                                 <td className="p-3 text-right">
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDeleteTask(task);
-                                    }}
-                                    className="h-7 w-7 text-zinc-500 hover:text-red-400"
-                                  >
-                                    <Trash2 size={14} />
-                                  </Button>
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onTaskClick(task);
+                                      }}
+                                      className="h-7 w-7 text-zinc-500 hover:text-white"
+                                    >
+                                      <Edit size={14} />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteTask(task);
+                                      }}
+                                      className="h-7 w-7 text-zinc-500 hover:text-red-400"
+                                    >
+                                      <Trash2 size={14} />
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             );

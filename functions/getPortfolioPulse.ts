@@ -43,23 +43,59 @@ Deno.serve(async (req) => {
       status: { $in: ['awarded', 'in_progress', 'on_hold'] }
     });
     
-    // Compute pulse for each project in parallel
-    const pulsePromises = projects.map(async (project) => {
+    if (projects.length === 0) {
+      return ok({
+        generated_at: new Date().toISOString(),
+        projects: [],
+        portfolio_stats: {
+          total_projects: 0,
+          avg_health_score: 0,
+          critical_projects: 0,
+          total_blockers: 0
+        }
+      });
+    }
+    
+    const projectIds = projects.map(p => p.id);
+    
+    // BATCH FETCH all related entities once
+    const [rfis, submittals, changeOrders, deliveries, tasks, drawingSets, insights] = await Promise.all([
+      base44.entities.RFI.filter({ project_id: { $in: projectIds } }),
+      base44.entities.Submittal.filter({ project_id: { $in: projectIds } }),
+      base44.entities.ChangeOrder.filter({ project_id: { $in: projectIds } }),
+      base44.entities.Delivery.filter({ project_id: { $in: projectIds } }),
+      base44.entities.Task.filter({ project_id: { $in: projectIds } }),
+      base44.entities.DrawingSet.filter({ project_id: { $in: projectIds } }),
+      base44.entities.AIInsight.filter({ 
+        project_id: { $in: projectIds }, 
+        insight_type: 'project_pulse',
+        is_published: true
+      })
+    ]);
+    
+    // Group by project_id in memory
+    const groupedData = {};
+    projectIds.forEach(pid => {
+      groupedData[pid] = {
+        rfis: rfis.filter(r => r.project_id === pid),
+        submittals: submittals.filter(s => s.project_id === pid),
+        changeOrders: changeOrders.filter(co => co.project_id === pid),
+        deliveries: deliveries.filter(d => d.project_id === pid),
+        tasks: tasks.filter(t => t.project_id === pid),
+        drawingSets: drawingSets.filter(ds => ds.project_id === pid),
+        insights: insights.filter(i => i.project_id === pid)
+      };
+    });
+    
+    // Compute pulse per project using grouped data
+    const portfolioPulse = projects.map(project => {
       try {
-        // Compute pulse inline (can't invoke other functions in preview)
-        const pulse = await computeProjectPulse(base44, project.id);
-        
-        // Calculate health score
+        const data = groupedData[project.id];
+        const pulse = computeProjectPulseFromData(project.id, data);
         const healthScore = calculateHealthScore(pulse.blockers);
         
-        // Get latest AI insight
-        const insights = await base44.entities.AIInsight.filter({
-          project_id: project.id,
-          insight_type: 'project_pulse',
-          is_published: true
-        });
-        
-        const latestInsight = insights.sort((a, b) => 
+        // Get latest insight
+        const latestInsight = data.insights.sort((a, b) => 
           new Date(b.generated_at) - new Date(a.generated_at)
         )[0];
         
@@ -83,18 +119,16 @@ Deno.serve(async (req) => {
         console.error(`Error processing project ${project.id}:`, error);
         return null;
       }
-    });
-    
-    const portfolioPulse = (await Promise.all(pulsePromises))
+    })
       .filter(p => p !== null)
-      .sort((a, b) => a.health_score - b.health_score); // Worst health first
+      .sort((a, b) => a.health_score - b.health_score);
     
-    // Portfolio-level stats
+    // Portfolio-level stats (safe division)
     const portfolioStats = {
       total_projects: portfolioPulse.length,
-      avg_health_score: Math.round(
-        portfolioPulse.reduce((sum, p) => sum + p.health_score, 0) / portfolioPulse.length
-      ),
+      avg_health_score: portfolioPulse.length > 0
+        ? Math.round(portfolioPulse.reduce((sum, p) => sum + p.health_score, 0) / portfolioPulse.length)
+        : 0,
       critical_projects: portfolioPulse.filter(p => p.health_score < 50).length,
       total_blockers: portfolioPulse.reduce((sum, p) => sum + p.top_blockers.length, 0)
     };
@@ -137,19 +171,12 @@ function getHealthGrade(score) {
   return 'F';
 }
 
-// Inline pulse computation (from getProjectPulse)
-async function computeProjectPulse(base44, project_id) {
+// Compute pulse from pre-fetched grouped data
+function computeProjectPulseFromData(project_id, data) {
   const now = new Date();
   const SLA = { RFI_STANDARD: 7, RFI_CRITICAL: 3, SUBMITTAL: 14, CHANGE_ORDER: 10, DELIVERY: 1 };
   
-  const [rfis, submittals, changeOrders, deliveries, tasks, drawingSets] = await Promise.all([
-    base44.asServiceRole.entities.RFI.filter({ project_id }),
-    base44.asServiceRole.entities.Submittal.filter({ project_id }),
-    base44.asServiceRole.entities.ChangeOrder.filter({ project_id }),
-    base44.asServiceRole.entities.Delivery.filter({ project_id }),
-    base44.asServiceRole.entities.Task.filter({ project_id }),
-    base44.asServiceRole.entities.DrawingSet.filter({ project_id })
-  ]);
+  const { rfis, submittals, changeOrders, deliveries, tasks, drawingSets } = data;
   
   const counts = {
     rfi_open: rfis.filter(r => !['answered', 'closed'].includes(r.status)).length,

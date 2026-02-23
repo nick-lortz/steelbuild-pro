@@ -141,9 +141,9 @@ export default function ProjectDashboard() {
         title={project?.name || 'Project Dashboard'}
         subtitle={project?.project_number || 'Loading...'}
         actions={
-          <>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Select value={activeProjectId} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-80">
+              <SelectTrigger className="w-full sm:w-80">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -158,22 +158,24 @@ export default function ProjectDashboard() {
               variant="outline"
               size="sm"
               onClick={() => setConfigOpen(true)}
+              className="w-full sm:w-auto"
             >
               <Settings size={14} className="mr-2" />
-              Configure Widgets
+              <span className="hidden sm:inline">Configure Widgets</span>
+              <span className="sm:hidden">Configure</span>
             </Button>
-          </>
+          </div>
         }
       />
 
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="dashboard">
             {(provided) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
               >
                 {widgetLayout.map((widgetId, index) => {
                   const widget = AVAILABLE_WIDGETS.find(w => w.id === widgetId);

@@ -48,10 +48,14 @@ function LaborContent() {
       
       const daysBack = filterDateRange === '7d' ? 7 : filterDateRange === '30d' ? 30 : 14;
       const now = new Date();
-      const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack);
+      const cutoff = new Date(now);
+      cutoff.setDate(now.getDate() - daysBack);
+      cutoff.setHours(0, 0, 0, 0);
       
       return allEntries.filter(e => {
-        const workDate = new Date(e.work_date + 'T00:00:00');
+        if (!e.work_date) return false;
+        const [year, month, day] = e.work_date.split('-').map(Number);
+        const workDate = new Date(year, month - 1, day);
         return workDate >= cutoff;
       });
     },

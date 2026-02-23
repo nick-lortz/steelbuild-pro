@@ -59,10 +59,14 @@ export default function NoteComposer({ projectId, weekId, noteType = 'note', onS
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="detailing">Detailing</SelectItem>
+              <SelectItem value="fabrication">Fabrication</SelectItem>
+              <SelectItem value="delivery">Delivery</SelectItem>
+              <SelectItem value="erection">Erection</SelectItem>
+              <SelectItem value="rfi">RFIs</SelectItem>
+              <SelectItem value="change_order">Change Orders</SelectItem>
+              <SelectItem value="blocker">Blockers/Constraints</SelectItem>
               <SelectItem value="general">General</SelectItem>
-              <SelectItem value="shop">Shop</SelectItem>
-              <SelectItem value="field">Field</SelectItem>
-              <SelectItem value="meeting">Meeting</SelectItem>
               <SelectItem value="safety">Safety</SelectItem>
               <SelectItem value="qc">QC</SelectItem>
             </SelectContent>

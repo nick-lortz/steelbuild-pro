@@ -123,52 +123,86 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
             )}
 
             {/* Tabs */}
-            <Tabs defaultValue="notes" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-zinc-800">
-                <TabsTrigger value="notes">Notes</TabsTrigger>
-                <TabsTrigger value="actions">
-                  Action Items
+            <Tabs defaultValue="detailing" className="w-full">
+              <TabsList className="grid w-full grid-cols-7 bg-zinc-800 gap-1">
+                <TabsTrigger value="detailing" className="text-xs sm:text-sm">Detailing</TabsTrigger>
+                <TabsTrigger value="fabrication" className="text-xs sm:text-sm">Fabrication</TabsTrigger>
+                <TabsTrigger value="delivery" className="text-xs sm:text-sm">Delivery</TabsTrigger>
+                <TabsTrigger value="erection" className="text-xs sm:text-sm">Erection</TabsTrigger>
+                <TabsTrigger value="rfis" className="text-xs sm:text-sm">RFIs</TabsTrigger>
+                <TabsTrigger value="change_orders" className="text-xs sm:text-sm">COs</TabsTrigger>
+                <TabsTrigger value="blockers" className="text-xs sm:text-sm">
+                  Blockers
                   {openActions.length > 0 && (
-                    <Badge variant="outline" className="ml-2 text-xs">{openActions.length}</Badge>
+                    <Badge variant="outline" className="ml-1 text-xs">{openActions.length}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="decisions">Decisions</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="notes" className="space-y-2 mt-3">
-                {categorizedNotes.carried.length > 0 && (
-                  <div className="mb-3">
-                    <div className="text-xs font-bold text-amber-500 mb-2">Carried from Last Week</div>
-                    {categorizedNotes.carried.map(note => (
-                      <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
-                    ))}
-                  </div>
+              <TabsContent value="detailing" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'detailing').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No detailing notes</div>
                 )}
-
-                <div className="text-xs font-bold text-zinc-400 mb-2">This Week</div>
-                {categorizedNotes.notes.length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No notes yet</div>
-                )}
-                {categorizedNotes.notes.map(note => (
+                {notes.filter(n => n.category === 'detailing').map(note => (
                   <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
                 ))}
               </TabsContent>
 
-              <TabsContent value="actions" className="space-y-2 mt-3">
-                {categorizedNotes.actions.length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No action items</div>
+              <TabsContent value="fabrication" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'fabrication').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No fabrication notes</div>
                 )}
-                {categorizedNotes.actions.map(action => (
-                  <ActionItemCard key={action.id} action={action} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                {notes.filter(n => n.category === 'fabrication').map(note => (
+                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
                 ))}
               </TabsContent>
 
-              <TabsContent value="decisions" className="space-y-2 mt-3">
-                {categorizedNotes.decisions.length === 0 && (
-                  <div className="text-sm text-zinc-500 italic p-4 text-center">No decisions logged</div>
+              <TabsContent value="delivery" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'delivery').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No delivery notes</div>
                 )}
-                {categorizedNotes.decisions.map(decision => (
-                  <DecisionCard key={decision.id} decision={decision} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                {notes.filter(n => n.category === 'delivery').map(note => (
+                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                ))}
+              </TabsContent>
+
+              <TabsContent value="erection" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'erection').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No erection notes</div>
+                )}
+                {notes.filter(n => n.category === 'erection').map(note => (
+                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                ))}
+              </TabsContent>
+
+              <TabsContent value="rfis" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'rfi').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No RFI notes</div>
+                )}
+                {notes.filter(n => n.category === 'rfi').map(note => (
+                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                ))}
+              </TabsContent>
+
+              <TabsContent value="change_orders" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'change_order').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No change order notes</div>
+                )}
+                {notes.filter(n => n.category === 'change_order').map(note => (
+                  <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                ))}
+              </TabsContent>
+
+              <TabsContent value="blockers" className="space-y-2 mt-3">
+                {notes.filter(n => n.category === 'blocker' || n.note_type === 'action').length === 0 && (
+                  <div className="text-sm text-zinc-500 italic p-4 text-center">No blockers or action items</div>
+                )}
+                {notes.filter(n => n.category === 'blocker' || n.note_type === 'action').map(note => (
+                  note.note_type === 'action' ? (
+                    <ActionItemCard key={note.id} action={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                  ) : (
+                    <NoteCard key={note.id} note={note} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
+                  )
                 ))}
               </TabsContent>
             </Tabs>

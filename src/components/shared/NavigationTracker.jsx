@@ -6,7 +6,7 @@ export default function NavigationTracker() {
   const location = useLocation();
   const lastLoggedPage = useRef(null);
   const lastLogTime = useRef(0);
-  const MIN_LOG_INTERVAL = 5000; // 5 seconds minimum between logs
+  const MIN_LOG_INTERVAL = 30000; // 30 seconds minimum between logs
 
   useEffect(() => {
     const currentPath = location.pathname;

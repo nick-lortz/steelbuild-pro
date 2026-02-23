@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
-import { Users } from 'lucide-react';
 import { 
   CheckCircle2, Clock, AlertTriangle, DollarSign, 
   TrendingUp, Users, Package, Truck 

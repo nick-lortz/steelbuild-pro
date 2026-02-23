@@ -17,6 +17,7 @@ import WorkPackageWidget from '@/components/project-dashboard/WorkPackageWidget'
 import DrawingWidget from '@/components/project-dashboard/DrawingWidget';
 import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialog';
 import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
+import PredictiveRiskPanel from '@/components/project-dashboard/PredictiveRiskPanel';
 import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';

@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
 
     // Import state machine from backend-safe module
-    const { validatePhaseTransition, getWorkflowGuidance } = await import('./stateMachine.js');
+    const { validatePhaseTransition, getWorkflowGuidance } = await import('./_lib/stateMachine.js');
 
     // Evaluate transition
     const trace = await validatePhaseTransition(workPackage, target_state, base44);

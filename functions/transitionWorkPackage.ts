@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { validateWPTransition } from './_lib/transitionValidation.js';
 import { evaluateFabricationGate } from './_lib/executionGates.js';
+import { createROIEvent, determineSeverityFromGate } from './_lib/roiCalculations.js';
 
 /**
  * Enforce legality checks for WorkPackage status transitions
@@ -100,6 +101,19 @@ Deno.serve(async (req) => {
             metadata: { gate_type: 'fabricate', override_reason }
           });
           
+          // Create ROI event for override
+          const severity = determineSeverityFromGate(gateEvaluation);
+          await base44.asServiceRole.entities.ROIEvent.create(
+            createROIEvent(
+              wp.project_id,
+              'gate_override',
+              'WorkPackage',
+              work_package_id,
+              severity,
+              `Fabrication gate overridden: ${override_reason}`
+            )
+          );
+          
         } else if (gateEvaluation.gate_status === 'blocked') {
           // HARD BLOCK - cannot proceed
           return Response.json({
@@ -196,6 +210,20 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.ExecutionGate.update(existingGates[0].id, gateData);
       } else {
         await base44.asServiceRole.entities.ExecutionGate.create(gateData);
+      }
+      
+      // Track install readiness improvement for ROI
+      if (gateEvaluation.gate_status === 'open' && wp.install_ready === false) {
+        await base44.asServiceRole.entities.ROIEvent.create(
+          createROIEvent(
+            wp.project_id,
+            'install_ready_improved',
+            'WorkPackage',
+            work_package_id,
+            'medium',
+            `WP ${wp.wpid} install readiness improved - gate now open`
+          )
+        );
       }
     }
 

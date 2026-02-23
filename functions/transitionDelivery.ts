@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { validateDeliveryTransition } from './_lib/transitionValidation.js';
 import { evaluateShipmentGate, evaluateInstallGate } from './_lib/executionGates.js';
+import { createROIEvent, determineSeverityFromGate } from './_lib/roiCalculations.js';
 
 /**
  * Enforce legality checks for Delivery status transitions with execution gate controls
@@ -116,6 +117,20 @@ Deno.serve(async (req) => {
             metadata: { gate_type: gateType, override_reason }
           });
           
+          // Create ROI event for override
+          const severity = determineSeverityFromGate(gateEvaluation);
+          const eventType = gateType === 'ship' ? 'shipment_released' : 'install_hold_prevented';
+          await base44.asServiceRole.entities.ROIEvent.create(
+            createROIEvent(
+              delivery.project_id,
+              eventType,
+              'Delivery',
+              delivery_id,
+              severity,
+              `${gateType.toUpperCase()} gate overridden: ${override_reason}`
+            )
+          );
+          
         } else if (gateEvaluation.gate_status === 'blocked') {
           // HARD BLOCK
           return Response.json({
@@ -215,6 +230,22 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.ExecutionGate.update(existingGates[0].id, gateData);
       } else {
         await base44.asServiceRole.entities.ExecutionGate.create(gateData);
+      }
+      
+      // Track shipment/install block prevention for ROI
+      if (gateEvaluation.gate_status === 'blocked') {
+        const eventType = gateType === 'ship' ? 'shipment_blocked' : 'install_hold_prevented';
+        const severity = determineSeverityFromGate(gateEvaluation);
+        await base44.asServiceRole.entities.ROIEvent.create(
+          createROIEvent(
+            delivery.project_id,
+            eventType,
+            'Delivery',
+            delivery_id,
+            severity,
+            `${gateType.toUpperCase()} gate blocked - preventing costly field issue`
+          )
+        );
       }
     }
 

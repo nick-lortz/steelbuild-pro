@@ -118,7 +118,7 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
               const needsRelease = set.status === 'BFS' && !set.released_for_fab_date;
 
               return (
-                <React.Fragment key={set.id} data-source-location="DrawingSetTable">
+                <React.Fragment key={set.id}>
                   <tr className="border-b border-zinc-800 hover:bg-zinc-800/30 cursor-pointer">
                     <td className="p-3">
                       <Button

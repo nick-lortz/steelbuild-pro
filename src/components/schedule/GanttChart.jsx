@@ -315,7 +315,7 @@ export default function GanttChart({
       <CardHeader className="border-b border-zinc-800 space-y-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-white">
-            Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View
+            Gantt Chart - {viewMode ? viewMode.charAt(0).toUpperCase() + viewMode.slice(1) : 'Day'} View
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={scrollToToday} className="border-zinc-700 text-xs">

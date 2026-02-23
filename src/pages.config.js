@@ -131,6 +131,7 @@ import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
 import ProjectAssistant from './pages/ProjectAssistant';
+import Collaboration from './pages/Collaboration';
 import __Layout from './Layout.jsx';
 
 
@@ -219,6 +220,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
     "ProjectAssistant": ProjectAssistant,
+    "Collaboration": Collaboration,
 }
 
 export const pagesConfig = {

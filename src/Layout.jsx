@@ -66,53 +66,91 @@ import PullToRefresh from '@/components/shared/PullToRefresh';
 
 const navGroups = [
 {
-  name: 'Overview',
+  name: 'Dashboard',
   icon: LayoutDashboard,
   items: [
   { name: 'Project Dashboard', page: 'ProjectDashboard', icon: LayoutDashboard },
   { name: 'Projects', page: 'Projects', icon: Building },
-  { name: 'Portfolio Pulse', page: 'PortfolioPulse', icon: Gauge },
-  { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: BarChart3 },
+  { name: 'Calendar', page: 'Calendar', icon: Calendar },
   { name: 'Alerts', page: 'Alerts', icon: AlertCircle },
-  { name: 'Calendar', page: 'Calendar', icon: Calendar }],
+  { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 }],
 
   roles: ['admin', 'user']
 },
 {
-  name: 'Project Execution',
-  icon: CheckCircle2,
+  name: 'Job Setup',
+  icon: FileCheck,
   items: [
-  { name: 'Work Packages', page: 'WorkPackages', icon: FileCheck },
-  { name: 'Detailing', page: 'Detailing', icon: FileText },
+  { name: 'Contracts', page: 'Contracts', icon: FileText },
+  { name: 'Job Setup', page: 'PMJobSetup', icon: CheckCircle2 },
+  { name: 'Scope & Exclusions', page: 'PMScopeExclusions', icon: FileText },
+  { name: 'Contacts', page: 'PMContacts', icon: Users }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Detailing & Drawings',
+  icon: FileText,
+  items: [
+  { name: 'Drawings', page: 'Drawings', icon: FileText },
+  { name: 'Detailing', page: 'Detailing', icon: FileCheck },
+  { name: 'Documents', page: 'Documents', icon: File }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Communications',
+  icon: MessageSquare,
+  items: [
+  { name: 'RFI Hub', page: 'RFIHub', icon: MessageSquareWarning },
+  { name: 'Submittals', page: 'Submittals', icon: FileCheck },
+  { name: 'Messages', page: 'Messages', icon: MessageSquare },
+  { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar },
+  { name: 'Meetings', page: 'Meetings', icon: Users },
+  { name: 'My Action Items', page: 'MyActionItems', icon: CheckCircle2 }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Fabrication',
+  icon: Wrench,
+  items: [
   { name: 'Fabrication', page: 'Fabrication', icon: Wrench },
+  { name: 'Work Packages', page: 'WorkPackages', icon: Package }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Logistics & Deliveries',
+  icon: Truck,
+  items: [
   { name: 'Deliveries', page: 'Deliveries', icon: Truck },
   { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
-  { name: 'Field Tools', page: 'FieldTools', icon: Camera },
-  { name: 'Feedback Loop', page: 'FeedbackLoop', icon: TrendingUp }],
+  { name: 'Shipping & Travel', page: 'PMShippingTravel', icon: Truck }],
 
   roles: ['admin', 'user']
 },
 {
-  name: 'Schedule & Planning',
-  icon: Calendar,
+  name: 'Field Execution',
+  icon: Camera,
   items: [
   { name: 'Schedule', page: 'Schedule', icon: Calendar },
   { name: 'Weekly Schedule', page: 'WeeklySchedule', icon: Calendar },
-  { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 },
-  { name: 'Daily Logs', page: 'DailyLogs', icon: Calendar }],
+  { name: 'Field Tools', page: 'FieldTools', icon: Camera },
+  { name: 'Daily Logs', page: 'DailyLogs', icon: FileText },
+  { name: 'Photos', page: 'ProjectPhotos', icon: Camera }],
 
   roles: ['admin', 'user']
 },
 {
-  name: 'Cost Management',
+  name: 'Cost Control',
   icon: DollarSign,
   items: [
-  { name: 'Contracts', page: 'Contracts', icon: FileText },
   { name: 'Financials', page: 'FinancialsRedesign', icon: DollarSign },
-  { name: 'Budget Control', page: 'BudgetControl', icon: DollarSign },
-  { name: 'Cost Codes', page: 'CostCodes', icon: Hash },
+  { name: 'Budget Control', page: 'BudgetControl', icon: BarChart3 },
   { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
-  { name: 'Labor & Scope', page: 'LaborScope', icon: TrendingUp }],
+  { name: 'Cost Codes', page: 'CostCodes', icon: Hash },
+  { name: 'Labor & Scope', page: 'LaborScope', icon: Clock }],
 
   roles: ['admin', 'user']
 },
@@ -128,54 +166,19 @@ const navGroups = [
   roles: ['admin', 'user']
 },
 {
-  name: 'Communications',
-  icon: MessageSquare,
-  items: [
-  { name: 'RFI Hub', page: 'RFIHub', icon: Gauge },
-  { name: 'Submittals', page: 'Submittals', icon: FileCheck },
-  { name: 'Messages', page: 'Messages', icon: MessageSquareWarning },
-  { name: 'Meetings', page: 'Meetings', icon: Users },
-  { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar },
-  { name: 'My Action Items', page: 'MyActionItems', icon: CheckCircle2 }],
-
-  roles: ['admin', 'user']
-},
-{
-  name: 'Documents & Media',
-  icon: File,
-  items: [
-  { name: 'Documents', page: 'Documents', icon: File },
-  { name: 'Drawings', page: 'Drawings', icon: FileText },
-  { name: 'Photos', page: 'ProjectPhotos', icon: Camera }],
-
-  roles: ['admin', 'user']
-},
-{
-  name: 'Insights & Reporting',
+  name: 'Reporting & Analytics',
   icon: BarChart3,
   items: [
-  { name: 'Analytics', page: 'Analytics', icon: BarChart3 },
-  { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: TrendingUp },
-  { name: 'Reports', page: 'Reports', icon: FileText },
-  { name: 'Performance', page: 'Performance', icon: Gauge },
+  { name: 'Portfolio Pulse', page: 'PortfolioPulse', icon: Gauge },
+  { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: TrendingUp },
+  { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: BarChart3 },
   { name: 'Job Status Report', page: 'JobStatusReport', icon: FileText },
-  { name: 'AI Insights', page: 'Insights', icon: Sparkles }],
+  { name: 'Reports', page: 'Reports', icon: FileText },
+  { name: 'AI Insights', page: 'Insights', icon: Sparkles },
+  { name: 'Feedback Loop', page: 'FeedbackLoop', icon: TrendingUp },
+  { name: 'Performance', page: 'Performance', icon: Gauge }],
 
   roles: ['admin', 'user']
-},
-{
-  name: 'PM Toolkit',
-  icon: DollarSign,
-  items: [
-  { name: 'PM Dashboard', page: 'PMToolkit', icon: LayoutDashboard },
-  { name: 'Job Setup', page: 'PMJobSetup', icon: CheckCircle2 },
-  { name: 'Scope & Exclusions', page: 'PMScopeExclusions', icon: FileText },
-  { name: 'Change Orders', page: 'PMChangeOrders', icon: DollarSign },
-  { name: 'Shipping & Travel', page: 'PMShippingTravel', icon: Truck },
-  { name: 'Contacts', page: 'PMContacts', icon: Users },
-  { name: 'Reports', page: 'PMReports', icon: FileText }],
-
-  roles: ['admin', 'project_manager', 'user']
 },
 {
   name: 'Settings',

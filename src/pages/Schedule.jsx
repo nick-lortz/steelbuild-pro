@@ -177,19 +177,8 @@ export default function Schedule() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch workflow risk state for at-risk badges
-  const { data: riskState } = useQuery({
-    queryKey: ['workflowRisk', activeProjectIds],
-    queryFn: async () => {
-      if (activeProjectIds.length !== 1) return null;
-      const { data } = await base44.functions.invoke('getWorkflowRiskState', { 
-        project_id: activeProjectIds[0] 
-      });
-      return data;
-    },
-    enabled: activeProjectIds.length === 1,
-    staleTime: 3 * 60 * 1000
-  });
+  // Workflow risk state disabled (function not implemented)
+  const riskState = null;
 
   const { data: drawingSets = [] } = useQuery({
     queryKey: ['drawings', activeProjectIds],

@@ -47,10 +47,13 @@ function LaborContent() {
       const allEntries = await base44.entities.LaborEntry.filter({ project_id: activeProjectId });
       
       const daysBack = filterDateRange === '7d' ? 7 : filterDateRange === '30d' ? 30 : 14;
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - daysBack);
+      const now = new Date();
+      const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBack);
       
-      return allEntries.filter(e => new Date(e.work_date) >= cutoff);
+      return allEntries.filter(e => {
+        const workDate = new Date(e.work_date + 'T00:00:00');
+        return workDate >= cutoff;
+      });
     },
     enabled: !!activeProjectId
   });

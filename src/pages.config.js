@@ -59,6 +59,7 @@ import AutomationWorkflows from './pages/AutomationWorkflows';
 import BudgetControl from './pages/BudgetControl';
 import Calendar from './pages/Calendar';
 import ChangeOrders from './pages/ChangeOrders';
+import Collaboration from './pages/Collaboration';
 import Contracts from './pages/Contracts';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
@@ -110,6 +111,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import ProductionMeetings from './pages/ProductionMeetings';
 import Profile from './pages/Profile';
 import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
+import ProjectAssistant from './pages/ProjectAssistant';
 import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
 import ProjectPhotos from './pages/ProjectPhotos';
@@ -130,8 +132,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ProjectAssistant from './pages/ProjectAssistant';
-import Collaboration from './pages/Collaboration';
 import __Layout from './Layout.jsx';
 
 
@@ -148,6 +148,7 @@ export const PAGES = {
     "BudgetControl": BudgetControl,
     "Calendar": Calendar,
     "ChangeOrders": ChangeOrders,
+    "Collaboration": Collaboration,
     "Contracts": Contracts,
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
@@ -199,6 +200,7 @@ export const PAGES = {
     "ProductionMeetings": ProductionMeetings,
     "Profile": Profile,
     "ProjectAnalyticsDashboard": ProjectAnalyticsDashboard,
+    "ProjectAssistant": ProjectAssistant,
     "ProjectBudget": ProjectBudget,
     "ProjectDashboard": ProjectDashboard,
     "ProjectPhotos": ProjectPhotos,
@@ -219,8 +221,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ProjectAssistant": ProjectAssistant,
-    "Collaboration": Collaboration,
 }
 
 export const pagesConfig = {

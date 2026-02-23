@@ -13,7 +13,8 @@ import { toast } from 'sonner';
 
 export default function LaborEntryForm({ projectId, onSuccess }) {
   const queryClient = useQueryClient();
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const [formData, setFormData] = useState({
     work_date: today,
@@ -175,7 +176,7 @@ export default function LaborEntryForm({ projectId, onSuccess }) {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Daily Labor Entry</span>
-          <span className="text-xs font-mono text-zinc-500">{format(new Date(formData.work_date), 'MMM dd, yyyy')}</span>
+          <span className="text-xs font-mono text-zinc-500">{formData.work_date}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">

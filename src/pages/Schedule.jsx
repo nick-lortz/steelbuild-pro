@@ -18,7 +18,10 @@ import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
 import AITaskPrioritizer from '@/components/schedule/AITaskPrioritizer';
 import DependencyVisualizer from '@/components/schedule/DependencyVisualizer';
 import QuickStatusUpdate from '@/components/schedule/QuickStatusUpdate';
+import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -47,6 +50,8 @@ export default function Schedule() {
   const [wbsGeneratorOpen, setWbsGeneratorOpen] = useState(false);
   const [taskPrioritizerOpen, setTaskPrioritizerOpen] = useState(false);
   const [quickStatusOpen, setQuickStatusOpen] = useState(false);
+  const [resourceAssignOpen, setResourceAssignOpen] = useState(false);
+  const [selectedTaskForResources, setSelectedTaskForResources] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -900,6 +905,93 @@ export default function Schedule() {
               onClose={() => setQuickStatusOpen(false)}
             />
           </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Resource Assignment Sheet */}
+      <Sheet open={resourceAssignOpen} onOpenChange={setResourceAssignOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Assign Resources</SheetTitle>
+          </SheetHeader>
+          {selectedTaskForResources && (
+            <div className="mt-6 space-y-4">
+              <div className="p-3 bg-zinc-800 rounded">
+                <p className="font-medium text-white">{selectedTaskForResources.name}</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  {projects.find(p => p.id === selectedTaskForResources.project_id)?.project_number}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
+                    Labor Resources
+                  </label>
+                  <QuickResourceAssign
+                    selectedResourceIds={selectedTaskForResources.assigned_resources || []}
+                    resources={resources.filter(r => r.type === 'labor')}
+                    onChange={(ids) => setSelectedTaskForResources({
+                      ...selectedTaskForResources,
+                      assigned_resources: ids
+                    })}
+                    placeholder="Select labor resources..."
+                    triggerClassName="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
+                    Equipment
+                  </label>
+                  <QuickResourceAssign
+                    selectedResourceIds={selectedTaskForResources.assigned_equipment || []}
+                    resources={resources.filter(r => r.type === 'equipment')}
+                    onChange={(ids) => setSelectedTaskForResources({
+                      ...selectedTaskForResources,
+                      assigned_equipment: ids
+                    })}
+                    placeholder="Select equipment..."
+                    triggerClassName="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4 border-t border-zinc-800">
+                <Link to={createPageUrl('ResourceManagement')}>
+                  <Button variant="outline" size="sm">
+                    Manage Resources
+                  </Button>
+                </Link>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setResourceAssignOpen(false);
+                      setSelectedTaskForResources(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      updateMutation.mutate({
+                        id: selectedTaskForResources.id,
+                        data: {
+                          assigned_resources: selectedTaskForResources.assigned_resources || [],
+                          assigned_equipment: selectedTaskForResources.assigned_equipment || []
+                        }
+                      });
+                      setResourceAssignOpen(false);
+                      setSelectedTaskForResources(null);
+                    }}
+                  >
+                    Assign
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </div>

@@ -26,7 +26,10 @@ import SkillGapAnalysis from '@/components/resources/SkillGapAnalysis';
 import ResourceDashboard from '@/components/resources/ResourceDashboard';
 import ResourceWorkloadChart from '@/components/resources/ResourceWorkloadChart';
 import UserSkillsManager from '@/components/resources/UserSkillsManager';
-import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity } from 'lucide-react';
+import ResourceAllocationCalendar from '@/components/resources/ResourceAllocationCalendar';
+import AvailabilityTimeline from '@/components/resources/AvailabilityTimeline';
+import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity, Calendar as CalendarIcon } from 'lucide-react';
+import { addDays } from 'date-fns';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, isAfter, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
@@ -40,6 +43,8 @@ export default function ResourceManagement() {
   const [selectedTaskForAssign, setSelectedTaskForAssign] = useState(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingResource, setEditingResource] = useState(null);
+  const [selectedResource, setSelectedResource] = useState(null);
+  const [resourceDetailOpen, setResourceDetailOpen] = useState(false);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -373,19 +378,23 @@ export default function ResourceManagement() {
       />
 
       <ContentSection>
-        <Tabs defaultValue="portfolio" className="space-y-6">
-          <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="portfolio">
+        <Tabs defaultValue="availability" className="space-y-6">
+          <TabsList className="bg-zinc-900 border border-zinc-800 flex-wrap">
+            <TabsTrigger value="availability">
+              <CalendarIcon size={14} className="mr-2" />
+              Availability
+            </TabsTrigger>
+            <TabsTrigger value="allocations">
               <Activity size={14} className="mr-2" />
-              Portfolio View
+              Allocations
+            </TabsTrigger>
+            <TabsTrigger value="portfolio">
+              <BarChart3 size={14} className="mr-2" />
+              Portfolio
             </TabsTrigger>
             <TabsTrigger value="assign">
               <UserPlus size={14} className="mr-2" />
               Quick Assign
-            </TabsTrigger>
-            <TabsTrigger value="overview">
-              <BarChart3 size={14} className="mr-2" />
-              Overview
             </TabsTrigger>
             <TabsTrigger value="conflicts">
               <AlertTriangle size={14} className="mr-2" />
@@ -399,15 +408,53 @@ export default function ResourceManagement() {
               <Users size={14} className="mr-2" />
               Skills
             </TabsTrigger>
-            <TabsTrigger value="forecasting">
-              <TrendingUp size={14} className="mr-2" />
-              Forecasting
-            </TabsTrigger>
-            <TabsTrigger value="gaps">
-              <AlertTriangle size={14} className="mr-2" />
-              Skill Gaps
-            </TabsTrigger>
           </TabsList>
+
+          {/* Availability Tab */}
+          <TabsContent value="availability" className="space-y-6">
+            <ResourceAllocationCalendar
+              resources={resources}
+              tasks={tasks}
+              projects={projects}
+              onResourceClick={(resource) => {
+                setSelectedResource(resource);
+                setResourceDetailOpen(true);
+              }}
+            />
+
+            <AvailabilityTimeline
+              resources={resources}
+              tasks={tasks}
+              projects={projects}
+              startDate={new Date()}
+              endDate={addDays(new Date(), 90)}
+              onTaskClick={(task) => {
+                // Future: open task detail
+              }}
+            />
+          </TabsContent>
+
+          {/* Allocations Tab */}
+          <TabsContent value="allocations" className="space-y-6">
+            <ResourceAllocationTable
+              resources={resources}
+              tasks={tasks}
+              projects={projects}
+              onEdit={(resource) => {
+                setEditingResource(resource);
+                setCreateDialogOpen(true);
+              }}
+              onDelete={(resource) => {
+                if (confirm(`Delete ${resource.name}?`)) {
+                  // Implement delete
+                }
+              }}
+              onResourceClick={(resource) => {
+                setSelectedResource(resource);
+                setResourceDetailOpen(true);
+              }}
+            />
+          </TabsContent>
 
           {/* Portfolio View Tab */}
           <TabsContent value="portfolio" className="space-y-6">
@@ -882,25 +929,116 @@ export default function ResourceManagement() {
             <ResourceLevelingPanel projectId={projects[0]?.id} />
           </TabsContent>
 
-          {/* Forecasting Tab */}
-          <TabsContent value="forecasting" className="space-y-6">
-            <ResourceForecasting
-              projects={projects}
-              resources={resources}
-              allocations={allocations}
-              tasks={tasks}
-            />
-          </TabsContent>
-
-          {/* Skill Gaps Tab */}
-          <TabsContent value="gaps" className="space-y-6">
-            <SkillGapAnalysis
-              projects={projects}
-              resources={resources}
-              tasks={tasks}
-            />
-          </TabsContent>
         </Tabs>
+
+        {/* Resource Detail Dialog */}
+        <Dialog open={resourceDetailOpen} onOpenChange={setResourceDetailOpen}>
+          <DialogContent className="max-w-4xl bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedResource?.name}</DialogTitle>
+            </DialogHeader>
+            {selectedResource && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Type</p>
+                    <Badge variant="outline" className="capitalize">{selectedResource.type}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Status</p>
+                    <Badge className={cn(
+                      selectedResource.status === 'available' ? 'bg-green-500/20 text-green-400' :
+                      selectedResource.status === 'assigned' ? 'bg-blue-500/20 text-blue-400' :
+                      'bg-zinc-700 text-zinc-400'
+                    )}>
+                      {selectedResource.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Rate</p>
+                    <p className="text-sm text-white font-mono">
+                      ${selectedResource.rate}/{selectedResource.rate_type || 'hr'}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedResource.skills && selectedResource.skills.length > 0 && (
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Skills</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedResource.skills.map(skill => (
+                        <Badge key={skill} variant="outline" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Current Assignments</p>
+                  <div className="space-y-2">
+                    {tasks.filter(t => 
+                      ((t.assigned_resources || []).includes(selectedResource.id) ||
+                       (t.assigned_equipment || []).includes(selectedResource.id)) &&
+                      (t.status === 'in_progress' || t.status === 'not_started')
+                    ).map(task => {
+                      const project = projects.find(p => p.id === task.project_id);
+                      return (
+                        <div key={task.id} className="p-3 bg-zinc-800 rounded border border-zinc-700">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-white">{task.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-[10px]">
+                                  {project?.project_number}
+                                </Badge>
+                                <Badge className={cn(
+                                  "text-[10px]",
+                                  task.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' : 'bg-zinc-700'
+                                )}>
+                                  {task.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            {task.start_date && task.end_date && (
+                              <div className="text-xs text-zinc-500">
+                                {format(parseISO(task.start_date), 'MMM d')} - {format(parseISO(task.end_date), 'MMM d')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {tasks.filter(t => 
+                      ((t.assigned_resources || []).includes(selectedResource.id) ||
+                       (t.assigned_equipment || []).includes(selectedResource.id)) &&
+                      (t.status === 'in_progress' || t.status === 'not_started')
+                    ).length === 0 && (
+                      <div className="text-center py-6 text-zinc-500 text-sm">
+                        No current assignments
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-zinc-800">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingResource(selectedResource);
+                      setResourceDetailOpen(false);
+                      setCreateDialogOpen(true);
+                    }}
+                  >
+                    <Edit size={14} className="mr-2" />
+                    Edit Resource
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Create/Edit Resource Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

@@ -42,7 +42,7 @@ import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel'
 import DocumentLinkSuggestions from '@/components/documents/DocumentLinkSuggestions';
 import AIDocumentAnalysis from '@/components/documents/AIDocumentAnalysis';
 import { format } from 'date-fns';
-import { toast } from '@/components/ui/notifications';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -773,6 +773,7 @@ export default function Documents() {
                       <SelectItem value="photo">Photos</SelectItem>
                       <SelectItem value="report">Reports</SelectItem>
                       <SelectItem value="correspondence">Correspondence</SelectItem>
+                      <SelectItem value="safety_form">Safety Forms</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1620,6 +1621,7 @@ function DocumentForm({ formData, setFormData, projects, workPackages, dailyLogs
               <SelectItem value="correspondence">Correspondence</SelectItem>
               <SelectItem value="receipt">Receipt</SelectItem>
               <SelectItem value="invoice">Invoice</SelectItem>
+              <SelectItem value="safety_form">Safety Form</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>

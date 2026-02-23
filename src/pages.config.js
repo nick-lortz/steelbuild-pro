@@ -114,6 +114,7 @@ import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
 import ProjectAssistant from './pages/ProjectAssistant';
 import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
+import ProjectManagement from './pages/ProjectManagement';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
 import ProjectStatusEmail from './pages/ProjectStatusEmail';
@@ -132,7 +133,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import ProjectManagement from './pages/ProjectManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -204,6 +204,7 @@ export const PAGES = {
     "ProjectAssistant": ProjectAssistant,
     "ProjectBudget": ProjectBudget,
     "ProjectDashboard": ProjectDashboard,
+    "ProjectManagement": ProjectManagement,
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
     "ProjectStatusEmail": ProjectStatusEmail,
@@ -222,7 +223,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "ProjectManagement": ProjectManagement,
 }
 
 export const pagesConfig = {

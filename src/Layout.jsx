@@ -95,7 +95,8 @@ const navGroups = [
   items: [
   { name: 'Drawings', page: 'Drawings', icon: FileText },
   { name: 'Detailing', page: 'Detailing', icon: FileCheck },
-  { name: 'Documents', page: 'Documents', icon: File }],
+  { name: 'Documents', page: 'Documents', icon: File },
+  { name: 'Project Management', page: 'ProjectManagement', icon: LayoutDashboard }],
 
   roles: ['admin', 'user']
 },

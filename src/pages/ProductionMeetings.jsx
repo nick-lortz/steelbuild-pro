@@ -163,56 +163,56 @@ function ProductionNotesContent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 lg:p-6 space-y-4">
-          <div className="space-y-3">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-              <Input
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
-              />
-            </div>
+      <div className="p-4 lg:p-6 space-y-4">
+        <div className="space-y-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Input
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 bg-zinc-900 border-zinc-800 h-8 text-xs"
+            />
+          </div>
 
-            <Select value={pmFilter} onValueChange={setPmFilter}>
-              <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
-                <SelectValue placeholder="Filter by PM" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All PMs</SelectItem>
-                {uniquePMs.map(pm => (
-                  <SelectItem key={pm} value={pm}>{pm}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Select value={pmFilter} onValueChange={setPmFilter}>
+            <SelectTrigger className="bg-zinc-900 border-zinc-800 h-8 text-xs">
+              <SelectValue placeholder="Filter by PM" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All PMs</SelectItem>
+              {uniquePMs.map(pm => (
+                <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-              {filteredProjects.length} Projects
-            </div>
+          <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+            {filteredProjects.length} Projects
+          </div>
+        </div>
 
+        {filteredProjects.length === 0 && (
+          <Card className="bg-zinc-900 border-zinc-800">
+            <CardContent className="p-12 text-center text-zinc-500">
+              No projects found
+            </CardContent>
+          </Card>
+        )}
 
-          {filteredProjects.length === 0 && (
-            <Card className="bg-zinc-900 border-zinc-800">
-              <CardContent className="p-12 text-center text-zinc-500">
-                No projects found
-              </CardContent>
-            </Card>
-          )}
-
-          {filteredProjects.map(project => {
-            const projectNotes = notes.filter(n => n.project_id === project.id);
-            return (
-              <ProjectSection
-                key={project.id}
-                project={project}
-                notes={projectNotes}
-                onCreateNote={(data) => createMutation.mutate(data)}
-                onUpdateNote={(id, data) => updateMutation.mutate({ id, data })}
-                onDeleteNote={(id) => deleteMutation.mutate(id)}
-              />
-            );
-          })}
+        {filteredProjects.map(project => {
+          const projectNotes = notes.filter(n => n.project_id === project.id);
+          return (
+            <ProjectSection
+              key={project.id}
+              project={project}
+              notes={projectNotes}
+              onCreateNote={(data) => createMutation.mutate(data)}
+              onUpdateNote={(id, data) => updateMutation.mutate({ id, data })}
+              onDeleteNote={(id) => deleteMutation.mutate(id)}
+            />
+          );
+        })}
 
         {/* Back to Top */}
         <Button

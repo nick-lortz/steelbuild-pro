@@ -24,6 +24,7 @@ import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
 import ErectionReadinessWidget from '@/components/project-dashboard/ErectionReadinessWidget';
 
 const AVAILABLE_WIDGETS = [
+  { id: 'predictive_risk', label: 'Predictive Risk Analytics', component: PredictiveRiskPanel },
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
   { id: 'margin_risk', label: 'Work Packages At Margin Risk', component: MarginRiskWidget },
@@ -39,6 +40,7 @@ const AVAILABLE_WIDGETS = [
 ];
 
 const DEFAULT_LAYOUT = [
+  'predictive_risk',
   'progress',
   'budget',
   'margin_risk',

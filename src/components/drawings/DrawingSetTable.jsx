@@ -118,8 +118,8 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
               const needsRelease = set.status === 'BFS' && !set.released_for_fab_date;
 
               return (
-                <React.Fragment key={set.id}>
-                  <tr className="border-b border-zinc-800 hover:bg-zinc-800/30 cursor-pointer">
+                <>
+                  <tr key={`main-${set.id}`} className="border-b border-zinc-800 hover:bg-zinc-800/30 cursor-pointer">
                     <td className="p-3">
                       <Button
                         variant="ghost"
@@ -186,7 +186,7 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
 
                   {/* Expanded Details */}
                   {isExpanded && (
-                    <tr className="bg-zinc-800/20 border-b border-zinc-800">
+                    <tr key={`details-${set.id}`} className="bg-zinc-800/20 border-b border-zinc-800">
                       <td colSpan={9} className="p-4">
                         <div className="space-y-4">
                           {/* Milestone Timeline */}
@@ -273,7 +273,7 @@ export default function DrawingSetTable({ sets, sheets, revisions, projects, onS
                       </td>
                     </tr>
                   )}
-                </React.Fragment>
+                </>
               );
             })}
           </tbody>

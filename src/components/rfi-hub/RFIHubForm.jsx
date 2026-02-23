@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showErrorToast, showSuccessToast, ErrorMessages } from '@/components/shared/errorHandling';
 import { SafeHTML } from '@/components/shared/sanitization';
+import DocumentPicker from '@/components/documents/DocumentPicker';
+import { Badge } from '@/components/ui/badge';
+import { File, Link as LinkIcon } from 'lucide-react';
 
 export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -526,6 +529,16 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
             </Button>
           </div>
         </form>
+
+
+      <DocumentPicker
+        open={showDocPicker}
+        onOpenChange={setShowDocPicker}
+        projectId={formData.project_id}
+        onSelect={handleLinkDocuments}
+        multiSelect={true}
+        categoryFilter={null}
+      />
       </DialogContent>
     </Dialog>
   );

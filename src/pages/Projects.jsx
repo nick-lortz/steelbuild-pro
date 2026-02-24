@@ -61,25 +61,7 @@ const initialFormState = {
   gc_phone: '',
   scope_of_work: '',
   exclusions: '',
-  notes: '',
-  has_deck: false,
-  has_joists: false,
-  detailer: '',
-  detailer_contact: '',
-  detailer_email: '',
-  detailer_phone: '',
-  joist_manufacturer: '',
-  joist_mfg_contact: '',
-  joist_mfg_email: '',
-  joist_mfg_phone: '',
-  deck_manufacturer: '',
-  deck_mfg_contact: '',
-  deck_mfg_email: '',
-  deck_mfg_phone: '',
-  deck_installer: '',
-  deck_installer_contact: '',
-  deck_installer_email: '',
-  deck_installer_phone: ''
+  notes: ''
 };
 
 export default function Projects() {
@@ -216,25 +198,7 @@ export default function Projects() {
       rough_lift_hr_rate: project.rough_lift_hr_rate?.toString() || '',
       baseline_shop_hours: project.baseline_shop_hours?.toString() || '',
       baseline_field_hours: project.baseline_field_hours?.toString() || '',
-      assigned_users: project.assigned_users || [],
-      has_deck: project.has_deck || false,
-      has_joists: project.has_joists || false,
-      detailer: project.detailer || '',
-      detailer_contact: project.detailer_contact || '',
-      detailer_email: project.detailer_email || '',
-      detailer_phone: project.detailer_phone || '',
-      joist_manufacturer: project.joist_manufacturer || '',
-      joist_mfg_contact: project.joist_mfg_contact || '',
-      joist_mfg_email: project.joist_mfg_email || '',
-      joist_mfg_phone: project.joist_mfg_phone || '',
-      deck_manufacturer: project.deck_manufacturer || '',
-      deck_mfg_contact: project.deck_mfg_contact || '',
-      deck_mfg_email: project.deck_mfg_email || '',
-      deck_mfg_phone: project.deck_mfg_phone || '',
-      deck_installer: project.deck_installer || '',
-      deck_installer_contact: project.deck_installer_contact || '',
-      deck_installer_email: project.deck_installer_email || '',
-      deck_installer_phone: project.deck_installer_phone || ''
+      assigned_users: project.assigned_users || []
     });
     setSelectedProject(project);
   };
@@ -718,6 +682,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.gc_contact}
               onChange={(e) => handleChange('gc_contact', e.target.value)}
               className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
+
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
@@ -726,6 +691,7 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.gc_email}
               onChange={(e) => handleChange('gc_email', e.target.value)}
               className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
+
           </div>
           <div className="space-y-2">
             <Label>Phone</Label>
@@ -733,201 +699,10 @@ function ProjectForm({ formData, setFormData, onSubmit, isLoading, isEdit, users
               value={formData.gc_phone}
               onChange={(e) => handleChange('gc_phone', e.target.value)}
               className="bg-zinc-800/50 border-zinc-700/50 rounded-lg" />
+
           </div>
         </div>
       </div>
-
-      {/* Scope Flags */}
-      <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
-        <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Scope Items</h4>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.has_deck}
-              onChange={(e) => handleChange('has_deck', e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500"
-            />
-            <span className="text-sm text-zinc-300">Project includes deck</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.has_joists}
-              onChange={(e) => handleChange('has_joists', e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-amber-500"
-            />
-            <span className="text-sm text-zinc-300">Project includes joists</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Detailer Info */}
-      <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
-        <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Detailer</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Company</Label>
-            <Input
-              value={formData.detailer}
-              onChange={(e) => handleChange('detailer', e.target.value)}
-              placeholder="Detailing company"
-              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Contact Name</Label>
-            <Input
-              value={formData.detailer_contact}
-              onChange={(e) => handleChange('detailer_contact', e.target.value)}
-              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input
-              type="email"
-              value={formData.detailer_email}
-              onChange={(e) => handleChange('detailer_email', e.target.value)}
-              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Phone</Label>
-            <Input
-              value={formData.detailer_phone}
-              onChange={(e) => handleChange('detailer_phone', e.target.value)}
-              className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Joist Manufacturer */}
-      {formData.has_joists && (
-        <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
-          <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Joist Manufacturer</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Company</Label>
-              <Input
-                value={formData.joist_manufacturer}
-                onChange={(e) => handleChange('joist_manufacturer', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Contact Name</Label>
-              <Input
-                value={formData.joist_mfg_contact}
-                onChange={(e) => handleChange('joist_mfg_contact', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.joist_mfg_email}
-                onChange={(e) => handleChange('joist_mfg_email', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input
-                value={formData.joist_mfg_phone}
-                onChange={(e) => handleChange('joist_mfg_phone', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Deck Manufacturer */}
-      {formData.has_deck && (
-        <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
-          <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Deck Manufacturer</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Company</Label>
-              <Input
-                value={formData.deck_manufacturer}
-                onChange={(e) => handleChange('deck_manufacturer', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Contact Name</Label>
-              <Input
-                value={formData.deck_mfg_contact}
-                onChange={(e) => handleChange('deck_mfg_contact', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.deck_mfg_email}
-                onChange={(e) => handleChange('deck_mfg_email', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input
-                value={formData.deck_mfg_phone}
-                onChange={(e) => handleChange('deck_mfg_phone', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Deck Installer */}
-      {formData.has_deck && (
-        <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
-          <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Deck Installer</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Company</Label>
-              <Input
-                value={formData.deck_installer}
-                onChange={(e) => handleChange('deck_installer', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Contact Name</Label>
-              <Input
-                value={formData.deck_installer_contact}
-                onChange={(e) => handleChange('deck_installer_contact', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.deck_installer_email}
-                onChange={(e) => handleChange('deck_installer_email', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input
-                value={formData.deck_installer_phone}
-                onChange={(e) => handleChange('deck_installer_phone', e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700/50 rounded-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="border-t border-[rgba(255,255,255,0.05)] pt-4">
         <h4 className="text-sm font-medium text-[#9CA3AF] mb-3">Scope of Work</h4>

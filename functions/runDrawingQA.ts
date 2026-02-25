@@ -163,12 +163,45 @@ Example: [{"category": "member_size", "severity": "P0", "message": "Beam B3 show
       p1_count: p1Count
     });
 
+    // ── Auto-transition parent DrawingSet status based on QA result ──
+    // Skipped if the set has qa_auto_transition explicitly set to false (user override).
+    const QA_STATUS_MAP = {
+      pass:        'IFA',         // passed all checks → ready to issue for approval
+      fail:        'BFA',         // has P0 blockers → back to detailer
+      in_progress: 'IFA'          // shouldn't reach here, but guard it
+    };
+
+    let drawingSetStatusUpdate = null;
+    try {
+      const sets = await base44.asServiceRole.entities.DrawingSet.filter({ id: revision.drawing_set_id });
+      const drawingSet = sets?.[0];
+
+      if (drawingSet && drawingSet.qa_auto_transition !== false) {
+        const newStatus = QA_STATUS_MAP[qaStatus];
+        if (newStatus && drawingSet.status !== newStatus) {
+          await base44.asServiceRole.entities.DrawingSet.update(revision.drawing_set_id, {
+            status: newStatus,
+            qa_last_result: qaStatus,
+            qa_last_run_at: new Date().toISOString()
+          });
+          drawingSetStatusUpdate = { from: drawingSet.status, to: newStatus };
+          console.log(`[runDrawingQA] DrawingSet ${revision.drawing_set_id} status: ${drawingSet.status} → ${newStatus}`);
+        }
+      } else if (drawingSet?.qa_auto_transition === false) {
+        console.log(`[runDrawingQA] Auto-transition disabled for DrawingSet ${revision.drawing_set_id} — status unchanged`);
+      }
+    } catch (err) {
+      // Non-fatal — log but don't fail the QA response
+      console.error('[runDrawingQA] DrawingSet status update failed:', err.message);
+    }
+
     return Response.json({
       success: true,
       qa_status: qaStatus,
       p0_count: p0Count,
       p1_count: p1Count,
-      findings
+      findings,
+      drawing_set_status_update: drawingSetStatusUpdate
     });
 
   } catch (error) {

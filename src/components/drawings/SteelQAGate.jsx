@@ -8,6 +8,8 @@ import { CheckCircle2, AlertCircle, AlertTriangle, Loader2, Lock, Zap, ZapOff } 
 
 export default function SteelQAGate({ drawingSetId, onQAComplete, disableRFF }) {
   const [running, setRunning] = useState(false);
+  const [lastTransition, setLastTransition] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: drawingSet, isLoading } = useQuery({
     queryKey: ['drawingSet', drawingSetId],
@@ -15,10 +17,21 @@ export default function SteelQAGate({ drawingSetId, onQAComplete, disableRFF }) 
     select: (data) => data?.[0] || null
   });
 
+  const toggleAutoTransition = useMutation({
+    mutationFn: (enabled) => base44.entities.DrawingSet.update(drawingSetId, { qa_auto_transition: enabled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['drawingSet', drawingSetId] })
+  });
+
   const runQA = async () => {
     setRunning(true);
+    setLastTransition(null);
     try {
       const result = await base44.functions.invoke('runSteelQA', { drawing_set_id: drawingSetId });
+      if (result?.data?.drawing_set_status_update) {
+        setLastTransition(result.data.drawing_set_status_update);
+      }
+      queryClient.invalidateQueries({ queryKey: ['drawingSet', drawingSetId] });
+      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
       if (onQAComplete) onQAComplete(result.data);
     } catch (error) {
       console.error('QA run failed:', error);

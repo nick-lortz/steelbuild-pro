@@ -195,7 +195,8 @@ const navGroups = [
   { name: 'Fix Queue', page: 'AuditFixQueue', icon: CheckCircle2, roles: ['admin'] },
   { name: 'QA Config', page: 'QAConfig', icon: Zap, roles: ['admin'] },
   { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
-  { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }],
+  { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }
+  ],
 
   roles: ['admin', 'user']
 }];

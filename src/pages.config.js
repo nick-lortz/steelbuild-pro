@@ -87,6 +87,7 @@ import HowItWorks from './pages/HowItWorks';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
 import JobStatusReport from './pages/JobStatusReport';
+import KnowledgeBase from './pages/KnowledgeBase';
 import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
@@ -133,7 +134,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import KnowledgeBase from './pages/KnowledgeBase';
 import __Layout from './Layout.jsx';
 
 
@@ -178,6 +178,7 @@ export const PAGES = {
     "Insights": Insights,
     "Integrations": Integrations,
     "JobStatusReport": JobStatusReport,
+    "KnowledgeBase": KnowledgeBase,
     "Labor": Labor,
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
@@ -224,7 +225,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "KnowledgeBase": KnowledgeBase,
 }
 
 export const pagesConfig = {

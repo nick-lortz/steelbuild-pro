@@ -183,7 +183,7 @@ TASK: Identify erection and stability risks even where NO mismatch exists betwee
 ${erectionCategoryList}
 
 For EACH risk found:
-- risk_type: one of [fit_up, tolerance, stability, sequence, interface, envelope]
+- risk_type: one of [${erectionCategories.map(c => c.key).join(', ')}]
 - severity: integer 1-5
 - description: specific risk description (field-actionable, not generic)
 - member_mark: affected member mark if identifiable

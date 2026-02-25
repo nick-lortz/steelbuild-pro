@@ -324,8 +324,8 @@ Return ONLY a JSON object with key "erection_risks" containing the array. Return
       });
       conflictIds.push(conflict.id);
 
-      // Auto-create RFI suggestion for severity 3-5
-      if (m.severity >= 3) {
+      // Auto-create RFI suggestion based on configured threshold
+      if (m.severity >= rfiMinSeverity) {
         await base44.asServiceRole.entities.RFISuggestion.create({
           project_id,
           trigger_source: m.scope_change_flag ? 'scope_change' : 'conflict',

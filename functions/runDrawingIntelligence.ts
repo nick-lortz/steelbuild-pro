@@ -65,16 +65,18 @@ EXAMPLES:
 - Pier embed pattern TBD = 2
 `;
 
-const MISMATCH_THRESHOLDS = `
+function buildMismatchThresholds(t) {
+  return `
 MISMATCH DETECTION THRESHOLDS:
-- Dimensional: flag if delta >= 1/4" between any two views
-- Elevation (B.O. deck, top of steel, etc.): flag if delta >= 1/8"
-- Slope (roof, canopy): flag ANY mismatch across views
-- Member type/size (HSS vs W-shape, size change): flag ALWAYS
-- Material spec revision (e.g. PL changed to BP): flag ALWAYS — also check all dependent member marks, detail callouts, and connection schedules
-- Connection hole type (SSH vs STD): flag ALWAYS
-- Bolt spec (quantity, diameter, grade): flag ANY mismatch
+- Dimensional: flag if delta >= ${t.dimensional_delta_inches}" between any two views
+- Elevation (B.O. deck, top of steel, etc.): flag if delta >= ${t.elevation_delta_inches}"
+- Slope (roof, canopy): ${t.slope_any_mismatch ? 'flag ANY mismatch across views' : 'flag only if slope difference > 1%'}
+- Member type/size (HSS vs W-shape, size change): ${t.member_type_always ? 'flag ALWAYS' : 'flag only if size delta > 2 sizes'}
+- Material spec revision (e.g. PL changed to BP): ${t.material_revision_always ? 'flag ALWAYS — also check all dependent member marks, detail callouts, and connection schedules' : 'flag only if strength grade changes'}
+- Connection hole type (SSH vs STD): ${t.connection_hole_type_always ? 'flag ALWAYS' : 'flag only if it impacts erection direction'}
+- Bolt spec (quantity, diameter, grade): ${t.bolt_spec_any_mismatch ? 'flag ANY mismatch' : 'flag only if strength or diameter differs'}
 `;
+}
 
 Deno.serve(async (req) => {
   try {

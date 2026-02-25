@@ -35,7 +35,7 @@ function serverError(message = 'Internal server error', error = null) {
 
 Deno.serve(async (req) => {
   try {
-    const { base44 } = await requireAdmin(req);
+    const base44 = createClientFromRequest(req);
     const now = new Date().toISOString();
     
     // Get all active projects

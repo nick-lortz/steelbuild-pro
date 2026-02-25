@@ -36,7 +36,8 @@ import {
   Package,
   MessageSquare,
   Gauge,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {

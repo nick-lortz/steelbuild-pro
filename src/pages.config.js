@@ -120,6 +120,7 @@ import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
 import ProjectStatusEmail from './pages/ProjectStatusEmail';
 import Projects from './pages/Projects';
+import QAConfig from './pages/QAConfig';
 import RFIHub from './pages/RFIHub';
 import RFIs from './pages/RFIs';
 import ROIDashboard from './pages/ROIDashboard';
@@ -134,7 +135,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import QAConfig from './pages/QAConfig';
 import __Layout from './Layout.jsx';
 
 
@@ -212,6 +212,7 @@ export const PAGES = {
     "ProjectSettings": ProjectSettings,
     "ProjectStatusEmail": ProjectStatusEmail,
     "Projects": Projects,
+    "QAConfig": QAConfig,
     "RFIHub": RFIHub,
     "RFIs": RFIs,
     "ROIDashboard": ROIDashboard,
@@ -226,7 +227,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "QAConfig": QAConfig,
 }
 
 export const pagesConfig = {

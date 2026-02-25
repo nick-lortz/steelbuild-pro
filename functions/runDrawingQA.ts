@@ -1,35 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const QA_RULES = {
-  member_size: {
-    prompt: "Check all member sizes (W-shapes, HSS, angles, plates) are called out with AISC standard designations. Flag any non-standard or ambiguous callouts.",
-    severity: "P0"
-  },
-  missing_dimension: {
-    prompt: "Identify any missing critical dimensions: member lengths, hole spacing, bolt patterns, weld lengths, plate dimensions.",
-    severity: "P0"
-  },
-  annotation_error: {
-    prompt: "Check for incomplete or conflicting annotations, missing detail references, unclear callouts.",
-    severity: "P1"
-  },
-  connection_detail: {
-    prompt: "Verify connection details show bolt sizes, quantities, edge distances per AISC standards. Check for missing shear tab dimensions.",
-    severity: "P0"
-  },
-  weld_symbol: {
-    prompt: "Validate weld symbols per AWS D1.1 standards. Check for missing weld sizes, lengths, or unclear symbols.",
-    severity: "P0"
-  },
-  material_spec: {
-    prompt: "Confirm material specifications are called out (ASTM A36, A992, A500, etc.). Flag missing or non-standard specs.",
-    severity: "P1"
-  },
-  tolerance: {
-    prompt: "Check if fabrication tolerances are specified where critical. Flag tight tolerances that may cause fit-up issues.",
-    severity: "P1"
+const DEFAULT_QA_RULES = [
+  { key: 'member_size',       severity: 'P0', enabled: true,  prompt: 'Check all member sizes (W-shapes, HSS, angles, plates) are called out with AISC standard designations. Flag any non-standard or ambiguous callouts.' },
+  { key: 'missing_dimension', severity: 'P0', enabled: true,  prompt: 'Identify any missing critical dimensions: member lengths, hole spacing, bolt patterns, weld lengths, plate dimensions.' },
+  { key: 'connection_detail', severity: 'P0', enabled: true,  prompt: 'Verify connection details show bolt sizes, quantities, edge distances per AISC standards. Check for missing shear tab dimensions.' },
+  { key: 'weld_symbol',       severity: 'P0', enabled: true,  prompt: 'Validate weld symbols per AWS D1.1 standards. Check for missing weld sizes, lengths, or unclear symbols.' },
+  { key: 'annotation_error',  severity: 'P1', enabled: true,  prompt: 'Check for incomplete or conflicting annotations, missing detail references, unclear callouts.' },
+  { key: 'material_spec',     severity: 'P1', enabled: true,  prompt: 'Confirm material specifications are called out (ASTM A36, A992, A500, etc.). Flag missing or non-standard specs.' },
+  { key: 'tolerance',         severity: 'P1', enabled: true,  prompt: 'Check if fabrication tolerances are specified where critical. Flag tight tolerances that may cause fit-up issues.' },
+];
+
+async function loadQARules(base44, projectId) {
+  try {
+    // Prefer project-level config, fall back to global
+    const [projectConfigs, globalConfigs] = await Promise.all([
+      projectId ? base44.asServiceRole.entities.QAConfig.filter({ scope: 'project', project_id: projectId, is_active: true }) : Promise.resolve([]),
+      base44.asServiceRole.entities.QAConfig.filter({ scope: 'global', is_active: true }),
+    ]);
+    const cfg = projectConfigs[0] || globalConfigs[0];
+    if (cfg?.qa_rules?.length) return cfg.qa_rules.filter(r => r.enabled !== false);
+  } catch (e) {
+    console.warn('[runDrawingQA] Could not load QAConfig, using defaults:', e.message);
   }
-};
+  return DEFAULT_QA_RULES;
+}
 
 Deno.serve(async (req) => {
   try {

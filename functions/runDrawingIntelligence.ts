@@ -2,9 +2,53 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * DRAWING INTELLIGENCE ENGINE
- * 3-phase AI analysis: cross-sheet mismatch → erection risks → scope/revision changes
- * Produces severity-scored findings, auto-RFI templates, scope flags.
+ * Loads thresholds and erection risk categories from QAConfig (project > global > hardcoded defaults).
  */
+
+const DEFAULT_THRESHOLDS = {
+  dimensional_delta_inches: 0.25,
+  elevation_delta_inches: 0.125,
+  slope_any_mismatch: true,
+  member_type_always: true,
+  material_revision_always: true,
+  connection_hole_type_always: true,
+  bolt_spec_any_mismatch: true,
+};
+
+const DEFAULT_ERECTION_CATEGORIES = [
+  { key: 'fit_up',    label: 'Fit-Up Risk',    enabled: true, prompt: 'Slotted holes (SSH) — check orientation relative to expected thermal expansion or erection movement direction. Flag if slot orientation is not aligned or not specified.' },
+  { key: 'tolerance', label: 'Tolerance Risk', enabled: true, prompt: 'Elevation breaks, camber, or bearing conditions without shim allowance or tolerance note.' },
+  { key: 'stability', label: 'Stability Risk', enabled: true, prompt: 'Cantilever framing, moment frames, or heavy cantilevered elements where deck diaphragm must be installed before column can be released or where temporary support/bracing is not noted.' },
+  { key: 'sequence',  label: 'Sequence Risk',  enabled: true, prompt: 'Erection aid angles, temporary connections, or bracing shown in details that are not explicitly called out in erection sequence or phasing notes.' },
+  { key: 'interface', label: 'Interface Risk', enabled: true, prompt: 'Beam bearing conditions at stud walls, CMU piers, masonry, or concrete — flag if anchor/embed pattern is TBD or not confirmed on structural drawings.' },
+  { key: 'envelope',  label: 'Envelope Risk',  enabled: true, prompt: 'Penetrations through roof/wall with connection details where waterproofing is not noted or is deferred.' },
+];
+
+async function loadIntelligenceConfig(base44, projectId) {
+  try {
+    const [projectConfigs, globalConfigs] = await Promise.all([
+      projectId ? base44.asServiceRole.entities.QAConfig.filter({ scope: 'project', project_id: projectId, is_active: true }) : Promise.resolve([]),
+      base44.asServiceRole.entities.QAConfig.filter({ scope: 'global', is_active: true }),
+    ]);
+    const cfg = projectConfigs[0] || globalConfigs[0];
+    if (cfg) {
+      return {
+        thresholds: { ...DEFAULT_THRESHOLDS, ...(cfg.mismatch_thresholds || {}) },
+        erectionCategories: cfg.erection_risk_categories?.filter(c => c.enabled !== false) || DEFAULT_ERECTION_CATEGORIES,
+        rfiMinSeverity: cfg.rfi_auto_create_min_severity ?? 3,
+        erectionRfiMinSeverity: cfg.erection_risk_rfi_min_severity ?? 4,
+      };
+    }
+  } catch (e) {
+    console.warn('[runDrawingIntelligence] Could not load QAConfig:', e.message);
+  }
+  return {
+    thresholds: DEFAULT_THRESHOLDS,
+    erectionCategories: DEFAULT_ERECTION_CATEGORIES,
+    rfiMinSeverity: 3,
+    erectionRfiMinSeverity: 4,
+  };
+}
 
 const SEVERITY_RUBRIC = `
 SEVERITY SCORING RUBRIC (use these exact scores):

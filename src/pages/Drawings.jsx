@@ -264,8 +264,17 @@ export default function Drawings() {
       ) : (
         <>
           {showAnalysisDashboard && (
-            <div className="mb-6">
-              <DrawingAnalysisDashboard projectId={activeProjectId} />
+            <div className="mb-6 p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
+              <DrawingIntelligenceDashboard
+                projectId={activeProjectId}
+                drawingSetId={selectedSet?.id || drawingSets[0]?.id}
+                drawingSetLabel={selectedSet
+                  ? `${selectedSet.set_number} – ${selectedSet.title}`
+                  : drawingSets[0]
+                    ? `${drawingSets[0].set_number} – ${drawingSets[0].title}`
+                    : undefined
+                }
+              />
             </div>
           )}
 

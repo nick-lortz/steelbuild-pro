@@ -59,23 +59,25 @@ Deno.serve(async (req) => {
       qa_status: 'in_progress'
     });
 
+    // Load configured rules (project > global > defaults)
+    const activeRules = await loadQARules(base44, revision.project_id);
+
     const findings = [];
     let p0Count = 0;
     let p1Count = 0;
 
     // Run QA checks on each sheet
     for (const sheet of revision.sheets || []) {
-      // Build comprehensive prompt
       const qaPrompt = `
 You are a steel fabrication QA reviewer analyzing drawing sheet ${sheet.sheet_number}.
 Review this sheet against AISC steel construction standards and flag issues.
 
 Run these checks:
-${Object.entries(QA_RULES).map(([key, rule]) => `- ${key}: ${rule.prompt}`).join('\n')}
+${activeRules.map(r => `- ${r.key}: ${r.prompt}`).join('\n')}
 
 For each issue found, provide:
-1. Category (one of: ${Object.keys(QA_RULES).join(', ')})
-2. Severity (P0 or P1)
+1. Category (one of: ${activeRules.map(r => r.key).join(', ')})
+2. Severity (P0 or P1) — use the rule's designated severity unless the finding is clearly more or less severe
 3. Specific message describing the issue
 4. Location on sheet (grid line, detail number, or general area)
 5. Recommendation for fix

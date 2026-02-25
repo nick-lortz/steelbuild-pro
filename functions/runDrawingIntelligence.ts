@@ -93,6 +93,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'project_id required' }, { status: 400 });
     }
 
+    // Load config (project > global > defaults)
+    const { thresholds, erectionCategories, rfiMinSeverity, erectionRfiMinSeverity } = await loadIntelligenceConfig(base44, project_id);
+    const MISMATCH_THRESHOLDS = buildMismatchThresholds(thresholds);
+
     // Fetch sheets
     let sheets = [];
     if (sheet_ids && sheet_ids.length > 0) {

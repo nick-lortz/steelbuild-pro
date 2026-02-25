@@ -170,6 +170,7 @@ For EACH mismatch found, return a JSON object with these EXACT fields:
 Return ONLY a JSON object with key "mismatches" containing the array. Return empty array if none found.`;
 
     // ===== PHASE 2: ERECTION RISK IDENTIFICATION =====
+    const erectionCategoryList = erectionCategories.map((c, i) => `${i + 1}. ${c.label.toUpperCase()}: ${c.prompt}`).join('\n');
     const erectionRiskPrompt = `You are a senior erection engineer reviewing structural steel drawings for field execution risks.
 
 Drawing Package: ${setLabel}
@@ -179,12 +180,7 @@ ${SEVERITY_RUBRIC}
 
 TASK: Identify erection and stability risks even where NO mismatch exists between views. Evaluate each of these risk categories:
 
-1. FIT-UP RISK: Slotted holes (SSH) — check orientation relative to expected thermal expansion or erection movement direction. Flag if slot orientation is not aligned or not specified.
-2. TOLERANCE RISK: Elevation breaks, camber, or bearing conditions without shim allowance or tolerance note.
-3. STABILITY RISK: Cantilever framing, moment frames, or heavy cantilevered elements where deck diaphragm must be installed before column can be released or where temporary support/bracing is not noted.
-4. SEQUENCE RISK: Erection aid angles, temporary connections, or bracing shown in details that are not explicitly called out in erection sequence or phasing notes.
-5. INTERFACE RISK: Beam bearing conditions at stud walls, CMU piers, masonry, or concrete — flag if anchor/embed pattern is TBD or not confirmed on structural drawings.
-6. ENVELOPE RISK: Penetrations through roof/wall with connection details where waterproofing is not noted or is deferred.
+${erectionCategoryList}
 
 For EACH risk found:
 - risk_type: one of [fit_up, tolerance, stability, sequence, interface, envelope]

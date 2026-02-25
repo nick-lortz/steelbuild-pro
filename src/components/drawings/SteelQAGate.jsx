@@ -61,6 +61,43 @@ export default function SteelQAGate({ drawingSetId, onQAComplete, disableRFF }) 
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Auto-transition toggle */}
+        <div className="flex items-center justify-between p-2.5 rounded bg-zinc-900 border border-zinc-700">
+          <div className="flex items-center gap-2 text-xs text-zinc-300">
+            {drawingSet?.qa_auto_transition !== false
+              ? <Zap size={13} className="text-amber-400" />
+              : <ZapOff size={13} className="text-zinc-500" />
+            }
+            <span>Auto-transition set status on QA result</span>
+          </div>
+          <button
+            onClick={() => toggleAutoTransition.mutate(drawingSet?.qa_auto_transition === false)}
+            className={`text-xs font-semibold px-2.5 py-1 rounded transition-colors ${
+              drawingSet?.qa_auto_transition !== false
+                ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+            }`}
+          >
+            {drawingSet?.qa_auto_transition !== false ? 'ON' : 'OFF'}
+          </button>
+        </div>
+
+        {/* Last auto-transition result */}
+        {lastTransition && (
+          <div className="text-xs p-2 bg-blue-950/30 border border-blue-700 rounded text-blue-300 flex items-center gap-2">
+            <Zap size={12} />
+            Set status auto-updated: <span className="font-mono font-bold">{lastTransition.from}</span> → <span className="font-mono font-bold text-amber-400">{lastTransition.to}</span>
+          </div>
+        )}
+
+        {/* QA → Status mapping reference */}
+        {drawingSet?.qa_auto_transition !== false && (
+          <div className="text-[10px] text-zinc-600 grid grid-cols-2 gap-1 px-1">
+            <span>QA pass → <span className="text-amber-400 font-mono">IFA</span></span>
+            <span>QA fail → <span className="text-red-400 font-mono">BFA</span></span>
+          </div>
+        )}
+
         {/* Status */}
         <div className="space-y-2">
           {qaStatus === 'pass' && (

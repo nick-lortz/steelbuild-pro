@@ -370,8 +370,8 @@ Return ONLY a JSON object with key "erection_risks" containing the array. Return
       });
       erectionIssueIds.push(issue.id);
 
-      // Auto-create RFI suggestion for severity 4-5 erection risks
-      if (r.rfi_required && r.severity >= 4) {
+      // Auto-create RFI suggestion based on configured threshold
+      if (r.rfi_required && r.severity >= erectionRfiMinSeverity) {
         await base44.asServiceRole.entities.RFISuggestion.create({
           project_id,
           trigger_source: 'erection_risk',

@@ -232,6 +232,12 @@ export default function ProjectAssistant() {
               <TabsTrigger value="forecasts" className="text-xs h-7 px-3">
                 <TrendingUp className="w-3.5 h-3.5 mr-1.5" />Forecasts
               </TabsTrigger>
+              <TabsTrigger value="brief" className="text-xs h-7 px-3">
+                <Calendar className="w-3.5 h-3.5 mr-1.5" />Daily Brief
+              </TabsTrigger>
+              <TabsTrigger value="autoresolve" className="text-xs h-7 px-3">
+                <Zap className="w-3.5 h-3.5 mr-1.5" />Auto-Resolve
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === 'chat' && (

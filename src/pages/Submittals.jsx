@@ -217,6 +217,19 @@ export default function Submittals() {
 
       <FilterBar>
         <div className="flex items-center gap-3 flex-wrap">
+          <Select value={activeProjectId || 'all'} onValueChange={(v) => setActiveProjectId(v === 'all' ? null : v)}>
+            <SelectTrigger className="w-56 bg-zinc-900 border-zinc-800 text-white">
+              <SelectValue placeholder="Select project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectItem value="all">All Projects</SelectItem>
+              {projects.map(p => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.project_number} — {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="relative flex-1 max-w-md">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <Input

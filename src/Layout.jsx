@@ -97,6 +97,7 @@ const navGroups = [
   { name: 'Drawings', page: 'Drawings', icon: FileText },
   { name: 'Detailing', page: 'Detailing', icon: FileCheck },
   { name: 'Documents', page: 'Documents', icon: File },
+  { name: 'Document Hub', page: 'DocumentHub', icon: FolderOpen },
   { name: 'Project Management', page: 'ProjectManagement', icon: LayoutDashboard }],
 
   roles: ['admin', 'user']

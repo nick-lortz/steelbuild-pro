@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Brain, Sparkles, AlertTriangle, Activity, TrendingUp, BarChart3,
   Wrench, Package, Truck, Zap, Target, Shield, Send, Loader2,
-  Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText
+  Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText,
+  ChevronDown, Building
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

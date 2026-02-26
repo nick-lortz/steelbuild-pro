@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   MessageSquareWarning, AlertCircle, Calendar, FileCheck,
-  Truck, DollarSign, Package, FileText, Wrench, BarChart3
+  Truck, DollarSign, Package, FileText, Wrench, BarChart3, FolderOpen
 } from 'lucide-react';
 
 const QUICK_LINKS = [

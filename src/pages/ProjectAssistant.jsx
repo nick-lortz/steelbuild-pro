@@ -52,6 +52,12 @@ export default function ProjectAssistant() {
   const [runningAnalysis, setRunningAnalysis] = useState(false);
   const [forecast, setForecast] = useState(null);
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects-list'],
+    queryFn: () => base44.entities.Project.filter({ status: 'in_progress' }, '-updated_date'),
+    staleTime: 5 * 60 * 1000
+  });
+
   const { data: project } = useQuery({
     queryKey: ['project', activeProjectId],
     queryFn: async () => {

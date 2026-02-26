@@ -142,30 +142,9 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      // Get item before deletion for version tracking
-      const items = await base44.entities.SOVItem.filter({ id });
-      const item = items[0];
-      
-      await base44.entities.SOVItem.delete(id);
-      
-      // Create version snapshot
-      await base44.functions.invoke('createSOVVersion', {
-        project_id: projectId,
-        change_type: 'delete',
-        change_summary: `Deleted SOV line ${item.sov_code}: ${item.description}`,
-        affected_sov_codes: [item.sov_code],
-        field_changes: [{
-          sov_code: item.sov_code,
-          field: 'deleted',
-          old_value: `${item.description} - $${item.scheduled_value}`,
-          new_value: null
-        }]
-      });
-    },
+    mutationFn: (id) => base44.entities.SOVItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('SOV line deleted');
     },
     onError: (err) => toast.error(err?.message ?? 'Delete failed')

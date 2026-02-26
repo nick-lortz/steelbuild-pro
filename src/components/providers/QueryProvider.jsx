@@ -6,13 +6,14 @@ import { showErrorToast } from '@/components/shared/errorHandling';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+      staleTime: 1000 * 60 * 10, // 10 minutes – don't re-fetch unless stale
+      gcTime: 1000 * 60 * 30,    // 30 minutes in cache
       retry: 1,
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false, // kills the #1 lag source: re-fetching all queries on tab switch
+      refetchOnReconnect: false,
     },
     mutations: {
-      retry: 1,
+      retry: 0,
     },
   },
   // Global error handling

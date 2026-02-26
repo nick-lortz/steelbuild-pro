@@ -57,20 +57,12 @@ export default function SOVManager({ projectId, canEdit }) {
     queryKey: ['sov-items', projectId],
     queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
     select: (items) => {
-      const seg = (s) => String(s ?? '').split(/[^\dA-Za-z]+/).filter(Boolean);
-      const cmp = (a, b) => {
-        const aa = seg(a), bb = seg(b);
-        const n = Math.max(aa.length, bb.length);
-        for (let i = 0; i < n; i++) {
-          const x = aa[i] ?? '', y = bb[i] ?? '';
-          const nx = Number(x), ny = Number(y);
-          const bothNum = !Number.isNaN(nx) && !Number.isNaN(ny);
-          if (bothNum && nx !== ny) return nx - ny;
-          if (x !== y) return String(x).localeCompare(String(y), undefined, { numeric: true });
-        }
-        return 0;
-      };
-      return [...items].sort((a, b) => cmp(a.sov_code, b.sov_code));
+      // Natural sort by sov_code
+      return [...items].sort((a, b) => {
+        const av = String(a.sov_code ?? a.item_number ?? '');
+        const bv = String(b.sov_code ?? b.item_number ?? '');
+        return av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+      });
     },
     enabled: !!projectId
   });

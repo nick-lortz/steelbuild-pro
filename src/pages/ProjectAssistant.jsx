@@ -39,7 +39,7 @@ const QUICK_QUERIES = [
 ];
 
 export default function ProjectAssistant() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef(null);
 

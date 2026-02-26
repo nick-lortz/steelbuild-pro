@@ -105,28 +105,9 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const result = await base44.entities.SOVItem.create({ ...data, project_id: projectId });
-      
-      // Create version snapshot
-      await base44.functions.invoke('createSOVVersion', {
-        project_id: projectId,
-        change_type: 'create',
-        change_summary: `Added SOV line ${data.sov_code}: ${data.description}`,
-        affected_sov_codes: [data.sov_code],
-        field_changes: [{
-          sov_code: data.sov_code,
-          field: 'created',
-          old_value: null,
-          new_value: `${data.description} - $${data.scheduled_value}`
-        }]
-      });
-      
-      return result;
-    },
+    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
-      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('SOV line added');
       setShowAddDialog(false);
       setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });

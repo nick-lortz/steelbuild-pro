@@ -143,16 +143,8 @@ export default function Schedule() {
     staleTime: 2 * 60 * 1000
   });
 
-  // Real-time subscription with delta updates
-  useEntitySubscription('Task', ['schedule-tasks', activeProjectIds], {
-    onEvent: (event) => {
-      // Only process if task belongs to active projects
-      if (!event.data?.project_id || !activeProjectIds.includes(event.data.project_id)) {
-        return;
-      }
-      toast.info(`Task ${event.type}d: ${event.data.name || 'Unknown'}`);
-    }
-  });
+  // Real-time subscription - disabled to prevent render loop with dynamic queryKey
+  // Real-time updates are handled via query invalidation on mutations
 
   // Fetch resources
   const { data: resources = [] } = useQuery({

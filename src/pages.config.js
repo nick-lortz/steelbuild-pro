@@ -68,6 +68,7 @@ import Dashboard from './pages/Dashboard';
 import DataManagement from './pages/DataManagement';
 import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
+import DocumentHub from './pages/DocumentHub';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
@@ -135,7 +136,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import DocumentHub from './pages/DocumentHub';
 import __Layout from './Layout.jsx';
 
 
@@ -161,6 +161,7 @@ export const PAGES = {
     "DataManagement": DataManagement,
     "Deliveries": Deliveries,
     "Detailing": Detailing,
+    "DocumentHub": DocumentHub,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
     "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
@@ -228,7 +229,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "DocumentHub": DocumentHub,
 }
 
 export const pagesConfig = {

@@ -340,7 +340,8 @@ function CategorySection({ category, notes, onUpdate, onDelete, openCount }) {
     erection: 'Erection',
     rfi: 'RFIs',
     change_order: 'Change Orders',
-    blocker: 'Blockers/Constraints'
+    blocker: 'Blockers/Constraints',
+    general: 'General'
   };
 
   const filteredNotes = category === 'blocker' 

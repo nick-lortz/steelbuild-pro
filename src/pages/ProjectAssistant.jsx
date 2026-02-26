@@ -288,6 +288,9 @@ export default function ProjectAssistant() {
               <TabsTrigger value="whatif" className="text-xs h-7 px-3">
                 <GitBranch className="w-3.5 h-3.5 mr-1.5" />What-If
               </TabsTrigger>
+              <TabsTrigger value="rfi" className="text-xs h-7 px-3">
+                <MessageSquareWarning className="w-3.5 h-3.5 mr-1.5" />RFI Intel
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === 'chat' && (

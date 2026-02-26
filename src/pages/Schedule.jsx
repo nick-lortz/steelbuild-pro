@@ -13,7 +13,6 @@ import TaskListView from '@/components/schedule/TaskListView';
 import CalendarView from '@/components/schedule/CalendarView';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from '@/components/ui/notifications';
-import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
 import AITaskPrioritizer from '@/components/schedule/AITaskPrioritizer';
 import DependencyVisualizer from '@/components/schedule/DependencyVisualizer';

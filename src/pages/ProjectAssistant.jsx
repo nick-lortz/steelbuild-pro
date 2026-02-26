@@ -22,6 +22,9 @@ import ConversationSidebar from '@/components/pma/ConversationSidebar';
 import AlertsFeed from '@/components/pma/AlertsFeed';
 import DailyBrief from '@/components/pma/DailyBrief';
 import AutoResolvePanel from '@/components/pma/AutoResolvePanel';
+import ScheduleDelayPredictor from '@/components/pma/ScheduleDelayPredictor';
+import CommunicationAnalysis from '@/components/pma/CommunicationAnalysis';
+import WhatIfScenario from '@/components/pma/WhatIfScenario';
 
 const QUICK_QUERIES = [
   { label: 'Daily Pulse',         query: "Give me today's project pulse — critical issues, forecasts, and what needs action now.", icon: Activity },

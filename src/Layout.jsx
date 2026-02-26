@@ -257,9 +257,10 @@ function LayoutContent({ children, currentPageName }) {
     },
     enabled: !!activeProjectId,
     select: (data) => data?.[0] || null,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: false
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);

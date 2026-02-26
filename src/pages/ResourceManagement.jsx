@@ -30,9 +30,9 @@ import ResourceAllocationCalendar from '@/components/resources/ResourceAllocatio
 import AvailabilityTimeline from '@/components/resources/AvailabilityTimeline';
 import ResourceAllocationTable from '@/components/resources/ResourceAllocationTable';
 import { Users, TrendingUp, AlertTriangle, Clock, Search, Filter, BarChart3, UserPlus, CheckCircle2, Activity, Calendar as CalendarIcon, Edit } from 'lucide-react';
-import { addDays } from 'date-fns';
+import { addDays, format, isAfter, parseISO } from 'date-fns';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, isAfter, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/notifications';
 
 export default function ResourceManagement() {

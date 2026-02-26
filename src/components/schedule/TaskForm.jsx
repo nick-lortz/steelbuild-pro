@@ -39,8 +39,11 @@ export default function TaskForm({
   const queryClient = useQueryClient();
 
   const { data: workPackages = [] } = useQuery({
-    queryKey: ['work-packages'],
-    queryFn: () => base44.entities.WorkPackage.list(),
+    queryKey: ['work-packages', formData.project_id],
+    queryFn: () => formData.project_id
+      ? base44.entities.WorkPackage.filter({ project_id: formData.project_id })
+      : [],
+    enabled: !!formData.project_id,
   });
 
   const { data: currentUser } = useQuery({

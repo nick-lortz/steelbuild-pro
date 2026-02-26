@@ -334,7 +334,7 @@ export default function SOVManager({ projectId, canEdit }) {
           <Button onClick={() => setShowBulkAddDialog(true)} disabled={!canEdit || sovItems.length > 0} variant="outline" size="sm">
             Add Standard SOV
           </Button>
-          <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
+          <Button onClick={() => { setEditingItem(null); setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 }); setShowAddDialog(true); }} disabled={!canEdit} size="sm">
             <Plus size={16} className="mr-1" />
             Add SOV Line
           </Button>

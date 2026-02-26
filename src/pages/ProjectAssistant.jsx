@@ -418,6 +418,30 @@ export default function ProjectAssistant() {
             <AutoResolvePanel activeProjectId={activeProjectId} />
           </TabsContent>
 
+          {/* Delay Risk Tab */}
+          <TabsContent value="delay" className="flex-1 overflow-hidden m-0">
+            <ScheduleDelayPredictor
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
+          {/* Comms Analysis Tab */}
+          <TabsContent value="comms" className="flex-1 overflow-hidden m-0">
+            <CommunicationAnalysis
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
+          {/* What-If Tab */}
+          <TabsContent value="whatif" className="flex-1 overflow-hidden m-0">
+            <WhatIfScenario
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
           {/* Forecasts Tab */}
           <TabsContent value="forecasts" className="flex-1 overflow-y-auto m-0 p-4">
             <div className="max-w-4xl mx-auto space-y-4">

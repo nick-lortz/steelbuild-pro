@@ -25,6 +25,7 @@ import AutoResolvePanel from '@/components/pma/AutoResolvePanel';
 import ScheduleDelayPredictor from '@/components/pma/ScheduleDelayPredictor';
 import CommunicationAnalysis from '@/components/pma/CommunicationAnalysis';
 import WhatIfScenario from '@/components/pma/WhatIfScenario';
+import RFIIntelligence from '@/components/pma/RFIIntelligence';
 
 const QUICK_QUERIES = [
   { label: 'Daily Pulse',         query: "Give me today's project pulse — critical issues, forecasts, and what needs action now.", icon: Activity },

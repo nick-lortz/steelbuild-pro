@@ -17,6 +17,7 @@ const QUICK_LINKS = [
   { label: 'Documents',     page: 'Documents',          icon: FileText,             color: 'text-zinc-400',   bg: 'bg-zinc-500/10 hover:bg-zinc-500/20' },
   { label: 'Fabrication',   page: 'Fabrication',        icon: Wrench,               color: 'text-rose-400',   bg: 'bg-rose-500/10 hover:bg-rose-500/20' },
   { label: 'Analytics',     page: 'ProjectAnalyticsDashboard', icon: BarChart3,    color: 'text-indigo-400', bg: 'bg-indigo-500/10 hover:bg-indigo-500/20' },
+  { label: 'Doc Hub',       page: 'DocumentHub',               icon: FolderOpen,   color: 'text-teal-400',   bg: 'bg-teal-500/10 hover:bg-teal-500/20' },
 ];
 
 export default function QuickLinksWidget() {

@@ -278,6 +278,15 @@ export default function ProjectAssistant() {
               <TabsTrigger value="autoresolve" className="text-xs h-7 px-3">
                 <Zap className="w-3.5 h-3.5 mr-1.5" />Auto-Resolve
               </TabsTrigger>
+              <TabsTrigger value="delay" className="text-xs h-7 px-3">
+                <TrendingDown className="w-3.5 h-3.5 mr-1.5" />Delay Risk
+              </TabsTrigger>
+              <TabsTrigger value="comms" className="text-xs h-7 px-3">
+                <MessageSquare className="w-3.5 h-3.5 mr-1.5" />Comms Analysis
+              </TabsTrigger>
+              <TabsTrigger value="whatif" className="text-xs h-7 px-3">
+                <GitBranch className="w-3.5 h-3.5 mr-1.5" />What-If
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === 'chat' && (

@@ -160,12 +160,26 @@ export default function ProjectAssistant() {
 
   if (!activeProjectId) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <Card className="border-amber-500/20">
-          <CardContent className="p-16 text-center">
-            <Brain className="w-16 h-16 text-amber-500/30 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2 text-white">No Active Project</h2>
-            <p className="text-zinc-400">Select a project to activate the Project Manager Assistant</p>
+      <div className="p-6 max-w-lg mx-auto mt-16">
+        <Card className="border-amber-500/20 bg-zinc-900">
+          <CardContent className="p-10 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+              <Brain className="w-8 h-8 text-amber-500/60" />
+            </div>
+            <h2 className="text-lg font-semibold mb-1 text-white">Select a Project</h2>
+            <p className="text-zinc-500 text-sm mb-6">Choose a project to activate the PMA Command Center</p>
+            <Select onValueChange={setActiveProjectId}>
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectValue placeholder="Select project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.project_number} — {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
       </div>

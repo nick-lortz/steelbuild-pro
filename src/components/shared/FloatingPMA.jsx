@@ -35,8 +35,10 @@ export default function FloatingPMA() {
       return { criticalCount, highCount, blockedGates, agingRFIs, totalAlerts: alerts.length };
     },
     enabled: !!activeProjectId,
-    refetchInterval: 60000,
-    staleTime: 30000
+    refetchInterval: 5 * 60 * 1000, // 5 min – was 60s, hammering the DB on every page
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   if (!activeProjectId || dismissed) return null;

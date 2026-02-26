@@ -22,6 +22,9 @@ import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceO
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
 import ErectionReadinessWidget from '@/components/project-dashboard/ErectionReadinessWidget';
+import QuickLinksWidget from '@/components/project-dashboard/QuickLinksWidget';
+import { Pin, PinOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const AVAILABLE_WIDGETS = [
   { id: 'predictive_risk', label: 'Predictive Risk Analytics', component: PredictiveRiskPanel },

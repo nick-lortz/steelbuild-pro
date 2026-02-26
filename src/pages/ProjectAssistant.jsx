@@ -89,7 +89,8 @@ export default function ProjectAssistant() {
       return { criticalRisks, highRisks, blockedGates, agingRFIs, totalAlerts: alerts.length };
     },
     enabled: !!activeProjectId,
-    refetchInterval: 30000
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   // Init conversation on project change

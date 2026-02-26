@@ -128,55 +128,7 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      // Get original item for version tracking
-      const original = await base44.entities.SOVItem.filter({ id });
-      const originalItem = original[0];
-      
-      // Validate if updating percent_complete
-      if (data.percent_complete !== undefined) {
-        const validation = await base44.functions.invoke('validateSOVBudget', {
-          sov_item_id: id,
-          percent_complete: data.percent_complete,
-          project_id: projectId
-        });
-
-        if (!validation.data.valid && validation.data.severity === 'critical') {
-          throw new Error(validation.data.error);
-        }
-
-        if (validation.data.warning) {
-          toast.warning(validation.data.warning);
-        }
-      }
-
-      const result = await base44.entities.SOVItem.update(id, data);
-      
-      // Create version snapshot with field-level changes
-      const fieldChanges = [];
-      Object.keys(data).forEach(field => {
-        if (originalItem[field] !== data[field]) {
-          fieldChanges.push({
-            sov_code: originalItem.sov_code,
-            field,
-            old_value: String(originalItem[field] ?? ''),
-            new_value: String(data[field] ?? '')
-          });
-        }
-      });
-      
-      if (fieldChanges.length > 0) {
-        await base44.functions.invoke('createSOVVersion', {
-          project_id: projectId,
-          change_type: 'update',
-          change_summary: `Updated SOV line ${originalItem.sov_code}`,
-          affected_sov_codes: [originalItem.sov_code],
-          field_changes: fieldChanges
-        });
-      }
-      
-      return result;
-    },
+    mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
     onSuccess: (result, variables) => {
       queryClient.setQueryData(['sov-items', projectId], (old) => {
         if (!old) return old;

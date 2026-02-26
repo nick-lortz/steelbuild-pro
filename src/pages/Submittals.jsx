@@ -44,6 +44,12 @@ export default function Submittals() {
   const [selectedSubmittal, setSelectedSubmittal] = useState(null);
   const [deleteSubmittal, setDeleteSubmittal] = useState(null);
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-updated_date'),
+    staleTime: 5 * 60 * 1000
+  });
+
   const { data: submittals = [] } = useQuery({
     queryKey: ['submittals', activeProjectId],
     queryFn: () => base44.entities.Submittal.filter({ project_id: activeProjectId }, '-submitted_date'),

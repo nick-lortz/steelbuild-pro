@@ -353,6 +353,22 @@ export default function ProjectAssistant() {
             <AlertsFeed activeProjectId={activeProjectId} onRunMonitor={runMonitor} />
           </TabsContent>
 
+          {/* Daily Brief Tab */}
+          <TabsContent value="brief" className="flex-1 overflow-hidden m-0">
+            <DailyBrief
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => {
+                setActiveTab('chat');
+                setTimeout(() => sendMessage(text), 100);
+              }}
+            />
+          </TabsContent>
+
+          {/* Auto-Resolve Tab */}
+          <TabsContent value="autoresolve" className="flex-1 overflow-hidden m-0">
+            <AutoResolvePanel activeProjectId={activeProjectId} />
+          </TabsContent>
+
           {/* Forecasts Tab */}
           <TabsContent value="forecasts" className="flex-1 overflow-y-auto m-0 p-4">
             <div className="max-w-4xl mx-auto space-y-4">

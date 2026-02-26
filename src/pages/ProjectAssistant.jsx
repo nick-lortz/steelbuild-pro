@@ -198,7 +198,22 @@ export default function ProjectAssistant() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-wide">Autonomous Project Command</h1>
-                <p className="text-[10px] text-zinc-500 font-mono">{project?.name} · PREDICTIVE INTELLIGENCE ACTIVE</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <Select value={activeProjectId} onValueChange={(v) => { setActiveProjectId(v); }}>
+                    <SelectTrigger className="h-6 text-[10px] font-mono bg-transparent border-zinc-700 text-zinc-400 hover:text-amber-400 hover:border-amber-500/40 transition-colors px-2 w-auto max-w-xs">
+                      <Building className="w-3 h-3 mr-1 flex-shrink-0" />
+                      <SelectValue placeholder="Select project..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-700">
+                      {projects.map(p => (
+                        <SelectItem key={p.id} value={p.id} className="text-xs">
+                          {p.project_number} — {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-[10px] text-zinc-600 font-mono">PREDICTIVE INTELLIGENCE ACTIVE</span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">

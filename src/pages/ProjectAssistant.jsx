@@ -18,6 +18,8 @@ import ReactMarkdown from 'react-markdown';
 import ChatMessage from '@/components/pma/ChatMessage';
 import ConversationSidebar from '@/components/pma/ConversationSidebar';
 import AlertsFeed from '@/components/pma/AlertsFeed';
+import DailyBrief from '@/components/pma/DailyBrief';
+import AutoResolvePanel from '@/components/pma/AutoResolvePanel';
 
 const QUICK_QUERIES = [
   { label: 'Daily Pulse',         query: "Give me today's project pulse — critical issues, forecasts, and what needs action now.", icon: Activity },

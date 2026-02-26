@@ -129,14 +129,8 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
-    onSuccess: (result, variables) => {
-      queryClient.setQueryData(['sov-items', projectId], (old) => {
-        if (!old) return old;
-        return old.map(item => 
-          item.id === variables.id ? { ...item, ...variables.data } : item
-        );
-      });
-      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
     },
     onError: (err) => toast.error(err?.message ?? 'Update failed')
   });

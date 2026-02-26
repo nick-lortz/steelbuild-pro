@@ -154,44 +154,20 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const [editingPercent, setEditingPercent] = useState({});
 
-  const handleUpdatePercent = async (sovItem, value) => {
-    if (value === '' || value == null) {
-      setEditingPercent(prev => ({ ...prev, [sovItem.id]: '' }));
-      return;
-    }
-
+  const handleUpdatePercent = (sovItem, value) => {
+    if (value === '' || value == null) return;
     const numValue = parseFloat(value);
     if (Number.isNaN(numValue) || numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
-
-    // Per-line guard: only block if this specific line has approved/paid invoices
     const prev = sovItem.percent_complete ?? 0;
     if (numValue < prev && lockedSovItemIds.has(sovItem.id)) {
       toast.error('Cannot decrease % complete for billed lines. Use change order.');
       return;
     }
-
-    setEditingPercent(prev => ({ ...prev, [sovItem.id]: undefined }));
-
-    // Optimistic update with rollback
-    updateMutation.mutate(
-      { id: sovItem.id, data: { percent_complete: numValue } },
-      {
-        onMutate: async () => {
-          await queryClient.cancelQueries({ queryKey: ['sov-items', projectId] });
-          const prevData = queryClient.getQueryData(['sov-items', projectId]);
-          queryClient.setQueryData(['sov-items', projectId], (old = []) =>
-            old.map(it => it.id === sovItem.id ? { ...it, percent_complete: numValue } : it)
-          );
-          return { prevData };
-        },
-        onError: (_err, _vars, ctx) => {
-          if (ctx?.prevData) queryClient.setQueryData(['sov-items', projectId], ctx.prevData);
-        }
-      }
-    );
+    setEditingPercent(p => ({ ...p, [sovItem.id]: undefined }));
+    updateMutation.mutate({ id: sovItem.id, data: { percent_complete: numValue } });
   };
 
   const handleEdit = (item) => {

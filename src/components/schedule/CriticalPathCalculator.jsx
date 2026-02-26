@@ -6,116 +6,81 @@
 export function calculateCriticalPath(tasks) {
   if (!tasks || tasks.length === 0) return [];
 
-  // Build task dependency map
-  const taskMap = new Map(tasks.map(t => [t.id, t]));
-  const successorMap = new Map();
-  const predecessorMap = new Map();
+  try {
+    const tasksWithDeps = tasks.filter(t => (t.predecessor_ids || []).length > 0);
+    if (tasksWithDeps.length === 0) return [];
 
-  // Initialize maps
-  tasks.forEach(task => {
-    successorMap.set(task.id, []);
-    predecessorMap.set(task.id, task.predecessor_ids || []);
-  });
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+    const successorMap = new Map(tasks.map(t => [t.id, []]));
+    const inDegree = new Map(tasks.map(t => [t.id, 0]));
 
-  // Build successor relationships
-  tasks.forEach(task => {
-    (task.predecessor_ids || []).forEach(predId => {
-      const successors = successorMap.get(predId) || [];
-      successors.push(task.id);
-      successorMap.set(predId, successors);
-    });
-  });
-
-  // Forward pass - calculate earliest start/finish
-  const earliest = new Map();
-  const visited = new Set();
-
-  function forwardPass(taskId, depth = 0) {
-    if (visited.has(taskId)) return earliest.get(taskId)?.finish || 0;
-
-    const task = taskMap.get(taskId);
-    if (!task) return 0;
-
-    const predecessors = predecessorMap.get(taskId) || [];
-    
-    let maxPredFinish = 0;
-    predecessors.forEach(predId => {
-      const predEarliest = forwardPass(predId, depth + 1);
-      maxPredFinish = Math.max(maxPredFinish, predEarliest);
+    tasks.forEach(task => {
+      (task.predecessor_ids || []).forEach(predId => {
+        if (taskMap.has(predId)) {
+          inDegree.set(task.id, (inDegree.get(task.id) || 0) + 1);
+          successorMap.get(predId).push(task.id);
+        }
+      });
     });
 
-    const duration = calculateDuration(task);
-    const start = maxPredFinish;
-    const finish = start + duration;
+    // Topological sort (Kahn's algorithm - iterative, no recursion)
+    const queue = tasks.filter(t => (inDegree.get(t.id) || 0) === 0).map(t => t.id);
+    const topoOrder = [];
+    const tempInDegree = new Map(inDegree);
 
-    earliest.set(taskId, { start, finish });
-    visited.add(taskId);
-
-    return finish;
-  }
-
-  // Run forward pass on all tasks
-  tasks.forEach(task => forwardPass(task.id));
-
-  // Find project end date
-  const projectEnd = Math.max(...Array.from(earliest.values()).map(e => e.finish || 0));
-
-  // Backward pass - calculate latest start/finish
-  const latest = new Map();
-  const visitedBack = new Set();
-
-  function backwardPass(taskId) {
-    if (visitedBack.has(taskId)) return latest.get(taskId)?.start || projectEnd;
-
-    const task = taskMap.get(taskId);
-    if (!task) return projectEnd;
-
-    const successors = successorMap.get(taskId) || [];
-    
-    let minSuccStart = projectEnd;
-    if (successors.length === 0) {
-      minSuccStart = projectEnd;
-    } else {
-      successors.forEach(succId => {
-        const succLatest = backwardPass(succId);
-        minSuccStart = Math.min(minSuccStart, succLatest);
+    while (queue.length > 0) {
+      const current = queue.shift();
+      topoOrder.push(current);
+      (successorMap.get(current) || []).forEach(succId => {
+        const newDeg = (tempInDegree.get(succId) || 0) - 1;
+        tempInDegree.set(succId, newDeg);
+        if (newDeg === 0) queue.push(succId);
       });
     }
 
-    const duration = calculateDuration(task);
-    const finish = minSuccStart;
-    const start = finish - duration;
+    // Cycle detected - bail out safely
+    if (topoOrder.length !== tasks.length) return [];
 
-    latest.set(taskId, { start, finish });
-    visitedBack.add(taskId);
+    // Forward pass (iterative)
+    const earliest = new Map();
+    topoOrder.forEach(taskId => {
+      const task = taskMap.get(taskId);
+      const preds = (task.predecessor_ids || []).filter(id => taskMap.has(id));
+      const maxPred = preds.length > 0 ? Math.max(...preds.map(id => (earliest.get(id)?.finish || 0))) : 0;
+      const dur = calculateDuration(task);
+      earliest.set(taskId, { start: maxPred, finish: maxPred + dur });
+    });
 
-    return start;
-  }
+    const projectEnd = Math.max(...Array.from(earliest.values()).map(e => e.finish || 0));
 
-  // Run backward pass
-  tasks.forEach(task => backwardPass(task.id));
+    // Backward pass (iterative - reverse topo order)
+    const latest = new Map();
+    [...topoOrder].reverse().forEach(taskId => {
+      const task = taskMap.get(taskId);
+      const succs = successorMap.get(taskId) || [];
+      const minSucc = succs.length > 0 ? Math.min(...succs.map(id => (latest.get(id)?.start ?? projectEnd))) : projectEnd;
+      const dur = calculateDuration(task);
+      latest.set(taskId, { start: minSucc - dur, finish: minSucc });
+    });
 
-  // Identify critical tasks (no float/slack)
-  const criticalTasks = [];
-  tasks.forEach(task => {
-    const e = earliest.get(task.id);
-    const l = latest.get(task.id);
-
-    if (e && l) {
-      const slack = l.start - e.start;
-      // Float should be 0 or very close (within 1 day for rounding)
-      if (slack <= 1) {
-        criticalTasks.push(task.id);
+    // Identify critical tasks
+    const criticalTasks = [];
+    tasks.forEach(task => {
+      const e = earliest.get(task.id);
+      const l = latest.get(task.id);
+      if (e && l) {
+        const slack = l.start - e.start;
+        if (slack <= 1) criticalTasks.push(task.id);
+        task._float_days = Math.round(slack * 10) / 10;
+        task._earliest = e;
+        task._latest = l;
       }
+    });
 
-      // Store float on task for display
-      task._float_days = Math.round(slack * 10) / 10;
-      task._earliest = e;
-      task._latest = l;
-    }
-  });
-
-  return criticalTasks;
+    return criticalTasks;
+  } catch {
+    return [];
+  }
 }
 
 function calculateDuration(task) {

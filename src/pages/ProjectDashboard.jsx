@@ -171,7 +171,13 @@ export default function ProjectDashboard() {
         }
       />
 
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+
+        {/* Quick Links strip */}
+        <Card className="p-4">
+          <QuickLinksWidget />
+        </Card>
+
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="dashboard">
             {(provided) => (
@@ -195,6 +201,10 @@ export default function ProjectDashboard() {
                     handleUpdateLayout(items);
                   };
 
+                  const unpinWidget = (id) => {
+                    handleUpdateLayout(widgetLayout.filter(w => w !== id));
+                  };
+
                   return (
                     <Draggable key={widgetId} draggableId={widgetId} index={index}>
                       {(provided, snapshot) => (
@@ -204,44 +214,37 @@ export default function ProjectDashboard() {
                           className={snapshot.isDragging ? 'opacity-50' : ''}
                         >
                           <Card className="p-4 relative group">
-                            {/* Keyboard reorder controls (WCAG 2.1.1) */}
+                            {/* Keyboard reorder controls */}
                             <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => moveWidget(index, index - 1)}
-                                disabled={!canMoveUp}
-                                className="h-7 w-7 p-0"
-                                aria-label={`Move ${widget.label} up`}
-                              >
+                              <Button size="sm" variant="ghost" onClick={() => moveWidget(index, index - 1)} disabled={!canMoveUp} className="h-7 w-7 p-0" aria-label={`Move ${widget.label} up`}>
                                 <span aria-hidden="true">↑</span>
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => moveWidget(index, index + 1)}
-                                disabled={!canMoveDown}
-                                className="h-7 w-7 p-0"
-                                aria-label={`Move ${widget.label} down`}
-                              >
+                              <Button size="sm" variant="ghost" onClick={() => moveWidget(index, index + 1)} disabled={!canMoveDown} className="h-7 w-7 p-0" aria-label={`Move ${widget.label} down`}>
                                 <span aria-hidden="true">↓</span>
                               </Button>
                             </div>
 
-                            {/* Drag handle (mouse users) */}
-                            <div
-                              {...provided.dragHandleProps}
-                              className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
-                              aria-hidden="true"
-                            >
-                              <GripVertical size={16} className="text-[#6B7280]" />
+                            {/* Right side: unpin + drag handle */}
+                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => unpinWidget(widgetId)}
+                                className="h-7 w-7 p-0 text-zinc-500 hover:text-red-400"
+                                title="Unpin widget"
+                              >
+                                <PinOff size={13} />
+                              </Button>
+                              <div
+                                {...provided.dragHandleProps}
+                                className="p-1 cursor-move"
+                                aria-hidden="true"
+                              >
+                                <GripVertical size={16} className="text-[#6B7280]" />
+                              </div>
                             </div>
 
-                            {/* Screen reader position info */}
-                            <span className="sr-only">
-                              {widget.label}, position {index + 1} of {widgetLayout.length}
-                            </span>
-
+                            <span className="sr-only">{widget.label}, position {index + 1} of {widgetLayout.length}</span>
                             <WidgetComponent projectId={activeProjectId} />
                           </Card>
                         </div>
@@ -257,11 +260,9 @@ export default function ProjectDashboard() {
 
         {widgetLayout.length === 0 && (
           <Card className="p-12 text-center">
-            <p className="text-[#6B7280] mb-4">No widgets configured</p>
-            <Button
-              onClick={() => setConfigOpen(true)}
-            >
-              Add Widgets
+            <p className="text-[#6B7280] mb-4">No widgets pinned</p>
+            <Button onClick={() => setConfigOpen(true)}>
+              <Pin size={14} className="mr-2" /> Pin Widgets
             </Button>
           </Card>
         )}

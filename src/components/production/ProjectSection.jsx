@@ -120,6 +120,7 @@ export default function ProjectSection({ project, notes = [], onCreateNote, onUp
                 onDelete={onDeleteNote}
                 openCount={openActions.length}
               />
+              <CategorySection category="general" notes={notes} onUpdate={onUpdateNote} onDelete={onDeleteNote} />
             </div>
 
 

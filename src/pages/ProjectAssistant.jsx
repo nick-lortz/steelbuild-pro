@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Brain, Sparkles, AlertTriangle, Activity, TrendingUp, BarChart3,
   Wrench, Package, Truck, Zap, Target, Shield, Send, Loader2,
-  Bell, RefreshCw, PanelLeftOpen, PanelLeftClose
+  Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

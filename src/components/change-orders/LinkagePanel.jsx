@@ -30,6 +30,12 @@ export default function LinkagePanel({ changeOrder, onUpdate }) {
     enabled: !!changeOrder.project_id
   });
 
+  const { data: sovItems = [] } = useQuery({
+    queryKey: ['sov-items', changeOrder.project_id],
+    queryFn: () => base44.entities.SOVItem.filter({ project_id: changeOrder.project_id }),
+    enabled: !!changeOrder.project_id
+  });
+
   const linkMutation = useMutation({
     mutationFn: ({ field, id }) => {
       const currentIds = changeOrder[field] || [];

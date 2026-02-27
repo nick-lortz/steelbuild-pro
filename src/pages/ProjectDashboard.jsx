@@ -175,6 +175,31 @@ export default function ProjectDashboard() {
 
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
 
+        {/* View Toggle */}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={view === 'daily' ? 'default' : 'outline'}
+            onClick={() => setView('daily')}
+          >
+            PM Daily Driver
+          </Button>
+          <Button
+            size="sm"
+            variant={view === 'project' ? 'default' : 'outline'}
+            onClick={() => setView('project')}
+          >
+            Project Widgets
+          </Button>
+        </div>
+
+        {/* PM Daily Driver View */}
+        {view === 'daily' && (
+          <PMDailyDriver onSelectProject={(id) => { setActiveProjectId(id); setView('project'); }} />
+        )}
+
+        {/* Project Widget View */}
+        {view === 'project' && <>
         {/* Quick Links strip */}
         <Card className="p-4">
           <QuickLinksWidget />

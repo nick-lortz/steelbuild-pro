@@ -982,6 +982,12 @@ export default function DocumentHub() {
                           <Download size={12} className="mr-1" /> Download
                         </Button>
                       </a>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        navigator.clipboard.writeText(selectedDoc.file_url);
+                        toast.success('Link copied to clipboard');
+                      }} className="border-zinc-700 text-white text-xs h-8">
+                        <Share2 size={12} className="mr-1" /> Copy Link
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => handleAnalyze(selectedDoc)} disabled={analyzing === selectedDoc.id} className="border-blue-700 text-blue-400 text-xs h-8">
                         {analyzing === selectedDoc.id ? <Loader2 size={12} className="mr-1 animate-spin" /> : <Sparkles size={12} className="mr-1" />}
                         Re-Tag

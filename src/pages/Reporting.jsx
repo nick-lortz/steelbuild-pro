@@ -12,9 +12,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import TrendChart from '@/components/reporting/TrendChart';
-import DashboardFilters from '@/components/reporting/DashboardFilters';
-import ExportPanel from '@/components/reporting/ExportPanel';
+import TrendChart from '@/components/reporting/TrendChart.jsx';
+import DashboardFilters from '@/components/reporting/DashboardFilters.jsx';
+import ExportPanel from '@/components/reporting/ExportPanel.jsx';
 
 export default function ReportingPage() {
   const { activeProjectId } = useActiveProject();

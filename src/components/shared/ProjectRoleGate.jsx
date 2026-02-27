@@ -1,22 +1,20 @@
 import React from 'react';
-import { useProjectRole } from './hooks/useProjectRole';
+import { useProjectRole, roleAtLeast } from './hooks/useProjectRole';
 import { Lock } from 'lucide-react';
 
 /**
  * ProjectRoleGate - Conditionally renders children based on project-scoped role.
  *
- * Usage:
- *   <ProjectRoleGate permission="financials:edit">
- *     <EditFinancialsButton />
- *   </ProjectRoleGate>
+ * Props:
+ *   permission  - string key from PROJECT_PERMISSIONS (e.g. 'financials:edit')
+ *   minRole     - minimum role string (e.g. 'apm') — used if no permission key
+ *   projectId   - override active project (optional)
+ *   fallback    - rendered when access denied (default: null)
+ *   showLock    - render a lock icon instead of null when denied
  *
- *   <ProjectRoleGate minRole="apm">
- *     <ScheduleEditor />
- *   </ProjectRoleGate>
- *
- *   <ProjectRoleGate permission="changeorders:approve" fallback={<ReadOnlyView />}>
- *     <ApproveButton />
- *   </ProjectRoleGate>
+ * Examples:
+ *   <ProjectRoleGate permission="financials:edit">...</ProjectRoleGate>
+ *   <ProjectRoleGate minRole="pm" fallback={<ReadOnlyBanner />}>...</ProjectRoleGate>
  */
 export default function ProjectRoleGate({
   permission,
@@ -26,7 +24,7 @@ export default function ProjectRoleGate({
   fallback = null,
   showLock = false,
 }) {
-  const { can, projectRole, isLoading, roleAtLeast: checkRole } = useProjectRoleWithHelper(projectId);
+  const { can, projectRole, isLoading } = useProjectRole(projectId);
 
   if (isLoading) return null;
 
@@ -34,7 +32,6 @@ export default function ProjectRoleGate({
   if (permission) {
     allowed = can(permission);
   } else if (minRole) {
-    const { roleAtLeast } = require('./hooks/useProjectRole');
     allowed = roleAtLeast(projectRole, minRole);
   } else {
     allowed = !!projectRole;
@@ -44,19 +41,12 @@ export default function ProjectRoleGate({
 
   if (showLock) {
     return (
-      <div className="inline-flex items-center gap-1 opacity-40 cursor-not-allowed" title="Insufficient project role">
+      <span className="inline-flex items-center gap-1 opacity-40 cursor-not-allowed" title="Insufficient project role">
         <Lock size={14} className="text-zinc-500" />
         <span className="text-xs text-zinc-500">Restricted</span>
-      </div>
+      </span>
     );
   }
 
   return fallback;
-}
-
-// Internal helper to also expose roleAtLeast via the hook result
-function useProjectRoleWithHelper(projectId) {
-  const result = useProjectRole(projectId);
-  const { roleAtLeast } = require('./hooks/useProjectRole');
-  return { ...result, roleAtLeast };
 }

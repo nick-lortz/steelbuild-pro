@@ -382,11 +382,5 @@ async function runForProject(base44, project_id) {
     };
 
     console.log(`[PMA Monitor v2] Complete:`, JSON.stringify(summary));
-
-    return Response.json({ success: true, summary, alerts, actions });
-
-  } catch (error) {
-    console.error('[PMA Monitor v2] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-});
+    return summary;
+}

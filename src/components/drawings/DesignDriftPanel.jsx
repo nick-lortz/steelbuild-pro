@@ -112,10 +112,10 @@ function InstallRiskCard({ issue }) {
               {issue.related_connection && <span className="font-mono text-[11px] text-amber-400 font-bold">{issue.related_connection}</span>}
             </div>
             <div className="text-sm text-white mb-1">{issue.description}</div>
-            {issue.resolution_recommendation && (
+            {(issue.mitigation_plan || issue.resolution_recommendation) && (
               <div className="text-xs text-blue-400 flex items-start gap-1.5 mt-1">
                 <span className="text-zinc-500">→</span>
-                <span>{issue.resolution_recommendation}</span>
+                <span>{issue.mitigation_plan || issue.resolution_recommendation}</span>
               </div>
             )}
             {issue.location_reference && <div className="text-xs text-zinc-500 mt-1">@ {issue.location_reference}</div>}

@@ -3,7 +3,7 @@
  * Shows scope/design-intent drift findings and installability risks
  * alongside CO exposure flags. Wired into DrawingIntelligenceDashboard tabs.
  */
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';

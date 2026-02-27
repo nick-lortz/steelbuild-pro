@@ -13,7 +13,7 @@ import {
   Wrench, Package, Truck, Zap, Target, Shield, Send, Loader2,
   Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText,
   ChevronDown, Building, TrendingDown, MessageSquare, GitBranch, MessageSquareWarning,
-  FileCheck, Mail
+  FileCheck, Mail, DollarSign
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

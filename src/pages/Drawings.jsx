@@ -20,7 +20,9 @@ import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog
 import DrawingUploadEnhanced from '@/components/drawings/DrawingUploadEnhanced';
 import EnhancedDrawingUpload from '@/components/drawings/EnhancedDrawingUpload';
 import DrawingIntelligenceDashboard from '@/components/drawings/DrawingIntelligenceDashboard';
-import { FileText, Plus, Upload, Search, Sparkles } from 'lucide-react';
+import DrawingSheetManager from '@/components/drawings/DrawingSheetManager';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { FileText, Plus, Upload, Search, Sparkles, Layers } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function Drawings() {

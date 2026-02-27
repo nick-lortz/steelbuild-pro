@@ -83,11 +83,12 @@ export default function FloatingPMA() {
             {statusData && (
               <div className="p-3 space-y-2">
                 {[
-                  { label: 'Critical Alerts', value: statusData.criticalCount, color: 'text-red-400' },
-                  { label: 'High Alerts', value: statusData.highCount, color: 'text-amber-400' },
-                  { label: 'Blocked Gates', value: statusData.blockedGates, color: 'text-orange-400' },
-                  { label: 'Aging RFIs (14d+)', value: statusData.agingRFIs, color: 'text-yellow-400' },
-                ].map(item => (
+                   { label: 'Critical Alerts', value: statusData.criticalCount, color: 'text-red-400' },
+                   { label: 'High Alerts', value: statusData.highCount, color: 'text-amber-400' },
+                   { label: 'Blocked Gates', value: statusData.blockedGates, color: 'text-orange-400' },
+                   { label: 'Aging RFIs (14d+)', value: statusData.agingRFIs, color: 'text-yellow-400' },
+                   { label: 'Pending COs', value: statusData.pendingCOs, color: 'text-blue-400' },
+                 ].map(item => (
                   <div key={item.label} className="flex justify-between items-center text-xs">
                     <span className="text-zinc-400">{item.label}</span>
                     <span className={cn('font-mono font-bold', item.value > 0 ? item.color : 'text-green-400')}>

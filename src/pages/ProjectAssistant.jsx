@@ -43,6 +43,8 @@ const QUICK_QUERIES = [
   { label: 'Auto-Resolve',        query: 'What can you auto-resolve for me today?', icon: Zap },
   { label: 'Escalation Queue',    query: 'What needs escalation this week?', icon: AlertTriangle },
   { label: 'Recovery Plan',       query: 'Generate schedule recovery options with cost-benefit analysis.', icon: TrendingUp },
+  { label: 'CO Strategy',         query: 'Review my pending change orders and give me an approval strategy with urgency ranking.', icon: FileCheck },
+  { label: 'Margin Health',       query: 'What is my current gross margin outlook and what are the top 3 threats to margin?', icon: DollarSign },
 ];
 
 export default function ProjectAssistant() {

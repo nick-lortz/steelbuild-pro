@@ -57,6 +57,7 @@ export default function ProjectDashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [widgetLayout, setWidgetLayout] = useState([]);
   const [configOpen, setConfigOpen] = useState(false);
+  const [view, setView] = useState('daily'); // 'daily' | 'project'
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],

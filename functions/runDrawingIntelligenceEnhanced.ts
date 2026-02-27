@@ -216,9 +216,10 @@ Return ONLY JSON: { "drift_findings": [ ...] }`;
     const coExposureItems = [];
     for (const d of driftFindings) {
       const sev = d.severity || 3;
+      const resolvedDriftSheetId = sheetByNumber(d.sheet_reference) || fallbackSheetId;
       const flag = await base44.asServiceRole.entities.DesignIntentFlag.create({
         project_id,
-        sheet_id: sheetByNumber(d.sheet_reference),
+        sheet_id: resolvedDriftSheetId,
         change_category: d.change_category || 'connection_type',
         description: d.description,
         location_reference: d.location_reference,

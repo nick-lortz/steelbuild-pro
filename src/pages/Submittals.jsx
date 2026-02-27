@@ -358,6 +358,56 @@ export default function Submittals() {
         </SheetContent>
       </Sheet>
 
+      {/* AI Generate Panel */}
+      <Dialog open={showAIPanel} onOpenChange={setShowAIPanel}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles size={16} className="text-amber-400" />
+              AI Submittal Generator
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-zinc-400">
+              Select a drawing set. The AI will analyze the project phase and scope, then auto-create all required submittals with deadlines and reviewer assignments.
+            </p>
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-500 uppercase">Drawing Set</label>
+              <Select value={selectedDrawingSet} onValueChange={setSelectedDrawingSet}>
+                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
+                  <SelectValue placeholder="Select drawing set..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {drawingSets.map(ds => (
+                    <SelectItem key={ds.id} value={ds.id}>
+                      {ds.set_number} — {ds.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
+              <Button variant="outline" onClick={() => setShowAIPanel(false)}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  await handleAIGenerate(selectedDrawingSet);
+                  setShowAIPanel(false);
+                  setSelectedDrawingSet('');
+                }}
+                disabled={!selectedDrawingSet || generatingAI}
+                className="bg-amber-500 hover:bg-amber-600 text-black"
+              >
+                {generatingAI ? (
+                  <><RefreshCw size={14} className="mr-2 animate-spin" />Generating...</>
+                ) : (
+                  <><Sparkles size={14} className="mr-2" />Generate Submittals</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation */}
       {deleteSubmittal && (
         <Dialog open={!!deleteSubmittal} onOpenChange={() => setDeleteSubmittal(null)}>

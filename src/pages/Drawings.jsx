@@ -47,6 +47,7 @@ export default function Drawings() {
   const [selectedSet, setSelectedSet] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showAnalysisDashboard, setShowAnalysisDashboard] = useState(false);
+  const [mainTab, setMainTab] = useState('sets');
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

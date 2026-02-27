@@ -30,6 +30,7 @@ import RFIIntelligence from '@/components/pma/RFIIntelligence';
 import COIntelligence from '@/components/pma/COIntelligence';
 import MarginPulse from '@/components/pma/MarginPulse';
 import DraftEmailPanel from '@/components/pma/DraftEmailPanel';
+import { createPageUrl } from '@/utils';
 
 const QUICK_QUERIES = [
   { label: 'Daily Pulse',         query: "Give me today's project pulse — critical issues, forecasts, and what needs action now.", icon: Activity },

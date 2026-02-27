@@ -293,6 +293,7 @@ export default function ProjectDashboard() {
             </Button>
           </Card>
         )}
+        </>}
       </div>
 
       <WidgetConfigDialog

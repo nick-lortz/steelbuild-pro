@@ -13,7 +13,7 @@ import {
   Wrench, Package, Truck, Zap, Target, Shield, Send, Loader2,
   Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText,
   ChevronDown, Building, TrendingDown, MessageSquare, GitBranch, MessageSquareWarning,
-  FileCheck, DollarSign
+  FileCheck, Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -27,8 +27,8 @@ import ScheduleDelayPredictor from '@/components/pma/ScheduleDelayPredictor';
 import CommunicationAnalysis from '@/components/pma/CommunicationAnalysis';
 import WhatIfScenario from '@/components/pma/WhatIfScenario';
 import RFIIntelligence from '@/components/pma/RFIIntelligence';
-import ChangeOrderIntelligence from '@/components/pma/ChangeOrderIntelligence';
-import MarginPulse from '@/components/pma/MarginPulse';
+import COIntelligence from '@/components/pma/COIntelligence';
+import DraftEmailPanel from '@/components/pma/DraftEmailPanel';
 
 const QUICK_QUERIES = [
   { label: 'Daily Pulse',         query: "Give me today's project pulse — critical issues, forecasts, and what needs action now.", icon: Activity },
@@ -43,8 +43,8 @@ const QUICK_QUERIES = [
   { label: 'Auto-Resolve',        query: 'What can you auto-resolve for me today?', icon: Zap },
   { label: 'Escalation Queue',    query: 'What needs escalation this week?', icon: AlertTriangle },
   { label: 'Recovery Plan',       query: 'Generate schedule recovery options with cost-benefit analysis.', icon: TrendingUp },
-  { label: 'CO Strategy',         query: 'Review my pending change orders and give me an approval strategy with urgency ranking.', icon: FileCheck },
-  { label: 'Margin Health',       query: 'What is my current gross margin outlook and what are the top 3 threats to margin?', icon: DollarSign },
+  { label: 'CO Status',           query: 'Summarize all pending change orders, their values, and approval strategy.', icon: FileCheck },
+  { label: 'Weekly Summary',      query: 'Generate a weekly executive summary for this project including schedule, budget, RFI, and CO status.', icon: FileText },
 ];
 
 export default function ProjectAssistant() {
@@ -300,8 +300,8 @@ export default function ProjectAssistant() {
               <TabsTrigger value="co" className="text-xs h-7 px-3">
                 <FileCheck className="w-3.5 h-3.5 mr-1.5" />CO Intel
               </TabsTrigger>
-              <TabsTrigger value="margin" className="text-xs h-7 px-3">
-                <DollarSign className="w-3.5 h-3.5 mr-1.5" />Margin
+              <TabsTrigger value="email" className="text-xs h-7 px-3">
+                <Mail className="w-3.5 h-3.5 mr-1.5" />Draft Email
               </TabsTrigger>
             </TabsList>
 
@@ -468,15 +468,15 @@ export default function ProjectAssistant() {
 
           {/* CO Intelligence Tab */}
           <TabsContent value="co" className="flex-1 overflow-hidden m-0">
-            <ChangeOrderIntelligence
+            <COIntelligence
               activeProjectId={activeProjectId}
               onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
             />
           </TabsContent>
 
-          {/* Margin Pulse Tab */}
-          <TabsContent value="margin" className="flex-1 overflow-hidden m-0">
-            <MarginPulse
+          {/* Draft Email Tab */}
+          <TabsContent value="email" className="flex-1 overflow-hidden m-0">
+            <DraftEmailPanel
               activeProjectId={activeProjectId}
               onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
             />

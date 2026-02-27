@@ -231,8 +231,12 @@ function SheetRow({ sheet, drawingSets, revisions, currentUser, onStatusChange }
               onClick={() => setUploadOpen(true)} title="Upload new revision">
               <Upload className="w-3.5 h-3.5" />
             </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500 hover:text-red-400"
+              onClick={() => { setIssuesOpen(v => !v); setHistoryOpen(false); }} title="Linked issues & flags">
+              <Flag className="w-3.5 h-3.5" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500 hover:text-purple-400"
-              onClick={() => setHistoryOpen(v => !v)} title="Version history">
+              onClick={() => { setHistoryOpen(v => !v); setIssuesOpen(false); }} title="Version history">
               {historyOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </Button>
           </div>

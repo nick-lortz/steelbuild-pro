@@ -28,6 +28,7 @@ import CommunicationAnalysis from '@/components/pma/CommunicationAnalysis';
 import WhatIfScenario from '@/components/pma/WhatIfScenario';
 import RFIIntelligence from '@/components/pma/RFIIntelligence';
 import COIntelligence from '@/components/pma/COIntelligence';
+import MarginPulse from '@/components/pma/MarginPulse';
 import DraftEmailPanel from '@/components/pma/DraftEmailPanel';
 
 const QUICK_QUERIES = [

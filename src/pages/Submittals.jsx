@@ -40,6 +40,8 @@ export default function Submittals() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showAIPanel, setShowAIPanel] = React.useState(false);
+  const [selectedDrawingSet, setSelectedDrawingSet] = React.useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedSubmittal, setSelectedSubmittal] = useState(null);
   const [deleteSubmittal, setDeleteSubmittal] = useState(null);

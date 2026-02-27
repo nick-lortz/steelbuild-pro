@@ -242,6 +242,15 @@ function SheetRow({ sheet, drawingSets, revisions, currentUser, onStatusChange }
           </div>
         </div>
 
+        {issuesOpen && (
+          <div className="mt-2 ml-7">
+            <div className="text-[10px] text-zinc-500 uppercase mb-1 flex items-center gap-1">
+              <Flag className="w-3 h-3" /> Linked Erection Issues & Design Flags
+            </div>
+            <SheetLinkedIssues sheetId={sheet.id} />
+          </div>
+        )}
+
         {historyOpen && (
           <div className="mt-2 ml-7">
             <div className="text-[10px] text-zinc-500 uppercase mb-1 flex items-center gap-1">

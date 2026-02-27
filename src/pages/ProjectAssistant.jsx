@@ -464,6 +464,22 @@ export default function ProjectAssistant() {
             />
           </TabsContent>
 
+          {/* CO Intelligence Tab */}
+          <TabsContent value="co" className="flex-1 overflow-hidden m-0">
+            <ChangeOrderIntelligence
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
+          {/* Margin Pulse Tab */}
+          <TabsContent value="margin" className="flex-1 overflow-hidden m-0">
+            <MarginPulse
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
           {/* Forecasts Tab */}
           <TabsContent value="forecasts" className="flex-1 overflow-y-auto m-0 p-4">
             <div className="max-w-4xl mx-auto space-y-4">

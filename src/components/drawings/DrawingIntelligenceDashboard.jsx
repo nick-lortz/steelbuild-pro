@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   AlertTriangle, Zap, FileText, Flag, CheckCircle2, X,
-  Download, Loader2, Eye, Clock, ChevronDown, ChevronRight, Lock, Unlock
+  Download, Loader2, Eye, Clock, ChevronDown, ChevronRight, Lock, Unlock, DollarSign
 } from 'lucide-react';
+import DesignDriftPanel from '@/components/drawings/DesignDriftPanel';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';

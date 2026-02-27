@@ -1,8 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Recalculate delivery legality against sequencing rules
- * Called from propagateRFIImpacts, install readiness engine, and entity automation on Delivery update.
+ * Recalculate delivery legality against sequencing rules.
+ * Supports:
+ *   - Direct call: { delivery_id }
+ *   - Entity automation on Delivery update: payload has data.id = delivery_id
+ *   - Entity automation on WorkPackage update: payload has data.id = wp_id, finds all linked deliveries
  */
 
 function evaluateDeliverySequencing(delivery, workPackages, project) {
@@ -75,7 +78,6 @@ function evaluateDeliverySequencing(delivery, workPackages, project) {
 
   const sequencingValid = reasons.length === 0;
 
-  // Compute is_installable_delivery
   let installable = false;
   if (sequencingValid) {
     const stagingRequired = workPackages.some(wp => wp.staging_required !== false);
@@ -107,107 +109,79 @@ function evaluateDeliverySequencing(delivery, workPackages, project) {
   };
 }
 
+async function processDelivery(base44, delivery) {
+  const wpIds = delivery.work_package_ids || [];
+  const [workPackages, projects] = await Promise.all([
+    wpIds.length > 0
+      ? base44.asServiceRole.entities.WorkPackage.filter({ id: { $in: wpIds } })
+      : Promise.resolve([]),
+    base44.asServiceRole.entities.Project.filter({ id: delivery.project_id })
+  ]);
+  const project = projects[0] || {};
+  const computed = evaluateDeliverySequencing(delivery, workPackages, project);
+
+  await base44.asServiceRole.entities.Delivery.update(delivery.id, {
+    sequencing_valid: computed.sequencing_valid,
+    sequencing_block_reasons: computed.sequencing_block_reasons,
+    sequencing_blocking_entity_ids: computed.sequencing_blocking_entity_ids,
+    is_installable_delivery: computed.is_installable_delivery,
+    installable_reasons: computed.installable_reasons,
+    installable_blocking_entity_ids: computed.installable_blocking_entity_ids,
+    delivery_contains_non_install_ready: computed.delivery_contains_non_install_ready
+  });
+
+  return {
+    delivery_id: delivery.id,
+    delivery_number: delivery.delivery_number,
+    sequencing_valid: computed.sequencing_valid,
+    is_installable: computed.is_installable_delivery,
+    blocking_reasons: computed.sequencing_block_reasons,
+    wp_count: workPackages.length
+  };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Support both direct calls and entity automation payload
     let body = {};
     try { body = await req.json(); } catch (_) {}
 
-    const delivery_id = body.delivery_id;
-    const wp_id = body.wp_id || body.data?.id || body.event?.entity_id;
+    // Direct call with explicit delivery_id
+    const explicit_delivery_id = body.delivery_id;
+    // Entity automation payload — entity_name tells us what triggered
+    const entity_name = body.event?.entity_name;
+    const entity_id = body.data?.id || body.event?.entity_id;
 
     let deliveriesToProcess = [];
 
-    if (delivery_id) {
-      // Direct call with delivery_id
-      const result = await base44.asServiceRole.entities.Delivery.filter({ id: delivery_id });
+    if (explicit_delivery_id) {
+      const result = await base44.asServiceRole.entities.Delivery.filter({ id: explicit_delivery_id });
       deliveriesToProcess = result;
-    } else if (wp_id) {
-      // Triggered from WorkPackage update — find all deliveries containing this WP
+    } else if (entity_name === 'WorkPackage' && entity_id) {
+      // Find all deliveries that contain this work package
       deliveriesToProcess = await base44.asServiceRole.entities.Delivery.filter({
-        work_package_ids: { $in: [wp_id] }
+        work_package_ids: { $in: [entity_id] }
       });
+    } else if (entity_name === 'Delivery' && entity_id) {
+      const result = await base44.asServiceRole.entities.Delivery.filter({ id: entity_id });
+      deliveriesToProcess = result;
+    } else if (entity_id) {
+      // Fallback: try as delivery_id directly
+      const result = await base44.asServiceRole.entities.Delivery.filter({ id: entity_id });
+      deliveriesToProcess = result;
     }
 
     if (!deliveriesToProcess.length) {
-      return Response.json({ message: 'No deliveries to process', wp_id, delivery_id }, { status: 200 });
+      return Response.json({ message: 'No deliveries to process', entity_id, entity_name }, { status: 200 });
     }
 
-    const results = [];
-    for (const delivery of deliveriesToProcess) {
-      const wpIds = delivery.work_package_ids || [];
-      const [workPackages, projects] = await Promise.all([
-        wpIds.length > 0
-          ? base44.asServiceRole.entities.WorkPackage.filter({ id: { $in: wpIds } })
-          : Promise.resolve([]),
-        base44.asServiceRole.entities.Project.filter({ id: delivery.project_id })
-      ]);
-      const project = projects[0] || {};
-      const computed = evaluateDeliverySequencing(delivery, workPackages, project);
-
-      await base44.asServiceRole.entities.Delivery.update(delivery.id, {
-        sequencing_valid: computed.sequencing_valid,
-        sequencing_block_reasons: computed.sequencing_block_reasons,
-        sequencing_blocking_entity_ids: computed.sequencing_blocking_entity_ids,
-        is_installable_delivery: computed.is_installable_delivery,
-        installable_reasons: computed.installable_reasons,
-        installable_blocking_entity_ids: computed.installable_blocking_entity_ids,
-        delivery_contains_non_install_ready: computed.delivery_contains_non_install_ready
-      });
-
-      results.push({
-        delivery_id: delivery.id,
-        delivery_number: delivery.delivery_number,
-        sequencing_valid: computed.sequencing_valid,
-        is_installable: computed.is_installable_delivery,
-        blocking_reasons: computed.sequencing_block_reasons,
-        wp_count: workPackages.length
-      });
-    }
-
-    return Response.json({ success: true, processed: results.length, results, timestamp: new Date().toISOString() });
-
-  } catch (error) {
-    console.error('Delivery legality recalculation error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-});
-
-// Dummy block to satisfy parser — actual serve above handles all cases
-// (replaced below original single-delivery path)
-function _noop() {
-
-    // Fetch WPs and project in parallel
-    const wpIds = delivery.work_package_ids || [];
-    const [workPackages, projects] = await Promise.all([
-      wpIds.length > 0
-        ? base44.asServiceRole.entities.WorkPackage.filter({ id: { $in: wpIds } })
-        : Promise.resolve([]),
-      base44.asServiceRole.entities.Project.filter({ id: delivery.project_id })
-    ]);
-    const project = projects[0] || {};
-
-    const computed = evaluateDeliverySequencing(delivery, workPackages, project);
-
-    await base44.asServiceRole.entities.Delivery.update(delivery_id, {
-      sequencing_valid: computed.sequencing_valid,
-      sequencing_block_reasons: computed.sequencing_block_reasons,
-      sequencing_blocking_entity_ids: computed.sequencing_blocking_entity_ids,
-      is_installable_delivery: computed.is_installable_delivery,
-      installable_reasons: computed.installable_reasons,
-      installable_blocking_entity_ids: computed.installable_blocking_entity_ids,
-      delivery_contains_non_install_ready: computed.delivery_contains_non_install_ready
-    });
+    const results = await Promise.all(deliveriesToProcess.map(d => processDelivery(base44, d)));
 
     return Response.json({
-      delivery_id,
-      delivery_number: delivery.delivery_number,
-      sequencing_valid: computed.sequencing_valid,
-      is_installable: computed.is_installable_delivery,
-      blocking_reasons: computed.sequencing_block_reasons,
-      wp_count: workPackages.length,
+      success: true,
+      processed: results.length,
+      results,
       timestamp: new Date().toISOString()
     });
 

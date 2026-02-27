@@ -103,6 +103,31 @@ export default function Submittals() {
     }
   });
 
+  const [generatingAI, setGeneratingAI] = React.useState(false);
+
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawing-sets', activeProjectId],
+    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId
+  });
+
+  const handleAIGenerate = async (drawingSetId) => {
+    if (!activeProjectId || !drawingSetId) return;
+    setGeneratingAI(true);
+    try {
+      const result = await base44.functions.invoke('autoGenerateSubmittals', {
+        project_id: activeProjectId,
+        drawing_set_id: drawingSetId
+      });
+      queryClient.invalidateQueries({ queryKey: ['submittals'] });
+      toast.success(`Generated ${result.data?.created || 0} submittals (${result.data?.skipped_duplicates || 0} duplicates skipped)`);
+    } catch (e) {
+      toast.error('AI generation failed: ' + e.message);
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     return submittals.filter(s =>
       (statusFilter === 'all' || s.status === statusFilter) &&

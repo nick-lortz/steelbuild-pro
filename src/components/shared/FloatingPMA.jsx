@@ -17,10 +17,11 @@ export default function FloatingPMA() {
   const { data: statusData } = useQuery({
     queryKey: ['pma-float-status', activeProjectId],
     queryFn: async () => {
-      const [alerts, gates, rfis] = await Promise.all([
+      const [alerts, gates, rfis, cos] = await Promise.all([
         base44.entities.Alert.filter({ project_id: activeProjectId, status: 'active' }),
         base44.entities.ExecutionGate.filter({ project_id: activeProjectId }),
-        base44.entities.RFI.filter({ project_id: activeProjectId })
+        base44.entities.RFI.filter({ project_id: activeProjectId }),
+        base44.entities.ChangeOrder.filter({ project_id: activeProjectId })
       ]);
 
       const criticalCount = alerts.filter(a => a.severity === 'critical').length;
@@ -31,8 +32,9 @@ export default function FloatingPMA() {
         const days = Math.floor((new Date() - new Date(r.created_date)) / 86400000);
         return days >= 14;
       }).length;
+      const pendingCOs = cos.filter(c => ['submitted', 'under_review'].includes(c.status)).length;
 
-      return { criticalCount, highCount, blockedGates, agingRFIs, totalAlerts: alerts.length };
+      return { criticalCount, highCount, blockedGates, agingRFIs, pendingCOs, totalAlerts: alerts.length };
     },
     enabled: !!activeProjectId,
     refetchInterval: 5 * 60 * 1000, // 5 min – was 60s, hammering the DB on every page

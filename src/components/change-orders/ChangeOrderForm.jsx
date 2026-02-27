@@ -226,6 +226,28 @@ export default function ChangeOrderForm({ changeOrder, projects, getNextCONumber
         </CardContent>
       </Card>
 
+      {/* Unallocated cost prompt */}
+      {hasUnallocatedCost && (
+        <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+          <AlertTriangle size={15} className="text-amber-400 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-amber-400">Cost impact not allocated to SOV</p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              This CO has a ${Math.abs(costImpact).toLocaleString()} cost impact. Allocate it across SOV line items below for accurate billing tracking.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={addSOVAllocation}
+            className="bg-amber-500 hover:bg-amber-600 text-black text-xs h-7 shrink-0"
+          >
+            <Plus size={12} className="mr-1" />
+            Add Line
+          </Button>
+        </div>
+      )}
+
       {/* SOV Allocations */}
       {formData.project_id && sovItems.length > 0 && (
         <Card className="bg-zinc-950 border-zinc-800">

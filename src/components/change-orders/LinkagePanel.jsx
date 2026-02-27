@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Link as LinkIcon, FileText, Package, CheckSquare, Truck, Plus, X } from 'lucide-react';
+import { Link as LinkIcon, FileText, Package, CheckSquare, Truck, Plus, X, LayoutList } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function LinkagePanel({ changeOrder, onUpdate }) {

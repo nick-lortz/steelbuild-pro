@@ -23,6 +23,7 @@ import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
 import ErectionReadinessWidget from '@/components/project-dashboard/ErectionReadinessWidget';
 import QuickLinksWidget from '@/components/project-dashboard/QuickLinksWidget';
+import PMDailyDriver from '@/components/project-dashboard/PMDailyDriver';
 import { Pin, PinOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 

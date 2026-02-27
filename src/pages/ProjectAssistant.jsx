@@ -12,7 +12,8 @@ import {
   Brain, Sparkles, AlertTriangle, Activity, TrendingUp, BarChart3,
   Wrench, Package, Truck, Zap, Target, Shield, Send, Loader2,
   Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText,
-  ChevronDown, Building, TrendingDown, MessageSquare, GitBranch, MessageSquareWarning
+  ChevronDown, Building, TrendingDown, MessageSquare, GitBranch, MessageSquareWarning,
+  FileCheck, Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';

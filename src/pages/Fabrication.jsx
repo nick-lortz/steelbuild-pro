@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { format, parseISO, isValid } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { checkPrerequisites, PrerequisitesBadge } from '@/components/fabrication/PrerequisitesEngine';
+import ReadinessScorePanel from '@/components/fabrication/ReadinessScorePanel';
 
 export default function FabricationPage() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();

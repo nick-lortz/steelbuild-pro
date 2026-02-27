@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText, Share2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import DocumentPreview from '@/components/documents/DocumentPreview';

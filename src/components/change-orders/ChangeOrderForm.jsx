@@ -107,6 +107,7 @@ export default function ChangeOrderForm({ changeOrder, projects, getNextCONumber
   );
   const costImpact = parseFloat(formData.cost_impact) || 0;
   const allocationMismatch = Math.abs(totalAllocated - costImpact) > 0.01;
+  const hasUnallocatedCost = costImpact !== 0 && formData.sov_allocations.length === 0 && formData.project_id && sovItems.length > 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

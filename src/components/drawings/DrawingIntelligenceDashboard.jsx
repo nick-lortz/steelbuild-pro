@@ -489,6 +489,9 @@ export default function DrawingIntelligenceDashboard({ projectId, drawingSetId, 
             RFI Queue ({activeRFIs.length})
             {stats.pendingRFIs > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />}
           </TabsTrigger>
+          <TabsTrigger value="drift_install" className="flex items-center gap-1">
+            <DollarSign className="w-3 h-3" /> Drift & Install
+          </TabsTrigger>
         </TabsList>
 
         {/* All Findings */}

@@ -540,6 +540,21 @@ export default function Documents() {
               <Eye size={16} />
             </Button>
           )}
+          {row.file_url && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(row.file_url);
+                toast.success('Link copied');
+              }}
+              className="text-zinc-400 hover:text-blue-400"
+              title="Copy Link"
+            >
+              <Share2 size={16} />
+            </Button>
+          )}
           <Button
             size="sm"
             variant="ghost"

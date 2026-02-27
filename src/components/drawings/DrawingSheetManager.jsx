@@ -183,6 +183,7 @@ function UploadRevisionDialog({ sheet, drawingSets, projectId, currentUser, onCl
 
 function SheetRow({ sheet, drawingSets, revisions, currentUser, onStatusChange }) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [issuesOpen, setIssuesOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const queryClient = useQueryClient();
   const setName = drawingSets.find(s => s.id === sheet.drawing_set_id);

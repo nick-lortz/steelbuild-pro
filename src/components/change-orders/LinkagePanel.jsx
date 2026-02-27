@@ -68,10 +68,12 @@ export default function LinkagePanel({ changeOrder, onUpdate }) {
   const linkedRFIs = rfis.filter(r => changeOrder.linked_rfi_ids?.includes(r.id));
   const linkedTasks = tasks.filter(t => changeOrder.linked_task_ids?.includes(t.id));
   const linkedDrawings = drawingSets.filter(d => changeOrder.linked_drawing_set_ids?.includes(d.id));
+  const linkedSOVItems = sovItems.filter(s => changeOrder.linked_sov_item_ids?.includes(s.id));
 
   const availableRFIs = rfis.filter(r => !changeOrder.linked_rfi_ids?.includes(r.id));
   const availableTasks = tasks.filter(t => !changeOrder.linked_task_ids?.includes(t.id));
   const availableDrawings = drawingSets.filter(d => !changeOrder.linked_drawing_set_ids?.includes(d.id));
+  const availableSOVItems = sovItems.filter(s => !changeOrder.linked_sov_item_ids?.includes(s.id));
 
   return (
     <div className="space-y-4">

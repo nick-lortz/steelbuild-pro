@@ -15,13 +15,37 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    const body = await req.json();
-    const { project_id } = body;
+    // Support both direct calls { project_id } and scheduled automation (no payload)
+    let body = {};
+    try { body = await req.json(); } catch (_) {}
+    let projectIds = [];
 
-    if (!project_id) {
-      return Response.json({ error: 'project_id required' }, { status: 400 });
+    if (body.project_id) {
+      projectIds = [body.project_id];
+    } else {
+      // Scheduled run — process all active projects
+      const activeProjects = await base44.asServiceRole.entities.Project.filter({
+        status: { $in: ['awarded', 'in_progress'] }
+      });
+      projectIds = activeProjects.map(p => p.id);
     }
 
+    console.log(`[PMA Monitor v2] Running for ${projectIds.length} project(s)`);
+
+    const allSummaries = [];
+    for (const project_id of projectIds) {
+      const runResult = await runForProject(base44, project_id);
+      allSummaries.push(runResult);
+    }
+
+    return Response.json({ success: true, projects_processed: allSummaries.length, summaries: allSummaries });
+  } catch (error) {
+    console.error('[PMA Monitor v2] Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
+
+async function runForProject(base44, project_id) {
     console.log(`[PMA Monitor v2] Starting for project: ${project_id}`);
 
     const now = new Date();

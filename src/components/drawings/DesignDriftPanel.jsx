@@ -243,7 +243,7 @@ export default function DesignDriftPanel({ projectId, drawingSetId, drawingSetLa
             <div className="text-center py-10 text-zinc-500 text-sm">No scope drift detected. Run scan to analyze drawings.</div>
           )}
           {openDrift.map(flag => (
-            <DriftCard key={flag.id} flag={flag}
+            <DriftCard key={flag.id} flag={{ ...flag, labor_delta: laborDeltaMap[flag.location_reference] || null }}
               onApprove={(f) => {
                 updateFlag.mutate({ id: f.id, data: { status: 'approved' } });
                 toast.success('Flagged as approved — no CO action needed');

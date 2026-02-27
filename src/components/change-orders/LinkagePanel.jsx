@@ -286,6 +286,76 @@ export default function LinkagePanel({ changeOrder, onUpdate }) {
           )}
         </CardContent>
       </Card>
+      {/* SOV Items */}
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <LayoutList size={16} className="text-amber-400" />
+              Linked SOV Lines ({linkedSOVItems.length})
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAddingType('sov')}
+              className="border-zinc-700 h-8"
+            >
+              <Plus size={12} className="mr-1" />
+              Link SOV
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {addingType === 'sov' && (
+            <div className="flex gap-2 mb-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded">
+              <Select onValueChange={(id) => linkMutation.mutate({ field: 'linked_sov_item_ids', id })}>
+                <SelectTrigger className="flex-1 bg-zinc-900 border-zinc-700 h-9">
+                  <SelectValue placeholder="Select SOV line item..." />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  {availableSOVItems.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.sov_code} – {s.description?.substring(0, 50)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setAddingType(null)}
+                className="h-9 w-9 text-zinc-500"
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
+          {linkedSOVItems.length === 0 ? (
+            <p className="text-sm text-zinc-500 text-center py-4">No linked SOV lines</p>
+          ) : (
+            linkedSOVItems.map(sov => (
+              <div key={sov.id} className="flex items-center justify-between p-2 bg-zinc-900/50 rounded">
+                <div className="flex-1">
+                  <p className="text-xs font-mono text-amber-400">{sov.sov_code}</p>
+                  <p className="text-sm text-zinc-300">{sov.description}</p>
+                  {sov.scheduled_value > 0 && (
+                    <p className="text-xs text-zinc-500 mt-0.5">${sov.scheduled_value.toLocaleString()} scheduled</p>
+                  )}
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => unlinkMutation.mutate({ field: 'linked_sov_item_ids', id: sov.id })}
+                  className="h-7 w-7 text-zinc-500 hover:text-red-500"
+                >
+                  <X size={12} />
+                </Button>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

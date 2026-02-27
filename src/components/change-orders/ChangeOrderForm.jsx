@@ -50,6 +50,18 @@ export default function ChangeOrderForm({ changeOrder, projects, getNextCONumber
     enabled: !!formData.project_id
   });
 
+  // Auto-populate SOV allocations from linked_sov_item_ids when project loads and no allocations exist
+  React.useEffect(() => {
+    const linkedIds = changeOrder?.linked_sov_item_ids;
+    if (!linkedIds?.length || formData.sov_allocations.length > 0 || !sovItems.length) return;
+    const stubs = linkedIds
+      .filter(id => sovItems.find(s => s.id === id))
+      .map(id => ({ sov_item_id: id, amount: '', description: '' }));
+    if (stubs.length) {
+      setFormData(prev => ({ ...prev, sov_allocations: stubs }));
+    }
+  }, [sovItems, changeOrder?.linked_sov_item_ids]);
+
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', formData.project_id],
     queryFn: () => base44.entities.RFI.filter({ project_id: formData.project_id }),

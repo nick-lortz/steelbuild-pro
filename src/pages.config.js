@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import DocumentManagement from './pages/DocumentManagement';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -57,4 +58,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "DocumentManagement",
     Pages: PAGES,
+    Layout: __Layout,
 };

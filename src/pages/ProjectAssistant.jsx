@@ -13,7 +13,7 @@ import {
   Wrench, Package, Truck, Zap, Target, Shield, Send, Loader2,
   Bell, RefreshCw, PanelLeftOpen, PanelLeftClose, Calendar, FileText,
   ChevronDown, Building, TrendingDown, MessageSquare, GitBranch, MessageSquareWarning,
-  FileCheck, DollarSign
+  FileCheck, Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -27,8 +27,8 @@ import ScheduleDelayPredictor from '@/components/pma/ScheduleDelayPredictor';
 import CommunicationAnalysis from '@/components/pma/CommunicationAnalysis';
 import WhatIfScenario from '@/components/pma/WhatIfScenario';
 import RFIIntelligence from '@/components/pma/RFIIntelligence';
-import ChangeOrderIntelligence from '@/components/pma/ChangeOrderIntelligence';
-import MarginPulse from '@/components/pma/MarginPulse';
+import COIntelligence from '@/components/pma/COIntelligence';
+import DraftEmailPanel from '@/components/pma/DraftEmailPanel';
 
 const QUICK_QUERIES = [
   { label: 'Daily Pulse',         query: "Give me today's project pulse — critical issues, forecasts, and what needs action now.", icon: Activity },
@@ -295,6 +295,12 @@ export default function ProjectAssistant() {
               <TabsTrigger value="rfi" className="text-xs h-7 px-3">
                 <MessageSquareWarning className="w-3.5 h-3.5 mr-1.5" />RFI Intel
               </TabsTrigger>
+              <TabsTrigger value="co" className="text-xs h-7 px-3">
+                <FileCheck className="w-3.5 h-3.5 mr-1.5" />CO Intel
+              </TabsTrigger>
+              <TabsTrigger value="email" className="text-xs h-7 px-3">
+                <Mail className="w-3.5 h-3.5 mr-1.5" />Draft Email
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === 'chat' && (
@@ -453,6 +459,22 @@ export default function ProjectAssistant() {
           {/* RFI Intelligence Tab */}
           <TabsContent value="rfi" className="flex-1 overflow-hidden m-0">
             <RFIIntelligence
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
+          {/* CO Intelligence Tab */}
+          <TabsContent value="co" className="flex-1 overflow-hidden m-0">
+            <COIntelligence
+              activeProjectId={activeProjectId}
+              onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
+            />
+          </TabsContent>
+
+          {/* Draft Email Tab */}
+          <TabsContent value="email" className="flex-1 overflow-hidden m-0">
+            <DraftEmailPanel
               activeProjectId={activeProjectId}
               onSendToChat={(text) => { setActiveTab('chat'); setTimeout(() => sendMessage(text), 100); }}
             />

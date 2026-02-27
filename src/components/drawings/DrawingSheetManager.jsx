@@ -16,10 +16,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Upload, History, CheckCircle2, Eye, FileText, ChevronDown,
-  ChevronRight, Loader2, Search, ExternalLink, AlertCircle, Clock
+  ChevronRight, Loader2, Search, ExternalLink, AlertCircle, Clock, Flag
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import SheetLinkedIssues from './SheetLinkedIssues';
 
 const FAB_STATUS_CONFIG = {
   approved_for_fabrication: { label: 'AFF', sublabel: 'Approved For Fabrication', color: 'bg-green-500/20 text-green-400 border-green-500/40', dot: 'bg-green-400' },

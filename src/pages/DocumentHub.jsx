@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Upload, Search, File, FileText, Sparkles, History, Eye, Download,
   Loader2, Trash2, Tag, X, Plus, CheckCircle, AlertCircle, Clock,
-  FolderOpen, Grid, List, ChevronRight, RefreshCw, ArrowUpDown
+  FolderOpen, Grid, List, ChevronRight, RefreshCw, ArrowUpDown, Share2, Link as LinkIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';

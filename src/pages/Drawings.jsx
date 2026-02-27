@@ -291,67 +291,88 @@ export default function Drawings() {
             ]}
           />
 
-          <FilterBar>
-            <div className="flex-1 relative max-w-md">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-              <Input
-                placeholder="Search by set name, number, or revision..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="IFA">IFA</SelectItem>
-                <SelectItem value="BFA">BFA</SelectItem>
-                <SelectItem value="BFS">BFS</SelectItem>
-                <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
-                <SelectItem value="FFF">FFF</SelectItem>
-                <SelectItem value="As-Built">As-Built</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by Discipline" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Disciplines</SelectItem>
-                <SelectItem value="structural">Structural</SelectItem>
-                <SelectItem value="misc_metals">Misc Metals</SelectItem>
-                <SelectItem value="stairs">Stairs</SelectItem>
-                <SelectItem value="handrails">Handrails</SelectItem>
-                <SelectItem value="connections">Connections</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterBar>
+          <Tabs value={mainTab} onValueChange={setMainTab} className="mt-2">
+            <TabsList className="bg-zinc-900 border border-zinc-800 mb-4">
+              <TabsTrigger value="sets" className="flex items-center gap-1.5 text-xs">
+                <FileText className="w-3.5 h-3.5" /> Drawing Sets ({drawingSets.length})
+              </TabsTrigger>
+              <TabsTrigger value="sheets" className="flex items-center gap-1.5 text-xs">
+                <Layers className="w-3.5 h-3.5" /> Sheet Management ({sheets.length})
+              </TabsTrigger>
+            </TabsList>
 
-          <ContentSection>
-            {isLoading ? (
-              <LoadingState message="Loading drawings..." />
-            ) : filteredSets.length === 0 ? (
-              <EmptyState
-                icon={FileText}
-                title={drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
-                description={drawingSets.length === 0 ? 'Create your first drawing set or upload drawings to get started' : 'Try adjusting your search or filters'}
-                actionLabel={drawingSets.length === 0 ? 'Create Drawing Set' : null}
-                onAction={drawingSets.length === 0 ? () => setShowCreateDialog(true) : null}
-              />
-            ) : (
-              <DrawingSetTable
-                sets={filteredSets}
-                sheets={sheets}
-                revisions={revisions}
-                projects={userProjects}
-                onSelectSet={handleSelectSet}
-              />
-            )}
-          </ContentSection>
+            <TabsContent value="sets">
+              <FilterBar>
+                <div className="flex-1 relative max-w-md">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                  <Input
+                    placeholder="Search by set name, number, or revision..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue placeholder="Filter by Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="IFA">IFA</SelectItem>
+                    <SelectItem value="BFA">BFA</SelectItem>
+                    <SelectItem value="BFS">BFS</SelectItem>
+                    <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
+                    <SelectItem value="FFF">FFF</SelectItem>
+                    <SelectItem value="As-Built">As-Built</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
+                  <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                    <SelectValue placeholder="Filter by Discipline" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectItem value="all">All Disciplines</SelectItem>
+                    <SelectItem value="structural">Structural</SelectItem>
+                    <SelectItem value="misc_metals">Misc Metals</SelectItem>
+                    <SelectItem value="stairs">Stairs</SelectItem>
+                    <SelectItem value="handrails">Handrails</SelectItem>
+                    <SelectItem value="connections">Connections</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FilterBar>
+              <ContentSection>
+                {isLoading ? (
+                  <LoadingState message="Loading drawings..." />
+                ) : filteredSets.length === 0 ? (
+                  <EmptyState
+                    icon={FileText}
+                    title={drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
+                    description={drawingSets.length === 0 ? 'Create your first drawing set or upload drawings to get started' : 'Try adjusting your search or filters'}
+                    actionLabel={drawingSets.length === 0 ? 'Create Drawing Set' : null}
+                    onAction={drawingSets.length === 0 ? () => setShowCreateDialog(true) : null}
+                  />
+                ) : (
+                  <DrawingSetTable
+                    sets={filteredSets}
+                    sheets={sheets}
+                    revisions={revisions}
+                    projects={userProjects}
+                    onSelectSet={handleSelectSet}
+                  />
+                )}
+              </ContentSection>
+            </TabsContent>
+
+            <TabsContent value="sheets">
+              <ContentSection>
+                <DrawingSheetManager
+                  projectId={activeProjectId}
+                  drawingSets={drawingSets}
+                />
+              </ContentSection>
+            </TabsContent>
+          </Tabs>
         </>
       )}
 

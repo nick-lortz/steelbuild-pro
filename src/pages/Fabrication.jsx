@@ -1363,6 +1363,46 @@ function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCanc
   );
 }
 
+function WPReadinessSelector({ workPackages, projectId }) {
+  const [selectedWPId, setSelectedWPId] = useState(workPackages[0]?.id || '');
+  const selectedWP = workPackages.find(wp => wp.id === selectedWPId);
+
+  return (
+    <Card className="bg-zinc-900 border-zinc-800">
+      <CardHeader>
+        <CardTitle className="text-sm uppercase tracking-widest text-amber-400 flex items-center gap-2">
+          <TrendingUp size={14} />
+          FRI / EII / MIS — Readiness Scoring
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-500 uppercase">Work Package</label>
+          <Select value={selectedWPId} onValueChange={setSelectedWPId}>
+            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+              <SelectValue placeholder="Select work package..." />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {workPackages.map(wp => (
+                <SelectItem key={wp.id} value={wp.id} className="text-white">
+                  {wp.wpid} — {wp.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {selectedWPId && (
+          <ReadinessScorePanel
+            workPackageId={selectedWPId}
+            projectId={projectId}
+            targetErectionStart={selectedWP?.install_day || selectedWP?.target_date}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function PrerequisitesPanel({ item, drawings, rfis }) {
   const prereqCheck = checkPrerequisites(item, drawings, rfis);
   

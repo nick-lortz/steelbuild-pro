@@ -301,6 +301,9 @@ export default function ProjectAssistant() {
               <TabsTrigger value="co" className="text-xs h-7 px-3">
                 <FileCheck className="w-3.5 h-3.5 mr-1.5" />CO Intel
               </TabsTrigger>
+              <TabsTrigger value="margin" className="text-xs h-7 px-3">
+                <DollarSign className="w-3.5 h-3.5 mr-1.5" />Margin Pulse
+              </TabsTrigger>
               <TabsTrigger value="email" className="text-xs h-7 px-3">
                 <Mail className="w-3.5 h-3.5 mr-1.5" />Draft Email
               </TabsTrigger>

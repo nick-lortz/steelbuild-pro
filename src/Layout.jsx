@@ -1,70 +1,545 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { FileText, BarChart3, Home, Menu, X } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { initSentry } from '@/components/providers/SentryProvider';
+import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
+import { useAuth } from '@/components/shared/hooks/useAuth';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Building,
+  DollarSign,
+  FileText,
+  MessageSquareWarning,
+  FileCheck,
+  Users,
+  Menu,
+  X,
+  ChevronRight,
+  ChevronDown,
+  Hash,
+  Sparkles,
+  File,
+  Calendar,
+  Truck,
+  Clock,
+  TrendingUp,
+  LogOut,
+  Settings,
+  UserCircle,
+  BarChart3,
+  Camera,
+  CheckCircle2,
+  LayoutDashboard,
+  Wrench,
+  Package,
+  MessageSquare,
+  Gauge,
+  AlertCircle,
+  Zap,
+  FolderOpen
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger } from
+'@/components/ui/dropdown-menu';
+import { Toaster } from '@/components/ui/toaster';
+import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { TabNavigationProvider } from '@/components/shared/hooks/useTabNavigation';
+import { SkipToMainContent } from '@/components/shared/accessibility';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import NotificationPanel from '@/components/notifications/NotificationPanel';
+import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
+import MobileNav from '@/components/layout/MobileNav';
+import ThemeToggle from '@/components/layout/ThemeToggle';
+import OfflineIndicator from '@/components/shared/OfflineIndicator';
+import CommandPalette from '@/components/shared/CommandPalette';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { SECURITY_HEADERS } from '@/components/shared/securityHeaders';
+import PullToRefresh from '@/components/shared/PullToRefresh';
+import FloatingPMA from '@/components/shared/FloatingPMA';
 
-export default function Layout({ children, currentPageName }) {
+const navGroups = [
+{
+  name: 'Dashboard',
+  icon: LayoutDashboard,
+  items: [
+  { name: 'Project Dashboard', page: 'ProjectDashboard', icon: LayoutDashboard },
+  { name: 'Projects', page: 'Projects', icon: Building },
+  { name: 'Calendar', page: 'Calendar', icon: Calendar },
+  { name: 'Alerts', page: 'Alerts', icon: AlertCircle },
+  { name: 'To-Do List', page: 'ToDoList', icon: CheckCircle2 }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Job Setup',
+  icon: FileCheck,
+  items: [
+  { name: 'Contracts', page: 'Contracts', icon: FileText },
+  { name: 'Job Setup', page: 'PMJobSetup', icon: CheckCircle2 },
+  { name: 'Scope & Exclusions', page: 'PMScopeExclusions', icon: FileText },
+  { name: 'Contacts', page: 'PMContacts', icon: Users }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Detailing & Drawings',
+  icon: FileText,
+  items: [
+  { name: 'Drawings', page: 'Drawings', icon: FileText },
+  { name: 'Detailing', page: 'Detailing', icon: FileCheck },
+  { name: 'Documents', page: 'Documents', icon: File },
+  { name: 'Document Hub', page: 'DocumentHub', icon: FolderOpen },
+  { name: 'Project Management', page: 'ProjectManagement', icon: LayoutDashboard }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Communications',
+  icon: MessageSquare,
+  items: [
+  { name: 'RFI Hub', page: 'RFIHub', icon: MessageSquareWarning },
+  { name: 'Submittals', page: 'Submittals', icon: FileCheck },
+  { name: 'Messages', page: 'Messages', icon: MessageSquare },
+  { name: 'Production Notes', page: 'ProductionMeetings', icon: Calendar },
+  { name: 'Meetings', page: 'Meetings', icon: Users },
+  { name: 'My Action Items', page: 'MyActionItems', icon: CheckCircle2 }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Fabrication',
+  icon: Wrench,
+  items: [
+  { name: 'Fabrication', page: 'Fabrication', icon: Wrench },
+  { name: 'Work Packages', page: 'WorkPackages', icon: Package }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Logistics & Deliveries',
+  icon: Truck,
+  items: [
+  { name: 'Deliveries', page: 'Deliveries', icon: Truck },
+  { name: 'Look-Ahead Planning', page: 'LookAheadPlanning', icon: Calendar },
+  { name: 'Shipping & Travel', page: 'PMShippingTravel', icon: Truck }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Field Execution',
+  icon: Camera,
+  items: [
+  { name: 'Schedule', page: 'Schedule', icon: Calendar },
+  { name: 'Weekly Schedule', page: 'WeeklySchedule', icon: Calendar },
+  { name: 'Field Tools', page: 'FieldTools', icon: Camera },
+  { name: 'Daily Logs', page: 'DailyLogs', icon: FileText },
+  { name: 'Photos', page: 'ProjectPhotos', icon: Camera }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Cost Control',
+  icon: DollarSign,
+  items: [
+  { name: 'Financials', page: 'FinancialsRedesign', icon: DollarSign },
+  { name: 'Budget Control', page: 'BudgetControl', icon: BarChart3 },
+  { name: 'Change Orders', page: 'ChangeOrders', icon: FileCheck },
+  { name: 'Cost Codes', page: 'CostCodes', icon: Hash },
+  { name: 'Labor & Scope', page: 'LaborScope', icon: Clock }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Resources',
+  icon: Users,
+  items: [
+  { name: 'Resources', page: 'Resources', icon: Users },
+  { name: 'Resource Management', page: 'ResourceManagement', icon: Package },
+  { name: 'Equipment', page: 'Equipment', icon: Truck },
+  { name: 'Labor', page: 'Labor', icon: Clock }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Reporting & Analytics',
+  icon: BarChart3,
+  items: [
+  { name: 'Portfolio Pulse', page: 'PortfolioPulse', icon: Gauge },
+  { name: 'Executive Roll-Up', page: 'ExecutiveRollUp', icon: TrendingUp },
+  { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: BarChart3 },
+  { name: 'Job Status Report', page: 'JobStatusReport', icon: FileText },
+  { name: 'Reports', page: 'Reports', icon: FileText },
+  { name: 'AI Insights', page: 'Insights', icon: Sparkles },
+  { name: 'Feedback Loop', page: 'FeedbackLoop', icon: TrendingUp },
+  { name: 'Performance', page: 'Performance', icon: Gauge }],
+
+  roles: ['admin', 'user']
+},
+{
+  name: 'Settings',
+  icon: Settings,
+  items: [
+  { name: 'Profile', page: 'Profile', icon: UserCircle, roles: ['admin', 'user'] },
+  { name: 'Notifications', page: 'NotificationSettings', icon: Settings, roles: ['admin', 'user'] },
+  { name: 'Admin Panel', page: 'Admin', icon: Settings, roles: ['admin'] },
+  { name: 'Data Management', page: 'DataManagement', icon: LayoutDashboard, roles: ['admin'] },
+  { name: 'App Audit', page: 'AuditDashboard', icon: AlertCircle, roles: ['admin'] },
+  { name: 'Fix Queue', page: 'AuditFixQueue', icon: CheckCircle2, roles: ['admin'] },
+  { name: 'QA Config', page: 'QAConfig', icon: Zap, roles: ['admin'] },
+  { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
+  { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }
+  ],
+
+  roles: ['admin', 'user']
+}];
+
+
+
+function LayoutContent({ children, currentPageName }) {
+  useRenderCount('LayoutContent');
+  useMountLogger('LayoutContent');
+
+  // Initialize Sentry on app load
+  useEffect(() => {
+    initSentry();
+  }, []);
+
+  const { activeProjectId } = useActiveProject();
+  const queryClient = useQueryClient();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState(() => {
+    const saved = localStorage.getItem('nav_expanded_groups');
+    return saved ? JSON.parse(saved) : ['Overview', 'Project Execution'];
+  });
 
-  const navItems = [
-    { label: 'Home', path: 'Home', icon: Home },
-    { label: 'Reporting', path: 'Reporting', icon: BarChart3 },
-    { label: 'Documents', path: 'DocumentManagement', icon: FileText },
-  ];
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries();
+  };
 
+  const toggleGroup = (groupName) => {
+    setExpandedGroups((prev) => {
+      const newExpanded = prev.includes(groupName) ?
+      prev.filter((g) => g !== groupName) :
+      [...prev, groupName];
+      localStorage.setItem('nav_expanded_groups', JSON.stringify(newExpanded));
+      return newExpanded;
+    });
+  };
+
+  // Single source of truth - imported from useAuth hook
+  const { user: currentUser, isLoading: userLoading } = useAuth();
+
+  // Set Sentry user context when authenticated
+  useEffect(() => {
+    if (!currentUser) return;
+    import('@/components/providers/SentryProvider').then(({ setSentryUser, setSentryContext }) => {
+      setSentryUser(currentUser);
+      if (activeProjectId) {
+        setSentryContext('project', { project_id: activeProjectId });
+      }
+    });
+  }, [currentUser, activeProjectId]);
+
+  const { data: activeProject } = useQuery({
+    queryKey: ['activeProject', activeProjectId],
+    queryFn: async () => {
+      if (!activeProjectId) return null;
+      return await base44.entities.Project.filter({ id: activeProjectId });
+    },
+    enabled: !!activeProjectId,
+    select: (data) => data?.[0] || null,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const handleLogout = () => {
+    base44.auth.logout();
+  };
+
+  const projectPhase = activeProject?.phase || 'fabrication';
+
+  const visibleNavGroups = React.useMemo(() => {
+    if (!currentUser) return navGroups;
+    return navGroups.map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+      !item.roles || item.roles.includes(currentUser.role)
+      )
+    })).filter((group) =>
+    (!group.roles || group.roles.includes(currentUser.role)) && group.items.length > 0
+    );
+  }, [currentUser]);
+
+  // Show loading state while checking auth
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>);
+
+  }
+
+  // Apply security headers (documented in Layout)
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+
+    // CSP headers applied server-side; CSP documented in components/shared/securityHeaders.js
+  }
   return (
-    <div className="flex min-h-screen bg-gray-900">
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-50 md:hidden bg-gray-800 p-2 rounded-lg text-white"
-      >
-        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+    <div className="min-h-screen bg-black text-[#E5E7EB] relative overflow-hidden">
+      {/* Ambient background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-50%] right-[-25%] w-full h-full opacity-40"
+             style={{ background: 'radial-gradient(circle at center, rgba(255, 107, 44, 0.15) 0%, transparent 60%)' }} />
+        <div className="absolute bottom-[-50%] left-[-25%] w-full h-full opacity-30"
+             style={{ background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 60%)' }} />
+      </div>
+      
+      <SkipToMainContent />
+      <OfflineIndicator />
+      <Toaster />
+      <CommandPalette />
+      {/* Mobile Header */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-black/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4"
+              style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 text-[#9CA3AF] hover:text-[#FF9D42] transition-colors">
+
+            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center shadow-lg"
+                 style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.5)' }}>
+              <Building size={18} className="text-black" />
+            </div>
+            <span className="font-bold text-lg tracking-tight text-[#E5E7EB]">SteelBuild Pro</span>
+          </div>
+        </div>
+
+        {currentUser &&
+        <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <NotificationCenter />
+            <DropdownMenu>
+              <DropdownMenuTrigger className="p-2">
+                <UserCircle size={24} className="text-zinc-400" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium text-white">
+                    {currentUser.full_name || currentUser.email}
+                  </p>
+                  <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
+                </div>
+                <DropdownMenuSeparator className="bg-zinc-800" />
+                <DropdownMenuItem asChild className="text-white hover:text-white">
+                  <Link to={createPageUrl('Settings')}>
+                    <Settings size={16} className="mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="text-red-400 hover:text-red-300">
+                  <LogOut size={16} className="mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        }
+      </header>
+
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to logout?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-amber-500 hover:bg-amber-600 text-black">
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 w-64 bg-gray-800 border-r border-gray-700 transform transition-transform
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 z-40 md:relative
-      `}>
-        <div className="p-6 border-b border-gray-700">
-          <h1 className="text-xl font-bold text-white">Steel Project</h1>
+      <aside
+        className={cn(
+          'fixed top-0 left-0 z-40 h-full w-64 bg-black/95 backdrop-blur-md border-r border-[rgba(255,255,255,0.05)] flex flex-col',
+          'lg:translate-x-0 transition-transform duration-300',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+        style={{ boxShadow: '4px 0 24px rgba(0, 0, 0, 0.8)' }}>
+
+        <div className="h-16 flex items-center px-4 border-b border-[rgba(255,255,255,0.05)] flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
+               style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.5)' }}>
+            <Building size={18} className="text-black" />
+          </div>
+          <span className="font-bold text-lg tracking-wider ml-3 text-[#E5E7EB]">SteelBuild Pro</span>
         </div>
-        <nav className="p-4 space-y-2">
-          {navItems.map(item => {
-            const Icon = item.icon;
-            const isActive = currentPageName === item.path;
+
+        <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
+          {visibleNavGroups.map((group) => {
+            const isExpanded = expandedGroups.includes(group.name);
+            const GroupIcon = group.icon;
+            const hasActivePage = group.items.some((item) => item.page === currentPageName);
+
             return (
-              <Link
-                key={item.path}
-                to={createPageUrl(item.path)}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {item.label}
-              </Link>
-            );
+              <div key={group.name}>
+                {/* Group Header */}
+                <button
+                  onClick={() => toggleGroup(group.name)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg',
+                    hasActivePage ? 'text-[#FF9D42] bg-[rgba(255,157,66,0.08)]' : 'text-[#6B7280] hover:text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)]'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <GroupIcon size={12} />
+                    <span>{group.name}</span>
+                  </div>
+                  <ChevronDown
+                    size={12}
+                    className={cn(
+                      'transition-transform',
+                      isExpanded ? 'rotate-0' : '-rotate-90'
+                    )} />
+
+                </button>
+
+                {/* Group Items */}
+                {isExpanded &&
+                <div className="ml-2 mt-0.5 space-y-0.5">
+                    {group.items.map((item) => {
+                    const isActive = currentPageName === item.page;
+                    const Icon = item.icon;
+
+                    return (
+                      <Link
+                        key={item.page}
+                        to={createPageUrl(item.page)}
+                        onClick={() => setSidebarOpen(false)}
+                        className={cn(
+                          'flex items-center gap-2.5 px-3 py-2 text-xs font-medium transition-all rounded-lg group',
+                          isActive ?
+                          'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' :
+                          'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)] hover:border-[rgba(255,157,66,0.1)] border border-transparent'
+                        )}
+                        style={isActive ? { boxShadow: '0 0 20px rgba(255, 157, 66, 0.2)' } : {}}>
+
+                          <Icon size={14} className={isActive ? '' : 'group-hover:text-[#FF9D42] transition-colors'} />
+                          {item.name}
+                        </Link>);
+
+                  })}
+                  </div>
+                }
+              </div>);
+
           })}
         </nav>
+
+        {currentUser &&
+        <div className="border-t border-[rgba(255,255,255,0.05)] p-3 flex-shrink-0 bg-[rgba(0,0,0,0.2)]">
+            <div className="flex items-center justify-between mb-2 px-2">
+              <ThemeToggle />
+              <NotificationCenter />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-[rgba(255,157,66,0.05)] transition-all rounded-lg border border-transparent hover:border-[rgba(255,157,66,0.1)]">
+                <UserCircle size={16} className="text-[#FF9D42]" />
+                <div className="flex-1 text-left">
+                  <p className="text-xs font-semibold text-[#E5E7EB] truncate tracking-wide">
+                    {currentUser.full_name || currentUser.email}
+                  </p>
+                  <p className="text-[10px] text-[#6B7280] uppercase tracking-widest">{currentUser.role}</p>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-[#151B24]/95 backdrop-blur-md border-[rgba(255,255,255,0.1)] text-[#E5E7EB]">
+                <DropdownMenuItem asChild className="text-white hover:text-white">
+                  <Link to={createPageUrl('Settings')}>
+                    <Settings size={16} className="mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-zinc-800" />
+                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="text-red-400 hover:text-red-300">
+                  <LogOut size={16} className="mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        }
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 w-full pt-14 md:pt-0">
-        {children}
+      {sidebarOpen &&
+      <div
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 lg:hidden transition-opacity"
+        onClick={() => setSidebarOpen(false)} />
+
+      }
+
+      <main id="main-content" className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0 relative z-10" role="main">
+        <PullToRefresh onRefresh={handleRefresh}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentPageName}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: [0.65, 0, 0.35, 1] }}
+              className="text-[#E5E7EB] p-4 lg:p-6">
+
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </PullToRefresh>
       </main>
 
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 md:hidden z-30"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-    </div>
-  );
+      <MobileNav currentPageName={currentPageName} />
+      <FloatingPMA />
+      </div>);
+
 }
+
+const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, currentPageName }) {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider>
+        <ConfirmProvider>
+          <ActiveProjectProvider>
+            <TabNavigationProvider>
+              <LayoutContent children={children} currentPageName={currentPageName} />
+            </TabNavigationProvider>
+          </ActiveProjectProvider>
+        </ConfirmProvider>
+      </ThemeProvider>
+    </ErrorBoundary>);
+
+});
+
+export default LayoutWithProviders;

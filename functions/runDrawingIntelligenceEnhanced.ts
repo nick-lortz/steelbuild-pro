@@ -180,7 +180,7 @@ Return ONLY JSON: { "drift_findings": [ ...] }`;
         inspection_risk: sev >= 4 ? 'high' : 'low',
         confidence_score: r.confidence || 80,
         status: 'open',
-        resolution_recommendation: r.recommendation,
+        mitigation_plan: r.recommendation || null,
         detected_at: now
       });
       installIssueIds.push(issue.id);

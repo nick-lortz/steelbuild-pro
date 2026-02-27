@@ -162,13 +162,15 @@ Return ONLY JSON: { "drift_findings": [ ...] }`;
     console.log(`[DI Enhanced] Phase 3: ${installRisks.length} installability risks | Phase 4: ${driftFindings.length} drift findings`);
 
     // ===== SAVE INSTALLABILITY RISKS → ErectionIssue =====
+    const fallbackSheetId = sheetsWithFiles[0]?.id;
     const installIssueIds = [];
     for (const r of installRisks) {
       const sev = r.severity || 3;
       const riskMap = { 5: 'high', 4: 'high', 3: 'medium', 2: 'low', 1: 'low' };
+      const resolvedSheetId = sheetByNumber(r.sheet_reference) || fallbackSheetId;
       const issue = await base44.asServiceRole.entities.ErectionIssue.create({
         project_id,
-        sheet_id: sheetByNumber(r.sheet_reference),
+        sheet_id: resolvedSheetId,
         issue_type: 'installability',
         description: r.description,
         related_connection: r.connection_reference || r.member_mark,

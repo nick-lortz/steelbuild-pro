@@ -562,6 +562,14 @@ export default function DrawingIntelligenceDashboard({ projectId, drawingSetId, 
             />
           ))}
         </TabsContent>
+        {/* Drift & Install tab */}
+        <TabsContent value="drift_install" className="mt-4">
+          <DesignDriftPanel
+            projectId={projectId}
+            drawingSetId={drawingSetId}
+            drawingSetLabel={drawingSetLabel}
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );

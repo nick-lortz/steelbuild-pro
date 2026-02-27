@@ -19,7 +19,7 @@ import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import SubmittalDetailPanel from '@/components/submittals/SubmittalDetailPanel';
 import SubmittalForm from '@/components/submittals/SubmittalForm';
-import { Plus, Search, Eye, Trash2, FileText } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, FileText, Sparkles, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 

@@ -8,10 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Search, Upload, FolderOpen, Clock, Download, Share2, Trash2, FileText, Filter } from 'lucide-react';
-import DocumentUploader from '@/components/documents/DocumentUploader';
-import DocumentList from '@/components/documents/DocumentList';
-import DocumentVersionHistory from '@/components/documents/DocumentVersionHistory';
-import DocumentActions from '@/components/documents/DocumentActions';
+import DocumentUploader from '@/components/documents/DocumentUploader.jsx';
+import DocumentList from '@/components/documents/DocumentList.jsx';
+import DocumentVersionHistory from '@/components/documents/DocumentVersionHistory.jsx';
+import DocumentActions from '@/components/documents/DocumentActions.jsx';
 
 const CATEGORIES = [
   { value: 'drawing', label: 'Drawings', color: 'bg-blue-100 text-blue-800' },

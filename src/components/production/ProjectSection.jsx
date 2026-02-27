@@ -331,7 +331,7 @@ function ActionItemCard({ action, onUpdate, onDelete }) {
 }
 
 function CategorySection({ category, notes, onUpdate, onDelete, openCount }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(category === 'general');
   
   const categoryLabels = {
     detailing: 'Detailing',

@@ -161,6 +161,12 @@ Return ONLY JSON: { "drift_findings": [ ...] }`;
 
     console.log(`[DI Enhanced] Phase 3: ${installRisks.length} installability risks | Phase 4: ${driftFindings.length} drift findings`);
 
+    // Build a lookup map: sheetId → fabrication_status
+    const sheetFabStatusMap = {};
+    for (const s of sheetsWithFiles) {
+      sheetFabStatusMap[s.id] = s.fabrication_status || 'issued_for_approval';
+    }
+
     // ===== SAVE INSTALLABILITY RISKS → ErectionIssue =====
     const fallbackSheetId = sheetsWithFiles[0]?.id;
     const installIssueIds = [];
@@ -171,6 +177,7 @@ Return ONLY JSON: { "drift_findings": [ ...] }`;
       const issue = await base44.asServiceRole.entities.ErectionIssue.create({
         project_id,
         sheet_id: resolvedSheetId,
+        sheet_fab_status_at_detection: sheetFabStatusMap[resolvedSheetId] || 'issued_for_approval',
         issue_type: 'installability',
         description: r.description,
         related_connection: r.connection_reference || r.member_mark,

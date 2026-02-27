@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
           inspection_risk: riskLevel === 'HIGH' ? 'high' : 'low',
           confidence_score: 80,
           status: 'open',
-          resolution_recommendation: details.filter(d => d.recommendation).map(d => d.recommendation).join(' | '),
+          mitigation_plan: details.filter(d => d.recommendation).map(d => d.recommendation).join(' | '),
           detected_at: new Date().toISOString()
         });
       }

@@ -146,6 +146,21 @@ export default function DesignDriftPanel({ projectId, drawingSetId, drawingSetLa
     enabled: !!projectId
   });
 
+  const { data: driftRFIs = [] } = useQuery({
+    queryKey: ['drift-rfi-suggestions', projectId],
+    queryFn: () => base44.entities.RFISuggestion.filter({ project_id: projectId, scope_change: true }),
+    enabled: !!projectId
+  });
+
+  // Build a map: location_reference → labor_delta_risk from drift RFI suggestions
+  const laborDeltaMap = useMemo(() => {
+    const map = {};
+    driftRFIs.forEach(r => {
+      if (r.location_reference) map[r.location_reference] = r.labor_delta_risk;
+    });
+    return map;
+  }, [driftRFIs]);
+
   const updateFlag = useMutation({
     mutationFn: ({ id, data }) => base44.entities.DesignIntentFlag.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['design-intent-flags', projectId] })

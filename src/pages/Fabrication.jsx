@@ -833,6 +833,11 @@ export default function FabricationPage() {
 
           {/* Fabrication Readiness */}
           <TabsContent value="readiness" className="space-y-4 mt-6">
+            {/* FRI / EII / MIS Scoring Panel — per WP */}
+            {workPackages.length > 0 && (
+              <WPReadinessSelector workPackages={workPackages} projectId={activeProjectId} />
+            )}
+
             <Card className="bg-green-950/20 border-green-500/30">
               <CardHeader>
                 <CardTitle className="text-sm uppercase tracking-widest text-green-400 flex items-center gap-2">

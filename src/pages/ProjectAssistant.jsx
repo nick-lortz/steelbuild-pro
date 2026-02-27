@@ -492,11 +492,17 @@ export default function ProjectAssistant() {
             <div className="max-w-4xl mx-auto space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-base font-bold text-white">Predictive Analytics</h2>
-                <Button onClick={runPredictiveAnalytics} disabled={runningAnalysis}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs">
-                  {runningAnalysis ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-                  Run Forecast
-                </Button>
+                <div className="flex gap-2">
+                  <a href={createPageUrl('Reporting')} className="inline-flex items-center gap-1 px-3 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs rounded-md transition-colors">
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    Full Dashboard
+                  </a>
+                  <Button onClick={runPredictiveAnalytics} disabled={runningAnalysis}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs">
+                    {runningAnalysis ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                    Run Forecast
+                  </Button>
+                </div>
               </div>
 
               {forecast ? (

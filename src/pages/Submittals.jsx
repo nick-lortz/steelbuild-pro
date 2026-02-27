@@ -222,13 +222,24 @@ export default function Submittals() {
         title="Submittals"
         subtitle={`${submittals.length} submittals`}
         actions={
-          <Button 
-            onClick={() => setShowCreateDialog(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
-          >
-            <Plus size={16} className="mr-2" />
-            New Submittal
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowAIPanel(true)}
+              variant="outline"
+              className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+              disabled={!activeProjectId}
+            >
+              <Sparkles size={16} className="mr-2" />
+              AI Generate
+            </Button>
+            <Button 
+              onClick={() => setShowCreateDialog(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+            >
+              <Plus size={16} className="mr-2" />
+              New Submittal
+            </Button>
+          </div>
         }
       />
 

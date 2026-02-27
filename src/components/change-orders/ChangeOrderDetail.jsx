@@ -13,6 +13,7 @@ import { toast } from '@/components/ui/notifications';
 import VersionHistory from './VersionHistory';
 import LinkagePanel from './LinkagePanel';
 import AIImpactAnalysis from './AIImpactAnalysis';
+import SOVAllocationEditor from './SOVAllocationEditor';
 
 export default function ChangeOrderDetail({ changeOrder, projects, onEdit, onDelete, onUpdate, onClose }) {
   const [activeTab, setActiveTab] = useState('overview');

@@ -72,6 +72,7 @@ const navGroups = [
   name: 'Dashboard',
   icon: LayoutDashboard,
   items: [
+  { name: 'Daily PM Dashboard', page: 'DailyPMDashboard', icon: Gauge },
   { name: 'Project Dashboard', page: 'ProjectDashboard', icon: LayoutDashboard },
   { name: 'Projects', page: 'Projects', icon: Building },
   { name: 'Calendar', page: 'Calendar', icon: Calendar },

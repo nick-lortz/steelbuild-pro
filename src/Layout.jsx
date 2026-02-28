@@ -38,7 +38,8 @@ import {
   Gauge,
   AlertCircle,
   Zap,
-  FolderOpen
+  FolderOpen,
+  Eye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {

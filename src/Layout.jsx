@@ -97,6 +97,7 @@ const navGroups = [
   icon: FileText,
   items: [
   { name: 'Drawings', page: 'Drawings', icon: FileText },
+  { name: 'Drawing Viewer', page: 'DrawingViewer', icon: Eye },
   { name: 'Detailing', page: 'Detailing', icon: FileCheck },
   { name: 'Documents', page: 'Documents', icon: File },
   { name: 'Document Hub', page: 'DocumentHub', icon: FolderOpen },

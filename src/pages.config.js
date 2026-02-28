@@ -138,6 +138,7 @@ import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
 import DailyPMDashboard from './pages/DailyPMDashboard';
+import DrawingViewer from './pages/DrawingViewer';
 import __Layout from './Layout.jsx';
 
 
@@ -233,6 +234,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
     "DailyPMDashboard": DailyPMDashboard,
+    "DrawingViewer": DrawingViewer,
 }
 
 export const pagesConfig = {

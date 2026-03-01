@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { useAuth } from '@/components/shared/hooks/useAuth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import {
   Clock, Truck, HardHat, Users, AlertCircle, CheckCircle2,
   XCircle, Zap, Loader2, Copy, FileText, Package,
-  GitBranch, ShieldCheck
+  GitBranch, ShieldCheck, LogIn, LogOut, UserCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays, isValid } from 'date-fns';

@@ -17,10 +17,11 @@ import DataTable from '@/components/ui/DataTable';
 import PermissionManager from '@/components/settings/PermissionManager';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
 import TrainingCenter from '@/components/settings/TrainingCenter';
-import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle, GraduationCap } from 'lucide-react';
+import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle, GraduationCap, Database } from 'lucide-react';
 import { toast } from "sonner";
 import { safeFormat } from '@/components/shared/dateUtilsSafe';
 import { cn } from '@/lib/utils';
+import DataTransfer from '@/components/settings/DataTransfer';
 
 export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -212,6 +213,7 @@ export default function Settings() {
             <TabsTrigger value="notifications"><Bell size={12} className="mr-1.5" />Notifications</TabsTrigger>
             <TabsTrigger value="training"><GraduationCap size={12} className="mr-1.5" />Training</TabsTrigger>
             <TabsTrigger value="feedback"><MessageSquare size={12} className="mr-1.5" />Feedback</TabsTrigger>
+            {isAdmin && <TabsTrigger value="data"><Database size={12} className="mr-1.5" />Data</TabsTrigger>}
           </TabsList>
 
           {/* Profile */}

@@ -33,8 +33,13 @@ const CATEGORY_COLORS = {
 };
 
 export default function WidgetConfigDialog({ open, onClose, availableWidgets, currentLayout, onUpdateLayout }) {
-  const [selected, setSelected] = useState(() => new Set(currentLayout));
+  const [selected, setSelected] = useState(new Set(currentLayout));
   const [filter, setFilter] = useState('All');
+
+  // Sync selected state whenever dialog opens
+  React.useEffect(() => {
+    if (open) setSelected(new Set(currentLayout));
+  }, [open]);
 
   const categories = ['All', ...new Set(availableWidgets.map(w => WIDGET_META[w.id]?.category || 'Other'))];
 

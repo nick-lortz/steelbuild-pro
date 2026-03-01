@@ -271,12 +271,30 @@ GC Roadblocks: ${gcRoadblocks.length}
     }
   };
 
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (!activeProjectId) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <HardHat size={40} className="mx-auto mb-4 text-[#4B5563]" />
-          <p className="text-[#6B7280] text-sm">Select a project to view your daily PM dashboard</p>
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-xl font-bold text-[#E5E7EB] tracking-tight">Daily PM Dashboard</h1>
+          <p className="text-xs text-[#6B7280] mt-0.5">{format(today, 'EEEE, MMMM d, yyyy')} — Select a project to load your dashboard</p>
+        </div>
+        <div className="max-w-sm">
+          <Select onValueChange={v => setActiveProjectId(v)}>
+            <SelectTrigger className="bg-[#0A0A0A] border-[rgba(255,255,255,0.1)] h-10">
+              <SelectValue placeholder="Select Project..." />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0A0A0A] border-[rgba(255,255,255,0.1)]">
+              {allProjects.map(p => (
+                <SelectItem key={p.id} value={p.id} className="text-sm">{p.project_number} · {p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     );

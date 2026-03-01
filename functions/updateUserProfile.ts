@@ -34,18 +34,9 @@ Deno.serve(async (req) => {
       };
     }
 
-    // Use auth.updateMe for full_name (it's a protected built-in field)
-    if (updatePayload.full_name !== undefined) {
-      await base44.auth.updateMe({ full_name: updatePayload.full_name });
-      delete updatePayload.full_name;
-    }
+    const updatedUser = await base44.asServiceRole.entities.User.update(user.id, updatePayload);
 
-    // Update remaining custom fields on the User entity
-    if (Object.keys(updatePayload).length > 0) {
-      await base44.asServiceRole.entities.User.update(user.id, updatePayload);
-    }
-
-    return Response.json({ success: true });
+    return Response.json({ success: true, user: updatedUser });
   } catch (error) {
     console.error('Update error:', error);
     return Response.json({ error: error.message }, { status: 500 });

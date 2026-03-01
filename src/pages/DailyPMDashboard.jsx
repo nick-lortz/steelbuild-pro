@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, differenceInDays, isValid } from 'date-fns';
+import { useAppReady } from '@/components/shared/hooks/useAppReady';
 
 const daysDiff = (dateStr) => {
   if (!dateStr) return 0;

@@ -290,7 +290,7 @@ function LayoutContent({ children, currentPageName }) {
   }, [currentUser]);
 
   // Show loading state only on initial load (user is undefined = never resolved yet)
-  if (userLoading && user === undefined) {
+  if (userLoading && currentUser === undefined) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

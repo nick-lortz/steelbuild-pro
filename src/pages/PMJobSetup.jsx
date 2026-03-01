@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import PMProjectSelector from '@/components/pm-toolkit/PMProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, Plus, Mail, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Circle, Plus, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const DEFAULT_CHECKLIST = [
+  { title: 'Project Information', order: 0 },
+  { title: 'Drawings / Revisions / Submittals', order: 1 },
+  { title: 'RFIs', order: 2 },
+  { title: 'Work Packages', order: 3 },
+  { title: 'Schedule', order: 4 },
+  { title: 'Budget & Financials', order: 5 },
+  { title: 'SOV', order: 6 },
+  { title: 'Labor & Scope', order: 7 },
+  { title: 'Resources', order: 8 },
+  { title: 'Change Orders', order: 9 },
+];
 
 export default function PMJobSetup() {
   const { activeProjectId } = useActiveProject();

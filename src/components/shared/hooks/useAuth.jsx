@@ -24,12 +24,7 @@ export function useAuth() {
     },
     staleTime: Infinity,
     gcTime: Infinity,
-    retry: (failureCount, err) => {
-      const status = err?.response?.status || err?.status;
-      // Don't retry auth failures, retry transient errors up to 3x
-      if (status === 401 || status === 403) return false;
-      return failureCount < 3;
-    },
+    retry: false,
     refetchOnWindowFocus: true,
     refetchOnMount: false,
     refetchInterval: false,

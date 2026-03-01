@@ -170,9 +170,9 @@ export default function PMJobSetup() {
             </div>
           ))}
 
-          {checklistItems.length === 0 && templates.length === 0 && (
+          {checklistItems.length === 0 && !seeding && (
             <div className="text-center py-8 text-[#6B7280]">
-              No checklist items yet. Create your first task above.
+              No checklist items yet. Add a task above.
             </div>
           )}
         </CardContent>

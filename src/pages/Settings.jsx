@@ -512,6 +512,13 @@ export default function Settings() {
             <TrainingCenter />
           </TabsContent>
 
+          {/* Data Transfer */}
+          {isAdmin && (
+            <TabsContent value="data">
+              <DataTransfer />
+            </TabsContent>
+          )}
+
           {/* Feedback */}
           <TabsContent value="feedback">
             <div className="space-y-4">

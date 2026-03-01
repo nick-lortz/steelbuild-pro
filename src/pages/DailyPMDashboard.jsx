@@ -145,7 +145,7 @@ export default function DailyPMDashboard() {
   const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis-daily', activeProjectId],
     queryFn: () => base44.entities.RFI.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId,
+    enabled: !!activeProjectId && appReady,
     staleTime: 5 * 60 * 1000,
   });
 

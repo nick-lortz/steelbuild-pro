@@ -78,14 +78,8 @@ export default function Drawings() {
 
   const { data: sheets = [] } = useQuery({
     queryKey: ['drawing-sheets', activeProjectId],
-    queryFn: async () => {
-      if (!activeProjectId) return [];
-      const setIds = drawingSets.map(s => s.id);
-      if (setIds.length === 0) return [];
-      const allSheets = await base44.entities.DrawingSheet.list();
-      return allSheets.filter(sheet => setIds.includes(sheet.drawing_set_id));
-    },
-    enabled: !!activeProjectId && drawingSets.length > 0,
+    queryFn: () => base44.entities.DrawingSheet.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 

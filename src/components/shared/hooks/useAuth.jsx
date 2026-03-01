@@ -12,13 +12,7 @@ export function useAuth() {
       try {
         return await base44.auth.me();
       } catch (err) {
-        const status = err?.response?.status || err?.status;
-        if (status === 401 && !window.location.hostname.includes('preview')) {
-          base44.auth.redirectToLogin(window.location.pathname);
-          return null;
-        }
-        // For non-auth errors (network, etc.), throw so React Query can retry
-        if (status !== 401) throw err;
+        // Return null for any error (auth, network, app not found, etc.)
         return null;
       }
     },

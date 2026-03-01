@@ -417,6 +417,7 @@ export default function Deliveries() {
   const metrics = [
     { label: 'Total', value: kpis.total, color: 'text-white', icon: Truck },
     { label: 'Today', value: kpis.today, color: 'text-blue-400', icon: Calendar },
+    { label: 'At Risk (5d)', value: kpis.atRisk, color: kpis.atRisk > 0 ? 'text-amber-400' : 'text-zinc-400', icon: AlertTriangle },
     { label: 'On-Time', value: `${kpis.onTimePercent.toFixed(0)}%`, color: 'text-green-400', icon: null },
     { label: 'Exceptions', value: kpis.exceptions, color: kpis.exceptions > 0 ? 'text-red-400' : 'text-zinc-400', icon: AlertTriangle }
   ];

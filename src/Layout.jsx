@@ -61,6 +61,7 @@ import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
+import ProjectSelector from '@/components/layout/ProjectSelector';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';

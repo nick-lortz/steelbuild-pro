@@ -265,12 +265,19 @@ export default function Deliveries() {
       return date && isToday(parseISO(date));
     }).length;
     const exceptions = filteredDeliveries.filter(d => d.exceptions?.some(e => !e.resolved)).length;
+    const atRisk = filteredDeliveries.filter(d => {
+      const dateStr = d.confirmed_date || d.scheduled_date || d.requested_date;
+      if (!dateStr || ['received', 'cancelled', 'closed'].includes(d.delivery_status)) return false;
+      const days = differenceInDays(parseISO(dateStr), new Date());
+      return days >= 0 && days <= 5 && !['confirmed', 'arrived_on_site'].includes(d.delivery_status);
+    }).length;
 
     return {
       total: filteredDeliveries.length,
       today: todaysCount,
       onTimePercent: received.length > 0 ? (onTime.length / received.length) * 100 : 0,
-      exceptions
+      exceptions,
+      atRisk
     };
   }, [filteredDeliveries]);
 

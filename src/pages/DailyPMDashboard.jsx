@@ -112,9 +112,35 @@ function AIActionCard({ title, description, icon: Icon, color, onRun, result, lo
 export default function DailyPMDashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const { user } = useAuth();
+  const { isReady: appReady, error: appError } = useAppReady();
   const [aiResults, setAiResults] = useState({});
   const [aiLoading, setAiLoading] = useState({});
   const today = new Date();
+
+  // Guard: Do not fetch data until SDK is ready
+  if (appError) {
+    return (
+      <div className="space-y-5">
+        <h1 className="text-xl font-bold text-[#E5E7EB]">Daily PM Dashboard</h1>
+        <div className="bg-red-950/40 border border-red-800/30 rounded-lg p-4">
+          <p className="text-sm text-red-400">App initialization error: {appError}</p>
+          <p className="text-xs text-red-400/70 mt-2">Please refresh the page or contact support.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!appReady) {
+    return (
+      <div className="space-y-5">
+        <h1 className="text-xl font-bold text-[#E5E7EB]">Daily PM Dashboard</h1>
+        <div className="flex items-center gap-3 py-8">
+          <div className="w-5 h-5 border-2 border-[#FF9D42] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[#6B7280]">Initializing app context...</p>
+        </div>
+      </div>
+    );
+  }
 
   const { data: rfis = [], isLoading: rfisLoading } = useQuery({
     queryKey: ['rfis-daily', activeProjectId],

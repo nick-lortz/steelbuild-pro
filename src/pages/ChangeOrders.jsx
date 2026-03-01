@@ -431,42 +431,73 @@ export default function ChangeOrders() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewingCO(co);
-                          }}
-                          className="text-zinc-400 hover:text-white h-8"
-                        >
-                          <Eye size={14} className="mr-1" />
-                          View
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(co);
-                          }}
-                          className="text-zinc-400 hover:text-blue-400 h-8"
-                        >
-                          <Edit size={14} className="mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteCO(co);
-                          }}
-                          className="text-zinc-500 hover:text-red-500 h-8 w-8"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                       {/* Quick Approval Buttons for submitted/under_review */}
+                       {['submitted', 'under_review'].includes(co.status) && (
+                         <>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               quickStatusMutation.mutate({ id: co.id, status: 'approved' });
+                             }}
+                             className="h-8 text-green-400 hover:text-green-300 hover:bg-green-900/20 text-xs gap-1"
+                             disabled={quickStatusMutation.isPending}
+                           >
+                             <CheckCircle2 size={13} />
+                             Approve
+                           </Button>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               quickStatusMutation.mutate({ id: co.id, status: 'rejected' });
+                             }}
+                             className="h-8 text-red-400 hover:text-red-300 hover:bg-red-900/20 text-xs gap-1"
+                             disabled={quickStatusMutation.isPending}
+                           >
+                             <XCircle size={13} />
+                             Reject
+                           </Button>
+                         </>
+                       )}
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setViewingCO(co);
+                         }}
+                         className="text-zinc-400 hover:text-white h-8"
+                       >
+                         <Eye size={14} className="mr-1" />
+                         View
+                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleEdit(co);
+                         }}
+                         className="text-zinc-400 hover:text-blue-400 h-8"
+                       >
+                         <Edit size={14} className="mr-1" />
+                         Edit
+                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="icon"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setDeleteCO(co);
+                         }}
+                         className="text-zinc-500 hover:text-red-500 h-8 w-8"
+                       >
+                         <Trash2 size={14} />
+                       </Button>
                       </div>
                     </div>
                   </CardContent>

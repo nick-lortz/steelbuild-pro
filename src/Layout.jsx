@@ -405,6 +405,7 @@ function LayoutContent({ children, currentPageName }) {
           <span className="font-bold text-lg tracking-wider ml-3 text-[#E5E7EB]">SteelBuild Pro</span>
         </div>
 
+        <ProjectSelector />
         <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
           {visibleNavGroups.map((group) => {
             const isExpanded = expandedGroups.includes(group.name);

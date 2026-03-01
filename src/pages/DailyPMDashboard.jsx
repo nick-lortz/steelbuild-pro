@@ -109,7 +109,7 @@ function AIActionCard({ title, description, icon: Icon, color, onRun, result, lo
 }
 
 export default function DailyPMDashboard() {
-  const { activeProjectId } = useActiveProject();
+  const { activeProjectId, setActiveProjectId } = useActiveProject();
   const { user } = useAuth();
   const [aiResults, setAiResults] = useState({});
   const [aiLoading, setAiLoading] = useState({});

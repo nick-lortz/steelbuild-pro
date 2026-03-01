@@ -68,9 +68,9 @@ export default function Settings() {
     if (currentUser) {
       setProfileData({
         full_name: currentUser.full_name || '',
-        phone: currentUser.phone || '',
-        title: currentUser.title || '',
-        department: currentUser.department || ''
+        phone: currentUser.phone || currentUser.data?.phone || '',
+        title: currentUser.title || currentUser.data?.title || '',
+        department: currentUser.department || currentUser.data?.department || ''
       });
       if (currentUser.display_preferences) {
         setDisplayPrefs((prev) => ({ ...prev, ...currentUser.display_preferences }));

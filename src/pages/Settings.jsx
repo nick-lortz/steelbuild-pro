@@ -409,9 +409,9 @@ export default function Settings() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button onClick={() => updateProfileMutation.mutate({ display_preferences: displayPrefs })} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                  <Button onClick={() => updateProfileMutation.mutate({ display_preferences: displayPrefs })} disabled={updateProfileMutation.isPending} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
                     <Save size={14} className="mr-1" />
-                    SAVE
+                    {updateProfileMutation.isPending ? 'SAVING...' : 'SAVE DISPLAY'}
                   </Button>
                 </div>
               </CardContent>

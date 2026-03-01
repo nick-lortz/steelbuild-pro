@@ -28,15 +28,12 @@ export default function PMJobSetup() {
   const [showEmailDraft, setShowEmailDraft] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
+  const [seeding, setSeeding] = useState(false);
+
   const { data: checklistItems = [], isLoading } = useQuery({
     queryKey: ['checklistItems', activeProjectId],
     queryFn: () => base44.entities.ProjectChecklistItem.filter({ project_id: activeProjectId, category: 'job_setup' }),
     enabled: !!activeProjectId
-  });
-
-  const { data: templates = [] } = useQuery({
-    queryKey: ['checklistTemplates'],
-    queryFn: () => base44.entities.ProjectChecklistTemplate.filter({ category: 'job_setup' })
   });
 
   const { data: emailTemplates = [] } = useQuery({
@@ -44,41 +41,31 @@ export default function PMJobSetup() {
     queryFn: () => base44.entities.EmailTemplate.filter({ category: 'job_setup' })
   });
 
-  const { data: project } = useQuery({
-    queryKey: ['project', activeProjectId],
-    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
-    enabled: !!activeProjectId,
-    select: (data) => data[0]
-  });
-
   const updateItemMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ProjectChecklistItem.update(id, data),
     onSuccess: () => queryClient.invalidateQueries(['checklistItems'])
   });
 
-  const createFromTemplate = useMutation({
-    mutationFn: async (templateId) => {
-      const template = templates.find(t => t.id === templateId);
-      if (!template) return;
-      
-      const promises = template.items.map((item, idx) =>
+  // Auto-seed default checklist when a project has no items
+  useEffect(() => {
+    if (!activeProjectId || isLoading || checklistItems.length > 0 || seeding) return;
+    setSeeding(true);
+    Promise.all(
+      DEFAULT_CHECKLIST.map(item =>
         base44.entities.ProjectChecklistItem.create({
           project_id: activeProjectId,
           category: 'job_setup',
           title: item.title,
-          description: item.description,
-          required: item.required || false,
-          order: item.order || idx,
-          status: 'not_started'
+          order: item.order,
+          status: 'not_started',
+          required: false
         })
-      );
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
+      )
+    ).then(() => {
       queryClient.invalidateQueries(['checklistItems']);
-      toast.success('Checklist items created from template');
-    }
-  });
+      setSeeding(false);
+    });
+  }, [activeProjectId, isLoading, checklistItems.length]);
 
   const toggleStatus = (item) => {
     const newStatus = item.status === 'completed' ? 'not_started' : 'completed';
@@ -86,8 +73,7 @@ export default function PMJobSetup() {
       id: item.id,
       data: {
         status: newStatus,
-        completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
-        completed_by: newStatus === 'completed' ? (project?.project_manager || 'current_user') : null
+        completed_at: newStatus === 'completed' ? new Date().toISOString() : null
       }
     });
   };

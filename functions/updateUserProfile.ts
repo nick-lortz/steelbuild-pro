@@ -8,16 +8,33 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { full_name, phone, title, department } = await req.json();
+  const body = await req.json();
+  const { full_name, phone, title, department, display_preferences, workflow_preferences } = body;
 
   try {
-    // Update using service role to ensure it persists
-    const updatedUser = await base44.asServiceRole.entities.User.update(user.id, {
-      full_name: full_name || user.full_name,
-      phone: phone !== undefined ? phone : user.phone,
-      title: title !== undefined ? title : user.title,
-      department: department !== undefined ? department : user.department
-    });
+    const updatePayload = {};
+
+    // Profile fields
+    if (full_name !== undefined) updatePayload.full_name = full_name;
+    if (phone !== undefined) updatePayload.phone = phone;
+    if (title !== undefined) updatePayload.title = title;
+    if (department !== undefined) updatePayload.department = department;
+
+    // Preference blobs — merge with existing
+    if (display_preferences !== undefined) {
+      updatePayload.display_preferences = {
+        ...(user.display_preferences || {}),
+        ...display_preferences
+      };
+    }
+    if (workflow_preferences !== undefined) {
+      updatePayload.workflow_preferences = {
+        ...(user.workflow_preferences || {}),
+        ...workflow_preferences
+      };
+    }
+
+    const updatedUser = await base44.asServiceRole.entities.User.update(user.id, updatePayload);
 
     return Response.json({ success: true, user: updatedUser });
   } catch (error) {

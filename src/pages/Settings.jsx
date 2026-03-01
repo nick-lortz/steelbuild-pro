@@ -102,12 +102,15 @@ export default function Settings() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       const response = await base44.functions.invoke('updateUserProfile', data);
-      if (response.data.error) throw new Error(response.data.error);
+      if (response.data?.error) throw new Error(response.data.error);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success('Saved');
+      toast.success('Settings saved');
+    },
+    onError: (err) => {
+      toast.error('Save failed: ' + (err.message || 'Unknown error'));
     }
   });
 

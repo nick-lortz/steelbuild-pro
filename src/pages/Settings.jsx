@@ -92,7 +92,10 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowInviteDialog(false);
       setInviteEmail('');
-      toast.success('Invite sent');
+      toast.success('Invite sent to ' + inviteEmail);
+    },
+    onError: (err) => {
+      toast.error('Invite failed: ' + (err.message || 'Unknown error'));
     }
   });
 

@@ -313,12 +313,29 @@ GC Roadblocks: ${gcRoadblocks.length}
             {format(today, 'EEEE, MMMM d, yyyy')} · {project?.name || 'Project'} Intel Snapshot
           </p>
         </div>
-        {totalFlags > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-red-950/40 border border-red-800/30 rounded-lg">
-            <AlertCircle size={13} className="text-red-400" />
-            <span className="text-xs font-semibold text-red-400">{totalFlags} Active Flag{totalFlags !== 1 ? 's' : ''}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {totalFlags > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-950/40 border border-red-800/30 rounded-lg">
+              <AlertCircle size={13} className="text-red-400" />
+              <span className="text-xs font-semibold text-red-400">{totalFlags} Active Flag{totalFlags !== 1 ? 's' : ''}</span>
+            </div>
+          )}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-[#0A0A0A] border border-[rgba(255,255,255,0.08)] rounded-lg">
+                <UserCircle size={13} className="text-[#FF9D42]" />
+                <span className="text-xs text-[#9CA3AF] max-w-[120px] truncate">{user.full_name || user.email}</span>
+              </div>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 border-red-800/40 text-red-400 hover:bg-red-950/30 hover:text-red-300" onClick={() => base44.auth.logout()}>
+                <LogOut size={12} /> Logout
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5 border-[rgba(255,157,66,0.3)] text-[#FF9D42] hover:bg-[rgba(255,157,66,0.1)]" onClick={() => base44.auth.redirectToLogin()}>
+              <LogIn size={12} /> Login
+            </Button>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="intel" className="space-y-4">

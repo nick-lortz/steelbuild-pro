@@ -12,10 +12,10 @@ export const PERMISSIONS = {
   'financials:delete': ['admin'],
   
   // Project permissions
-  'projects:create': ['admin'],
-  'projects:edit': ['admin'],
+  'projects:create': ['admin', 'project_manager', 'user'],
+  'projects:edit': ['admin', 'project_manager', 'user'],
   'projects:delete': ['admin'],
-  'projects:view': ['admin', 'user'],
+  'projects:view': ['admin', 'project_manager', 'user'],
   
   // User management
   'users:invite': ['admin'],

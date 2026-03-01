@@ -197,17 +197,29 @@ export default function DrawingViewer() {
   const openRFIsCount = rfis.filter(r => !['closed', 'answered'].includes(r.status)).length;
   const blockerCount = rfis.filter(r => r.is_install_blocker || r.fab_blocker).length;
 
+  // Auto-select first drawing set when project changes or sets load
   useEffect(() => {
-    if (drawingSets.length > 0 && !selectedSetId) {
-      setSelectedSetId(drawingSets[0].id);
+    if (drawingSets.length > 0) {
+      setSelectedSetId(prev => {
+        const stillValid = drawingSets.some(s => s.id === prev);
+        return stillValid ? prev : drawingSets[0].id;
+      });
+    } else {
+      setSelectedSetId('');
     }
   }, [drawingSets]);
 
+  // Auto-select first sheet when set changes or sheets load
   useEffect(() => {
-    if (sheets.length > 0 && !selectedSheetId) {
-      setSelectedSheetId(sheets[0].id);
+    if (sheets.length > 0) {
+      setSelectedSheetId(prev => {
+        const stillValid = sheets.some(s => s.id === prev);
+        return stillValid ? prev : sheets[0].id;
+      });
+    } else {
+      setSelectedSheetId('');
     }
-  }, [sheets]);
+  }, [sheets, selectedSetId]);
 
   const tools = [
     { id: 'pen', icon: Pen, label: 'Pen' },

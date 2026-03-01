@@ -64,6 +64,7 @@ import Contracts from './pages/Contracts';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
+import DailyPMDashboard from './pages/DailyPMDashboard';
 import Dashboard from './pages/Dashboard';
 import DataManagement from './pages/DataManagement';
 import Deliveries from './pages/Deliveries';
@@ -72,6 +73,7 @@ import DocumentHub from './pages/DocumentHub';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
+import DrawingViewer from './pages/DrawingViewer';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import ErectionLookahead from './pages/ErectionLookahead';
@@ -137,8 +139,6 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
-import DailyPMDashboard from './pages/DailyPMDashboard';
-import DrawingViewer from './pages/DrawingViewer';
 import __Layout from './Layout.jsx';
 
 
@@ -160,6 +160,7 @@ export const PAGES = {
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
+    "DailyPMDashboard": DailyPMDashboard,
     "Dashboard": Dashboard,
     "DataManagement": DataManagement,
     "Deliveries": Deliveries,
@@ -168,6 +169,7 @@ export const PAGES = {
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
     "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
+    "DrawingViewer": DrawingViewer,
     "Drawings": Drawings,
     "Equipment": Equipment,
     "ErectionLookahead": ErectionLookahead,
@@ -233,8 +235,6 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
-    "DailyPMDashboard": DailyPMDashboard,
-    "DrawingViewer": DrawingViewer,
 }
 
 export const pagesConfig = {

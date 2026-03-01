@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, TrendingUp, TrendingDown, DollarSign, Clock, AlertTriangle, Edit, Trash2, Eye, RefreshCw } from 'lucide-react';
+import { Plus, Search, DollarSign, Clock, AlertTriangle, Edit, Trash2, Eye, RefreshCw, CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import ChangeOrderForm from '@/components/change-orders/ChangeOrderForm';

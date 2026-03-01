@@ -289,8 +289,8 @@ function LayoutContent({ children, currentPageName }) {
     );
   }, [currentUser]);
 
-  // Show loading state while checking auth
-  if (userLoading) {
+  // Show loading state only on initial load (user is undefined = never resolved yet)
+  if (userLoading && user === undefined) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

@@ -161,8 +161,9 @@ export default function DrawingViewer() {
   const { data: sheets = [] } = useQuery({
     queryKey: ['drawing-sheets-for-set', selectedSetId],
     queryFn: () => base44.entities.DrawingSheet.filter({ drawing_set_id: selectedSetId }),
-    enabled: !!selectedSetId,
+    enabled: !!selectedSetId && selectedSetId !== '',
     staleTime: 2 * 60 * 1000,
+    refetchOnMount: true,
   });
 
   const { data: revisions = [] } = useQuery({

@@ -1,17 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pencil, Trash2, AlertTriangle, CheckSquare, Square, Zap, XCircle, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { SafeText } from '@/components/shared/sanitization';
+import { base44 } from '@/api/base44Client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export default function RFIHubTable({ rfis, onEdit, onDelete, title }) {
+  const [selected, setSelected] = useState(new Set());
+  const [bulkAction, setBulkAction] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const toggleSelect = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === rfis.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(rfis.map(r => r.id)));
+    }
+  };
+
+  const applyBulkAction = async () => {
+    if (!bulkAction || selected.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selected);
+      let updateData = {};
+      if (bulkAction === 'close') updateData = { status: 'closed' };
+      else if (bulkAction === 'submit') updateData = { status: 'submitted' };
+      else if (bulkAction === 'flag_fab') updateData = { fab_blocker: true, fabrication_hold: true };
+      else if (bulkAction === 'clear_fab') updateData = { fab_blocker: false, fabrication_hold: false };
+      else if (bulkAction === 'bic_gc') updateData = { ball_in_court: 'gc' };
+      else if (bulkAction === 'bic_architect') updateData = { ball_in_court: 'architect' };
+      else if (bulkAction === 'bic_internal') updateData = { ball_in_court: 'internal' };
+
+      await Promise.all(ids.map(id => base44.entities.RFI.update(id, updateData)));
+      queryClient.invalidateQueries({ queryKey: ['rfis'] });
+      toast.success(`Updated ${ids.length} RFIs`);
+      setSelected(new Set());
+      setBulkAction('');
+    } catch {
+      toast.error('Bulk update failed');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   if (!rfis || rfis.length === 0) {
     return (
-      <Card className="bg-zinc-900 border-zinc-800">
+      <Card className="bg-[#0A0A0A] border-[rgba(255,255,255,0.08)]">
         <CardContent className="py-12 text-center">
-          <p className="text-zinc-500">No RFIs in this category</p>
+          <p className="text-[#6B7280] text-sm">No RFIs in this category</p>
         </CardContent>
       </Card>
     );

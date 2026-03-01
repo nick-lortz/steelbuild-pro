@@ -85,14 +85,8 @@ export default function Drawings() {
 
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawing-revisions', activeProjectId],
-    queryFn: async () => {
-      if (!activeProjectId) return [];
-      const setIds = drawingSets.map(s => s.id);
-      if (setIds.length === 0) return [];
-      const allRevisions = await base44.entities.DrawingRevision.list();
-      return allRevisions.filter(rev => setIds.includes(rev.drawing_set_id));
-    },
-    enabled: !!activeProjectId && drawingSets.length > 0,
+    queryFn: () => base44.entities.DrawingRevision.filter({ project_id: activeProjectId }),
+    enabled: !!activeProjectId,
     staleTime: 2 * 60 * 1000
   });
 

@@ -150,6 +150,23 @@ export default function ChangeOrders() {
     setShowForm(true);
   };
 
+  const quickStatusMutation = useMutation({
+    mutationFn: async ({ id, status }) => {
+      const update = { status };
+      if (status === 'approved') {
+        update.approved_date = new Date().toISOString().split('T')[0];
+        const user = await base44.auth.me();
+        update.approved_by = user.email;
+      }
+      return base44.entities.ChangeOrder.update(id, update);
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ['changeOrders'] });
+      toast.success(`CO ${status}`);
+    },
+    onError: () => toast.error('Status update failed')
+  });
+
   const filteredCOs = useMemo(() => {
     return changeOrders.filter(co => {
       const matchesSearch = 

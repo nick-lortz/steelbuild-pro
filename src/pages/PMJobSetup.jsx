@@ -107,29 +107,11 @@ export default function PMJobSetup() {
         </div>
       </div>
 
-      {checklistItems.length === 0 && templates.length > 0 && (
-        <Card className="border-[#FF9D42]/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-[#FF9D42]" />
-              Initialize Job Setup
-            </CardTitle>
-            <CardDescription>Load the standard job won checklist to get started</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              {templates.map(template => (
-                <Button
-                  key={template.id}
-                  onClick={() => createFromTemplate.mutate(template.id)}
-                  disabled={createFromTemplate.isPending}
-                >
-                  Load: {template.name}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {seeding && (
+        <div className="flex items-center gap-2 text-[#9CA3AF] text-sm">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Initializing default checklist...
+        </div>
       )}
 
       <Card>

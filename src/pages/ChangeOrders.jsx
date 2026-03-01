@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, DollarSign, Clock, AlertTriangle, Edit, Trash2, Eye, RefreshCw, CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 import ChangeOrderForm from '@/components/change-orders/ChangeOrderForm';
 import ChangeOrderDetail from '@/components/change-orders/ChangeOrderDetail';

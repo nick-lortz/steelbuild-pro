@@ -278,7 +278,6 @@ GC Roadblocks: ${gcRoadblocks.length}
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    enabled: appReady,
     staleTime: 5 * 60 * 1000,
   });
 

@@ -53,6 +53,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ActiveProjectProvider, useActiveProject } from '@/components/shared/hooks/useActiveProject';
+import { useAppReady } from '@/components/shared/hooks/useAppReady';
 import { TabNavigationProvider } from '@/components/shared/hooks/useTabNavigation';
 import { SkipToMainContent } from '@/components/shared/accessibility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";

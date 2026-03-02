@@ -7,7 +7,8 @@ export const ActiveProjectProvider = React.memo(
 function ActiveProjectProvider({ children }) {
   const [activeProjectId, setActiveProjectId] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('activeProjectId') || null;
+      const stored = localStorage.getItem('activeProjectId');
+      return stored ? Number(stored) : null;
     }
     return null;
   });

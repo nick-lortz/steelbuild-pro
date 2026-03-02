@@ -255,15 +255,13 @@ function LayoutContent({ children, currentPageName }) {
     });
   }, [currentUser, activeProjectId]);
 
-  const { isReady: appReady } = useAppReady();
-
   const { data: activeProject } = useQuery({
     queryKey: ['activeProject', activeProjectId],
     queryFn: async () => {
       if (!activeProjectId) return null;
       return await base44.entities.Project.filter({ id: activeProjectId });
     },
-    enabled: appReady && !!activeProjectId,
+    enabled: !!activeProjectId,
     select: (data) => data?.[0] || null,
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,

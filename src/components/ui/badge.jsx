@@ -32,7 +32,7 @@ function Badge({
   variant = "default",
   ...props
 }) {
-  return (<div className={cn(badgeVariants({ variant: /** @type {any} */ (variant) }), className)} {...props} />);
+  return (<span className={cn(badgeVariants({ variant: /** @type {any} */ (variant) }), className)} {...props} />);
 }
 
 export { Badge, badgeVariants }

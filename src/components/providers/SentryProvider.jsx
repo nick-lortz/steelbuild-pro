@@ -12,7 +12,7 @@ export function initSentry() {
   const env = /** @type {any} */ (import.meta).env || {};
   const dsn = env.VITE_SENTRY_DSN;
   if (!dsn) {
-    console.warn('Sentry DSN not configured');
+    // DSN not set — skip silently in preview/staging environments
     return;
   }
 

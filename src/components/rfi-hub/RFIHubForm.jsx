@@ -7,9 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showErrorToast, showSuccessToast, ErrorMessages } from '@/components/shared/errorHandling';
 import { SafeHTML } from '@/components/shared/sanitization';
-import DocumentPicker from '@/components/documents/DocumentPicker';
-import { Badge } from '@/components/ui/badge';
-import { File, Link as LinkIcon } from 'lucide-react';
 
 export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -39,8 +36,6 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
-  const [showDocPicker, setShowDocPicker] = useState(false);
-  const [linkedDocs, setLinkedDocs] = useState([]);
 
   // Auto-generate RFI number for new RFIs
   useEffect(() => {
@@ -89,22 +84,6 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
       ...prev,
       attachments: prev.attachments.filter((_, i) => i !== index)
     }));
-  };
-
-  const handleLinkDocuments = async (docs) => {
-    if (!Array.isArray(docs)) docs = [docs];
-    setLinkedDocs(prev => [...prev, ...docs]);
-    
-    // Update linked documents in RFI
-    const docIds = [...new Set([...linkedDocs.map(d => d.id), ...docs.map(d => d.id)])];
-    for (const doc of docs) {
-      await base44.entities.Document.update(doc.id, { rfi_id: rfi?.id || 'pending' });
-    }
-  };
-
-  const handleUnlinkDocument = async (docId) => {
-    setLinkedDocs(prev => prev.filter(d => d.id !== docId));
-    await base44.entities.Document.update(docId, { rfi_id: null });
   };
 
   const handleSubmit = async (e) => {
@@ -421,37 +400,22 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
           <div className="space-y-2">
             <label className="text-sm font-medium">Attachments (Drawings, Specs, Photos)</label>
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  type="file"
-                  multiple
-                  onChange={handleFileUpload}
-                  disabled={uploadingFiles}
-                  className="bg-zinc-800 border-zinc-700 flex-1"
-                  accept=".pdf,.dwg,.jpg,.jpeg,.png,.xlsx,.docx"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowDocPicker(true)}
-                  className="border-zinc-700"
-                >
-                  <LinkIcon className="w-4 h-4 mr-2" />
-                  Link Existing
-                </Button>
-              </div>
+              <Input
+                type="file"
+                multiple
+                onChange={handleFileUpload}
+                disabled={uploadingFiles}
+                className="bg-zinc-800 border-zinc-700"
+                accept=".pdf,.dwg,.jpg,.jpeg,.png,.xlsx,.docx"
+              />
               {uploadingFiles && (
                 <p className="text-xs text-amber-400">Uploading files...</p>
               )}
-              
-              {/* Uploaded Attachments */}
               {formData.attachments.length > 0 && (
                 <div className="space-y-1 mt-2">
-                  <p className="text-xs text-zinc-500 font-semibold">Direct Uploads:</p>
                   {formData.attachments.map((att, idx) => (
                     <div key={idx} className="flex items-center justify-between bg-zinc-800/50 p-2 rounded border border-zinc-700">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <File className="w-3 h-3 text-amber-500" />
                         <span className="text-xs text-zinc-400 truncate">{att.file_name}</span>
                         <a 
                           href={att.file_url} 
@@ -467,42 +431,9 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRemoveAttachment(idx)}
-                        className="text-red-400 hover:text-red-300 h-6 px-2"
+                        className="text-red-400 hover:text-red-300"
                       >
                         Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Linked Documents */}
-              {linkedDocs.length > 0 && (
-                <div className="space-y-1 mt-2">
-                  <p className="text-xs text-zinc-500 font-semibold">Linked from Library:</p>
-                  {linkedDocs.map((doc) => (
-                    <div key={doc.id} className="flex items-center justify-between bg-blue-500/10 p-2 rounded border border-blue-500/30">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <File className="w-3 h-3 text-blue-400" />
-                        <span className="text-xs text-blue-300 truncate">{doc.title}</span>
-                        <Badge className="text-[10px] capitalize">{doc.category}</Badge>
-                        <a 
-                          href={doc.file_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-400 hover:text-blue-300"
-                        >
-                          View
-                        </a>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleUnlinkDocument(doc.id)}
-                        className="text-red-400 hover:text-red-300 h-6 px-2"
-                      >
-                        Unlink
                       </Button>
                     </div>
                   ))}
@@ -529,16 +460,6 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
             </Button>
           </div>
         </form>
-
-
-      <DocumentPicker
-        open={showDocPicker}
-        onOpenChange={setShowDocPicker}
-        projectId={formData.project_id}
-        onSelect={handleLinkDocuments}
-        multiSelect={true}
-        categoryFilter={null}
-      />
       </DialogContent>
     </Dialog>
   );

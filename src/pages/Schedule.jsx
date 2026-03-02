@@ -13,14 +13,12 @@ import TaskListView from '@/components/schedule/TaskListView';
 import CalendarView from '@/components/schedule/CalendarView';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import { toast } from '@/components/ui/notifications';
+import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
 import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
 import AITaskPrioritizer from '@/components/schedule/AITaskPrioritizer';
 import DependencyVisualizer from '@/components/schedule/DependencyVisualizer';
 import QuickStatusUpdate from '@/components/schedule/QuickStatusUpdate';
-import QuickResourceAssign from '@/components/resources/QuickResourceAssign';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
 
 export default function Schedule() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -49,20 +47,8 @@ export default function Schedule() {
   const [wbsGeneratorOpen, setWbsGeneratorOpen] = useState(false);
   const [taskPrioritizerOpen, setTaskPrioritizerOpen] = useState(false);
   const [quickStatusOpen, setQuickStatusOpen] = useState(false);
-  const [resourceAssignOpen, setResourceAssignOpen] = useState(false);
-  const [selectedTaskForResources, setSelectedTaskForResources] = useState(null);
 
   const queryClient = useQueryClient();
-
-  // Expose to TaskListView for resource assignment trigger
-  useEffect(() => {
-    window.setSelectedTaskForResources = setSelectedTaskForResources;
-    window.setResourceAssignOpen = setResourceAssignOpen;
-    return () => {
-      delete window.setSelectedTaskForResources;
-      delete window.setResourceAssignOpen;
-    };
-  }, []);
 
   // Fetch current user
   const { data: currentUser } = useQuery({
@@ -142,8 +128,16 @@ export default function Schedule() {
     staleTime: 2 * 60 * 1000
   });
 
-  // Real-time subscription - disabled to prevent render loop with dynamic queryKey
-  // Real-time updates are handled via query invalidation on mutations
+  // Real-time subscription with delta updates
+  useEntitySubscription('Task', ['schedule-tasks', activeProjectIds], {
+    onEvent: (event) => {
+      // Only process if task belongs to active projects
+      if (!event.data?.project_id || !activeProjectIds.includes(event.data.project_id)) {
+        return;
+      }
+      toast.info(`Task ${event.type}d: ${event.data.name || 'Unknown'}`);
+    }
+  });
 
   // Fetch resources
   const { data: resources = [] } = useQuery({
@@ -458,56 +452,44 @@ export default function Schedule() {
     <div className="min-h-screen bg-black">
       {/* Header */}
       <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="max-w-[1800px] mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#E5E7EB] tracking-tight">Schedule</h1>
-              <p className="text-xs sm:text-sm text-[#6B7280] font-mono mt-1">
+              <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Schedule</h1>
+              <p className="text-sm text-[#6B7280] font-mono mt-1">
                 multi-project scheduling with dependencies
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
               <Button
                 onClick={() => setWbsGeneratorOpen(true)}
                 disabled={!activeProjectId}
                 variant="outline"
-                size="sm"
-                className="flex-1 sm:flex-initial"
               >
-                <Sparkles size={16} className="mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Generate WBS</span>
-                <span className="sm:hidden">WBS</span>
+                <Sparkles size={18} className="mr-2" />
+                Generate WBS
               </Button>
               <Button
                 onClick={() => setTaskPrioritizerOpen(true)}
                 disabled={filteredTasks.length === 0}
                 variant="outline"
-                size="sm"
-                className="flex-1 sm:flex-initial"
               >
-                <Sparkles size={16} className="mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Prioritize</span>
-                <span className="sm:hidden">Priority</span>
+                <Sparkles size={18} className="mr-2" />
+                Prioritize Tasks
               </Button>
               <Button
                 onClick={() => setQuickStatusOpen(true)}
                 disabled={filteredTasks.length === 0}
                 variant="outline"
-                size="sm"
-                className="flex-1 sm:flex-initial"
               >
-                <span className="hidden sm:inline">Bulk Status</span>
-                <span className="sm:hidden">Status</span>
+                Bulk Status Update
               </Button>
               <Button
                 onClick={handleCreateTask}
                 disabled={activeProjectIds.length === 0}
-                size="sm"
-                className="flex-1 sm:flex-initial"
               >
-                <Plus size={16} className="mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Add Task</span>
-                <span className="sm:hidden">Add</span>
+                <Plus size={18} className="mr-2" />
+                Add Task
               </Button>
             </div>
           </div>
@@ -516,36 +498,36 @@ export default function Schedule() {
 
       {/* Metrics */}
       <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)]">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="max-w-[1800px] mx-auto px-8 py-4">
+          <div className="grid grid-cols-5 gap-4">
             <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="text-[9px] sm:text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Total Tasks</div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#E5E7EB]">{statusCounts.all}</div>
+              <CardContent className="p-4">
+                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Total Tasks</div>
+                <div className="text-3xl font-bold text-[#E5E7EB]">{statusCounts.all}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="text-[9px] sm:text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Not Started</div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#9CA3AF]">{statusCounts.not_started}</div>
+              <CardContent className="p-4">
+                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Not Started</div>
+                <div className="text-3xl font-bold text-[#9CA3AF]">{statusCounts.not_started}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="text-[9px] sm:text-[10px] text-[#3B82F6] uppercase tracking-wider font-semibold mb-1">In Progress</div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#3B82F6]">{statusCounts.in_progress}</div>
+              <CardContent className="p-4">
+                <div className="text-[10px] text-[#3B82F6] uppercase tracking-wider font-semibold mb-1">In Progress</div>
+                <div className="text-3xl font-bold text-[#3B82F6]">{statusCounts.in_progress}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="text-[9px] sm:text-[10px] text-[#10B981] uppercase tracking-wider font-semibold mb-1">Completed</div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#10B981]">{statusCounts.completed}</div>
+              <CardContent className="p-4">
+                <div className="text-[10px] text-[#10B981] uppercase tracking-wider font-semibold mb-1">Completed</div>
+                <div className="text-3xl font-bold text-[#10B981]">{statusCounts.completed}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 sm:p-4">
-                <div className="text-[9px] sm:text-[10px] text-[#EF4444] uppercase tracking-wider font-semibold mb-1">Overdue</div>
-                <div className="text-2xl sm:text-3xl font-bold text-[#EF4444]">{statusCounts.overdue}</div>
+              <CardContent className="p-4">
+                <div className="text-[10px] text-[#EF4444] uppercase tracking-wider font-semibold mb-1">Overdue</div>
+                <div className="text-3xl font-bold text-[#EF4444]">{statusCounts.overdue}</div>
               </CardContent>
             </Card>
           </div>
@@ -554,10 +536,10 @@ export default function Schedule() {
 
       {/* Filters */}
       <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.01)]">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="max-w-[1800px] mx-auto px-8 py-3">
+          <div className="flex items-center gap-4">
             {/* Project Selector */}
-            <div className="w-full sm:w-64">
+            <div className="w-64">
               <Select 
                 value={selectedProjects.length > 0 ? 'multi' : (activeProjectId || '')} 
                 onValueChange={(value) => {
@@ -598,7 +580,7 @@ export default function Schedule() {
             </div>
 
             {/* PM Filter */}
-            <div className="w-full sm:w-56">
+            <div className="w-56">
               <Select value={pmFilter} onValueChange={setPmFilter}>
                 <SelectTrigger>
                   <SelectValue />
@@ -617,13 +599,13 @@ export default function Schedule() {
             </div>
 
             {/* Search */}
-            <div className="flex-1 sm:flex-initial sm:w-64 relative">
+            <div className="flex-1 relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
               <Input
-                placeholder="Search tasks..."
+                placeholder="Search tasks by name or WBS..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-9"
+                className="pl-10"
               />
             </div>
 
@@ -639,16 +621,16 @@ export default function Schedule() {
             </Button>
 
             {/* View Mode */}
-            <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1 w-full sm:w-auto">
+            <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
               {[
                 { value: 'gantt', label: 'Gantt' },
                 { value: 'list', label: 'List' },
-                { value: 'calendar', label: 'Cal' }
+                { value: 'calendar', label: 'Calendar' }
               ].map(({ value, label }) => (
                 <button
                   key={value}
                   onClick={() => setViewMode(value)}
-                  className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all ${
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                     viewMode === value 
                       ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' 
                       : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)]'
@@ -661,7 +643,7 @@ export default function Schedule() {
 
             {/* Zoom Level (for Gantt) */}
             {viewMode === 'gantt' && (
-              <div className="hidden sm:flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
+              <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
                 {[
                   { value: 'day', label: 'Day' },
                   { value: 'week', label: 'Week' },
@@ -688,7 +670,6 @@ export default function Schedule() {
               size="sm"
               onClick={handleExportICS}
               disabled={filteredTasks.length === 0}
-              className="hidden sm:flex"
             >
               <Download size={16} className="mr-2" />
               Export .ics
@@ -697,7 +678,7 @@ export default function Schedule() {
 
           {/* Filters Panel */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-4 pt-4 border-t border-[rgba(255,255,255,0.05)]">
+            <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-[rgba(255,255,255,0.05)]">
               <div>
                 <label className="text-xs text-[#6B7280] uppercase mb-2 block">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -768,7 +749,7 @@ export default function Schedule() {
       </div>
 
       {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
         {/* Dependency Visualizer */}
         {filteredTasks.length > 0 && (
           <div className="mb-6">
@@ -906,93 +887,6 @@ export default function Schedule() {
               onClose={() => setQuickStatusOpen(false)}
             />
           </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Resource Assignment Sheet */}
-      <Sheet open={resourceAssignOpen} onOpenChange={setResourceAssignOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Assign Resources</SheetTitle>
-          </SheetHeader>
-          {selectedTaskForResources && (
-            <div className="mt-6 space-y-4">
-              <div className="p-3 bg-zinc-800 rounded">
-                <p className="font-medium text-white">{selectedTaskForResources.name}</p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  {projects.find(p => p.id === selectedTaskForResources.project_id)?.project_number}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
-                    Labor Resources
-                  </label>
-                  <QuickResourceAssign
-                    selectedResourceIds={selectedTaskForResources.assigned_resources || []}
-                    resources={resources.filter(r => r.type === 'labor')}
-                    onChange={(ids) => setSelectedTaskForResources({
-                      ...selectedTaskForResources,
-                      assigned_resources: ids
-                    })}
-                    placeholder="Select labor resources..."
-                    triggerClassName="w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-zinc-400 uppercase tracking-wider mb-2 block">
-                    Equipment
-                  </label>
-                  <QuickResourceAssign
-                    selectedResourceIds={selectedTaskForResources.assigned_equipment || []}
-                    resources={resources.filter(r => r.type === 'equipment')}
-                    onChange={(ids) => setSelectedTaskForResources({
-                      ...selectedTaskForResources,
-                      assigned_equipment: ids
-                    })}
-                    placeholder="Select equipment..."
-                    triggerClassName="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-4 border-t border-zinc-800">
-                <Link to={createPageUrl('ResourceManagement')}>
-                  <Button variant="outline" size="sm">
-                    Manage Resources
-                  </Button>
-                </Link>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setResourceAssignOpen(false);
-                      setSelectedTaskForResources(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      updateMutation.mutate({
-                        id: selectedTaskForResources.id,
-                        data: {
-                          assigned_resources: selectedTaskForResources.assigned_resources || [],
-                          assigned_equipment: selectedTaskForResources.assigned_equipment || []
-                        }
-                      });
-                      setResourceAssignOpen(false);
-                      setSelectedTaskForResources(null);
-                    }}
-                  >
-                    Assign
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </SheetContent>
       </Sheet>
     </div>

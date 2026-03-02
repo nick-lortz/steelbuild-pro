@@ -64,16 +64,13 @@ import Contracts from './pages/Contracts';
 import CostCodes from './pages/CostCodes';
 import DailyLogs from './pages/DailyLogs';
 import DailyLogsExport from './pages/DailyLogsExport';
-import DailyPMDashboard from './pages/DailyPMDashboard';
 import Dashboard from './pages/Dashboard';
 import DataManagement from './pages/DataManagement';
 import Deliveries from './pages/Deliveries';
 import Detailing from './pages/Detailing';
-import DocumentHub from './pages/DocumentHub';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
-import DrawingViewer from './pages/DrawingViewer';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import ErectionLookahead from './pages/ErectionLookahead';
@@ -90,7 +87,6 @@ import HowItWorks from './pages/HowItWorks';
 import Insights from './pages/Insights';
 import Integrations from './pages/Integrations';
 import JobStatusReport from './pages/JobStatusReport';
-import KnowledgeBase from './pages/KnowledgeBase';
 import Labor from './pages/Labor';
 import LaborScope from './pages/LaborScope';
 import LandingPage from './pages/LandingPage';
@@ -118,16 +114,13 @@ import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
 import ProjectAssistant from './pages/ProjectAssistant';
 import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
-import ProjectManagement from './pages/ProjectManagement';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
 import ProjectStatusEmail from './pages/ProjectStatusEmail';
 import Projects from './pages/Projects';
-import QAConfig from './pages/QAConfig';
 import RFIHub from './pages/RFIHub';
 import RFIs from './pages/RFIs';
 import ROIDashboard from './pages/ROIDashboard';
-import Reporting from './pages/Reporting';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
 import Resources from './pages/Resources';
@@ -139,6 +132,7 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import ProjectManagement from './pages/ProjectManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -160,16 +154,13 @@ export const PAGES = {
     "CostCodes": CostCodes,
     "DailyLogs": DailyLogs,
     "DailyLogsExport": DailyLogsExport,
-    "DailyPMDashboard": DailyPMDashboard,
     "Dashboard": Dashboard,
     "DataManagement": DataManagement,
     "Deliveries": Deliveries,
     "Detailing": Detailing,
-    "DocumentHub": DocumentHub,
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
     "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
-    "DrawingViewer": DrawingViewer,
     "Drawings": Drawings,
     "Equipment": Equipment,
     "ErectionLookahead": ErectionLookahead,
@@ -186,7 +177,6 @@ export const PAGES = {
     "Insights": Insights,
     "Integrations": Integrations,
     "JobStatusReport": JobStatusReport,
-    "KnowledgeBase": KnowledgeBase,
     "Labor": Labor,
     "LaborScope": LaborScope,
     "LandingPage": LandingPage,
@@ -214,16 +204,13 @@ export const PAGES = {
     "ProjectAssistant": ProjectAssistant,
     "ProjectBudget": ProjectBudget,
     "ProjectDashboard": ProjectDashboard,
-    "ProjectManagement": ProjectManagement,
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
     "ProjectStatusEmail": ProjectStatusEmail,
     "Projects": Projects,
-    "QAConfig": QAConfig,
     "RFIHub": RFIHub,
     "RFIs": RFIs,
     "ROIDashboard": ROIDashboard,
-    "Reporting": Reporting,
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
     "Resources": Resources,
@@ -235,6 +222,7 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "ProjectManagement": ProjectManagement,
 }
 
 export const pagesConfig = {

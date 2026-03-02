@@ -1,29 +1,35 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const DEFAULT_QA_RULES = [
-  { key: 'member_size',       severity: 'P0', enabled: true,  prompt: 'Check all member sizes (W-shapes, HSS, angles, plates) are called out with AISC standard designations. Flag any non-standard or ambiguous callouts.' },
-  { key: 'missing_dimension', severity: 'P0', enabled: true,  prompt: 'Identify any missing critical dimensions: member lengths, hole spacing, bolt patterns, weld lengths, plate dimensions.' },
-  { key: 'connection_detail', severity: 'P0', enabled: true,  prompt: 'Verify connection details show bolt sizes, quantities, edge distances per AISC standards. Check for missing shear tab dimensions.' },
-  { key: 'weld_symbol',       severity: 'P0', enabled: true,  prompt: 'Validate weld symbols per AWS D1.1 standards. Check for missing weld sizes, lengths, or unclear symbols.' },
-  { key: 'annotation_error',  severity: 'P1', enabled: true,  prompt: 'Check for incomplete or conflicting annotations, missing detail references, unclear callouts.' },
-  { key: 'material_spec',     severity: 'P1', enabled: true,  prompt: 'Confirm material specifications are called out (ASTM A36, A992, A500, etc.). Flag missing or non-standard specs.' },
-  { key: 'tolerance',         severity: 'P1', enabled: true,  prompt: 'Check if fabrication tolerances are specified where critical. Flag tight tolerances that may cause fit-up issues.' },
-];
-
-async function loadQARules(base44, projectId) {
-  try {
-    // Prefer project-level config, fall back to global
-    const [projectConfigs, globalConfigs] = await Promise.all([
-      projectId ? base44.asServiceRole.entities.QAConfig.filter({ scope: 'project', project_id: projectId, is_active: true }) : Promise.resolve([]),
-      base44.asServiceRole.entities.QAConfig.filter({ scope: 'global', is_active: true }),
-    ]);
-    const cfg = projectConfigs[0] || globalConfigs[0];
-    if (cfg?.qa_rules?.length) return cfg.qa_rules.filter(r => r.enabled !== false);
-  } catch (e) {
-    console.warn('[runDrawingQA] Could not load QAConfig, using defaults:', e.message);
+const QA_RULES = {
+  member_size: {
+    prompt: "Check all member sizes (W-shapes, HSS, angles, plates) are called out with AISC standard designations. Flag any non-standard or ambiguous callouts.",
+    severity: "P0"
+  },
+  missing_dimension: {
+    prompt: "Identify any missing critical dimensions: member lengths, hole spacing, bolt patterns, weld lengths, plate dimensions.",
+    severity: "P0"
+  },
+  annotation_error: {
+    prompt: "Check for incomplete or conflicting annotations, missing detail references, unclear callouts.",
+    severity: "P1"
+  },
+  connection_detail: {
+    prompt: "Verify connection details show bolt sizes, quantities, edge distances per AISC standards. Check for missing shear tab dimensions.",
+    severity: "P0"
+  },
+  weld_symbol: {
+    prompt: "Validate weld symbols per AWS D1.1 standards. Check for missing weld sizes, lengths, or unclear symbols.",
+    severity: "P0"
+  },
+  material_spec: {
+    prompt: "Confirm material specifications are called out (ASTM A36, A992, A500, etc.). Flag missing or non-standard specs.",
+    severity: "P1"
+  },
+  tolerance: {
+    prompt: "Check if fabrication tolerances are specified where critical. Flag tight tolerances that may cause fit-up issues.",
+    severity: "P1"
   }
-  return DEFAULT_QA_RULES;
-}
+};
 
 Deno.serve(async (req) => {
   try {
@@ -59,25 +65,23 @@ Deno.serve(async (req) => {
       qa_status: 'in_progress'
     });
 
-    // Load configured rules (project > global > defaults)
-    const activeRules = await loadQARules(base44, revision.project_id);
-
     const findings = [];
     let p0Count = 0;
     let p1Count = 0;
 
     // Run QA checks on each sheet
     for (const sheet of revision.sheets || []) {
+      // Build comprehensive prompt
       const qaPrompt = `
 You are a steel fabrication QA reviewer analyzing drawing sheet ${sheet.sheet_number}.
 Review this sheet against AISC steel construction standards and flag issues.
 
 Run these checks:
-${activeRules.map(r => `- ${r.key}: ${r.prompt}`).join('\n')}
+${Object.entries(QA_RULES).map(([key, rule]) => `- ${key}: ${rule.prompt}`).join('\n')}
 
 For each issue found, provide:
-1. Category (one of: ${activeRules.map(r => r.key).join(', ')})
-2. Severity (P0 or P1) — use the rule's designated severity unless the finding is clearly more or less severe
+1. Category (one of: ${Object.keys(QA_RULES).join(', ')})
+2. Severity (P0 or P1)
 3. Specific message describing the issue
 4. Location on sheet (grid line, detail number, or general area)
 5. Recommendation for fix
@@ -159,45 +163,12 @@ Example: [{"category": "member_size", "severity": "P0", "message": "Beam B3 show
       p1_count: p1Count
     });
 
-    // ── Auto-transition parent DrawingSet status based on QA result ──
-    // Skipped if the set has qa_auto_transition explicitly set to false (user override).
-    const QA_STATUS_MAP = {
-      pass:        'IFA',         // passed all checks → ready to issue for approval
-      fail:        'BFA',         // has P0 blockers → back to detailer
-      in_progress: 'IFA'          // shouldn't reach here, but guard it
-    };
-
-    let drawingSetStatusUpdate = null;
-    try {
-      const sets = await base44.asServiceRole.entities.DrawingSet.filter({ id: revision.drawing_set_id });
-      const drawingSet = sets?.[0];
-
-      if (drawingSet && drawingSet.qa_auto_transition !== false) {
-        const newStatus = QA_STATUS_MAP[qaStatus];
-        if (newStatus && drawingSet.status !== newStatus) {
-          await base44.asServiceRole.entities.DrawingSet.update(revision.drawing_set_id, {
-            status: newStatus,
-            qa_last_result: qaStatus,
-            qa_last_run_at: new Date().toISOString()
-          });
-          drawingSetStatusUpdate = { from: drawingSet.status, to: newStatus };
-          console.log(`[runDrawingQA] DrawingSet ${revision.drawing_set_id} status: ${drawingSet.status} → ${newStatus}`);
-        }
-      } else if (drawingSet?.qa_auto_transition === false) {
-        console.log(`[runDrawingQA] Auto-transition disabled for DrawingSet ${revision.drawing_set_id} — status unchanged`);
-      }
-    } catch (err) {
-      // Non-fatal — log but don't fail the QA response
-      console.error('[runDrawingQA] DrawingSet status update failed:', err.message);
-    }
-
     return Response.json({
       success: true,
       qa_status: qaStatus,
       p0_count: p0Count,
       p1_count: p1Count,
-      findings,
-      drawing_set_status_update: drawingSetStatusUpdate
+      findings
     });
 
   } catch (error) {

@@ -7,10 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, CheckCircle2, Circle, Calendar as CalendarIcon, Trash2, Paperclip, Eye } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import DocumentPicker from '@/components/documents/DocumentPicker';
 
 export default function MilestoneTracker({ projectId }) {
   const queryClient = useQueryClient();
@@ -20,8 +19,6 @@ export default function MilestoneTracker({ projectId }) {
     target_date: null,
     description: ''
   });
-  const [showDocPicker, setShowDocPicker] = useState(false);
-  const [currentMilestoneId, setCurrentMilestoneId] = useState(null);
 
   const { data: milestones, isLoading } = useQuery({
     queryKey: ['milestones', projectId],
@@ -31,14 +28,6 @@ export default function MilestoneTracker({ projectId }) {
         task_type: 'milestone'
       });
       return tasks.sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
-    },
-    enabled: !!projectId
-  });
-
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents', projectId],
-    queryFn: async () => {
-      return await base44.entities.Document.filter({ project_id: projectId });
     },
     enabled: !!projectId
   });
@@ -85,24 +74,6 @@ export default function MilestoneTracker({ projectId }) {
       toast.success('Milestone deleted');
     }
   });
-
-  const handleLinkDocuments = async (docs) => {
-    if (!currentMilestoneId) return;
-    if (!Array.isArray(docs)) docs = [docs];
-    
-    for (const doc of docs) {
-      await base44.entities.Document.update(doc.id, { task_id: currentMilestoneId });
-    }
-    
-    queryClient.invalidateQueries({ queryKey: ['documents', projectId] });
-    toast.success(`${docs.length} document(s) linked`);
-    setShowDocPicker(false);
-    setCurrentMilestoneId(null);
-  };
-
-  const getLinkedDocs = (milestoneId) => {
-    return documents.filter(d => d.task_id === milestoneId);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -254,14 +225,6 @@ export default function MilestoneTracker({ projectId }) {
           )}
         </CardContent>
       </Card>
-
-      <DocumentPicker
-        open={showDocPicker}
-        onOpenChange={setShowDocPicker}
-        projectId={projectId}
-        onSelect={handleLinkDocuments}
-        multiSelect={true}
-      />
     </div>
   );
 }

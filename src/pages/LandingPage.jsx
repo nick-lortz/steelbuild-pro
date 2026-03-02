@@ -141,7 +141,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <Button onClick={handleGetStarted} className="bg-[#FF6B2C] hover:bg-[#FF9D42] text-black font-bold px-6">
+          <Button onClick={handleGetStarted} variant="outline">
             Sign In
           </Button>
         </div>

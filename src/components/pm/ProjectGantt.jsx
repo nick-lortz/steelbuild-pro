@@ -48,13 +48,7 @@ export default function ProjectGantt({ projectId }) {
         </p>
       </CardHeader>
       <CardContent>
-        <GanttChart 
-          tasks={tasks} 
-          viewMode="week"
-          onTaskUpdate={async () => {}}
-          onTaskEdit={() => {}}
-          onTaskDelete={() => {}}
-        />
+        <GanttChart tasks={tasks} />
       </CardContent>
     </Card>
   );

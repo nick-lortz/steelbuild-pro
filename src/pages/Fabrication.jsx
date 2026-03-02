@@ -30,7 +30,6 @@ import { toast } from 'sonner';
 import { format, parseISO, isValid } from 'date-fns';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { checkPrerequisites, PrerequisitesBadge } from '@/components/fabrication/PrerequisitesEngine';
-import ReadinessScorePanel from '@/components/fabrication/ReadinessScorePanel';
 
 export default function FabricationPage() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
@@ -833,11 +832,6 @@ export default function FabricationPage() {
 
           {/* Fabrication Readiness */}
           <TabsContent value="readiness" className="space-y-4 mt-6">
-            {/* FRI / EII / MIS Scoring Panel — per WP */}
-            {workPackages.length > 0 && (
-              <WPReadinessSelector workPackages={workPackages} projectId={activeProjectId} />
-            )}
-
             <Card className="bg-green-950/20 border-green-500/30">
               <CardHeader>
                 <CardTitle className="text-sm uppercase tracking-widest text-green-400 flex items-center gap-2">
@@ -1360,46 +1354,6 @@ function CreatePackageForm({ projectId, workPackages, drawings, onSubmit, onCanc
         </Button>
       </div>
     </form>
-  );
-}
-
-function WPReadinessSelector({ workPackages, projectId }) {
-  const [selectedWPId, setSelectedWPId] = useState(workPackages[0]?.id || '');
-  const selectedWP = workPackages.find(wp => wp.id === selectedWPId);
-
-  return (
-    <Card className="bg-zinc-900 border-zinc-800">
-      <CardHeader>
-        <CardTitle className="text-sm uppercase tracking-widest text-amber-400 flex items-center gap-2">
-          <TrendingUp size={14} />
-          FRI / EII / MIS — Readiness Scoring
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-1">
-          <label className="text-xs text-zinc-500 uppercase">Work Package</label>
-          <Select value={selectedWPId} onValueChange={setSelectedWPId}>
-            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-              <SelectValue placeholder="Select work package..." />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              {workPackages.map(wp => (
-                <SelectItem key={wp.id} value={wp.id} className="text-white">
-                  {wp.wpid} — {wp.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {selectedWPId && (
-          <ReadinessScorePanel
-            workPackageId={selectedWPId}
-            projectId={projectId}
-            targetErectionStart={selectedWP?.install_day || selectedWP?.target_date}
-          />
-        )}
-      </CardContent>
-    </Card>
   );
 }
 

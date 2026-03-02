@@ -1,7 +1,5 @@
 /**
- * Global (system-level) role-based permissions framework
- * For project-scoped permissions, use useProjectRole + ProjectRoleGate.
- *
+ * Role-based permissions framework
  * Usage: checkPermission(user, 'financials:edit', { project })
  */
 
@@ -12,10 +10,10 @@ export const PERMISSIONS = {
   'financials:delete': ['admin'],
   
   // Project permissions
-  'projects:create': ['admin', 'project_manager', 'user'],
-  'projects:edit': ['admin', 'project_manager', 'user'],
+  'projects:create': ['admin'],
+  'projects:edit': ['admin'],
   'projects:delete': ['admin'],
-  'projects:view': ['admin', 'project_manager', 'user'],
+  'projects:view': ['admin', 'user'],
   
   // User management
   'users:invite': ['admin'],
@@ -49,22 +47,31 @@ export const PERMISSIONS = {
 };
 
 /**
- * Check if user has system-level permission.
- * For project-scoped checks, use useProjectRole().can(permission) instead.
+ * Check if user has permission
+ * @param {object} user - Current user object with role property
+ * @param {string} permission - Permission key (e.g., 'financials:edit')
+ * @param {object} context - Optional context (e.g., { project })
+ * @returns {boolean}
  */
 export function checkPermission(user, permission, context = {}) {
   if (!user) return false;
+  
+  // Admin has all permissions
   if (user.role === 'admin') return true;
   
+  // Check if permission exists
   const allowedRoles = PERMISSIONS[permission];
   if (!allowedRoles) {
     console.warn(`Permission ${permission} not defined`);
     return false;
   }
   
+  // Check if user's role is in allowed roles
   if (!allowedRoles.includes(user.role)) return false;
   
+  // Context-based checks
   if (context.project && context.project.assigned_users) {
+    // Check if user is assigned to project
     const isAssigned = context.project.assigned_users.includes(user.email);
     if (!isAssigned && user.role !== 'admin') return false;
   }
@@ -72,19 +79,34 @@ export function checkPermission(user, permission, context = {}) {
   return true;
 }
 
+/**
+ * Check multiple permissions (user must have ALL)
+ */
 export function checkAllPermissions(user, permissions, context = {}) {
   return permissions.every(perm => checkPermission(user, perm, context));
 }
 
+/**
+ * Check multiple permissions (user must have ANY)
+ */
 export function checkAnyPermission(user, permissions, context = {}) {
   return permissions.some(perm => checkPermission(user, perm, context));
 }
 
+/**
+ * Get list of permissions for current user
+ */
 export function getUserPermissions(user) {
   if (!user) return [];
-  return Object.keys(PERMISSIONS).filter(perm => checkPermission(user, perm));
+  
+  return Object.keys(PERMISSIONS).filter(perm => 
+    checkPermission(user, perm)
+  );
 }
 
+/**
+ * Hook for using permissions in React components
+ */
 export function usePermissions(user) {
   return {
     can: (permission, context) => checkPermission(user, permission, context),

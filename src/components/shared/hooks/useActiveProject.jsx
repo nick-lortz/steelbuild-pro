@@ -7,8 +7,7 @@ export const ActiveProjectProvider = React.memo(
 function ActiveProjectProvider({ children }) {
   const [activeProjectId, setActiveProjectId] = useState(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('activeProjectId');
-      return stored || null;
+      return localStorage.getItem('activeProjectId') || null;
     }
     return null;
   });
@@ -21,11 +20,7 @@ function ActiveProjectProvider({ children }) {
     }
   }, [activeProjectId]);
 
-  const wrappedSetActiveProjectId = React.useCallback((id) => {
-    setActiveProjectId(id != null ? String(id) : null);
-  }, []);
-
-  const value = useMemo(() => ({ activeProjectId, setActiveProjectId: wrappedSetActiveProjectId }), [activeProjectId, wrappedSetActiveProjectId]);
+  const value = useMemo(() => ({ activeProjectId, setActiveProjectId }), [activeProjectId]);
 
   return (
     <ActiveProjectContext.Provider value={value}>

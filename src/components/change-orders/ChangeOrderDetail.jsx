@@ -13,7 +13,6 @@ import { toast } from '@/components/ui/notifications';
 import VersionHistory from './VersionHistory';
 import LinkagePanel from './LinkagePanel';
 import AIImpactAnalysis from './AIImpactAnalysis';
-import SOVAllocationEditor from './SOVAllocationEditor';
 
 export default function ChangeOrderDetail({ changeOrder, projects, onEdit, onDelete, onUpdate, onClose }) {
   const [activeTab, setActiveTab] = useState('overview');
@@ -209,11 +208,36 @@ export default function ChangeOrderDetail({ changeOrder, projects, onEdit, onDel
             </CardContent>
           </Card>
 
-          <SOVAllocationEditor
-            changeOrder={changeOrder}
-            sovItems={sovItems}
-            onSaved={onUpdate}
-          />
+          {changeOrder.sov_allocations?.length > 0 && (
+            <Card className="bg-zinc-950 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-sm">SOV Allocations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {changeOrder.sov_allocations.map((alloc, idx) => (
+                    <div key={idx} className="flex justify-between items-start p-3 bg-zinc-900/50 rounded">
+                      <div className="flex-1">
+                        <p className="text-xs font-mono text-amber-500 mb-1">
+                          {getSovDescription(alloc.sov_item_id).split('-')[0].trim()}
+                        </p>
+                        <p className="text-sm text-zinc-300">{alloc.description}</p>
+                      </div>
+                      <p className="text-sm font-bold text-amber-400">
+                        ${parseFloat(alloc.amount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                  <div className="flex justify-between text-sm pt-2 border-t border-zinc-800">
+                    <span className="text-zinc-500 font-semibold">Total:</span>
+                    <span className="font-bold text-green-400">
+                      ${changeOrder.sov_allocations.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Key Dates */}
           <Card className="bg-zinc-950 border-zinc-800">

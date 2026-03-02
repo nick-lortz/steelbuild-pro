@@ -26,7 +26,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText, Share2 } from 'lucide-react';
+import { Plus, Upload, Search, File, History, Eye, Download, Loader2, CheckCircle, XCircle, FileSpreadsheet, Trash2, List, Sparkles, FileText } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import DocumentPreview from '@/components/documents/DocumentPreview';
@@ -42,7 +42,7 @@ import ApprovalWorkflowPanel from '@/components/documents/ApprovalWorkflowPanel'
 import DocumentLinkSuggestions from '@/components/documents/DocumentLinkSuggestions';
 import AIDocumentAnalysis from '@/components/documents/AIDocumentAnalysis';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/notifications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -540,21 +540,6 @@ export default function Documents() {
               <Eye size={16} />
             </Button>
           )}
-          {row.file_url && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(row.file_url);
-                toast.success('Link copied');
-              }}
-              className="text-zinc-400 hover:text-blue-400"
-              title="Copy Link"
-            >
-              <Share2 size={16} />
-            </Button>
-          )}
           <Button
             size="sm"
             variant="ghost"
@@ -788,7 +773,6 @@ export default function Documents() {
                       <SelectItem value="photo">Photos</SelectItem>
                       <SelectItem value="report">Reports</SelectItem>
                       <SelectItem value="correspondence">Correspondence</SelectItem>
-                      <SelectItem value="safety_form">Safety Forms</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1636,7 +1620,6 @@ function DocumentForm({ formData, setFormData, projects, workPackages, dailyLogs
               <SelectItem value="correspondence">Correspondence</SelectItem>
               <SelectItem value="receipt">Receipt</SelectItem>
               <SelectItem value="invoice">Invoice</SelectItem>
-              <SelectItem value="safety_form">Safety Form</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>

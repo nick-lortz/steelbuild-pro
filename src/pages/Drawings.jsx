@@ -19,10 +19,8 @@ import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
 import DrawingUploadEnhanced from '@/components/drawings/DrawingUploadEnhanced';
 import EnhancedDrawingUpload from '@/components/drawings/EnhancedDrawingUpload';
-import DrawingIntelligenceDashboard from '@/components/drawings/DrawingIntelligenceDashboard';
-import DrawingSheetManager from '@/components/drawings/DrawingSheetManager';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { FileText, Plus, Upload, Search, Sparkles, Layers } from 'lucide-react';
+import DrawingAnalysisDashboard from '@/components/drawings/DrawingAnalysisDashboard';
+import { FileText, Plus, Upload, Search, Sparkles } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
 
 export default function Drawings() {
@@ -47,7 +45,6 @@ export default function Drawings() {
   const [selectedSet, setSelectedSet] = useState(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showAnalysisDashboard, setShowAnalysisDashboard] = useState(false);
-  const [mainTab, setMainTab] = useState('sets');
 
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],
@@ -78,15 +75,27 @@ export default function Drawings() {
 
   const { data: sheets = [] } = useQuery({
     queryKey: ['drawing-sheets', activeProjectId],
-    queryFn: () => base44.entities.DrawingSheet.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId,
+    queryFn: async () => {
+      if (!activeProjectId) return [];
+      const setIds = drawingSets.map(s => s.id);
+      if (setIds.length === 0) return [];
+      const allSheets = await base44.entities.DrawingSheet.list();
+      return allSheets.filter(sheet => setIds.includes(sheet.drawing_set_id));
+    },
+    enabled: !!activeProjectId && drawingSets.length > 0,
     staleTime: 2 * 60 * 1000
   });
 
   const { data: revisions = [] } = useQuery({
     queryKey: ['drawing-revisions', activeProjectId],
-    queryFn: () => base44.entities.DrawingRevision.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId,
+    queryFn: async () => {
+      if (!activeProjectId) return [];
+      const setIds = drawingSets.map(s => s.id);
+      if (setIds.length === 0) return [];
+      const allRevisions = await base44.entities.DrawingRevision.list();
+      return allRevisions.filter(rev => setIds.includes(rev.drawing_set_id));
+    },
+    enabled: !!activeProjectId && drawingSets.length > 0,
     staleTime: 2 * 60 * 1000
   });
 
@@ -255,17 +264,8 @@ export default function Drawings() {
       ) : (
         <>
           {showAnalysisDashboard && (
-            <div className="mb-6 p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
-              <DrawingIntelligenceDashboard
-                projectId={activeProjectId}
-                drawingSetId={selectedSet?.id || drawingSets[0]?.id}
-                drawingSetLabel={selectedSet
-                  ? `${selectedSet.set_number} – ${selectedSet.title}`
-                  : drawingSets[0]
-                    ? `${drawingSets[0].set_number} – ${drawingSets[0].title}`
-                    : undefined
-                }
-              />
+            <div className="mb-6">
+              <DrawingAnalysisDashboard projectId={activeProjectId} />
             </div>
           )}
 
@@ -279,88 +279,67 @@ export default function Drawings() {
             ]}
           />
 
-          <Tabs value={mainTab} onValueChange={setMainTab} className="mt-2">
-            <TabsList className="bg-zinc-900 border border-zinc-800 mb-4">
-              <TabsTrigger value="sets" className="flex items-center gap-1.5 text-xs">
-                <FileText className="w-3.5 h-3.5" /> Drawing Sets ({drawingSets.length})
-              </TabsTrigger>
-              <TabsTrigger value="sheets" className="flex items-center gap-1.5 text-xs">
-                <Layers className="w-3.5 h-3.5" /> Sheet Management ({sheets.length})
-              </TabsTrigger>
-            </TabsList>
+          <FilterBar>
+            <div className="flex-1 relative max-w-md">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <Input
+                placeholder="Search by set name, number, or revision..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="IFA">IFA</SelectItem>
+                <SelectItem value="BFA">BFA</SelectItem>
+                <SelectItem value="BFS">BFS</SelectItem>
+                <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
+                <SelectItem value="FFF">FFF</SelectItem>
+                <SelectItem value="As-Built">As-Built</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
+              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
+                <SelectValue placeholder="Filter by Discipline" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Disciplines</SelectItem>
+                <SelectItem value="structural">Structural</SelectItem>
+                <SelectItem value="misc_metals">Misc Metals</SelectItem>
+                <SelectItem value="stairs">Stairs</SelectItem>
+                <SelectItem value="handrails">Handrails</SelectItem>
+                <SelectItem value="connections">Connections</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </FilterBar>
 
-            <TabsContent value="sets">
-              <FilterBar>
-                <div className="flex-1 relative max-w-md">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                  <Input
-                    placeholder="Search by set name, number, or revision..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                    <SelectValue placeholder="Filter by Status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="IFA">IFA</SelectItem>
-                    <SelectItem value="BFA">BFA</SelectItem>
-                    <SelectItem value="BFS">BFS</SelectItem>
-                    <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
-                    <SelectItem value="FFF">FFF</SelectItem>
-                    <SelectItem value="As-Built">As-Built</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
-                  <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                    <SelectValue placeholder="Filter by Discipline" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Disciplines</SelectItem>
-                    <SelectItem value="structural">Structural</SelectItem>
-                    <SelectItem value="misc_metals">Misc Metals</SelectItem>
-                    <SelectItem value="stairs">Stairs</SelectItem>
-                    <SelectItem value="handrails">Handrails</SelectItem>
-                    <SelectItem value="connections">Connections</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FilterBar>
-              <ContentSection>
-                {isLoading ? (
-                  <LoadingState message="Loading drawings..." />
-                ) : filteredSets.length === 0 ? (
-                  <EmptyState
-                    icon={FileText}
-                    title={drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
-                    description={drawingSets.length === 0 ? 'Create your first drawing set or upload drawings to get started' : 'Try adjusting your search or filters'}
-                    actionLabel={drawingSets.length === 0 ? 'Create Drawing Set' : null}
-                    onAction={drawingSets.length === 0 ? () => setShowCreateDialog(true) : null}
-                  />
-                ) : (
-                  <DrawingSetTable
-                    sets={filteredSets}
-                    sheets={sheets}
-                    revisions={revisions}
-                    projects={userProjects}
-                    onSelectSet={handleSelectSet}
-                  />
-                )}
-              </ContentSection>
-            </TabsContent>
-
-            <TabsContent value="sheets">
-              <ContentSection>
-                <DrawingSheetManager
-                  projectId={activeProjectId}
-                  drawingSets={drawingSets}
-                />
-              </ContentSection>
-            </TabsContent>
-          </Tabs>
+          <ContentSection>
+            {isLoading ? (
+              <LoadingState message="Loading drawings..." />
+            ) : filteredSets.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title={drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
+                description={drawingSets.length === 0 ? 'Create your first drawing set or upload drawings to get started' : 'Try adjusting your search or filters'}
+                actionLabel={drawingSets.length === 0 ? 'Create Drawing Set' : null}
+                onAction={drawingSets.length === 0 ? () => setShowCreateDialog(true) : null}
+              />
+            ) : (
+              <DrawingSetTable
+                sets={filteredSets}
+                sheets={sheets}
+                revisions={revisions}
+                projects={userProjects}
+                onSelectSet={handleSelectSet}
+              />
+            )}
+          </ContentSection>
         </>
       )}
 

@@ -19,7 +19,7 @@ import ContentSection from '@/components/layout/ContentSection';
 import SectionCard from '@/components/layout/SectionCard';
 import SubmittalDetailPanel from '@/components/submittals/SubmittalDetailPanel';
 import SubmittalForm from '@/components/submittals/SubmittalForm';
-import { Plus, Search, Eye, Trash2, FileText, Sparkles, RefreshCw } from 'lucide-react';
+import { Plus, Search, Eye, Trash2, FileText } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from '@/components/ui/notifications';
 
@@ -40,17 +40,9 @@ export default function Submittals() {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showAIPanel, setShowAIPanel] = React.useState(false);
-  const [selectedDrawingSet, setSelectedDrawingSet] = React.useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedSubmittal, setSelectedSubmittal] = useState(null);
   const [deleteSubmittal, setDeleteSubmittal] = useState(null);
-
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date'),
-    staleTime: 5 * 60 * 1000
-  });
 
   const { data: submittals = [] } = useQuery({
     queryKey: ['submittals', activeProjectId],
@@ -104,31 +96,6 @@ export default function Submittals() {
       toast.error('Failed to delete: ' + error.message);
     }
   });
-
-  const [generatingAI, setGeneratingAI] = React.useState(false);
-
-  const { data: drawingSets = [] } = useQuery({
-    queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => base44.entities.DrawingSet.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId
-  });
-
-  const handleAIGenerate = async (drawingSetId) => {
-    if (!activeProjectId || !drawingSetId) return;
-    setGeneratingAI(true);
-    try {
-      const result = await base44.functions.invoke('autoGenerateSubmittals', {
-        project_id: activeProjectId,
-        drawing_set_id: drawingSetId
-      });
-      queryClient.invalidateQueries({ queryKey: ['submittals'] });
-      toast.success(`Generated ${result.data?.created || 0} submittals (${result.data?.skipped_duplicates || 0} duplicates skipped)`);
-    } catch (e) {
-      toast.error('AI generation failed: ' + e.message);
-    } finally {
-      setGeneratingAI(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     return submittals.filter(s =>
@@ -222,24 +189,13 @@ export default function Submittals() {
         title="Submittals"
         subtitle={`${submittals.length} submittals`}
         actions={
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setShowAIPanel(true)}
-              variant="outline"
-              className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
-              disabled={!activeProjectId}
-            >
-              <Sparkles size={16} className="mr-2" />
-              AI Generate
-            </Button>
-            <Button 
-              onClick={() => setShowCreateDialog(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
-            >
-              <Plus size={16} className="mr-2" />
-              New Submittal
-            </Button>
-          </div>
+          <Button 
+            onClick={() => setShowCreateDialog(true)}
+            className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
+          >
+            <Plus size={16} className="mr-2" />
+            New Submittal
+          </Button>
         }
       />
 
@@ -254,20 +210,7 @@ export default function Submittals() {
       />
 
       <FilterBar>
-        <div className="flex items-center gap-3 flex-wrap">
-          <Select value={activeProjectId || 'all'} onValueChange={(v) => setActiveProjectId(v === 'all' ? null : v)}>
-            <SelectTrigger className="w-56 bg-zinc-900 border-zinc-800 text-white">
-              <SelectValue placeholder="Select project..." />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects.map(p => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.project_number} — {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <Input
@@ -357,56 +300,6 @@ export default function Submittals() {
           )}
         </SheetContent>
       </Sheet>
-
-      {/* AI Generate Panel */}
-      <Dialog open={showAIPanel} onOpenChange={setShowAIPanel}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles size={16} className="text-amber-400" />
-              AI Submittal Generator
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <p className="text-sm text-zinc-400">
-              Select a drawing set. The AI will analyze the project phase and scope, then auto-create all required submittals with deadlines and reviewer assignments.
-            </p>
-            <div className="space-y-2">
-              <label className="text-xs text-zinc-500 uppercase">Drawing Set</label>
-              <Select value={selectedDrawingSet} onValueChange={setSelectedDrawingSet}>
-                <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white">
-                  <SelectValue placeholder="Select drawing set..." />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
-                  {drawingSets.map(ds => (
-                    <SelectItem key={ds.id} value={ds.id}>
-                      {ds.set_number} — {ds.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-zinc-800">
-              <Button variant="outline" onClick={() => setShowAIPanel(false)}>Cancel</Button>
-              <Button
-                onClick={async () => {
-                  await handleAIGenerate(selectedDrawingSet);
-                  setShowAIPanel(false);
-                  setSelectedDrawingSet('');
-                }}
-                disabled={!selectedDrawingSet || generatingAI}
-                className="bg-amber-500 hover:bg-amber-600 text-black"
-              >
-                {generatingAI ? (
-                  <><RefreshCw size={14} className="mr-2 animate-spin" />Generating...</>
-                ) : (
-                  <><Sparkles size={14} className="mr-2" />Generate Submittals</>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation */}
       {deleteSubmittal && (

@@ -312,27 +312,27 @@ export default function GanttChart({
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800 overflow-hidden">
-      <CardHeader className="border-b border-zinc-800 space-y-3 sm:space-y-4 p-3 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <CardTitle className="text-sm sm:text-base text-white">
-            Gantt Chart - {viewMode ? viewMode.charAt(0).toUpperCase() + viewMode.slice(1) : 'Day'} View
+      <CardHeader className="border-b border-zinc-800 space-y-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm text-white">
+            Gantt Chart - {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} View
           </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <Button size="sm" variant="outline" onClick={scrollToToday} className="border-zinc-700 text-xs min-w-[60px]">
-              <Home size={12} className="sm:mr-1" />
-              <span className="hidden sm:inline">Today</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={scrollToToday} className="border-zinc-700 text-xs">
+              <Home size={14} className="mr-1" />
+              Today
             </Button>
-            <Button size="sm" variant="outline" onClick={expandAll} className="border-zinc-700 text-xs hidden sm:inline-flex">
+            <Button size="sm" variant="outline" onClick={expandAll} className="border-zinc-700 text-xs">
               Expand All
             </Button>
-            <Button size="sm" variant="outline" onClick={collapseAll} className="border-zinc-700 text-xs hidden sm:inline-flex">
+            <Button size="sm" variant="outline" onClick={collapseAll} className="border-zinc-700 text-xs">
               Collapse All
             </Button>
             <Button
               size="sm"
               variant={groupByWBS ? "default" : "outline"}
               onClick={() => setGroupByWBS(!groupByWBS)}
-              className={`text-xs hidden sm:inline-flex ${groupByWBS ? 'bg-purple-600 hover:bg-purple-700 border-purple-600' : 'border-zinc-700'}`}
+              className={`text-xs ${groupByWBS ? 'bg-purple-600 hover:bg-purple-700 border-purple-600' : 'border-zinc-700'}`}
               title="Group by WBS codes instead of phases"
             >
               WBS
@@ -341,7 +341,7 @@ export default function GanttChart({
               size="sm"
               variant={showBaseline ? "default" : "outline"}
               onClick={() => setShowBaseline(!showBaseline)}
-              className={`text-xs hidden sm:inline-flex ${showBaseline ? 'bg-teal-600 hover:bg-teal-700 border-teal-600' : 'border-zinc-700'}`}
+              className={`text-xs ${showBaseline ? 'bg-teal-600 hover:bg-teal-700 border-teal-600' : 'border-zinc-700'}`}
               title="Toggle baseline visualization"
             >
               Baseline
@@ -350,12 +350,12 @@ export default function GanttChart({
               size="sm"
               variant={showResourceIndicators ? "default" : "outline"}
               onClick={() => setShowResourceIndicators(!showResourceIndicators)}
-              className={`text-xs hidden sm:inline-flex ${showResourceIndicators ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-600' : 'border-zinc-700'}`}
+              className={`text-xs ${showResourceIndicators ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-600' : 'border-zinc-700'}`}
               title="Toggle resource indicators"
             >
               Resources
             </Button>
-            <div className="text-xs text-zinc-400 hidden lg:flex items-center gap-1">
+            <div className="text-xs text-zinc-400 flex items-center gap-1">
               <GitBranch size={12} />
               Ctrl+Click to edit dependencies
             </div>
@@ -363,14 +363,14 @@ export default function GanttChart({
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-          <div className="relative flex-1 sm:max-w-xs">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <Input
               placeholder="Search tasks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-zinc-800 border-zinc-700 text-white h-9 text-sm"
+              className="pl-9 bg-zinc-800 border-zinc-700 text-white h-8 text-sm"
             />
             {searchTerm && (
               <button
@@ -386,16 +386,15 @@ export default function GanttChart({
             size="sm"
             variant={showCriticalOnly ? "default" : "outline"}
             onClick={() => setShowCriticalOnly(!showCriticalOnly)}
-            className={`text-xs gap-1 flex-1 sm:flex-initial ${showCriticalOnly ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700'}`}
+            className={`text-xs gap-1 ${showCriticalOnly ? 'bg-red-600 hover:bg-red-700' : 'border-zinc-700'}`}
             title="Show only critical path tasks"
           >
-            <AlertTriangle size={12} />
-            <span className="hidden sm:inline">Critical Path</span>
-            <span className="sm:hidden">Critical</span>
+            <AlertTriangle size={14} />
+            Critical Path
           </Button>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-zinc-800 border-zinc-700 h-9 text-sm">
+            <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700 h-8 text-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -409,7 +408,7 @@ export default function GanttChart({
           </Select>
 
           <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-zinc-800 border-zinc-700 h-9 text-sm">
+            <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700 h-8 text-sm">
               <SelectValue placeholder="Project" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -446,18 +445,18 @@ export default function GanttChart({
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="overflow-x-auto touch-pan-x" ref={chartRef}>
+        <div className="overflow-x-auto" ref={chartRef}>
           <div style={{ minWidth: `${periods.length * columnWidth}px` }}>
             {/* Timeline Header */}
             <div className="flex border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
-              <div className="w-48 sm:w-64 lg:w-80 flex-shrink-0 border-r border-zinc-800 p-2 sm:p-3 font-semibold text-xs sm:text-sm text-white bg-zinc-900">
+              <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-semibold text-sm text-white bg-zinc-900">
                 TASK NAME
               </div>
               <div className="flex flex-1 relative">
                 {periods.map((date, idx) => (
                   <div 
                     key={idx} 
-                    className="border-r border-zinc-800 p-1 sm:p-2 text-center text-[10px] sm:text-xs text-zinc-200"
+                    className="border-r border-zinc-800 p-2 text-center text-xs text-zinc-200"
                     style={{ minWidth: `${columnWidth}px` }}
                   >
                     <div className="font-semibold">
@@ -466,7 +465,7 @@ export default function GanttChart({
                       {viewMode === 'month' && format(date, 'MMM yyyy')}
                     </div>
                     {viewMode === 'day' && (
-                      <div className="text-[9px] sm:text-[10px] text-zinc-400">{format(date, 'EEE')}</div>
+                      <div className="text-[10px] text-zinc-400">{format(date, 'EEE')}</div>
                     )}
                   </div>
                 ))}
@@ -497,10 +496,10 @@ export default function GanttChart({
                   <div className="flex bg-zinc-800/70 hover:bg-zinc-800">
                     <button
                       onClick={() => toggleProject(projectId)}
-                      className="w-48 sm:w-64 lg:w-80 flex-shrink-0 border-r border-zinc-800 p-2 sm:p-3 font-bold text-sm sm:text-base text-amber-400 flex items-center gap-1 sm:gap-2 text-left hover:text-amber-300 transition-colors"
+                      className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-amber-400 flex items-center gap-2 text-left hover:text-amber-300 transition-colors"
                     >
-                      {isProjectCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                      <span className="truncate">{project.project_number} - {project.name} ({totalTasks})</span>
+                      {isProjectCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                      {project.project_number} - {project.name} ({totalTasks})
                     </button>
                     <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                   </div>
@@ -533,10 +532,10 @@ export default function GanttChart({
                           <div className="flex bg-zinc-800/50 hover:bg-zinc-800/70">
                             <button
                               onClick={() => togglePhase(groupId)}
-                              className="w-48 sm:w-64 lg:w-80 flex-shrink-0 border-r border-zinc-800 p-2 sm:p-2.5 pl-4 sm:pl-8 font-semibold text-xs sm:text-sm text-zinc-300 flex items-center gap-1 sm:gap-2 text-left hover:text-white transition-colors"
+                              className="w-80 flex-shrink-0 border-r border-zinc-800 p-2.5 pl-8 font-semibold text-sm text-zinc-300 flex items-center gap-2 text-left hover:text-white transition-colors"
                             >
-                              {isGroupCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                              <span className="truncate">{groupLabel} ({groupTasks.length})</span>
+                              {isGroupCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                              {groupLabel} ({groupTasks.length})
                             </button>
                             <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                           </div>
@@ -557,7 +556,7 @@ export default function GanttChart({
                               <div key={task.id}>
                                 <div className="flex border-b border-zinc-800 hover:bg-zinc-800/40 group transition-colors">
                                   {/* Task Name */}
-                                  <div className="w-48 sm:w-64 lg:w-80 flex-shrink-0 border-r border-zinc-800 p-2 sm:p-3 flex flex-col gap-1 sm:gap-1.5 bg-zinc-900 z-10">
+                                  <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 flex flex-col gap-1.5 bg-zinc-900 z-10">
                                     <div className="flex items-center gap-1">
                                       {hasChildren && (
                                         <button
@@ -565,14 +564,14 @@ export default function GanttChart({
                                             e.stopPropagation();
                                             toggleParent(task.id);
                                           }}
-                                          className="text-zinc-400 hover:text-white transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center"
+                                          className="text-zinc-400 hover:text-white transition-colors"
                                         >
-                                          {isParentCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                          {isParentCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                                         </button>
                                       )}
                                       <button
-                                        onClick={(e) => handleTaskClick(task, e)}
-                                        className="text-left text-xs sm:text-sm font-medium text-white hover:text-amber-400 truncate flex-1 transition-colors min-h-[44px] flex items-center"
+                                        onClick={(e) => handleTaskClick(task, e)} // ✅ pass event
+                                        className="text-left text-sm font-medium text-white hover:text-amber-400 truncate flex-1 transition-colors"
                                       >
                                         {hasChildren && '📁 '}
                                         {task.is_milestone ? '◆ ' : ''}
@@ -583,7 +582,7 @@ export default function GanttChart({
                                           e.stopPropagation();
                                           setDeleteTask(task);
                                         }}
-                                        className="text-zinc-500 hover:text-red-400 transition-colors p-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                                        className="text-zinc-500 hover:text-red-400 transition-colors p-1"
                                         title="Delete task"
                                       >
                                         <Trash2 size={14} />
@@ -591,14 +590,14 @@ export default function GanttChart({
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {taskProject && (
-                                        <span className="text-[10px] sm:text-xs text-zinc-300 truncate">
+                                        <span className="text-xs text-zinc-300 truncate">
                                           {taskProject.name}
                                         </span>
                                       )}
                                       {(hasRFI || hasCO) && (
                                         <div className="flex gap-1">
-                                          {hasRFI && <LinkIcon size={10} className="text-blue-400" />}
-                                          {hasCO && <LinkIcon size={10} className="text-purple-400" />}
+                                          {hasRFI && <LinkIcon size={12} className="text-blue-400" />}
+                                          {hasCO && <LinkIcon size={12} className="text-purple-400" />}
                                         </div>
                                       )}
                                     </div>
@@ -771,8 +770,8 @@ export default function GanttChart({
                                       <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-10 flex flex-col gap-1.5 bg-zinc-900 z-10">
                                         <div className="flex items-center gap-1">
                                           <button
-                                            onClick={(e) => handleTaskClick(childTask, e)}
-                                            className="text-left text-xs sm:text-sm text-zinc-300 hover:text-amber-400 truncate flex-1 transition-colors min-h-[44px] flex items-center"
+                                            onClick={(e) => handleTaskClick(childTask, e)} // ✅ pass event
+                                            className="text-left text-sm text-zinc-300 hover:text-amber-400 truncate flex-1 transition-colors"
                                           >
                                             ↳ {childTask.name}
                                           </button>
@@ -781,7 +780,7 @@ export default function GanttChart({
                                               e.stopPropagation();
                                               setDeleteTask(childTask);
                                             }}
-                                            className="text-zinc-500 hover:text-red-400 transition-colors p-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                                            className="text-zinc-500 hover:text-red-400 transition-colors p-1"
                                             title="Delete task"
                                           >
                                             <Trash2 size={14} />
@@ -881,10 +880,10 @@ export default function GanttChart({
                 <div className="flex bg-zinc-800/70 hover:bg-zinc-800 border-b border-zinc-800">
                   <button
                     onClick={() => setCollapsedCompleted(!collapsedCompleted)}
-                    className="w-48 sm:w-64 lg:w-80 flex-shrink-0 border-r border-zinc-800 p-2 sm:p-3 font-bold text-sm sm:text-base text-green-400 flex items-center gap-1 sm:gap-2 text-left hover:text-green-300 transition-colors min-h-[44px]"
+                    className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 font-bold text-base text-green-400 flex items-center gap-2 text-left hover:text-green-300 transition-colors"
                   >
-                    {collapsedCompleted ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                    <span className="truncate">✓ Completed ({completedTasks.length})</span>
+                    {collapsedCompleted ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+                    ✓ Completed Tasks ({completedTasks.length})
                   </button>
                   <div className="flex-1" style={{ minWidth: `${periods.length * columnWidth}px` }} />
                 </div>
@@ -897,12 +896,12 @@ export default function GanttChart({
 
                     return (
                       <div key={task.id} className="flex border-b border-zinc-800/50 hover:bg-zinc-800/30 group transition-colors opacity-60">
-                        <div className="w-48 sm:w-64 lg:w-80 flex-shrink-0 border-r border-zinc-800 p-2 sm:p-3 pl-4 sm:pl-8 flex flex-col gap-1 sm:gap-1.5 bg-zinc-900 z-10">
+                        <div className="w-80 flex-shrink-0 border-r border-zinc-800 p-3 pl-8 flex flex-col gap-1.5 bg-zinc-900 z-10">
                           <div className="flex items-center gap-1">
-                            <CheckCircle size={12} className="text-green-400 flex-shrink-0" />
+                            <CheckCircle size={14} className="text-green-400 flex-shrink-0" />
                             <button
-                              onClick={(e) => handleTaskClick(task, e)}
-                              className="text-left text-xs sm:text-sm text-zinc-400 hover:text-green-400 truncate flex-1 transition-colors line-through min-h-[44px] flex items-center"
+                              onClick={(e) => handleTaskClick(task, e)} // ✅ pass event
+                              className="text-left text-sm text-zinc-400 hover:text-green-400 truncate flex-1 transition-colors line-through"
                             >
                               {task.name}
                             </button>
@@ -911,7 +910,7 @@ export default function GanttChart({
                                 e.stopPropagation();
                                 setDeleteTask(task);
                               }}
-                              className="text-zinc-500 hover:text-red-400 transition-colors p-1 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                              className="text-zinc-500 hover:text-red-400 transition-colors p-1"
                               title="Delete task"
                             >
                               <Trash2 size={14} />
@@ -968,9 +967,9 @@ export default function GanttChart({
         </div>
 
         {/* Legend */}
-        <div className="border-t border-zinc-800 bg-zinc-900/50 p-3 sm:p-5">
-          <h4 className="text-xs sm:text-sm font-semibold text-white mb-3 sm:mb-4">Legend</h4>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
+        <div className="border-t border-zinc-800 bg-zinc-900/50 p-5">
+          <h4 className="text-sm font-semibold text-white mb-4">Legend</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <div className="w-1 h-5 bg-amber-500" />
               <span className="font-medium text-amber-400">Today</span>

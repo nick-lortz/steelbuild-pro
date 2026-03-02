@@ -22,10 +22,6 @@ import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceO
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
 import ErectionReadinessWidget from '@/components/project-dashboard/ErectionReadinessWidget';
-import QuickLinksWidget from '@/components/project-dashboard/QuickLinksWidget';
-import PMDailyDriver from '@/components/project-dashboard/PMDailyDriver';
-import { Pin, PinOff } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 const AVAILABLE_WIDGETS = [
   { id: 'predictive_risk', label: 'Predictive Risk Analytics', component: PredictiveRiskPanel },
@@ -57,7 +53,6 @@ export default function ProjectDashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
   const [widgetLayout, setWidgetLayout] = useState([]);
   const [configOpen, setConfigOpen] = useState(false);
-  const [view, setView] = useState('daily'); // 'daily' | 'project'
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
@@ -146,9 +141,9 @@ export default function ProjectDashboard() {
         title={project?.name || 'Project Dashboard'}
         subtitle={project?.project_number || 'Loading...'}
         actions={
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <>
             <Select value={activeProjectId} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-full sm:w-80">
+              <SelectTrigger className="w-80">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -163,133 +158,107 @@ export default function ProjectDashboard() {
               variant="outline"
               size="sm"
               onClick={() => setConfigOpen(true)}
-              className="w-full sm:w-auto"
             >
               <Settings size={14} className="mr-2" />
-              <span className="hidden sm:inline">Configure Widgets</span>
-              <span className="sm:hidden">Configure</span>
+              Configure Widgets
             </Button>
-          </div>
+          </>
         }
       />
 
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+      <div className="max-w-[1800px] mx-auto px-8 py-6">
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="dashboard">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+              >
+                {widgetLayout.map((widgetId, index) => {
+                  const widget = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
+                  if (!widget) return null;
 
-        {/* View Toggle */}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant={view === 'daily' ? 'default' : 'outline'}
-            onClick={() => setView('daily')}
-          >
-            PM Daily Driver
-          </Button>
-          <Button
-            size="sm"
-            variant={view === 'project' ? 'default' : 'outline'}
-            onClick={() => setView('project')}
-          >
-            Project Widgets
-          </Button>
-        </div>
+                  const WidgetComponent = widget.component;
+                  const canMoveUp = index > 0;
+                  const canMoveDown = index < widgetLayout.length - 1;
 
-        {/* PM Daily Driver View */}
-        {view === 'daily' && (
-          <PMDailyDriver onSelectProject={(id) => { setActiveProjectId(id); setView('project'); }} />
-        )}
+                  const moveWidget = (fromIndex, toIndex) => {
+                    const items = Array.from(widgetLayout);
+                    const [moved] = items.splice(fromIndex, 1);
+                    items.splice(toIndex, 0, moved);
+                    handleUpdateLayout(items);
+                  };
 
-        {/* Project Widget View */}
-        {view === 'project' && (
-          <div className="space-y-6">
-            <Card className="p-4">
-              <QuickLinksWidget />
-            </Card>
-
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="dashboard">
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
-                  >
-                    {widgetLayout.map((widgetId, index) => {
-                      const widget = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
-                      if (!widget) return null;
-
-                      const WidgetComponent = widget.component;
-                      const canMoveUp = index > 0;
-                      const canMoveDown = index < widgetLayout.length - 1;
-
-                      const moveWidget = (fromIndex, toIndex) => {
-                        const items = Array.from(widgetLayout);
-                        const [moved] = items.splice(fromIndex, 1);
-                        items.splice(toIndex, 0, moved);
-                        handleUpdateLayout(items);
-                      };
-
-                      const unpinWidget = (id) => {
-                        handleUpdateLayout(widgetLayout.filter(w => w !== id));
-                      };
-
-                      return (
-                        <Draggable key={widgetId} draggableId={widgetId} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={snapshot.isDragging ? 'opacity-50' : ''}
-                            >
-                              <Card className="p-4 relative group">
-                                <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
-                                  <Button size="sm" variant="ghost" onClick={() => moveWidget(index, index - 1)} disabled={!canMoveUp} className="h-7 w-7 p-0" aria-label={`Move ${widget.label} up`}>
-                                    <span aria-hidden="true">↑</span>
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => moveWidget(index, index + 1)} disabled={!canMoveDown} className="h-7 w-7 p-0" aria-label={`Move ${widget.label} down`}>
-                                    <span aria-hidden="true">↓</span>
-                                  </Button>
-                                </div>
-                                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => unpinWidget(widgetId)}
-                                    className="h-7 w-7 p-0 text-zinc-500 hover:text-red-400"
-                                    title="Unpin widget"
-                                  >
-                                    <PinOff size={13} />
-                                  </Button>
-                                  <div
-                                    {...provided.dragHandleProps}
-                                    className="p-1 cursor-move"
-                                    aria-hidden="true"
-                                  >
-                                    <GripVertical size={16} className="text-[#6B7280]" />
-                                  </div>
-                                </div>
-                                <span className="sr-only">{widget.label}, position {index + 1} of {widgetLayout.length}</span>
-                                <WidgetComponent projectId={activeProjectId} />
-                              </Card>
+                  return (
+                    <Draggable key={widgetId} draggableId={widgetId} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={snapshot.isDragging ? 'opacity-50' : ''}
+                        >
+                          <Card className="p-4 relative group">
+                            {/* Keyboard reorder controls (WCAG 2.1.1) */}
+                            <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => moveWidget(index, index - 1)}
+                                disabled={!canMoveUp}
+                                className="h-7 w-7 p-0"
+                                aria-label={`Move ${widget.label} up`}
+                              >
+                                <span aria-hidden="true">↑</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => moveWidget(index, index + 1)}
+                                disabled={!canMoveDown}
+                                className="h-7 w-7 p-0"
+                                aria-label={`Move ${widget.label} down`}
+                              >
+                                <span aria-hidden="true">↓</span>
+                              </Button>
                             </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
 
-            {widgetLayout.length === 0 && (
-              <Card className="p-12 text-center">
-                <p className="text-[#6B7280] mb-4">No widgets pinned</p>
-                <Button onClick={() => setConfigOpen(true)}>
-                  <Pin size={14} className="mr-2" /> Pin Widgets
-                </Button>
-              </Card>
+                            {/* Drag handle (mouse users) */}
+                            <div
+                              {...provided.dragHandleProps}
+                              className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
+                              aria-hidden="true"
+                            >
+                              <GripVertical size={16} className="text-[#6B7280]" />
+                            </div>
+
+                            {/* Screen reader position info */}
+                            <span className="sr-only">
+                              {widget.label}, position {index + 1} of {widgetLayout.length}
+                            </span>
+
+                            <WidgetComponent projectId={activeProjectId} />
+                          </Card>
+                        </div>
+                      )}
+                    </Draggable>
+                  );
+                })}
+                {provided.placeholder}
+              </div>
             )}
-          </div>
+          </Droppable>
+        </DragDropContext>
+
+        {widgetLayout.length === 0 && (
+          <Card className="p-12 text-center">
+            <p className="text-[#6B7280] mb-4">No widgets configured</p>
+            <Button
+              onClick={() => setConfigOpen(true)}
+            >
+              Add Widgets
+            </Button>
+          </Card>
         )}
       </div>
 

@@ -3,9 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, Clock, AlertTriangle, DollarSign, 
   TrendingUp, Users, Package, Truck 
@@ -134,22 +131,6 @@ export default function PMDashboard({ projectId }) {
           </div>
         </CardContent>
       </Card>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-3">
-        <Link to={createPageUrl('ResourceManagement')}>
-          <Button variant="outline" className="w-full">
-            <Users size={16} className="mr-2" />
-            Resource Management
-          </Button>
-        </Link>
-        <Link to={createPageUrl('Schedule') + `?project=${projectId}`}>
-          <Button variant="outline" className="w-full">
-            <Clock size={16} className="mr-2" />
-            Schedule View
-          </Button>
-        </Link>
-      </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

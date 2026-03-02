@@ -1,26 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
 import PMProjectSelector from '@/components/pm-toolkit/PMProjectSelector';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, Plus, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Plus, Mail, AlertCircle } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
-
-const DEFAULT_CHECKLIST = [
-  { title: 'Project Information', order: 0 },
-  { title: 'Drawings / Revisions / Submittals', order: 1 },
-  { title: 'RFIs', order: 2 },
-  { title: 'Work Packages', order: 3 },
-  { title: 'Schedule', order: 4 },
-  { title: 'Budget & Financials', order: 5 },
-  { title: 'SOV', order: 6 },
-  { title: 'Labor & Scope', order: 7 },
-  { title: 'Resources', order: 8 },
-  { title: 'Change Orders', order: 9 },
-];
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function PMJobSetup() {
   const { activeProjectId } = useActiveProject();
@@ -28,12 +19,15 @@ export default function PMJobSetup() {
   const [showEmailDraft, setShowEmailDraft] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
-  const [seeding, setSeeding] = useState(false);
-
   const { data: checklistItems = [], isLoading } = useQuery({
     queryKey: ['checklistItems', activeProjectId],
     queryFn: () => base44.entities.ProjectChecklistItem.filter({ project_id: activeProjectId, category: 'job_setup' }),
     enabled: !!activeProjectId
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['checklistTemplates'],
+    queryFn: () => base44.entities.ProjectChecklistTemplate.filter({ category: 'job_setup' })
   });
 
   const { data: emailTemplates = [] } = useQuery({
@@ -41,31 +35,41 @@ export default function PMJobSetup() {
     queryFn: () => base44.entities.EmailTemplate.filter({ category: 'job_setup' })
   });
 
+  const { data: project } = useQuery({
+    queryKey: ['project', activeProjectId],
+    queryFn: () => base44.entities.Project.filter({ id: activeProjectId }),
+    enabled: !!activeProjectId,
+    select: (data) => data[0]
+  });
+
   const updateItemMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ProjectChecklistItem.update(id, data),
     onSuccess: () => queryClient.invalidateQueries(['checklistItems'])
   });
 
-  // Auto-seed default checklist when a project has no items
-  useEffect(() => {
-    if (!activeProjectId || isLoading || checklistItems.length > 0 || seeding) return;
-    setSeeding(true);
-    Promise.all(
-      DEFAULT_CHECKLIST.map(item =>
+  const createFromTemplate = useMutation({
+    mutationFn: async (templateId) => {
+      const template = templates.find(t => t.id === templateId);
+      if (!template) return;
+      
+      const promises = template.items.map((item, idx) =>
         base44.entities.ProjectChecklistItem.create({
           project_id: activeProjectId,
           category: 'job_setup',
           title: item.title,
-          order: item.order,
-          status: 'not_started',
-          required: false
+          description: item.description,
+          required: item.required || false,
+          order: item.order || idx,
+          status: 'not_started'
         })
-      )
-    ).then(() => {
+      );
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries(['checklistItems']);
-      setSeeding(false);
-    });
-  }, [activeProjectId, isLoading, checklistItems.length]);
+      toast.success('Checklist items created from template');
+    }
+  });
 
   const toggleStatus = (item) => {
     const newStatus = item.status === 'completed' ? 'not_started' : 'completed';
@@ -73,7 +77,8 @@ export default function PMJobSetup() {
       id: item.id,
       data: {
         status: newStatus,
-        completed_at: newStatus === 'completed' ? new Date().toISOString() : null
+        completed_at: newStatus === 'completed' ? new Date().toISOString() : null,
+        completed_by: newStatus === 'completed' ? (project?.project_manager || 'current_user') : null
       }
     });
   };
@@ -107,11 +112,29 @@ export default function PMJobSetup() {
         </div>
       </div>
 
-      {seeding && (
-        <div className="flex items-center gap-2 text-[#9CA3AF] text-sm">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Initializing default checklist...
-        </div>
+      {checklistItems.length === 0 && templates.length > 0 && (
+        <Card className="border-[#FF9D42]/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-[#FF9D42]" />
+              Initialize Job Setup
+            </CardTitle>
+            <CardDescription>Load the standard job won checklist to get started</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              {templates.map(template => (
+                <Button
+                  key={template.id}
+                  onClick={() => createFromTemplate.mutate(template.id)}
+                  disabled={createFromTemplate.isPending}
+                >
+                  Load: {template.name}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Card>
@@ -170,9 +193,9 @@ export default function PMJobSetup() {
             </div>
           ))}
 
-          {checklistItems.length === 0 && !seeding && (
+          {checklistItems.length === 0 && templates.length === 0 && (
             <div className="text-center py-8 text-[#6B7280]">
-              No checklist items yet. Add a task above.
+              No checklist items yet. Create your first task above.
             </div>
           )}
         </CardContent>

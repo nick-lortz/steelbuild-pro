@@ -16,70 +16,94 @@ export default function DependencyVisualizer({ tasks }) {
   }, [tasks]);
 
   const calculateCriticalPath = (taskList) => {
-    try {
-      if (!taskList || taskList.length === 0) return [];
-      const tasksWithDeps = taskList.filter(t => (t.predecessor_ids || []).length > 0);
-      if (tasksWithDeps.length === 0) return [];
+    // Build dependency graph
+    const taskMap = new Map(taskList.map(t => [t.id, t]));
+    const graph = new Map();
+    
+    taskList.forEach(task => {
+      const predecessors = task.predecessor_ids || [];
+      graph.set(task.id, {
+        task,
+        predecessors,
+        successors: []
+      });
+    });
 
-      const taskMap = new Map(taskList.map(t => [t.id, t]));
-      const inDegree = new Map(taskList.map(t => [t.id, 0]));
-      const successors = new Map(taskList.map(t => [t.id, []]));
+    // Build successor links
+    graph.forEach((node, taskId) => {
+      node.predecessors.forEach(predId => {
+        if (graph.has(predId)) {
+          graph.get(predId).successors.push(taskId);
+        }
+      });
+    });
 
-      taskList.forEach(task => {
-        (task.predecessor_ids || []).forEach(predId => {
-          if (taskMap.has(predId)) {
-            inDegree.set(task.id, (inDegree.get(task.id) || 0) + 1);
-            successors.get(predId).push(task.id);
+    // Calculate earliest start/finish
+    const earliestStart = new Map();
+    const earliestFinish = new Map();
+    
+    const calculateEarliest = (taskId) => {
+      if (earliestStart.has(taskId)) return earliestFinish.get(taskId);
+      
+      const node = graph.get(taskId);
+      const task = node.task;
+      
+      let maxPredFinish = 0;
+      node.predecessors.forEach(predId => {
+        if (graph.has(predId)) {
+          maxPredFinish = Math.max(maxPredFinish, calculateEarliest(predId));
+        }
+      });
+      
+      const es = maxPredFinish;
+      const ef = es + (task.duration_days || 0);
+      
+      earliestStart.set(taskId, es);
+      earliestFinish.set(taskId, ef);
+      
+      return ef;
+    };
+
+    taskList.forEach(task => calculateEarliest(task.id));
+
+    // Calculate latest start/finish (working backwards)
+    const projectEnd = Math.max(...Array.from(earliestFinish.values()));
+    const latestFinish = new Map();
+    const latestStart = new Map();
+
+    const calculateLatest = (taskId) => {
+      if (latestFinish.has(taskId)) return latestStart.get(taskId);
+      
+      const node = graph.get(taskId);
+      const task = node.task;
+      
+      let minSuccStart = projectEnd;
+      if (node.successors.length > 0) {
+        node.successors.forEach(succId => {
+          if (graph.has(succId)) {
+            minSuccStart = Math.min(minSuccStart, calculateLatest(succId));
           }
         });
-      });
-
-      // Topological sort to avoid recursion stack overflow
-      const queue = taskList.filter(t => (inDegree.get(t.id) || 0) === 0).map(t => t.id);
-      const topoOrder = [];
-      const tempInDegree = new Map(inDegree);
-
-      while (queue.length > 0) {
-        const current = queue.shift();
-        topoOrder.push(current);
-        (successors.get(current) || []).forEach(succId => {
-          const newDeg = (tempInDegree.get(succId) || 0) - 1;
-          tempInDegree.set(succId, newDeg);
-          if (newDeg === 0) queue.push(succId);
-        });
       }
+      
+      const lf = minSuccStart;
+      const ls = lf - (task.duration_days || 0);
+      
+      latestFinish.set(taskId, lf);
+      latestStart.set(taskId, ls);
+      
+      return ls;
+    };
 
-      // If cycle detected, return empty
-      if (topoOrder.length !== taskList.length) return [];
+    taskList.forEach(task => calculateLatest(task.id));
 
-      const earliest = new Map();
-      topoOrder.forEach(taskId => {
-        const task = taskMap.get(taskId);
-        const preds = (task.predecessor_ids || []).filter(id => taskMap.has(id));
-        const maxPred = preds.length > 0 ? Math.max(...preds.map(id => (earliest.get(id)?.finish || 0))) : 0;
-        const dur = task.duration_days || 1;
-        earliest.set(taskId, { start: maxPred, finish: maxPred + dur });
-      });
+    // Identify critical path (tasks with zero float)
+    const critical = taskList.filter(task => {
+      const float = latestStart.get(task.id) - earliestStart.get(task.id);
+      return Math.abs(float) < 0.01; // Account for floating point errors
+    });
 
-      const projectEnd = Math.max(...Array.from(earliest.values()).map(e => e.finish));
-      const latest = new Map();
-      [...topoOrder].reverse().forEach(taskId => {
-        const task = taskMap.get(taskId);
-        const succs = successors.get(taskId) || [];
-        const minSucc = succs.length > 0 ? Math.min(...succs.map(id => (latest.get(id)?.start || projectEnd))) : projectEnd;
-        const dur = task.duration_days || 1;
-        latest.set(taskId, { start: minSucc - dur, finish: minSucc });
-      });
-
-      return taskList.filter(task => {
-        const e = earliest.get(task.id);
-        const l = latest.get(task.id);
-        if (!e || !l) return false;
-        return Math.abs(l.start - e.start) < 0.01;
-      }).map(t => t.id);
-    } catch {
-      return [];
-    }
+    return critical.map(t => t.id);
   };
 
   const renderDependencyNode = (task) => {

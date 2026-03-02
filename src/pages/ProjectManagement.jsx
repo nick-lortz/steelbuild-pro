@@ -37,35 +37,32 @@ export default function ProjectManagement() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">Project Management</h1>
+        <h1 className="text-2xl font-bold text-white mb-2">Project Management</h1>
         {project && (
-          <p className="text-sm sm:text-base text-[#9CA3AF]">
+          <p className="text-[#9CA3AF]">
             {project.project_number} - {project.name}
           </p>
         )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#0A0A0A] border border-[rgba(255,255,255,0.05)] w-full sm:w-auto grid grid-cols-2 sm:flex gap-1">
-          <TabsTrigger value="dashboard" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-            <LayoutDashboard className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-            <span className="sm:hidden">Dash</span>
+        <TabsList className="bg-[#0A0A0A] border border-[rgba(255,255,255,0.05)]">
+          <TabsTrigger value="dashboard" className="gap-2">
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
           </TabsTrigger>
-          <TabsTrigger value="milestones" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Target className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Milestones</span>
-            <span className="sm:hidden">Miles</span>
+          <TabsTrigger value="milestones" className="gap-2">
+            <Target className="w-4 h-4" />
+            Milestones
           </TabsTrigger>
-          <TabsTrigger value="assignments" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Task Assignments</span>
-            <span className="sm:hidden">Tasks</span>
+          <TabsTrigger value="assignments" className="gap-2">
+            <Users className="w-4 h-4" />
+            Task Assignments
           </TabsTrigger>
-          <TabsTrigger value="timeline" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+          <TabsTrigger value="timeline" className="gap-2">
+            <Calendar className="w-4 h-4" />
             Timeline
           </TabsTrigger>
         </TabsList>

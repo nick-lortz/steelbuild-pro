@@ -11,24 +11,9 @@ export default function AIDocumentAnalysis({ document, onUpdate }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [findingSimilar, setFindingSimilar] = useState(false);
+  const [results, setResults] = useState(null);
+  const [summary, setSummary] = useState(null);
   const [similarDocs, setSimilarDocs] = useState(null);
-
-  // Load persisted data from document fields on open
-  const [results, setResults] = useState(() => {
-    if (document?.ai_metadata) {
-      try { return typeof document.ai_metadata === 'string' ? JSON.parse(document.ai_metadata) : document.ai_metadata; }
-      catch { return null; }
-    }
-    return null;
-  });
-
-  const [summary, setSummary] = useState(() => {
-    if (document?.ai_findings) {
-      try { return typeof document.ai_findings === 'string' ? JSON.parse(document.ai_findings) : { summary_text: document.ai_findings }; }
-      catch { return { summary_text: document.ai_findings }; }
-    }
-    return null;
-  });
 
   const handleAnalyze = async () => {
     setAnalyzing(true);

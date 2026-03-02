@@ -17,11 +17,10 @@ import DataTable from '@/components/ui/DataTable';
 import PermissionManager from '@/components/settings/PermissionManager';
 import NotificationPreferences from '@/components/settings/NotificationPreferences';
 import TrainingCenter from '@/components/settings/TrainingCenter';
-import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle, GraduationCap, Database } from 'lucide-react';
+import { UserCircle, Shield, Users, Plus, Save, MessageSquare, Send, Bell, Monitor, Zap, Trash2, AlertTriangle, GraduationCap } from 'lucide-react';
 import { toast } from "sonner";
 import { safeFormat } from '@/components/shared/dateUtilsSafe';
 import { cn } from '@/lib/utils';
-import DataTransfer from '@/components/settings/DataTransfer';
 
 export default function Settings() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -93,25 +92,19 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setShowInviteDialog(false);
       setInviteEmail('');
-      toast.success('Invite sent to ' + inviteEmail);
-    },
-    onError: (err) => {
-      toast.error('Invite failed: ' + (err.message || 'Unknown error'));
+      toast.success('Invite sent');
     }
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       const response = await base44.functions.invoke('updateUserProfile', data);
-      if (response.data?.error) throw new Error(response.data.error);
+      if (response.data.error) throw new Error(response.data.error);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success('Settings saved');
-    },
-    onError: (err) => {
-      toast.error('Save failed: ' + (err.message || 'Unknown error'));
+      toast.success('Saved');
     }
   });
 
@@ -213,7 +206,6 @@ export default function Settings() {
             <TabsTrigger value="notifications"><Bell size={12} className="mr-1.5" />Notifications</TabsTrigger>
             <TabsTrigger value="training"><GraduationCap size={12} className="mr-1.5" />Training</TabsTrigger>
             <TabsTrigger value="feedback"><MessageSquare size={12} className="mr-1.5" />Feedback</TabsTrigger>
-            {isAdmin && <TabsTrigger value="data"><Database size={12} className="mr-1.5" />Data</TabsTrigger>}
           </TabsList>
 
           {/* Profile */}
@@ -256,9 +248,9 @@ export default function Settings() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button onClick={() => updateProfileMutation.mutate(profileData)} disabled={updateProfileMutation.isPending} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                  <Button onClick={() => updateProfileMutation.mutate(profileData)} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
                     <Save size={14} className="mr-1" />
-                    {updateProfileMutation.isPending ? 'SAVING...' : 'SAVE PROFILE'}
+                    SAVE
                   </Button>
                 </div>
               </CardContent>
@@ -411,9 +403,9 @@ export default function Settings() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button onClick={() => updateProfileMutation.mutate({ display_preferences: displayPrefs })} disabled={updateProfileMutation.isPending} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                  <Button onClick={() => updateProfileMutation.mutate({ display_preferences: displayPrefs })} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
                     <Save size={14} className="mr-1" />
-                    {updateProfileMutation.isPending ? 'SAVING...' : 'SAVE DISPLAY'}
+                    SAVE
                   </Button>
                 </div>
               </CardContent>
@@ -486,9 +478,9 @@ export default function Settings() {
                 </div>
 
                 <div className="flex justify-end pt-2">
-                  <Button onClick={() => updateProfileMutation.mutate({ workflow_preferences: workflowPrefs })} disabled={updateProfileMutation.isPending} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
+                  <Button onClick={() => updateProfileMutation.mutate({ workflow_preferences: workflowPrefs })} className="bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 text-xs">
                     <Save size={14} className="mr-1" />
-                    {updateProfileMutation.isPending ? 'SAVING...' : 'SAVE WORKFLOW'}
+                    SAVE
                   </Button>
                 </div>
               </CardContent>
@@ -511,13 +503,6 @@ export default function Settings() {
           <TabsContent value="training">
             <TrainingCenter />
           </TabsContent>
-
-          {/* Data Transfer */}
-          {isAdmin && (
-            <TabsContent value="data">
-              <DataTransfer />
-            </TabsContent>
-          )}
 
           {/* Feedback */}
           <TabsContent value="feedback">

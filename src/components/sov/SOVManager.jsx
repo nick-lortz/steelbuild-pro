@@ -57,12 +57,20 @@ export default function SOVManager({ projectId, canEdit }) {
     queryKey: ['sov-items', projectId],
     queryFn: () => base44.entities.SOVItem.filter({ project_id: projectId }),
     select: (items) => {
-      // Natural sort by sov_code
-      return [...items].sort((a, b) => {
-        const av = String(a.sov_code ?? a.item_number ?? '');
-        const bv = String(b.sov_code ?? b.item_number ?? '');
-        return av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
-      });
+      const seg = (s) => String(s ?? '').split(/[^\dA-Za-z]+/).filter(Boolean);
+      const cmp = (a, b) => {
+        const aa = seg(a), bb = seg(b);
+        const n = Math.max(aa.length, bb.length);
+        for (let i = 0; i < n; i++) {
+          const x = aa[i] ?? '', y = bb[i] ?? '';
+          const nx = Number(x), ny = Number(y);
+          const bothNum = !Number.isNaN(nx) && !Number.isNaN(ny);
+          if (bothNum && nx !== ny) return nx - ny;
+          if (x !== y) return String(x).localeCompare(String(y), undefined, { numeric: true });
+        }
+        return 0;
+      };
+      return [...items].sort((a, b) => cmp(a.sov_code, b.sov_code));
     },
     enabled: !!projectId
   });
@@ -97,9 +105,28 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.SOVItem.create({ ...data, project_id: projectId }),
+    mutationFn: async (data) => {
+      const result = await base44.entities.SOVItem.create({ ...data, project_id: projectId });
+      
+      // Create version snapshot
+      await base44.functions.invoke('createSOVVersion', {
+        project_id: projectId,
+        change_type: 'create',
+        change_summary: `Added SOV line ${data.sov_code}: ${data.description}`,
+        affected_sov_codes: [data.sov_code],
+        field_changes: [{
+          sov_code: data.sov_code,
+          field: 'created',
+          old_value: null,
+          new_value: `${data.description} - $${data.scheduled_value}`
+        }]
+      });
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('SOV line added');
       setShowAddDialog(false);
       setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
@@ -108,11 +135,30 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const bulkCreateMutation = useMutation({
-    mutationFn: (items) => base44.entities.SOVItem.bulkCreate(
-      items.map(item => ({ ...item, project_id: projectId }))
-    ),
+    mutationFn: async (items) => {
+      const result = await base44.entities.SOVItem.bulkCreate(
+        items.map(item => ({ ...item, project_id: projectId }))
+      );
+      
+      // Create version snapshot
+      await base44.functions.invoke('createSOVVersion', {
+        project_id: projectId,
+        change_type: 'bulk_create',
+        change_summary: `Added ${items.length} standard SOV line items`,
+        affected_sov_codes: items.map(i => i.sov_code),
+        field_changes: items.map(i => ({
+          sov_code: i.sov_code,
+          field: 'created',
+          old_value: null,
+          new_value: i.description
+        }))
+      });
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('Standard SOV items added');
       setShowBulkAddDialog(false);
     },
@@ -120,17 +166,92 @@ export default function SOVManager({ projectId, canEdit }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.SOVItem.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+    mutationFn: async ({ id, data }) => {
+      // Get original item for version tracking
+      const original = await base44.entities.SOVItem.filter({ id });
+      const originalItem = original[0];
+      
+      // Validate if updating percent_complete
+      if (data.percent_complete !== undefined) {
+        const validation = await base44.functions.invoke('validateSOVBudget', {
+          sov_item_id: id,
+          percent_complete: data.percent_complete,
+          project_id: projectId
+        });
+
+        if (!validation.data.valid && validation.data.severity === 'critical') {
+          throw new Error(validation.data.error);
+        }
+
+        if (validation.data.warning) {
+          toast.warning(validation.data.warning);
+        }
+      }
+
+      const result = await base44.entities.SOVItem.update(id, data);
+      
+      // Create version snapshot with field-level changes
+      const fieldChanges = [];
+      Object.keys(data).forEach(field => {
+        if (originalItem[field] !== data[field]) {
+          fieldChanges.push({
+            sov_code: originalItem.sov_code,
+            field,
+            old_value: String(originalItem[field] ?? ''),
+            new_value: String(data[field] ?? '')
+          });
+        }
+      });
+      
+      if (fieldChanges.length > 0) {
+        await base44.functions.invoke('createSOVVersion', {
+          project_id: projectId,
+          change_type: 'update',
+          change_summary: `Updated SOV line ${originalItem.sov_code}`,
+          affected_sov_codes: [originalItem.sov_code],
+          field_changes: fieldChanges
+        });
+      }
+      
+      return result;
+    },
+    onSuccess: (result, variables) => {
+      queryClient.setQueryData(['sov-items', projectId], (old) => {
+        if (!old) return old;
+        return old.map(item => 
+          item.id === variables.id ? { ...item, ...variables.data } : item
+        );
+      });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
     },
     onError: (err) => toast.error(err?.message ?? 'Update failed')
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.SOVItem.delete(id),
+    mutationFn: async (id) => {
+      // Get item before deletion for version tracking
+      const items = await base44.entities.SOVItem.filter({ id });
+      const item = items[0];
+      
+      await base44.entities.SOVItem.delete(id);
+      
+      // Create version snapshot
+      await base44.functions.invoke('createSOVVersion', {
+        project_id: projectId,
+        change_type: 'delete',
+        change_summary: `Deleted SOV line ${item.sov_code}: ${item.description}`,
+        affected_sov_codes: [item.sov_code],
+        field_changes: [{
+          sov_code: item.sov_code,
+          field: 'deleted',
+          old_value: `${item.description} - $${item.scheduled_value}`,
+          new_value: null
+        }]
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sov-items', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['sov-versions', projectId] });
       toast.success('SOV line deleted');
     },
     onError: (err) => toast.error(err?.message ?? 'Delete failed')
@@ -146,20 +267,44 @@ export default function SOVManager({ projectId, canEdit }) {
 
   const [editingPercent, setEditingPercent] = useState({});
 
-  const handleUpdatePercent = (sovItem, value) => {
-    if (value === '' || value == null) return;
+  const handleUpdatePercent = async (sovItem, value) => {
+    if (value === '' || value == null) {
+      setEditingPercent(prev => ({ ...prev, [sovItem.id]: '' }));
+      return;
+    }
+
     const numValue = parseFloat(value);
     if (Number.isNaN(numValue) || numValue < 0 || numValue > 100) {
       toast.error('Percent must be 0-100');
       return;
     }
+
+    // Per-line guard: only block if this specific line has approved/paid invoices
     const prev = sovItem.percent_complete ?? 0;
     if (numValue < prev && lockedSovItemIds.has(sovItem.id)) {
       toast.error('Cannot decrease % complete for billed lines. Use change order.');
       return;
     }
-    setEditingPercent(p => ({ ...p, [sovItem.id]: undefined }));
-    updateMutation.mutate({ id: sovItem.id, data: { percent_complete: numValue } });
+
+    setEditingPercent(prev => ({ ...prev, [sovItem.id]: undefined }));
+
+    // Optimistic update with rollback
+    updateMutation.mutate(
+      { id: sovItem.id, data: { percent_complete: numValue } },
+      {
+        onMutate: async () => {
+          await queryClient.cancelQueries({ queryKey: ['sov-items', projectId] });
+          const prevData = queryClient.getQueryData(['sov-items', projectId]);
+          queryClient.setQueryData(['sov-items', projectId], (old = []) =>
+            old.map(it => it.id === sovItem.id ? { ...it, percent_complete: numValue } : it)
+          );
+          return { prevData };
+        },
+        onError: (_err, _vars, ctx) => {
+          if (ctx?.prevData) queryClient.setQueryData(['sov-items', projectId], ctx.prevData);
+        }
+      }
+    );
   };
 
   const handleEdit = (item) => {
@@ -326,7 +471,7 @@ export default function SOVManager({ projectId, canEdit }) {
           <Button onClick={() => setShowBulkAddDialog(true)} disabled={!canEdit || sovItems.length > 0} variant="outline" size="sm">
             Add Standard SOV
           </Button>
-          <Button onClick={() => { setEditingItem(null); setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 }); setShowAddDialog(true); }} disabled={!canEdit} size="sm">
+          <Button onClick={() => setShowAddDialog(true)} disabled={!canEdit} size="sm">
             <Plus size={16} className="mr-1" />
             Add SOV Line
           </Button>
@@ -429,17 +574,24 @@ export default function SOVManager({ projectId, canEdit }) {
           <form onSubmit={(e) => { 
             e.preventDefault(); 
             if (editingItem) {
+              // Only send non-locked fields
               const updates = {
                 sov_code: formData.sov_code,
                 description: formData.description,
-                sov_category: formData.sov_category,
-                ...(!lockedSovItemIds.has(editingItem.id) && { scheduled_value: formData.scheduled_value })
+                sov_category: formData.sov_category
               };
-              updateMutation.mutate({ id: editingItem.id, data: updates });
-              toast.success('SOV line updated');
-              setShowAddDialog(false);
-              setEditingItem(null);
-              setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
+              // Only include scheduled_value if not locked
+              if (!lockedSovItemIds.has(editingItem.id)) {
+                updates.scheduled_value = formData.scheduled_value;
+              }
+              updateMutation.mutate({ id: editingItem.id, data: updates }, {
+                onSuccess: () => {
+                  toast.success('SOV line updated');
+                  setShowAddDialog(false);
+                  setEditingItem(null);
+                  setFormData({ sov_code: '', description: '', sov_category: 'labor', scheduled_value: 0 });
+                }
+              });
             } else {
               createMutation.mutate(formData);
             }

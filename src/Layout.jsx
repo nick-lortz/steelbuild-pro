@@ -36,10 +36,7 @@ import {
   Package,
   MessageSquare,
   Gauge,
-  AlertCircle,
-  Zap,
-  FolderOpen,
-  Eye
+  AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -61,7 +58,6 @@ import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MobileNav from '@/components/layout/MobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
-import ProjectSelector from '@/components/layout/ProjectSelector';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
@@ -74,7 +70,6 @@ const navGroups = [
   name: 'Dashboard',
   icon: LayoutDashboard,
   items: [
-  { name: 'Daily PM Dashboard', page: 'DailyPMDashboard', icon: Gauge },
   { name: 'Project Dashboard', page: 'ProjectDashboard', icon: LayoutDashboard },
   { name: 'Projects', page: 'Projects', icon: Building },
   { name: 'Calendar', page: 'Calendar', icon: Calendar },
@@ -99,11 +94,8 @@ const navGroups = [
   icon: FileText,
   items: [
   { name: 'Drawings', page: 'Drawings', icon: FileText },
-  { name: 'Drawing Viewer', page: 'DrawingViewer', icon: Eye },
   { name: 'Detailing', page: 'Detailing', icon: FileCheck },
-  { name: 'Documents', page: 'Documents', icon: File },
-  { name: 'Document Hub', page: 'DocumentHub', icon: FolderOpen },
-  { name: 'Project Management', page: 'ProjectManagement', icon: LayoutDashboard }],
+  { name: 'Documents', page: 'Documents', icon: File }],
 
   roles: ['admin', 'user']
 },
@@ -199,10 +191,8 @@ const navGroups = [
   { name: 'Data Management', page: 'DataManagement', icon: LayoutDashboard, roles: ['admin'] },
   { name: 'App Audit', page: 'AuditDashboard', icon: AlertCircle, roles: ['admin'] },
   { name: 'Fix Queue', page: 'AuditFixQueue', icon: CheckCircle2, roles: ['admin'] },
-  { name: 'QA Config', page: 'QAConfig', icon: Zap, roles: ['admin'] },
   { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
-  { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }
-  ],
+  { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] }],
 
   roles: ['admin', 'user']
 }];
@@ -263,10 +253,9 @@ function LayoutContent({ children, currentPageName }) {
     },
     enabled: !!activeProjectId,
     select: (data) => data?.[0] || null,
-    staleTime: 30 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -289,8 +278,8 @@ function LayoutContent({ children, currentPageName }) {
     );
   }, [currentUser]);
 
-  // Show loading state only on initial load (user is undefined = never resolved yet)
-  if (userLoading && currentUser === undefined) {
+  // Show loading state while checking auth
+  if (userLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -405,7 +394,6 @@ function LayoutContent({ children, currentPageName }) {
           <span className="font-bold text-lg tracking-wider ml-3 text-[#E5E7EB]">SteelBuild Pro</span>
         </div>
 
-        <ProjectSelector />
         <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
           {visibleNavGroups.map((group) => {
             const isExpanded = expandedGroups.includes(group.name);

@@ -4,21 +4,8 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Support both direct calls { project_id } and entity automation payload { event, data }
-    let body = {};
-    try { body = await req.json(); } catch (_) {}
-
-    let project_id = body.project_id || body.data?.project_id;
-    const cost_code_id = body.cost_code_id || body.data?.cost_code_id;
-
-    // Fallback: resolve project_id from the entity record when automation payload lacks it
-    if (!project_id) {
-      const entity_id = body.event?.entity_id || body.data?.id;
-      if (entity_id) {
-        const records = await base44.asServiceRole.entities.Expense.filter({ id: entity_id });
-        if (records.length) project_id = records[0].project_id;
-      }
-    }
+    // This runs as automation, no user auth needed
+    const { project_id, cost_code_id } = await req.json();
 
     if (!project_id) {
       return Response.json({ error: 'project_id required' }, { status: 400 });

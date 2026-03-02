@@ -8,7 +8,7 @@ function ActiveProjectProvider({ children }) {
   const [activeProjectId, setActiveProjectId] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('activeProjectId');
-      return stored ? Number(stored) : null;
+      return stored || null;
     }
     return null;
   });

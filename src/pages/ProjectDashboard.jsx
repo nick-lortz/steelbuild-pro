@@ -17,14 +17,12 @@ import WorkPackageWidget from '@/components/project-dashboard/WorkPackageWidget'
 import DrawingWidget from '@/components/project-dashboard/DrawingWidget';
 import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialog';
 import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
-import PredictiveRiskPanel from '@/components/project-dashboard/PredictiveRiskPanel';
 import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
 import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
 import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
 import ErectionReadinessWidget from '@/components/project-dashboard/ErectionReadinessWidget';
 
 const AVAILABLE_WIDGETS = [
-  { id: 'predictive_risk', label: 'Predictive Risk Analytics', component: PredictiveRiskPanel },
   { id: 'progress', label: 'Project Progress', component: ProgressWidget },
   { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
   { id: 'margin_risk', label: 'Work Packages At Margin Risk', component: MarginRiskWidget },
@@ -40,7 +38,6 @@ const AVAILABLE_WIDGETS = [
 ];
 
 const DEFAULT_LAYOUT = [
-  'predictive_risk',
   'progress',
   'budget',
   'margin_risk',

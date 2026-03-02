@@ -63,7 +63,6 @@ import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { SECURITY_HEADERS } from '@/components/shared/securityHeaders';
 import PullToRefresh from '@/components/shared/PullToRefresh';
-import FloatingPMA from '@/components/shared/FloatingPMA';
 
 const navGroups = [
 {
@@ -514,7 +513,6 @@ function LayoutContent({ children, currentPageName }) {
       </main>
 
       <MobileNav currentPageName={currentPageName} />
-      <FloatingPMA />
       </div>);
 
 }

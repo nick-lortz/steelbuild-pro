@@ -30,12 +30,10 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
     created_date: rfi?.created_date || new Date().toISOString().split('T')[0],
     cost_impact: rfi?.cost_impact || 'unknown',
     schedule_impact: rfi?.schedule_impact || 'unknown',
-    notes: rfi?.notes || '',
-    attachments: rfi?.attachments || []
+    notes: rfi?.notes || ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   // Auto-generate RFI number for new RFIs
   useEffect(() => {
@@ -45,46 +43,6 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
       setFormData(prev => ({ ...prev, rfi_number: maxNumber + 1 }));
     }
   }, [formData.project_id, rfi, allRFIs]);
-
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    setUploadingFiles(true);
-    try {
-      const uploadedFiles = [];
-      
-      for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        uploadedFiles.push({
-          file_url,
-          file_name: file.name,
-          file_type: file.type,
-          uploaded_by: (await base44.auth.me()).email,
-          uploaded_date: new Date().toISOString(),
-          version: 1
-        });
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        attachments: [...prev.attachments, ...uploadedFiles]
-      }));
-      
-      showSuccessToast(`${uploadedFiles.length} file(s) uploaded`);
-    } catch (error) {
-      showErrorToast(error, 'Failed to upload files');
-    } finally {
-      setUploadingFiles(false);
-    }
-  };
-
-  const handleRemoveAttachment = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
-    }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -394,52 +352,6 @@ export default function RFIHubForm({ rfi, projects, allRFIs, onClose, onSuccess 
               className="bg-zinc-800 border-zinc-700"
               rows={3}
             />
-          </div>
-
-          {/* Attachments */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Attachments (Drawings, Specs, Photos)</label>
-            <div className="space-y-2">
-              <Input
-                type="file"
-                multiple
-                onChange={handleFileUpload}
-                disabled={uploadingFiles}
-                className="bg-zinc-800 border-zinc-700"
-                accept=".pdf,.dwg,.jpg,.jpeg,.png,.xlsx,.docx"
-              />
-              {uploadingFiles && (
-                <p className="text-xs text-amber-400">Uploading files...</p>
-              )}
-              {formData.attachments.length > 0 && (
-                <div className="space-y-1 mt-2">
-                  {formData.attachments.map((att, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-zinc-800/50 p-2 rounded border border-zinc-700">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="text-xs text-zinc-400 truncate">{att.file_name}</span>
-                        <a 
-                          href={att.file_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-amber-400 hover:text-amber-300"
-                        >
-                          View
-                        </a>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRemoveAttachment(idx)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">

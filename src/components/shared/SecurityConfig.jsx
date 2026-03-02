@@ -1,18 +1,18 @@
 /**
- * Enterprise Security Configuration
- * Centralized security settings and policies
+ * Security Configuration
+ * Central security settings for the application
  */
 
 export const SECURITY_CONFIG = {
   // Content Security Policy
   CSP: {
     'default-src': ["'self'"],
-    'script-src': ["'self'", "'unsafe-inline'", 'https://js.stripe.com'],
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-    'font-src': ["'self'", 'https://fonts.gstatic.com'],
+    'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://base44.com'],
+    'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", 'data:', 'https:', 'blob:'],
-    'connect-src': ["'self'", 'https://api.stripe.com', 'wss:'],
-    'frame-src': ["'self'", 'https://js.stripe.com'],
+    'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
+    'connect-src': ["'self'", 'https://*.base44.app', 'https://base44.com', 'wss://*.base44.app'],
+    'frame-src': ["'self'"],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
@@ -20,31 +20,13 @@ export const SECURITY_CONFIG = {
     'upgrade-insecure-requests': []
   },
 
-  // Rate limiting configuration
-  RATE_LIMITS: {
-    api: {
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 1000, // limit each IP to 1000 requests per windowMs
-      message: 'Too many requests from this IP'
-    },
-    auth: {
-      windowMs: 15 * 60 * 1000,
-      max: 5, // limit each IP to 5 auth attempts per windowMs
-      message: 'Too many authentication attempts'
-    },
-    upload: {
-      windowMs: 60 * 1000, // 1 minute
-      max: 10, // limit uploads
-      message: 'Too many file uploads'
-    }
-  },
-
-  // Session configuration
-  SESSION: {
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    secure: true, // HTTPS only
-    httpOnly: true,
-    sameSite: 'strict'
+  // Input validation
+  VALIDATION: {
+    maxStringLength: 10000,
+    maxObjectDepth: 10,
+    maxArrayLength: 1000,
+    sanitizeHtml: true,
+    allowedHtmlTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'code', 'pre']
   },
 
   // File upload restrictions
@@ -55,31 +37,44 @@ export const SECURITY_CONFIG = {
       'image/jpeg',
       'image/png',
       'image/gif',
+      'image/webp',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/csv',
       'text/plain',
-      'text/csv'
-    ],
-    quarantineTime: 5 * 60 * 1000 // 5 minutes
+      'application/zip'
+    ]
   },
 
-  // Input validation
-  VALIDATION: {
-    maxStringLength: 10000,
-    maxArrayLength: 1000,
-    maxObjectDepth: 10,
-    sanitizeHtml: true,
-    allowedHtmlTags: ['b', 'i', 'u', 'strong', 'em', 'p', 'br', 'ul', 'ol', 'li']
+  // Rate limiting
+  RATE_LIMITS: {
+    api: {
+      windowMs: 60000, // 1 minute
+      max: 100
+    },
+    auth: {
+      windowMs: 900000, // 15 minutes
+      max: 5
+    },
+    fileUpload: {
+      windowMs: 3600000, // 1 hour
+      max: 50
+    },
+    navigation: {
+      windowMs: 60000, // 1 minute
+      max: 60
+    }
   },
 
   // API security
   API: {
-    requireApiKey: true,
-    requireUserAgent: true,
+    requireUserAgent: false, // Don't block legitimate API clients
     blockSuspiciousPatterns: true,
-    logAllRequests: true
+    timeout: 30000
   }
 };
 

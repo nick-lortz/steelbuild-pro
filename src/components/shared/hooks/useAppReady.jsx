@@ -2,55 +2,54 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 
 /**
- * Ensures Base44 SDK is fully initialized with valid appId before running queries.
- * In preview mode, appId may be injected asynchronously.
- * Returns true only when SDK is ready and has a valid app context.
+ * Reads the Base44 appId from all known injection points:
+ * - URL search param (preview bridge injects ?appId=xxx or similar)
+ * - window.__BASE44_APP_ID__ (runtime global)
+ * - base44.config.appId (SDK internal after init)
  */
+function resolveAppId() {
+  // 1. URL params injected by builder bridge
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = params.get('appId') || params.get('app_id') || params.get('base44_app_id');
+  if (fromUrl && fromUrl !== 'null') return fromUrl;
+
+  // 2. Runtime global set by builder bridge
+  if (window.__BASE44_APP_ID__ && window.__BASE44_APP_ID__ !== 'null') {
+    return window.__BASE44_APP_ID__;
+  }
+
+  // 3. SDK internal config (set after async init)
+  const sdkId = base44?.config?.appId;
+  if (sdkId && sdkId !== 'null') return sdkId;
+
+  return null;
+}
+
 export function useAppReady() {
-  const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState(null);
+  const [isReady, setIsReady] = useState(() => !!resolveAppId());
 
   useEffect(() => {
+    if (isReady) return;
+
     let mounted = true;
     let checks = 0;
-    const maxChecks = 20; // ~2 seconds with 100ms intervals
+    const maxChecks = 30; // 3 seconds at 100ms
 
-    const checkReady = async () => {
-      try {
-        // Attempt to access app context; if appId is null, this will fail
-        const appId = window.__BASE44_APP_ID__ || 
-                     (typeof base44?.config?.appId === 'string' ? base44.config.appId : null);
-        
-        if (!appId && checks < maxChecks) {
-          checks++;
-          setTimeout(checkReady, 100);
-          return;
-        }
-
-        if (mounted) {
-          if (appId) {
-            setIsReady(true);
-            setError(null);
-            console.log('[AppReady] SDK initialized with appId:', appId);
-          } else {
-            setError('App context not available in this environment');
-            console.error('[AppReady] Failed to initialize: appId is null after max retries');
-          }
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err.message);
-          console.error('[AppReady] Initialization error:', err);
-        }
+    const poll = () => {
+      const appId = resolveAppId();
+      if (appId) {
+        if (mounted) setIsReady(true);
+        return;
       }
+      if (++checks < maxChecks) {
+        setTimeout(poll, 100);
+      }
+      // After maxChecks, give up silently — queries stay disabled
     };
 
-    checkReady();
+    poll();
+    return () => { mounted = false; };
+  }, [isReady]);
 
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return { isReady, error };
+  return { isReady };
 }

@@ -22,7 +22,7 @@ function ActiveProjectProvider({ children }) {
   }, [activeProjectId]);
 
   const wrappedSetActiveProjectId = React.useCallback((id) => {
-    setActiveProjectId(id != null ? Number(id) : null);
+    setActiveProjectId(id != null ? String(id) : null);
   }, []);
 
   const value = useMemo(() => ({ activeProjectId, setActiveProjectId: wrappedSetActiveProjectId }), [activeProjectId, wrappedSetActiveProjectId]);

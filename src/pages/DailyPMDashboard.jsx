@@ -152,21 +152,21 @@ export default function DailyPMDashboard() {
   const { data: changeOrders = [], isLoading: cosLoading } = useQuery({
     queryKey: ['cos-daily', activeProjectId],
     queryFn: () => base44.entities.ChangeOrder.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId,
+    enabled: !!activeProjectId && appReady,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks-daily', activeProjectId],
     queryFn: () => base44.entities.Task.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId,
+    enabled: !!activeProjectId && appReady,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: deliveries = [], isLoading: deliveriesLoading } = useQuery({
     queryKey: ['deliveries-daily', activeProjectId],
     queryFn: () => base44.entities.Delivery.filter({ project_id: activeProjectId }),
-    enabled: !!activeProjectId,
+    enabled: !!activeProjectId && appReady,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -176,7 +176,7 @@ export default function DailyPMDashboard() {
       const results = await base44.entities.Project.filter({ id: activeProjectId });
       return results?.[0] || null;
     },
-    enabled: !!activeProjectId,
+    enabled: !!activeProjectId && appReady,
     staleTime: 10 * 60 * 1000,
   });
 

@@ -21,7 +21,11 @@ function ActiveProjectProvider({ children }) {
     }
   }, [activeProjectId]);
 
-  const value = useMemo(() => ({ activeProjectId, setActiveProjectId }), [activeProjectId]);
+  const wrappedSetActiveProjectId = React.useCallback((id) => {
+    setActiveProjectId(id != null ? Number(id) : null);
+  }, []);
+
+  const value = useMemo(() => ({ activeProjectId, setActiveProjectId: wrappedSetActiveProjectId }), [activeProjectId, wrappedSetActiveProjectId]);
 
   return (
     <ActiveProjectContext.Provider value={value}>

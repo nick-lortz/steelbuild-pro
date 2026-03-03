@@ -231,7 +231,8 @@ function LayoutContent({ children, currentPageName }) {
   };
 
   // Single source of truth - imported from useAuth hook
-  const { user: currentUser, isLoading: userLoading } = useAuth();
+  const { user: currentUser, isLoading: userLoading, isEnvError } = useAuth();
+  const { logout } = useAuthActions();
 
   // Set Sentry user context when authenticated
   useEffect(() => {
@@ -258,16 +259,7 @@ function LayoutContent({ children, currentPageName }) {
   });
 
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-
-  const handleLogout = async () => {
-    queryClient.setQueryData(['currentUser'], null);
-    queryClient.removeQueries({ queryKey: ['currentUser'] });
-    try {
-      await base44.auth.logout();
-    } catch (e) {
-      window.location.href = '/';
-    }
-  };
+  const handleLogout = () => logout();
 
   const projectPhase = activeProject?.phase || 'fabrication';
 
@@ -283,16 +275,33 @@ function LayoutContent({ children, currentPageName }) {
     );
   }, [currentUser]);
 
-  // Show loading state while checking auth
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-zinc-400">Loading...</p>
         </div>
-      </div>);
+      </div>
+    );
+  }
 
+  if (isEnvError) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center max-w-md px-6">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle size={32} className="text-red-500" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">App Configuration Error</h2>
+          <p className="text-zinc-400 text-sm mb-4">
+            The app returned a "Not Found" response. This usually means the environment is misconfigured
+            or the app hasn't been published yet.
+          </p>
+          <p className="text-zinc-600 text-xs font-mono">{window.location.hostname}</p>
+        </div>
+      </div>
+    );
   }
 
   // Apply security headers (documented in Layout)

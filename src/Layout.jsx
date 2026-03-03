@@ -57,7 +57,6 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
 import { showErrorToast, isAuthError } from '@/components/shared/errorHandling';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import MobileNav from '@/components/layout/MobileNav';
-import ThemeToggle from '@/components/layout/ThemeToggle';
 import OfflineIndicator from '@/components/shared/OfflineIndicator';
 import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';

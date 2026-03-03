@@ -15,7 +15,7 @@ export default function WorkflowGuidancePanel({
   if (!showHints) return null;
   if (!validationResult) return null;
   
-  const { blockers, canAdvance } = validationResult;
+  const { blockers = [], canAdvance } = validationResult;
   
   if (canAdvance) {
     return (

@@ -309,105 +309,116 @@ function LayoutContent({ children, currentPageName }) {
     // CSP headers applied server-side; CSP documented in components/shared/securityHeaders.js
   }
   return (
-    <div className="min-h-screen bg-black text-[#E5E7EB] relative overflow-hidden">
-      {/* Ambient background effects */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-50%] right-[-25%] w-full h-full opacity-40"
-             style={{ background: 'radial-gradient(circle at center, rgba(255, 107, 44, 0.15) 0%, transparent 60%)' }} />
-        <div className="absolute bottom-[-50%] left-[-25%] w-full h-full opacity-30"
-             style={{ background: 'radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 60%)' }} />
-      </div>
-      
+    <div style={{ background: 'var(--page-bg)' }} className="min-h-screen relative">
+      {/* Vignette overlay */}
+      <div className="fixed inset-0 pointer-events-none z-0"
+           style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(255,90,31,0.06) 0%, transparent 60%)' }} />
+
       <SkipToMainContent />
       <OfflineIndicator />
       <Toaster />
       <CommandPalette />
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-black/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.05)] flex items-center justify-between px-4"
-              style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}>
-        <div className="flex items-center gap-4">
+
+      {/* ── Mobile Header ── */}
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4"
+        style={{
+          background: 'var(--frame-bg)',
+          borderBottom: '1px solid var(--panel-border)',
+          paddingTop: 'max(0px, env(safe-area-inset-top))',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.5)'
+        }}
+      >
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-[#9CA3AF] hover:text-[#FF9D42] transition-colors">
-
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            className="btn-icon"
+            style={{ width: '2rem', height: '2rem' }}
+          >
+            {sidebarOpen ? <X size={16} /> : <Menu size={16} />}
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center shadow-lg"
-                 style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.5)' }}>
-              <Building size={18} className="text-black" />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                 style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))', boxShadow: '0 0 16px var(--accent-glow)' }}>
+              <Building size={14} className="text-white" />
             </div>
-            <span className="font-bold text-lg tracking-tight text-[#E5E7EB]">SteelBuild Pro</span>
+            <span className="font-bold text-sm tracking-widest uppercase" style={{ color: 'var(--text)' }}>SteelBuild Pro</span>
           </div>
         </div>
-
-        {currentUser &&
-        <div className="flex items-center gap-2">
-            <ThemeToggle />
+        {currentUser && (
+          <div className="flex items-center gap-2">
             <NotificationCenter />
             <DropdownMenu>
-              <DropdownMenuTrigger className="p-2">
-                <UserCircle size={24} className="text-zinc-400" />
+              <DropdownMenuTrigger asChild>
+                <button className="btn-icon" style={{ width: '2rem', height: '2rem' }}>
+                  <UserCircle size={16} style={{ color: 'var(--accent-2)' }} />
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium text-white">
-                    {currentUser.full_name || currentUser.email}
-                  </p>
-                  <p className="text-xs text-zinc-400 capitalize">{currentUser.role}</p>
+              <DropdownMenuContent align="end" className="w-52"
+                style={{ background: 'var(--panel-bg-2)', border: '1px solid var(--panel-border)', borderRadius: '14px' }}>
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>{currentUser.full_name || currentUser.email}</p>
+                  <p className="label-caps mt-0.5">{currentUser.role}</p>
                 </div>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem asChild className="text-white hover:text-white">
-                  <Link to={createPageUrl('Settings')}>
-                    <Settings size={16} className="mr-2" />
-                    Settings
+                <DropdownMenuSeparator style={{ background: 'var(--panel-border)' }} />
+                <DropdownMenuItem asChild>
+                  <Link to={createPageUrl('Settings')} className="flex items-center gap-2 text-xs px-3 py-2 cursor-pointer" style={{ color: 'var(--text-dim)' }}>
+                    <Settings size={13} /> Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="text-red-400 hover:text-red-300">
-                  <LogOut size={16} className="mr-2" />
-                  Logout
+                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="flex items-center gap-2 text-xs px-3 py-2 cursor-pointer" style={{ color: 'var(--danger)' }}>
+                  <LogOut size={13} /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        }
+        )}
       </header>
 
+      {/* ── Logout Confirmation ── */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
+        <AlertDialogContent style={{ background: 'var(--panel-bg-2)', border: '1px solid var(--panel-border)', borderRadius: 'var(--radius-panel)', color: 'var(--text)' }}>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Confirm Logout</AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to logout?
+            <AlertDialogTitle style={{ color: 'var(--text)' }}>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription style={{ color: 'var(--text-mute)' }}>
+              Are you sure you want to end your session?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-zinc-700 text-white hover:bg-zinc-800">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout} className="bg-amber-500 hover:bg-amber-600 text-black">
+            <AlertDialogCancel style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)', color: 'var(--text-dim)', borderRadius: 'var(--radius-control)' }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="btn-primary" style={{ borderRadius: 'var(--radius-control)' }}>
               Logout
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Sidebar */}
+      {/* ── Sidebar ── */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-40 h-full w-64 bg-black/95 backdrop-blur-md border-r border-[rgba(255,255,255,0.05)] flex flex-col',
+          'fixed top-0 left-0 z-40 h-full w-60 flex flex-col',
           'lg:translate-x-0 transition-transform duration-300',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
-        style={{ boxShadow: '4px 0 24px rgba(0, 0, 0, 0.8)' }}>
-
-        <div className="h-16 flex items-center px-4 border-b border-[rgba(255,255,255,0.05)] flex-shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF6B2C] to-[#FF9D42] flex items-center justify-center"
-               style={{ boxShadow: '0 0 24px rgba(255, 157, 66, 0.5)' }}>
-            <Building size={18} className="text-black" />
+        style={{
+          background: 'var(--frame-bg)',
+          borderRight: '1px solid var(--panel-border)',
+          boxShadow: '4px 0 32px rgba(0,0,0,0.6)'
+        }}
+      >
+        {/* Brand */}
+        <div className="h-14 flex items-center px-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--panel-border)' }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center mr-3 flex-shrink-0"
+               style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-2))', boxShadow: '0 0 18px var(--accent-glow)' }}>
+            <Building size={14} className="text-white" />
           </div>
-          <span className="font-bold text-lg tracking-wider ml-3 text-[#E5E7EB]">SteelBuild Pro</span>
+          <span className="font-bold text-sm tracking-widest uppercase" style={{ color: 'var(--text)' }}>SteelBuild Pro</span>
         </div>
 
-        <nav className="p-2 space-y-1 flex-1 overflow-y-auto">
+        {/* Nav Groups */}
+        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {visibleNavGroups.map((group) => {
             const isExpanded = expandedGroups.includes(group.name);
             const GroupIcon = group.icon;
@@ -415,111 +426,108 @@ function LayoutContent({ children, currentPageName }) {
 
             return (
               <div key={group.name}>
-                {/* Group Header */}
                 <button
                   onClick={() => toggleGroup(group.name)}
-                  className={cn(
-                    'w-full flex items-center justify-between px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-lg',
-                    hasActivePage ? 'text-[#FF9D42] bg-[rgba(255,157,66,0.08)]' : 'text-[#6B7280] hover:text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)]'
-                  )}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all"
+                  style={{
+                    color: hasActivePage ? 'var(--accent-2)' : 'var(--text-mute)',
+                    background: hasActivePage ? 'rgba(255,90,31,0.06)' : 'transparent',
+                    fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase'
+                  }}
                 >
-                  <div className="flex items-center gap-2">
-                    <GroupIcon size={12} />
+                  <div className="flex items-center gap-1.5">
+                    <GroupIcon size={11} />
                     <span>{group.name}</span>
                   </div>
-                  <ChevronDown
-                    size={12}
-                    className={cn(
-                      'transition-transform',
-                      isExpanded ? 'rotate-0' : '-rotate-90'
-                    )} />
-
+                  <ChevronDown size={10} className={cn('transition-transform', isExpanded ? 'rotate-0' : '-rotate-90')} />
                 </button>
 
-                {/* Group Items */}
-                {isExpanded &&
-                <div className="ml-2 mt-0.5 space-y-0.5">
+                {isExpanded && (
+                  <div className="ml-1.5 mt-0.5 space-y-0.5 mb-1">
                     {group.items.map((item) => {
-                    const isActive = currentPageName === item.page;
-                    const Icon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.page}
-                        to={createPageUrl(item.page)}
-                        onClick={() => setSidebarOpen(false)}
-                        className={cn(
-                          'flex items-center gap-2.5 px-3 py-2 text-xs font-medium transition-all rounded-lg group',
-                          isActive ?
-                          'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' :
-                          'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)] hover:border-[rgba(255,157,66,0.1)] border border-transparent'
-                        )}
-                        style={isActive ? { boxShadow: '0 0 20px rgba(255, 157, 66, 0.2)' } : {}}>
-
-                          <Icon size={14} className={isActive ? '' : 'group-hover:text-[#FF9D42] transition-colors'} />
+                      const isActive = currentPageName === item.page;
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.page}
+                          to={createPageUrl(item.page)}
+                          onClick={() => setSidebarOpen(false)}
+                          className={cn('flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium rounded-xl transition-all', isActive ? 'nav-item-active' : '')}
+                          style={isActive ? {} : {
+                            color: 'var(--text-mute)',
+                            border: '1px solid transparent'
+                          }}
+                          onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-dim)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}}
+                          onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = 'var(--text-mute)'; e.currentTarget.style.background = ''; }}}
+                        >
+                          <Icon size={12} />
                           {item.name}
-                        </Link>);
-
-                  })}
+                        </Link>
+                      );
+                    })}
                   </div>
-                }
-              </div>);
-
+                )}
+              </div>
+            );
           })}
         </nav>
 
-        {currentUser &&
-        <div className="border-t border-[rgba(255,255,255,0.05)] p-3 flex-shrink-0 bg-[rgba(0,0,0,0.2)]">
-            <div className="flex items-center justify-between mb-2 px-2">
-              <ThemeToggle />
+        {/* User Footer */}
+        {currentUser && (
+          <div className="flex-shrink-0 p-3" style={{ borderTop: '1px solid var(--panel-border)' }}>
+            <div className="flex items-center justify-end mb-2">
               <NotificationCenter />
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-[rgba(255,157,66,0.05)] transition-all rounded-lg border border-transparent hover:border-[rgba(255,157,66,0.1)]">
-                <UserCircle size={16} className="text-[#FF9D42]" />
-                <div className="flex-1 text-left">
-                  <p className="text-xs font-semibold text-[#E5E7EB] truncate tracking-wide">
+              <DropdownMenuTrigger className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all"
+                style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,90,31,0.2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--panel-border)'; }}
+              >
+                <UserCircle size={15} style={{ color: 'var(--accent-2)', flexShrink: 0 }} />
+                <div className="flex-1 text-left overflow-hidden">
+                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--text)', letterSpacing: '0.03em' }}>
                     {currentUser.full_name || currentUser.email}
                   </p>
-                  <p className="text-[10px] text-[#6B7280] uppercase tracking-widest">{currentUser.role}</p>
+                  <p className="label-caps mt-0.5">{currentUser.role}</p>
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-[#151B24]/95 backdrop-blur-md border-[rgba(255,255,255,0.1)] text-[#E5E7EB]">
-                <DropdownMenuItem asChild className="text-white hover:text-white">
-                  <Link to={createPageUrl('Settings')}>
-                    <Settings size={16} className="mr-2" />
-                    Settings
+              <DropdownMenuContent align="end" className="w-52"
+                style={{ background: 'var(--panel-bg-2)', border: '1px solid var(--panel-border)', borderRadius: '14px' }}>
+                <DropdownMenuItem asChild>
+                  <Link to={createPageUrl('Settings')} className="flex items-center gap-2 text-xs px-3 py-2 cursor-pointer" style={{ color: 'var(--text-dim)' }}>
+                    <Settings size={13} /> Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-zinc-800" />
-                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="text-red-400 hover:text-red-300">
-                  <LogOut size={16} className="mr-2" />
-                  Logout
+                <DropdownMenuSeparator style={{ background: 'var(--panel-border)' }} />
+                <DropdownMenuItem onClick={() => setShowLogoutDialog(true)} className="flex items-center gap-2 text-xs px-3 py-2 cursor-pointer" style={{ color: 'var(--danger)' }}>
+                  <LogOut size={13} /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        }
+        )}
       </aside>
 
-      {sidebarOpen &&
-      <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-30 lg:hidden transition-opacity"
-        onClick={() => setSidebarOpen(false)} />
+      {/* Sidebar backdrop (mobile) */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 lg:hidden" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+             onClick={() => setSidebarOpen(false)} />
+      )}
 
-      }
-
-      <main id="main-content" className="lg:ml-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0 relative z-10" role="main">
+      {/* ── Main Content ── */}
+      <main id="main-content" className="lg:ml-60 pt-14 lg:pt-0 min-h-screen pb-20 lg:pb-0 relative z-10" role="main">
         <PullToRefresh onRefresh={handleRefresh}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPageName}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25, ease: [0.65, 0, 0.35, 1] }}
-              className="text-[#E5E7EB] p-4 lg:p-6">
-
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2, ease: [0.65, 0, 0.35, 1] }}
+              style={{ color: 'var(--text)' }}
+              className="p-4 lg:p-5"
+            >
               {children}
             </motion.div>
           </AnimatePresence>
@@ -527,7 +535,8 @@ function LayoutContent({ children, currentPageName }) {
       </main>
 
       <MobileNav currentPageName={currentPageName} />
-      </div>);
+    </div>
+  );
 
 }
 

@@ -261,8 +261,10 @@ function LayoutContent({ children, currentPageName }) {
 
   const handleLogout = async () => {
     try {
+      queryClient.clear();
       await base44.auth.logout();
     } catch (e) {
+      queryClient.clear();
       window.location.href = '/';
     }
   };

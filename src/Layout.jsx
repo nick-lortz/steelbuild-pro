@@ -260,11 +260,11 @@ function LayoutContent({ children, currentPageName }) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   const handleLogout = async () => {
+    queryClient.setQueryData(['currentUser'], null);
+    queryClient.removeQueries({ queryKey: ['currentUser'] });
     try {
-      queryClient.clear();
       await base44.auth.logout();
     } catch (e) {
-      queryClient.clear();
       window.location.href = '/';
     }
   };

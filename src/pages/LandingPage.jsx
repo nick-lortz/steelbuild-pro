@@ -27,12 +27,12 @@ export default function LandingPage() {
       const isAuthenticated = await base44.auth.isAuthenticated();
       if (isAuthenticated) {
         navigate(createPageUrl('ProjectDashboard'));
-      } else {
-        base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
+        return;
       }
     } catch (e) {
-      base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
+      // fall through to login redirect
     }
+    base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
   };
 
   // Real steel fabrication metrics

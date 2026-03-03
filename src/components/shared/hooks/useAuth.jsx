@@ -20,13 +20,11 @@ export function useAuth() {
         return null;
       }
     },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
     retry: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-    refetchIntervalInBackground: false
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always'
   });
 
   return { user, isLoading, error };

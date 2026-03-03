@@ -4,133 +4,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ========================================
-   WCAG 2.1 AA: Focus Indicators & Accessibility
-   ======================================== */
-:focus-visible {
-  outline: 2px solid var(--ring, #f59e0b);
-  outline-offset: 2px;
+/* ============================================================
+   PHOENIX INDUSTRIAL DARK — Design Token System
+   ============================================================ */
+:root {
+  /* Page & Frame */
+  --page-bg: #2F343C;
+  --frame-bg: #0B0D10;
+  --panel-bg: #14181E;
+  --panel-bg-2: #1A1F27;
+  --panel-border: rgba(255, 255, 255, 0.06);
+
+  /* Typography */
+  --text: rgba(255, 255, 255, 0.92);
+  --text-dim: rgba(255, 255, 255, 0.70);
+  --text-mute: rgba(255, 255, 255, 0.50);
+
+  /* Orange Accent System */
+  --accent: #FF5A1F;
+  --accent-2: #FF7A2F;
+  --accent-glow: rgba(255, 90, 31, 0.35);
+  --accent-glow-strong: rgba(255, 90, 31, 0.55);
+
+  /* Status Colors */
+  --success: #4DD6A4;
+  --warning: #FFB15A;
+  --danger: #FF4D4D;
+  --info: #4DA3FF;
+
+  /* Shape */
+  --radius-frame: 28px;
+  --radius-panel: 18px;
+  --radius-control: 12px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-frame: 0 18px 50px rgba(0, 0, 0, 0.55);
+  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 0 1px rgba(255, 90, 31, 0.25), 0 8px 22px rgba(255, 90, 31, 0.18);
+
+  /* shadcn compatibility — always dark */
+  --background: 0 0% 7%;
+  --foreground: 220 9% 92%;
+  --card: 220 14% 9%;
+  --card-foreground: 220 9% 92%;
+  --popover: 220 14% 9%;
+  --popover-foreground: 220 9% 92%;
+  --primary: 19 100% 56%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 220 14% 11%;
+  --secondary-foreground: 220 9% 72%;
+  --muted: 220 14% 11%;
+  --muted-foreground: 220 9% 52%;
+  --accent: 19 100% 56%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 220 9% 92%;
+  --border: 220 14% 10%;
+  --input: 220 14% 10%;
+  --ring: 19 100% 56%;
+  --radius: 0.75rem;
 }
 
-button:focus-visible,
-[role="button"]:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--ring, #f59e0b);
-  outline-offset: 2px;
+/* Force dark — no light mode overrides */
+html, html.light, html.dark {
+  color-scheme: dark;
 }
 
-/* Screen reader only utility */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
-.focus:not-sr-only {
-  position: static;
-  width: auto;
-  height: auto;
-  padding: inherit;
-  margin: inherit;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-}
-
-/* Safe bottom for mobile notches */
-.safe-bottom {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-/* ========================================
-   Disable Text Selection on UI Elements
-   ======================================== */
-button,
-[role="button"],
-[role="tab"],
-[role="menuitem"],
-.nav,
-nav,
-header,
-footer,
-[class*="button"],
-[class*="icon"],
-svg,
-img {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Enable selection for content areas */
-p,
-article,
-.content,
-textarea,
-input,
-[contenteditable="true"] {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-}
-
-/* ========================================
-   Disable Overscroll/Bounce
-   ======================================== */
-body,
-html {
-  overscroll-behavior-y: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Prevent pull-to-refresh on main container */
-#root,
-#main-content {
-  overscroll-behavior-y: contain;
-}
-
-/* ========================================
-   Native-like Touch Feedback
-   ======================================== */
-button,
-[role="button"],
-a {
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-  touch-action: manipulation;
-}
-
-/* ========================================
-   Minimum Tap Target Size (44px on mobile)
-   ======================================== */
-@media (max-width: 1023px) {
-  button,
-  [role="button"],
-  a[href],
-  input[type="checkbox"],
-  input[type="radio"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Ensure interactive elements inside buttons meet target size */
-  button > *,
-  [role="button"] > * {
-    pointer-events: none;
-  }
-}
-
-/* ========================================
-   Viewport & Full Screen
-   ======================================== */
+/* ============================================================
+   BASE RESET
+   ============================================================ */
 html, body, #root {
   width: 100%;
   height: 100%;
@@ -140,265 +83,264 @@ html, body, #root {
 }
 
 body {
+  background: var(--page-bg);
+  color: var(--text);
   min-height: 100vh;
-  min-height: -webkit-fill-available;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
 }
 
-/* ========================================
-   Ambient Background Effects
-   ======================================== */
-body::before {
-  content: '';
-  position: fixed;
-  top: -50%;
-  right: -25%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at center, rgba(255, 107, 44, 0.15) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
+/* ============================================================
+   PHOENIX FRAME — centered app shell
+   ============================================================ */
+.phoenix-frame {
+  background: var(--frame-bg);
+  border-radius: var(--radius-frame);
+  box-shadow: var(--shadow-frame);
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  bottom: -50%;
-  left: -25%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
+/* ============================================================
+   PANEL COMPONENT
+   ============================================================ */
+.phoenix-panel {
+  background: var(--panel-bg);
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), var(--shadow-panel);
 }
 
-/* ========================================
-   Glassmorphism Utilities
-   ======================================== */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.phoenix-panel-2 {
+  background: var(--panel-bg-2);
+  border-radius: var(--radius-panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
-.glass-panel-strong {
+/* ============================================================
+   GRID / DOT TEXTURE (hero panels)
+   ============================================================ */
+.phoenix-grid-texture {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ============================================================
+   TYPOGRAPHY SYSTEM
+   ============================================================ */
+.label-caps {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   BUTTON SYSTEM
+   ============================================================ */
+.btn-primary {
+  background: linear-gradient(90deg, rgba(255, 90, 31, 0.95), rgba(255, 122, 47, 0.85));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-control);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.25rem;
+  box-shadow: var(--shadow-glow);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  box-shadow: 0 0 0 1px rgba(255, 90, 31, 0.4), 0 12px 28px rgba(255, 90, 31, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--panel-bg-2);
+  color: var(--text-dim);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-pill);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.45rem 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.btn-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--panel-bg-2);
+  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+.btn-icon:hover {
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
 }
 
-/* ========================================
-   Glow Effects
-   ======================================== */
-.glow-warm {
-  box-shadow: 0 0 30px rgba(255, 157, 66, 0.3), 0 0 60px rgba(255, 157, 66, 0.1);
+/* ============================================================
+   BADGE / CHIP SYSTEM
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.glow-warm-strong {
-  box-shadow: 0 0 40px rgba(255, 157, 66, 0.4), 0 0 80px rgba(255, 157, 66, 0.2);
+.badge-accent {
+  background: rgba(255, 90, 31, 0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(255, 90, 31, 0.25);
+  box-shadow: 0 0 0 1px rgba(255, 90, 31, 0.12);
+}
+.badge-success { background: rgba(77, 214, 164, 0.12); color: var(--success); border: 1px solid rgba(77, 214, 164, 0.2); }
+.badge-warning { background: rgba(255, 177, 90, 0.12); color: var(--warning); border: 1px solid rgba(255, 177, 90, 0.2); }
+.badge-danger  { background: rgba(255, 77, 77, 0.12);  color: var(--danger);  border: 1px solid rgba(255, 77, 77, 0.2); }
+.badge-info    { background: rgba(77, 163, 255, 0.12); color: var(--info);    border: 1px solid rgba(77, 163, 255, 0.2); }
+.badge-mute    { background: rgba(255, 255, 255, 0.05); color: var(--text-mute); border: 1px solid var(--panel-border); }
+
+/* ============================================================
+   NAV ITEM — active glow
+   ============================================================ */
+.nav-item-active {
+  background: linear-gradient(90deg, rgba(255, 90, 31, 0.18), rgba(255, 122, 47, 0.08));
+  color: var(--accent-2) !important;
+  border: 1px solid rgba(255, 90, 31, 0.18) !important;
+  box-shadow: 0 0 12px rgba(255, 90, 31, 0.1);
 }
 
-.glow-cool {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3), 0 0 60px rgba(59, 130, 246, 0.1);
+/* ============================================================
+   INPUT SYSTEM
+   ============================================================ */
+input, textarea, select {
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius-control) !important;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  border-color: rgba(255, 90, 31, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.15) !important;
 }
 
-.glow-border-warm {
-  border: 1px solid rgba(255, 157, 66, 0.3);
-  box-shadow: 0 0 20px rgba(255, 157, 66, 0.2);
+/* ============================================================
+   TABLE SYSTEM
+   ============================================================ */
+table thead th {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border-bottom: 1px solid var(--panel-border);
+}
+table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.15s ease;
+}
+table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
 }
 
-.glow-border-cool {
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 90, 31, 0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 90, 31, 0.45); }
+
+/* ============================================================
+   FOCUS / ACCESSIBILITY
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* ========================================
-   Gradient Backgrounds
-   ======================================== */
-.gradient-warm {
-  background: linear-gradient(135deg, #FF6B2C 0%, #FF9D42 50%, #FFB84D 100%);
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0;
+  margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border-width: 0;
 }
 
-.gradient-cool {
-  background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #60A5FA 100%);
+/* ============================================================
+   MOBILE TOUCH
+   ============================================================ */
+button, [role="button"], a {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-.gradient-text-warm {
-  background: linear-gradient(135deg, #FF6B2C 0%, #FF9D42 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ========================================
-   Grid Pattern Overlay
-   ======================================== */
-.grid-pattern {
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 32px 32px;
-}
-
-/* ========================================
-   Smooth Transitions
-   ======================================== */
-* {
-  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              color 250ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-button, a, [role="button"] {
-  transition: all 250ms cubic-bezier(0.65, 0, 0.35, 1);
-}
-
-/* ========================================
-   Scrollbar Styling
-   ======================================== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 157, 66, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 157, 66, 0.5);
-}
-
-/* Ultra-Dark Futuristic Theme */
-:root {
-  /* Base colors */
-  --bg-primary: #000000;
-  --bg-secondary: #0A0A0A;
-  --bg-tertiary: #0F0F0F;
-  --bg-elevated: #151515;
-  
-  /* Text colors */
-  --text-primary: #E5E7EB;
-  --text-secondary: #9CA3AF;
-  --text-tertiary: #6B7280;
-  --text-muted: #4B5563;
-  
-  /* Accent colors */
-  --accent-orange: #FF6B2C;
-  --accent-amber: #FF9D42;
-  --accent-blue: #3B82F6;
-  
-  /* Borders */
-  --border-default: rgba(255, 255, 255, 0.05);
-  --border-elevated: rgba(255, 255, 255, 0.1);
-  --border-glow: rgba(255, 157, 66, 0.3);
-  
-  /* Shadows & glows */
-  --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.8);
-  --glow-warm: 0 0 30px rgba(255, 157, 66, 0.3);
-  --glow-cool: 0 0 30px rgba(59, 130, 246, 0.3);
-  
-  /* Radial gradients */
-  --radial-warm: radial-gradient(circle at center, rgba(255, 107, 44, 0.3) 0%, transparent 70%);
-  --radial-cool: radial-gradient(circle at center, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
-  
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  
-  /* shadcn compatibility */
-  --background: 0 0% 0%;
-  --foreground: 220 9% 91%;
-  --card: 0 0% 4%;
-  --card-foreground: 220 9% 91%;
-  --primary: 19 95% 59%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 6%;
-  --secondary-foreground: 220 9% 91%;
-  --muted: 0 0% 8%;
-  --muted-foreground: 220 9% 61%;
-  --accent: 19 95% 59%;
-  --accent-foreground: 0 0% 0%;
-  --destructive: 0 62% 50%;
-  --destructive-foreground: 220 9% 91%;
-  --border: 0 0% 8%;
-  --input: 0 0% 8%;
-  --ring: 19 95% 59%;
-  --radius: 0.75rem;
-}
-
-.dark {
-  --background: 0 0% 0%;
-  --foreground: 220 9% 91%;
-  --card: 0 0% 4%;
-  --card-foreground: 220 9% 91%;
-  --primary: 19 95% 59%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 6%;
-  --secondary-foreground: 220 9% 91%;
-  --muted: 0 0% 8%;
-  --muted-foreground: 220 9% 61%;
-  --accent: 19 95% 59%;
-  --accent-foreground: 0 0% 0%;
-  --destructive: 0 62% 50%;
-  --destructive-foreground: 220 9% 91%;
-  --border: 0 0% 8%;
-  --input: 0 0% 8%;
-  --ring: 19 95% 59%;
-}
-
-.light {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --primary: 19 95% 59%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 19 95% 59%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 19 95% 59%;
-}
-
-/* Auto Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: 0 0% 0%;
-    --foreground: 220 9% 91%;
-    --card: 0 0% 4%;
-    --card-foreground: 220 9% 91%;
-    --primary: 19 95% 59%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 6%;
-    --secondary-foreground: 220 9% 91%;
-    --muted: 0 0% 8%;
-    --muted-foreground: 220 9% 61%;
-    --accent: 19 95% 59%;
-    --accent-foreground: 0 0% 0%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 220 9% 91%;
-    --border: 0 0% 8%;
-    --input: 0 0% 8%;
-    --ring: 19 95% 59%;
+@media (max-width: 1023px) {
+  button, [role="button"], a[href] {
+    min-height: 44px;
+    min-width: 44px;
   }
+}
+
+/* Safe bottom for mobile notches */
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+/* Prevent overscroll bounce */
+#root, #main-content { overscroll-behavior-y: contain; }
+
+/* ============================================================
+   SMOOTH TRANSITIONS (non-layout props only)
+   ============================================================ */
+* {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease,
+    opacity 200ms ease;
+}
+button, a, [role="button"] {
+  transition: all 200ms cubic-bezier(0.65, 0, 0.35, 1);
 }

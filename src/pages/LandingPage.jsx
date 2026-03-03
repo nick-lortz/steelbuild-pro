@@ -23,10 +23,14 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = async () => {
-    const isAuthenticated = await base44.auth.isAuthenticated();
-    if (isAuthenticated) {
-      navigate(createPageUrl('ProjectDashboard'));
-    } else {
+    try {
+      const isAuthenticated = await base44.auth.isAuthenticated();
+      if (isAuthenticated) {
+        navigate(createPageUrl('ProjectDashboard'));
+      } else {
+        base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
+      }
+    } catch (e) {
       base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
     }
   };

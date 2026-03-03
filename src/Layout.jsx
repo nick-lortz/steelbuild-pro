@@ -259,8 +259,12 @@ function LayoutContent({ children, currentPageName }) {
 
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  const handleLogout = () => {
-    base44.auth.logout();
+  const handleLogout = async () => {
+    try {
+      await base44.auth.logout();
+    } catch (e) {
+      window.location.href = '/';
+    }
   };
 
   const projectPhase = activeProject?.phase || 'fabrication';

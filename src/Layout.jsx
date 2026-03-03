@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
-import { useAuth } from '@/components/shared/hooks/useAuth';
+import { useAuth, useAuthActions } from '@/components/shared/hooks/useAuth';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Building,

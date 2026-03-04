@@ -2,393 +2,249 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import PageShell from '@/components/layout/PageShell';
-import PageHeader from '@/components/layout/PageHeader';
-import MetricsBar from '@/components/layout/MetricsBar';
-import FilterBar from '@/components/layout/FilterBar';
-import ContentSection from '@/components/layout/ContentSection';
-import EmptyState from '@/components/layout/EmptyState';
-import LoadingState from '@/components/layout/LoadingState';
-import DrawingSetTable from '@/components/drawings/DrawingSetTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  CompactHeader, CompactFilterBar, CompactKPIStrip, DenseTable, StatusPill, InlineAction
+} from '@/components/layout/CompactPageShell';
 import DrawingSetForm from '@/components/drawings/DrawingSetForm';
 import DrawingSetDetailDialog from '@/components/drawings/DrawingSetDetailDialog';
-import DrawingUploadEnhanced from '@/components/drawings/DrawingUploadEnhanced';
 import EnhancedDrawingUpload from '@/components/drawings/EnhancedDrawingUpload';
 import DrawingAnalysisDashboard from '@/components/drawings/DrawingAnalysisDashboard';
-import { FileText, Plus, Upload, Search, Sparkles } from 'lucide-react';
+import { Search, Plus, Upload, Sparkles, FileText } from 'lucide-react';
 import { toast } from '@/components/ui/notifications';
+
+const SAMPLE_SETS = [
+  { id: 'd1', set_number: 'S-101', title: 'Foundation & Anchor Bolt Plan', discipline: 'structural', status: 'FFF', sheet_count: 4, total_revision_count: 3, submitted_date: '2026-01-10', updated_date: '2026-02-28' },
+  { id: 'd2', set_number: 'S-201', title: 'Second Floor Framing Plan', discipline: 'structural', status: 'BFA', sheet_count: 6, total_revision_count: 2, submitted_date: '2026-01-22', updated_date: '2026-03-01' },
+  { id: 'd3', set_number: 'S-202', title: 'Roof Framing Plan — Bldg A', discipline: 'structural', status: 'IFA', sheet_count: 5, total_revision_count: 1, submitted_date: '2026-02-05', updated_date: '2026-02-20' },
+  { id: 'd4', set_number: 'M-01', title: 'Misc Metals Schedule', discipline: 'structural', status: 'IFA', sheet_count: 2, total_revision_count: 1, submitted_date: '2026-02-14', updated_date: '2026-03-01' },
+  { id: 'd5', set_number: 'S-301', title: 'Connection Details — Moment Frames', discipline: 'structural', status: 'BFS', sheet_count: 8, total_revision_count: 2, submitted_date: '2026-01-30', updated_date: '2026-02-25' },
+  { id: 'd6', set_number: 'A-101', title: 'Architectural Floor Plan', discipline: 'architectural', status: 'FFF', sheet_count: 3, total_revision_count: 4, submitted_date: '2025-12-01', updated_date: '2026-01-15' },
+];
 
 export default function Drawings() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
-  
-  // Initialize from URL param if no active project
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [disciplineFilter, setDisciplineFilter] = useState('all');
+  const [showCreate, setShowCreate] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [selectedSet, setSelectedSet] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+
   React.useEffect(() => {
     if (!activeProjectId) {
       const params = new URLSearchParams(window.location.search);
-      const projectId = params.get('project');
-      if (projectId) {
-        setActiveProjectId(projectId);
-      }
+      const p = params.get('project');
+      if (p) setActiveProjectId(p);
     }
   }, []);
-  const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [disciplineFilter, setDisciplineFilter] = useState('all');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedSet, setSelectedSet] = useState(null);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [showAnalysisDashboard, setShowAnalysisDashboard] = useState(false);
-
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
-  });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 
+  const { data: currentUser } = useQuery({ queryKey: ['currentUser'], queryFn: () => base44.auth.me() });
+
   const userProjects = useMemo(() => {
-    if (!currentUser) return [];
-    return currentUser.role === 'admin'
-      ? allProjects
-      : allProjects.filter(p => p.assigned_users?.includes(currentUser?.email));
+    if (!currentUser) return allProjects;
+    return currentUser.role === 'admin' ? allProjects : allProjects.filter(p => p.assigned_users?.includes(currentUser.email));
   }, [currentUser, allProjects]);
 
   const { data: drawingSets = [], isLoading } = useQuery({
     queryKey: ['drawing-sets', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, '-updated_date')
-      : [],
+    queryFn: () => activeProjectId ? base44.entities.DrawingSet.filter({ project_id: activeProjectId }, '-updated_date') : [],
     enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
-  });
-
-  const { data: sheets = [] } = useQuery({
-    queryKey: ['drawing-sheets', activeProjectId],
-    queryFn: async () => {
-      if (!activeProjectId) return [];
-      const setIds = drawingSets.map(s => s.id);
-      if (setIds.length === 0) return [];
-      const allSheets = await base44.entities.DrawingSheet.list();
-      return allSheets.filter(sheet => setIds.includes(sheet.drawing_set_id));
-    },
-    enabled: !!activeProjectId && drawingSets.length > 0,
-    staleTime: 2 * 60 * 1000
-  });
-
-  const { data: revisions = [] } = useQuery({
-    queryKey: ['drawing-revisions', activeProjectId],
-    queryFn: async () => {
-      if (!activeProjectId) return [];
-      const setIds = drawingSets.map(s => s.id);
-      if (setIds.length === 0) return [];
-      const allRevisions = await base44.entities.DrawingRevision.list();
-      return allRevisions.filter(rev => setIds.includes(rev.drawing_set_id));
-    },
-    enabled: !!activeProjectId && drawingSets.length > 0,
-    staleTime: 2 * 60 * 1000
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: rfis = [] } = useQuery({
     queryKey: ['rfis', activeProjectId],
-    queryFn: () => activeProjectId
-      ? base44.entities.RFI.filter({ project_id: activeProjectId })
-      : [],
+    queryFn: () => activeProjectId ? base44.entities.RFI.filter({ project_id: activeProjectId }) : [],
     enabled: !!activeProjectId,
-    staleTime: 2 * 60 * 1000
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
-    staleTime: 10 * 60 * 1000
-  });
+  const { data: users = [] } = useQuery({ queryKey: ['users'], queryFn: () => base44.entities.User.list(), staleTime: 10 * 60 * 1000 });
 
-  const createDrawingSetMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: async (data) => {
-      const createdSet = await base44.entities.DrawingSet.create({
-        project_id: data.project_id,
-        title: data.title || data.set_name,
-        set_number: data.set_number,
-        discipline: data.discipline,
-        status: data.status,
-        submitted_date: data.submitted_date || null,
-        approved_date: data.approved_date || null,
-        notes: data.notes || '',
-        sheet_count: data.sheet_count || 0,
-        total_revision_count: 1
-      });
-
-      if (createdSet && createdSet.id) {
-        await base44.entities.DrawingRevision.create({
-          project_id: createdSet.project_id,
-          drawing_set_id: createdSet.id,
-          revision_number: 'Rev 0',
-          revision_date: new Date().toISOString().split('T')[0],
-          description: 'Initial submission',
-          status: createdSet.status || 'IFA',
-          is_current: true
-        });
+      const created = await base44.entities.DrawingSet.create({ project_id: data.project_id, title: data.title || data.set_name, set_number: data.set_number, discipline: data.discipline, status: data.status, submitted_date: data.submitted_date || null, approved_date: data.approved_date || null, notes: data.notes || '', sheet_count: data.sheet_count || 0, total_revision_count: 1 });
+      if (created?.id) {
+        await base44.entities.DrawingRevision.create({ project_id: created.project_id, drawing_set_id: created.id, revision_number: 'Rev 0', revision_date: new Date().toISOString().split('T')[0], description: 'Initial submission', status: created.status || 'IFA', is_current: true });
       }
-
-      return createdSet;
+      return created;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      setShowCreateDialog(false);
-      toast.success('Drawing set created');
-    },
-    onError: (error) => {
-      console.error('Create error:', error);
-      toast.error('Creation failed: ' + (error.message || 'Unknown error'));
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['drawing-sets'] }); setShowCreate(false); toast.success('Drawing set created'); },
+    onError: (e) => toast.error('Failed: ' + e.message),
   });
 
-  const deleteDrawingSetMutation = useMutation({
-    mutationFn: (id) => base44.entities.DrawingSet.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-      toast.success('Drawing set deleted');
+  const displaySets = drawingSets.length > 0 ? drawingSets : (activeProjectId ? [] : SAMPLE_SETS);
+
+  const filtered = useMemo(() => {
+    let r = displaySets;
+    if (search) { const q = search.toLowerCase(); r = r.filter(s => s.title?.toLowerCase().includes(q) || s.set_number?.toLowerCase().includes(q)); }
+    if (statusFilter !== 'all') r = r.filter(s => s.status === statusFilter);
+    if (disciplineFilter !== 'all') r = r.filter(s => s.discipline === disciplineFilter);
+    return r;
+  }, [displaySets, search, statusFilter, disciplineFilter]);
+
+  const metrics = useMemo(() => ({
+    total: displaySets.length,
+    fff: displaySets.filter(s => s.status === 'FFF').length,
+    ifa: displaySets.filter(s => s.status === 'IFA').length,
+    bfa: displaySets.filter(s => s.status === 'BFA').length,
+    bfs: displaySets.filter(s => s.status === 'BFS').length,
+  }), [displaySets]);
+
+  const columns = [
+    { header: '#', key: 'set_number', render: r => <span style={{ fontFamily: 'monospace', color: 'rgba(255,255,255,0.5)' }}>{r.set_number}</span> },
+    {
+      header: 'Title', key: 'title', wrap: true, render: r => (
+        <span style={{ color: 'rgba(255,255,255,0.82)', fontWeight: 500, cursor: 'pointer' }} onClick={() => { setSelectedSet(r); setShowDetail(true); }}>
+          {r.title}
+        </span>
+      )
     },
-    onError: () => toast.error('Delete failed')
-  });
+    { header: 'Discipline', key: 'discipline', render: r => <StatusPill status={r.discipline || '—'} /> },
+    { header: 'Status', key: 'status', render: r => <StatusPill status={r.status} /> },
+    { header: 'Sheets', key: 'sheet_count', align: 'right', render: r => <span style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'monospace' }}>{r.sheet_count || 0}</span> },
+    { header: 'Rev', key: 'total_revision_count', align: 'right', render: r => <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>{r.total_revision_count || 1}</span> },
+    { header: 'Updated', key: 'updated_date', align: 'right', render: r => <span style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontSize: '0.62rem' }}>{r.updated_date?.slice(0, 10) || '—'}</span> },
+    {
+      header: '', key: '_actions', align: 'right', render: r => (
+        <div className="flex items-center gap-1 justify-end">
+          <InlineAction label="Detail" onClick={() => { setSelectedSet(r); setShowDetail(true); }} variant="ghost" />
+        </div>
+      )
+    },
+  ];
 
-  // Filter and search logic
-  const filteredSets = useMemo(() => {
-    let filtered = drawingSets;
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(set =>
-        set.set_name?.toLowerCase().includes(query) ||
-        set.set_number?.toLowerCase().includes(query) ||
-        set.current_revision?.toLowerCase().includes(query)
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(set => set.status === statusFilter);
-    }
-
-    if (disciplineFilter !== 'all') {
-      filtered = filtered.filter(set => set.discipline === disciplineFilter);
-    }
-
-    return filtered;
-  }, [drawingSets, searchQuery, statusFilter, disciplineFilter]);
-
-  // Dashboard metrics
-  const metrics = useMemo(() => {
-    const total = drawingSets.length;
-    const released = drawingSets.filter(s => s.status === 'FFF' || s.status === 'As-Built').length;
-    const needsReview = drawingSets.filter(s => s.status === 'IFA').length;
-    const needsRevision = drawingSets.filter(s => s.status === 'Revise & Resubmit' || s.status === 'BFA').length;
-    const aiReviewed = drawingSets.filter(s => s.ai_review_status === 'completed').length;
-
-    return { total, released, needsReview, needsRevision, aiReviewed };
-  }, [drawingSets]);
-
-  const selectedProject = allProjects.find(p => p.id === activeProjectId);
-
-  const handleSelectSet = (set) => {
-    setSelectedSet(set);
-    setShowDetailDialog(true);
-  };
+  const ActionBar = () => (
+    <div className="flex items-center gap-1.5">
+      <button
+        onClick={() => setShowAnalysis(v => !v)}
+        disabled={!activeProjectId}
+        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.08)', color: showAnalysis ? '#a78bfa' : 'rgba(167,139,250,0.6)', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+      >
+        <Sparkles size={11} /> AI
+      </button>
+      <button
+        onClick={() => setShowUpload(true)}
+        disabled={!activeProjectId}
+        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)', color: 'rgba(147,197,253,0.8)', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+      >
+        <Upload size={11} /> Upload
+      </button>
+      <button
+        onClick={() => setShowCreate(true)}
+        disabled={!activeProjectId}
+        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,90,31,0.3)', background: 'rgba(255,90,31,0.1)', color: '#FF8C42', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+      >
+        <Plus size={11} /> New
+      </button>
+    </div>
+  );
 
   return (
-    <PageShell>
-      <PageHeader
-        title="Drawings"
-        subtitle={selectedProject ? `${selectedProject.project_number} • ${metrics.total} sets` : 'Select project'}
-        actions={
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      <CompactHeader
+        left={
           <>
-            <Select value={activeProjectId || ''} onValueChange={(val) => setActiveProjectId(val || null)}>
-              <SelectTrigger className="w-64 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Select Project" />
+            <span style={{ fontWeight: 800, fontSize: '0.78rem', color: 'rgba(255,255,255,0.88)' }}>Drawings</span>
+            <Select value={activeProjectId || ''} onValueChange={v => setActiveProjectId(v || null)}>
+              <SelectTrigger className="h-7 text-xs w-52" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}>
+                <SelectValue placeholder="Select project…" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                {userProjects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} • {p.name}
-                  </SelectItem>
-                ))}
+              <SelectContent>
+                {userProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.project_number} — {p.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button
-              onClick={() => setShowAnalysisDashboard(!showAnalysisDashboard)}
-              disabled={!activeProjectId}
-              variant="outline"
-              className="border-purple-700 text-purple-300 hover:bg-purple-900/20"
-            >
-              <Sparkles size={16} className="mr-2" />
-              AI Analysis
-            </Button>
-            <Button
-              onClick={() => setShowUploadDialog(true)}
-              disabled={!activeProjectId}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Upload size={16} className="mr-2" />
-              Upload Set
-            </Button>
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              disabled={!activeProjectId}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-bold"
-            >
-              <Plus size={16} className="mr-2" />
-              New Set
-            </Button>
           </>
         }
+        right={<ActionBar />}
       />
 
-      {!activeProjectId ? (
-        <ContentSection>
-          <EmptyState
-            icon={FileText}
-            title="No Project Selected"
-            description="Select a project to view and manage drawings"
+      <CompactKPIStrip items={[
+        { label: 'Total Sets', value: metrics.total },
+        { label: 'FFF', value: metrics.fff, color: '#4DD6A4' },
+        { label: 'IFA', value: metrics.ifa, color: '#4DA3FF' },
+        { label: 'BFA', value: metrics.bfa, color: '#FFB15A' },
+        { label: 'BFS', value: metrics.bfs, color: '#FFB15A' },
+      ]} />
+
+      <CompactFilterBar>
+        <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+          <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }} />
+          <input
+            placeholder="Set #, title…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ paddingLeft: 26, height: 28, width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, color: 'rgba(255,255,255,0.8)', fontSize: '0.72rem', outline: 'none' }}
           />
-        </ContentSection>
-      ) : (
-        <>
-          {showAnalysisDashboard && (
-            <div className="mb-6">
-              <DrawingAnalysisDashboard projectId={activeProjectId} />
-            </div>
-          )}
+        </div>
+        {[
+          { label: 'Status', value: statusFilter, onChange: setStatusFilter, options: [['all','All Status'],['IFA','IFA'],['BFA','BFA'],['BFS','BFS'],['FFF','FFF'],['superseded','Superseded']] },
+          { label: 'Discipline', value: disciplineFilter, onChange: setDisciplineFilter, options: [['all','All Disciplines'],['structural','Structural'],['architectural','Architectural'],['mechanical','Mechanical'],['electrical','Electrical'],['civil','Civil'],['other','Other']] },
+        ].map(({ value, onChange, options }) => (
+          <select
+            key={value}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            style={{ height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, color: 'rgba(255,255,255,0.65)', fontSize: '0.7rem', cursor: 'pointer' }}
+          >
+            {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        ))}
+        <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', marginLeft: 4 }}>{filtered.length} sets</span>
+      </CompactFilterBar>
 
-          <MetricsBar
-            metrics={[
-              { label: 'Total Sets', value: metrics.total },
-              { label: 'Released', value: metrics.released, color: 'text-green-400' },
-              { label: 'Needs Review', value: metrics.needsReview, color: 'text-blue-400' },
-              { label: 'Needs Revision', value: metrics.needsRevision, color: 'text-amber-400' },
-              { label: 'AI Reviewed', value: metrics.aiReviewed, color: 'text-purple-400' }
-            ]}
-          />
-
-          <FilterBar>
-            <div className="flex-1 relative max-w-md">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-              <Input
-                placeholder="Search by set name, number, or revision..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-white"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="IFA">IFA</SelectItem>
-                <SelectItem value="BFA">BFA</SelectItem>
-                <SelectItem value="BFS">BFS</SelectItem>
-                <SelectItem value="Revise & Resubmit">Revise & Resubmit</SelectItem>
-                <SelectItem value="FFF">FFF</SelectItem>
-                <SelectItem value="As-Built">As-Built</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={disciplineFilter} onValueChange={setDisciplineFilter}>
-              <SelectTrigger className="w-48 bg-zinc-900 border-zinc-800 text-white">
-                <SelectValue placeholder="Filter by Discipline" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Disciplines</SelectItem>
-                <SelectItem value="structural">Structural</SelectItem>
-                <SelectItem value="misc_metals">Misc Metals</SelectItem>
-                <SelectItem value="stairs">Stairs</SelectItem>
-                <SelectItem value="handrails">Handrails</SelectItem>
-                <SelectItem value="connections">Connections</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </FilterBar>
-
-          <ContentSection>
-            {isLoading ? (
-              <LoadingState message="Loading drawings..." />
-            ) : filteredSets.length === 0 ? (
-              <EmptyState
-                icon={FileText}
-                title={drawingSets.length === 0 ? 'No Drawing Sets Yet' : 'No Results Found'}
-                description={drawingSets.length === 0 ? 'Create your first drawing set or upload drawings to get started' : 'Try adjusting your search or filters'}
-                actionLabel={drawingSets.length === 0 ? 'Create Drawing Set' : null}
-                onAction={drawingSets.length === 0 ? () => setShowCreateDialog(true) : null}
-              />
-            ) : (
-              <DrawingSetTable
-                sets={filteredSets}
-                sheets={sheets}
-                revisions={revisions}
-                projects={userProjects}
-                onSelectSet={handleSelectSet}
-              />
-            )}
-          </ContentSection>
-        </>
+      {showAnalysis && activeProjectId && (
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <DrawingAnalysisDashboard projectId={activeProjectId} />
+        </div>
       )}
 
-      {/* Create Drawing Set Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle>New Drawing Set</DialogTitle>
-          </DialogHeader>
-          <DrawingSetForm
-            projectId={activeProjectId}
-            onSubmit={(data) => createDrawingSetMutation.mutate(data)}
-            onCancel={() => setShowCreateDialog(false)}
-            isLoading={createDrawingSetMutation.isPending}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {isLoading ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem' }}>Loading…</div>
+        ) : (
+          <DenseTable
+            columns={columns}
+            rows={filtered}
+            onRowClick={r => { setSelectedSet(r); setShowDetail(true); }}
+            emptyMessage={activeProjectId ? 'No drawing sets. Click New to add.' : 'Select a project to view drawings.'}
           />
+        )}
+      </div>
+
+      {/* Dialogs */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ background: '#0D1117', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <DialogHeader><DialogTitle>New Drawing Set</DialogTitle></DialogHeader>
+          <DrawingSetForm projectId={activeProjectId} onSubmit={d => createMutation.mutate(d)} onCancel={() => setShowCreate(false)} isLoading={createMutation.isPending} />
         </DialogContent>
       </Dialog>
 
-      {/* Upload Drawings Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle>Upload Drawing Set with AI Analysis</DialogTitle>
-          </DialogHeader>
-          <EnhancedDrawingUpload
-            projectId={activeProjectId}
-            onComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ['drawing-sets'] });
-              queryClient.invalidateQueries({ queryKey: ['drawing-sheets'] });
-              queryClient.invalidateQueries({ queryKey: ['drawing-conflicts'] });
-              setShowUploadDialog(false);
-            }}
-          />
+      <Dialog open={showUpload} onOpenChange={setShowUpload}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ background: '#0D1117', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <DialogHeader><DialogTitle>Upload Drawing Set</DialogTitle></DialogHeader>
+          <EnhancedDrawingUpload projectId={activeProjectId} onComplete={() => { queryClient.invalidateQueries({ queryKey: ['drawing-sets'] }); setShowUpload(false); }} />
         </DialogContent>
       </Dialog>
 
-      {/* Drawing Set Detail Dialog */}
       <DrawingSetDetailDialog
         drawingSetId={selectedSet?.id}
-        open={showDetailDialog}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowDetailDialog(false);
-            setSelectedSet(null);
-          }
-        }}
+        open={showDetail}
+        onOpenChange={open => { if (!open) { setShowDetail(false); setSelectedSet(null); } }}
         users={users}
         rfis={rfis}
       />
-    </PageShell>
+    </div>
   );
 }

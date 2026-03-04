@@ -251,10 +251,17 @@ function MoreDropdown({ currentPageName }) {
                 )
               ) : (
                 /* Grouped layout */
-                <div className="grid grid-cols-2 gap-x-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2">
                   {MORE_GROUPS.map(group => (
-                    <div key={group.label} style={{ padding: '4px 8px', marginBottom: 4 }}>
-                      <p style={{
+                    <div 
+                      key={group.label} 
+                      role="group" 
+                      aria-label={`${group.label} navigation`}
+                      style={{ padding: '4px 8px', marginBottom: 4 }}
+                    >
+                      <p 
+                        aria-hidden="true"
+                        style={{
                         fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.12em',
                         textTransform: 'uppercase', color: 'rgba(255,90,31,0.6)',
                         padding: '2px 4px', marginBottom: 2,

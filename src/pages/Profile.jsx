@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { UserCircle, Bell, LogOut, Moon, Sun, Mail, Briefcase, Trash2, AlertTriangle } from 'lucide-react';
+import DebugModeToggle from '@/components/debug/DebugModeToggle';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { toast } from '@/components/ui/notifications';
 import ScreenContainer from '@/components/layout/ScreenContainer';
@@ -244,6 +245,13 @@ export default function Profile() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Debug Mode — admin only */}
+      {currentUser?.role === 'admin' && (
+        <div className="mb-4">
+          <DebugModeToggle user={currentUser} />
+        </div>
+      )}
 
       {/* Delete Account */}
       <Card className="mb-4 border-destructive/50">

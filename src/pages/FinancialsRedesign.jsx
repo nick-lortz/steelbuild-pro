@@ -356,56 +356,41 @@ export default function FinancialsRedesign() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-black">
-        {/* Header */}
-        <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md">
-          <div className="max-w-[1800px] mx-auto px-8 py-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Financials</h1>
-                  <Badge className={statusColor}>{projectStatus}</Badge>
-                  {sovMismatch && (
-                    <Badge className="bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30">
-                      <AlertCircle size={12} className="mr-1" />
-                      SOV Mismatch: {formatCurrency(sovTotal)} vs {formatCurrency(metrics.baseContract)}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <p className="text-sm text-[#6B7280] font-mono">
-                    {selectedProjectData?.project_number} - {selectedProjectData?.name}
-                  </p>
-                  {canEdit && (
-                    <button
-                      onClick={handleEditContractValue}
-                      className="text-xs text-[#6B7280] hover:text-[#FF9D42] transition-colors flex items-center gap-1"
-                    >
-                      <Edit2 size={12} />
-                      Edit Base Contract ({formatCurrency(metrics.baseContract)})
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <DenominatorToggle mode={denominatorMode} onChange={setDenominatorMode} />
-                <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Select project...</SelectItem>
-                    {projects.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.project_number} - {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Compact sticky header */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 20, flexShrink: 0, background: 'rgba(13,17,23,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 44, flexWrap: 'wrap', gap: 6 }}>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span style={{ fontWeight: 800, fontSize: '0.78rem', color: 'rgba(255,255,255,0.88)' }}>Financials</span>
+              <span style={{ fontFamily: 'monospace', fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)' }}>{selectedProjectData?.project_number} — {selectedProjectData?.name}</span>
+              <Badge className={statusColor} style={{ fontSize: '0.58rem', padding: '1px 7px' }}>{projectStatus}</Badge>
+              {sovMismatch && (
+                <Badge className="bg-[#FF9D42]/20 text-[#FCD34D] border-[#FF9D42]/30" style={{ fontSize: '0.58rem', padding: '1px 7px' }}>
+                  <AlertCircle size={10} className="mr-1 inline" />SOV mismatch
+                </Badge>
+              )}
             </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {canEdit && (
+                <button onClick={handleEditContractValue} style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Edit2 size={11} /> {formatCurrency(metrics.baseContract)}
+                </button>
+              )}
+              <DenominatorToggle mode={denominatorMode} onChange={setDenominatorMode} />
+              <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
+                <SelectTrigger className="h-7 text-xs w-52" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Portfolio View</SelectItem>
+                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.project_number} — {p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            {/* KPI Strip */}
+          {/* Condensed KPI strip — single row */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', overflowX: 'auto' }}>
             <FinancialKPIStrip
               totalContract={metrics.totalContract}
               baseContract={metrics.baseContract}
@@ -421,7 +406,8 @@ export default function FinancialsRedesign() {
         </div>
 
         {/* Content */}
-        <div className="max-w-[1800px] mx-auto px-8 py-6">
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="p-4">
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>

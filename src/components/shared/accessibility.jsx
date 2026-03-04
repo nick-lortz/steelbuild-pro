@@ -120,7 +120,7 @@ export function SkipToMainContent() {
   return (
     <a
       href="#main-content"
-      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-black focus:rounded"
+      className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#FF5A1F] focus:text-white focus:rounded-[10px] focus:text-[0.75rem] focus:font-bold focus:shadow-[0_0_0_2px_rgba(255,90,31,0.5)]"
     >
       Skip to main content
     </a>

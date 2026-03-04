@@ -62,19 +62,22 @@ export function ConfirmProvider({ children }) {
           }
         }}
       >
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent
+          className="bg-[#14181E] border border-[rgba(255,255,255,0.08)] rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.70)]"
+          style={{ backdropFilter: 'blur(12px)' }}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
+            <AlertDialogTitle className="text-[rgba(255,255,255,0.92)] text-[1rem] font-bold">
               {confirmState.title}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
+            <AlertDialogDescription className="text-[rgba(255,255,255,0.45)] text-[0.8125rem]">
               {confirmState.description}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={confirmState.onCancel}
-              className="border-zinc-700 text-white hover:bg-zinc-800"
+              className="bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.60)] rounded-[10px] hover:bg-[rgba(255,255,255,0.08)] hover:text-[rgba(255,255,255,0.88)] focus-visible:ring-2 focus-visible:ring-[#FF5A1F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14181E]"
             >
               {confirmState.cancelText}
             </AlertDialogCancel>
@@ -82,8 +85,8 @@ export function ConfirmProvider({ children }) {
               onClick={confirmState.onConfirm}
               className={
                 confirmState.variant === 'destructive'
-                  ? 'bg-red-500 hover:bg-red-600'
-                  : 'bg-amber-500 hover:bg-amber-600 text-black'
+                  ? 'bg-[rgba(255,77,77,0.12)] border border-[rgba(255,77,77,0.25)] text-[#FF4D4D] rounded-[10px] hover:bg-[rgba(255,77,77,0.22)] focus-visible:ring-2 focus-visible:ring-[#FF4D4D] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14181E]'
+                  : 'bg-gradient-to-r from-[#FF5A1F] to-[#FF7A2F] text-white rounded-[10px] border-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] focus-visible:ring-offset-2 focus-visible:ring-offset-[#14181E]'
               }
             >
               {confirmState.confirmText}

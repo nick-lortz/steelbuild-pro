@@ -1,14 +1,20 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // This runs as automation, no user auth needed
-    const { project_id, cost_code_id } = await req.json();
+    // Extract from entity automation event
+    const payload = await req.json();
+    const { data, event } = payload;
+    
+    // Get project_id from the expense record
+    const expense = data || await base44.asServiceRole.entities.Expense.get(event.entity_id);
+    const project_id = expense?.project_id;
+    const cost_code_id = expense?.cost_code_id;
 
     if (!project_id) {
-      return Response.json({ error: 'project_id required' }, { status: 400 });
+      return Response.json({ error: 'project_id required in expense record' }, { status: 400 });
     }
 
     // Aggregate all expenses for this project/cost_code

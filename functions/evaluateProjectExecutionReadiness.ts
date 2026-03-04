@@ -9,7 +9,7 @@
  * Admin-only function (called by automation)
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 async function requireAdmin(req) {
   const base44 = createClientFromRequest(req);
@@ -39,19 +39,19 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     
     // Get all active projects
-    const projects = await base44.asServiceRole.entities.Project.filter({
-      status: { $in: ['awarded', 'in_progress', 'on_hold'] }
-    });
+    const projects = await base44.asServiceRole.entities.Project.list();
+    const activeProjects = projects.filter(p => ['awarded', 'in_progress', 'on_hold'].includes(p.status));
     
-    if (projects.length === 0) {
+    if (activeProjects.length === 0) {
       return ok({
         message: 'No active projects to evaluate',
         evaluated_at: now,
-        projects_evaluated: 0
+        projects_evaluated: 0,
+        active_status_applied: true
       });
     }
     
-    const projectIds = projects.map(p => p.id);
+    const projectIds = activeProjects.map(p => p.id);
     
     // Batch fetch all related entities
     const [workPackages, rfis, deliveries, submittals, tasks, changeOrders, existingTasks] = await Promise.all([
@@ -88,8 +88,8 @@ Deno.serve(async (req) => {
     const newTasks = [];
     const updatedTasks = [];
     const alerts = [];
-    
-    for (const project of projects) {
+
+    for (const project of activeProjects) {
       const evaluation = await evaluateProjectExecution({
         project,
         workPackages: wpBy.get(project.id) || [],
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     }
     
     // Update last_execution_scan_at on all projects
-    for (const project of projects) {
+    for (const project of activeProjects) {
       await base44.asServiceRole.entities.Project.update(project.id, {
         last_execution_scan_at: now
       });

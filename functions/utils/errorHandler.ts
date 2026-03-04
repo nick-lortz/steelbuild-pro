@@ -16,13 +16,35 @@ export function handleFunctionError(error, functionName, context = {}) {
     timestamp,
     function: functionName,
     error: error?.message || String(error),
+    errorCode: error?.code,
     stack: error?.stack?.split('\n').slice(0, 2).join(' '),
     context
   };
 
   console.error(JSON.stringify(errorLog));
 
-  // Map error types to HTTP responses
+  // Check structured error code first
+  if (error?.code === 'VALIDATION_ERROR' || error?.code === 'ZOD_ERROR') {
+    return createErrorResponse(400, 'VALIDATION_ERROR', error.message);
+  }
+
+  if (error?.code === 'CONFLICT' || error?.code === 'DUPLICATE') {
+    return createErrorResponse(409, 'CONFLICT', error.message);
+  }
+
+  if (error?.code === 'NOT_FOUND') {
+    return createErrorResponse(404, 'NOT_FOUND', error.message);
+  }
+
+  if (error?.code === 'FORBIDDEN') {
+    return createErrorResponse(403, 'FORBIDDEN', error.message);
+  }
+
+  if (error?.code === 'RATE_LIMIT') {
+    return createErrorResponse(429, 'RATE_LIMIT', error.message);
+  }
+
+  // Map error types to HTTP responses (message-based fallback)
   if (error?.message?.includes('Unauthorized') || error?.status === 401) {
     return createErrorResponse(401, 'UNAUTHORIZED', 'Authentication required');
   }
@@ -35,16 +57,18 @@ export function handleFunctionError(error, functionName, context = {}) {
     return createErrorResponse(404, 'NOT_FOUND', error.message);
   }
 
-  if (error?.message?.includes('already exists')) {
+  // Specific pattern for duplicate/conflict (must come after NOT_FOUND)
+  if (error?.message?.match(/^Duplicate|already exists|unique constraint/i)) {
     return createErrorResponse(409, 'CONFLICT', error.message);
   }
 
-  if (error?.message?.includes('Validation')) {
+  // Validation errors (must come after specific code checks)
+  if (error?.message?.match(/validation|required|invalid|must be/i)) {
     return createErrorResponse(400, 'VALIDATION_ERROR', error.message);
   }
 
   // Default to 500
-  return createErrorResponse(500, 'INTERNAL_ERROR', 'An error occurred. Please try again.');
+  return createErrorResponse(500, 'INTERNAL_ERROR', `Internal error in ${functionName}. Contact support with request ID.`);
 }
 
 export function wrapFunction(functionName, handler) {

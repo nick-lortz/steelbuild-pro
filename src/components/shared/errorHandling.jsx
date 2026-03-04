@@ -31,7 +31,8 @@ export function getErrorMessage(error) {
       case 403:
         return 'You do not have permission to perform this action.';
       case 404:
-        return 'The requested resource was not found.';
+        // Intentionally no page reload suggestion — 404s are per-resource only
+        return 'Resource not found. It may have been deleted or moved.';
       case 409:
         return 'This record already exists or conflicts with existing data.';
       case 422:

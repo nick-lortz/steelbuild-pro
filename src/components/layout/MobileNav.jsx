@@ -10,8 +10,6 @@ import {
   X 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 
 const tabs = [
   { name: 'Dashboard', page: 'Dashboard', icon: Building2, rootPage: 'Dashboard' },
@@ -52,10 +50,6 @@ const pageToTabMap = {
 
 export default function MobileNav({ currentPageName }) {
   const navigate = useNavigate();
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-  });
 
   const handleTabClick = (e, tab) => {
     const currentTab = pageToTabMap[currentPageName];
@@ -74,50 +68,74 @@ export default function MobileNav({ currentPageName }) {
   };
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-800 safe-bottom">
-      <div className="flex items-center justify-around px-2 py-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const currentTab = pageToTabMap[currentPageName];
-          const isActive = currentTab === tab.page;
-          
-          return (
-            <Link
-              key={tab.page}
-              to={createPageUrl(tab.page)}
-              onClick={(e) => handleTabClick(e, tab)}
-              className={cn(
-                "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px]",
-                isActive 
-                  ? "text-amber-500" 
-                  : "text-zinc-400 active:bg-zinc-800"
-              )}
-            >
-              <Icon size={20} />
-              <span className="text-[10px] font-medium">{tab.name}</span>
-            </Link>
-          );
-        })}
+    <nav 
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 safe-bottom"
+      style={{
+        background: '#0D1117',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        padding: '8px 8px',
+      }}
+    >
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const currentTab = pageToTabMap[currentPageName];
+        const isActive = currentTab === tab.page;
         
-        <Link
-          to={createPageUrl('Profile')}
-          onClick={(e) => {
-            if (currentPageName === 'Profile') {
-              e.preventDefault();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}
-          className={cn(
-            "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-[64px]",
-            currentPageName === 'Profile' 
-              ? "text-amber-500" 
-              : "text-zinc-400 active:bg-zinc-800"
-          )}
-        >
-          <UserCircle size={20} />
-          <span className="text-[10px] font-medium">Profile</span>
-        </Link>
-      </div>
+        return (
+          <Link
+            key={tab.page}
+            to={createPageUrl(tab.page)}
+            onClick={(e) => handleTabClick(e, tab)}
+            className="flex flex-col items-center gap-1 rounded-lg transition-colors"
+            style={{
+              padding: '8px 12px',
+              minWidth: '64px',
+              color: isActive ? '#FF8C42' : 'rgba(255,255,255,0.55)',
+              backgroundColor: isActive ? 'rgba(255,90,31,0.1)' : 'transparent',
+              textDecoration: 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <Icon size={20} style={{ color: isActive ? '#FF8C42' : 'rgba(255,255,255,0.4)' }} />
+            <span style={{ fontSize: '10px', fontWeight: 500 }}>{tab.name}</span>
+          </Link>
+        );
+      })}
+      
+      <Link
+        to={createPageUrl('Profile')}
+        onClick={(e) => {
+          if (currentPageName === 'Profile') {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
+        className="flex flex-col items-center gap-1 rounded-lg transition-colors"
+        style={{
+          padding: '8px 12px',
+          minWidth: '64px',
+          color: currentPageName === 'Profile' ? '#FF8C42' : 'rgba(255,255,255,0.55)',
+          backgroundColor: currentPageName === 'Profile' ? 'rgba(255,90,31,0.1)' : 'transparent',
+          textDecoration: 'none',
+        }}
+        onMouseEnter={(e) => {
+          if (currentPageName !== 'Profile') e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+        }}
+        onMouseLeave={(e) => {
+          if (currentPageName !== 'Profile') e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        <UserCircle size={20} style={{ color: currentPageName === 'Profile' ? '#FF8C42' : 'rgba(255,255,255,0.4)' }} />
+        <span style={{ fontSize: '10px', fontWeight: 500 }}>Profile</span>
+      </Link>
     </nav>
   );
 }

@@ -14,39 +14,53 @@ import { Button } from '@/components/ui/button';
 
 // ─── Run tests inline (import the pure formula lib + run tests) ──────────────
 
-import {
-  roundHalfEven,
-  calcLineItemExtended,
-  calcEstimateSubtotal,
-  calcMarkupSellPrice,
-  calcMarginToMarkup,
-  calcDiscount,
-  calcTax,
-  calcTaxGrossUp,
-  calcRetainageWithheld,
-  calcNetPaymentDue,
-  calcRetainageBalance,
-  calcSOVCurrentBilling,
-  calcSOVBalanceToFinish,
-  calcG703Totals,
-  calcCOTotalCost,
-  validateCODelta,
-  calcLaborCost,
-  inferOTRate,
-  calcEV,
-  calcCPI,
-  calcSPI,
-  calcEAC,
-  calcTCPI,
-  calcWIP,
-  calcInvoiceAgeDays,
-  calcAgingBucket,
-  calcETCBudgetMethod,
-  calcETCPerformanceMethod,
-  calcResourceCost,
-  calcShippingCost,
-  calcTravelCost,
-} from '@/components/shared/financialFormulas.js';
+// ─── Canonical Formula Library (inlined to avoid cross-module build issues) ──
+
+const n = (v) => (typeof v === 'number' && !isNaN(v) ? v : Number(v) || 0);
+
+function roundHalfEven(value, decimals = 2) {
+  const factor = Math.pow(10, decimals);
+  const shifted = value * factor;
+  const floor = Math.floor(shifted);
+  const diff = shifted - floor;
+  let rounded;
+  if (diff === 0.5) { rounded = floor % 2 === 0 ? floor : floor + 1; }
+  else { rounded = Math.round(shifted); }
+  return rounded / factor;
+}
+
+const clamp = (v, min, max) => Math.min(Math.max(n(v), n(min)), n(max));
+
+const calcLineItemExtended = (qty, price) => roundHalfEven(n(qty) * n(price));
+const calcEstimateSubtotal = (items) => roundHalfEven((items || []).reduce((s, v) => s + n(v), 0));
+const calcMarkupSellPrice  = (cost, pct) => roundHalfEven(n(cost) * (1 + n(pct) / 100));
+const calcMarginToMarkup   = (m) => { const mv = n(m); if (mv >= 100) return Infinity; if (mv <= 0) return 0; return roundHalfEven(mv / (1 - mv / 100), 4); };
+const calcDiscount         = (price, pct) => { const d = roundHalfEven(n(price) * (clamp(pct,0,100)/100)); return { discount_amount: d, net_price: roundHalfEven(n(price)-d) }; };
+const calcTax              = (amt, rate) => roundHalfEven(n(amt) * (n(rate) / 100));
+const calcTaxGrossUp       = (gross, rate) => { const r = n(rate)/100; const tax = roundHalfEven(n(gross)*r/(1+r)); return { tax, net: roundHalfEven(n(gross)-tax) }; };
+const calcRetainageWithheld= (billing, pct = 10) => roundHalfEven(n(billing) * (clamp(pct,0,100)/100));
+const calcNetPaymentDue    = (billing, pct = 10) => { const ret = calcRetainageWithheld(billing,pct); return { retainage: ret, net_due: roundHalfEven(n(billing)-ret) }; };
+const calcRetainageBalance = (held, released = 0) => roundHalfEven(Math.max(0, n(held)-n(released)));
+const calcSOVCurrentBilling= (sv, pct, prev) => roundHalfEven(n(sv)*(clamp(pct,0,100)/100) - n(prev));
+const calcSOVBalanceToFinish= (sv, billed) => roundHalfEven(n(sv)-n(billed));
+const calcG703Totals       = (lines = []) => { let tc=0,tr=0; for(const l of lines){const b=n(l.current_billed);const r=n(l.retainage_pct??10);tc+=b;tr+=b*(r/100);} return {total_current:roundHalfEven(tc),total_retainage:roundHalfEven(tr),net_due:roundHalfEven(tc-tr)}; };
+const calcCOTotalCost      = (items=[], sr=65, fr=85) => roundHalfEven(items.reduce((s,li)=>s+n(li.shop_hours)*sr+n(li.field_hours)*fr+n(li.equipment_cost)+n(li.material_cost)+n(li.other_cost),0));
+const validateCODelta      = (header, lines=[]) => { const sum=roundHalfEven(lines.reduce((s,v)=>s+n(v),0)); const delta=roundHalfEven(n(header)-sum); return {valid:Math.abs(delta)<0.01,delta}; };
+const calcLaborCost        = (rh,rr,oh=0,or_=0,dh=0,dr=0,burden=1.0) => { const lc=roundHalfEven(n(rh)*n(rr)+n(oh)*n(or_)+n(dh)*n(dr)); return {labor_cost:lc,loaded_cost:roundHalfEven(lc*Math.max(1,n(burden)))}; };
+const inferOTRate          = (rate) => roundHalfEven(n(rate)*1.5);
+const calcEV               = (BAC, pct) => roundHalfEven(n(BAC)*(clamp(pct,0,100)/100));
+const calcCPI              = (EV, AC) => { if(n(AC)===0) return n(EV)>0?Infinity:1; return roundHalfEven(n(EV)/n(AC),4); };
+const calcSPI              = (EV, PV) => { if(n(PV)===0) return 1; return roundHalfEven(n(EV)/n(PV),4); };
+const calcEAC              = (BAC,EV,AC,method='typical') => { const b=n(BAC),ev=n(EV),ac=n(AC); const cpi=ac>0?ev/ac:1; if(method==='optimistic') return roundHalfEven(ac+(b-ev)); if(method==='pessimistic') return roundHalfEven(cpi>0?b/cpi:b); return roundHalfEven(ac+(cpi>0?(b-ev)/cpi:(b-ev))); };
+const calcTCPI             = (BAC,EV,AC) => { const d=n(BAC)-n(AC); if(d===0) return n(BAC)===n(EV)?1:Infinity; return roundHalfEven((n(BAC)-n(EV))/d,4); };
+const calcWIP              = (cv,pct,billed) => { const earned=roundHalfEven(n(cv)*(clamp(pct,0,100)/100)); const b=n(billed); return {earned_revenue:earned,over_billing:roundHalfEven(Math.max(0,b-earned)),under_billing:roundHalfEven(Math.max(0,earned-b))}; };
+const calcInvoiceAgeDays   = (inv_date, ref=new Date()) => Math.max(0,Math.floor((new Date(ref)-new Date(inv_date))/(86400000)));
+const calcAgingBucket      = (days) => { const d=n(days); if(d<=0)return'current'; if(d<=30)return'1-30'; if(d<=60)return'31-60'; if(d<=90)return'61-90'; return'90+'; };
+const calcETCBudgetMethod  = (budget, actual) => roundHalfEven(Math.max(0,n(budget)-n(actual)));
+const calcETCPerformanceMethod=(BAC,EV,CPI)=>{ const cpi=n(CPI); if(cpi<=0) return Math.max(0,n(BAC)-n(EV)); return roundHalfEven(Math.max(0,(n(BAC)-n(EV))/cpi)); };
+const calcResourceCost     = (hrs,rate,burden=1.0) => { const tc=roundHalfEven(n(hrs)*n(rate)); return {total_cost:tc,loaded_cost:roundHalfEven(tc*Math.max(1,n(burden)))}; };
+const calcShippingCost     = ({loads_shipped=1,load_unload_hours=0,distance_miles=0,time_from_shop_hours=0,labor_rate=0,mileage_rate=0})=>{ const per=roundHalfEven(n(time_from_shop_hours)*n(labor_rate)+n(distance_miles)*n(mileage_rate)+n(load_unload_hours)*n(labor_rate)); return {per_load_cost:per,total_cost:roundHalfEven(per*Math.max(1,n(loads_shipped)))}; };
+const calcTravelCost       = ({duration_weeks=1,men=1,distance_miles=0,travel_hours=0,labor_rate=0,mileage_rate=0})=>{ const pmw=roundHalfEven(n(travel_hours)*n(labor_rate)+n(distance_miles)*2*n(mileage_rate)); return {per_man_week:pmw,total_cost:roundHalfEven(pmw*Math.max(1,n(men))*Math.max(1,n(duration_weeks)))}; };
 
 // ─── Inline test runner (no Node dependency) ─────────────────────────────────
 

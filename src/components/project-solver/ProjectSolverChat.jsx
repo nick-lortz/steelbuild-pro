@@ -61,7 +61,10 @@ export default function ProjectSolverChat({ projectId, onClose, onStructuredOutp
         annotations: userMsg.annotations,
       });
 
-      if (res.data?.session_id && !sessionId) setSessionId(res.data.session_id);
+      if (res.data?.session_id && !sessionId) {
+        setSessionId(res.data.session_id);
+        onSessionCreated?.({ id: res.data.session_id, title: userMsg.content?.slice(0, 60) || 'Session' });
+      }
 
       const assistantMsg = {
         id: crypto.randomUUID(),
@@ -71,6 +74,7 @@ export default function ProjectSolverChat({ projectId, onClose, onStructuredOutp
         created_at: new Date().toISOString(),
       };
       setMessages(prev => [...prev, assistantMsg]);
+      if (res.data?.structured_output) onStructuredOutput?.(res.data.structured_output, res.data.session_id);
     } catch (e) {
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(), role: 'assistant',

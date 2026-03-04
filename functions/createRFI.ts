@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.20";
 import { validateInput, RFICreateSchema } from './utils/validation.js';
 import { handleFunctionError } from './utils/errorHandler.js';
 
@@ -31,9 +31,22 @@ async function requireProjectAccess(base44: any, user: any, project_id: string) 
 }
 
 async function rfiNumberExists(base44: any, project_id: string, rfi_number: number, excludeId?: string) {
-  const existing = await base44.entities.RFI.filter({ project_id, rfi_number });
-  const filtered = excludeId ? existing.filter((r: any) => r.id !== excludeId) : existing;
-  return filtered.length > 0 ? filtered : null;
+  try {
+    const existing = await base44.asServiceRole.entities.RFI.filter({ project_id, rfi_number });
+    
+    if (!Array.isArray(existing)) {
+      throw new Error('Unexpected filter response: expected array');
+    }
+    
+    const filtered = excludeId 
+      ? existing.filter((r: any) => r.id !== excludeId)
+      : existing;
+    
+    return filtered;  // Always return array (empty or with items)
+  } catch (error: any) {
+    console.error(`RFI uniqueness check failed for project=${project_id}, rfi_number=${rfi_number}:`, error.message);
+    throw error;
+  }
 }
 
 async function getNextRfiNumber(base44: any, project_id: string) {
@@ -68,7 +81,7 @@ Deno.serve(async (req) => {
 
     // pre-check uniqueness
     const dup = await rfiNumberExists(base44.asServiceRole, data.project_id, rfi_number);
-    if (dup) {
+    if (dup.length > 0) {
       return json(409, {
         error: "Duplicate RFI number for project",
         project_id: data.project_id,
@@ -88,11 +101,14 @@ Deno.serve(async (req) => {
 
         // post-check: detect race duplicates
         const post = await rfiNumberExists(base44.asServiceRole, data.project_id, rfi_number);
-        if (post && post.length > 1) {
+        if (post.length > 1) {
           // best-effort rollback of our insert
-          await base44.asServiceRole.entities.RFI.delete(rfi.id);
+          const deleteResult = await base44.asServiceRole.entities.RFI.delete(rfi.id);
+          if (!deleteResult) {
+            console.error(`Failed to delete orphaned RFI ${rfi.id} during race recovery`);
+          }
           return json(409, {
-            error: "Duplicate RFI number detected (race)",
+            error: "Duplicate RFI number detected (race condition)",
             project_id: data.project_id,
             rfi_number,
           });
@@ -102,12 +118,17 @@ Deno.serve(async (req) => {
       } catch (e: any) {
         const msg = String(e?.message ?? e);
         if (msg.toLowerCase().includes("duplicate") || msg.includes("409")) {
-          // Recompute next number and retry once
+          // Retry with higher number to avoid collision
           if (attempt === 1) {
-            rfi_number = await getNextRfiNumber(base44.asServiceRole, data.project_id);
+            const rfis = await base44.asServiceRole.entities.RFI.filter({ project_id: data.project_id });
+            const max = rfis.reduce((m: number, r: any) => Math.max(m, Number(r.rfi_number || 0)), 0);
+            rfi_number = max + 2;  // Skip 1 number to avoid collision
             continue;
           }
-          return json(409, { error: "Duplicate RFI number for project", project_id: data.project_id, rfi_number });
+          return json(409, { 
+            error: "Duplicate RFI number for project (unable to find available number)",
+            project_id: data.project_id
+          });
         }
         if (attempt === 2) throw e;
       }

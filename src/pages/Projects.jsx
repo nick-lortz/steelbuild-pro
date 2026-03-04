@@ -384,6 +384,7 @@ export default function Projects() {
           />
         )}
       </div>
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

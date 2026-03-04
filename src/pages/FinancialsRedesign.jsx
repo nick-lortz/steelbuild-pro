@@ -301,44 +301,30 @@ export default function FinancialsRedesign() {
     }
   });
 
-  // Show portfolio view when no project selected, otherwise show project view
+  // Show portfolio view when no project selected
   if (!selectedProject) {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen bg-black">
-          {/* Header */}
-          <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md sticky top-0 z-10">
-            <div className="max-w-[1800px] mx-auto px-8 py-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 mb-4">
-                  <Home size={28} className="text-[#FF9D42]" />
-                  <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Financials</h1>
-                </div>
-                <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue placeholder="Select project to drill down..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Portfolio View</SelectItem>
-                    {projects.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.project_number} - {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Slim header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 44, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,17,23,0.97)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 20, flexShrink: 0, flexWrap: 'wrap', gap: 8 }}>
+            <div className="flex items-center gap-2">
+              <Home size={14} style={{ color: '#FF9D42' }} />
+              <span style={{ fontWeight: 800, fontSize: '0.78rem', color: 'rgba(255,255,255,0.88)' }}>Financials</span>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Portfolio View</span>
             </div>
+            <Select value={selectedProject || 'none'} onValueChange={(val) => setSelectedProject(val === 'none' ? '' : val)}>
+              <SelectTrigger className="h-7 text-xs w-52" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}>
+                <SelectValue placeholder="Select project…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Portfolio View</SelectItem>
+                {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.project_number} — {p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-
-          {/* Portfolio Dashboard */}
-          <div className="max-w-[1800px] mx-auto px-8 py-6">
-            <PortfolioFinancialHomepage
-              projects={projects}
-              sovItems={allSovItems}
-              expenses={allExpenses}
-              changeOrders={allChangeOrders}
-            />
+          <div className="flex-1 overflow-y-auto p-4">
+            <PortfolioFinancialHomepage projects={projects} sovItems={allSovItems} expenses={allExpenses} changeOrders={allChangeOrders} />
           </div>
         </div>
       </ErrorBoundary>

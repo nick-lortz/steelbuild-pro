@@ -521,7 +521,7 @@ function LayoutContent({ children, currentPageName }) {
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.18, ease: [0.65, 0, 0.35, 1] }}
                 style={{ color: 'rgba(255,255,255,0.88)', minHeight: '100%' }}
-                className="p-4 lg:p-5"
+                className="p-2 sm:p-4"
               >
                 {children}
               </motion.div>

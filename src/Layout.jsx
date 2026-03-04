@@ -137,6 +137,7 @@ const navGroups = [
       { name: 'Project Analytics', page: 'ProjectAnalyticsDashboard', icon: BarChart3 },
       { name: 'Job Status Report', page: 'JobStatusReport',           icon: FileText },
       { name: 'Reports',           page: 'Reports',                   icon: FileText },
+      { name: 'ProjectSolver AI',   page: 'ProjectSolver',             icon: Sparkles },
       { name: 'AI Insights',       page: 'Insights',                  icon: Sparkles },
       { name: 'Feedback Loop',     page: 'FeedbackLoop',              icon: TrendingUp },
       { name: 'Performance',       page: 'Performance',               icon: Gauge },

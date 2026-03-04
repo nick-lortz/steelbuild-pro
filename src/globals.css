@@ -360,7 +360,7 @@ table tbody tr:hover {
 }
 
 /* ============================================================
-   MOBILE TOUCH
+   MOBILE TOUCH (44px min-tap target per WCAG 2.5.5)
    ============================================================ */
 button, [role="button"], a {
   -webkit-tap-highlight-color: transparent;
@@ -373,6 +373,15 @@ button, [role="button"], a {
   button, [role="button"], a[href] {
     min-height: 44px;
     min-width: 44px;
+  }
+  /* Tighter page padding on mobile */
+  .p-4, .p-5, .lg\:p-5 {
+    padding: var(--page-padding-sm) !important;
+  }
+}
+@media (min-width: 1024px) {
+  .p-4, .p-5 {
+    padding: var(--page-padding-lg) !important;
   }
 }
 

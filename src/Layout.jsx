@@ -366,10 +366,10 @@ function LayoutContent({ children, currentPageName }) {
         {/* ── Top Nav Bar ── */}
         <header
           style={{
-            height: 52,
+            height: 48,   /* slim 48px header */
             display: 'flex',
             alignItems: 'center',
-            padding: '0 20px',
+            padding: '0 16px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             gap: 0,
             flexShrink: 0,

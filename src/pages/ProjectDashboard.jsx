@@ -1,271 +1,257 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, GripVertical } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import PageHeader from '@/components/ui/PageHeader';
 import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import ProgressWidget from '@/components/project-dashboard/ProgressWidget';
-import BudgetWidget from '@/components/project-dashboard/BudgetWidget';
-import RFIWidget from '@/components/project-dashboard/RFIWidget';
-import DeliveryWidget from '@/components/project-dashboard/DeliveryWidget';
-import ChangeOrderWidget from '@/components/project-dashboard/ChangeOrderWidget';
-import WorkPackageWidget from '@/components/project-dashboard/WorkPackageWidget';
-import DrawingWidget from '@/components/project-dashboard/DrawingWidget';
-import WidgetConfigDialog from '@/components/project-dashboard/WidgetConfigDialog';
-import AIRiskWidget from '@/components/project-dashboard/AIRiskWidget';
-import ResourceOptimizationWidget from '@/components/project-dashboard/ResourceOptimizationWidget';
-import DocumentsWidget from '@/components/project-dashboard/DocumentsWidget';
-import MarginRiskWidget from '@/components/project-dashboard/MarginRiskWidget';
-import ErectionReadinessWidget from '@/components/project-dashboard/ErectionReadinessWidget';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import {
+  CompactHeader, CompactKPIStrip, StatusPill, InlineAction
+} from '@/components/layout/CompactPageShell';
+import {
+  AlertTriangle, TrendingUp, FileText, Truck, DollarSign, CheckCircle2, Clock, Settings
+} from 'lucide-react';
 
-const AVAILABLE_WIDGETS = [
-  { id: 'progress', label: 'Project Progress', component: ProgressWidget },
-  { id: 'budget', label: 'Budget vs Actual', component: BudgetWidget },
-  { id: 'margin_risk', label: 'Work Packages At Margin Risk', component: MarginRiskWidget },
-  { id: 'erection_readiness', label: 'Erection Tasks Not Ready', component: ErectionReadinessWidget },
-  { id: 'ai_risk', label: 'AI Risk Assessment', component: AIRiskWidget },
-  { id: 'resource_optimization', label: 'Resource Optimization', component: ResourceOptimizationWidget },
-  { id: 'documents', label: 'Documents', component: DocumentsWidget },
-  { id: 'rfis', label: 'Open RFIs', component: RFIWidget },
-  { id: 'deliveries', label: 'Upcoming Deliveries', component: DeliveryWidget },
-  { id: 'change_orders', label: 'Change Orders', component: ChangeOrderWidget },
-  { id: 'work_packages', label: 'Work Packages', component: WorkPackageWidget },
-  { id: 'drawings', label: 'Drawing Status', component: DrawingWidget }
+// ── Sample placeholders ───────────────────────────────────────────────────────
+const SAMPLE_PROJECTS = [
+  { id: 'p1', project_number: '24-001', name: 'Riverside Warehouse', status: 'in_progress', client: 'DCS Construction', contract_value: 1_850_000, phase: 'fabrication', target_completion: '2026-06-15', progress: 62 },
+  { id: 'p2', project_number: '24-002', name: 'Mesa Distribution Center', status: 'in_progress', client: 'Wentworth GC', contract_value: 3_200_000, phase: 'erection', target_completion: '2026-04-30', progress: 81 },
+  { id: 'p3', project_number: '24-003', name: 'Chandler Office Build', status: 'awarded', client: 'Sunstate Dev', contract_value: 980_000, phase: 'detailing', target_completion: '2026-09-01', progress: 12 },
+  { id: 'p4', project_number: '23-018', name: 'Phoenix Auto Plant Exp.', status: 'completed', client: 'Toyota GC', contract_value: 5_100_000, phase: 'closeout', target_completion: '2025-12-31', progress: 100 },
 ];
 
-const DEFAULT_LAYOUT = [
-  'progress',
-  'budget',
-  'margin_risk',
-  'erection_readiness',
-  'rfis',
-  'deliveries'
+const SAMPLE_RFIS = [
+  { id: 'r1', rfi_number: 47, subject: 'Column baseplate anchor bolt spacing — Grid B4', project_name: 'Mesa Distribution Center', priority: 'critical', status: 'submitted', business_days_open: 8, due_date: '2026-03-06' },
+  { id: 'r2', rfi_number: 23, subject: 'Connection detail at HSS beam pocket — Level 2', project_name: 'Riverside Warehouse', priority: 'high', status: 'under_review', business_days_open: 5, due_date: '2026-03-10' },
+  { id: 'r3', rfi_number: 12, subject: 'Embed plate tolerance for precast panel interface', project_name: 'Chandler Office Build', priority: 'medium', status: 'draft', business_days_open: 2, due_date: '2026-03-14' },
 ];
+
+const SAMPLE_COS = [
+  { id: 'c1', co_number: 8, title: 'Additional bracing per EOR Bulletin 3', project_name: 'Mesa Distribution Center', cost_impact: 42_500, status: 'submitted' },
+  { id: 'c2', co_number: 5, title: 'Crane mobilization delay — owner-caused', project_name: 'Riverside Warehouse', cost_impact: 18_200, status: 'under_review' },
+  { id: 'c3', co_number: 12, title: 'Added stair tread nos. as VE credit', project_name: 'Chandler Office Build', cost_impact: -9_800, status: 'approved' },
+];
+
+const SAMPLE_REVISIONS = [
+  { id: 'v1', set_number: 'S-101', title: 'Foundation & Anchor Bolt Plan', status: 'FFF', discipline: 'structural', updated_date: '2026-03-03', project_name: 'Riverside Warehouse' },
+  { id: 'v2', set_number: 'S-204', title: 'Roof Framing Plan — Bldg B', status: 'BFA', discipline: 'structural', updated_date: '2026-03-02', project_name: 'Mesa Distribution Center' },
+  { id: 'v3', set_number: 'M-01', title: 'Misc Metals Schedule', status: 'IFA', discipline: 'misc_metals', updated_date: '2026-03-01', project_name: 'Chandler Office Build' },
+];
+
+const fmt$ = v => v < 0 ? `(${Math.abs(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })})` : v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+// ── Bento cell wrapper ────────────────────────────────────────────────────────
+function BentoCell({ title, icon: Icon, accent, children, className = '' }) {
+  return (
+    <div
+      className={`flex flex-col ${className}`}
+      style={{
+        background: 'rgba(255,255,255,0.025)',
+        border: `1px solid ${accent ? 'rgba(255,90,31,0.2)' : 'rgba(255,255,255,0.05)'}`,
+        borderRadius: 14,
+        overflow: 'hidden',
+      }}
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        {Icon && <Icon size={12} style={{ color: accent || 'rgba(255,255,255,0.35)' }} />}
+        <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+          {title}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto">{children}</div>
+    </div>
+  );
+}
 
 export default function ProjectDashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
-  const [widgetLayout, setWidgetLayout] = useState([]);
-  const [configOpen, setConfigOpen] = useState(false);
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: project } = useQuery({
-    queryKey: ['project', activeProjectId],
-    queryFn: async () => {
-      if (!activeProjectId) return null;
-      const projects = await base44.entities.Project.filter({ id: activeProjectId });
-      return projects[0];
-    },
-    enabled: !!activeProjectId
+  const { data: rfis = [] } = useQuery({
+    queryKey: ['rfis-dashboard'],
+    queryFn: () => base44.entities.RFI.list('-created_date', 20),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: changeOrders = [] } = useQuery({
+    queryKey: ['cos-dashboard'],
+    queryFn: () => base44.entities.ChangeOrder.list('-created_date', 10),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: drawingSets = [] } = useQuery({
+    queryKey: ['drawings-dashboard'],
+    queryFn: () => base44.entities.DrawingSet.list('-updated_date', 10),
+    staleTime: 2 * 60 * 1000,
   });
 
   useEffect(() => {
-    // Check for ?project= URL param and set active project
     const params = new URLSearchParams(window.location.search);
-    const projectParam = params.get('project');
-    
-    if (projectParam && projectParam !== activeProjectId) {
-      setActiveProjectId(projectParam);
-    } else if (!projectParam && !activeProjectId && allProjects.length > 0) {
-      // Default to first project if none set
-      setActiveProjectId(allProjects[0].id);
-    }
+    const p = params.get('project') || params.get('id');
+    if (p && p !== activeProjectId) setActiveProjectId(p);
+    else if (!p && !activeProjectId && allProjects.length > 0) setActiveProjectId(allProjects[0].id);
   }, [allProjects]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(`dashboard_layout_${activeProjectId}`);
-    setWidgetLayout(saved ? JSON.parse(saved) : DEFAULT_LAYOUT);
-  }, [activeProjectId]);
+  // Use live data if available, fall back to samples
+  const projects = allProjects.length > 0 ? allProjects : SAMPLE_PROJECTS;
+  const urgentRFIs = (rfis.length > 0 ? rfis.filter(r => ['critical', 'high'].includes(r.priority) && !['answered', 'closed'].includes(r.status)) : SAMPLE_RFIS).slice(0, 5);
+  const pendingCOs = (changeOrders.length > 0 ? changeOrders.filter(c => ['submitted', 'under_review'].includes(c.status)) : SAMPLE_COS).slice(0, 5);
+  const recentDrawings = (drawingSets.length > 0 ? drawingSets.slice(0, 5) : SAMPLE_REVISIONS);
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-
-    const items = Array.from(widgetLayout);
-    const [reordered] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reordered);
-
-    setWidgetLayout(items);
-    localStorage.setItem(`dashboard_layout_${activeProjectId}`, JSON.stringify(items));
-  };
-
-  const handleUpdateLayout = (newLayout) => {
-    setWidgetLayout(newLayout);
-    localStorage.setItem(`dashboard_layout_${activeProjectId}`, JSON.stringify(newLayout));
-  };
-
-  if (!activeProjectId) {
-    return (
-      <div className="min-h-screen bg-black">
-        <PageHeader 
-          title="Project Dashboard" 
-          subtitle="Select a project to view dashboard"
-          actions={
-            <Select value={activeProjectId || 'none'} onValueChange={(val) => setActiveProjectId(val === 'none' ? null : val)}>
-              <SelectTrigger className="w-80">
-                <SelectValue placeholder="Select project..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Select project...</SelectItem>
-                {allProjects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          }
-        />
-        <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <Card className="p-12 text-center">
-            <p className="text-[#6B7280]">No project selected</p>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  // Portfolio KPIs
+  const kpis = useMemo(() => {
+    const active = projects.filter(p => p.status === 'in_progress');
+    const totalValue = projects.reduce((s, p) => s + (p.contract_value || 0), 0);
+    const openRFIs = urgentRFIs.length;
+    const pendingCOValue = pendingCOs.reduce((s, c) => s + (c.cost_impact || 0), 0);
+    return { active: active.length, totalValue, openRFIs, pendingCOValue };
+  }, [projects, urgentRFIs, pendingCOs]);
 
   return (
-    <div className="min-h-screen bg-black">
-      <PageHeader
-        title={project?.name || 'Project Dashboard'}
-        subtitle={project?.project_number || 'Loading...'}
-        actions={
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <CompactHeader
+        left={
           <>
-            <Select value={activeProjectId} onValueChange={setActiveProjectId}>
-              <SelectTrigger className="w-80">
-                <SelectValue />
+            <span style={{ fontWeight: 800, fontSize: '0.8rem', color: 'rgba(255,255,255,0.9)' }}>Dashboard</span>
+            <Select value={activeProjectId || 'all'} onValueChange={v => setActiveProjectId(v === 'all' ? null : v)}>
+              <SelectTrigger className="h-7 text-xs w-52" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8 }}>
+                <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent>
-                {allProjects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.project_number} - {p.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">All Projects</SelectItem>
+                {allProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.project_number} — {p.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfigOpen(true)}
-            >
-              <Settings size={14} className="mr-2" />
-              Configure Widgets
-            </Button>
           </>
+        }
+        right={
+          <Link to={createPageUrl('Settings')} style={{ color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center' }}>
+            <Settings size={14} />
+          </Link>
         }
       />
 
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="dashboard">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-              >
-                {widgetLayout.map((widgetId, index) => {
-                  const widget = AVAILABLE_WIDGETS.find(w => w.id === widgetId);
-                  if (!widget) return null;
+      {/* KPI strip */}
+      <CompactKPIStrip items={[
+        { label: 'Active Jobs', value: kpis.active, color: '#4DD6A4' },
+        { label: 'Portfolio Value', value: fmt$(kpis.totalValue), color: 'rgba(255,255,255,0.88)' },
+        { label: 'Urgent RFIs', value: kpis.openRFIs, color: kpis.openRFIs > 0 ? '#FF4D4D' : '#4DD6A4' },
+        { label: 'Pending CO Value', value: fmt$(kpis.pendingCOValue), color: '#FFB15A' },
+      ]} />
 
-                  const WidgetComponent = widget.component;
-                  const canMoveUp = index > 0;
-                  const canMoveDown = index < widgetLayout.length - 1;
+      {/* Bento grid */}
+      <div
+        className="flex-1 p-3 grid gap-3"
+        style={{
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gridAutoRows: 'minmax(200px, auto)',
+          alignContent: 'start',
+        }}
+      >
+        {/* Active Projects */}
+        <BentoCell title="Active Projects" icon={TrendingUp} className="lg:col-span-2">
+          <table className="w-full" style={{ fontSize: '0.72rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                {['#', 'Project', 'Phase', 'Progress', 'Target', 'Value', ''].map((h, i) => (
+                  <th key={i} style={{ padding: '4px 10px', color: 'rgba(255,255,255,0.28)', fontWeight: 700, fontSize: '0.58rem', letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: i > 2 ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {projects.filter(p => p.status !== 'closed').slice(0, 6).map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.025)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>{p.project_number}</td>
+                  <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.85)', fontWeight: 600, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</td>
+                  <td style={{ padding: '5px 10px' }}><StatusPill status={p.phase || p.status} /></td>
+                  <td style={{ padding: '5px 10px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                      <div style={{ width: 52, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${p.progress || 0}%`, height: '100%', background: '#4DD6A4', borderRadius: 2 }} />
+                      </div>
+                      <span style={{ color: 'rgba(255,255,255,0.5)', minWidth: 28, textAlign: 'right' }}>{p.progress || 0}%</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.4)', textAlign: 'right', fontFamily: 'monospace' }}>{p.target_completion || '—'}</td>
+                  <td style={{ padding: '5px 10px', color: 'rgba(255,255,255,0.65)', textAlign: 'right', fontFamily: 'monospace' }}>{fmt$(p.contract_value || 0)}</td>
+                  <td style={{ padding: '5px 8px', textAlign: 'right' }}>
+                    <Link to={createPageUrl('ProjectDashboard') + `?project=${p.id}`}
+                      style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#FF8C42', textDecoration: 'none' }}>
+                      Open →
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </BentoCell>
 
-                  const moveWidget = (fromIndex, toIndex) => {
-                    const items = Array.from(widgetLayout);
-                    const [moved] = items.splice(fromIndex, 1);
-                    items.splice(toIndex, 0, moved);
-                    handleUpdateLayout(items);
-                  };
-
-                  return (
-                    <Draggable key={widgetId} draggableId={widgetId} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={snapshot.isDragging ? 'opacity-50' : ''}
-                        >
-                          <Card className="p-4 relative group">
-                            {/* Keyboard reorder controls (WCAG 2.1.1) */}
-                            <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => moveWidget(index, index - 1)}
-                                disabled={!canMoveUp}
-                                className="h-7 w-7 p-0"
-                                aria-label={`Move ${widget.label} up`}
-                              >
-                                <span aria-hidden="true">↑</span>
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => moveWidget(index, index + 1)}
-                                disabled={!canMoveDown}
-                                className="h-7 w-7 p-0"
-                                aria-label={`Move ${widget.label} down`}
-                              >
-                                <span aria-hidden="true">↓</span>
-                              </Button>
-                            </div>
-
-                            {/* Drag handle (mouse users) */}
-                            <div
-                              {...provided.dragHandleProps}
-                              className="absolute top-2 right-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
-                              aria-hidden="true"
-                            >
-                              <GripVertical size={16} className="text-[#6B7280]" />
-                            </div>
-
-                            {/* Screen reader position info */}
-                            <span className="sr-only">
-                              {widget.label}, position {index + 1} of {widgetLayout.length}
-                            </span>
-
-                            <WidgetComponent projectId={activeProjectId} />
-                          </Card>
-                        </div>
-                      )}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
+        {/* Urgent RFIs */}
+        <BentoCell title="Urgent RFIs" icon={AlertTriangle} accent="#FF4D4D">
+          {urgentRFIs.length === 0 ? (
+            <div style={{ padding: '24px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.72rem' }}>No urgent RFIs</div>
+          ) : urgentRFIs.map(r => (
+            <div key={r.id} style={{ padding: '7px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>#{r.rfi_number || r.id?.slice(-3)}</span>
+                  <StatusPill status={r.priority} />
+                </div>
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.78)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>{r.subject}</p>
+                <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>{r.project_name} · {r.business_days_open || 0}bd open</p>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+              <InlineAction label="View" onClick={() => {}} />
+            </div>
+          ))}
+        </BentoCell>
 
-        {widgetLayout.length === 0 && (
-          <Card className="p-12 text-center">
-            <p className="text-[#6B7280] mb-4">No widgets configured</p>
-            <Button
-              onClick={() => setConfigOpen(true)}
-            >
-              Add Widgets
-            </Button>
-          </Card>
-        )}
+        {/* Pending Change Orders */}
+        <BentoCell title="Pending Change Orders" icon={DollarSign} accent="#FFB15A">
+          {pendingCOs.length === 0 ? (
+            <div style={{ padding: '24px 12px', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.72rem' }}>No pending COs</div>
+          ) : pendingCOs.map(c => (
+            <div key={c.id} style={{ padding: '7px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>CO-{String(c.co_number || '').padStart(3, '0')}</span>
+                  <StatusPill status={c.status} />
+                </div>
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.78)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{c.title}</p>
+                <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', marginTop: 1 }}>{c.project_name}</p>
+              </div>
+              <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', fontWeight: 700, color: (c.cost_impact || 0) < 0 ? '#4DD6A4' : '#FFB15A', flexShrink: 0 }}>
+                {fmt$(c.cost_impact || 0)}
+              </span>
+            </div>
+          ))}
+        </BentoCell>
+
+        {/* Recent Drawing Revisions */}
+        <BentoCell title="Recent Drawing Updates" icon={FileText}>
+          {recentDrawings.map(d => (
+            <div key={d.id} style={{ padding: '7px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{d.set_number}</span>
+                  <StatusPill status={d.status} />
+                </div>
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>{d.title}</p>
+                <p style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', marginTop: 1 }}>{d.project_name || '—'}</p>
+              </div>
+              <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>{d.updated_date?.slice(0, 10) || '—'}</span>
+            </div>
+          ))}
+        </BentoCell>
       </div>
-
-      <WidgetConfigDialog
-        open={configOpen}
-        onClose={() => setConfigOpen(false)}
-        availableWidgets={AVAILABLE_WIDGETS}
-        currentLayout={widgetLayout}
-        onUpdateLayout={handleUpdateLayout}
-      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
@@ -13,11 +13,13 @@ import { TabNavigationProvider } from '@/components/shared/hooks/useTabNavigatio
 import { SkipToMainContent } from '@/components/shared/accessibility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import MobileNav from '@/components/layout/MobileNav';
-import OfflineIndicator from '@/components/shared/OfflineIndicator';
-import CommandPalette from '@/components/shared/CommandPalette';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import PullToRefresh from '@/components/shared/PullToRefresh';
 import TopNav from '@/components/layout/TopNav';
+
+// Lazy load heavy components
+const OfflineIndicator = React.lazy(() => import('@/components/shared/OfflineIndicator'));
+const CommandPalette = React.lazy(() => import('@/components/shared/CommandPalette'));
 
 // ── Nav groups for the all-apps grid (used by TopNav) ───────────────────────
 import {
@@ -243,9 +245,11 @@ function LayoutContent({ children, currentPageName }) {
   return (
     <div style={{ background: '#2B2F38', minHeight: '100vh', padding: '16px', boxSizing: 'border-box' }}>
       <SkipToMainContent />
-      <OfflineIndicator />
       <Toaster />
-      <CommandPalette />
+      <Suspense fallback={null}>
+        <OfflineIndicator />
+        <CommandPalette />
+      </Suspense>
 
       {/* ── Phoenix Frame ── */}
       <div

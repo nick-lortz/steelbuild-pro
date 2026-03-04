@@ -308,71 +308,56 @@ export default function Projects() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0E13]">
-      {/* Header */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[#0F1419]/80 backdrop-blur-md">
-        <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Projects</h1>
-              <p className="text-sm text-[#6B7280] font-mono mt-1">{projects.length} projects</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="gap-2"
-              >
-                <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-                Refresh
-              </Button>
-              {can.createProject && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setFormData(initialFormState);
-                    setShowForm(true);
-                  }}
-                >
-                  <Plus size={14} className="mr-1" />
-                  New Project
-                </Button>
-              )}
-            </div>
-          </div>
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Compact sticky header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', height: 44, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(13,17,23,0.97)', backdropFilter: 'blur(12px)', position: 'sticky', top: 0, zIndex: 20, flexShrink: 0, flexWrap: 'wrap', gap: 6 }}>
+        <div className="flex items-center gap-2">
+          <Building size={13} style={{ color: '#FF8C42' }} />
+          <span style={{ fontWeight: 800, fontSize: '0.78rem', color: 'rgba(255,255,255,0.88)' }}>Projects</span>
+          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', fontFamily: 'monospace' }}>{projects.length} total</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7 text-xs gap-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} /> Refresh
+          </Button>
+          {can.createProject && (
+            <button
+              onClick={() => { setFormData(initialFormState); setShowForm(true); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 7, border: '1px solid rgba(255,90,31,0.3)', background: 'rgba(255,90,31,0.1)', color: '#FF8C42', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+            >
+              <Plus size={11} /> New Project
+            </button>
+          )}
         </div>
       </div>
 
-      {/* KPI Bar */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)]">
-        <div className="max-w-[1800px] mx-auto px-8 py-4">
+      {/* KPI strip */}
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
+        <div className="px-4 py-2">
           <ProjectsKPIBar projects={projectsWithMetrics} tasks={tasks} financials={financials} />
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.01)]">
-        <div className="max-w-[1800px] mx-auto px-8 py-3">
-            <ProjectsFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            pmFilter={pmFilter}
-            onPMChange={setPMFilter}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            onClearFilters={handleClearFilters}
-            hasActiveFilters={hasActiveFilters}
-            projectManagers={projectManagers}
-          />
-        </div>
+      {/* Compact filter bar */}
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.01)', padding: '6px 16px' }}>
+        <ProjectsFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          pmFilter={pmFilter}
+          onPMChange={setPMFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          onClearFilters={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+          projectManagers={projectManagers}
+        />
       </div>
 
       {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div className="px-4 py-3">
         {/* Demo Seeder */}
         {projects.length === 0 && !isLoading && (
           <div className="mb-6">

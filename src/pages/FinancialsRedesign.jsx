@@ -720,6 +720,7 @@ export default function FinancialsRedesign() {
             </TabsContent>
           </Tabs>
         </div>
+        </div>
       </div>
 
       {splittingExpense && (

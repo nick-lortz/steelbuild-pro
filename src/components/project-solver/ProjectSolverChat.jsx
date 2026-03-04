@@ -13,18 +13,18 @@ import FileUploadZone from './FileUploadZone';
 import ImageAnnotator from './ImageAnnotator';
 import StructuredOutputCard from './StructuredOutputCard';
 
-export default function ProjectSolverChat({ projectId, onClose }) {
+export default function ProjectSolverChat({ projectId, onClose, onStructuredOutput, onSessionCreated, initialSession }) {
   const { activeProjectId } = useActiveProject();
   const pid = projectId || activeProjectId;
 
-  const [sessionId, setSessionId] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [sessionId, setSessionId] = useState(initialSession?.id || null);
+  const [messages, setMessages] = useState(initialSession?.messages || []);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showAnnotator, setShowAnnotator] = useState(false);
   const [annotatingUrl, setAnnotatingUrl] = useState(null);
-  const [pendingFiles, setPendingFiles] = useState([]); // [{name, url}]
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [pendingAnnotations, setPendingAnnotations] = useState([]);
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);

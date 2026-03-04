@@ -144,7 +144,7 @@ function MoreDropdown({ currentPageName }) {
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
           padding: '6px 12px',
-          color: isMoreActive ? '#fff' : 'rgba(255,255,255,0.38)',
+          color: isMoreActive ? '#fff' : 'rgba(255,255,255,0.55)',
           background: isMoreActive ? 'rgba(255,255,255,0.07)' : 'transparent',
           border: 'none',
           cursor: 'pointer',
@@ -288,7 +288,7 @@ function MoreItem({ item, currentPageName, onSelect }) {
       style={{
         padding: '5px 8px',
         fontSize: '0.7rem',
-        color: isActive ? '#FF8C42' : 'rgba(255,255,255,0.55)',
+        color: isActive ? '#FF8C42' : 'rgba(255,255,255,0.65)',
         background: isActive ? 'rgba(255,90,31,0.1)' : 'transparent',
         textDecoration: 'none',
         display: 'flex',
@@ -380,7 +380,7 @@ export default function TopNav({ currentPageName, currentUser, visibleNavGroups,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   padding: '6px 11px',
-                  color: isActive ? '#fff' : 'rgba(255,255,255,0.38)',
+                  color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
                   background: isActive
                     ? 'linear-gradient(135deg,rgba(255,90,31,0.18),rgba(255,140,66,0.08))'
                     : 'transparent',

@@ -8,45 +8,33 @@ import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics'
 import { useAuth, useAuthActions } from '@/components/shared/hooks/useAuth';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertCircle,
   Building,
+  LayoutDashboard,
   DollarSign,
   FileText,
   MessageSquareWarning,
   FileCheck,
   Users,
-  Menu,
-  X,
-  ChevronDown,
-  Hash,
-  Sparkles,
-  File,
   Calendar,
   Truck,
   Clock,
   TrendingUp,
-  LogOut,
   Settings,
   UserCircle,
   BarChart3,
   Camera,
   CheckCircle2,
-  LayoutDashboard,
   Wrench,
   Package,
   MessageSquare,
   Gauge,
-  AlertCircle,
+  Sparkles,
+  Hash,
+  File,
   LayoutGrid,
-  Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/toaster';
 import { ConfirmProvider } from '@/components/providers/ConfirmProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';

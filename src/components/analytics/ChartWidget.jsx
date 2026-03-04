@@ -1,7 +1,8 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { CHART, rechartsProps, CustomTooltip, CustomLegend, SBPChartGradients } from '@/components/shared/chartTheme';
 
-const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
+const COLORS = CHART.colors;
 
 // Intersection Observer for visibility
 function useIsVisible(ref) {

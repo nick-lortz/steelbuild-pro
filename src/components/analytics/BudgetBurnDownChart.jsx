@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { CHART, rechartsProps, CustomTooltip, CustomLegend, SBPChartGradients } from '@/components/shared/chartTheme';
 
 export default function BudgetBurnDownChart({ data }) {
   if (!data || data.length === 0) {

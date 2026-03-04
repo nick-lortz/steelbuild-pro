@@ -1,22 +1,14 @@
 {
-  "id": "/",
   "name": "SteelBuild-Pro",
   "short_name": "SteelBuild-Pro",
-  "description": "Structural steel project management platform",
+  "description": "A purpose-built project management platform for structural steel contractors, combining financial control, drawing and revision management, RFIs, change orders, and resource planning in one streamlined system — designed with a clean, dark industrial interface for real-world construction workflows.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
   "theme_color": "#000000",
+  "background_color": "#ffffff",
   "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

@@ -200,6 +200,7 @@ const navGroups = [
       { name: 'Data Management', page: 'DataManagement', icon: LayoutDashboard, roles: ['admin'] },
       { name: 'App Audit', page: 'AuditDashboard', icon: AlertCircle, roles: ['admin'] },
       { name: 'Fix Queue', page: 'AuditFixQueue', icon: CheckCircle2, roles: ['admin'] },
+      { name: 'Formula Tests', page: 'FinancialTestRunner', icon: Sparkles, roles: ['admin'] },
       { name: 'Integrations', page: 'Integrations', icon: Sparkles, roles: ['admin'] },
       { name: 'Settings', page: 'Settings', icon: Settings, roles: ['admin'] },
     ],

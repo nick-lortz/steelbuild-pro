@@ -792,7 +792,6 @@ export default function FinancialsRedesign() {
           </div>
         </DialogContent>
       </Dialog>
-      </div>
     </ErrorBoundary>
   );
 }

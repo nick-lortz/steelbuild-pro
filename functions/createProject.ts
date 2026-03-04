@@ -1,4 +1,4 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.20";
 import { validateInput, ProjectCreateSchema } from './utils/schemas.js';
 import { handleFunctionError } from './utils/errorHandler.js';
 
@@ -90,6 +90,26 @@ Deno.serve(async (req) => {
             error: "Duplicate project_number detected (race)",
             project_number,
           });
+        }
+
+        // Add audit log after successful creation (HIGH-004 fix)
+        try {
+          await base44.asServiceRole.entities.AuditLog.create({
+            entity_type: 'Project',
+            entity_id: project.id,
+            action: 'CREATE',
+            user_email: user.email,
+            timestamp: new Date().toISOString(),
+            details: JSON.stringify({
+              project_number: project_number,
+              project_name: data.name,
+              contract_value: data.contract_value || 0,
+              client: data.client || ''
+            })
+          });
+        } catch (auditError: any) {
+          // Log audit failure but don't fail the request
+          console.warn(`Audit log creation failed: ${auditError.message}`);
         }
 
         return json(201, { success: true, project });

@@ -5,6 +5,34 @@
 
 import { z } from 'npm:zod@3.24.2';
 
+// RFI valid status transitions (HIGH-003 fix)
+export const validRFIStatusTransitions = {
+  'draft': ['internal_review', 'submitted'],
+  'internal_review': ['submitted', 'draft'],
+  'submitted': ['under_review'],  // Cannot go back after submitted
+  'under_review': ['answered', 'reopened'],
+  'answered': ['closed', 'reopened'],
+  'closed': ['reopened'],
+  'reopened': ['under_review']
+};
+
+export function validateRFIStatusTransition(currentStatus, newStatus) {
+  const allowed = validRFIStatusTransitions[currentStatus];
+  if (!allowed) {
+    return { 
+      valid: false, 
+      error: `Unknown current status: ${currentStatus}` 
+    };
+  }
+  if (!allowed.includes(newStatus)) {
+    return { 
+      valid: false, 
+      error: `Cannot transition from ${currentStatus} to ${newStatus}. Allowed: ${allowed.join(', ')}` 
+    };
+  }
+  return { valid: true };
+}
+
 // Common schemas
 export const ProjectIdSchema = z.object({
   project_id: z.string().min(1, 'project_id required')
@@ -17,11 +45,11 @@ export const PaginationSchema = z.object({
 
 export const RFICreateSchema = z.object({
   project_id: z.string().min(1),
-  rfi_number: z.number().int().positive(),
-  subject: z.string().min(3, 'subject min 3 chars'),
+  rfi_number: z.number().int().positive().optional(),  // If omitted, auto-generate
+  subject: z.string().min(3, 'subject must be at least 3 characters'),
   rfi_type: z.enum(['connection_detail', 'member_size_length', 'embed_anchor', 'tolerance_fitup', 'coating_finish', 'erection_sequence', 'other']),
   category: z.enum(['structural', 'architectural', 'mep', 'coordination', 'clarification', 'other']),
-  question: z.string().min(10, 'question min 10 chars'),
+  question: z.string().min(10, 'question must be at least 10 characters'),
   priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
   assigned_to: z.string().optional(),
   due_date: z.string().date().optional()
@@ -29,9 +57,10 @@ export const RFICreateSchema = z.object({
 
 export const RFIUpdateSchema = z.object({
   id: z.string().min(1),
-  response: z.string().min(5, 'response min 5 chars').optional(),
+  response: z.string().min(5, 'response must be at least 5 characters').optional(),
   status: z.enum(['draft', 'internal_review', 'submitted', 'under_review', 'answered', 'closed', 'reopened']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional()
+  // NOTE: question cannot be updated post-submission (immutable business rule)
 });
 
 export const TaskCreateSchema = z.object({
@@ -66,4 +95,14 @@ export function validateInput(schema, data) {
   }
 }
 
-export default { validateInput, ProjectIdSchema, PaginationSchema, RFICreateSchema, RFIUpdateSchema, TaskCreateSchema, FinancialUpdateSchema };
+export default { 
+  validateInput, 
+  validateRFIStatusTransition,
+  validRFIStatusTransitions,
+  ProjectIdSchema, 
+  PaginationSchema, 
+  RFICreateSchema, 
+  RFIUpdateSchema, 
+  TaskCreateSchema, 
+  FinancialUpdateSchema 
+};

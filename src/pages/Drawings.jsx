@@ -191,9 +191,9 @@ export default function Drawings() {
         {[
           { label: 'Status', value: statusFilter, onChange: setStatusFilter, options: [['all','All Status'],['IFA','IFA'],['BFA','BFA'],['BFS','BFS'],['FFF','FFF'],['superseded','Superseded']] },
           { label: 'Discipline', value: disciplineFilter, onChange: setDisciplineFilter, options: [['all','All Disciplines'],['structural','Structural'],['architectural','Architectural'],['mechanical','Mechanical'],['electrical','Electrical'],['civil','Civil'],['other','Other']] },
-        ].map(({ value, onChange, options }) => (
+        ].map(({ label, value, onChange, options }) => (
           <select
-            key={value}
+            key={label}
             value={value}
             onChange={e => onChange(e.target.value)}
             style={{ height: 28, padding: '0 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, color: 'rgba(255,255,255,0.65)', fontSize: '0.7rem', cursor: 'pointer' }}

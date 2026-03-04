@@ -171,7 +171,7 @@ export function StatusPill({ status, colorMap = {} }) {
   );
 }
 
-export function InlineAction({ label, onClick, variant = 'ghost' }) {
+export function InlineAction({ label, onClick, variant = 'ghost', ariaLabel }) {
   const styles = {
     ghost: { color: 'rgba(255,255,255,0.35)', background: 'transparent' },
     accent: { color: '#FF8C42', background: 'rgba(255,90,31,0.1)' },
@@ -180,6 +180,7 @@ export function InlineAction({ label, onClick, variant = 'ghost' }) {
   return (
     <button
       onClick={e => { e.stopPropagation(); onClick?.(); }}
+      aria-label={ariaLabel || label}
       style={{
         fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
         padding: '2px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',

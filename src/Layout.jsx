@@ -40,6 +40,18 @@ if (IS_PREVIEW_ENV) {
     }
     return originalFetch.apply(this, args);
   };
+
+  // Intercept XMLHttpRequest just in case the SDK uses Axios
+  const originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    const APP_ID = '694bc0dd754d739afc7067e9';
+    if (typeof url === 'string') {
+      if (url.includes('/v1/apps/undefined/')) url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
+      else if (url.includes('/v1/apps/null/')) url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
+      else if (url.includes('api.base44.app/v1/entities') && !url.includes('/apps/')) url = url.replace('/v1/entities', `/v1/apps/${APP_ID}/entities`);
+    }
+    return originalOpen.call(this, method, url, ...rest);
+  };
 }
 // ------------------------------------------------------
 

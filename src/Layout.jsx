@@ -17,6 +17,32 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import PullToRefresh from '@/components/shared/PullToRefresh';
 import TopNav from '@/components/layout/TopNav';
 
+// --- PLATFORM BUG WORKAROUND: Force App ID in Preview ---
+const IS_PREVIEW_ENV = window.location.hostname.includes('preview') || window.location.hostname.includes('sandbox');
+if (IS_PREVIEW_ENV) {
+  const originalFetch = window.fetch;
+  window.fetch = async function(...args) {
+    let url = args[0];
+    const APP_ID = '694bc0dd754d739afc7067e9';
+    if (typeof url === 'string') {
+      if (url.includes('/v1/apps/undefined/')) args[0] = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
+      else if (url.includes('/v1/apps/null/')) args[0] = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
+      // Also catch cases where the url is just the origin without app ID
+      else if (url.includes('api.base44.app/v1/entities') && !url.includes('/apps/')) {
+        args[0] = url.replace('/v1/entities', `/v1/apps/${APP_ID}/entities`);
+      }
+    } else if (url instanceof URL) {
+      if (url.href.includes('/v1/apps/undefined/')) args[0] = new URL(url.href.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`));
+      else if (url.href.includes('/v1/apps/null/')) args[0] = new URL(url.href.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`));
+    } else if (url instanceof Request) {
+      if (url.url.includes('/v1/apps/undefined/')) args[0] = new Request(url.url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`), url);
+      else if (url.url.includes('/v1/apps/null/')) args[0] = new Request(url.url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`), url);
+    }
+    return originalFetch.apply(this, args);
+  };
+}
+// ------------------------------------------------------
+
 // Lazy load heavy components
 const OfflineIndicator = React.lazy(() => import('@/components/shared/OfflineIndicator'));
 const CommandPalette = React.lazy(() => import('@/components/shared/CommandPalette'));

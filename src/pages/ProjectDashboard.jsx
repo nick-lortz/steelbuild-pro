@@ -66,7 +66,7 @@ function BentoCell({ title, icon: Icon, accent, children, className = '' }) {
 export default function ProjectDashboard() {
   const { activeProjectId, setActiveProjectId } = useActiveProject();
 
-  const { data: allProjects = [] } = useQuery({
+  const { data: allProjects = [], isError: isProjectsError } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('name'),
     staleTime: 5 * 60 * 1000,

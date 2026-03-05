@@ -78,16 +78,20 @@ export const validateRequest = (request) => {
   }
   
   if (SECURITY_CONFIG.API.blockSuspiciousPatterns) {
-    const suspiciousPatterns = [
-      /\b(union|select|insert|delete|drop|create|alter)\b/i,
+    // Only check URL for injection patterns — NOT request body.
+    // Body content like "select W18x50" or "create shop drawings" is legitimate steel terminology.
+    const urlPatterns = [
       /<script[^>]*>.*?<\/script>/gi,
       /javascript:/i,
       /vbscript:/i,
-      /onload|onerror|onclick/i
+      /onload\s*=/i,
+      /onerror\s*=/i,
+      /onclick\s*=/i,
+      /\b(union\s+select|drop\s+table|insert\s+into|delete\s+from|alter\s+table)\b/i,
     ];
     
     const url = request.url;
-    if (suspiciousPatterns.some(pattern => pattern.test(url))) {
+    if (urlPatterns.some(pattern => pattern.test(url))) {
       throw new Error('Suspicious request pattern detected');
     }
   }
@@ -107,12 +111,21 @@ export const validateFileUpload = (file) => {
   }
   
   const filename = file.name;
-  if (!/^[a-zA-Z0-9._-]+$/.test(filename)) {
+  if (!/^[a-zA-Z0-9._\- ()]+$/.test(filename)) {
     throw new Error('Invalid filename characters');
   }
   
   if (filename.length > 255) {
     throw new Error('Filename too long');
+  }
+
+  // Block dangerous double extensions (e.g., report.pdf.exe)
+  const BLOCKED_EXTS = ['.exe','.bat','.cmd','.com','.scr','.pif','.vbs','.vbe','.js','.jse','.wsf','.wsh','.ps1','.msi','.dll','.hta','.lnk'];
+  const parts = filename.toLowerCase().split('.');
+  for (let i = 1; i < parts.length; i++) {
+    if (BLOCKED_EXTS.includes('.' + parts[i])) {
+      throw new Error(`Blocked file extension: .${parts[i]}`);
+    }
   }
   
   return true;

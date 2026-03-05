@@ -27,7 +27,7 @@ export function useAuth() {
           if (IS_PREVIEW) {
             return { id: 'preview-user', email: 'pm@steelbuildpro.com', full_name: 'Preview PM', role: 'admin' };
           }
-          return null;
+          return { __env_error__: true };
         }
         return null;
       }

@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-
+import { createPageUrl } from '@/utils';
 
 export default function PageNotFound({}) {
   const location = useLocation();
@@ -71,7 +71,7 @@ export default function PageNotFound({}) {
                     {/* Action Button */}
                     <div className="pt-6">
                         <button 
-                            onClick={() => navigate('/', { replace: true })} 
+                            onClick={() => navigate(createPageUrl('LandingPage'), { replace: true })} 
                             className="inline-flex items-center px-6 py-3 text-sm font-semibold rounded-lg bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-black shadow-lg hover:shadow-[0_0_40px_rgba(255,157,66,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-250 focus:outline-none focus:ring-2 focus:ring-[#FF9D42] focus:ring-offset-2 focus:ring-offset-black"
                         >
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

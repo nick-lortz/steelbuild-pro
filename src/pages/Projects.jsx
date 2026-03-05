@@ -76,6 +76,7 @@ export default function Projects() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleteProject, setDeleteProject] = useState(null);
 
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: currentUser } = useQuery({
     queryKey: ['currentUser'],

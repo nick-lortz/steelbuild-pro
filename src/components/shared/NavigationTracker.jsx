@@ -21,13 +21,13 @@ export default function NavigationTracker() {
     lastLoggedPage.current = pageName;
     lastLogTime.current = now;
 
-    // Log page view - silently fail if rate limited
-    base44.analytics.track({
-      eventName: 'page_view',
-      properties: { page: pageName }
-    }).catch(() => {
-      // Silently ignore rate limit errors
-    });
+    // Log page view - Temporarily disabled due to Base44 platform SDK bug (App ID dropping out causing 404s)
+    // base44.analytics.track({
+    //   eventName: 'page_view',
+    //   properties: { page: pageName }
+    // }).catch(() => {
+    //   // Silently ignore rate limit errors
+    // });
   }, [location.pathname]);
 
   return null;

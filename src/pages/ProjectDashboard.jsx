@@ -114,6 +114,11 @@ export default function ProjectDashboard() {
 
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+      {isProjectsError && (
+        <div style={{ background: 'rgba(255, 77, 77, 0.1)', color: '#FF4D4D', padding: '12px 16px', fontSize: '0.8rem', borderBottom: '1px solid rgba(255, 77, 77, 0.2)' }}>
+          <strong>API Connection Failed:</strong> Unable to load live database records. Showing placeholder sample data. (If you are in the Preview environment, this is a known platform bug. Please publish and view the live app to see real data.)
+        </div>
+      )}
       {/* Header */}
       <CompactHeader
         left={

@@ -16,21 +16,13 @@ export function useAuth() {
         return await base44.auth.me();
       } catch (err) {
         const status = err?.response?.status ?? err?.status;
-        if (status === 401) {
+        if (status === 401 || status === 404) {
           // Do not auto-redirect on public pages to avoid redirect loops
           const isPublicPage = ['/LandingPage', '/', '/HowItWorks', '/PrivacyPolicy', '/TermsOfService'].includes(window.location.pathname);
           if (!isPublicPage && !IS_PREVIEW) {
             base44.auth.redirectToLogin(window.location.pathname);
           }
           return null;
-        }
-        if (status === 404) {
-          console.warn('[AUTH] App not found (404). Bypassing error to allow UI preview.');
-          if (IS_PREVIEW) {
-            // Use the user's actual email so their specific data loads
-            return { id: 'preview-user', email: 'nickl@shsteelaz.com', full_name: 'Nick L', role: 'admin' };
-          }
-          return { __env_error__: true };
         }
         return null;
       }
@@ -42,13 +34,11 @@ export function useAuth() {
     refetchOnMount: 'always',
   });
 
-  const isEnvError = user?.__env_error__ === true;
-
   return {
-    user: isEnvError ? null : user,
+    user,
     isLoading,
     error,
-    isEnvError,
+    isEnvError: false,
   };
 }
 

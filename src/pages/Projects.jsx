@@ -302,11 +302,11 @@ export default function Projects() {
   };
 
   const handleViewProject = (project) => {
-    window.location.href = `/ProjectDashboard?id=${project.id}`;
+    navigate(createPageUrl('ProjectDashboard') + `?project=${project.id}`);
   };
 
   const handleSettings = (project) => {
-    window.location.href = createPageUrl('ProjectSettings') + `?project=${project.id}`;
+    navigate(createPageUrl('ProjectSettings') + `?project=${project.id}`);
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
@@ -283,7 +283,7 @@ function LayoutContent({ children, currentPageName }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground font-sans">
+    <div style={{ background: '#2B2F38', minHeight: '100vh', padding: '16px', boxSizing: 'border-box' }}>
       <SkipToMainContent />
       <Toaster />
       <Suspense fallback={null}>
@@ -291,109 +291,66 @@ function LayoutContent({ children, currentPageName }) {
         <CommandPalette />
       </Suspense>
 
-      {/* Sidebar */}
-      <div className="hidden md:flex w-64 flex-col border-r border-border bg-card">
-        <div className="h-16 flex items-center px-6 border-b border-border">
-          <h1 className="text-xl font-black tracking-tight text-foreground">STEEL<span className="text-primary">BUILD</span><span className="text-muted-foreground font-medium">-PRO</span></h1>
-        </div>
-        <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
-          <nav className="space-y-6 px-3">
-            {visibleNavGroups.map((group, i) => (
-              <div key={i}>
-                <h2 className="px-3 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
-                  {group.name}
-                </h2>
-                <div className="space-y-1">
-                  {group.items.map((item, j) => {
-                    const Icon = item.icon;
-                    const isActive = currentPageName === item.page;
-                    return (
-                      <a
-                        key={j}
-                        href={`/${item.page}`}
-                        className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                          isActive
-                            ? 'bg-primary/10 text-primary border border-primary/20'
-                            : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-                        }`}
-                      >
-                        <Icon className={`mr-3 flex-shrink-0 h-4 w-4 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
-                        {item.name}
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </nav>
-        </div>
-      </div>
+      {/* ── Phoenix Frame ── */}
+      <div
+        style={{
+          background: '#0D1117',
+          borderRadius: 20,
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+          minHeight: 'calc(100vh - 32px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
+        {/* ── Redesigned sticky top nav ── */}
+        <TopNav
+          currentPageName={currentPageName}
+          currentUser={currentUser}
+          visibleNavGroups={visibleNavGroups}
+          onLogout={() => setShowLogoutDialog(true)}
+        />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-background">
-        {/* Header */}
-        <header className="h-16 flex flex-shrink-0 items-center justify-between px-6 border-b border-border bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center space-x-3">
-            {/* Mobile menu button (placeholder) */}
-            <button className="md:hidden p-2 -ml-2 text-muted-foreground hover:text-foreground">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
-            </button>
-            <div className="hidden sm:flex items-center bg-secondary/50 rounded-md px-3 py-1.5 border border-border">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mr-3">Project</span>
-              <select className="bg-transparent border-none text-sm font-medium text-foreground focus:ring-0 cursor-pointer outline-none">
-                <option>All Projects</option>
-                <option>Active Projects</option>
-                <option>Completed Projects</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="hidden sm:block text-right">
-              <div className="text-sm font-medium text-foreground">{currentUser?.full_name || currentUser?.email}</div>
-              <div className="text-xs font-semibold text-primary uppercase tracking-wider">{currentUser?.role}</div>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-secondary border border-border flex items-center justify-center text-sm font-bold text-muted-foreground">
-              {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <button onClick={() => setShowLogoutDialog(true)} className="p-2 text-muted-foreground hover:text-destructive transition-colors" title="Logout">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-            </button>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <main id="main-content" role="main" className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        {/* ── Page Content ── */}
+        <main id="main-content" role="main" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           <PullToRefresh onRefresh={handleRefresh}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentPageName}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="h-full max-w-[1600px] mx-auto"
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: [0.65, 0, 0.35, 1] }}
+                style={{ color: 'rgba(255,255,255,0.88)', minHeight: '100%' }}
+                className="p-2 sm:p-4"
               >
                 {children}
               </motion.div>
             </AnimatePresence>
           </PullToRefresh>
         </main>
+
+        {/* Mobile bottom nav */}
+        <div className="lg:hidden">
+          <MobileNav currentPageName={currentPageName} />
+        </div>
       </div>
 
-      {/* Logout confirm dialog */}
+      {/* ── Logout confirm dialog ── */}
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent className="bg-card border-border">
+        <AlertDialogContent style={{ background: '#0D1117', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, color: '#fff' }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle style={{ color: '#fff' }}>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription style={{ color: 'rgba(255,255,255,0.45)' }}>
               Are you sure you want to end your session?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-secondary text-secondary-foreground hover:bg-secondary/80 border-none">
+            <AlertDialogCancel style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', borderRadius: 10 }}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 border-none">
+            <AlertDialogAction onClick={handleLogout} style={{ background: 'linear-gradient(90deg,#FF5A1F,#FF8C42)', color: '#fff', borderRadius: 10, border: 'none' }}>
               Logout
             </AlertDialogAction>
           </AlertDialogFooter>

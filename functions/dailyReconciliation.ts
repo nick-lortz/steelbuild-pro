@@ -238,8 +238,7 @@ Deno.serve(async (req) => {
       completed_at: new Date().toISOString(),
       status:      summary.critical > 0 ? 'failed' : summary.high > 0 ? 'warning' : 'passed',
       findings_count: summary.total,
-      summary:     JSON.stringify(summary),
-      triggered_by_user_id: 'system-scheduled',
+      summary,
       projects_checked: projects.length,
     });
 

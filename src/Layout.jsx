@@ -231,7 +231,9 @@ function LayoutContent({ children, currentPageName }) {
     return (
       <>
         <SkipToMainContent />
-        <OfflineIndicator />
+        <Suspense fallback={null}>
+          <OfflineIndicator />
+        </Suspense>
         <Toaster />
         <AnimatePresence mode="wait">
           <motion.div key={currentPageName} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>

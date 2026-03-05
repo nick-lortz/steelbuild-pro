@@ -28,8 +28,8 @@ if (IS_PREVIEW_ENV) {
       if (url.includes('/v1/apps/undefined/')) args[0] = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
       else if (url.includes('/v1/apps/null/')) args[0] = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
       // Also catch cases where the url is just the origin without app ID
-      else if (url.includes('api.base44.app/v1/entities') && !url.includes('/apps/')) {
-        args[0] = url.replace('/v1/entities', `/v1/apps/${APP_ID}/entities`);
+      else if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) {
+        args[0] = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
       }
     } else if (url instanceof URL) {
       if (url.href.includes('/v1/apps/undefined/')) args[0] = new URL(url.href.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`));

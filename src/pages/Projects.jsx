@@ -207,7 +207,7 @@ export default function Projects() {
 
   const handleViewDashboard = (project, e) => {
     if (e) e.stopPropagation();
-    window.location.href = `/ProjectDashboard?id=${project.id}`;
+    navigate(createPageUrl('ProjectDashboard') + `?project=${project.id}`);
   };
 
   const handleSubmit = (e) => {

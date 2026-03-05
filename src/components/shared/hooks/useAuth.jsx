@@ -17,12 +17,16 @@ export function useAuth() {
       } catch (err) {
         const status = err?.response?.status ?? err?.status;
         if (status === 401) {
-          base44.auth.redirectToLogin(window.location.pathname);
+          // Do not auto-redirect on public pages to avoid redirect loops
+          const isPublicPage = ['/LandingPage', '/', '/HowItWorks', '/PrivacyPolicy', '/TermsOfService'].includes(window.location.pathname);
+          if (!isPublicPage && !IS_PREVIEW) {
+            base44.auth.redirectToLogin(window.location.pathname);
+          }
           return null;
         }
         if (status === 404) {
-          console.warn('[AUTH] App not found (404).');
-          return { __env_error__: true };
+          console.warn('[AUTH] App not found (404). Treating as unauthenticated.');
+          return null;
         }
         return null;
       }

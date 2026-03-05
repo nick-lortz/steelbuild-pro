@@ -132,6 +132,9 @@ import TestSuite from './pages/TestSuite';
 import ToDoList from './pages/ToDoList';
 import WeeklySchedule from './pages/WeeklySchedule';
 import WorkPackages from './pages/WorkPackages';
+import ProjectDetails from './pages/ProjectDetails';
+import DrawingDetails from './pages/DrawingDetails';
+import ResourcePlanner from './pages/ResourcePlanner';
 import __Layout from './Layout.jsx';
 
 
@@ -221,6 +224,9 @@ export const PAGES = {
     "ToDoList": ToDoList,
     "WeeklySchedule": WeeklySchedule,
     "WorkPackages": WorkPackages,
+    "ProjectDetails": ProjectDetails,
+    "DrawingDetails": DrawingDetails,
+    "ResourcePlanner": ResourcePlanner,
 }
 
 export const pagesConfig = {

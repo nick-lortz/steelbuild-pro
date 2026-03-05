@@ -48,7 +48,7 @@ if (IS_PREVIEW_ENV) {
     if (typeof url === 'string') {
       if (url.includes('/v1/apps/undefined/')) url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
       else if (url.includes('/v1/apps/null/')) url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
-      else if (url.includes('api.base44.app/v1/entities') && !url.includes('/apps/')) url = url.replace('/v1/entities', `/v1/apps/${APP_ID}/entities`);
+      else if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) url = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
     }
     return originalOpen.call(this, method, url, ...rest);
   };

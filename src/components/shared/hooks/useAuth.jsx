@@ -17,16 +17,11 @@ export function useAuth() {
       } catch (err) {
         const status = err?.response?.status ?? err?.status;
         if (status === 401) {
-          if (!IS_PREVIEW) {
-            base44.auth.redirectToLogin(window.location.pathname);
-          }
+          base44.auth.redirectToLogin(window.location.pathname);
           return null;
         }
         if (status === 404) {
-          console.warn('[AUTH] App not found (404). Bypassing error to allow UI preview.');
-          if (IS_PREVIEW) {
-            return { id: 'preview-user', email: 'pm@steelbuildpro.com', full_name: 'Preview PM', role: 'admin' };
-          }
+          console.warn('[AUTH] App not found (404).');
           return { __env_error__: true };
         }
         return null;

@@ -287,7 +287,7 @@ export default function Projects() {
     } else if (sortBy === 'progress') {
       filtered.sort((a, b) => (b.progress || 0) - (a.progress || 0));
     } else if (sortBy === 'updated') {
-      filtered.sort((a, b) => (b.updated_date || '').localeCompare(a.updated_date || ''));
+      filtered.sort((a, b) => String(b.updated_date || '').localeCompare(String(a.updated_date || '')));
     }
 
     return filtered;

@@ -25,16 +25,7 @@ export function useAuth() {
           return null;
         }
         if (status === 404) {
-          console.warn('[AUTH] App not found (404). Bypassing error to allow UI preview.');
-          if (IS_PREVIEW) {
-            // Use the actual User ID so relations/created_by queries return the correct data
-            return { 
-              id: '694bc0de754d739afc7067ea', 
-              email: 'nickl@shsteelaz.com', 
-              full_name: 'Nick L', 
-              role: 'admin' 
-            };
-          }
+          console.error('[AUTH] App not found (404). Network interceptor should have caught this.');
           return { __env_error__: true };
         }
         return null;

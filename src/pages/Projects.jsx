@@ -35,6 +35,7 @@ import ProjectsFilters from '@/components/projects/ProjectsFilters';
 import DeleteProjectDialog from '@/components/projects/DeleteProjectDialog';
 import { calculateProjectProgress } from '@/components/shared/projectProgressUtils';
 import DemoProjectSeeder from '@/components/projects/DemoProjectSeeder';
+import { fetchProjectEntities, updateProjectEntity } from '@/components/shared/apiHelpers';
 
 
 const initialFormState = {

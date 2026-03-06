@@ -17,7 +17,55 @@ import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import PullToRefresh from '@/components/shared/PullToRefresh';
 import TopNav from '@/components/layout/TopNav';
 
-// Removed platform bug workaround as it might be causing 404s by injecting an old app id
+// --- PLATFORM BUG WORKAROUND: Force App ID in Preview ---
+// The SDK might be incorrectly extracting the short hash from the preview URL
+// instead of using the full App ID, causing 404 App Not Found errors.
+const IS_PREVIEW_ENV = window.location.hostname.includes('preview') || window.location.hostname.includes('sandbox');
+if (IS_PREVIEW_ENV) {
+  const APP_ID = '694bc0dd754d739afc7067e9';
+  const SHORT_ID = 'fc7067e9'; // The hash from preview--steel-build-pro-fc7067e9.base44.app
+
+  const originalFetch = window.fetch;
+  window.fetch = async function(...args) {
+    let url = args[0];
+    if (typeof url === 'string') {
+      url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
+      url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
+      url = url.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
+      if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) {
+        url = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
+      }
+      args[0] = url;
+    } else if (url instanceof URL) {
+      let href = url.href;
+      href = href.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
+      href = href.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
+      href = href.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
+      args[0] = new URL(href);
+    } else if (url instanceof Request) {
+      let reqUrl = url.url;
+      reqUrl = reqUrl.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
+      reqUrl = reqUrl.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
+      reqUrl = reqUrl.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
+      args[0] = new Request(reqUrl, url);
+    }
+    return originalFetch.apply(this, args);
+  };
+
+  const originalOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    if (typeof url === 'string') {
+      url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
+      url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
+      url = url.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
+      if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) {
+        url = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
+      }
+    }
+    return originalOpen.call(this, method, url, ...rest);
+  };
+}
+// ------------------------------------------------------
 
 // Lazy load heavy components
 const OfflineIndicator = React.lazy(() => import('@/components/shared/OfflineIndicator'));

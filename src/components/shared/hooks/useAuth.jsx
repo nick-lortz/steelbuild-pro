@@ -1,10 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 as originalBase44 } from '@/api/base44Client';
-import { createClient } from '@base44/sdk';
-
-const APP_ID = '694bc0dd754d739afc7067e9';
-// Force creation of a fresh client with the right APP_ID just in case originalBase44 is corrupted
-export const base44 = createClient({ appId: APP_ID });
+import { base44 } from '@/api/base44Client';
 
 const IS_PREVIEW = window.location.hostname.includes('preview') || 
                    window.location.hostname.includes('sandbox');

@@ -28,9 +28,9 @@ export function useAuth() {
           return null;
         }
         if (status === 404) {
-          console.error('[AUTH] App not found (404). Network interceptor should have caught this.', err?.response?.url || err?.url);
-          console.error('App IDs:', window.__BASE44_APP_ID__, import.meta.env);
-          return { __env_error__: true };
+          console.error('[AUTH] App not found (404). Config:', err?.config?.url, err?.config?.baseURL);
+          // Temporary bypass error screen
+          // return { __env_error__: true };
         }
         return null;
       }

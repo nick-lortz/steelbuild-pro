@@ -19,7 +19,7 @@ export function useAuth() {
         if (status === 401) {
           // Do not auto-redirect on public pages to avoid redirect loops
           const isPublicPage = ['/LandingPage', '/', '/HowItWorks', '/PrivacyPolicy', '/TermsOfService'].includes(window.location.pathname);
-          if (!isPublicPage && !IS_PREVIEW) {
+          if (!isPublicPage) {
             base44.auth.redirectToLogin(window.location.pathname);
           }
           return null;

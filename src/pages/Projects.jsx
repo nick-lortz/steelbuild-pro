@@ -323,6 +323,25 @@ export default function Projects() {
           <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-7 text-xs gap-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
             <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} /> Refresh
           </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 text-xs" 
+            onClick={async () => {
+              toast.success("Testing API Utils...");
+              const allProjects = await fetchProjectEntities();
+              if (allProjects && allProjects.length > 0) {
+                 await updateProjectEntity(allProjects[0].id, {
+                    status: 'awarded',
+                    phase: 'fabrication'
+                 });
+                 toast.success("Updated first project!");
+                 handleRefresh();
+              }
+            }}
+          >
+            Test API Sync
+          </Button>
           {can.createProject && (
             <button
               onClick={() => { setFormData(initialFormState); setShowForm(true); }}

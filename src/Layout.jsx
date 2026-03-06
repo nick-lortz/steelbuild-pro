@@ -28,6 +28,7 @@ if (IS_PREVIEW_ENV) {
   const originalFetch = window.fetch;
   window.fetch = async function(...args) {
     let url = args[0];
+    let originalUrlStr = typeof url === 'string' ? url : (url instanceof URL ? url.href : (url instanceof Request ? url.url : String(url)));
     if (typeof url === 'string') {
       url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
       url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
@@ -48,6 +49,12 @@ if (IS_PREVIEW_ENV) {
       reqUrl = reqUrl.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
       reqUrl = reqUrl.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
       args[0] = new Request(reqUrl, url);
+    }
+    let newUrlStr = typeof args[0] === 'string' ? args[0] : (args[0] instanceof URL ? args[0].href : (args[0] instanceof Request ? args[0].url : String(args[0])));
+    if (originalUrlStr !== newUrlStr) {
+       console.log("[INTERCEPTOR] Changed fetch URL from", originalUrlStr, "to", newUrlStr);
+    } else {
+       console.log("[INTERCEPTOR] fetch URL unchanged:", newUrlStr);
     }
     return originalFetch.apply(this, args);
   };

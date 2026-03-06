@@ -1,4 +1,5 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import '@/components/shared/networkInterceptor';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { initSentry } from '@/components/providers/SentryProvider';
 import { useRenderCount, useMountLogger } from '@/components/shared/diagnostics';
@@ -16,69 +17,6 @@ import MobileNav from '@/components/layout/MobileNav';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import PullToRefresh from '@/components/shared/PullToRefresh';
 import TopNav from '@/components/layout/TopNav';
-
-// --- PLATFORM BUG WORKAROUND: Force App ID in Preview ---
-// The SDK might be incorrectly extracting the short hash from the preview URL
-// instead of using the full App ID, causing 404 App Not Found errors.
-const IS_PREVIEW_ENV = window.location.hostname.includes('preview') || window.location.hostname.includes('sandbox');
-if (IS_PREVIEW_ENV) {
-  const APP_ID = '694bc0dd754d739afc7067e9';
-  const SHORT_ID = 'fc7067e9'; // The hash from preview--steel-build-pro-fc7067e9.base44.app
-
-  const originalFetch = window.fetch;
-  window.fetch = async function(...args) {
-    let url = args[0];
-    let originalUrlStr = typeof url === 'string' ? url : (url instanceof URL ? url.href : (url instanceof Request ? url.url : String(url)));
-    if (typeof url === 'string') {
-      url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
-      url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
-      url = url.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
-      if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) {
-        url = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
-      }
-      args[0] = url;
-    } else if (url instanceof URL) {
-      let href = url.href;
-      href = href.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
-      href = href.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
-      href = href.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
-      args[0] = new URL(href);
-    } else if (url instanceof Request) {
-      let reqUrl = url.url;
-      reqUrl = reqUrl.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
-      reqUrl = reqUrl.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
-      reqUrl = reqUrl.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
-      args[0] = new Request(reqUrl, url);
-    }
-    let newUrlStr = typeof args[0] === 'string' ? args[0] : (args[0] instanceof URL ? args[0].href : (args[0] instanceof Request ? args[0].url : String(args[0])));
-    if (originalUrlStr !== newUrlStr) {
-       console.log("[INTERCEPTOR] Changed fetch URL from", originalUrlStr, "to", newUrlStr);
-    } else {
-       console.log("[INTERCEPTOR] fetch URL unchanged:", newUrlStr);
-    }
-    return originalFetch.apply(this, args);
-  };
-
-  const originalOpen = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-    let originalUrl = url;
-    if (typeof url === 'string') {
-      url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
-      url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
-      url = url.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
-      if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) {
-        url = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
-      }
-      if (url !== originalUrl) {
-         console.log("[INTERCEPTOR] Changed XHR URL from", originalUrl, "to", url);
-      } else {
-         console.log("[INTERCEPTOR] XHR URL unchanged:", url);
-      }
-    }
-    return originalOpen.call(this, method, url, ...rest);
-  };
-}
-// ------------------------------------------------------
 
 // Lazy load heavy components
 const OfflineIndicator = React.lazy(() => import('@/components/shared/OfflineIndicator'));
@@ -234,10 +172,8 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => { 
     initSentry(); 
-    try {
-      console.log("base44 object keys:", Object.keys(base44));
-      console.log("base44 auth keys:", Object.keys(base44.auth));
-    } catch (e) {}
+    console.log("base44 object keys:", Object.keys(base44));
+    console.log("base44 auth keys:", Object.keys(base44.auth));
   }, []);
 
   const { activeProjectId } = useActiveProject();

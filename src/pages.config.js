@@ -70,6 +70,7 @@ import Detailing from './pages/Detailing';
 import DocumentLinkage from './pages/DocumentLinkage';
 import Documents from './pages/Documents';
 import DrawingAnalyticsDashboard from './pages/DrawingAnalyticsDashboard';
+import DrawingDetails from './pages/DrawingDetails';
 import Drawings from './pages/Drawings';
 import Equipment from './pages/Equipment';
 import ErectionLookahead from './pages/ErectionLookahead';
@@ -113,6 +114,7 @@ import Profile from './pages/Profile';
 import ProjectAnalyticsDashboard from './pages/ProjectAnalyticsDashboard';
 import ProjectBudget from './pages/ProjectBudget';
 import ProjectDashboard from './pages/ProjectDashboard';
+import ProjectDetails from './pages/ProjectDetails';
 import ProjectPhotos from './pages/ProjectPhotos';
 import ProjectSettings from './pages/ProjectSettings';
 import ProjectSolver from './pages/ProjectSolver';
@@ -123,6 +125,7 @@ import RFIs from './pages/RFIs';
 import ROIDashboard from './pages/ROIDashboard';
 import Reports from './pages/Reports';
 import ResourceManagement from './pages/ResourceManagement';
+import ResourcePlanner from './pages/ResourcePlanner';
 import Resources from './pages/Resources';
 import Schedule from './pages/Schedule';
 import Settings from './pages/Settings';
@@ -159,6 +162,7 @@ export const PAGES = {
     "DocumentLinkage": DocumentLinkage,
     "Documents": Documents,
     "DrawingAnalyticsDashboard": DrawingAnalyticsDashboard,
+    "DrawingDetails": DrawingDetails,
     "Drawings": Drawings,
     "Equipment": Equipment,
     "ErectionLookahead": ErectionLookahead,
@@ -202,6 +206,7 @@ export const PAGES = {
     "ProjectAnalyticsDashboard": ProjectAnalyticsDashboard,
     "ProjectBudget": ProjectBudget,
     "ProjectDashboard": ProjectDashboard,
+    "ProjectDetails": ProjectDetails,
     "ProjectPhotos": ProjectPhotos,
     "ProjectSettings": ProjectSettings,
     "ProjectSolver": ProjectSolver,
@@ -212,6 +217,7 @@ export const PAGES = {
     "ROIDashboard": ROIDashboard,
     "Reports": Reports,
     "ResourceManagement": ResourceManagement,
+    "ResourcePlanner": ResourcePlanner,
     "Resources": Resources,
     "Schedule": Schedule,
     "Settings": Settings,

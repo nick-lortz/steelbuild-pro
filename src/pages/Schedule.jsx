@@ -1,895 +1,655 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, Download, Sliders, Sparkles } from 'lucide-react';
-import TaskForm from '@/components/schedule/TaskForm';
-import GanttChart from '@/components/schedule/GanttChart';
-import TaskListView from '@/components/schedule/TaskListView';
-import CalendarView from '@/components/schedule/CalendarView';
-import { useActiveProject } from '@/components/shared/hooks/useActiveProject';
-import { toast } from '@/components/ui/notifications';
-import { useEntitySubscription } from '@/components/shared/hooks/useSubscription';
-import AIWBSGenerator from '@/components/schedule/AIWBSGenerator';
-import AITaskPrioritizer from '@/components/schedule/AITaskPrioritizer';
-import DependencyVisualizer from '@/components/schedule/DependencyVisualizer';
-import QuickStatusUpdate from '@/components/schedule/QuickStatusUpdate';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 
-export default function Schedule() {
-  const { activeProjectId, setActiveProjectId } = useActiveProject();
-  
-  // Initialize from URL param if no active project
-  React.useEffect(() => {
-    if (!activeProjectId) {
-      const params = new URLSearchParams(window.location.search);
-      const projectId = params.get('project');
-      if (projectId) {
-        setActiveProjectId(projectId);
-      }
-    }
-  }, []);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [phaseFilter, setPhaseFilter] = useState('all');
-  const [showTaskForm, setShowTaskForm] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [viewMode, setViewMode] = useState('gantt');
-  const [zoomLevel, setZoomLevel] = useState('week');
-  const [selectedProjects, setSelectedProjects] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [pmFilter, setPmFilter] = useState('all');
-  const [wbsGeneratorOpen, setWbsGeneratorOpen] = useState(false);
-  const [taskPrioritizerOpen, setTaskPrioritizerOpen] = useState(false);
-  const [quickStatusOpen, setQuickStatusOpen] = useState(false);
+// ── Persistent storage helpers ──────────────────────────────────────────────
+const STORAGE_KEY = "gantt-manager-data";
+const loadData = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+const saveData = (data) => {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+};
 
-  const queryClient = useQueryClient();
+// ── Google Fonts injector ────────────────────────────────────────────────────
+const FontLoader = () => (
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+);
 
-  // Fetch current user
-  const { data: currentUser } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false
-  });
+// ── Constants ────────────────────────────────────────────────────────────────
+const TASK_TYPES = {
+  DETAILING:    { label: "Detailing",        color: "#7C6AF7", bg: "rgba(124,106,247,0.18)" },
+  FABRICATION:  { label: "Fabrication",      color: "#FF8C42", bg: "rgba(255,140,66,0.18)"  },
+  DELIVERY:     { label: "Delivery",         color: "#36B37E", bg: "rgba(54,179,126,0.18)"  },
+  ERECTION:     { label: "Erection",         color: "#FF5A1F", bg: "rgba(255,90,31,0.18)"   },
+  CUSTOM:       { label: "Custom",           color: "#4DC8E8", bg: "rgba(77,200,232,0.18)"  },
+};
 
-  // Fetch projects for multi-project scheduling
-  const { data: allProjects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('name'),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000
-  });
+const STATUS_COLORS = {
+  "NOT STARTED": "#6B7280",
+  "IN PROGRESS": "#FFB020",
+  "COMPLETE":    "#36B37E",
+  "DELAYED":     "#FF4D4D",
+  "ON HOLD":     "#7C6AF7",
+};
 
-  // Filter projects by user access
-  const projects = useMemo(() => {
-    if (!currentUser) return [];
-    let filtered = currentUser.role === 'admin' 
-      ? allProjects 
-      : allProjects.filter(p => 
-          p.project_manager === currentUser.email || 
-          p.superintendent === currentUser.email ||
-          (p.assigned_users && p.assigned_users.includes(currentUser.email))
-        );
-    
-    // Apply PM filter
-    if (pmFilter !== 'all') {
-      filtered = filtered.filter(p => p.project_manager === pmFilter);
-    }
-    
-    return [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [currentUser, allProjects, pmFilter]);
+const PROJECTS = [
+  "Mesa Distribution Center",
+  "Riverside Warehouse",
+  "Chandler Office Build",
+];
 
-  // Get unique PMs
-  const projectManagers = useMemo(() => {
-    const pms = new Set();
-    allProjects.forEach(p => {
-      if (p.project_manager) pms.add(p.project_manager);
-    });
-    return Array.from(pms).sort();
-  }, [allProjects]);
+// ── Seed data ────────────────────────────────────────────────────────────────
+const SEED_TASKS = [
+  // Mesa Distribution Center
+  { id: "T001", project: "Mesa Distribution Center", name: "IFC Drawing Release — Foundations", type: "DETAILING",   start: "2026-01-05", end: "2026-01-18", status: "COMPLETE",    crew: "Detailing Team", notes: "Issued for construction Rev 1" },
+  { id: "T002", project: "Mesa Distribution Center", name: "IFC Drawing Release — Superstructure", type: "DETAILING",start: "2026-01-15", end: "2026-02-05", status: "COMPLETE",    crew: "Detailing Team", notes: "" },
+  { id: "T003", project: "Mesa Distribution Center", name: "Fabrication — Foundations & Columns", type: "FABRICATION",start: "2026-01-20", end: "2026-02-28", status: "COMPLETE",  crew: "Shop Floor A",   notes: "Mark list WP-01 through WP-04" },
+  { id: "T004", project: "Mesa Distribution Center", name: "Fabrication — Roof Beams & Joists",   type: "FABRICATION",start: "2026-02-10", end: "2026-03-20", status: "IN PROGRESS",crew: "Shop Floor B",   notes: "WP-09 camber RFI pending" },
+  { id: "T005", project: "Mesa Distribution Center", name: "Delivery — Phase 1 Steel",            type: "DELIVERY",  start: "2026-02-25", end: "2026-03-03", status: "COMPLETE",    crew: "Logistics",      notes: "4 loads, flatbed" },
+  { id: "T006", project: "Mesa Distribution Center", name: "Delivery — Phase 2 Steel",            type: "DELIVERY",  start: "2026-03-18", end: "2026-03-24", status: "NOT STARTED", crew: "Logistics",      notes: "Pending fab completion" },
+  { id: "T007", project: "Mesa Distribution Center", name: "Erection — Columns Grid A–D",         type: "ERECTION",  start: "2026-03-04", end: "2026-03-14", status: "IN PROGRESS",crew: "Iron Crew 1",    notes: "Anchor bolt RFI-001 holding B4" },
+  { id: "T008", project: "Mesa Distribution Center", name: "Erection — Main Roof Framing",        type: "ERECTION",  start: "2026-03-24", end: "2026-04-12", status: "NOT STARTED", crew: "Iron Crew 1",    notes: "" },
+  { id: "T009", project: "Mesa Distribution Center", name: "Final Punch & Closeout",              type: "CUSTOM",    start: "2026-04-14", end: "2026-04-22", status: "NOT STARTED", crew: "PM",             notes: "" },
 
-  // Determine which projects to show
-  const activeProjects = useMemo(() => {
-    if (selectedProjects.length > 0) {
-      return projects.filter(p => selectedProjects.includes(p.id));
-    }
-    if (activeProjectId) {
-      return projects.filter(p => p.id === activeProjectId);
-    }
-    return projects;
-  }, [projects, activeProjectId, selectedProjects]);
+  // Riverside Warehouse
+  { id: "T010", project: "Riverside Warehouse",      name: "IFC Drawing Release — Full Set",      type: "DETAILING",  start: "2026-01-10", end: "2026-01-28", status: "COMPLETE",    crew: "Detailing Team", notes: "" },
+  { id: "T011", project: "Riverside Warehouse",      name: "Fabrication — Level 1 & 2 Framing",  type: "FABRICATION",start: "2026-01-28", end: "2026-03-10", status: "IN PROGRESS", crew: "Shop Floor A",   notes: "HSS pocket RFI-002 open" },
+  { id: "T012", project: "Riverside Warehouse",      name: "Fabrication — Misc Metals / Stairs",  type: "FABRICATION",start: "2026-02-15", end: "2026-03-05", status: "COMPLETE",    crew: "Shop Floor C",   notes: "RFI-005 resolved Rev B" },
+  { id: "T013", project: "Riverside Warehouse",      name: "Delivery — Structural Steel",         type: "DELIVERY",   start: "2026-03-12", end: "2026-03-17", status: "NOT STARTED", crew: "Logistics",      notes: "" },
+  { id: "T014", project: "Riverside Warehouse",      name: "Erection — Level 1 Framing",          type: "ERECTION",   start: "2026-03-18", end: "2026-04-04", status: "NOT STARTED", crew: "Iron Crew 2",    notes: "" },
+  { id: "T015", project: "Riverside Warehouse",      name: "Erection — Level 2 & Roof",           type: "ERECTION",   start: "2026-04-06", end: "2026-04-25", status: "NOT STARTED", crew: "Iron Crew 2",    notes: "" },
 
-  const activeProjectIds = useMemo(() => 
-    activeProjects.map(p => p.id), 
-    [activeProjects]
+  // Chandler Office Build
+  { id: "T016", project: "Chandler Office Build",    name: "IFC Drawing Release",                 type: "DETAILING",  start: "2025-12-15", end: "2026-01-10", status: "COMPLETE",    crew: "Detailing Team", notes: "" },
+  { id: "T017", project: "Chandler Office Build",    name: "Fabrication — Embeds & Misc",         type: "FABRICATION",start: "2026-01-12", end: "2026-02-01", status: "COMPLETE",    crew: "Shop Floor B",   notes: "RFI-003 resolved" },
+  { id: "T018", project: "Chandler Office Build",    name: "Fabrication — Structural Frame",      type: "FABRICATION",start: "2026-01-20", end: "2026-02-28", status: "COMPLETE",    crew: "Shop Floor A",   notes: "" },
+  { id: "T019", project: "Chandler Office Build",    name: "Delivery — All Steel",                type: "DELIVERY",   start: "2026-03-01", end: "2026-03-06", status: "COMPLETE",    crew: "Logistics",      notes: "" },
+  { id: "T020", project: "Chandler Office Build",    name: "Erection — Full Frame",               type: "ERECTION",   start: "2026-03-07", end: "2026-03-28", status: "IN PROGRESS", crew: "Iron Crew 3",    notes: "On schedule" },
+  { id: "T021", project: "Chandler Office Build",    name: "Touch-up & Final Inspection",         type: "CUSTOM",     start: "2026-03-29", end: "2026-04-05", status: "NOT STARTED", crew: "PM",             notes: "" },
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const parseDate = (s) => new Date(s);
+const fmtShort  = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const fmtFull   = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const addDays   = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+
+const EMPTY_TASK = {
+  name: "", project: PROJECTS[0], type: "FABRICATION",
+  start: new Date().toISOString().slice(0, 10),
+  end: "", status: "NOT STARTED", crew: "", notes: "",
+};
+
+let _id = 100;
+const genId = () => `T${String(++_id).padStart(3, "0")}`;
+
+// ── Sub-components ───────────────────────────────────────────────────────────
+const Pill = ({ type }) => {
+  const m = TASK_TYPES[type] || TASK_TYPES.CUSTOM;
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 700, letterSpacing: "0.1em",
+      padding: "2px 7px", borderRadius: 3,
+      color: m.color, background: m.bg,
+      fontFamily: "'IBM Plex Mono', monospace",
+    }}>{m.label.toUpperCase()}</span>
+  );
+};
+
+const StatusDot = ({ status }) => (
+  <span style={{
+    display: "inline-flex", alignItems: "center", gap: 5,
+    fontSize: 10, fontWeight: 700, color: STATUS_COLORS[status] || "#fff",
+    fontFamily: "'IBM Plex Mono', monospace",
+  }}>
+    <span style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_COLORS[status], flexShrink: 0 }} />
+    {status}
+  </span>
+);
+
+const Btn = ({ children, onClick, variant = "primary", style, disabled }) => {
+  const variants = {
+    primary:   { background: "linear-gradient(135deg,#FF5A1F,#FF8C42)", color: "#fff" },
+    secondary: { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.12)" },
+    danger:    { background: "rgba(255,77,77,0.12)", color: "#FF4D4D", border: "1px solid rgba(255,77,77,0.25)" },
+    ghost:     { background: "transparent", color: "rgba(255,255,255,0.45)" },
+  };
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: "8px 16px", borderRadius: 6, fontWeight: 700, fontSize: 11,
+      letterSpacing: "0.08em", cursor: disabled ? "not-allowed" : "pointer",
+      border: "none", fontFamily: "'IBM Plex Mono', monospace",
+      transition: "opacity 0.15s", opacity: disabled ? 0.5 : 1,
+      ...variants[variant], ...style,
+    }}>{children}</button>
+  );
+};
+
+const Field = ({ label, children, style }) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: 5, ...style }}>
+    <label style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono', monospace" }}>{label}</label>
+    {children}
+  </div>
+);
+
+const inputStyle = {
+  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: 6, padding: "8px 11px", color: "#fff", fontSize: 12,
+  fontFamily: "'IBM Plex Mono', monospace", outline: "none",
+};
+
+// ── Task Form Modal ──────────────────────────────────────────────────────────
+const TaskForm = ({ task, onSave, onClose, onDelete }) => {
+  const [f, setF] = useState(task || EMPTY_TASK);
+  const set = k => v => setF(p => ({ ...p, [k]: v }));
+  const isNew = !task?.id;
+
+  const inp = (k, type = "text", ph = "") => (
+    <input type={type} value={f[k] || ""} placeholder={ph}
+      onChange={e => set(k)(e.target.value)}
+      style={inputStyle}
+      onFocus={e => e.target.style.borderColor = "#FF8C42"}
+      onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+    />
   );
 
-  // Fetch tasks for selected projects
-  const { data: allScheduleTasks = [], isLoading, refetch } = useQuery({
-    queryKey: ['schedule-tasks', activeProjectIds],
-    queryFn: async () => {
-      if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.Task.filter({ project_id: projectId }, 'end_date')
-        )
-      );
-      return results.flat();
-    },
-    enabled: activeProjectIds.length > 0,
-    staleTime: 2 * 60 * 1000
-  });
+  const sel = (k, opts) => (
+    <select value={f[k] || ""} onChange={e => set(k)(e.target.value)}
+      style={{ ...inputStyle, background: "#0A0E15", cursor: "pointer" }}>
+      {opts.map(o => <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
 
-  // Real-time subscription with delta updates
-  useEntitySubscription('Task', ['schedule-tasks', activeProjectIds], {
-    onEvent: (event) => {
-      // Only process if task belongs to active projects
-      if (!event.data?.project_id || !activeProjectIds.includes(event.data.project_id)) {
-        return;
-      }
-      toast.info(`Task ${event.type}d: ${event.data.name || 'Unknown'}`);
-    }
-  });
-
-  // Fetch resources
-  const { data: resources = [] } = useQuery({
-    queryKey: ['resources'],
-    queryFn: () => base44.entities.Resource.list(),
-    staleTime: 10 * 60 * 1000,
-    gcTime: 30 * 60 * 1000
-  });
-
-  const { data: rfis = [] } = useQuery({
-    queryKey: ['rfis', activeProjectIds],
-    queryFn: async () => {
-      if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.RFI.filter({ project_id: projectId })
-        )
-      );
-      return results.flat();
-    },
-    enabled: activeProjectIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: changeOrders = [] } = useQuery({
-    queryKey: ['changeOrders', activeProjectIds],
-    queryFn: async () => {
-      if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.ChangeOrder.filter({ project_id: projectId })
-        )
-      );
-      return results.flat();
-    },
-    enabled: activeProjectIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Workflow risk state disabled (function not implemented)
-  const riskState = null;
-
-  const { data: drawingSets = [] } = useQuery({
-    queryKey: ['drawings', activeProjectIds],
-    queryFn: async () => {
-      if (activeProjectIds.length === 0) return [];
-      const results = await Promise.all(
-        activeProjectIds.map(projectId => 
-          base44.entities.DrawingSet.filter({ project_id: projectId })
-        )
-      );
-      return results.flat();
-    },
-    enabled: activeProjectIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Filter tasks
-  const filteredTasks = useMemo(() => {
-    let filtered = [...allScheduleTasks];
-
-    // Search
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(t => 
-        t.name?.toLowerCase().includes(search) ||
-        t.wbs_code?.toLowerCase().includes(search)
-      );
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'overdue') {
-        const today = new Date().toISOString().split('T')[0];
-        filtered = filtered.filter(t => 
-          t.status !== 'completed' && 
-          t.end_date && 
-          t.end_date < today
-        );
-      } else {
-        filtered = filtered.filter(t => t.status === statusFilter);
-      }
-    }
-
-    // Priority filter
-    if (priorityFilter !== 'all') {
-      filtered = filtered.filter(t => t.is_critical === (priorityFilter === 'critical'));
-    }
-
-    // Phase filter
-    if (phaseFilter !== 'all') {
-      filtered = filtered.filter(t => t.phase === phaseFilter);
-    }
-
-    return filtered;
-  }, [allScheduleTasks, searchTerm, statusFilter, priorityFilter, phaseFilter]);
-
-  const createMutation = useMutation({
-    mutationFn: async (data) => {
-      const result = await base44.entities.Task.create(data);
-      return result;
-    },
-    onMutate: async (newTask) => {
-      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      
-      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
-      const previousTasks = queryClient.getQueryData(['tasks']);
-      
-      const optimisticTask = {
-        ...newTask,
-        id: `temp-${Date.now()}`,
-        created_date: new Date().toISOString(),
-        created_by: currentUser?.email
-      };
-      
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) => [...old, optimisticTask]);
-      queryClient.setQueryData(['tasks'], (old = []) => old ? [...old, optimisticTask] : [optimisticTask]);
-      
-      return { previousScheduleTasks, previousTasks };
-    },
-    onError: (error, newTask, context) => {
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
-      queryClient.setQueryData(['tasks'], context.previousTasks);
-      console.error('Create task error:', error);
-      toast.error(error?.response?.data?.error || error?.message || 'Failed to create task');
-    },
-    onSuccess: () => {
-      setShowTaskForm(false);
-      setEditingTask(null);
-      toast.success('Task created successfully');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    }
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      const result = await base44.entities.Task.update(id, data);
-      return result;
-    },
-    onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      
-      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
-      const previousTasks = queryClient.getQueryData(['tasks']);
-      
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) =>
-        old.map(t => t.id === id ? { ...t, ...data } : t)
-      );
-      
-      queryClient.setQueryData(['tasks'], (old = []) =>
-        old?.map(t => t.id === id ? { ...t, ...data } : t)
-      );
-      
-      return { previousScheduleTasks, previousTasks };
-    },
-    onError: (error, { id, data }, context) => {
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
-      queryClient.setQueryData(['tasks'], context.previousTasks);
-      console.error('Update task error:', error);
-      toast.error(error?.response?.data?.error || error?.message || 'Failed to update task');
-    },
-    onSuccess: () => {
-      setShowTaskForm(false);
-      setEditingTask(null);
-      toast.success('Task updated successfully');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    }
-  });
-
-  const bulkUpdateMutation = useMutation({
-    mutationFn: async (updates) => {
-      await Promise.all(
-        updates.map(({ id, status }) => 
-          base44.entities.Task.update(id, { status })
-        )
-      );
-    },
-    onMutate: async (updates) => {
-      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
-      
-      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
-      
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) => {
-        const updateMap = new Map(updates.map(u => [u.id, u.status]));
-        return old.map(t => updateMap.has(t.id) ? { ...t, status: updateMap.get(t.id) } : t);
-      });
-      
-      return { previousScheduleTasks };
-    },
-    onError: (error, updates, context) => {
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
-      toast.error('Failed to update tasks');
-    },
-    onSuccess: () => {
-      toast.success('Tasks updated');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      return await base44.entities.Task.delete(id);
-    },
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['schedule-tasks'] });
-      
-      const previousScheduleTasks = queryClient.getQueryData(['schedule-tasks', activeProjectIds]);
-      
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], (old = []) =>
-        old.filter(t => t.id !== id)
-      );
-      
-      return { previousScheduleTasks };
-    },
-    onError: (error, id, context) => {
-      queryClient.setQueryData(['schedule-tasks', activeProjectIds], context.previousScheduleTasks);
-      toast.error(error.response?.data?.error || 'Failed to delete task');
-    },
-    onSuccess: () => {
-      toast.success('Task deleted');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['schedule-tasks'] });
-    }
-  });
-
-  const handleCreateTask = () => {
-    if (activeProjectIds.length === 0) {
-      toast.error('Please select at least one project');
-      return;
-    }
-    setEditingTask({
-      project_id: activeProjectIds[0],
-      phase: 'fabrication',
-      status: 'not_started',
-      is_milestone: false
-    });
-    setShowTaskForm(true);
+  const handleSave = () => {
+    if (!f.name || !f.start || !f.end) { alert("Name, Start, and End are required."); return; }
+    if (new Date(f.end) <= new Date(f.start)) { alert("End date must be after start date."); return; }
+    onSave(isNew ? { ...f, id: genId() } : f);
   };
-
-  const handleTaskClick = (task) => {
-    setEditingTask(task);
-    setShowTaskForm(true);
-  };
-
-  const handleExportICS = () => {
-    // Generate ICS file for calendar export
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Schedule Management//EN',
-      ...filteredTasks.map(task => {
-        return [
-          'BEGIN:VEVENT',
-          `UID:${task.id}@scheduleapp`,
-          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
-          `DTSTART:${task.start_date?.replace(/[-]/g, '')}`,
-          `DTEND:${task.end_date?.replace(/[-]/g, '')}`,
-          `SUMMARY:${task.name}`,
-          `DESCRIPTION:${task.notes || ''}`,
-          'END:VEVENT'
-        ].join('\n');
-      }),
-      'END:VCALENDAR'
-    ].join('\n');
-
-    const blob = new Blob([icsContent], { type: 'text/calendar' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'schedule.ics';
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Calendar exported');
-  };
-
-  const statusCounts = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const counts = {
-      all: filteredTasks.length,
-      not_started: 0,
-      in_progress: 0,
-      completed: 0,
-      overdue: 0
-    };
-    
-    filteredTasks.forEach(t => {
-      if (t.status === 'not_started') counts.not_started++;
-      else if (t.status === 'in_progress') counts.in_progress++;
-      else if (t.status === 'completed') counts.completed++;
-      
-      if (t.status !== 'completed' && t.end_date && t.end_date < today) {
-        counts.overdue++;
-      }
-    });
-    
-    return counts;
-  }, [filteredTasks]);
 
   return (
-    <ErrorBoundary>
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-black/95 backdrop-blur-md">
-        <div className="max-w-[1800px] mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ background: "#0A0E15", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, width: "100%", maxWidth: 680, padding: 28, boxShadow: "0 40px 80px rgba(0,0,0,0.8)", maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+          <div>
+            <div style={{ fontSize: 9, color: "#FF8C42", letterSpacing: "0.18em", fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>
+              {isNew ? "NEW TASK" : `EDIT ${f.id}`}
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Barlow Condensed', sans-serif", color: "#fff" }}>
+              {isNew ? "Add Gantt Task" : f.name}
+            </div>
+          </div>
+          <Btn variant="ghost" onClick={onClose} style={{ fontSize: 13 }}>✕</Btn>
+        </div>
+
+        <div style={{ display: "grid", gap: 14 }}>
+          <Field label="Task Name *">
+            {inp("name", "text", "Describe this phase or milestone")}
+          </Field>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            <Field label="Project">{sel("project", PROJECTS)}</Field>
+            <Field label="Task Type">{sel("type", Object.keys(TASK_TYPES))}</Field>
+            <Field label="Status">{sel("status", Object.keys(STATUS_COLORS))}</Field>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Start Date *">{inp("start", "date")}</Field>
+            <Field label="End Date *">{inp("end", "date")}</Field>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Crew / Responsible">{inp("crew", "text", "e.g. Iron Crew 1, Shop Floor A")}</Field>
+            <Field label="Notes">{inp("notes", "text", "Optional notes")}</Field>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+            <div>{!isNew && <Btn variant="danger" onClick={() => { if (window.confirm("Delete this task?")) onDelete(f.id); }}>DELETE</Btn>}</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Btn variant="secondary" onClick={onClose}>Cancel</Btn>
+              <Btn variant="primary" onClick={handleSave}>{isNew ? "▶ ADD TASK" : "✓ SAVE"}</Btn>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Today Marker ─────────────────────────────────────────────────────────────
+const TODAY = new Date();
+
+// ── Main Gantt ───────────────────────────────────────────────────────────────
+export default function GanttChart() {
+  const [tasks, setTasks] = useState(() => loadData() || SEED_TASKS);
+  const [selectedProject, setSelectedProject] = useState("All Projects");
+  const [filterType, setFilterType] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [showForm, setShowForm] = useState(false);
+  const [editTask, setEditTask] = useState(null);
+  const [zoom, setZoom] = useState(28); // px per day
+  const [tooltipTask, setTooltipTask] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const scrollRef = useRef(null);
+  
+  useEffect(() => { saveData(tasks); }, [tasks]);
+
+  // Compute date range from all visible tasks
+  const visibleTasks = useMemo(() => {
+    let list = [...tasks];
+    if (selectedProject !== "All Projects") list = list.filter(t => t.project === selectedProject);
+    if (filterType !== "ALL") list = list.filter(t => t.type === filterType);
+    if (filterStatus !== "ALL") list = list.filter(t => t.status === filterStatus);
+    return list.sort((a, b) => new Date(a.start) - new Date(b.start));
+  }, [tasks, selectedProject, filterType, filterStatus]);
+
+  const { rangeStart, totalDays, months } = useMemo(() => {
+    if (!visibleTasks.length) {
+      const s = new Date(TODAY); s.setDate(1);
+      return { rangeStart: s, totalDays: 60, months: [] };
+    }
+    const allStarts = visibleTasks.map(t => parseDate(t.start));
+    const allEnds   = visibleTasks.map(t => parseDate(t.end));
+    const minDate = new Date(Math.min(...allStarts));
+    const maxDate = new Date(Math.max(...allEnds));
+    minDate.setDate(minDate.getDate() - 3);
+    maxDate.setDate(maxDate.getDate() + 7);
+    const totalDays = Math.ceil((maxDate - minDate) / 86400000);
+
+    // Build month headers
+    const months = [];
+    let cur = new Date(minDate); cur.setDate(1);
+    while (cur <= maxDate) {
+      const mStart = new Date(Math.max(cur, minDate));
+      const mEnd   = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
+      const clampEnd = new Date(Math.min(mEnd, maxDate));
+      const offsetDays = Math.ceil((mStart - minDate) / 86400000);
+      const spanDays   = Math.ceil((clampEnd - mStart) / 86400000) + 1;
+      months.push({
+        label: cur.toLocaleDateString("en-US", { month: "short", year: "numeric" }),
+        offset: offsetDays, span: spanDays,
+      });
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    }
+    return { rangeStart: minDate, totalDays, months };
+  }, [visibleTasks]);
+
+  const dayOffset = (dateStr) => Math.floor((parseDate(dateStr) - rangeStart) / 86400000);
+  const todayOffset = Math.floor((TODAY - rangeStart) / 86400000);
+
+  // Group by project for labels
+  const grouped = useMemo(() => {
+    const groups = {};
+    visibleTasks.forEach(t => {
+      if (!groups[t.project]) groups[t.project] = [];
+      groups[t.project].push(t);
+    });
+    return groups;
+  }, [visibleTasks]);
+
+  const handleSave = (task) => {
+    setTasks(prev => {
+      const exists = prev.find(t => t.id === task.id);
+      return exists ? prev.map(t => t.id === task.id ? task : t) : [...prev, task];
+    });
+    setShowForm(false); setEditTask(null);
+  };
+
+  const handleDelete = (id) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    setShowForm(false); setEditTask(null);
+  };
+
+  const ROW_H = 38;
+  const LABEL_W = 280;
+  const HEADER_H = 56;
+
+  // Stats
+  const stats = useMemo(() => ({
+    total: visibleTasks.length,
+    complete: visibleTasks.filter(t => t.status === "COMPLETE").length,
+    inProgress: visibleTasks.filter(t => t.status === "IN PROGRESS").length,
+    delayed: visibleTasks.filter(t => t.status === "DELAYED").length,
+    notStarted: visibleTasks.filter(t => t.status === "NOT STARTED").length,
+  }), [visibleTasks]);
+
+  return (
+    <>
+      <FontLoader />
+      <div style={{
+        minHeight: "100vh", background: "#060A10",
+        backgroundImage: "radial-gradient(ellipse at 10% 0%, rgba(255,90,31,0.07) 0%, transparent 55%)",
+        fontFamily: "'IBM Plex Mono', monospace", color: "#fff",
+      }}>
+        {/* ── Header ── */}
+        <div style={{ padding: "22px 24px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 18 }}>
             <div>
-              <h1 className="text-3xl font-bold text-[#E5E7EB] tracking-tight">Schedule</h1>
-              <p className="text-sm text-[#6B7280] font-mono mt-1">
-                multi-project scheduling with dependencies
-              </p>
+              <div style={{ fontSize: 9, color: "#FF8C42", letterSpacing: "0.2em", fontWeight: 700, marginBottom: 4 }}>STEELBUILD PRO</div>
+              <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, fontWeight: 800, margin: 0, letterSpacing: "0.02em" }}>
+                PROJECT GANTT CHART
+              </h1>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+                Fabrication · Detailing · Erection · Delivery · Milestones
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setWbsGeneratorOpen(true)}
-                disabled={!activeProjectId}
-                variant="outline"
-              >
-                <Sparkles size={18} className="mr-2" />
-                Generate WBS
-              </Button>
-              <Button
-                onClick={() => setTaskPrioritizerOpen(true)}
-                disabled={filteredTasks.length === 0}
-                variant="outline"
-              >
-                <Sparkles size={18} className="mr-2" />
-                Prioritize Tasks
-              </Button>
-              <Button
-                onClick={() => setQuickStatusOpen(true)}
-                disabled={filteredTasks.length === 0}
-                variant="outline"
-              >
-                Bulk Status Update
-              </Button>
-              <Button
-                onClick={handleCreateTask}
-                disabled={activeProjectIds.length === 0}
-              >
-                <Plus size={18} className="mr-2" />
-                Add Task
-              </Button>
+            <Btn variant="primary" onClick={() => { setEditTask(null); setShowForm(true); }} style={{ padding: "10px 20px" }}>
+              + ADD TASK
+            </Btn>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
+            {[
+              { label: "TOTAL", val: stats.total, c: "rgba(255,255,255,0.6)" },
+              { label: "COMPLETE", val: stats.complete, c: "#36B37E" },
+              { label: "IN PROGRESS", val: stats.inProgress, c: "#FFB020" },
+              { label: "NOT STARTED", val: stats.notStarted, c: "#6B7280" },
+              { label: "DELAYED", val: stats.delayed, c: "#FF4D4D" },
+            ].map(({ label, val, c }) => (
+              <div key={label} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: c, fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>{val}</div>
+                <div style={{ fontSize: 8, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", marginTop: 2 }}>{label}</div>
+              </div>
+            ))}
+            {/* Progress bar */}
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, paddingLeft: 12, borderLeft: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ flex: 1, height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ width: `${stats.total ? (stats.complete / stats.total) * 100 : 0}%`, height: "100%", background: "linear-gradient(90deg,#36B37E,#4DC8E8)", borderRadius: 3, transition: "width 0.4s" }} />
+              </div>
+              <span style={{ fontSize: 10, color: "#36B37E", fontWeight: 700, minWidth: 36 }}>
+                {stats.total ? Math.round((stats.complete / stats.total) * 100) : 0}%
+              </span>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Metrics */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.02)]">
-        <div className="max-w-[1800px] mx-auto px-8 py-4">
-          <div className="grid grid-cols-5 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Total Tasks</div>
-                <div className="text-3xl font-bold text-[#E5E7EB]">{statusCounts.all}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-1">Not Started</div>
-                <div className="text-3xl font-bold text-[#9CA3AF]">{statusCounts.not_started}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-[10px] text-[#3B82F6] uppercase tracking-wider font-semibold mb-1">In Progress</div>
-                <div className="text-3xl font-bold text-[#3B82F6]">{statusCounts.in_progress}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-[10px] text-[#10B981] uppercase tracking-wider font-semibold mb-1">Completed</div>
-                <div className="text-3xl font-bold text-[#10B981]">{statusCounts.completed}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="text-[10px] text-[#EF4444] uppercase tracking-wider font-semibold mb-1">Overdue</div>
-                <div className="text-3xl font-bold text-[#EF4444]">{statusCounts.overdue}</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="border-b border-[rgba(255,255,255,0.05)] bg-[rgba(255,255,255,0.01)]">
-        <div className="max-w-[1800px] mx-auto px-8 py-3">
-          <div className="flex items-center gap-4">
-            {/* Project Selector */}
-            <div className="w-64">
-              <Select 
-                value={selectedProjects.length > 0 ? 'multi' : (activeProjectId || '')} 
-                onValueChange={(value) => {
-                  if (value === 'all') {
-                    setSelectedProjects(projects.map(p => p.id));
-                    setActiveProjectId(null);
-                  } else if (value === 'multi') {
-                    // Keep multi-select active
-                  } else {
-                    setSelectedProjects([]);
-                    setActiveProjectId(value);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Project(s)">
-                    {selectedProjects.length > 1 
-                      ? `${selectedProjects.length} Projects` 
-                      : selectedProjects.length === 1
-                        ? projects.find(p => p.id === selectedProjects[0])?.name
-                        : activeProjectId
-                          ? projects.find(p => p.id === activeProjectId)?.name
-                          : 'Select Project(s)'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="max-h-96">
-                  <SelectItem value="all">
-                    All Projects ({projects.length})
-                  </SelectItem>
-                  <div className="border-t border-[rgba(255,255,255,0.05)] my-1" />
-                  {projects.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.project_number} - {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* PM Filter */}
-            <div className="w-56">
-              <Select value={pmFilter} onValueChange={setPmFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-96">
-                  <SelectItem value="all">
-                    All PMs
-                  </SelectItem>
-                  {projectManagers.map((pm) => (
-                    <SelectItem key={pm} value={pm}>
-                      {pm}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" />
-              <Input
-                placeholder="Search tasks by name or WBS..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Filters Toggle */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={showFilters ? 'bg-[rgba(255,157,66,0.08)] text-[#FF9D42]' : ''}
-            >
-              <Sliders size={16} className="mr-2" />
-              Filters
-            </Button>
-
-            {/* View Mode */}
-            <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
-              {[
-                { value: 'gantt', label: 'Gantt' },
-                { value: 'list', label: 'List' },
-                { value: 'calendar', label: 'Calendar' }
-              ].map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setViewMode(value)}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    viewMode === value 
-                      ? 'bg-gradient-to-r from-[#FF6B2C] to-[#FF9D42] text-[#0A0E13] shadow-md' 
-                      : 'text-[#9CA3AF] hover:text-[#E5E7EB] hover:bg-[rgba(255,157,66,0.05)]'
-                  }`}
-                >
-                  {label}
-                </button>
+          {/* Filters */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", paddingBottom: 14 }}>
+            {/* Project tabs */}
+            {["All Projects", ...PROJECTS].map(p => (
+              <button key={p} onClick={() => setSelectedProject(p)} style={{
+                padding: "5px 12px", borderRadius: 5, fontSize: 10, fontWeight: 700,
+                fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer",
+                border: selectedProject === p ? "1px solid rgba(255,140,66,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                background: selectedProject === p ? "rgba(255,140,66,0.15)" : "rgba(255,255,255,0.03)",
+                color: selectedProject === p ? "#FF8C42" : "rgba(255,255,255,0.4)",
+                letterSpacing: "0.06em",
+              }}>{p}</button>
+            ))}
+            <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.08)", margin: "0 4px" }} />
+            {/* Type filter */}
+            <select value={filterType} onChange={e => setFilterType(e.target.value)}
+              style={{ background: "#0A0E15", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 5, padding: "5px 10px", color: "#fff", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer" }}>
+              <option value="ALL">All Types</option>
+              {Object.entries(TASK_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            {/* Status filter */}
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              style={{ background: "#0A0E15", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 5, padding: "5px 10px", color: "#fff", fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer" }}>
+              <option value="ALL">All Statuses</option>
+              {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            {/* Zoom */}
+            <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em" }}>ZOOM</span>
+              {[{ label: "1W", val: 52 }, { label: "2W", val: 34 }, { label: "1M", val: 20 }, { label: "2M", val: 12 }, { label: "3M", val: 8 }].map(z => (
+                <button key={z.label} onClick={() => setZoom(z.val)} style={{
+                  padding: "4px 9px", borderRadius: 4, fontSize: 9, fontWeight: 700, cursor: "pointer",
+                  fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "0.08em",
+                  border: zoom === z.val ? "1px solid rgba(255,140,66,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                  background: zoom === z.val ? "rgba(255,140,66,0.15)" : "transparent",
+                  color: zoom === z.val ? "#FF8C42" : "rgba(255,255,255,0.3)",
+                }}>{z.label}</button>
               ))}
             </div>
-
-            {/* Zoom Level (for Gantt) */}
-            {viewMode === 'gantt' && (
-              <div className="flex gap-1 border border-[rgba(255,255,255,0.1)] bg-[#0F1419] rounded-lg overflow-hidden p-1">
-                {[
-                  { value: 'day', label: 'Day' },
-                  { value: 'week', label: 'Week' },
-                  { value: 'month', label: 'Month' }
-                ].map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => setZoomLevel(value)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                      zoomLevel === value 
-                        ? 'bg-[#151B24] text-[#FF9D42]' 
-                        : 'text-[#6B7280] hover:text-[#E5E7EB]'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Export Calendar */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportICS}
-              disabled={filteredTasks.length === 0}
-            >
-              <Download size={16} className="mr-2" />
-              Export .ics
-            </Button>
           </div>
+        </div>
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-[rgba(255,255,255,0.05)]">
-              <div>
-                <label className="text-xs text-[#6B7280] uppercase mb-2 block">Status</label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="not_started">Not Started</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="on_hold">On Hold</SelectItem>
-                    <SelectItem value="blocked">Blocked</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* ── Legend ── */}
+        <div style={{ display: "flex", gap: 16, padding: "10px 24px", borderBottom: "1px solid rgba(255,255,255,0.04)", flexWrap: "wrap" }}>
+          {Object.entries(TASK_TYPES).map(([k, v]) => (
+            <div key={k} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: v.color }} />
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em" }}>{v.label.toUpperCase()}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginLeft: 12 }}>
+            <div style={{ width: 2, height: 12, background: "#4DC8E8" }} />
+            <span style={{ fontSize: 9, color: "rgba(77,200,232,0.7)", letterSpacing: "0.08em" }}>TODAY</span>
+          </div>
+        </div>
 
-              <div>
-                <label className="text-xs text-[#6B7280] uppercase mb-2 block">Priority</label>
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priorities</SelectItem>
-                    <SelectItem value="critical">Critical Path Only</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {/* ── Gantt Body ── */}
+        <div style={{ padding: "0 24px 24px" }}>
+          {visibleTasks.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 60, color: "rgba(255,255,255,0.2)", fontSize: 12 }}>
+              No tasks match current filters. Click + ADD TASK to get started.
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto", overflowY: "visible" }} ref={scrollRef}>
+              <div style={{ minWidth: LABEL_W + totalDays * zoom }}>
 
-              <div>
-                <label className="text-xs text-[#6B7280] uppercase mb-2 block">Phase</label>
-                <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Phases</SelectItem>
-                    <SelectItem value="detailing">Detailing</SelectItem>
-                    <SelectItem value="fabrication">Fabrication</SelectItem>
-                    <SelectItem value="delivery">Delivery</SelectItem>
-                    <SelectItem value="erection">Erection</SelectItem>
-                    <SelectItem value="closeout">Closeout</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                {/* Render grouped by project */}
+                {Object.entries(grouped).map(([proj, projTasks]) => (
+                  <div key={proj}>
+                    {/* Project group header */}
+                    <div style={{
+                      display: "flex", alignItems: "center",
+                      background: "rgba(255,140,66,0.06)",
+                      borderTop: "1px solid rgba(255,140,66,0.2)",
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      position: "sticky", top: 0, zIndex: 5,
+                    }}>
+                      {/* Label column */}
+                      <div style={{
+                        width: LABEL_W, minWidth: LABEL_W, padding: "8px 14px",
+                        display: "flex", alignItems: "center", gap: 8,
+                        borderRight: "1px solid rgba(255,255,255,0.06)",
+                        position: "sticky", left: 0, background: "rgba(15,18,26,0.97)", zIndex: 6,
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#FF8C42", letterSpacing: "0.08em", fontFamily: "'Barlow Condensed', sans-serif" }}>
+                          ▸ {proj.toUpperCase()}
+                        </span>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{projTasks.length} tasks</span>
+                      </div>
+                      {/* Timeline header months */}
+                      <div style={{ flex: 1, position: "relative", height: HEADER_H, overflow: "hidden" }}>
+                        {/* Month labels */}
+                        {months.map((m, i) => (
+                          <div key={i} style={{
+                            position: "absolute", left: m.offset * zoom, width: m.span * zoom,
+                            top: 0, height: "50%", borderRight: "1px solid rgba(255,255,255,0.08)",
+                            display: "flex", alignItems: "center", paddingLeft: 8,
+                          }}>
+                            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, letterSpacing: "0.08em", whiteSpace: "nowrap" }}>{m.label}</span>
+                          </div>
+                        ))}
+                        {/* Week lines */}
+                        {Array.from({ length: Math.ceil(totalDays / 7) }, (_, i) => (
+                          <div key={i} style={{
+                            position: "absolute", left: i * 7 * zoom, top: "50%", bottom: 0,
+                            width: 1, background: "rgba(255,255,255,0.05)",
+                          }} />
+                        ))}
+                        {/* Day labels (only if zoom >= 20) */}
+                        {zoom >= 20 && Array.from({ length: totalDays }, (_, i) => {
+                          const d = addDays(rangeStart, i);
+                          if (d.getDay() !== 1) return null;
+                          return (
+                            <div key={i} style={{
+                              position: "absolute", left: i * zoom + 2, top: "55%",
+                              fontSize: 8, color: "rgba(255,255,255,0.25)", letterSpacing: "0.04em",
+                              whiteSpace: "nowrap",
+                            }}>{fmtShort(d)}</div>
+                          );
+                        })}
+                        {/* Today line in header */}
+                        {todayOffset >= 0 && todayOffset <= totalDays && (
+                          <div style={{
+                            position: "absolute", left: todayOffset * zoom,
+                            top: 0, bottom: 0, width: 2, background: "#4DC8E8", opacity: 0.6,
+                          }} />
+                        )}
+                      </div>
+                    </div>
 
-              <div className="flex items-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setStatusFilter('all');
-                    setPriorityFilter('all');
-                    setPhaseFilter('all');
-                    setSearchTerm('');
-                  }}
-                  className="w-full"
-                >
-                  Clear All Filters
-                </Button>
+                    {/* Task rows */}
+                    {projTasks.map((task, rowIdx) => {
+                      const off = dayOffset(task.start);
+                      const dur = Math.max(1, Math.ceil((parseDate(task.end) - parseDate(task.start)) / 86400000));
+                      const tm  = TASK_TYPES[task.type] || TASK_TYPES.CUSTOM;
+                      const isDelayed = task.status === "DELAYED";
+                      const isComplete = task.status === "COMPLETE";
+                      const barW = Math.max(dur * zoom, 4);
+
+                      return (
+                        <div key={task.id} style={{
+                          display: "flex", alignItems: "center",
+                          borderBottom: "1px solid rgba(255,255,255,0.035)",
+                          background: rowIdx % 2 === 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                          height: ROW_H,
+                        }}>
+                          {/* Label */}
+                          <div style={{
+                            width: LABEL_W, minWidth: LABEL_W, height: "100%",
+                            display: "flex", alignItems: "center",
+                            padding: "0 14px", gap: 8, overflow: "hidden",
+                            borderRight: "1px solid rgba(255,255,255,0.06)",
+                            position: "sticky", left: 0, background: rowIdx % 2 === 0 ? "#0B0F18" : "#080C13",
+                            zIndex: 3, cursor: "pointer",
+                          }}
+                            onClick={() => { setEditTask(task); setShowForm(true); }}
+                            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,140,66,0.07)"}
+                            onMouseLeave={e => e.currentTarget.style.background = rowIdx % 2 === 0 ? "#0B0F18" : "#080C13"}
+                          >
+                            <Pill type={task.type} />
+                            <span style={{
+                              fontSize: 11, color: isComplete ? "rgba(255,255,255,0.4)" : "#fff",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1,
+                              textDecoration: isComplete ? "line-through" : "none",
+                            }}>{task.name}</span>
+                            <span style={{ fontSize: 9, color: STATUS_COLORS[task.status], flexShrink: 0 }}>●</span>
+                          </div>
+
+                          {/* Timeline row */}
+                          <div style={{ flex: 1, height: "100%", position: "relative", overflow: "hidden" }}>
+                            {/* Alternating day columns */}
+                            {Array.from({ length: totalDays }, (_, i) => (
+                              addDays(rangeStart, i).getDay() === 0 || addDays(rangeStart, i).getDay() === 6
+                                ? <div key={i} style={{ position: "absolute", left: i * zoom, width: zoom, top: 0, bottom: 0, background: "rgba(255,255,255,0.012)" }} />
+                                : null
+                            ))}
+
+                            {/* Today line */}
+                            {todayOffset >= 0 && todayOffset <= totalDays && (
+                              <div style={{
+                                position: "absolute", left: todayOffset * zoom,
+                                top: 0, bottom: 0, width: 2, background: "#4DC8E8",
+                                opacity: 0.35, zIndex: 2,
+                              }} />
+                            )}
+
+                            {/* Gantt bar */}
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: Math.max(0, off * zoom),
+                                width: barW,
+                                top: "50%", transform: "translateY(-50%)",
+                                height: 22, borderRadius: 4,
+                                background: isComplete
+                                  ? `repeating-linear-gradient(45deg,${tm.color}44,${tm.color}44 3px,${tm.color}22 3px,${tm.color}22 6px)`
+                                  : isDelayed
+                                  ? `linear-gradient(90deg,#FF4D4D,#FF8080)`
+                                  : `linear-gradient(90deg,${tm.color}cc,${tm.color}88)`,
+                                border: `1px solid ${isDelayed ? "#FF4D4D" : tm.color}55`,
+                                cursor: "pointer",
+                                zIndex: 2,
+                                display: "flex", alignItems: "center",
+                                paddingLeft: 6, overflow: "hidden",
+                                boxShadow: `0 2px 8px ${tm.color}33`,
+                                transition: "opacity 0.12s",
+                              }}
+                              onMouseEnter={e => {
+                                e.currentTarget.style.opacity = "0.85";
+                                setTooltipTask(task);
+                                setTooltipPos({ x: e.clientX, y: e.clientY });
+                              }}
+                              onMouseMove={e => setTooltipPos({ x: e.clientX, y: e.clientY })}
+                              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; setTooltipTask(null); }}
+                              onClick={() => { setEditTask(task); setShowForm(true); }}
+                            >
+                              {barW > 60 && (
+                                <span style={{ fontSize: 9, color: "#fff", fontWeight: 700, whiteSpace: "nowrap", letterSpacing: "0.04em", opacity: 0.9 }}>
+                                  {task.crew}
+                                </span>
+                              )}
+                              {isComplete && barW > 20 && (
+                                <span style={{ position: "absolute", right: 5, fontSize: 9, color: "#fff", opacity: 0.7 }}>✓</span>
+                              )}
+                            </div>
+
+                            {/* Duration label */}
+                            {barW > 40 && (
+                              <div style={{
+                                position: "absolute",
+                                left: Math.max(0, off * zoom) + barW + 4,
+                                top: "50%", transform: "translateY(-50%)",
+                                fontSize: 8, color: "rgba(255,255,255,0.25)", whiteSpace: "nowrap",
+                              }}>
+                                {dur}d
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6">
-        {/* Dependency Visualizer */}
-        {filteredTasks.length > 0 && (
-          <div className="mb-6">
-            <DependencyVisualizer tasks={filteredTasks} />
+        {/* ── Tooltip ── */}
+        {tooltipTask && (
+          <div style={{
+            position: "fixed",
+            left: tooltipPos.x + 14,
+            top: tooltipPos.y - 10,
+            background: "#0D1117",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 8, padding: "10px 14px",
+            zIndex: 9999, pointerEvents: "none",
+            boxShadow: "0 12px 32px rgba(0,0,0,0.6)",
+            minWidth: 200, maxWidth: 280,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", marginBottom: 6, lineHeight: 1.3 }}>{tooltipTask.name}</div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>{tooltipTask.project}</div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+              <Pill type={tooltipTask.type} />
+              <StatusDot status={tooltipTask.status} />
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", lineHeight: 1.8 }}>
+              <div>📅 {fmtFull(parseDate(tooltipTask.start))} → {fmtFull(parseDate(tooltipTask.end))}</div>
+              <div>👷 {tooltipTask.crew || "—"}</div>
+              {tooltipTask.notes && <div>📝 {tooltipTask.notes}</div>}
+            </div>
           </div>
         )}
 
-        {activeProjectIds.length === 0 ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="text-center">
-              <Calendar size={64} className="mx-auto mb-4 text-[#4B5563]" />
-              <h3 className="text-xl font-semibold text-[#E5E7EB] mb-2">No Project Selected</h3>
-              <p className="text-sm text-[#9CA3AF] max-w-md">
-                Select one or more projects to view and manage their schedules
-              </p>
-            </div>
-          </div>
-        ) : isLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-[#FF9D42] border-t-transparent animate-spin mx-auto mb-4 rounded-full" />
-              <p className="text-sm text-[#9CA3AF]">Loading schedule...</p>
-            </div>
-          </div>
-        ) : filteredTasks.length === 0 ? (
-          <div className="text-center py-32">
-            <Calendar size={64} className="mx-auto mb-4 text-[#4B5563]" />
-            <h3 className="text-xl font-semibold text-[#E5E7EB] mb-2">No Tasks Found</h3>
-            <p className="text-sm text-[#9CA3AF] mb-6 max-w-md mx-auto">
-              {allScheduleTasks.length === 0 
-                ? 'Create your first task to begin scheduling'
-                : 'No tasks match your current filters'}
-            </p>
-            {allScheduleTasks.length === 0 && (
-              <Button
-                onClick={handleCreateTask}
-              >
-                <Plus size={18} className="mr-2" />
-                Create First Task
-              </Button>
-            )}
-          </div>
-        ) : viewMode === 'gantt' ? (
-          <GanttChart
-            tasks={filteredTasks}
-            projects={activeProjects}
-            viewMode={zoomLevel}
-            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
-            onTaskEdit={handleTaskClick}
-            onTaskDelete={(id) => deleteMutation.mutate(id)}
-            resources={resources}
-            rfis={rfis}
-            changeOrders={changeOrders}
-          />
-        ) : viewMode === 'calendar' ? (
-          <CalendarView
-            tasks={filteredTasks}
-            projects={activeProjects}
-            onTaskClick={handleTaskClick}
-            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
-          />
-        ) : (
-          <TaskListView
-            tasks={filteredTasks}
-            projects={activeProjects}
-            resources={resources}
-            workPackages={[]}
-            riskState={riskState}
-            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
-            onTaskClick={handleTaskClick}
-            onTaskDelete={(id) => deleteMutation.mutate(id)}
+        {/* ── Form Modal ── */}
+        {showForm && (
+          <TaskForm
+            task={editTask}
+            onSave={handleSave}
+            onClose={() => { setShowForm(false); setEditTask(null); }}
+            onDelete={handleDelete}
           />
         )}
       </div>
-
-      {/* Task Form Sheet */}
-      <Sheet open={showTaskForm} onOpenChange={(open) => {
-        setShowTaskForm(open);
-        if (!open) setEditingTask(null);
-      }}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>
-              {editingTask?.id ? 'Edit Task' : 'New Task'}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <TaskForm
-              task={editingTask}
-              projects={projects}
-              tasks={allScheduleTasks}
-              resources={resources}
-              rfis={rfis}
-              changeOrders={changeOrders}
-              drawingSets={drawingSets}
-              onSubmit={(data) => {
-                if (editingTask?.id) {
-                  updateMutation.mutate({ id: editingTask.id, data });
-                } else {
-                  createMutation.mutate(data);
-                }
-              }}
-              onCancel={() => {
-                setShowTaskForm(false);
-                setEditingTask(null);
-              }}
-              isLoading={createMutation.isPending || updateMutation.isPending}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <AIWBSGenerator
-        project={projects.find(p => p.id === activeProjectId)}
-        open={wbsGeneratorOpen}
-        onClose={() => setWbsGeneratorOpen(false)}
-      />
-
-      <AITaskPrioritizer
-        projectId={activeProjectId}
-        tasks={filteredTasks}
-        open={taskPrioritizerOpen}
-        onClose={() => setTaskPrioritizerOpen(false)}
-      />
-
-      <Sheet open={quickStatusOpen} onOpenChange={setQuickStatusOpen}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Quick Status Update</SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <QuickStatusUpdate
-              tasks={filteredTasks}
-              onBulkUpdate={(updates) => bulkUpdateMutation.mutate(updates)}
-              onClose={() => setQuickStatusOpen(false)}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
-    </div>
-    </ErrorBoundary>
+    </>
   );
 }

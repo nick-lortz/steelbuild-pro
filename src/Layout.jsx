@@ -224,6 +224,12 @@ function LayoutContent({ children, currentPageName }) {
           <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
             The app returned a "Not Found" response. Check environment config.
           </p>
+          <pre className="text-xs text-left mt-4 p-4 bg-black rounded overflow-auto">
+            {JSON.stringify({
+              appId: window.__BASE44_APP_ID__,
+              env: import.meta.env
+            }, null, 2)}
+          </pre>
         </div>
       </div>
     );

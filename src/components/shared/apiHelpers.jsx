@@ -1,4 +1,5 @@
 import { toast } from '@/components/ui/notifications';
+import { base44 } from '@/api/base44Client';
 
 /**
  * Creates a standardized mutation configuration with error handling

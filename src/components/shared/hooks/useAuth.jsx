@@ -13,8 +13,11 @@ export function useAuth() {
     queryKey: ['currentUser'],
     queryFn: async () => {
       try {
-        return await base44.auth.me();
+        const result = await base44.auth.me();
+        console.log("AUTH ME SUCCESS", result);
+        return result;
       } catch (err) {
+        console.log("AUTH ME ERROR", err?.config?.url, err?.config?.baseURL, err?.response?.data);
         const status = err?.response?.status ?? err?.status;
         if (status === 401) {
           // Do not auto-redirect on public pages to avoid redirect loops

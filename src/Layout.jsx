@@ -172,8 +172,6 @@ function LayoutContent({ children, currentPageName }) {
 
   useEffect(() => { 
     initSentry(); 
-    console.log("base44 object keys:", Object.keys(base44));
-    console.log("base44 auth keys:", Object.keys(base44.auth));
   }, []);
 
   const { activeProjectId } = useActiveProject();

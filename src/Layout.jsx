@@ -54,12 +54,18 @@ if (IS_PREVIEW_ENV) {
 
   const originalOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    let originalUrl = url;
     if (typeof url === 'string') {
       url = url.replace('/v1/apps/undefined/', `/v1/apps/${APP_ID}/`);
       url = url.replace('/v1/apps/null/', `/v1/apps/${APP_ID}/`);
       url = url.replace(`/v1/apps/${SHORT_ID}/`, `/v1/apps/${APP_ID}/`);
       if (url.includes('api.base44.app/v1/') && !url.includes('/apps/')) {
         url = url.replace('/v1/', `/v1/apps/${APP_ID}/`);
+      }
+      if (url !== originalUrl) {
+         console.log("[INTERCEPTOR] Changed XHR URL from", originalUrl, "to", url);
+      } else {
+         console.log("[INTERCEPTOR] XHR URL unchanged:", url);
       }
     }
     return originalOpen.call(this, method, url, ...rest);

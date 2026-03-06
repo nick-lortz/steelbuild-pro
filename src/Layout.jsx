@@ -332,6 +332,7 @@ const LayoutWithProviders = React.memo(function LayoutWithProviders({ children, 
           <ActiveProjectProvider>
             <TabNavigationProvider>
               <LayoutContent children={children} currentPageName={currentPageName} />
+              <div style={{ display: 'none' }} data-trigger-hmr={Date.now()}></div>
             </TabNavigationProvider>
           </ActiveProjectProvider>
         </ConfirmProvider>

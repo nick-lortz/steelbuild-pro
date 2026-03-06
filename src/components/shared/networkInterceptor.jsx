@@ -62,4 +62,7 @@ if (IS_PREVIEW_ENV) {
   };
   
   console.log("[INTERCEPTOR] Installed early network hooks for APP_ID:", APP_ID);
+  
+  // Also try to patch window.__BASE44_APP_ID__ globally in case the SDK reads it
+  window.__BASE44_APP_ID__ = APP_ID;
 }

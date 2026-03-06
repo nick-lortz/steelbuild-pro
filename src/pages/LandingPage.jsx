@@ -23,6 +23,32 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = async () => {
+    console.log("Starting network tests...");
+    const appId = '694bc0dd754d739afc7067e9';
+    const shortId = 'fc7067e9';
+    const serverUrl = new URLSearchParams(window.location.search).get('server_url') || 'https://base44.app';
+    
+    try {
+      const res1 = await fetch(`${serverUrl}/v1/apps/${appId}/auth/me`, {
+         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log("Test 1 (AppId):", res1.status);
+    } catch(e) { console.error("Test 1 failed", e); }
+
+    try {
+      const res2 = await fetch(`${serverUrl}/v1/apps/${shortId}/auth/me`, {
+         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log("Test 2 (ShortId):", res2.status);
+    } catch(e) { console.error("Test 2 failed", e); }
+
+    try {
+      const res3 = await fetch(`https://api.base44.app/v1/apps/${appId}/auth/me`, {
+         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log("Test 3 (Prod API):", res3.status);
+    } catch(e) { console.error("Test 3 failed", e); }
+
     try {
       const isAuthenticated = await base44.auth.isAuthenticated();
       if (isAuthenticated) {
@@ -30,7 +56,7 @@ export default function LandingPage() {
         return;
       }
     } catch (e) {
-      // fall through to login redirect
+      console.error("SDK Auth test failed", e);
     }
     base44.auth.redirectToLogin(createPageUrl('ProjectDashboard'));
   };
